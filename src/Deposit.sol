@@ -22,7 +22,7 @@ contract Deposit {
     constructor() {
         owner = msg.sender;
         TNFTInstance = new TNFT(owner);
-        BNFTInstance = new BNFT();
+        BNFTInstance = new BNFT(owner);
         stakeAmount = 0.1 ether;
     }
 
