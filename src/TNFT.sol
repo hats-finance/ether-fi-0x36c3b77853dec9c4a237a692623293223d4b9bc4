@@ -12,7 +12,7 @@ contract TNFT is ERC721 {
     }
 
     function mint(address _reciever) public {
-        _mint(_reciever, tokenId);
+        _safeMint(_reciever, tokenId);
         tokenId++;
     }
     
