@@ -19,4 +19,6 @@ contract BNFT is ERC721, Ownable {
            tokenId++;
         }
     }
+
+    //Make soulbound
 }

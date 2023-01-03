@@ -22,9 +22,9 @@ contract Deposit {
     }
 
     function deposit() public payable {
-        require(msg.value >= stakeAmount, "Insufficient staking amount");
-        depositorBalances[msg.sender] += msg.value;
+        require(msg.value == stakeAmount, "Insufficient staking amount");
         TNFTInstance.mint(msg.sender);
         BNFTInstance.mint(msg.sender);
+        depositorBalances[msg.sender] += msg.value;
     }
 }
