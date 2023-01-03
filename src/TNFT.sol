@@ -17,5 +17,4 @@ contract TNFT is ERC721 {
            tokenId++;
         }
     }
-    
 }
