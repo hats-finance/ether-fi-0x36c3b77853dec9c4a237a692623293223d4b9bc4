@@ -13,14 +13,20 @@ contract DepositTest is Test {
     TNFT public TestTNFTInstance;
 
     address owner = vm.addr(1);
-    address staker = vm.addr(2);
-
+    
     function setUp() public {
         vm.startPrank(owner);
         depositInstance = new Deposit();
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
         vm.stopPrank();
+    }
+
+    function testDepositCreatesNFTs() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        depositInstance.deposit{value: 0.2 ether}();
+        assertEq(TestBNFTInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 1);
+        assertEq(TestTNFTInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 1);
     }
 
     function testDepositReceivesEther() public {
