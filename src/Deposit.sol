@@ -16,7 +16,7 @@ contract Deposit {
 
     mapping(address => uint256) public depositorBalances;
 
-    event Deposit(address sender, uint256 value);
+    event StakeDeposit(address sender, uint256 value);
     event UpdateStakeAmount(uint256 oldStakeAmount, uint256 newStakeAmount);
 
     constructor() {
@@ -32,11 +32,11 @@ contract Deposit {
         BNFTInstance.mint(msg.sender);
         depositorBalances[msg.sender] += msg.value;
 
-        emit Deposit(msg.sender, msg.value);
+        emit StakeDeposit(msg.sender, msg.value);
     }
 
     function setStakeAmount(uint256 _newStakeAmount) public onlyOwner {
-        uint256 public oldStakeAmount = stakeAmount;
+        uint256 oldStakeAmount = stakeAmount;
         stakeAmount = _newStakeAmount;
 
         emit UpdateStakeAmount(oldStakeAmount, _newStakeAmount);
