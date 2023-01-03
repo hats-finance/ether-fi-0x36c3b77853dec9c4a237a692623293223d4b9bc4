@@ -20,10 +20,10 @@ contract Deposit {
     event UpdateStakeAmount(uint256 oldStakeAmount, uint256 newStakeAmount);
 
     constructor() {
-        TNFTInstance = new TNFT();
+        owner = msg.sender;
+        TNFTInstance = new TNFT(owner);
         BNFTInstance = new BNFT();
         stakeAmount = 0.1 ether;
-        owner = msg.sender;
     }
 
     function deposit() public payable {
