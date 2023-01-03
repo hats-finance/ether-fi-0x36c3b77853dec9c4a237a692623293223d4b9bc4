@@ -13,7 +13,8 @@ contract DepositTest is Test {
     TNFT public TestTNFTInstance;
 
     address owner = vm.addr(1);
-    
+    address alice = vm.addr(2);
+
     function setUp() public {
         vm.startPrank(owner);
         depositInstance = new Deposit();
@@ -54,5 +55,18 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Insufficient staking amount");
         depositInstance.deposit{value:0.2 ether}();
+    }
+    
+    function testUpdateStakeAmount() public {
+        vm.startPrank(owner);
+        assertEq(depositInstance.stakeAmount(), 0.1 ether);
+        depositInstance.setStakeAmount(1 ether);
+        assertEq(depositInstance.stakeAmount(), 1 ether);
+    }
+
+    function testUpdateStakeAmountFailsIfNotOwner() public {
+        vm.expectRevert("Only owner function");
+        vm.prank(alice);
+        depositInstance.setStakeAmount(1 ether);
     }
 }
