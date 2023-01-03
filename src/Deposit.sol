@@ -12,6 +12,7 @@ contract Deposit {
     BNFT public BNFTInstance;
 
     uint256 public stakeAmount;
+    address public owner;
 
     mapping(address => uint256) public depositorBalances;
 
@@ -19,6 +20,7 @@ contract Deposit {
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
         stakeAmount = 0.1 ether;
+        owner = msg.sender;
     }
 
     function deposit() public payable {
@@ -26,5 +28,15 @@ contract Deposit {
         TNFTInstance.mint(msg.sender);
         BNFTInstance.mint(msg.sender);
         depositorBalances[msg.sender] += msg.value;
+    }
+
+    function setStakeAmount(uint256 _newStakeAmount) public onlyOwner {
+        uint256 public oldStakeAmount = stakeAmount;
+        stakeAmount = _newStakeAmount;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
+        _;
     }
 }
