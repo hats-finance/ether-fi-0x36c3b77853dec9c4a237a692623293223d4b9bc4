@@ -3,19 +3,21 @@ pragma solidity 0.8.13;
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
+import "./TNFT.sol";
+import "./BNFT.sol";
 
 contract Deposit {
 
-    ITNFT TNFTInstance;
-    IBNFT BNFTInstance;
+    TNFT public TNFTInstance;
+    BNFT public BNFTInstance;
 
-    constructor(address _TNFTAddress, address _BNFTAddress) {
-        TNFTInstance = ITNFT(_TNFTAddress);
-        BNFTInstance = IBNFT(_BNFTAddress);
+    constructor() {
+        TNFTInstance = new TNFT();
+        BNFTInstance = new BNFT();
     }
 
     function deposit() public payable {
-        require(msg.value >= 32 ether, "Insufficient staking amount");
+        require(msg.value >= 0.1 ether, "Insufficient staking amount");
         TNFTInstance.mint(msg.sender);
         BNFTInstance.mint(msg.sender);
     }
