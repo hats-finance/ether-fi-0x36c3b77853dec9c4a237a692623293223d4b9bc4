@@ -4,12 +4,12 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TNFT is ERC721, Ownable {
+contract BNFT is ERC721, Ownable {
 
     uint256 private tokenId;
-    uint256 public price = 30 ether;
+    uint256 public price = 2 ether;
 
-    constructor() ERC721("Transferrable NFT", "TNFT"){
+    constructor() ERC721("Bond NFT", "BNFT"){
 
     }
 

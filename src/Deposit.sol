@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity 0.8.13;
 
 import "./interfaces/ITNFT.sol";
 
@@ -7,7 +7,7 @@ contract Deposit {
 
     ITNFT TNFTInstance;
 
-    constructor(address _TNFTAddress) public {
+    constructor(address _TNFTAddress) {
         TNFTInstance = ITNFT(_TNFTAddress);
     }
 
