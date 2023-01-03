@@ -11,13 +11,19 @@ contract Deposit {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
 
+    uint256 public stakeAmount;
+
+    mapping(address => uint256) public depositorBalances;
+
     constructor() {
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
+        stakeAmount = 0.1 ether;
     }
 
     function deposit() public payable {
-        require(msg.value >= 0.1 ether, "Insufficient staking amount");
+        require(msg.value >= stakeAmount, "Insufficient staking amount");
+        depositorBalances[msg.sender] += msg.value;
         TNFTInstance.mint(msg.sender);
         BNFTInstance.mint(msg.sender);
     }

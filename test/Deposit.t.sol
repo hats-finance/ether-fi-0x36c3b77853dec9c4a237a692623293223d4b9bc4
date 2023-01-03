@@ -29,10 +29,25 @@ contract DepositTest is Test {
         assertEq(TestTNFTInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 1);
     }
 
+    function testDepositCreatesNFTsWithCorrectOwner() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        depositInstance.deposit{value: 0.2 ether}();
+        assertEq(TestBNFTInstance.ownerOf(0), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestTNFTInstance.ownerOf(0), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    }
+
     function testDepositReceivesEther() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.deposit{value: 0.2 ether}();
         assertEq(address(depositInstance).balance, 0.2 ether);
+    }
+
+     function testDepositUpdatesBalancesMapping() public {
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        depositInstance.deposit{value: 0.2 ether}();
+        assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.2 ether);
+        depositInstance.deposit{value: 0.5 ether}();
+        assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.7 ether);
     }
 
     
