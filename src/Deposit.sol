@@ -15,5 +15,4 @@ contract Deposit {
         require(msg.value >= 32 ether, "Insufficient staking amount");
         TNFTInstance.mint(msg.sender);
     }
-
 }
