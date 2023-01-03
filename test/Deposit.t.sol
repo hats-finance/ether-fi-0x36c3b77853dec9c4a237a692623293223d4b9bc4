@@ -23,6 +23,11 @@ contract DepositTest is Test {
         vm.stopPrank();
     }
 
+    function testDepositContractInstantiatedCorrectly() public {
+        assertEq(depositInstance.stakeAmount(), 0.1 ether);
+        assertEq(depositInstance.owner(), address(owner));
+    }
+
     function testDepositCreatesNFTs() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.deposit{value: 0.1 ether}();
