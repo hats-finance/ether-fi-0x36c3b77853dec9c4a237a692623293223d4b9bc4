@@ -26,7 +26,7 @@ contract DepositTest is Test {
     function testDepositCreatesNFTs() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.deposit{value: 0.2 ether}();
-        assertEq(address(depositInstance).balance, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance);
+        assertEq(address(depositInstance).balance, 0.2 ether);
     }
 
     
