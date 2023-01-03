@@ -23,6 +23,12 @@ contract DepositTest is Test {
         vm.stopPrank();
     }
 
+    function testTNFTContractGetsInstantiatedCorrectly() public {
+        assertEq(TestTNFTInstance.depositContractAddress(), address(depositInstance));
+        assertEq(TestTNFTInstance.nftValue(), 30 ether);
+        assertEq(TestTNFTInstance.owner(), address(owner));
+    }
+
     function testTNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
         vm.expectRevert("Only deposit contract function");
@@ -41,4 +47,5 @@ contract DepositTest is Test {
         vm.expectRevert("Only owner function");
         TestTNFTInstance.setNftValue(20 ether);
     }
+
 }
