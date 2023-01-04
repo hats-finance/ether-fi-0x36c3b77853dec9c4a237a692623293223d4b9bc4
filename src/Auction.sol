@@ -10,7 +10,7 @@ import "./Deposit.sol";
 
 contract Auction {
 
-    uint256 public numberofAuctions = 1;
+    uint256 public numberOfAuctions = 1;
     address public depositContractAddress;
     address public owner;
 
@@ -21,6 +21,7 @@ contract Auction {
     event AuctionCreated(uint256 auctionId, uint256 startTime);
     event AuctionClosed(uint256 auctionId, uint256 endTime);
     event BidPlaced(uint256 auctionId, address bidder, uint256 amount);
+    event RefundClaimed(address claimer, uint256 amount);
 
     struct AuctionDetails {
         Bid winningBid;
@@ -44,27 +45,27 @@ contract Auction {
 
     function startAuction() public onlyOwnerOrDepositContract {
 
-        auctions[numberofAuctions] = AuctionDetails({
-            winningBid: bids[numberofAuctions][msg.sender],
+        auctions[numberOfAuctions] = AuctionDetails({
+            winningBid: bids[numberOfAuctions][msg.sender],
             numberOfBids: 0,
             startTime: block.timestamp,
             timeClosed: 0,
             isActive: true
         });
 
-        emit AuctionCreated(numberofAuctions, block.timestamp);
-        numberofAuctions++;
+        emit AuctionCreated(numberOfAuctions, block.timestamp);
+        numberOfAuctions++;
 
     }
 
     //Owner cannot call this otherwise it poses a bias risk between bidder and owner
     function closeAuction() external onlyDepositContract returns (address) {
        
-        AuctionDetails storage auctionDetails = auctions[numberofAuctions - 1];
+        AuctionDetails storage auctionDetails = auctions[numberOfAuctions - 1];
         auctionDetails.isActive = false;
         auctionDetails.timeClosed = block.timestamp;
 
-        emit AuctionClosed(numberofAuctions - 1, block.timestamp);
+        emit AuctionClosed(numberOfAuctions - 1, block.timestamp);
 
         Bid memory bid = auctionDetails.winningBid;
         return bid.bidderAddress;
@@ -72,13 +73,13 @@ contract Auction {
 
     //Future will have a whitelist of operators who can bid
     function bidOnStake() external payable {
-        AuctionDetails storage currentAuction = auctions[numberofAuctions - 1];
+        AuctionDetails storage currentAuction = auctions[numberOfAuctions - 1];
         Bid memory bid = currentAuction.winningBid;
 
         require(currentAuction.isActive == true, "Auction is inactive");
         require(msg.value > bid.amount, "Bid too low");
 
-        bids[numberofAuctions - 1][msg.sender] = Bid({
+        bids[numberOfAuctions - 1][msg.sender] = Bid({
             amount: msg.value,
             timeOfBid: block.timestamp,
             bidderAddress: msg.sender
@@ -87,7 +88,7 @@ contract Auction {
         currentAuction.numberOfBids++;
         refundBalances[bid.bidderAddress] += bid.amount;
 
-        currentAuction.winningBid = bids[numberofAuctions - 1][msg.sender];
+        currentAuction.winningBid = bids[numberOfAuctions - 1][msg.sender];
 
         emit BidPlaced(numberOfAuctions - 1, msg.sender, msg.value);
 
@@ -100,6 +101,8 @@ contract Auction {
 
         (bool sent, ) = msg.sender.call{value: refundBalance}("");
         require(sent, "Failed to send Ether");
+
+        emit RefundClaimed(msg.sender, refundBalance);
     }
 
     modifier onlyOwnerOrDepositContract() {
