@@ -14,9 +14,9 @@ contract Auction {
     address public depositContractAddress;
     address public owner;
 
-    mapping(uint256 => Auction) public auctions;
+    mapping(uint256 => AuctionDetails) public auctions;
 
-    struct Auction {
+    struct AuctionDetails {
         uint256 reservePrice;
         uint256 winningBid;
         uint256 startTime;
@@ -33,7 +33,7 @@ contract Auction {
     //only called by deposit contract or owner
     function startAuction() external {
 
-        auctions[numberofAuctions] = Auction({
+        auctions[numberofAuctions] = AuctionDetails({
             reservePrice: 0,
             winningBid: 0,
             startTime: block.timestamp,
@@ -51,4 +51,8 @@ contract Auction {
         _;
     }
 
+    modifier onlyDepositContract() {
+        require(msg.sender == depositContractAddress, "Only deposit contract function");
+        _;
+    }
 }
