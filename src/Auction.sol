@@ -11,6 +11,8 @@ import "./Deposit.sol";
 contract Auction {
 
     uint256 public numberofAuctions;
+    address public depositContractAddress;
+    address public owner;
 
     mapping(uint256 => Auction) public auctions;
 
@@ -21,6 +23,11 @@ contract Auction {
         uint256 timeClosed;
         address winningAddress;
         bool isActive;
+    }
+
+    constructor(address _depositAddress) {
+        depositContractAddress = _depositAddress;
+        owner = msg.sender;
     }
 
     //only called by deposit contract or owner
