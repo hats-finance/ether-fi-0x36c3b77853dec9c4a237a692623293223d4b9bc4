@@ -23,6 +23,7 @@ contract Auction {
 
     struct AuctionDetails {
         Bid winningBid;
+        uint256 numberOfBids;
         uint256 startTime;
         uint256 timeClosed;
         bool isActive;
@@ -44,6 +45,7 @@ contract Auction {
 
         auctions[numberofAuctions] = AuctionDetails({
             winningBid: bids[numberofAuctions][msg.sender],
+            numberOfBids: 0,
             startTime: block.timestamp,
             timeClosed: 0,
             isActive: true
@@ -81,6 +83,7 @@ contract Auction {
             bidderAddress: msg.sender
         });
 
+        currentAuction.numberOfBids++;
         refundBalances[bid.bidderAddress] += bid.amount;
 
         currentAuction.winningBid = bids[numberofAuctions - 1][msg.sender];
