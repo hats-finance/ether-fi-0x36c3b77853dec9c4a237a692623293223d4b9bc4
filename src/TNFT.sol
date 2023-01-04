@@ -26,13 +26,6 @@ contract TNFT is ERC721 {
         }
     }
 
-    function setNftValue(uint256 _newNftValue) public onlyOwner {
-        uint256 oldNftValue = nftValue;
-        nftValue = _newNftValue;
-
-        emit UpdateNftValue(oldNftValue, _newNftValue);
-    }
-
     modifier onlyDepositContract() {
         require(msg.sender == depositContractAddress, "Only deposit contract function");
         _;
