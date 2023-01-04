@@ -37,9 +37,10 @@ contract Auction {
     constructor(address _depositAddress) {
         depositContractAddress = _depositAddress;
         owner = msg.sender;
+        startAuction();
     }
 
-    function startAuction() external onlyOwnerOrDepositContract {
+    function startAuction() public onlyOwnerOrDepositContract {
 
         auctions[numberofAuctions] = AuctionDetails({
             winningBid: 0,

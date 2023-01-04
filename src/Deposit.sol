@@ -20,8 +20,8 @@ contract Deposit {
 
     constructor() {
         owner = msg.sender;
-        TNFTInstance = new TNFT(owner);
-        BNFTInstance = new BNFT(owner);
+        TNFTInstance = new TNFT(msg.sender);
+        BNFTInstance = new BNFT(msg.sender);
     }
 
     function deposit() public payable {
