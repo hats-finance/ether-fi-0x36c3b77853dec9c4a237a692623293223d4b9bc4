@@ -81,7 +81,7 @@ contract AuctionTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}();
         
-        (uint256 amount,, address bidderAddress) = auctionInstance.bids(1, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (uint256 amount,, address bidderAddress) = auctionInstance.bids(1, 0);
         (, uint256 numberOfBids,,,) = auctionInstance.auctions(1);
 
         assertEq(amount, 0.1 ether);
@@ -91,7 +91,7 @@ contract AuctionTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.3 ether}();
 
-        (uint256 amount2,, address bidderAddress2) = auctionInstance.bids(1, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (uint256 amount2,, address bidderAddress2) = auctionInstance.bids(1, 1);
         (, uint256 numberOfBids2,,,) = auctionInstance.auctions(1);
 
         assertEq(amount2, 0.3 ether);
@@ -100,7 +100,6 @@ contract AuctionTest is Test {
 
         assertEq(address(auctionInstance).balance, 0.4 ether);
         assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.1 ether);
-
     }
 
     function testBiddingLowerThanWinningBidFails() public {
@@ -110,5 +109,36 @@ contract AuctionTest is Test {
         vm.expectRevert("Bid too low");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.01 ether}();
+    }
+
+    function testClaimRefundFailsIfNoRefundAvailable() public {
+        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}();
+
+        vm.expectRevert("No refund available");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.claimRefundableBalance();
+    }
+
+    function testClaimRefundCorrectlySendsRefund() public {
+        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}();
+        auctionInstance.bidOnStake{value: 0.2 ether}();
+
+        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.1 ether);
+        assertEq(address(auctionInstance).balance, 0.3 ether);
+
+        uint256 currentTestAccountBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
+
+        auctionInstance.claimRefundableBalance();
+
+        assertEq(address(auctionInstance).balance, 0.2 ether);
+        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, currentTestAccountBalance += 0.1 ether);
+        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+
     }
 }

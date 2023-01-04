@@ -16,7 +16,9 @@ contract Auction is IAuction {
     address public owner;
 
     mapping(uint256 => AuctionDetails) public auctions;
-    mapping(uint256 => mapping(address => Bid)) public bids;
+
+    //Mapping of auction ID => bidID => Bid
+    mapping(uint256 => mapping(uint256 => Bid)) public bids;
     mapping(address => uint256) public refundBalances;
 
     event AuctionCreated(uint256 auctionId, uint256 startTime);
@@ -35,7 +37,7 @@ contract Auction is IAuction {
         require(auctions[numberOfAuctions - 1].isActive == false, "Previous auction not closed");
 
         auctions[numberOfAuctions] = AuctionDetails({
-            winningBid: bids[numberOfAuctions][msg.sender],
+            winningBid: bids[numberOfAuctions][0],
             numberOfBids: 0,
             startTime: block.timestamp,
             timeClosed: 0,
@@ -68,7 +70,7 @@ contract Auction is IAuction {
         require(currentAuction.isActive == true, "Auction is inactive");
         require(msg.value > bid.amount, "Bid too low");
 
-        bids[numberOfAuctions - 1][msg.sender] = Bid({
+        bids[numberOfAuctions - 1][currentAuction.numberOfBids] = Bid({
             amount: msg.value,
             timeOfBid: block.timestamp,
             bidderAddress: msg.sender
@@ -77,7 +79,7 @@ contract Auction is IAuction {
         currentAuction.numberOfBids++;
         refundBalances[bid.bidderAddress] += bid.amount;
 
-        currentAuction.winningBid = bids[numberOfAuctions - 1][msg.sender];
+        currentAuction.winningBid = bids[numberOfAuctions - 1][currentAuction.numberOfBids - 1];
 
         emit BidPlaced(numberOfAuctions - 1, msg.sender, msg.value);
 
