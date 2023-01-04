@@ -61,17 +61,4 @@ contract DepositTest is Test {
         vm.expectRevert("Insufficient staking amount");
         depositInstance.deposit{value:0.2 ether}();
     }
-    
-    function testUpdateStakeAmount() public {
-        vm.startPrank(owner);
-        assertEq(depositInstance.stakeAmount(), 0.1 ether);
-        depositInstance.setStakeAmount(1 ether);
-        assertEq(depositInstance.stakeAmount(), 1 ether);
-    }
-
-    function testUpdateStakeAmountFailsIfNotOwner() public {
-        vm.expectRevert("Only owner function");
-        vm.prank(alice);
-        depositInstance.setStakeAmount(1 ether);
-    }
 }

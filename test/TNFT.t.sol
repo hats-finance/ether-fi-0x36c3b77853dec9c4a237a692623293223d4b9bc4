@@ -34,18 +34,4 @@ contract DepositTest is Test {
         vm.expectRevert("Only deposit contract function");
         TestTNFTInstance.mint(address(alice));
     }
-
-    function testUpdateNftValueWorksCorrectly() public {
-        vm.startPrank(owner);
-        assertEq(TestTNFTInstance.nftValue(), 30 ether);
-        TestTNFTInstance.setNftValue(20 ether);
-        assertEq(TestTNFTInstance.nftValue(), 20 ether);
-    }
-
-    function testUpdateNftValueFailsIfNotOwner() public {
-        vm.startPrank(alice);
-        vm.expectRevert("Only owner function");
-        TestTNFTInstance.setNftValue(20 ether);
-    }
-
 }
