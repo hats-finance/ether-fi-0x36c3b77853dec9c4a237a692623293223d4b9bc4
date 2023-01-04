@@ -8,7 +8,6 @@ import "../src/TNFT.sol";
 import "../src/Auction.sol";
 
 contract AuctionTest is Test {
-
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -29,7 +28,10 @@ contract AuctionTest is Test {
     function testAuctionContractInstantiatedCorrectly() public {
         assertEq(auctionInstance.numberOfAuctions(), 1);
         assertEq(auctionInstance.owner(), address(owner));
-        assertEq(auctionInstance.depositContractAddress(), address(depositInstance));
+        assertEq(
+            auctionInstance.depositContractAddress(),
+            address(depositInstance)
+        );
     }
 
     function testStartAuctionFailsIfPreviousAuctionIsOpen() public {
@@ -61,7 +63,7 @@ contract AuctionTest is Test {
     function testCloseAuctionFunctionCorrectlyClosesAuction() public {
         hoax(address(depositInstance));
         auctionInstance.closeAuction();
-        (,,,, bool isActive) = auctionInstance.auctions(0);
+        (, , , , bool isActive) = auctionInstance.auctions(0);
         assertEq(isActive, false);
     }
 
@@ -77,9 +79,9 @@ contract AuctionTest is Test {
     function testBiddingHighestBidWorksCorrectly() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}();
-        
-        (uint256 amount,, address bidderAddress) = auctionInstance.bids(0, 0);
-        (, uint256 numberOfBids,,,) = auctionInstance.auctions(0);
+
+        (uint256 amount, , address bidderAddress) = auctionInstance.bids(0, 0);
+        (, uint256 numberOfBids, , , ) = auctionInstance.auctions(0);
 
         assertEq(amount, 0.1 ether);
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -88,8 +90,12 @@ contract AuctionTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.3 ether}();
 
-        (uint256 amount2,, address bidderAddress2) = auctionInstance.bids(0, 1);
-        (uint256 winningId, uint256 numberOfBids2,,,) = auctionInstance.auctions(0);
+        (uint256 amount2, , address bidderAddress2) = auctionInstance.bids(
+            0,
+            1
+        );
+        (uint256 winningId, uint256 numberOfBids2, , , ) = auctionInstance
+            .auctions(0);
 
         assertEq(amount2, 0.3 ether);
         assertEq(bidderAddress2, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -97,7 +103,12 @@ contract AuctionTest is Test {
         assertEq(winningId, 1);
 
         assertEq(address(auctionInstance).balance, 0.4 ether);
-        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.1 ether);
+        assertEq(
+            auctionInstance.refundBalances(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            0.1 ether
+        );
     }
 
     function testBiddingLowerThanWinningBidFails() public {
@@ -110,7 +121,12 @@ contract AuctionTest is Test {
     }
 
     function testClaimRefundFailsIfNoRefundAvailable() public {
-        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+        assertEq(
+            auctionInstance.refundBalances(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            0
+        );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}();
@@ -121,21 +137,40 @@ contract AuctionTest is Test {
     }
 
     function testClaimRefundCorrectlySendsRefund() public {
-        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+        assertEq(
+            auctionInstance.refundBalances(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            0
+        );
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}();
         auctionInstance.bidOnStake{value: 0.2 ether}();
 
-        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.1 ether);
+        assertEq(
+            auctionInstance.refundBalances(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            0.1 ether
+        );
         assertEq(address(auctionInstance).balance, 0.3 ether);
 
-        uint256 currentTestAccountBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
+        uint256 currentTestAccountBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+                .balance;
 
         auctionInstance.claimRefundableBalance();
 
         assertEq(address(auctionInstance).balance, 0.2 ether);
-        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, currentTestAccountBalance += 0.1 ether);
-        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+        assertEq(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
+            currentTestAccountBalance += 0.1 ether
+        );
+        assertEq(
+            auctionInstance.refundBalances(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            0
+        );
     }
 }

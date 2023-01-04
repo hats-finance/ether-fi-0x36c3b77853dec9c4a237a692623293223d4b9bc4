@@ -8,7 +8,6 @@ import "../src/TNFT.sol";
 import "../src/Auction.sol";
 
 contract DepositTest is Test {
-
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -34,15 +33,31 @@ contract DepositTest is Test {
     function testDepositCreatesNFTs() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.deposit{value: 0.1 ether}();
-        assertEq(TestBNFTInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 1);
-        assertEq(TestTNFTInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 1);
+        assertEq(
+            TestBNFTInstance.balanceOf(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            1
+        );
+        assertEq(
+            TestTNFTInstance.balanceOf(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            1
+        );
     }
 
     function testDepositCreatesNFTsWithCorrectOwner() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.deposit{value: 0.1 ether}();
-        assertEq(TestBNFTInstance.ownerOf(0), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        assertEq(TestTNFTInstance.ownerOf(0), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(
+            TestBNFTInstance.ownerOf(0),
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
+        assertEq(
+            TestTNFTInstance.ownerOf(0),
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
     }
 
     function testDepositReceivesEther() public {
@@ -51,17 +66,27 @@ contract DepositTest is Test {
         assertEq(address(depositInstance).balance, 0.1 ether);
     }
 
-     function testDepositUpdatesBalancesMapping() public {
+    function testDepositUpdatesBalancesMapping() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.deposit{value: 0.1 ether}();
-        assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.1 ether);
+        assertEq(
+            depositInstance.depositorBalances(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            0.1 ether
+        );
         depositInstance.deposit{value: 0.1 ether}();
-        assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.2 ether);
+        assertEq(
+            depositInstance.depositorBalances(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            0.2 ether
+        );
     }
 
     function testDepositFailsIfIncorrectAmountSent() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Insufficient staking amount");
-        depositInstance.deposit{value:0.2 ether}();
+        depositInstance.deposit{value: 0.2 ether}();
     }
 }

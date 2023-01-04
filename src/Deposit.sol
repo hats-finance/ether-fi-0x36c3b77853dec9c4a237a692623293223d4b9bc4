@@ -8,7 +8,6 @@ import "./TNFT.sol";
 import "./BNFT.sol";
 
 contract Deposit {
-
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
     IAuction public auctionInterfaceInstance;
