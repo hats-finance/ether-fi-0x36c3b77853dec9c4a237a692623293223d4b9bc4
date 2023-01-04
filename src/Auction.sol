@@ -32,6 +32,8 @@ contract Auction is IAuction {
 
     function startAuction() public onlyOwnerOrDepositContract {
 
+        require(auctions[numberOfAuctions - 1].isActive == false, "Previous auction not closed");
+
         auctions[numberOfAuctions] = AuctionDetails({
             winningBid: bids[numberOfAuctions][msg.sender],
             numberOfBids: 0,
