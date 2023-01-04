@@ -11,7 +11,7 @@ contract Deposit {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
 
-    uint256 public stakeAmount = 32 ether;
+    uint256 public stakeAmount = 0.1 ether;
     address public owner;
 
     mapping(address => uint256) public depositorBalances;
@@ -23,7 +23,6 @@ contract Deposit {
         owner = msg.sender;
         TNFTInstance = new TNFT(owner);
         BNFTInstance = new BNFT(owner);
-        stakeAmount = 0.1 ether;
     }
 
     function deposit() public payable {
