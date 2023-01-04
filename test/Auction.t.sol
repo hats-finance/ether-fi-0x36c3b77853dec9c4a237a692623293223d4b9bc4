@@ -35,8 +35,37 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.depositContractAddress(), address(depositInstance));
     }
 
-    function testAuctionGetsCreatedOnInstantiation() public {
-        (,, uint256 startTime,,) = auctionInstance.auctions(1);
-        assertEq(startTime, 1);
+    function testStartAuctionFailsIfPreviousAuctionIsOpen() public {
+        vm.startPrank(owner);
+        vm.expectRevert("Previous auction not closed");
+        auctionInstance.startAuction();
+    }
+
+    function testStartAuctionFailsIfNotOwnerOrDepositContract() public {
+        vm.startPrank(alice);
+        vm.expectRevert("Not owner or deposit contract");
+        auctionInstance.startAuction();
+    }
+
+    function testStartAuctionFunctionCreatesNewAuction() public {
+        hoax(address(depositInstance));
+        auctionInstance.closeAuction();
+        vm.startPrank(owner);
+        auctionInstance.startAuction();
+        (,, uint256 startTime,,) = auctionInstance.auctions(2);
+        assertEq(auctionInstance.numberOfAuctions(), 3);
+    }
+
+    function testCloseAuctionFailsIfNotDepositContract() public {
+        vm.startPrank(owner);
+        vm.expectRevert("Only deposit contract function");
+        auctionInstance.closeAuction();
+    }
+
+    function testCloseAuctionFunctionCorrectlyClosesAuction() public {
+        hoax(address(depositInstance));
+        auctionInstance.closeAuction();
+        (,,,, bool isActive) = auctionInstance.auctions(1);
+        assertEq(isActive, false);
     }
 }
