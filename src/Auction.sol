@@ -38,7 +38,6 @@ contract Auction {
         owner = msg.sender;
     }
 
-    //only called by deposit contract or owner
     function startAuction() external {
 
         require(msg.sender == owner || msg.sender == depositContractAddress, "Incorrect caller");
@@ -54,6 +53,14 @@ contract Auction {
         emit AuctionCreated(block.timestamp, numberofAuctions);
         numberofAuctions++;
 
+    }
+
+    function closeAuction() external {
+
+    }
+
+    function bidOnStake() external {
+        
     }
 
     modifier onlyOwner() {
