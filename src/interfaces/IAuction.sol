@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 interface IAuction {
 
     struct AuctionDetails {
-        Bid winningBid;
+        uint256 winningBidId;
         uint256 numberOfBids;
         uint256 startTime;
         uint256 timeClosed;

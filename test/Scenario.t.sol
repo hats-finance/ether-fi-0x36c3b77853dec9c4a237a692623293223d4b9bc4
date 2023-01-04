@@ -26,23 +26,28 @@ contract ScenarioTest is Test {
         vm.stopPrank();
     }
 
-    function testClaimRefundCorrectlySendsRefund() public {
-        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+    function testOneBidderWithOneStake() public {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}();
-        auctionInstance.bidOnStake{value: 0.2 ether}();
 
-        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.1 ether);
-        assertEq(address(auctionInstance).balance, 0.3 ether);
-
-        uint256 currentTestAccountBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
-
-        auctionInstance.claimRefundableBalance();
-
-        assertEq(address(auctionInstance).balance, 0.2 ether);
-        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, currentTestAccountBalance += 0.1 ether);
         assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+        assertEq(address(auctionInstance).balance, 0.1 ether);
+        assertEq(address(depositInstance).balance, 0);
+
+        (uint256 winningBidId, uint256 numberOfBids,,, bool isActive) = auctionInstance.auctions(auctionInstance.numberOfAuctions() - 1);
+        (uint256 amount,, address bidderAddress) = auctionInstance.bids(auctionInstance.numberOfAuctions() - 1, winningBidId);
+
+        assertEq(winningBidId, 0);
+        assertEq(numberOfBids, 1);
+        assertEq(amount, 0.1 ether);
+        assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(isActive, false);
+
+        depositInstance.deposit{value: 0.1 ether}();
+        assertEq(TestBNFTInstance.ownerOf(0), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestTNFTInstance.ownerOf(0), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(address(depositInstance).balance, 0.1 ether);
 
     }
 }
