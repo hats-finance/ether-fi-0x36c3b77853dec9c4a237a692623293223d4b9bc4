@@ -95,6 +95,8 @@ contract Auction {
     }
 
     function claimRefundableBalance() external {
+
+        require(refundBalances[msg.sender] > 0, "No refund available");
         
         uint256 refundBalance = refundBalances[msg.sender];
         refundBalances[msg.sender] = 0;
