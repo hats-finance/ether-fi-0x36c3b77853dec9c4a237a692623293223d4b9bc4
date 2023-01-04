@@ -89,11 +89,12 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.3 ether}();
 
         (uint256 amount2,, address bidderAddress2) = auctionInstance.bids(1, 1);
-        (, uint256 numberOfBids2,,,) = auctionInstance.auctions(1);
+        (uint256 winningId, uint256 numberOfBids2,,,) = auctionInstance.auctions(1);
 
         assertEq(amount2, 0.3 ether);
         assertEq(bidderAddress2, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(numberOfBids2, 2);
+        assertEq(winningId, 1);
 
         assertEq(address(auctionInstance).balance, 0.4 ether);
         assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.1 ether);

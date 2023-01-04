@@ -37,7 +37,7 @@ contract Auction is IAuction {
         require(auctions[numberOfAuctions - 1].isActive == false, "Previous auction not closed");
 
         auctions[numberOfAuctions] = AuctionDetails({
-            winningBid: bids[numberOfAuctions][0],
+            winningBidId: 0,
             numberOfBids: 0,
             startTime: block.timestamp,
             timeClosed: 0,
@@ -58,14 +58,15 @@ contract Auction is IAuction {
 
         emit AuctionClosed(numberOfAuctions - 1, block.timestamp);
 
-        Bid memory bid = auctionDetails.winningBid;
+        uint256 winningBidID = auctionDetails.winningBidId;
+        Bid memory bid = bids[numberOfAuctions - 1][winningBidID];
         return bid.bidderAddress;
     }
 
     //Future will have a whitelist of operators who can bid
     function bidOnStake() external payable {
         AuctionDetails storage currentAuction = auctions[numberOfAuctions - 1];
-        Bid memory bid = currentAuction.winningBid;
+        Bid memory bid = bids[numberOfAuctions - 1][currentAuction.winningBidId];
 
         require(currentAuction.isActive == true, "Auction is inactive");
         require(msg.value > bid.amount, "Bid too low");
@@ -79,7 +80,7 @@ contract Auction is IAuction {
         currentAuction.numberOfBids++;
         refundBalances[bid.bidderAddress] += bid.amount;
 
-        currentAuction.winningBid = bids[numberOfAuctions - 1][currentAuction.numberOfBids - 1];
+        currentAuction.winningBidId = currentAuction.numberOfBids - 1;
 
         emit BidPlaced(numberOfAuctions - 1, msg.sender, msg.value);
 
