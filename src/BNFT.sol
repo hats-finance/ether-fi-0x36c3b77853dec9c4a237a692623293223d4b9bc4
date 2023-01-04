@@ -24,13 +24,6 @@ contract BNFT is ERC721 {
         }
     }
 
-    function setNftValue(uint256 _newNftValue) public onlyOwner {
-        uint256 oldNftValue = nftValue;
-        nftValue = _newNftValue;
-
-        emit UpdateNftValue(oldNftValue, _newNftValue);
-    }
-
     function transferFrom(
         address from,
         address to,
