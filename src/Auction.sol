@@ -22,10 +22,9 @@ contract Auction {
     event AuctionClosed(uint256 auctionId, uint256 endTime);
 
     struct AuctionDetails {
-        uint256 winningBid;
+        Bid winningBid;
         uint256 startTime;
         uint256 timeClosed;
-        address winningAddress;
         bool isActive;
     }
 
@@ -44,10 +43,9 @@ contract Auction {
     function startAuction() public onlyOwnerOrDepositContract {
 
         auctions[numberofAuctions] = AuctionDetails({
-            winningBid: 0,
+            winningBid: bids[numberofAuctions][msg.sender],
             startTime: block.timestamp,
             timeClosed: 0,
-            winningAddress: address(0),
             isActive: true
         });
 
@@ -64,20 +62,28 @@ contract Auction {
         auctionDetails.timeClosed = block.timestamp;
 
         emit AuctionClosed(numberofAuctions - 1, block.timestamp);
-        return auctionDetails.winningAddress;
+
+        Bid memory bid = auctionDetails.winningBid;
+        return bid.bidderAddress;
     }
 
     //Future will have a whitelist of operators who can bid
     function bidOnStake() external payable {
         AuctionDetails storage currentAuction = auctions[numberofAuctions - 1];
+        Bid memory bid = currentAuction.winningBid;
 
         require(currentAuction.isActive == true, "Auction is inactive");
-        require(msg.value > currentAuction.winningBid, "Bid too low");
+        require(msg.value > bid.amount, "Bid too low");
 
-        currentAuction.winningBid = msg.value;
-        currentAuction.winningAddress = msg.sender;
+        bids[numberofAuctions - 1][msg.sender] = Bid({
+            amount: msg.value,
+            timeOfBid: block.timestamp,
+            bidderAddress: msg.sender
+        });
 
+        refundBalances[bid.bidderAddress] += bid.amount;
 
+        currentAuction.winningBid = bids[numberofAuctions - 1][msg.sender];
 
     }
 
