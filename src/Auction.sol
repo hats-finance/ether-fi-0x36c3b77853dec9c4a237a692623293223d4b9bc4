@@ -90,6 +90,15 @@ contract Auction {
 
     }
 
+    function claimRefundableBalance() external {
+        
+        uint256 refundBalance = refundBalances[msg.sender];
+        refundBalances[msg.sender] = 0;
+
+        (bool sent, ) = msg.sender.call{value: refundBalance}("");
+        require(sent, "Failed to send Ether");
+    }
+
     modifier onlyOwnerOrDepositContract() {
         require(msg.sender == owner || msg.sender == depositContractAddress, "Not owner or deposit contract");
         _;
