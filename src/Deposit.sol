@@ -11,7 +11,7 @@ contract Deposit {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
 
-    uint256 public stakeAmount;
+    uint256 public stakeAmount = 32 ether;
     address public owner;
 
     mapping(address => uint256) public depositorBalances;
@@ -33,13 +33,6 @@ contract Deposit {
         depositorBalances[msg.sender] += msg.value;
 
         emit StakeDeposit(msg.sender, msg.value);
-    }
-
-    function setStakeAmount(uint256 _newStakeAmount) public onlyOwner {
-        uint256 oldStakeAmount = stakeAmount;
-        stakeAmount = _newStakeAmount;
-
-        emit UpdateStakeAmount(oldStakeAmount, _newStakeAmount);
     }
 
     modifier onlyOwner() {
