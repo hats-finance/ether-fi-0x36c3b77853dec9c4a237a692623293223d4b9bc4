@@ -5,19 +5,22 @@ import "forge-std/Test.sol";
 import "../src/Deposit.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
+import "../src/Auction.sol";
 
 contract DepositTest is Test {
 
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
+    Auction public auctionInstance;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
     function setUp() public {
         vm.startPrank(owner);
-        depositInstance = new Deposit();
+        auctionInstance = new Auction();
+        depositInstance = new Deposit(address(auctionInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
         vm.stopPrank();

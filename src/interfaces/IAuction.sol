@@ -21,4 +21,6 @@ interface IAuction {
     function closeAuction() external returns (address);
     function bidOnStake() external payable;
     function claimRefundableBalance() external;
+    function setDepositContractAddress(address _depositContractAddress) external;
+
 }

@@ -11,7 +11,7 @@ import "./Deposit.sol";
 
 contract Auction is IAuction {
 
-    uint256 public numberOfAuctions = 1;
+    uint256 public numberOfAuctions;
     address public depositContractAddress;
     address public owner;
 
@@ -26,15 +26,15 @@ contract Auction is IAuction {
     event BidPlaced(uint256 auctionId, address bidder, uint256 amount);
     event RefundClaimed(address claimer, uint256 amount);
 
-    constructor(address _depositAddress) {
-        depositContractAddress = _depositAddress;
+    constructor() {
         owner = msg.sender;
-        startAuction();
     }
 
     function startAuction() public onlyOwnerOrDepositContract {
 
-        require(auctions[numberOfAuctions - 1].isActive == false, "Previous auction not closed");
+        if(numberOfAuctions != 0){
+            require(auctions[numberOfAuctions - 1].isActive == false, "Previous auction not closed");
+        }
 
         auctions[numberOfAuctions] = AuctionDetails({
             winningBidId: 0,
@@ -97,6 +97,10 @@ contract Auction is IAuction {
         require(sent, "Failed to send Ether");
 
         emit RefundClaimed(msg.sender, refundBalance);
+    }
+
+    function setDepositContractAddress(address _depositContractAddress) external {
+        depositContractAddress = _depositContractAddress;
     }
 
     modifier onlyOwnerOrDepositContract() {

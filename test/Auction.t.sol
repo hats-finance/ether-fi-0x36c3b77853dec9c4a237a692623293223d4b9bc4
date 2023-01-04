@@ -19,15 +19,15 @@ contract AuctionTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        depositInstance = new Deposit();
+        auctionInstance = new Auction();
+        depositInstance = new Deposit(address(auctionInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        auctionInstance = new Auction(address(depositInstance));
         vm.stopPrank();
     }
 
     function testAuctionContractInstantiatedCorrectly() public {
-        assertEq(auctionInstance.numberOfAuctions(), 2);
+        assertEq(auctionInstance.numberOfAuctions(), 1);
         assertEq(auctionInstance.owner(), address(owner));
         assertEq(auctionInstance.depositContractAddress(), address(depositInstance));
     }
@@ -49,7 +49,7 @@ contract AuctionTest is Test {
         auctionInstance.closeAuction();
         vm.startPrank(owner);
         auctionInstance.startAuction();
-        assertEq(auctionInstance.numberOfAuctions(), 3);
+        assertEq(auctionInstance.numberOfAuctions(), 2);
     }
 
     function testCloseAuctionFailsIfNotDepositContract() public {
@@ -61,7 +61,7 @@ contract AuctionTest is Test {
     function testCloseAuctionFunctionCorrectlyClosesAuction() public {
         hoax(address(depositInstance));
         auctionInstance.closeAuction();
-        (,,,, bool isActive) = auctionInstance.auctions(1);
+        (,,,, bool isActive) = auctionInstance.auctions(0);
         assertEq(isActive, false);
     }
 
@@ -78,8 +78,8 @@ contract AuctionTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}();
         
-        (uint256 amount,, address bidderAddress) = auctionInstance.bids(1, 0);
-        (, uint256 numberOfBids,,,) = auctionInstance.auctions(1);
+        (uint256 amount,, address bidderAddress) = auctionInstance.bids(0, 0);
+        (, uint256 numberOfBids,,,) = auctionInstance.auctions(0);
 
         assertEq(amount, 0.1 ether);
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -88,8 +88,8 @@ contract AuctionTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.3 ether}();
 
-        (uint256 amount2,, address bidderAddress2) = auctionInstance.bids(1, 1);
-        (uint256 winningId, uint256 numberOfBids2,,,) = auctionInstance.auctions(1);
+        (uint256 amount2,, address bidderAddress2) = auctionInstance.bids(0, 1);
+        (uint256 winningId, uint256 numberOfBids2,,,) = auctionInstance.auctions(0);
 
         assertEq(amount2, 0.3 ether);
         assertEq(bidderAddress2, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -137,6 +137,5 @@ contract AuctionTest is Test {
         assertEq(address(auctionInstance).balance, 0.2 ether);
         assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, currentTestAccountBalance += 0.1 ether);
         assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
-
     }
 }
