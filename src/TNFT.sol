@@ -28,9 +28,4 @@ contract TNFT is ERC721 {
         require(msg.sender == depositContractAddress, "Only deposit contract function");
         _;
     }
-
-     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
-    }
 }

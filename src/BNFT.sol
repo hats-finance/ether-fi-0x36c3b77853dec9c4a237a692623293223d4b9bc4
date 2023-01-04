@@ -38,9 +38,4 @@ contract BNFT is ERC721 {
         );
         _;
     }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
-    }
 }
