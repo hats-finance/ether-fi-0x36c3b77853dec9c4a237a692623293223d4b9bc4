@@ -6,7 +6,6 @@ import "../src/Deposit.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
-import "../src/interfaces/IAuction.sol";
 
 contract AuctionTest is Test {
 
@@ -14,7 +13,6 @@ contract AuctionTest is Test {
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     Auction public auctionInstance;
-    IAuction public auctionInterfaceInstance;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -25,7 +23,6 @@ contract AuctionTest is Test {
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
         auctionInstance = new Auction(address(depositInstance));
-        auctionInterfaceInstance = IAuction(address(auctionInstance));
         vm.stopPrank();
     }
 
