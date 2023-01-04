@@ -52,7 +52,6 @@ contract AuctionTest is Test {
         auctionInstance.closeAuction();
         vm.startPrank(owner);
         auctionInstance.startAuction();
-        (,, uint256 startTime,,) = auctionInstance.auctions(2);
         assertEq(auctionInstance.numberOfAuctions(), 3);
     }
 
@@ -67,5 +66,49 @@ contract AuctionTest is Test {
         auctionInstance.closeAuction();
         (,,,, bool isActive) = auctionInstance.auctions(1);
         assertEq(isActive, false);
+    }
+
+    function testCannotBidIfAuctionIsInactive() public {
+        hoax(address(depositInstance));
+        auctionInstance.closeAuction();
+
+        vm.startPrank(alice);
+        vm.expectRevert("Auction is inactive");
+        auctionInstance.bidOnStake();
+    }
+
+    function testBiddingHighestBidWorksCorrectly() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}();
+        
+        (uint256 amount,, address bidderAddress) = auctionInstance.bids(1, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (, uint256 numberOfBids,,,) = auctionInstance.auctions(1);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(numberOfBids, 1);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.3 ether}();
+
+        (uint256 amount2,, address bidderAddress2) = auctionInstance.bids(1, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (, uint256 numberOfBids2,,,) = auctionInstance.auctions(1);
+
+        assertEq(amount2, 0.3 ether);
+        assertEq(bidderAddress2, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(numberOfBids2, 2);
+
+        assertEq(address(auctionInstance).balance, 0.4 ether);
+        assertEq(auctionInstance.refundBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.1 ether);
+
+    }
+
+    function testBiddingLowerThanWinningBidFails() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}();
+
+        vm.expectRevert("Bid too low");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.01 ether}();
     }
 }
