@@ -15,14 +15,22 @@ contract Auction {
     address public owner;
 
     mapping(uint256 => AuctionDetails) public auctions;
+    mapping(uint256 => mapping(address => Bid)) public bids;
+
+    event AuctionCreated(uint256 startTime, uint256 auctionId);
 
     struct AuctionDetails {
-        uint256 reservePrice;
         uint256 winningBid;
         uint256 startTime;
         uint256 timeClosed;
         address winningAddress;
         bool isActive;
+    }
+
+    struct Bid {
+        uint256 amount;
+        uint256 timeOfBid;
+        address bidderAddress;
     }
 
     constructor(address _depositAddress) {
@@ -34,7 +42,6 @@ contract Auction {
     function startAuction() external {
 
         auctions[numberofAuctions] = AuctionDetails({
-            reservePrice: 0,
             winningBid: 0,
             startTime: block.timestamp,
             timeClosed: 0,
@@ -42,6 +49,7 @@ contract Auction {
             isActive: true
         });
 
+        emit AuctionCreated(block.timestamp, numberofAuctions);
         numberofAuctions++;
 
     }
