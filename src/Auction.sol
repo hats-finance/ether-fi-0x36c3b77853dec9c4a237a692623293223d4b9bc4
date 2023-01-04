@@ -16,6 +16,7 @@ contract Auction {
 
     mapping(uint256 => AuctionDetails) public auctions;
     mapping(uint256 => mapping(address => Bid)) public bids;
+    mapping(address => uint256) public refundBalances;
 
     event AuctionCreated(uint256 auctionId, uint256 startTime);
     event AuctionClosed(uint256 auctionId, uint256 endTime);
@@ -66,7 +67,17 @@ contract Auction {
         return auctionDetails.winningAddress;
     }
 
-    function bidOnStake() external {
+    //Future will have a whitelist of operators who can bid
+    function bidOnStake() external payable {
+        AuctionDetails storage currentAuction = auctions[numberofAuctions - 1];
+
+        require(currentAuction.isActive == true, "Auction is inactive");
+        require(msg.value > currentAuction.winningBid, "Bid too low");
+
+        currentAuction.winningBid = msg.value;
+        currentAuction.winningAddress = msg.sender;
+
+
 
     }
 
