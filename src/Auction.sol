@@ -10,14 +10,15 @@ import "./Deposit.sol";
 
 contract Auction {
 
-    uint256 public numberofAuctions;
+    uint256 public numberofAuctions = 1;
     address public depositContractAddress;
     address public owner;
 
     mapping(uint256 => AuctionDetails) public auctions;
     mapping(uint256 => mapping(address => Bid)) public bids;
 
-    event AuctionCreated(uint256 startTime, uint256 auctionId);
+    event AuctionCreated(uint256 auctionId, uint256 startTime);
+    event AuctionClosed(uint256 auctionId, uint256 endTime);
 
     struct AuctionDetails {
         uint256 winningBid;
@@ -48,13 +49,20 @@ contract Auction {
             isActive: true
         });
 
-        emit AuctionCreated(block.timestamp, numberofAuctions);
+        emit AuctionCreated(numberofAuctions, block.timestamp);
         numberofAuctions++;
 
     }
 
-    function closeAuction() external onlyOwnerOrDepositContract {
+    //Owner cannot call this otherwise it poses a bias risk between bidder and owner
+    function closeAuction() external onlyDepositContract returns (address) {
+       
+        AuctionDetails storage auctionDetails = auctions[numberofAuctions - 1];
+        auctionDetails.isActive = false;
+        auctionDetails.timeClosed = block.timestamp;
 
+        emit AuctionClosed(numberofAuctions - 1, block.timestamp);
+        return auctionDetails.winningAddress;
     }
 
     function bidOnStake() external {
@@ -71,8 +79,8 @@ contract Auction {
     //     _;
     // }
 
-    // modifier onlyDepositContract() {
-    //     require(msg.sender == depositContractAddress, "Only deposit contract function");
-    //     _;
-    // }
+    modifier onlyDepositContract() {
+        require(msg.sender == depositContractAddress, "Only deposit contract function");
+        _;
+    }
 }
