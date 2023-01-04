@@ -36,5 +36,6 @@ contract BNFT is ERC721 {
             msg.sender == depositContractAddress,
             "Only deposit contract function"
         );
+        _;
     }
 }
