@@ -20,6 +20,7 @@ contract Auction {
 
     event AuctionCreated(uint256 auctionId, uint256 startTime);
     event AuctionClosed(uint256 auctionId, uint256 endTime);
+    event BidPlaced(uint256 auctionId, address bidder, uint256 amount);
 
     struct AuctionDetails {
         Bid winningBid;
@@ -87,6 +88,8 @@ contract Auction {
         refundBalances[bid.bidderAddress] += bid.amount;
 
         currentAuction.winningBid = bids[numberofAuctions - 1][msg.sender];
+
+        emit BidPlaced(numberOfAuctions - 1, msg.sender, msg.value);
 
     }
 
