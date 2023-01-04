@@ -41,6 +41,8 @@ contract Auction {
     //only called by deposit contract or owner
     function startAuction() external {
 
+        require(msg.sender == owner || msg.sender == depositContractAddress, "Incorrect caller");
+
         auctions[numberofAuctions] = AuctionDetails({
             winningBid: 0,
             startTime: block.timestamp,
