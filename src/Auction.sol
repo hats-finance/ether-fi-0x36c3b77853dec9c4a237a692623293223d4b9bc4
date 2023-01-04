@@ -38,9 +38,7 @@ contract Auction {
         owner = msg.sender;
     }
 
-    function startAuction() external {
-
-        require(msg.sender == owner || msg.sender == depositContractAddress, "Incorrect caller");
+    function startAuction() external onlyOwnerOrDepositContract {
 
         auctions[numberofAuctions] = AuctionDetails({
             winningBid: 0,
@@ -55,21 +53,26 @@ contract Auction {
 
     }
 
-    function closeAuction() external {
+    function closeAuction() external onlyOwnerOrDepositContract {
 
     }
 
     function bidOnStake() external {
-        
+
     }
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
+    modifier onlyOwnerOrDepositContract() {
+        require(msg.sender == owner || msg.sender == depositContractAddress, "Not owner or deposit contract");
         _;
     }
 
-    modifier onlyDepositContract() {
-        require(msg.sender == depositContractAddress, "Only deposit contract function");
-        _;
-    }
+    // modifier onlyOwner() {
+    //     require(msg.sender == owner, "Only owner function");
+    //     _;
+    // }
+
+    // modifier onlyDepositContract() {
+    //     require(msg.sender == depositContractAddress, "Only deposit contract function");
+    //     _;
+    // }
 }
