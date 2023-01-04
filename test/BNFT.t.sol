@@ -23,15 +23,22 @@ contract DepositTest is Test {
         vm.stopPrank();
     }
 
-    function testTNFTContractGetsInstantiatedCorrectly() public {
-        assertEq(TestTNFTInstance.depositContractAddress(), address(depositInstance));
-        assertEq(TestTNFTInstance.nftValue(), 30 ether);
-        assertEq(TestTNFTInstance.owner(), address(owner));
+    function testBNFTContractGetsInstantiatedCorrectly() public {
+        assertEq(TestBNFTInstance.depositContractAddress(), address(depositInstance));
+        assertEq(TestBNFTInstance.nftValue(), 2 ether);
+        assertEq(TestBNFTInstance.owner(), address(owner));
     }
 
-    function testTNFTMintsFailsIfNotCorrectCaller() public {
+    function testBNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
         vm.expectRevert("Only deposit contract function");
-        TestTNFTInstance.mint(address(alice));
+        TestBNFTInstance.mint(address(alice));
+    }
+
+    function testBNFTCannotBeTransferred() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        depositInstance.deposit{value: 0.1 ether}();  
+        vm.expectRevert("Err: token is SOUL BOUND");      
+        TestBNFTInstance.transferFrom(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, address(alice), 0);
     }
 }

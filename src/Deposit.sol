@@ -11,19 +11,17 @@ contract Deposit {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
 
-    uint256 public stakeAmount;
+    uint256 public stakeAmount = 0.1 ether;
     address public owner;
 
     mapping(address => uint256) public depositorBalances;
 
     event StakeDeposit(address sender, uint256 value);
-    event UpdateStakeAmount(uint256 oldStakeAmount, uint256 newStakeAmount);
 
     constructor() {
         owner = msg.sender;
         TNFTInstance = new TNFT(owner);
         BNFTInstance = new BNFT(owner);
-        stakeAmount = 0.1 ether;
     }
 
     function deposit() public payable {
@@ -33,13 +31,6 @@ contract Deposit {
         depositorBalances[msg.sender] += msg.value;
 
         emit StakeDeposit(msg.sender, msg.value);
-    }
-
-    function setStakeAmount(uint256 _newStakeAmount) public onlyOwner {
-        uint256 oldStakeAmount = stakeAmount;
-        stakeAmount = _newStakeAmount;
-
-        emit UpdateStakeAmount(oldStakeAmount, _newStakeAmount);
     }
 
     modifier onlyOwner() {
