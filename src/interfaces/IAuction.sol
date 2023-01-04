@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 interface IAuction {
-
     struct AuctionDetails {
         uint256 winningBidId;
         uint256 numberOfBids;
@@ -18,9 +17,13 @@ interface IAuction {
     }
 
     function startAuction() external;
-    function closeAuction() external returns (address);
-    function bidOnStake() external payable;
-    function claimRefundableBalance() external;
-    function setDepositContractAddress(address _depositContractAddress) external;
 
+    function closeAuction() external returns (address);
+
+    function bidOnStake() external payable;
+
+    function claimRefundableBalance() external;
+
+    function setDepositContractAddress(address _depositContractAddress)
+        external;
 }

@@ -10,7 +10,6 @@ import "./BNFT.sol";
 import "./Deposit.sol";
 
 contract Auction is IAuction {
-
     uint256 public numberOfAuctions;
     address public depositContractAddress;
     address public owner;
@@ -31,9 +30,11 @@ contract Auction is IAuction {
     }
 
     function startAuction() public onlyOwnerOrDepositContract {
-
-        if(numberOfAuctions != 0){
-            require(auctions[numberOfAuctions - 1].isActive == false, "Previous auction not closed");
+        if (numberOfAuctions != 0) {
+            require(
+                auctions[numberOfAuctions - 1].isActive == false,
+                "Previous auction not closed"
+            );
         }
 
         auctions[numberOfAuctions] = AuctionDetails({
@@ -46,12 +47,10 @@ contract Auction is IAuction {
 
         emit AuctionCreated(numberOfAuctions, block.timestamp);
         numberOfAuctions++;
-
     }
 
     //Owner cannot call this otherwise it poses a bias risk between bidder and owner
     function closeAuction() external onlyDepositContract returns (address) {
-       
         AuctionDetails storage auctionDetails = auctions[numberOfAuctions - 1];
         auctionDetails.isActive = false;
         auctionDetails.timeClosed = block.timestamp;
@@ -66,7 +65,9 @@ contract Auction is IAuction {
     //Future will have a whitelist of operators who can bid
     function bidOnStake() external payable {
         AuctionDetails storage currentAuction = auctions[numberOfAuctions - 1];
-        Bid memory bid = bids[numberOfAuctions - 1][currentAuction.winningBidId];
+        Bid memory bid = bids[numberOfAuctions - 1][
+            currentAuction.winningBidId
+        ];
 
         require(currentAuction.isActive == true, "Auction is inactive");
         require(msg.value > bid.amount, "Bid too low");
@@ -83,13 +84,11 @@ contract Auction is IAuction {
         currentAuction.winningBidId = currentAuction.numberOfBids - 1;
 
         emit BidPlaced(numberOfAuctions - 1, msg.sender, msg.value);
-
     }
 
     function claimRefundableBalance() external {
-
         require(refundBalances[msg.sender] > 0, "No refund available");
-        
+
         uint256 refundBalance = refundBalances[msg.sender];
         refundBalances[msg.sender] = 0;
 
@@ -99,12 +98,17 @@ contract Auction is IAuction {
         emit RefundClaimed(msg.sender, refundBalance);
     }
 
-    function setDepositContractAddress(address _depositContractAddress) external {
+    function setDepositContractAddress(address _depositContractAddress)
+        external
+    {
         depositContractAddress = _depositContractAddress;
     }
 
     modifier onlyOwnerOrDepositContract() {
-        require(msg.sender == owner || msg.sender == depositContractAddress, "Not owner or deposit contract");
+        require(
+            msg.sender == owner || msg.sender == depositContractAddress,
+            "Not owner or deposit contract"
+        );
         _;
     }
 
@@ -114,7 +118,10 @@ contract Auction is IAuction {
     // }
 
     modifier onlyDepositContract() {
-        require(msg.sender == depositContractAddress, "Only deposit contract function");
+        require(
+            msg.sender == depositContractAddress,
+            "Only deposit contract function"
+        );
         _;
     }
 }

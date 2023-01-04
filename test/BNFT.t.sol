@@ -8,7 +8,6 @@ import "../src/TNFT.sol";
 import "../src/Auction.sol";
 
 contract DepositTest is Test {
-
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -27,7 +26,10 @@ contract DepositTest is Test {
     }
 
     function testBNFTContractGetsInstantiatedCorrectly() public {
-        assertEq(TestBNFTInstance.depositContractAddress(), address(depositInstance));
+        assertEq(
+            TestBNFTInstance.depositContractAddress(),
+            address(depositInstance)
+        );
         assertEq(TestBNFTInstance.nftValue(), 2 ether);
         assertEq(TestBNFTInstance.owner(), address(owner));
     }
@@ -40,8 +42,12 @@ contract DepositTest is Test {
 
     function testBNFTCannotBeTransferred() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.deposit{value: 0.1 ether}();  
-        vm.expectRevert("Err: token is SOUL BOUND");      
-        TestBNFTInstance.transferFrom(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, address(alice), 0);
+        depositInstance.deposit{value: 0.1 ether}();
+        vm.expectRevert("Err: token is SOUL BOUND");
+        TestBNFTInstance.transferFrom(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
+            address(alice),
+            0
+        );
     }
 }
