@@ -17,7 +17,6 @@ contract Deposit {
     mapping(address => uint256) public depositorBalances;
 
     event StakeDeposit(address sender, uint256 value);
-    event UpdateStakeAmount(uint256 oldStakeAmount, uint256 newStakeAmount);
 
     constructor() {
         owner = msg.sender;

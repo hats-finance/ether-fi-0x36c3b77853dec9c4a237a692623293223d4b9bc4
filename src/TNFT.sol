@@ -11,8 +11,6 @@ contract TNFT is ERC721 {
     address public depositContractAddress;
     address public owner;
     
-    event UpdateNftValue(uint256 oldNftValue, uint256 newNftValue);
-
     constructor(address _owner) ERC721("Transferrable NFT", "TNFT"){
         nftValue = 30 ether;
         depositContractAddress = msg.sender;
