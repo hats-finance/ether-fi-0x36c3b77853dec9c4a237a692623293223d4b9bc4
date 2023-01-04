@@ -46,4 +46,9 @@ contract Auction {
 
     }
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
+        _;
+    }
+
 }
