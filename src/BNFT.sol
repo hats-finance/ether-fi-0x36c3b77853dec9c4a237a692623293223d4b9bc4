@@ -10,8 +10,6 @@ contract BNFT is ERC721 {
     address public depositContractAddress;
     address public owner;
 
-    event UpdateNftValue(uint256 oldNftValue, uint256 newNftValue);
-
     constructor(address _owner) ERC721("Bond NFT", "BNFT") {
         depositContractAddress = msg.sender;
         owner = _owner;
