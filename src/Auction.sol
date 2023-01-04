@@ -4,11 +4,12 @@ pragma solidity 0.8.13;
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IDeposit.sol";
+import "./interfaces/IAuction.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
 
-contract Auction {
+contract Auction is IAuction {
 
     uint256 public numberOfAuctions = 1;
     address public depositContractAddress;
@@ -22,20 +23,6 @@ contract Auction {
     event AuctionClosed(uint256 auctionId, uint256 endTime);
     event BidPlaced(uint256 auctionId, address bidder, uint256 amount);
     event RefundClaimed(address claimer, uint256 amount);
-
-    struct AuctionDetails {
-        Bid winningBid;
-        uint256 numberOfBids;
-        uint256 startTime;
-        uint256 timeClosed;
-        bool isActive;
-    }
-
-    struct Bid {
-        uint256 amount;
-        uint256 timeOfBid;
-        address bidderAddress;
-    }
 
     constructor(address _depositAddress) {
         depositContractAddress = _depositAddress;
