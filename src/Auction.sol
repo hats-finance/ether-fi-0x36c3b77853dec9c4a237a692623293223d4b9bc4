@@ -34,6 +34,7 @@ contract Auction is IAuction {
         require(bidsEnabled == true, "Bids already disabled");
         bidsEnabled = false;
         bids[currentHighestBidId].isActive = false;
+        address winningOperator = bids[currentHighestBidId].bidderAddress;
         
         uint256 tempWinningBidId;
 
@@ -44,8 +45,8 @@ contract Auction is IAuction {
         }
 
         currentHighestBidId = tempWinningBidId;
-        emit BiddingDisabled(bids[currentHighestBidId].bidderAddress);
-        return bids[currentHighestBidId].bidderAddress;
+        emit BiddingDisabled(winningOperator);
+        return winningOperator;
     }
 
     function enableBidding() external onlyDepositContract {
@@ -54,8 +55,8 @@ contract Auction is IAuction {
         emit BiddingEnabled();
     }
 
-    function updateBid() external {
-        
+    function updateBid(uint256 _bidId) external {
+
     }
 
     function cancelBid(uint256 _bidId) external {
