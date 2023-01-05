@@ -17,7 +17,7 @@ contract Treasury {
         owner = msg.sender;
     }
 
-    function withdraw() public {
+    function withdraw() external {
         require(msg.sender == owner, "Only owner function");
 
         uint256 balance = address(this).balance;
