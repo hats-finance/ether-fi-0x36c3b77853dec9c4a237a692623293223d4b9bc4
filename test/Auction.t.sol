@@ -202,8 +202,6 @@ contract AuctionTest is Test {
         
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        uint256 balanceBeforeCancellation = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance;
-
         vm.stopPrank();
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.cancelBid(2);

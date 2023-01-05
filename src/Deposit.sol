@@ -10,6 +10,8 @@ import "./BNFT.sol";
 contract Deposit {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
+    ITNFT public TNFTInterfaceInstance;
+    IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
 
     uint256 public stakeAmount = 0.1 ether;
@@ -24,14 +26,16 @@ contract Deposit {
         owner = msg.sender;
         TNFTInstance = new TNFT(msg.sender);
         BNFTInstance = new BNFT(msg.sender);
+        TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
+        BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
         auctionInterfaceInstance = IAuction(_auctionAddress);
         auctionInterfaceInstance.setDepositContractAddress(address(this));
     }
 
     function deposit() public payable {
         require(msg.value == stakeAmount, "Insufficient staking amount");
-        TNFTInstance.mint(msg.sender);
-        BNFTInstance.mint(msg.sender);
+        TNFTInterfaceInstance.mint(msg.sender);
+        BNFTInterfaceInstance.mint(msg.sender);
         depositorBalances[msg.sender] += msg.value;
 
         auctionInterfaceInstance.disableBidding();
