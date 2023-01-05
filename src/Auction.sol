@@ -21,6 +21,9 @@ contract Auction is IAuction {
     mapping(address => mapping(uint256 => Bid)) public bids;
 
     event BidPlaced(address bidder, uint256 amount, uint256 bidderId);
+    event BiddingDisabled(address winner);
+    event BiddingEnabled();
+    event BidCancelled(uint256 bidId);
 
     constructor() {
         owner = msg.sender;
@@ -40,12 +43,14 @@ contract Auction is IAuction {
         }
 
         currentHighestBidId = tempWinningBidId;
+        emit BiddingDisabled(bids[currentHighestBidId].bidderAddress);
         return bids[currentHighestBidId].bidderAddress;
     }
 
     function enableBidding() external onlyDepositContract {
         require(bidsEnabled == false, "Bids already enabled");
         bidsEnabled = true;
+        emit BiddingEnabled();
     }
 
     function cancelBid(uint256 _bidId) external {
@@ -70,6 +75,8 @@ contract Auction is IAuction {
 
         (bool sent, ) = msg.sender.call{value: bidValue}("");
         require(sent, "Failed to send Ether");
+
+        emit BidCancelled(_bidId);
 
     }
 
