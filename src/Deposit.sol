@@ -26,7 +26,6 @@ contract Deposit {
         BNFTInstance = new BNFT(msg.sender);
         auctionInterfaceInstance = IAuction(_auctionAddress);
         auctionInterfaceInstance.setDepositContractAddress(address(this));
-        auctionInterfaceInstance.startAuction();
     }
 
     function deposit() public payable {
@@ -35,7 +34,7 @@ contract Deposit {
         BNFTInstance.mint(msg.sender);
         depositorBalances[msg.sender] += msg.value;
 
-        auctionInterfaceInstance.closeAuction();
+        auctionInterfaceInstance.disableBidding();
 
         emit StakeDeposit(msg.sender, msg.value);
     }

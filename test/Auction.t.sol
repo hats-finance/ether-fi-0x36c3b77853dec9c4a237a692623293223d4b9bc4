@@ -26,7 +26,7 @@ contract AuctionTest is Test {
     }
 
     function testAuctionContractInstantiatedCorrectly() public {
-        assertEq(auctionInstance.numberOfAuctions(), 1);
+        assertEq(auctionInstance.numberOfBids(), 1);
         assertEq(auctionInstance.owner(), address(owner));
         assertEq(
             auctionInstance.depositContractAddress(),
@@ -34,143 +34,29 @@ contract AuctionTest is Test {
         );
     }
 
-    function testStartAuctionFailsIfPreviousAuctionIsOpen() public {
-        vm.startPrank(owner);
-        vm.expectRevert("Previous auction not closed");
-        auctionInstance.startAuction();
-    }
-
-    function testStartAuctionFailsIfNotOwnerOrDepositContract() public {
-        vm.startPrank(alice);
-        vm.expectRevert("Not owner or deposit contract");
-        auctionInstance.startAuction();
-    }
-
-    function testStartAuctionFunctionCreatesNewAuction() public {
-        hoax(address(depositInstance));
-        auctionInstance.closeAuction();
-        vm.startPrank(owner);
-        auctionInstance.startAuction();
-        assertEq(auctionInstance.numberOfAuctions(), 2);
-    }
-
-    function testCloseAuctionFailsIfNotDepositContract() public {
-        vm.startPrank(owner);
-        vm.expectRevert("Only deposit contract function");
-        auctionInstance.closeAuction();
-    }
-
-    function testCloseAuctionFunctionCorrectlyClosesAuction() public {
-        hoax(address(depositInstance));
-        auctionInstance.closeAuction();
-        (, , , , bool isActive) = auctionInstance.auctions(0);
-        assertEq(isActive, false);
-    }
-
-    function testCannotBidIfAuctionIsInactive() public {
-        hoax(address(depositInstance));
-        auctionInstance.closeAuction();
-
-        vm.startPrank(alice);
-        vm.expectRevert("Auction is inactive");
-        auctionInstance.bidOnStake();
-    }
-
     function testBiddingHighestBidWorksCorrectly() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}();
 
-        (uint256 amount, , address bidderAddress) = auctionInstance.bids(0, 0);
-        (, uint256 numberOfBids, , , ) = auctionInstance.auctions(0);
+        (uint256 amount,,address bidderAddress,) = auctionInstance.bids(1);
 
         assertEq(amount, 0.1 ether);
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        assertEq(numberOfBids, 1);
+        assertEq(auctionInstance.numberOfBids(), 2);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.3 ether}();
 
-        (uint256 amount2, , address bidderAddress2) = auctionInstance.bids(
-            0,
-            1
+        (uint256 amount2,, address bidderAddress2,) = auctionInstance.bids(
+            auctionInstance.currentHighestBidId()
         );
-        (uint256 winningId, uint256 numberOfBids2, , , ) = auctionInstance
-            .auctions(0);
 
+        assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(amount2, 0.3 ether);
         assertEq(bidderAddress2, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        assertEq(numberOfBids2, 2);
-        assertEq(winningId, 1);
+        assertEq(auctionInstance.numberOfBids(), 3);
 
         assertEq(address(auctionInstance).balance, 0.4 ether);
-        assertEq(
-            auctionInstance.refundBalances(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            0.1 ether
-        );
-    }
-
-    function testBiddingLowerThanWinningBidFails() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}();
-
-        vm.expectRevert("Bid too low");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.01 ether}();
-    }
-
-    function testClaimRefundFailsIfNoRefundAvailable() public {
-        assertEq(
-            auctionInstance.refundBalances(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            0
-        );
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}();
-
-        vm.expectRevert("No refund available");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.claimRefundableBalance();
-    }
-
-    function testClaimRefundCorrectlySendsRefund() public {
-        assertEq(
-            auctionInstance.refundBalances(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            0
-        );
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}();
-        auctionInstance.bidOnStake{value: 0.2 ether}();
-
-        assertEq(
-            auctionInstance.refundBalances(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            0.1 ether
-        );
-        assertEq(address(auctionInstance).balance, 0.3 ether);
-
-        uint256 currentTestAccountBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-                .balance;
-
-        auctionInstance.claimRefundableBalance();
-
-        assertEq(address(auctionInstance).balance, 0.2 ether);
-        assertEq(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
-            currentTestAccountBalance += 0.1 ether
-        );
-        assertEq(
-            auctionInstance.refundBalances(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            0
-        );
+    
     }
 }
