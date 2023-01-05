@@ -14,6 +14,7 @@ interface IAuction {
         uint256 amount;
         uint256 timeOfBid;
         address bidderAddress;
+        bool isActive;
     }
 
     function startAuction() external;
