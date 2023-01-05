@@ -97,7 +97,7 @@ contract Auction is IAuction {
 
     }
 
-    //Future will have a whitelist of operators who can bid
+    //Add whitelist of operators who can bid
     function bidOnStake() external payable {
 
         require(bidsEnabled == true, "Bidding is on hold");
