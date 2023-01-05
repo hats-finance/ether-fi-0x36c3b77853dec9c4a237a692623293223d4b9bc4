@@ -78,15 +78,15 @@ contract ScenarioTest is Test {
         
         //Bid One
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{0.1 ether}();
+        auctionInstance.bidOnStake{value: 0.1 ether}();
 
         //Bid Two
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{0.4 ether}();
+        auctionInstance.bidOnStake{value: 0.4 ether}();
 
         //Bid Three
         hoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
-        auctionInstance.bidOnStake{0.7 ether}();
+        auctionInstance.bidOnStake{value: 0.7 ether}();
 
         //Bid cancelled
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
@@ -97,16 +97,16 @@ contract ScenarioTest is Test {
 
         //Attempted bid which should fail
         vm.expectRevert("Bidding is on hold");
-        auctionInstance.bidOnStake{0.3 ether}();
+        auctionInstance.bidOnStake{value: 0.3 ether}();
         vm.stopPrank();
 
         //Bid Four
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        auctionInstance.bidOnStake{0.4 ether}();
+        auctionInstance.bidOnStake{value: 0.4 ether}();
 
         //Bid updated
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.updateBid{0.9 ether}();
+        auctionInstance.updateBid{value: 0.9 ether}(1);
 
         //Deposit Two
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
