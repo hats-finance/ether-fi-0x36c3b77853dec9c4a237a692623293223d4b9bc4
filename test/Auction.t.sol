@@ -93,8 +93,13 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.2 ether}();
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
+        assertEq(address(treasuryInstance).balance, 0);
+        assertEq(address(auctionInstance).balance, 0.6 ether);
+
         hoax(address(depositInstance));
         address winner = auctionInstance.disableBidding();
+        assertEq(address(treasuryInstance).balance, 0.3 ether);
+        assertEq(address(auctionInstance).balance, 0.3 ether);
 
         (,,,bool isActiveBid1) = auctionInstance.bids(1);
         (,,,bool isActiveBid2) = auctionInstance.bids(2);

@@ -32,7 +32,7 @@ contract ScenarioTest is Test {
      *  One bid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
      *  One deposit - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      */
-    function scenarioOne() public {
+    function testScenarioOne() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.3 ether}();
 
@@ -61,7 +61,9 @@ contract ScenarioTest is Test {
             0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
         );
         assertEq(address(depositInstance).balance, 0.1 ether);
-        assertEq(address(auctionInstance).balance, 0.3 ether);
+        assertEq(address(auctionInstance).balance, 0);
+        assertEq(address(treasuryInstance).balance, 0.3 ether);
+
         assertEq(auctionInstance.bidsEnabled(), false);
 
         (,,, bool isActiveAfterStake) = auctionInstance.bids(1);
@@ -73,11 +75,12 @@ contract ScenarioTest is Test {
      *  One bid cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  One deposit - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  Attempted Bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+     *  Enable Bids
      *  Fourth Bid - 0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098
      *  UpdatedBid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
      *  Second deposit - 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
      */
-    function scenarioTwo() public {
+    function testScenarioTwo() public {
         
         //Bid One
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -102,6 +105,10 @@ contract ScenarioTest is Test {
         vm.expectRevert("Bidding is on hold");
         auctionInstance.bidOnStake{value: 0.3 ether}();
         vm.stopPrank();
+
+        //Enable bidding as deposit contract
+        hoax(address(depositInstance));
+        auctionInstance.enableBidding();
 
         //Bid Four
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
