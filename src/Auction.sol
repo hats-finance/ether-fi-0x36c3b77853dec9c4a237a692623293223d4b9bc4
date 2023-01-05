@@ -18,7 +18,7 @@ contract Auction is IAuction {
 
     bool public bidsEnabled;
 
-    mapping(address => mapping(uint256 => Bid)) public bids;
+    mapping(uint256 => Bid) public bids;
 
     event BidPlaced(address bidder, uint256 amount, uint256 bidderId);
     event BiddingDisabled(address winner);
@@ -27,6 +27,7 @@ contract Auction is IAuction {
 
     constructor() {
         owner = msg.sender;
+        bidsEnabled = true;
     }
 
     function disableBidding() external onlyDepositContract returns (address){
@@ -51,6 +52,10 @@ contract Auction is IAuction {
         require(bidsEnabled == false, "Bids already enabled");
         bidsEnabled = true;
         emit BiddingEnabled();
+    }
+
+    function updateBid() external {
+        
     }
 
     function cancelBid(uint256 _bidId) external {
@@ -88,7 +93,8 @@ contract Auction is IAuction {
         bids[numberOfBids] = Bid({
             amount: msg.value,
             timeOfBid: block.timestamp,
-            bidderAddress: msg.sender
+            bidderAddress: msg.sender,
+            isActive: true
         });
 
         if(msg.value > bids[currentHighestBidId].amount) {
