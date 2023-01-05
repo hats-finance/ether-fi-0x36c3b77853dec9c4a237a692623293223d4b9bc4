@@ -188,4 +188,80 @@ contract AuctionTest is Test {
         assertEq(address(auctionInstance).balance, 0.4 ether);
         assertEq(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B.balance, balanceBeforeCancellation += 0.2 ether);
     }
+
+    function testCancelBidWorksIfBidIsCurrentHighest() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}();
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.bidOnStake{value: 0.3 ether}();
+
+        startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+        auctionInstance.bidOnStake{value: 0.2 ether}();
+        assertEq(address(auctionInstance).balance, 0.6 ether);
+        
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+
+        uint256 balanceBeforeCancellation = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance;
+
+        vm.stopPrank();
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.cancelBid(2);
+        assertEq(auctionInstance.currentHighestBidId(), 3);
+
+        (,,,bool isActive) = auctionInstance.bids(2);
+
+        assertEq(isActive, false);
+        assertEq(address(auctionInstance).balance, 0.3 ether);
+    }
+
+    function testUpdateBidFailsWhenNotExistingBid() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Invalid bid");
+        auctionInstance.updateBid{value: 0.1 ether}(1);   
+    }
+
+    function testUpdateBidFailsWhenNotBidOwnerCalling() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}();
+        
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        vm.expectRevert("Invalid bid");
+        auctionInstance.updateBid{value: 0.1 ether}(1);   
+    }
+
+    function testUpdateBidFailsWhenBidAlreadyInactive() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}();
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.cancelBid(1);   
+        
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Bid already cancelled");
+        auctionInstance.updateBid{value: 0.1 ether}(1);   
+    }
+
+    function testUpdateBidWorks() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}();
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.bidOnStake{value: 0.3 ether}();
+
+        startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+        auctionInstance.bidOnStake{value: 0.2 ether}();
+
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+        
+        assertEq(address(auctionInstance).balance, 0.6 ether);
+
+        auctionInstance.updateBid{value: 0.2 ether}(3);
+
+        (uint256 amount,,,) = auctionInstance.bids(3);
+
+        assertEq(amount, 0.4 ether);
+        assertEq(address(auctionInstance).balance, 0.8 ether);
+        assertEq(auctionInstance.currentHighestBidId(), 3);
+    }
 }
