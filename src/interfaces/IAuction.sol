@@ -10,13 +10,13 @@ interface IAuction {
         bool isActive;
     }
 
-    function startAuction() external;
-
-    function closeAuction() external returns (address);
-
     function bidOnStake() external payable;
 
-    function claimRefundableBalance() external;
+    function disableBidding() external returns (address);
+
+    function enableBidding() external;
+
+    function cancelBid(uint256 _bidId) external;
 
     function setDepositContractAddress(address _depositContractAddress)
         external;
