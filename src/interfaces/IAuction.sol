@@ -16,9 +16,9 @@ interface IAuction {
 
     function enableBidding() external;
 
-    function updateBid(uint256 _bidId) external;
-
     function cancelBid(uint256 _bidId) external;
+
+    function updateBid(uint256 _bidId) external payable;
 
     function setDepositContractAddress(address _depositContractAddress)
         external;

@@ -43,8 +43,12 @@ contract Auction is IAuction {
                 tempWinningBidId = x;
             }
         }
-
+        
         currentHighestBidId = tempWinningBidId;
+
+        //(bool sent, ) = msg.sender.call{value: bidValue}("");
+        //require(sent, "Failed to send Ether");
+
         emit BiddingDisabled(winningOperator);
         return winningOperator;
     }
@@ -55,8 +59,15 @@ contract Auction is IAuction {
         emit BiddingEnabled();
     }
 
-    function updateBid(uint256 _bidId) external {
+    function updateBid(uint256 _bidId) external payable {
+        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+        require(bids[_bidId].isActive == true, "Bid already cancelled");
 
+        bids[_bidId].amount += msg.value;
+        
+        if(bids[_bidId].amount > bids[currentHighestBidId].amount) {
+            currentHighestBidId = _bidId;
+        }
     }
 
     function cancelBid(uint256 _bidId) external {
