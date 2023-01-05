@@ -6,19 +6,22 @@ import "../src/Deposit.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
+import "../src/Treasury.sol";
 
-contract DepositTest is Test {
+contract BNFTTest is Test {
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     Auction public auctionInstance;
+    Treasury public treasuryInstance;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
     function setUp() public {
         vm.startPrank(owner);
-        auctionInstance = new Auction();
+        treasuryInstance = new Treasury();
+        auctionInstance = new Auction(address(treasuryInstance));
         depositInstance = new Deposit(address(auctionInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));

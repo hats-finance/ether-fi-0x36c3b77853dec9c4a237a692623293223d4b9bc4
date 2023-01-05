@@ -12,6 +12,7 @@ import "./Deposit.sol";
 contract Auction is IAuction {
     address public depositContractAddress;
     address public owner;
+    address public treasuryContractAddress;
 
     uint256 public currentHighestBidId;
     uint256 public numberOfBids = 1;
@@ -25,9 +26,10 @@ contract Auction is IAuction {
     event BiddingEnabled();
     event BidCancelled(uint256 bidId);
 
-    constructor() {
+    constructor(address _treasuryAddress) {
         owner = msg.sender;
         bidsEnabled = true;
+        treasuryContractAddress = _treasuryAddress;
     }
 
     function disableBidding() external onlyDepositContract returns (address){
@@ -35,7 +37,7 @@ contract Auction is IAuction {
         bidsEnabled = false;
         bids[currentHighestBidId].isActive = false;
         address winningOperator = bids[currentHighestBidId].bidderAddress;
-        
+        uint256 winningBidAmount = bids[currentHighestBidId].amount;
         uint256 tempWinningBidId;
 
         for(uint256 x = 1; x <= numberOfBids; x++){
@@ -46,8 +48,8 @@ contract Auction is IAuction {
         
         currentHighestBidId = tempWinningBidId;
 
-        //(bool sent, ) = msg.sender.call{value: bidValue}("");
-        //require(sent, "Failed to send Ether");
+        (bool sent, ) = treasuryContractAddress.call{value: winningBidAmount}("");
+        require(sent, "Failed to send Ether");
 
         emit BiddingDisabled(winningOperator);
         return winningOperator;
