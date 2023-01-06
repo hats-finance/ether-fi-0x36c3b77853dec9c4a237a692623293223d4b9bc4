@@ -8,7 +8,6 @@ import "./TNFT.sol";
 import "./BNFT.sol";
 
 contract Treasury {
-    
     address public owner;
 
     event Received(address sender, uint256 value);

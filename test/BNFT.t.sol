@@ -49,7 +49,7 @@ contract BNFTTest is Test {
     }
 
     function testBNFTCannotBeTransferred() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0); 
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
@@ -65,9 +65,21 @@ contract BNFTTest is Test {
     function _merkleSetup() internal {
         merkle = new Merkle();
 
-        whiteListedAddresses.push(keccak256(abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)));
-        whiteListedAddresses.push(keccak256(abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)));
-        whiteListedAddresses.push(keccak256(abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)));
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
+            )
+        );
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)
+            )
+        );
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)
+            )
+        );
 
         root = merkle.getRoot(whiteListedAddresses);
     }

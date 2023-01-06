@@ -37,22 +37,27 @@ contract Auction is IAuction {
         merkleRoot = _merkleRoot;
     }
 
-    function disableBidding() external onlyDepositContract returns (address){
+    function disableBidding() external onlyDepositContract returns (address) {
         bidsEnabled = false;
         bids[currentHighestBidId].isActive = false;
         address winningOperator = bids[currentHighestBidId].bidderAddress;
         uint256 winningBidAmount = bids[currentHighestBidId].amount;
         uint256 tempWinningBidId;
 
-        for(uint256 x = 1; x <= numberOfBids; x++){
-            if((bids[x].amount > bids[tempWinningBidId].amount) && (bids[x].isActive == true)){
+        for (uint256 x = 1; x <= numberOfBids; x++) {
+            if (
+                (bids[x].amount > bids[tempWinningBidId].amount) &&
+                (bids[x].isActive == true)
+            ) {
                 tempWinningBidId = x;
             }
         }
-        
+
         currentHighestBidId = tempWinningBidId;
 
-        (bool sent, ) = treasuryContractAddress.call{value: winningBidAmount}("");
+        (bool sent, ) = treasuryContractAddress.call{value: winningBidAmount}(
+            ""
+        );
         require(sent, "Failed to send Ether");
 
         numberOfActiveBids--;
@@ -72,8 +77,8 @@ contract Auction is IAuction {
         require(bids[_bidId].isActive == true, "Bid already cancelled");
 
         bids[_bidId].amount += msg.value;
-        
-        if(bids[_bidId].amount > bids[currentHighestBidId].amount) {
+
+        if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
             currentHighestBidId = _bidId;
         }
     }
@@ -84,11 +89,14 @@ contract Auction is IAuction {
 
         bids[_bidId].isActive = false;
 
-        if(currentHighestBidId == _bidId) {
+        if (currentHighestBidId == _bidId) {
             uint256 tempWinningBidId;
 
-            for(uint256 x = 1; x <= numberOfBids; x++){
-                if((bids[x].amount > bids[tempWinningBidId].amount) && (bids[x].isActive == true)){
+            for (uint256 x = 1; x <= numberOfBids; x++) {
+                if (
+                    (bids[x].amount > bids[tempWinningBidId].amount) &&
+                    (bids[x].isActive == true)
+                ) {
                     tempWinningBidId = x;
                 }
             }
@@ -104,13 +112,16 @@ contract Auction is IAuction {
         numberOfActiveBids--;
 
         emit BidCancelled(_bidId);
-
     }
 
     function bidOnStake(bytes32[] calldata _merkleProof) external payable {
         require(bidsEnabled == true, "Bidding is on hold");
         require(
-            MerkleProof.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(msg.sender))),
+            MerkleProof.verify(
+                _merkleProof,
+                merkleRoot,
+                keccak256(abi.encodePacked(msg.sender))
+            ),
             "Invalid merkle proof"
         );
 
@@ -121,7 +132,7 @@ contract Auction is IAuction {
             isActive: true
         });
 
-        if(msg.value > bids[currentHighestBidId].amount) {
+        if (msg.value > bids[currentHighestBidId].amount) {
             currentHighestBidId = numberOfBids;
         }
 

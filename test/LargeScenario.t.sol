@@ -148,12 +148,7 @@ contract SmallScenariosTest is Test {
         //Check the number of active bids has increased
         assertEq(auctionInstance.numberOfActiveBids(), 2);
         //Check the bid has been de-activated
-        (
-            ,
-            ,
-            ,
-            bool isActiveAfterCancel
-        ) = auctionInstance.bids(2);
+        (, , , bool isActiveAfterCancel) = auctionInstance.bids(2);
         assertEq(isActiveAfterCancel, false);
 
         //Deposit One
