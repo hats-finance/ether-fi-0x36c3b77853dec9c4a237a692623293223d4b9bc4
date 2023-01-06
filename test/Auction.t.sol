@@ -55,6 +55,11 @@ contract AuctionTest is Test {
     }
 
     function testEnablingBiddingWorks() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(whiteListedAddresses, 0); 
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+
         assertEq(auctionInstance.bidsEnabled(), true);
 
         hoax(address(depositInstance));
@@ -66,15 +71,6 @@ contract AuctionTest is Test {
         auctionInstance.enableBidding();
 
         assertEq(auctionInstance.bidsEnabled(), true);
-    }
-
-    function testDisableBiddingFailsIfBiddingAlreadyDisabled() public {
-        hoax(address(depositInstance));
-        auctionInstance.disableBidding();
-
-        hoax(address(depositInstance));
-        vm.expectRevert("Bids already disabled");
-        auctionInstance.disableBidding();
     }
 
     function testDisablingBiddingFailsIfNotContractCalling() public {
@@ -124,6 +120,9 @@ contract AuctionTest is Test {
 
     function testBiddingFailsWhenBidsDisabled() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0); 
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         hoax(address(depositInstance));
         auctionInstance.disableBidding();

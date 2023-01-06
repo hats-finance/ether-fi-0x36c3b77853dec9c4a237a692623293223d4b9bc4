@@ -38,7 +38,6 @@ contract Auction is IAuction {
     }
 
     function disableBidding() external onlyDepositContract returns (address){
-        require(bidsEnabled == true, "Bids already disabled");
         bidsEnabled = false;
         bids[currentHighestBidId].isActive = false;
         address winningOperator = bids[currentHighestBidId].bidderAddress;
