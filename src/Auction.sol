@@ -88,13 +88,15 @@ contract Auction is IAuction {
     function cancelBid(uint256 _bidId) external {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
+                
+        uint256 numberOfBidsLocal = numberOfBids;
 
         bids[_bidId].isActive = false;
 
         if (currentHighestBidId == _bidId) {
             uint256 tempWinningBidId;
 
-            for (uint256 x = 1; x <= numberOfBids; ++x) {
+            for (uint256 x = 1; x <= numberOfBidsLocal; ++x) {
                 if (
                     (bids[x].amount > bids[tempWinningBidId].amount) &&
                     (bids[x].isActive == true)
