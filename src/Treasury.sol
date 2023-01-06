@@ -4,10 +4,11 @@ pragma solidity 0.8.13;
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
+import "./interfaces/ITreasury.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 
-contract Treasury {
+contract Treasury is ITreasury{
     address public owner;
 
     event Received(address sender, uint256 value);
