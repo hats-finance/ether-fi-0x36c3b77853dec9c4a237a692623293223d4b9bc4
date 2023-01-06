@@ -29,6 +29,7 @@ contract Auction is IAuction {
     event BiddingDisabled(address winner);
     event BiddingEnabled();
     event BidCancelled(uint256 bidId);
+    event BidUpdated(uint256 bidId, uint256 valueUpdatedBy);
 
     constructor(address _treasuryAddress, bytes32 _merkleRoot) {
         owner = msg.sender;
@@ -48,8 +49,8 @@ contract Auction is IAuction {
 
         for (uint256 x; x <= numberOfBidsLocal - 1; ++x) {
             if (
-                (bids[x].isActive == true) && (bids[x].amount > bids[tempWinningBidId].amount)
-                
+                (bids[x].isActive == true) &&
+                (bids[x].amount > bids[tempWinningBidId].amount)
             ) {
                 tempWinningBidId = x;
             }
@@ -83,12 +84,14 @@ contract Auction is IAuction {
         if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
             currentHighestBidId = _bidId;
         }
+
+        emit BidUpdated(_bidId, msg.value);
     }
 
     function cancelBid(uint256 _bidId) external {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
-                
+
         uint256 numberOfBidsLocal = numberOfBids;
 
         bids[_bidId].isActive = false;
@@ -96,7 +99,7 @@ contract Auction is IAuction {
         if (currentHighestBidId == _bidId) {
             uint256 tempWinningBidId;
 
-            for (uint256 x; x <= numberOfBidsLocal -1; ++x) {
+            for (uint256 x; x <= numberOfBidsLocal - 1; ++x) {
                 if (
                     (bids[x].amount > bids[tempWinningBidId].amount) &&
                     (bids[x].isActive == true)
