@@ -42,6 +42,7 @@ contract SmallScenariosTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress1);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         assertEq(address(auctionInstance).balance, 0.3 ether);
         assertEq(address(depositInstance).balance, 0);
@@ -90,6 +91,7 @@ contract SmallScenariosTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress1);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         assertEq(address(auctionInstance).balance, 0.3 ether);
         
@@ -103,6 +105,7 @@ contract SmallScenariosTest is Test {
         assertEq(isActiveAfterStake, true);
 
         auctionInstance.cancelBid(1);
+        assertEq(auctionInstance.numberOfActiveBids(), 0);
 
         (,,, bool isActiveAfterCancel) = auctionInstance.bids(1);
         assertEq(isActiveAfterCancel, false);
@@ -114,11 +117,13 @@ contract SmallScenariosTest is Test {
         assertEq(auctionInstance.numberOfBids() - 1, 2);
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(address(auctionInstance).balance, 0.2 ether);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         auctionInstance.updateBid{value: 0.3 ether}(2);
         assertEq(auctionInstance.numberOfBids() - 1, 2);
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(address(auctionInstance).balance, 0.5 ether);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
 
     }
 

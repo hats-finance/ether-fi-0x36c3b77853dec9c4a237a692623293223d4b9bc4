@@ -49,7 +49,10 @@ contract BNFTTest is Test {
     }
 
     function testBNFTCannotBeTransferred() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0); 
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.1 ether}();
         vm.expectRevert("Err: token is SOUL BOUND");
         TestBNFTInstance.transferFrom(

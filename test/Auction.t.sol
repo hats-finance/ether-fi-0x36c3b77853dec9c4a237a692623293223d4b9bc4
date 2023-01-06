@@ -141,6 +141,7 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         (uint256 amount, , address bidderAddress, ) = auctionInstance.bids(1);
 
@@ -150,6 +151,7 @@ contract AuctionTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.3 ether}(proof);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
 
         (uint256 amount2, , address bidderAddress2, ) = auctionInstance.bids(
             auctionInstance.currentHighestBidId()
@@ -201,17 +203,21 @@ contract AuctionTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
 
         startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         auctionInstance.bidOnStake{value: 0.2 ether}(proofForAddress3);
         assertEq(address(auctionInstance).balance, 0.6 ether);
+        assertEq(auctionInstance.numberOfActiveBids(), 3);
 
         uint256 balanceBeforeCancellation = 0xCDca97f61d8EE53878cf602FF6BC2f260f10240B
                 .balance;
         auctionInstance.cancelBid(3);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
 
         (, , , bool isActive) = auctionInstance.bids(3);
 
@@ -230,13 +236,16 @@ contract AuctionTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
 
         startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         auctionInstance.bidOnStake{value: 0.2 ether}(proofForAddress3);
         assertEq(address(auctionInstance).balance, 0.6 ether);
+        assertEq(auctionInstance.numberOfActiveBids(), 3);
 
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
@@ -244,6 +253,7 @@ contract AuctionTest is Test {
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.cancelBid(2);
         assertEq(auctionInstance.currentHighestBidId(), 3);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
 
         (, , , bool isActive) = auctionInstance.bids(2);
 
