@@ -6,7 +6,6 @@ import "forge-std/Test.sol";
 import "../src/Treasury.sol";
 
 contract TreasuryTest is Test {
-
     Treasury treasuryInstance;
 
     address owner = vm.addr(1);
@@ -21,13 +20,13 @@ contract TreasuryTest is Test {
     function testTreasuryCanReceiveFunds() public {
         assertEq(address(treasuryInstance).balance, 0);
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        (bool sent,) = address(treasuryInstance).call{value: 0.5 ether}("");
+        (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
         assertEq(address(treasuryInstance).balance, 0.5 ether);
     }
 
     function testWithdrawFailsIfNotOwner() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        (bool sent,) = address(treasuryInstance).call{value: 0.5 ether}("");
+        (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
 
         vm.prank(alice);
         vm.expectRevert("Only owner function");
@@ -38,7 +37,7 @@ contract TreasuryTest is Test {
         assertEq(address(treasuryInstance).balance, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        (bool sent,) = address(treasuryInstance).call{value: 0.5 ether}("");
+        (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
         assertEq(address(treasuryInstance).balance, 0.5 ether);
 
         vm.prank(owner);
