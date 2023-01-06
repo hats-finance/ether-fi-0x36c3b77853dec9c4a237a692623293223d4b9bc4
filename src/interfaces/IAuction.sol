@@ -20,6 +20,8 @@ interface IAuction {
 
     function updateBid(uint256 _bidId) external payable;
 
+    function getNumberOfActivebids() external view returns (uint256);
+
     function setDepositContractAddress(address _depositContractAddress)
         external;
 }

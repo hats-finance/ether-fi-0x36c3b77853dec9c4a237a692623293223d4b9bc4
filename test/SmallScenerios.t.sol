@@ -9,7 +9,7 @@ import "../src/Auction.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract ScenarioTest is Test {
+contract SmallScenariosTest is Test {
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -77,71 +77,64 @@ contract ScenarioTest is Test {
         assertEq(isActiveAfterStake, false);
     }
 
+
     /**
-     *  Three bids - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf, 0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
-     *  One bid cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-     *  One deposit - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-     *  Attempted Bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-     *  Enable Bids
-     *  Fourth Bid - 0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098
-     *  UpdatedBid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-     *  Second deposit - 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
+     *  One bid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+     *  One cancel - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+     *  Second bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+     *  One updated bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      */
     function testScenarioTwo() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(whiteListedAddresses, 0); 
         bytes32[] memory proofForAddress2 = merkle.getProof(whiteListedAddresses, 1); 
-        bytes32[] memory proofForAddress3 = merkle.getProof(whiteListedAddresses, 2); 
-        bytes32[] memory proofForAddress4 = merkle.getProof(whiteListedAddresses, 3); 
 
-        //Bid One
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress1);
 
-        //Bid Two
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.4 ether}(proofForAddress2);
+        assertEq(address(auctionInstance).balance, 0.3 ether);
+        
+        (uint256 amount,, address bidderAddress, bool isActiveAfterStake) = auctionInstance.bids(auctionInstance.currentHighestBidId());
 
-        //Bid Three
-        hoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
-        auctionInstance.bidOnStake{value: 0.7 ether}(proofForAddress3);
+        assertEq(auctionInstance.numberOfBids() - 1, 1);
+        assertEq(amount, 0.3 ether);
+        assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(auctionInstance.currentHighestBidId(), 1);
+        assertEq(auctionInstance.bidsEnabled(), true);
+        assertEq(isActiveAfterStake, true);
 
-        //Bid cancelled
-        startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.cancelBid(2);
+        auctionInstance.cancelBid(1);
 
-        //Deposit One
-        depositInstance.deposit{value: 0.1 ether}();
+        (,,, bool isActiveAfterCancel) = auctionInstance.bids(1);
+        assertEq(isActiveAfterCancel, false);
 
-        //Attempted bid which should fail
-        vm.expectRevert("Bidding is on hold");
-        auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
         vm.stopPrank();
+        startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
 
-        //Enable bidding as deposit contract
-        hoax(address(depositInstance));
-        auctionInstance.enableBidding();
+        auctionInstance.bidOnStake{value: 0.2 ether}(proofForAddress2);
+        assertEq(auctionInstance.numberOfBids() - 1, 2);
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+        assertEq(address(auctionInstance).balance, 0.2 ether);
 
-        //Bid Four
-        hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        auctionInstance.bidOnStake{value: 0.4 ether}(proofForAddress4);
+        auctionInstance.updateBid{value: 0.3 ether}(2);
+        assertEq(auctionInstance.numberOfBids() - 1, 2);
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+        assertEq(address(auctionInstance).balance, 0.5 ether);
 
-        //Bid updated
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.updateBid{value: 0.9 ether}(1);
-
-        //Deposit Two
-        hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        depositInstance.deposit{value: 0.1 ether}();
     }
 
-     function _merkleSetup() internal {
+    function _merkleSetup() internal {
         merkle = new Merkle();
 
-        whiteListedAddresses.push(keccak256(abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)));
-        whiteListedAddresses.push(keccak256(abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)));
-        whiteListedAddresses.push(keccak256(abi.encodePacked(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20)));
-        whiteListedAddresses.push(keccak256(abi.encodePacked(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098)));
-
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
+            )
+        );
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)
+            )
+        );
         root = merkle.getRoot(whiteListedAddresses);
     }
  }

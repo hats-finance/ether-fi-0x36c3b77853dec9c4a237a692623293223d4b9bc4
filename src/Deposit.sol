@@ -34,6 +34,7 @@ contract Deposit {
 
     function deposit() public payable {
         require(msg.value == stakeAmount, "Insufficient staking amount");
+        require(auctionInterfaceInstance.getNumberOfActivebids() >= 1, "No bids available at the moment");
         TNFTInterfaceInstance.mint(msg.sender);
         BNFTInterfaceInstance.mint(msg.sender);
         depositorBalances[msg.sender] += msg.value;
