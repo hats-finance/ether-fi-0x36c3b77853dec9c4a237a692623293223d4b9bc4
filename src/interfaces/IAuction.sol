@@ -10,7 +10,7 @@ interface IAuction {
         bool isActive;
     }
 
-    function bidOnStake() external payable;
+    function bidOnStake(bytes32[] calldata _merkleProof) external payable;
 
     function disableBidding() external returns (address);
 
