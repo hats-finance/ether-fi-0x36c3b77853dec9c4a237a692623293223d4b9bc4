@@ -46,7 +46,7 @@ contract Auction is IAuction {
         uint256 winningBidAmount = bids[currentHighestBidIdLocal].amount;
         uint256 tempWinningBidId;
 
-        for (uint256 x = 1; x <= numberOfBidsLocal; x++) {
+        for (uint256 x = 1; x <= numberOfBidsLocal; ++x) {
             if (
                 (bids[x].isActive == true) && (bids[x].amount > bids[tempWinningBidId].amount)
                 
