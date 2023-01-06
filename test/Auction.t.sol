@@ -35,7 +35,6 @@ contract AuctionTest is Test {
 
     function testAuctionContractInstantiatedCorrectly() public {
         assertEq(auctionInstance.numberOfBids(), 1);
-        assertEq(auctionInstance.owner(), address(owner));
         assertEq(
             auctionInstance.depositContractAddress(),
             address(depositInstance)
@@ -62,7 +61,7 @@ contract AuctionTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
-
+        console.log(address(depositInstance).balance);
         assertEq(auctionInstance.bidsEnabled(), true);
 
         hoax(address(depositInstance));

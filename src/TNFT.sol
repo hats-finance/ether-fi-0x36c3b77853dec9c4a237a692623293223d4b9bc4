@@ -12,16 +12,14 @@ contract TNFT is ERC721 {
     uint256 private tokenId;
     uint256 public nftValue;
     address public depositContractAddress;
-    address public owner;
 
 //--------------------------------------------------------------------------------------
 //----------------------------------  CONSTRUCTOR   ------------------------------------
 //--------------------------------------------------------------------------------------
    
-    constructor(address _owner) ERC721("Transferrable NFT", "TNFT") {
-        nftValue = 30 ether;
+    constructor() ERC721("Transferrable NFT", "TNFT") {
+        nftValue = 0.03 ether;
         depositContractAddress = msg.sender;
-        owner = _owner;
     }
 
 //--------------------------------------------------------------------------------------

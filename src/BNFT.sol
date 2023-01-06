@@ -10,17 +10,16 @@ contract BNFT is ERC721 {
 //--------------------------------------------------------------------------------------
   
     uint256 private tokenIds;
-    uint256 public nftValue = 2 ether;
+    uint256 public nftValue = 0.002 ether;
     address public depositContractAddress;
-    address public owner;
 
 //--------------------------------------------------------------------------------------
 //----------------------------------  CONSTRUCTOR   ------------------------------------
 //--------------------------------------------------------------------------------------
    
-    constructor(address _owner) ERC721("Bond NFT", "BNFT") {
+    constructor() ERC721("Bond NFT", "BNFT") {
         depositContractAddress = msg.sender;
-        owner = _owner;
+        nftValue = 0.002 ether;
     }
 
 //--------------------------------------------------------------------------------------

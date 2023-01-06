@@ -152,11 +152,12 @@ contract SmallScenariosTest is Test {
         assertEq(isActiveAfterCancel, false);
 
         //Deposit One
-        depositInstance.deposit{value: 0.1 ether}();
+        depositInstance.deposit{value: 0.032 ether}();
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(address(treasuryInstance).balance, 0.7 ether);
         assertEq(address(auctionInstance).balance, 0.1 ether);
+        assertEq(address(depositInstance).balance, 0.032 ether);     
         assertEq(auctionInstance.bidsEnabled(), false);
 
         //Attempted bid which should fail
@@ -215,11 +216,13 @@ contract SmallScenariosTest is Test {
 
         //Deposit Two
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        depositInstance.deposit{value: 0.1 ether}();
+        depositInstance.deposit{value: 0.032 ether}();
+
         assertEq(auctionInstance.currentHighestBidId(), 4);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(address(treasuryInstance).balance, 1.7 ether);
         assertEq(address(auctionInstance).balance, 0.4 ether);
+        assertEq(address(depositInstance).balance, 340282366920938463463406607431768211456);
         assertEq(auctionInstance.bidsEnabled(), false);
     }
 

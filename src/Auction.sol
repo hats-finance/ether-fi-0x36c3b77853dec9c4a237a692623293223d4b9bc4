@@ -21,7 +21,6 @@ contract Auction is IAuction {
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
-    address public owner;
     address public treasuryContractAddress;
     bytes32 public merkleRoot;
     bool public bidsEnabled;
@@ -44,7 +43,6 @@ contract Auction is IAuction {
 //--------------------------------------------------------------------------------------
     
     constructor(address _treasuryAddress, bytes32 _merkleRoot) {
-        owner = msg.sender;
         bidsEnabled = true;
         treasuryContractAddress = _treasuryAddress;
         merkleRoot = _merkleRoot;

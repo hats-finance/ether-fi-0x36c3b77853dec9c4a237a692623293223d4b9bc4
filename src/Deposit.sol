@@ -18,10 +18,7 @@ contract Deposit {
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
-
-    uint256 public stakeAmount = 0.1 ether;
-    address public owner;
-    address public auctionAddress;
+    uint256 public stakeAmount;
 
     mapping(address => uint256) public depositorBalances;
 
@@ -36,9 +33,9 @@ contract Deposit {
 //--------------------------------------------------------------------------------------
    
     constructor(address _auctionAddress) {
-        owner = msg.sender;
-        TNFTInstance = new TNFT(msg.sender);
-        BNFTInstance = new BNFT(msg.sender);
+        stakeAmount = 0.032 ether;
+        TNFTInstance = new TNFT();
+        BNFTInstance = new BNFT();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
         auctionInterfaceInstance = IAuction(_auctionAddress);
