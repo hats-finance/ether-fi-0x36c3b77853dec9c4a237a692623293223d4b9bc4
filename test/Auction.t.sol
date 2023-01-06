@@ -362,6 +362,40 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 3);
     }
 
+    function testUpdatingMerkle() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+
+        assertEq(auctionInstance.merkleRoot(), root);
+        
+        hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
+        vm.expectRevert("Invalid merkle proof");
+        auctionInstance.bidOnStake(proofForAddress1);
+        
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098)
+            )
+        );
+
+        bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
+        auctionInstance.updateMerkleRoot(newRoot);
+
+        bytes32[] memory proofForAddress4 = merkle.getProof(
+            whiteListedAddresses,
+            3
+        );
+        
+        assertEq(auctionInstance.merkleRoot(), newRoot);
+        
+        hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
+        auctionInstance.bidOnStake(proofForAddress4);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
+
+    }
+
     function _merkleSetup() internal {
         merkle = new Merkle();
 

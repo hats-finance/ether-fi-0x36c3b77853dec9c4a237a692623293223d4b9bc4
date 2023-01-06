@@ -19,7 +19,7 @@ contract Auction is IAuction {
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
 
-    bytes32 private merkleRoot;
+    bytes32 public merkleRoot;
 
     bool public bidsEnabled;
 
@@ -30,6 +30,7 @@ contract Auction is IAuction {
     event BiddingEnabled();
     event BidCancelled(uint256 bidId);
     event BidUpdated(uint256 bidId, uint256 valueUpdatedBy);
+    event MerkleUpdated(bytes32 oldMerkle, bytes32 newMerkle);
 
     constructor(address _treasuryAddress, bytes32 _merkleRoot) {
         owner = msg.sender;
@@ -147,6 +148,13 @@ contract Auction is IAuction {
         numberOfActiveBids++;
 
         emit BidPlaced(msg.sender, msg.value, numberOfBids - 1);
+    }
+
+    function updateMerkleRoot(bytes32 _newMerkle) external {
+        bytes32 oldMerkle = merkleRoot;
+        merkleRoot = _newMerkle;
+
+        emit MerkleUpdated(oldMerkle, _newMerkle);
     }
 
     function setDepositContractAddress(address _depositContractAddress)
