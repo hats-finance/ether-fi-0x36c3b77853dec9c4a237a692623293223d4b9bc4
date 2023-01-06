@@ -17,6 +17,7 @@ contract Auction is IAuction {
 
     uint256 public currentHighestBidId;
     uint256 public numberOfBids = 1;
+    uint256 public numberOfActiveBids;
 
     bytes32 private merkleRoot;
 
@@ -99,6 +100,8 @@ contract Auction is IAuction {
         (bool sent, ) = msg.sender.call{value: bidValue}("");
         require(sent, "Failed to send Ether");
 
+        numberOfActiveBids--;
+
         emit BidCancelled(_bidId);
 
     }
@@ -122,6 +125,7 @@ contract Auction is IAuction {
         }
 
         numberOfBids++;
+        numberOfActiveBids++;
 
         emit BidPlaced(msg.sender, msg.value, numberOfBids - 1);
     }
@@ -130,6 +134,10 @@ contract Auction is IAuction {
         external
     {
         depositContractAddress = _depositContractAddress;
+    }
+
+    function getNumberOfActivebids() external view returns (uint256) {
+        return numberOfActiveBids;
     }
 
     modifier onlyOwnerOrDepositContract() {
