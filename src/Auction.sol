@@ -8,6 +8,7 @@ import "./interfaces/IAuction.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract Auction is IAuction {
     address public depositContractAddress;
@@ -16,6 +17,8 @@ contract Auction is IAuction {
 
     uint256 public currentHighestBidId;
     uint256 public numberOfBids = 1;
+
+    bytes32 private merkleRoot;
 
     bool public bidsEnabled;
 
@@ -26,10 +29,11 @@ contract Auction is IAuction {
     event BiddingEnabled();
     event BidCancelled(uint256 bidId);
 
-    constructor(address _treasuryAddress) {
+    constructor(address _treasuryAddress, bytes32 _merkleRoot) {
         owner = msg.sender;
         bidsEnabled = true;
         treasuryContractAddress = _treasuryAddress;
+        merkleRoot = _merkleRoot;
     }
 
     function disableBidding() external onlyDepositContract returns (address){
