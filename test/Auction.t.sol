@@ -369,11 +369,11 @@ contract AuctionTest is Test {
         );
 
         assertEq(auctionInstance.merkleRoot(), root);
-        
+
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
         vm.expectRevert("Invalid merkle proof");
         auctionInstance.bidOnStake(proofForAddress1);
-        
+
         whiteListedAddresses.push(
             keccak256(
                 abi.encodePacked(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098)
@@ -387,13 +387,12 @@ contract AuctionTest is Test {
             whiteListedAddresses,
             3
         );
-        
+
         assertEq(auctionInstance.merkleRoot(), newRoot);
-        
+
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
         auctionInstance.bidOnStake(proofForAddress4);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
-
     }
 
     function _merkleSetup() internal {
