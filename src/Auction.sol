@@ -94,7 +94,7 @@ contract Auction is IAuction {
         if (currentHighestBidId == _bidId) {
             uint256 tempWinningBidId;
 
-            for (uint256 x = 1; x <= numberOfBids; x++) {
+            for (uint256 x = 1; x <= numberOfBids; ++x) {
                 if (
                     (bids[x].amount > bids[tempWinningBidId].amount) &&
                     (bids[x].isActive == true)
