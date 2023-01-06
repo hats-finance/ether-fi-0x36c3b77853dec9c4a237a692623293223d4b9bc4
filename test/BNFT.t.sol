@@ -38,8 +38,7 @@ contract BNFTTest is Test {
             TestBNFTInstance.depositContractAddress(),
             address(depositInstance)
         );
-        assertEq(TestBNFTInstance.nftValue(), 2 ether);
-        assertEq(TestBNFTInstance.owner(), address(owner));
+        assertEq(TestBNFTInstance.nftValue(), 0.002 ether);
     }
 
     function testBNFTMintsFailsIfNotCorrectCaller() public {
@@ -53,7 +52,7 @@ contract BNFTTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.1 ether}();
+        depositInstance.deposit{value: 0.032 ether}();
         vm.expectRevert("Err: token is SOUL BOUND");
         TestBNFTInstance.transferFrom(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,

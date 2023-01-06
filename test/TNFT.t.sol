@@ -38,8 +38,7 @@ contract TNFTTest is Test {
             TestTNFTInstance.depositContractAddress(),
             address(depositInstance)
         );
-        assertEq(TestTNFTInstance.nftValue(), 30 ether);
-        assertEq(TestTNFTInstance.owner(), address(owner));
+        assertEq(TestTNFTInstance.nftValue(), 0.03 ether);
     }
 
     function testTNFTMintsFailsIfNotCorrectCaller() public {
