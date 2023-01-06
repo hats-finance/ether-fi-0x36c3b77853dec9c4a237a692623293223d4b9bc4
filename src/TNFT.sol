@@ -26,6 +26,8 @@ contract TNFT is ERC721 {
 //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
 //--------------------------------------------------------------------------------------
     
+    //Function only allows the deposit contract to mint to prevent
+    //standard eoa minting themselves NFTs
     function mint(address _reciever) external onlyDepositContract {
         _safeMint(_reciever, tokenId);
         unchecked {
