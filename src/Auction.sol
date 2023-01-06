@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+//Importing all needed contracts and libraries
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IDeposit.sol";
@@ -11,20 +12,26 @@ import "./Deposit.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract Auction is IAuction {
-    address public depositContractAddress;
-    address public owner;
-    address public treasuryContractAddress;
 
+//--------------------------------------------------------------------------------------
+//---------------------------------  STATE-VARIABLES  ----------------------------------
+//--------------------------------------------------------------------------------------
+    
     uint256 public currentHighestBidId;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
-
+    address public depositContractAddress;
+    address public owner;
+    address public treasuryContractAddress;
     bytes32 public merkleRoot;
-
     bool public bidsEnabled;
 
     mapping(uint256 => Bid) public bids;
 
+//--------------------------------------------------------------------------------------
+//-------------------------------------  EVENTS  ---------------------------------------
+//--------------------------------------------------------------------------------------
+    
     event BidPlaced(address bidder, uint256 amount, uint256 bidderId);
     event BiddingDisabled(address winner);
     event BiddingEnabled();
@@ -32,6 +39,10 @@ contract Auction is IAuction {
     event BidUpdated(uint256 bidId, uint256 valueUpdatedBy);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 newMerkle);
 
+//--------------------------------------------------------------------------------------
+//----------------------------------  CONSTRUCTOR   ------------------------------------
+//--------------------------------------------------------------------------------------
+    
     constructor(address _treasuryAddress, bytes32 _merkleRoot) {
         owner = msg.sender;
         bidsEnabled = true;
@@ -39,6 +50,10 @@ contract Auction is IAuction {
         merkleRoot = _merkleRoot;
     }
 
+//--------------------------------------------------------------------------------------
+//----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+//--------------------------------------------------------------------------------------
+    
     function disableBidding() external onlyDepositContract returns (address) {
         uint256 currentHighestBidIdLocal = currentHighestBidId;
         uint256 numberOfBidsLocal = numberOfBids;
@@ -163,9 +178,17 @@ contract Auction is IAuction {
         depositContractAddress = _depositContractAddress;
     }
 
+//--------------------------------------------------------------------------------------
+//-------------------------------------  GETTER   --------------------------------------
+//--------------------------------------------------------------------------------------
+
     function getNumberOfActivebids() external view returns (uint256) {
         return numberOfActiveBids;
     }
+
+//--------------------------------------------------------------------------------------
+//-----------------------------------  MODIFIERS  --------------------------------------
+//--------------------------------------------------------------------------------------
 
     modifier onlyOwnerOrDepositContract() {
         require(
