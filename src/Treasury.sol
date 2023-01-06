@@ -34,6 +34,7 @@ contract Treasury is ITreasury{
 //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
 //--------------------------------------------------------------------------------------
     
+    /// @notice Function allows only the owner to withdraw all the funds in the contract
     function withdraw() external {
         require(msg.sender == owner, "Only owner function");
 

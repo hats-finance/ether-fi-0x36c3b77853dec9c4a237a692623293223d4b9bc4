@@ -32,6 +32,10 @@ contract Deposit {
 //----------------------------------  CONSTRUCTOR   ------------------------------------
 //--------------------------------------------------------------------------------------
    
+    /// @notice Constructor to set variables on deployment
+    /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
+    /// @dev Auction contract must be deployed first
+    /// @param _auctionAddress the address of the auction contract for interaction
     constructor(address _auctionAddress) {
         stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
@@ -46,16 +50,22 @@ contract Deposit {
 //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
 //--------------------------------------------------------------------------------------
     
+    /// @notice Allows a user to stake their ETH
+    /// @dev This is phase 1 of the staking process, validation key submition is phase 2
+    /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     function deposit() public payable {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
             "No bids available at the moment"
         );
+
+        //Mints two NFTs to the staker
         TNFTInterfaceInstance.mint(msg.sender);
         BNFTInterfaceInstance.mint(msg.sender);
         depositorBalances[msg.sender] += msg.value;
 
+        //Disables the bidding in the auction contract
         auctionInterfaceInstance.disableBidding();
 
         emit StakeDeposit(msg.sender, msg.value);
