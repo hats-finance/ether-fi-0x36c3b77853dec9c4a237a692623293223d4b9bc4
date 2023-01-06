@@ -127,6 +127,43 @@ contract SmallScenariosTest is Test {
 
     }
 
+    function testTwoDepositsAtOnceStillWorks() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofForAddress2 = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
+        bytes32[] memory proofForAddress3 = merkle.getProof(
+            whiteListedAddresses,
+            2
+        );
+
+        //Bid One
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+
+        //Bid Two
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
+
+        //Bid Three
+        hoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
+        auctionInstance.bidOnStake{value: 0.2 ether}(proofForAddress3);
+
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        depositInstance.deposit{value: 0.1 ether}();
+        assertEq(auctionInstance.currentHighestBidId(), 3);
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        depositInstance.deposit{value: 0.1 ether}();
+        assertEq(auctionInstance.currentHighestBidId(), 1);
+
+    }
+
     function _merkleSetup() internal {
         merkle = new Merkle();
 
@@ -138,6 +175,11 @@ contract SmallScenariosTest is Test {
         whiteListedAddresses.push(
             keccak256(
                 abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)
+            )
+        );
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20)
             )
         );
         root = merkle.getRoot(whiteListedAddresses);
