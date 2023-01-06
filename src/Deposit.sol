@@ -8,6 +8,11 @@ import "./TNFT.sol";
 import "./BNFT.sol";
 
 contract Deposit {
+
+//--------------------------------------------------------------------------------------
+//---------------------------------  STATE-VARIABLES  ----------------------------------
+//--------------------------------------------------------------------------------------
+    
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
     ITNFT public TNFTInterfaceInstance;
@@ -20,8 +25,16 @@ contract Deposit {
 
     mapping(address => uint256) public depositorBalances;
 
+//--------------------------------------------------------------------------------------
+//-------------------------------------  EVENTS  ---------------------------------------
+//--------------------------------------------------------------------------------------
+ 
     event StakeDeposit(address sender, uint256 value);
 
+//--------------------------------------------------------------------------------------
+//----------------------------------  CONSTRUCTOR   ------------------------------------
+//--------------------------------------------------------------------------------------
+   
     constructor(address _auctionAddress) {
         owner = msg.sender;
         TNFTInstance = new TNFT(msg.sender);
@@ -32,6 +45,10 @@ contract Deposit {
         auctionInterfaceInstance.setDepositContractAddress(address(this));
     }
 
+//--------------------------------------------------------------------------------------
+//----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+//--------------------------------------------------------------------------------------
+    
     function deposit() public payable {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
@@ -45,10 +62,5 @@ contract Deposit {
         auctionInterfaceInstance.disableBidding();
 
         emit StakeDeposit(msg.sender, msg.value);
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
     }
 }

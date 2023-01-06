@@ -190,14 +190,6 @@ contract Auction is IAuction {
 //-----------------------------------  MODIFIERS  --------------------------------------
 //--------------------------------------------------------------------------------------
 
-    modifier onlyOwnerOrDepositContract() {
-        require(
-            msg.sender == owner || msg.sender == depositContractAddress,
-            "Not owner or deposit contract"
-        );
-        _;
-    }
-
     modifier onlyDepositContract() {
         require(
             msg.sender == depositContractAddress,
