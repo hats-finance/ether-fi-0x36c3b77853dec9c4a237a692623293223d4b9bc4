@@ -103,10 +103,12 @@ contract Auction is IAuction {
 
     }
 
-    //Add whitelist of operators who can bid
-    function bidOnStake() external payable {
-
+    function bidOnStake(bytes32[] calldata _merkleProof) external payable {
         require(bidsEnabled == true, "Bidding is on hold");
+        require(
+            MerkleProof.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(msg.sender))),
+            "Invalid merkle proof"
+        );
 
         bids[numberOfBids] = Bid({
             amount: msg.value,
