@@ -39,7 +39,10 @@ contract DepositTest is Test {
     }
 
     function testDepositCreatesNFTs() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0); 
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.1 ether}();
         assertEq(
             TestBNFTInstance.balanceOf(
@@ -56,7 +59,10 @@ contract DepositTest is Test {
     }
 
     function testDepositCreatesNFTsWithCorrectOwner() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0); 
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.1 ether}();
         assertEq(
             TestBNFTInstance.ownerOf(0),
@@ -69,13 +75,19 @@ contract DepositTest is Test {
     }
 
     function testDepositReceivesEther() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0); 
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.1 ether}();
         assertEq(address(depositInstance).balance, 0.1 ether);
     }
 
     function testDepositUpdatesBalancesMapping() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0); 
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.1 ether}();
         assertEq(
             depositInstance.depositorBalances(
@@ -99,7 +111,10 @@ contract DepositTest is Test {
     }
 
     function testDepositDisablesBidding() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0); 
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.1 ether}();
         assertEq(auctionInstance.bidsEnabled(), false);        
     }
@@ -108,6 +123,16 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Insufficient staking amount");
         depositInstance.deposit{value: 0.2 ether}();
+    }
+
+    function testDepositFailsBidDoesntExist() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0); 
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.cancelBid(1);
+        vm.expectRevert("No bids available at the moment");
+        depositInstance.deposit{value: 0.1 ether}();
     }
 
     function _merkleSetup() internal {
