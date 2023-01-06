@@ -7,6 +7,7 @@ import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
 import "../src/Treasury.sol";
+import "../lib/murky.git/src/Merkle.sol";
 
 contract AuctionTest is Test {
     Deposit public depositInstance;
