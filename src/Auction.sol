@@ -48,8 +48,8 @@ contract Auction is IAuction {
 
         for (uint256 x = 1; x <= numberOfBidsLocal; x++) {
             if (
-                (bids[x].amount > bids[tempWinningBidId].amount) &&
-                (bids[x].isActive == true)
+                (bids[x].isActive == true) && (bids[x].amount > bids[tempWinningBidId].amount)
+                
             ) {
                 tempWinningBidId = x;
             }
