@@ -39,13 +39,14 @@ contract Auction is IAuction {
 
     function disableBidding() external onlyDepositContract returns (address) {
         uint256 currentHighestBidIdLocal = currentHighestBidId;
+        uint256 numberOfBidsLocal = numberOfBids;
         bidsEnabled = false;
         bids[currentHighestBidIdLocal].isActive = false;
         address winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
         uint256 winningBidAmount = bids[currentHighestBidIdLocal].amount;
         uint256 tempWinningBidId;
 
-        for (uint256 x = 1; x <= numberOfBids; x++) {
+        for (uint256 x = 1; x <= numberOfBidsLocal; x++) {
             if (
                 (bids[x].amount > bids[tempWinningBidId].amount) &&
                 (bids[x].isActive == true)
