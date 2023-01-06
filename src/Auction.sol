@@ -56,6 +56,8 @@ contract Auction is IAuction {
         (bool sent, ) = treasuryContractAddress.call{value: winningBidAmount}("");
         require(sent, "Failed to send Ether");
 
+        numberOfActiveBids--;
+
         emit BiddingDisabled(winningOperator);
         return winningOperator;
     }
