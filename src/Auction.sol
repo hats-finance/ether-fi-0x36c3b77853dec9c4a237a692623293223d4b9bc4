@@ -38,6 +38,7 @@ contract Auction is IAuction {
     event BidCancelled(uint256 bidId);
     event BidUpdated(uint256 bidId, uint256 valueUpdatedBy);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 newMerkle);
+    event DepositAddressSet(address depositContractAddress);
 
 //--------------------------------------------------------------------------------------
 //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -253,6 +254,7 @@ contract Auction is IAuction {
     {
         depositContractAddress = _depositContractAddress;
         
+        emit DepositAddressSet(_depositContractAddress);
     }
 
 //--------------------------------------------------------------------------------------
