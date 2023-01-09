@@ -74,7 +74,7 @@ contract Auction is IAuction {
         uint256 tempWinningBidId;
 
         //Loop to calculate the next highest bid for the next stake
-        for (uint256 x; x <= numberOfBidsLocal - 1; ++x) {
+        for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
             if (
                 (bids[x].isActive == true) &&
                 (bids[x].amount > bids[tempWinningBidId].amount)
@@ -106,8 +106,9 @@ contract Auction is IAuction {
     }
 
     /// @notice Increases a currently active bid by a specified amount
+    /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to increase
-    function updateBid(uint256 _bidId) external payable {
+    function increaseBid(uint256 _bidId) external payable {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
 
@@ -119,6 +120,43 @@ contract Auction is IAuction {
         }
 
         emit BidUpdated(_bidId, msg.value);
+    }
+
+    /// @notice decreases a currently active bid by a specified amount
+    /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
+    /// @param _bidId the ID of the bid to decrease
+    /// @param _amount the amount to decrease the bid by
+    function decreaseBid(uint256 _bidId, uint256 _amount) external {
+        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+        require(_amount < bids[_bidId].amount, "Amount to large");
+        require(bids[_bidId].isActive == true, "Bid already cancelled");
+
+        //Set local variable for read operations to save gas
+        uint256 numberOfBidsLocal = numberOfBids;
+        bids[_bidId].amount -= _amount;
+
+        //Checks if the updated bid was the current highest bid
+        if(currentHighestBidId == _bidId){
+            uint256 tempWinningBidId;
+
+            //Calculate the new highest bid
+            for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
+                if (
+                    (bids[x].amount > bids[tempWinningBidId].amount) &&
+                    (bids[x].isActive == true)
+                ) {
+                    tempWinningBidId = x;
+                }
+            }
+
+            currentHighestBidId = tempWinningBidId;
+        }
+
+        //Refund the user with their decreased amount
+        (bool sent, ) = msg.sender.call{value: _amount}("");
+        require(sent, "Failed to send Ether");
+
+        emit BidUpdated(_bidId, _amount);
     }
 
     /// @notice Cancels a specified bid by de-activating it
@@ -141,7 +179,7 @@ contract Auction is IAuction {
             uint256 tempWinningBidId;
 
             //Calculate the new highest bid
-            for (uint256 x; x <= numberOfBidsLocal - 1; ++x) {
+            for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
                 if (
                     (bids[x].amount > bids[tempWinningBidId].amount) &&
                     (bids[x].isActive == true)
