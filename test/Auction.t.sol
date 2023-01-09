@@ -26,8 +26,10 @@ contract AuctionTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        auctionInstance = new Auction(address(treasuryInstance), root);
+        auctionInstance = new Auction(address(treasuryInstance));
+        auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
+        auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
         vm.stopPrank();
@@ -448,6 +450,26 @@ contract AuctionTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
     }
 
+    function testUpdatingMerkleFailsIfNotOwner() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+
+        assertEq(auctionInstance.merkleRoot(), root);
+
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098)
+            )
+        );
+
+        bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
+        vm.prank(alice);
+        vm.expectRevert("Only owner function");
+        auctionInstance.updateMerkleRoot(newRoot);
+    }
+
     function testUpdatingMerkle() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
@@ -467,6 +489,7 @@ contract AuctionTest is Test {
         );
 
         bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
+        vm.prank(owner);
         auctionInstance.updateMerkleRoot(newRoot);
 
         bytes32[] memory proofForAddress4 = merkle.getProof(
