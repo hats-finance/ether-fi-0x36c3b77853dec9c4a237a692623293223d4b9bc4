@@ -451,11 +451,7 @@ contract AuctionTest is Test {
     }
 
     function testUpdatingMerkleFailsIfNotOwner() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-
+    
         assertEq(auctionInstance.merkleRoot(), root);
 
         whiteListedAddresses.push(
