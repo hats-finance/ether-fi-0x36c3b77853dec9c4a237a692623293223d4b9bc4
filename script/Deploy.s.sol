@@ -11,7 +11,10 @@ contract MyScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        NFT nft = new NFT("NFT_tutorial", "TUT", "baseUri");
+        Treasury treasury = new Treasury();
+        Auction auction = new Auction(address(treasury));
+        Deposit deposit = new Deposit(address(auction));
+        auction.setDepositContractAddress(address(deposit));
 
         vm.stopBroadcast();
     }
