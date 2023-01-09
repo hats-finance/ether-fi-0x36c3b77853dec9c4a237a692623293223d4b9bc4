@@ -26,8 +26,10 @@ contract SmallScenariosTest is Test {
         vm.startPrank(owner);
         _merkleSetup();
         treasuryInstance = new Treasury();
-        auctionInstance = new Auction(address(treasuryInstance), root);
+        auctionInstance = new Auction(address(treasuryInstance));
+        auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
+        auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
         vm.stopPrank();
@@ -137,7 +139,7 @@ contract SmallScenariosTest is Test {
         assertEq(address(auctionInstance).balance, 0.2 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        auctionInstance.updateBid{value: 0.3 ether}(2);
+        auctionInstance.increaseBid{value: 0.3 ether}(2);
         assertEq(auctionInstance.numberOfBids() - 1, 2);
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(address(auctionInstance).balance, 0.5 ether);

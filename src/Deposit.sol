@@ -19,8 +19,10 @@ contract Deposit {
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
     uint256 public stakeAmount;
+    uint256 public numberOfStakes;
 
     mapping(address => uint256) public depositorBalances;
+    mapping(address => mapping(uint256 => address)) public stakeToOperator;
 
 //--------------------------------------------------------------------------------------
 //-------------------------------------  EVENTS  ---------------------------------------
@@ -43,7 +45,6 @@ contract Deposit {
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
         auctionInterfaceInstance = IAuction(_auctionAddress);
-        auctionInterfaceInstance.setDepositContractAddress(address(this));
     }
 
 //--------------------------------------------------------------------------------------
@@ -66,7 +67,10 @@ contract Deposit {
         depositorBalances[msg.sender] += msg.value;
 
         //Disables the bidding in the auction contract
-        auctionInterfaceInstance.disableBidding();
+        address winningOperatorAddress = auctionInterfaceInstance.disableBidding();
+
+        //Adds the winning operator to the mapping to store which address won which stake
+        stakeToOperator[msg.sender][numberOfStakes] = winningOperatorAddress;
 
         emit StakeDeposit(msg.sender, msg.value);
     }
