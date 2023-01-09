@@ -26,8 +26,10 @@ contract SmallScenariosTest is Test {
         vm.startPrank(owner);
         _merkleSetup();
         treasuryInstance = new Treasury();
-        auctionInstance = new Auction(address(treasuryInstance), root);
+        auctionInstance = new Auction(address(treasuryInstance));
+        auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
+        auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
         vm.stopPrank();

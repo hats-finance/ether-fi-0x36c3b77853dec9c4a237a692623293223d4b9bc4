@@ -24,7 +24,7 @@ contract Auction is IAuction {
     address public treasuryContractAddress;
     bytes32 public merkleRoot;
     bool public bidsEnabled;
-    bool public depositContractAddressSet;
+    address public owner;
 
     mapping(uint256 => Bid) public bids;
 
@@ -45,11 +45,10 @@ contract Auction is IAuction {
     
     /// @notice Constructor to set variables on deployment
     /// @param _treasuryAddress the address of the treasury to send funds to
-    /// @param _merkleRoot the merkle root which holds the whitelisted addresses for bidding
-    constructor(address _treasuryAddress, bytes32 _merkleRoot) {
+    constructor(address _treasuryAddress) {
         bidsEnabled = true;
         treasuryContractAddress = _treasuryAddress;
-        merkleRoot = _merkleRoot;
+        owner = msg.sender;
     }
 
 //--------------------------------------------------------------------------------------
@@ -237,9 +236,9 @@ contract Auction is IAuction {
     }
 
     /// @notice Updates the merkle root whitelists have been updated
-    /// @dev erkleroot gets generated in JS offline and sent to the contract
+    /// @dev merkleroot gets generated in JS offline and sent to the contract
     /// @param _newMerkle new merkle root to be used for bidding
-    function updateMerkleRoot(bytes32 _newMerkle) external {
+    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner{
         bytes32 oldMerkle = merkleRoot;
         merkleRoot = _newMerkle;
 
@@ -250,13 +249,10 @@ contract Auction is IAuction {
     /// @dev Called by depositContract and can only be called once
     /// @param _depositContractAddress address of the depositContract for authorizations
     function setDepositContractAddress(address _depositContractAddress)
-        external
+        external onlyOwner
     {
-        require(depositContractAddressSet == false, "Function already called");
         depositContractAddress = _depositContractAddress;
         
-        //Setting boolean to true to stop it from being called again
-        depositContractAddressSet = true;
     }
 
 //--------------------------------------------------------------------------------------
@@ -279,6 +275,11 @@ contract Auction is IAuction {
             msg.sender == depositContractAddress,
             "Only deposit contract function"
         );
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
         _;
     }
 }
