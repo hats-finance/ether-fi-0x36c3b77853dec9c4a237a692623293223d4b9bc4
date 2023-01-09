@@ -190,6 +190,20 @@ contract AuctionTest is Test {
         auctionInstance.cancelBid(1);
     }
 
+    function testCancelBidFailsWhenBiddingIsInactive() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.cancelBid(1);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Bid already cancelled");
+        auctionInstance.cancelBid(1);
+    }
+
     function testCancelBidFailsWhenNotBidOwnerCalling() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 

@@ -111,6 +111,8 @@ contract Auction is IAuction {
     function increaseBid(uint256 _bidId) external payable {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
+        require(bidsEnabled == true, "Increase bidding on hold");
+
 
         bids[_bidId].amount += msg.value;
 
@@ -130,6 +132,8 @@ contract Auction is IAuction {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(_amount < bids[_bidId].amount, "Amount to large");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
+        require(bidsEnabled == true, "Decrease bidding on hold");
+
 
         //Set local variable for read operations to save gas
         uint256 numberOfBidsLocal = numberOfBids;
@@ -166,6 +170,7 @@ contract Auction is IAuction {
     function cancelBid(uint256 _bidId) external {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
+        require(bidsEnabled == true, "Cancelling bids on hold");
 
         //Set local variable for read operations to save gas
         uint256 numberOfBidsLocal = numberOfBids;
