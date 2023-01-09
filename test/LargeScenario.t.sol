@@ -196,7 +196,7 @@ contract SmallScenariosTest is Test {
 
         //Bid updated
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.updateBid{value: 0.9 ether}(1);
+        auctionInstance.increaseBid{value: 0.9 ether}(1);
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(address(auctionInstance).balance, 1.4 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
