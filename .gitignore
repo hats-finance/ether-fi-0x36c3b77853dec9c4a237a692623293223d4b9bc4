@@ -6,3 +6,7 @@ out/
 !/broadcast
 /broadcast/*
 /broadcast/*/31337/
+
+# Dotenv file
+.env
+node_modules
