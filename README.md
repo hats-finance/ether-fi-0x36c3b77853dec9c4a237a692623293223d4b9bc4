@@ -152,13 +152,5 @@ followed by:
 ```zsh
 forge script script/Deploy.s.sol:MyScript --rpc-url $GOERLI_RPC_URL --broadcast --verify -vvvv
 ```
-<<<<<<< HEAD
-=======
 
 This will run the deployment and verify the contracts on the provided network. It will print data to the terminal which will provide you with the relevant contract addresses and merkle proofs for each whitelisted address.
-
-
-
-
-
->>>>>>> 9c0e105 (README update)
