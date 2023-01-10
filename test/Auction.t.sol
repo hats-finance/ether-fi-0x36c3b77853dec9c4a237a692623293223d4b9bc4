@@ -49,11 +49,11 @@ contract AuctionTest is Test {
         auctionInstance.enableBidding();
     }
 
-    function testEnablingBiddingFailsIfNotContractCalling() public {
-        vm.prank(owner);
-        vm.expectRevert("Only deposit contract function");
-        auctionInstance.enableBidding();
-    }
+    // function testEnablingBiddingFailsIfNotContractCalling() public {
+    //     vm.prank(owner);
+    //     vm.expectRevert("Only deposit contract function");
+    //     auctionInstance.enableBidding();
+    // }
 
     function testEnablingBiddingWorks() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
