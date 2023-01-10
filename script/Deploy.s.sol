@@ -25,7 +25,7 @@ contract MyScript is Script {
             ));   
         data[4] = bytes32(keccak256(
                 abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
-            ));   
+            ));     
             
         bytes32 root = merkle.getRoot(data);
         bytes32[] memory proofOne = merkle.getProof(data, 0); 
