@@ -99,6 +99,8 @@ contract Auction is IAuction {
     /// @notice Enables the bidding
     /// @dev Currently must get called manually for POC
     /// @dev Will be called from deposit contract when validator key is sent
+
+    //Remove check for POC
     function enableBidding() external onlyDepositContract {
         require(bidsEnabled == false, "Bids already enabled");
         bidsEnabled = true;
@@ -179,7 +181,7 @@ contract Auction is IAuction {
         bids[_bidId].isActive = false;
 
         //Check if the bid being cancelled is the current highest to make sure we
-        //calculate a new highest
+        //Calculate a new highest
         if (currentHighestBidId == _bidId) {
             uint256 tempWinningBidId;
 

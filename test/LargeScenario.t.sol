@@ -9,7 +9,7 @@ import "../src/Auction.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract SmallScenariosTest is Test {
+contract LargeScenariosTest is Test {
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
