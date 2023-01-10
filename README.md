@@ -65,3 +65,19 @@ Make sure the version you need is in this list, or choose the closest one and in
 svm install "0.7.6"
 ```
 
+## Deployment Instructions
+
+### Update foundry.toml
+
+The foundry.toml file allows foundry to read which network it should deploy smart contracts to. It is here where you set this variable. For example (deploying to Goerli):
+
+```zsh
+[rpc_endpoints]
+goerli = "${GOERLI_RPC_URL}"
+
+[etherscan]
+goerli = { key = "${ETHERSCAN_API_KEY}" }
+```
+
+
+
