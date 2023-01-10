@@ -142,9 +142,15 @@ The first part of the above code retrieves the private key from the .env file an
 Once this is all populated, you can run the deploy function to perform the deployment to the provided network. When you ready, run the following command:
 
 ```zsh
+source .env
+```
+followed by:
+
+```zsh
 forge script script/Deploy.s.sol:MyScript --rpc-url $GOERLI_RPC_URL --broadcast --verify -vvvv
 ```
 
+This will run the deployment and verify the contracts on the provided network. It will print data to the terminal which will provide you with the relevant contract addresses and merkle proofs for each whitelisted address.
 
 
 
