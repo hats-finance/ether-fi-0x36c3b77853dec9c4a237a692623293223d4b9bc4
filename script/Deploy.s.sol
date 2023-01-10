@@ -12,10 +12,10 @@ contract MyScript is Script {
         Merkle merkle = new Merkle();        
         bytes32[] memory data = new bytes32[](2);
         data[0] = bytes32(keccak256(
-                abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)
+                abi.encodePacked()
             ));
         data[1] = bytes32(keccak256(
-                abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
+                abi.encodePacked()
             ));   
 
         bytes32 root = merkle.getRoot(data);
