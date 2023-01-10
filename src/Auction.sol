@@ -100,8 +100,7 @@ contract Auction is IAuction {
     /// @dev Currently must get called manually for POC
     /// @dev Will be called from deposit contract when validator key is sent
 
-    //Remove check for POC
-    function enableBidding() external onlyDepositContract {
+    function enableBidding() external {
         require(bidsEnabled == false, "Bids already enabled");
         bidsEnabled = true;
         emit BiddingEnabled();
