@@ -113,6 +113,12 @@ You will need as many of these for as many of addresses you have added. This is 
         0xe49c0d75d3dd8e3b6c0106e828c6012a5f3b0e3b92c1ed11584f630f4dfa1fee
 ```
 
+The way you would use this proof in the actual function call would be as follows:
+
+```zsh
+[0x493a4cd18172510ab22441f3f81348a7f52ba4c0d02d50bb05e703d88fd3999c,0xd6e464cc412334ceda2d5f051d11721e429e8f3867ed8ab32cbc7ade1b5fc5d1,0xe49c0d75d3dd8e3b6c0106e828c6012a5f3b0e3b92c1ed11584f630f4dfa1fee]
+```
+
 Please note that based on the number of addresses you are whitelisting, the log of the proof could incorporate more or less than what is seen above. You will need to save your merkle proof for when you need to call a function on Etherscan.
 
 ### Step 6
