@@ -1,3 +1,6 @@
+# dappContracts
+Smart Contracts for Ether Fi dapp
+
 # EtherFi smart contracts setup
 
 ## Get Started  
