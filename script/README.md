@@ -6,7 +6,7 @@ Merkle trees allow systems to have whitelisted addresses, meaning that certain f
 
 ## Merkle Script Guide
 
-The merkle script uses the Murky library to generate the merkle root and proofs. We import the library in the beginning. There are x steps which need to be taken to generate a new merkle and update the contract, here is a 6 step-by-step guide in using the merkle script (scripts/Merkle.s.sol) to generate the new root and proofs:
+The merkle script uses the Murky library to generate the merkle root and proofs. We import the library in the beginning. There are 6 steps which need to be taken to generate a new merkle and update the contract, here is a step-by-step guide in using the merkle script (scripts/Merkle.s.sol) to generate the new root and proofs:
 
 ### Step 1
 
