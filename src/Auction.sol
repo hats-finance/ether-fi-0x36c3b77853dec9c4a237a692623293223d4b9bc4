@@ -32,7 +32,7 @@ contract Auction is IAuction {
 //-------------------------------------  EVENTS  ---------------------------------------
 //--------------------------------------------------------------------------------------
     
-    event BidPlaced(address indexed bidder, uint256 amount, uint256 bidderId);
+    event BidPlaced(address indexed bidder, uint256 amount, uint256 indexed bidderId);
     event BiddingDisabled(address indexed winner);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
