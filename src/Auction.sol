@@ -32,13 +32,13 @@ contract Auction is IAuction {
 //-------------------------------------  EVENTS  ---------------------------------------
 //--------------------------------------------------------------------------------------
     
-    event BidPlaced(address bidder, uint256 amount, uint256 bidderId);
-    event BiddingDisabled(address winner);
+    event BidPlaced(address indexed bidder, uint256 amount, uint256 bidderId);
+    event BiddingDisabled(address indexed winner);
     event BiddingEnabled();
-    event BidCancelled(uint256 bidId);
-    event BidUpdated(uint256 bidId, uint256 valueUpdatedBy);
-    event MerkleUpdated(bytes32 oldMerkle, bytes32 newMerkle);
-    event DepositAddressSet(address depositContractAddress);
+    event BidCancelled(uint256 indexed bidId);
+    event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
+    event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
+    event DepositAddressSet(address indexed depositContractAddress);
 
 //--------------------------------------------------------------------------------------
 //----------------------------------  CONSTRUCTOR   ------------------------------------
