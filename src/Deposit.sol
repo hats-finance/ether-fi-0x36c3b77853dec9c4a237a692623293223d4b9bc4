@@ -81,7 +81,7 @@ contract Deposit {
     /// @param _amount the amount to refund the depositor
     function refundDeposit(address _depositOwner, uint256 _amount) public {
         require(_amount % stakeAmount == 0, "Invalid refund amount");
-        require(depositorBalances[_depositOwner] <= _amount, "Insufficient balance");
+        require(depositorBalances[_depositOwner] >= _amount, "Insufficient balance");
 
         //Reduce the depositers balance
         depositorBalances[_depositOwner] -= _amount;
