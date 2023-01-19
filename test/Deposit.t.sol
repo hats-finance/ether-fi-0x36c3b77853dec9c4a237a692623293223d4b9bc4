@@ -137,6 +137,28 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
     }
 
+    function testDepositfailsIfContractPaused() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(owner);
+        depositInstance.pauseContract();
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        vm.expectRevert("Pausable: paused");
+        depositInstance.deposit{value: 0.032 ether}();
+        assertEq(depositInstance.paused(), true);
+        vm.stopPrank();
+
+        vm.prank(owner);
+        depositInstance.unPauseContract();
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        depositInstance.deposit{value: 0.032 ether}();
+        assertEq(depositInstance.paused(), false);
+        assertEq(address(depositInstance).balance, 0.032 ether);
+    }
+
     function testRefundFailsIfIvalidAmount() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Invalid refund amount");
