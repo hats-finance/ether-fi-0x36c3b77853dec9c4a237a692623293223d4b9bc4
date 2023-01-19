@@ -74,4 +74,16 @@ contract Deposit {
 
         emit StakeDeposit(msg.sender, msg.value);
     }
+
+    function refundDeposit(address _depositOwner, uint256 _amount) public {
+        require(_amount % stakeAmount == 0, "Invalid refund amount");
+        require(depositorBalances[_depositOwner] <= _amount, "Insufficient balance");
+
+        depositorBalances[_depositOwner] -= _amount;
+
+        //Refund the user with their requested amount
+        (bool sent, ) = _depositOwner.call{value: _amount}("");
+        require(sent, "Failed to send Ether");
+
+    }
 }
