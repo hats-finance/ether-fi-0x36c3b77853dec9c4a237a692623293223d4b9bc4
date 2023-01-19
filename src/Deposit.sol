@@ -79,7 +79,7 @@ contract Deposit {
     /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
-    function refundDeposit(address _depositOwner, uint256 _amount) public {
+    function refundDeposit(address _depositOwner, uint256 _amount) internal {
         require(_amount % stakeAmount == 0, "Invalid refund amount");
         require(depositorBalances[_depositOwner] >= _amount, "Insufficient balance");
 
