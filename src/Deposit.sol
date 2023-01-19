@@ -21,6 +21,7 @@ contract Deposit is Pausable {
     IAuction public auctionInterfaceInstance;
     uint256 public stakeAmount;
     uint256 public numberOfStakes;
+    address public owner;
 
     mapping(address => uint256) public depositorBalances;
     mapping(address => mapping(uint256 => address)) public stakeToOperator;
@@ -46,6 +47,7 @@ contract Deposit is Pausable {
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
         auctionInterfaceInstance = IAuction(_auctionAddress);
+        owner = msg.sender;
     }
 
 //--------------------------------------------------------------------------------------
@@ -91,5 +93,18 @@ contract Deposit is Pausable {
         (bool sent, ) = _depositOwner.call{value: _amount}("");
         require(sent, "Failed to send Ether");
 
+    }
+
+    function pauseContract() external onlyOwner {
+        _pause();
+    }
+
+    function unPauseContract() external onlyOwner {
+        _unpause();
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
+        _;
     }
 }
