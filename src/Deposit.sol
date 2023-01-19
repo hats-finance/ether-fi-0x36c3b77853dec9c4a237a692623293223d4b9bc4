@@ -6,8 +6,9 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract Deposit {
+contract Deposit is Pausable {
 
 //--------------------------------------------------------------------------------------
 //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -54,7 +55,7 @@ contract Deposit {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    function deposit() public payable {
+    function deposit() public payable whenNotPaused {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
