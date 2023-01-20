@@ -74,4 +74,21 @@ contract Deposit {
 
         emit StakeDeposit(msg.sender, msg.value);
     }
+
+    /// @notice Refunds the depositor their 32 ether
+    /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
+    /// @param _depositOwner address of the user being refunded
+    /// @param _amount the amount to refund the depositor
+    function refundDeposit(address _depositOwner, uint256 _amount) internal {
+        require(_amount % stakeAmount == 0, "Invalid refund amount");
+        require(depositorBalances[_depositOwner] >= _amount, "Insufficient balance");
+
+        //Reduce the depositers balance
+        depositorBalances[_depositOwner] -= _amount;
+
+        //Refund the user with their requested amount
+        (bool sent, ) = _depositOwner.call{value: _amount}("");
+        require(sent, "Failed to send Ether");
+
+    }
 }
