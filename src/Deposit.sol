@@ -6,8 +6,9 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract Deposit {
+contract Deposit is Pausable {
 
 //--------------------------------------------------------------------------------------
 //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -20,6 +21,7 @@ contract Deposit {
     IAuction public auctionInterfaceInstance;
     uint256 public stakeAmount;
     uint256 public numberOfStakes;
+    address public owner;
 
     mapping(address => uint256) public depositorBalances;
     mapping(address => mapping(uint256 => address)) public stakeToOperator;
@@ -45,6 +47,7 @@ contract Deposit {
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
         auctionInterfaceInstance = IAuction(_auctionAddress);
+        owner = msg.sender;
     }
 
 //--------------------------------------------------------------------------------------
@@ -54,7 +57,7 @@ contract Deposit {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    function deposit() public payable {
+    function deposit() public payable whenNotPaused {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
@@ -90,5 +93,18 @@ contract Deposit {
         (bool sent, ) = _depositOwner.call{value: _amount}("");
         require(sent, "Failed to send Ether");
 
+    }
+
+    function pauseContract() external onlyOwner {
+        _pause();
+    }
+
+    function unPauseContract() external onlyOwner {
+        _unpause();
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
+        _;
     }
 }
