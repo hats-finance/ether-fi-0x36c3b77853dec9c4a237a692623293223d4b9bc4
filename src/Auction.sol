@@ -43,6 +43,10 @@ contract Auction is IAuction {
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
     event DepositAddressSet(address indexed depositContractAddress);
+    event MinBidUpdated(
+        uint256 indexed oldMinBidAmount,
+        uint256 indexed newMinBidAmount
+    );
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -268,10 +272,10 @@ contract Auction is IAuction {
     }
 
     function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
-        uint256 oldBidAmount = minBidAmount;
+        uint256 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
 
-        emit MinBidUpdated(oldBidAmount, _newMinBidAmount);
+        emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
 
     //--------------------------------------------------------------------------------------
