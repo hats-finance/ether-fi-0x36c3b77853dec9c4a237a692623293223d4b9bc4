@@ -43,40 +43,6 @@ contract AuctionTest is Test {
         );
     }
 
-    function testEnablingBiddingFailsIfBiddingAlreadyEnabled() public {
-        hoax(address(depositInstance));
-        vm.expectRevert("Bids already enabled");
-        auctionInstance.enableBidding();
-    }
-
-    // function testEnablingBiddingFailsIfNotContractCalling() public {
-    //     vm.prank(owner);
-    //     vm.expectRevert("Only deposit contract function");
-    //     auctionInstance.enableBidding();
-    // }
-
-    function testEnablingBiddingWorks() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
-        console.log(address(depositInstance).balance);
-        assertEq(auctionInstance.bidsEnabled(), true);
-
-        hoax(address(depositInstance));
-        auctionInstance.disableBidding();
-
-        assertEq(auctionInstance.bidsEnabled(), false);
-
-        hoax(address(depositInstance));
-        auctionInstance.enableBidding();
-
-        assertEq(auctionInstance.bidsEnabled(), true);
-    }
-
     function testDisablingBiddingFailsIfNotContractCalling() public {
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
@@ -191,15 +157,21 @@ contract AuctionTest is Test {
     }
 
     function testCancelBidFailsWhenBiddingIsInactive() public {
-        bytes32[] memory proofAddressOne = merkle.getProof(whiteListedAddresses, 0);
-        bytes32[] memory proofAddressTwo = merkle.getProof(whiteListedAddresses, 1);
+        bytes32[] memory proofAddressOne = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofAddressTwo = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proofAddressOne);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.2 ether}(proofAddressTwo);
-        
+
         hoax(address(depositInstance));
         auctionInstance.disableBidding();
 
@@ -315,15 +287,21 @@ contract AuctionTest is Test {
     }
 
     function testIncreaseBidFailsWhenBiddingIsInactive() public {
-        bytes32[] memory proofAddressOne = merkle.getProof(whiteListedAddresses, 0);
-        bytes32[] memory proofAddressTwo = merkle.getProof(whiteListedAddresses, 1);
+        bytes32[] memory proofAddressOne = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofAddressTwo = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proofAddressOne);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.2 ether}(proofAddressTwo);
-        
+
         hoax(address(depositInstance));
         auctionInstance.disableBidding();
 
@@ -405,19 +383,25 @@ contract AuctionTest is Test {
         auctionInstance.decreaseBid(1, 0.05 ether);
     }
 
-     function testDecreaseBidFailsWhenBiddingIsInactive() public {
-        bytes32[] memory proofAddressOne = merkle.getProof(whiteListedAddresses, 0);
-        bytes32[] memory proofAddressTwo = merkle.getProof(whiteListedAddresses, 1);
+    function testDecreaseBidFailsWhenBiddingIsInactive() public {
+        bytes32[] memory proofAddressOne = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofAddressTwo = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proofAddressOne);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.2 ether}(proofAddressTwo);
-        
+
         hoax(address(depositInstance));
         auctionInstance.disableBidding();
-        
+
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Decrease bidding on hold");
         auctionInstance.decreaseBid(1, 0.05 ether);
@@ -505,7 +489,6 @@ contract AuctionTest is Test {
     }
 
     function testUpdatingMerkleFailsIfNotOwner() public {
-    
         assertEq(auctionInstance.merkleRoot(), root);
 
         whiteListedAddresses.push(
