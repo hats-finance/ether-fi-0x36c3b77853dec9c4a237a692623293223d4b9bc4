@@ -3,6 +3,12 @@ pragma solidity 0.8.13;
 
 interface IDeposit {
 
+    enum STAKE_PHASE {
+        STEP_1,
+        STEP_2,
+        STEP_3
+    }
+
     struct Stake {
         address staker,
         bytes32 withdrawCredentials,
