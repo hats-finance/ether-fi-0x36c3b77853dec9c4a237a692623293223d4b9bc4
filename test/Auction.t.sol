@@ -22,6 +22,8 @@ contract AuctionTest is Test {
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
+    event WinningBidSent(address indexed winner);
+
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
@@ -141,6 +143,28 @@ contract AuctionTest is Test {
         assertEq(isActiveBid1, true);
         assertEq(isActiveBid3, false);
         assertEq(winner, 0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+    }
+
+    function test_EventWinningBidSent() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofForAddress2 = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
+
+        vm.expectEmit(true, false, false, true);
+        emit WinningBidSent(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        hoax(address(depositInstance));
+        auctionInstance.calculateWinningBid();
     }
 
     function testBiddingWorksCorrectly() public {

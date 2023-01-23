@@ -36,7 +36,7 @@ contract Auction is IAuction {
         uint256 amount,
         uint256 indexed bidderId
     );
-    event BiddingDisabled(address indexed winner);
+    event WinningBidSent(address indexed winner);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
@@ -98,7 +98,7 @@ contract Auction is IAuction {
 
         numberOfActiveBids--;
 
-        emit BiddingDisabled(winningOperator);
+        emit WinningBidSent(winningOperator);
     }
 
     /// @notice Enables the bidding
