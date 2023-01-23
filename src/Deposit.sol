@@ -22,12 +22,13 @@ contract Deposit is IDeposit, Pausable {
     IAuction public auctionInterfaceInstance;
     uint256 public stakeAmount;
     uint256 public numberOfStakes = 0;
+    uint256 public numberOfValidators = 0;
     address public owner;
 
     mapping(address => uint256) public depositorBalances;
     mapping(address => mapping(uint256 => address)) public stakeToOperator;
-    mapping(bytes32 => Validator) public validators;
-    mapping(bytes32 => Stake) public stakes;
+    mapping(uint256 => Validator) public validators;
+    mapping(uint256 => Stake) public stakes;
 
 //--------------------------------------------------------------------------------------
 //-------------------------------------  EVENTS  ---------------------------------------
@@ -66,6 +67,13 @@ contract Deposit is IDeposit, Pausable {
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
             "No bids available at the moment"
         );
+
+        stakes[numberOfStakes] = Stake({
+            staker: msg.sender,
+            withdrawCredentials: "",
+            amount: msg.value,
+            phase: STAKE_PHASE.STEP_1
+        });
 
         //Mints two NFTs to the staker
         TNFTInterfaceInstance.mint(msg.sender);

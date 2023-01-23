@@ -31,7 +31,7 @@ interface IDeposit {
         bytes publicKey;
         bytes signature;
         bytes32 depositDataRoot;
-        bytes32 StakeId;
+        uint256 StakeId;
     }
 
     function deposit() external payable;
