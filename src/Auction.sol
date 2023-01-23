@@ -267,6 +267,13 @@ contract Auction is IAuction {
         emit DepositAddressSet(_depositContractAddress);
     }
 
+    function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
+        uint256 oldBidAmount = minBidAmount;
+        minBidAmount = _newMinBidAmount;
+
+        emit MinBidUpdated(oldBidAmount, _newMinBidAmount);
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
