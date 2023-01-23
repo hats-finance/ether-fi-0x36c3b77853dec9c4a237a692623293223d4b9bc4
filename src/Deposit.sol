@@ -86,8 +86,8 @@ contract Deposit is IDeposit, Pausable {
         //Disables the bidding in the auction contract
         address winningOperatorAddress = auctionInterfaceInstance.disableBidding();
 
-        //Adds the winning operator to the mapping to store which address won which stake
-        stakeToOperator[msg.sender][numberOfStakes] = winningOperatorAddress;
+        //Update the stake with the winning bid
+
 
         numberOfStakes++;
 
@@ -104,6 +104,8 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
+
+        stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
 
         refundDeposit(msg.sender, stakeAmount);
 

@@ -7,7 +7,8 @@ interface IDeposit {
     enum STAKE_PHASE {
         STEP_1,
         STEP_2,
-        STEP_3
+        STEP_3,
+        INACTIVE
     }
 
     /// @notice Structure to hold the information on new Stakes
