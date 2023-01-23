@@ -16,6 +16,13 @@ interface IDeposit {
         STAKE_PHASE phase
     }
 
+    struct Validator {
+        bytes publicKey,
+        bytes signature,
+        bytes32 depositDataRoot,
+        bytes32 StakeId
+    }
+
     function deposit() external payable;
 
     function setStakeAmount(uint256 _newStakeAmount) external;
