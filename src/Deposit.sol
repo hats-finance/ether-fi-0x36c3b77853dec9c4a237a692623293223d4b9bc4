@@ -21,7 +21,7 @@ contract Deposit is IDeposit, Pausable {
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
     uint256 public stakeAmount;
-    uint256 public numberOfStakes;
+    uint256 public numberOfStakes = 0;
     address public owner;
 
     mapping(address => uint256) public depositorBalances;
