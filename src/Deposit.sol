@@ -97,6 +97,7 @@ contract Deposit is IDeposit, Pausable {
         require(msg.sender ==  stakes[_stakeId].staker, "Not bid owner");
         require(stakes[_stakeId].phase == STAKE_PHASE.STEP_1, "Cancelling availability closed");
 
+        depositorBalances[msg.sender] -= stakes[_stakeId].amount;
         refundDeposit(msg.sender, stakes[_stakeId].amount);
 
     }
