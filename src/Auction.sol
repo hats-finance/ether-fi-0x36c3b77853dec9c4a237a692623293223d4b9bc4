@@ -12,12 +12,12 @@ import "./Deposit.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract Auction is IAuction {
+    //--------------------------------------------------------------------------------------
+    //---------------------------------  STATE-VARIABLES  ----------------------------------
+    //--------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------
-//---------------------------------  STATE-VARIABLES  ----------------------------------
-//--------------------------------------------------------------------------------------
-    
     uint256 public currentHighestBidId;
+    uint256 public minBidAmount;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
@@ -28,11 +28,15 @@ contract Auction is IAuction {
 
     mapping(uint256 => Bid) public bids;
 
-//--------------------------------------------------------------------------------------
-//-------------------------------------  EVENTS  ---------------------------------------
-//--------------------------------------------------------------------------------------
-    
-    event BidPlaced(address indexed bidder, uint256 amount, uint256 indexed bidderId);
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  EVENTS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    event BidPlaced(
+        address indexed bidder,
+        uint256 amount,
+        uint256 indexed bidderId
+    );
     event BiddingDisabled(address indexed winner);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
@@ -40,10 +44,10 @@ contract Auction is IAuction {
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
     event DepositAddressSet(address indexed depositContractAddress);
 
-//--------------------------------------------------------------------------------------
-//----------------------------------  CONSTRUCTOR   ------------------------------------
-//--------------------------------------------------------------------------------------
-    
+    //--------------------------------------------------------------------------------------
+    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @notice Constructor to set variables on deployment
     /// @param _treasuryAddress the address of the treasury to send funds to
     constructor(address _treasuryAddress) {
@@ -52,10 +56,10 @@ contract Auction is IAuction {
         owner = msg.sender;
     }
 
-//--------------------------------------------------------------------------------------
-//----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-//--------------------------------------------------------------------------------------
-    
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @notice Disables the bidding to prevent race-conditions on arrival of a stake
     /// @dev Used local variables to prevent multiple calling of state variables to save gas
     /// @dev Gets called from the deposit contract when a stake is received
@@ -63,7 +67,7 @@ contract Auction is IAuction {
     function disableBidding() external onlyDepositContract returns (address) {
         uint256 currentHighestBidIdLocal = currentHighestBidId;
         uint256 numberOfBidsLocal = numberOfBids;
-        
+
         //Disable bids to prevent race-conditions
         bidsEnabled = false;
 
@@ -114,7 +118,6 @@ contract Auction is IAuction {
         require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(bidsEnabled == true, "Increase bidding on hold");
 
-
         bids[_bidId].amount += msg.value;
 
         //Checks if the updated amount is now the current highest bid
@@ -135,13 +138,12 @@ contract Auction is IAuction {
         require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(bidsEnabled == true, "Decrease bidding on hold");
 
-
         //Set local variable for read operations to save gas
         uint256 numberOfBidsLocal = numberOfBids;
         bids[_bidId].amount -= _amount;
 
         //Checks if the updated bid was the current highest bid
-        if(currentHighestBidId == _bidId){
+        if (currentHighestBidId == _bidId) {
             uint256 tempWinningBidId;
 
             //Calculate the new highest bid
@@ -222,6 +224,7 @@ contract Auction is IAuction {
             ),
             "Invalid merkle proof"
         );
+        require(msg.value >= minBidAmount, "Bid Too Low");
 
         //Creates a bid object for storage and lookup in future
         bids[numberOfBids] = Bid({
@@ -245,7 +248,7 @@ contract Auction is IAuction {
     /// @notice Updates the merkle root whitelists have been updated
     /// @dev merkleroot gets generated in JS offline and sent to the contract
     /// @param _newMerkle new merkle root to be used for bidding
-    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner{
+    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
         bytes32 oldMerkle = merkleRoot;
         merkleRoot = _newMerkle;
 
@@ -256,16 +259,17 @@ contract Auction is IAuction {
     /// @dev Called by depositContract and can only be called once
     /// @param _depositContractAddress address of the depositContract for authorizations
     function setDepositContractAddress(address _depositContractAddress)
-        external onlyOwner
+        external
+        onlyOwner
     {
         depositContractAddress = _depositContractAddress;
-        
+
         emit DepositAddressSet(_depositContractAddress);
     }
 
-//--------------------------------------------------------------------------------------
-//-------------------------------------  GETTER   --------------------------------------
-//--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  GETTER   --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     /// @notice Fetches how many active bids there are and sends it to the caller
     /// @dev Needed for deposit to check if there are any active bids
@@ -274,9 +278,9 @@ contract Auction is IAuction {
         return numberOfActiveBids;
     }
 
-//--------------------------------------------------------------------------------------
-//-----------------------------------  MODIFIERS  --------------------------------------
-//--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //-----------------------------------  MODIFIERS  --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     modifier onlyDepositContract() {
         require(
