@@ -34,7 +34,7 @@ contract Deposit is IDeposit, Pausable {
 //-------------------------------------  EVENTS  ---------------------------------------
 //--------------------------------------------------------------------------------------
  
-    event StakeDeposit(address indexed sender, uint256 value);
+    event StakeDeposit(address indexed sender, uint256 value, uint256 id);
 
 //--------------------------------------------------------------------------------------
 //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -86,7 +86,9 @@ contract Deposit is IDeposit, Pausable {
         //Adds the winning operator to the mapping to store which address won which stake
         stakeToOperator[msg.sender][numberOfStakes] = winningOperatorAddress;
 
-        emit StakeDeposit(msg.sender, msg.value);
+        numberOfStakes++;
+
+        emit StakeDeposit(msg.sender, msg.value, numberOfStakes -1);
     }
 
     /// @notice Refunds the depositor their 32 ether
