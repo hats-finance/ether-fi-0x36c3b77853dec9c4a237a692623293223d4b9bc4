@@ -26,6 +26,8 @@ contract Deposit is IDeposit, Pausable {
 
     mapping(address => uint256) public depositorBalances;
     mapping(address => mapping(uint256 => address)) public stakeToOperator;
+    mapping(bytes32 => Validator) public validators;
+    mapping(bytes32 => Stake) public stakes;
 
 //--------------------------------------------------------------------------------------
 //-------------------------------------  EVENTS  ---------------------------------------
