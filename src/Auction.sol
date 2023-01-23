@@ -73,10 +73,12 @@ contract Auction is IAuction {
 
         //Set the bid to be de-activated to prevent 1 bid winning twice
         bids[currentHighestBidIdLocal].isActive = false;
-        winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
-        uint256 winningBidAmount = bids[currentHighestBidIdLocal].amount;
-        uint256 tempWinningBidId;
 
+        winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
+
+        uint256 winningBidAmount = bids[currentHighestBidIdLocal].amount;
+
+        uint256 tempWinningBidId;
         //Loop to calculate the next highest bid for the next stake
         for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
             if (
