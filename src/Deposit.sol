@@ -106,6 +106,7 @@ contract Deposit is IDeposit, Pausable {
         //Send in the bid ID to be re-initiated
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
+        stakes[_stakeId].winningBid = 0;
 
         refundDeposit(msg.sender, stakeAmount);
 
