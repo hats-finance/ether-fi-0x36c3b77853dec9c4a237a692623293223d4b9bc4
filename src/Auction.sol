@@ -36,7 +36,7 @@ contract Auction is IAuction {
         uint256 amount,
         uint256 indexed bidderId
     );
-    event WinningBidSent(address indexed winner, uint256 highestBidId);
+    event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
