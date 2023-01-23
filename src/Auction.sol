@@ -228,6 +228,7 @@ contract Auction is IAuction {
             ),
             "Invalid merkle proof"
         );
+        require(msg.value >= minBidAmount, "Bid Too Low");
 
         //Creates a bid object for storage and lookup in future
         bids[numberOfBids] = Bid({
