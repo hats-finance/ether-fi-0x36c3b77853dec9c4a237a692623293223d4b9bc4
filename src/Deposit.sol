@@ -4,11 +4,12 @@ pragma solidity 0.8.13;
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
+import "./interfaces/IDeposit.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract Deposit is Pausable {
+contract Deposit is IDeposit, Pausable {
 
 //--------------------------------------------------------------------------------------
 //---------------------------------  STATE-VARIABLES  ----------------------------------
