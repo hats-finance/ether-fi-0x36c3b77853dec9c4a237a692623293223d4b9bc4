@@ -219,6 +219,7 @@ contract Auction is IAuction {
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
     function bidOnStake(bytes32[] calldata _merkleProof) external payable {
+        require(msg.value >= minBidAmount, "Bid Too Low");
         require(bidsEnabled == true, "Bidding is on hold");
         require(
             MerkleProof.verify(
@@ -228,7 +229,6 @@ contract Auction is IAuction {
             ),
             "Invalid merkle proof"
         );
-        require(msg.value >= minBidAmount, "Bid Too Low");
 
         //Creates a bid object for storage and lookup in future
         bids[numberOfBids] = Bid({
