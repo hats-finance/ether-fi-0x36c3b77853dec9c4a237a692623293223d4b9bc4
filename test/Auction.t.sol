@@ -121,6 +121,7 @@ contract AuctionTest is Test {
         (, , , bool isActiveBid3) = auctionInstance.bids(3);
 
         assertEq(auctionInstance.currentHighestBidId(), 3);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
         assertEq(isActiveBid1, true);
         assertEq(isActiveBid2, false);
         assertEq(isActiveBid3, true);
@@ -136,6 +137,7 @@ contract AuctionTest is Test {
         (, , , isActiveBid3) = auctionInstance.bids(3);
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(isActiveBid1, true);
         assertEq(isActiveBid3, false);
         assertEq(winner, 0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
