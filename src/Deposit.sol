@@ -93,6 +93,11 @@ contract Deposit is IDeposit, Pausable {
         emit StakeDeposit(msg.sender, msg.value, numberOfStakes - 1);
     }
 
+    function cancelStake(uint256 _stakeId) public whenNotPaused {
+        require(msg.sender ==  stake[_stakeId].staker, "Not bid owner");
+        require(stake[_stakeId].phase == STAKE_PHASE.STEP_1, "Cancelling availability closed");
+    }
+
     /// @notice Refunds the depositor their 32 ether
     /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
