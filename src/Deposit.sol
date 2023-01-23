@@ -74,6 +74,7 @@ contract Deposit is IDeposit, Pausable {
             staker: msg.sender,
             withdrawCredentials: "",
             amount: msg.value,
+            winningBid: 0,
             phase: STAKE_PHASE.STEP_1
         });
 
@@ -97,8 +98,14 @@ contract Deposit is IDeposit, Pausable {
         require(msg.sender ==  stakes[_stakeId].staker, "Not bid owner");
         require(stakes[_stakeId].phase == STAKE_PHASE.STEP_1, "Cancelling availability closed");
 
-        depositorBalances[msg.sender] -= stakes[_stakeId].amount;
-        refundDeposit(msg.sender, stakes[_stakeId].amount);
+        uint256 stakeAmount = stakes[_stakeId].amount;
+
+        depositorBalances[msg.sender] -= stakeAmount;
+
+        //Call function in auction contract to re-initiate the bid that won
+        //Send in the bid ID to be re-initiated
+
+        refundDeposit(msg.sender, stakeAmount);
 
     }
 
@@ -106,7 +113,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
-    function refundDeposit(address _depositOwner, uint256 _amount) internal {
+    function refundDeposit(address _depositOwner, uint256 _amount) public {
         require(_amount % stakeAmount == 0, "Invalid refund amount");
         require(depositorBalances[_depositOwner] >= _amount, "Insufficient balance");
 

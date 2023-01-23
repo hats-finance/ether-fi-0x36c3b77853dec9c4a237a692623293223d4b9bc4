@@ -19,6 +19,7 @@ interface IDeposit {
         address staker;
         bytes32 withdrawCredentials;
         uint256 amount;
+        uint256 winningBid;
         STAKE_PHASE phase;
     }
 
