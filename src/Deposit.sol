@@ -61,6 +61,7 @@ contract Deposit is IDeposit, Pausable {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
+    /// TODO Uncomment winning operator address when function is built in the auction contract
     function deposit() public payable whenNotPaused {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
@@ -68,6 +69,7 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
+        //Create a stake pbject and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
             withdrawCredentials: "",
@@ -88,7 +90,7 @@ contract Deposit is IDeposit, Pausable {
 
         numberOfStakes++;
 
-        emit StakeDeposit(msg.sender, msg.value, numberOfStakes -1);
+        emit StakeDeposit(msg.sender, msg.value, numberOfStakes - 1);
     }
 
     /// @notice Refunds the depositor their 32 ether
