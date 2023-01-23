@@ -641,6 +641,9 @@ contract AuctionTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.decreaseBid(1, 0.1 ether);
 
+        (amount, , , ) = auctionInstance.bids(1);
+        assertEq(amount, 0.3 ether);
+
         vm.prank(owner);
         auctionInstance.unPauseContract();
 
