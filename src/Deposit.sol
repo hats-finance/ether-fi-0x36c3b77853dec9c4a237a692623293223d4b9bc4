@@ -100,6 +100,7 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
+        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBid);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBid = 0;

@@ -173,18 +173,40 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.2 ether}(proof);
+        assertEq(address(treasuryInstance).balance, 0 ether);
+        assertEq(address(auctionInstance).balance, 0.6 ether);
 
         depositInstance.deposit{value: 0.032 ether}("test_data");
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
         (address staker,bytes memory deposit_data,uint256 amount,uint256 winningbidID,,) = depositInstance.stakes(0);
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(amount, 0.032 ether);
-        assertEq(winningbidID, 1);
+        assertEq(winningbidID, 2);
         assertEq(deposit_data, "test_data");
+
+        (uint256 bidAmount,, address bidder, bool isActive) = auctionInstance.bids(winningbidID);
+        assertEq(bidAmount, 0.3 ether);
+        assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(isActive, false);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
+        assertEq(auctionInstance.currentHighestBidId(), 3);
+        assertEq(address(treasuryInstance).balance, 0.3 ether);
+        assertEq(address(auctionInstance).balance, 0.3 ether);
 
         depositInstance.cancelStake(0);
         (,,,winningbidID,,) = depositInstance.stakes(0);
         assertEq(winningbidID, 0);
+
+        (bidAmount,, bidder, isActive) = auctionInstance.bids(2);
+        assertEq(bidAmount, 0.3 ether);
+        assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(isActive, true);
+        assertEq(auctionInstance.numberOfActiveBids(), 3);
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+        assertEq(address(treasuryInstance).balance, 0 ether);
+        assertEq(address(auctionInstance).balance, 0.6 ether);
 
         assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, depositorBalance + 0.032 ether);
 

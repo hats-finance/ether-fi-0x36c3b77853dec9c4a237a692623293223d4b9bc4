@@ -51,6 +51,8 @@ contract Auction is IAuction, Pausable {
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
     );
+    event Received(address indexed sender, uint256 value);
+
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -314,6 +316,10 @@ contract Auction is IAuction, Pausable {
 
     function unPauseContract() external onlyOwner {
         _unpause();
+    }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 
     //--------------------------------------------------------------------------------------
