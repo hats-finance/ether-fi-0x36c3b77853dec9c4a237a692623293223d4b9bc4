@@ -173,7 +173,7 @@ contract DepositTest is Test {
         assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.064 ether);
 
         depositInstance.cancelStake(0);
-        (,,uint256 amount,,) = depositInstance.stakes(0);
+        (,,uint256 amount,,,) = depositInstance.stakes(0);
         uint256 balanceFour = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931).balance;
 
         assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.032 ether);
@@ -215,13 +215,13 @@ contract DepositTest is Test {
 
         depositInstance.deposit{value: 0.032 ether}();
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
-        (address staker,,uint256 amount,uint256 winningbidID,) = depositInstance.stakes(0);
+        (address staker,,uint256 amount,uint256 winningbidID,,) = depositInstance.stakes(0);
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(amount, 0.032 ether);
         assertEq(winningbidID, 1);
 
         depositInstance.cancelStake(0);
-        (,,,winningbidID,) = depositInstance.stakes(0);
+        (,,,winningbidID,,) = depositInstance.stakes(0);
         assertEq(winningbidID, 0);
 
         assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, depositorBalance + 0.032 ether);

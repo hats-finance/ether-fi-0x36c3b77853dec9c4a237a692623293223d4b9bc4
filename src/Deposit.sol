@@ -71,6 +71,7 @@ contract Deposit is IDeposit, Pausable {
             withdrawCredentials: "",
             amount: msg.value,
             winningBid: 0,
+            stakeId: numberOfStakes,
             phase: STAKE_PHASE.STEP_1
         });
 
@@ -98,7 +99,6 @@ contract Deposit is IDeposit, Pausable {
         require(stakes[_stakeId].phase == STAKE_PHASE.STEP_1, "Cancelling availability closed");
 
         uint256 stakeAmount = stakes[_stakeId].amount;
-
         depositorBalances[msg.sender] -= stakeAmount;
 
         //Call function in auction contract to re-initiate the bid that won
