@@ -72,6 +72,7 @@ contract Deposit is Pausable {
         address winningOperatorAddress = auctionInterfaceInstance
             .calculateWinningBid();
 
+
         //Adds the winning operator to the mapping to store which address won which stake
         stakeToOperator[msg.sender][numberOfStakes] = winningOperatorAddress;
 
@@ -82,6 +83,7 @@ contract Deposit is Pausable {
     /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
+
     function refundDeposit(address _depositOwner, uint256 _amount) public {
         require(_amount % stakeAmount == 0, "Invalid refund amount");
         require(

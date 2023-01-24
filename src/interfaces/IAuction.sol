@@ -13,8 +13,6 @@ interface IAuction {
 
     function calculateWinningBid() external returns (address);
 
-    function enableBidding() external;
-
     function cancelBid(uint256 _bidId) external;
 
     function increaseBid(uint256 _bidId) external payable;
