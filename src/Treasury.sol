@@ -61,11 +61,11 @@ contract Treasury is ITreasury {
     /*------ Setters ------*/
 
     /// @notice Sets the auctionContract address in the current contract
-    /// @dev Called by owner once deployed
+    /// @dev Called when auction contract is deployed
     /// @param _auctionContractAddress address of the auctionContract for authorizations
     function setAuctionContractAddress(address _auctionContractAddress)
         public
-        onlyOwner
+        onlyAuctionContract
     {
         auctionContractAddress = _auctionContractAddress;
     }
