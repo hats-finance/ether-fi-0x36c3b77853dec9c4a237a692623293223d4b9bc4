@@ -85,33 +85,28 @@ contract DepositTest is Test {
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
 
-    // function test_DepositUpdatesBalancesMapping() public {
-    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+    function test_DepositUpdatesBalancesMapping() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-    //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-    //     auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-    //     depositInstance.deposit{value: 0.032 ether}();
-    //     assertEq(
-    //         depositInstance.depositorBalances(
-    //             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-    //         ),
-    //         0.032 ether
-    //     );
-    //     vm.stopPrank();
-    //     hoax(address(depositInstance));
-    //     auctionInstance.enableBidding();
-    //     vm.stopPrank();
-
-    //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-    //     auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-    //     depositInstance.deposit{value: 0.032 ether}();
-    //     assertEq(
-    //         depositInstance.depositorBalances(
-    //             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-    //         ),
-    //         0.064 ether
-    //     );
-    // }
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        depositInstance.deposit{value: 0.032 ether}();
+        assertEq(
+            depositInstance.depositorBalances(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            0.032 ether
+        );
+    
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        depositInstance.deposit{value: 0.032 ether}();
+        assertEq(
+            depositInstance.depositorBalances(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            0.064 ether
+        );
+    }
 
     function test_DepositFailsIfIncorrectAmountSent() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
