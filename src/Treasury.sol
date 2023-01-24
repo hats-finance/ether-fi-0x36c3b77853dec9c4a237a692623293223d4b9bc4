@@ -8,32 +8,34 @@ import "./interfaces/ITreasury.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 
-contract Treasury is ITreasury{
+contract Treasury is ITreasury {
+    //--------------------------------------------------------------------------------------
+    //---------------------------------  STATE-VARIABLES  ----------------------------------
+    //--------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------
-//---------------------------------  STATE-VARIABLES  ----------------------------------
-//--------------------------------------------------------------------------------------
-   
     address public owner;
+    address private auctionContractAddress;
 
-//--------------------------------------------------------------------------------------
-//-------------------------------------  EVENTS  ---------------------------------------
-//--------------------------------------------------------------------------------------
- 
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  EVENTS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+
     event Received(address indexed sender, uint256 value);
+    event BidRefunded(uint256 indexed _bidId, uint256 indexed _amount);
 
-//--------------------------------------------------------------------------------------
-//----------------------------------  CONSTRUCTOR   ------------------------------------
-//--------------------------------------------------------------------------------------
-   
-    constructor() {
+    //--------------------------------------------------------------------------------------
+    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    constructor(address _auctionContractAddress) {
         owner = msg.sender;
+        auctionContractAddress = _auctionContractAddress;
     }
 
-//--------------------------------------------------------------------------------------
-//----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-//--------------------------------------------------------------------------------------
-    
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @notice Function allows only the owner to withdraw all the funds in the contract
     function withdraw() external {
         require(msg.sender == owner, "Only owner function");
@@ -43,7 +45,27 @@ contract Treasury is ITreasury{
         require(sent, "Failed to send Ether");
     }
 
+    function refundBid(uint256 _amount, uint256 _bidId)
+        external
+        onlyAuctionContract
+    {
+        (bool sent, ) = auctionContractAddress.call{value: _amount}("");
+        require(sent, "refund failed");
+
+        emit BidRefunded(_bidId, _amount);
+    }
+
     receive() external payable {
         emit Received(msg.sender, msg.value);
+    }
+
+    /*------ Modifiers ------*/
+
+    modifier onlyAuctionContract() {
+        require(
+            msg.sender == auctionContractAddress,
+            "Only auction contract function"
+        );
+        _;
     }
 }
