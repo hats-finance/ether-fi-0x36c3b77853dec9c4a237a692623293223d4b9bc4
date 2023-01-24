@@ -8,32 +8,33 @@ import "./interfaces/ITreasury.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 
-contract Treasury is ITreasury{
+contract Treasury is ITreasury {
+    //--------------------------------------------------------------------------------------
+    //---------------------------------  STATE-VARIABLES  ----------------------------------
+    //--------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------
-//---------------------------------  STATE-VARIABLES  ----------------------------------
-//--------------------------------------------------------------------------------------
-   
     address public owner;
+    address private auctionContractAddress;
 
-//--------------------------------------------------------------------------------------
-//-------------------------------------  EVENTS  ---------------------------------------
-//--------------------------------------------------------------------------------------
- 
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  EVENTS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+
     event Received(address indexed sender, uint256 value);
+    event BidRefunded(uint256 indexed _bidId, uint256 indexed _amount);
 
-//--------------------------------------------------------------------------------------
-//----------------------------------  CONSTRUCTOR   ------------------------------------
-//--------------------------------------------------------------------------------------
-   
+    //--------------------------------------------------------------------------------------
+    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //--------------------------------------------------------------------------------------
+
     constructor() {
         owner = msg.sender;
     }
 
-//--------------------------------------------------------------------------------------
-//----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-//--------------------------------------------------------------------------------------
-    
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @notice Function allows only the owner to withdraw all the funds in the contract
     function withdraw() external {
         require(msg.sender == owner, "Only owner function");
@@ -43,7 +44,43 @@ contract Treasury is ITreasury{
         require(sent, "Failed to send Ether");
     }
 
+    function refundBid(uint256 _amount, uint256 _bidId)
+        external
+        onlyAuctionContract
+    {
+        (bool sent, ) = auctionContractAddress.call{value: _amount}("");
+        require(sent, "refund failed");
+
+        emit BidRefunded(_bidId, _amount);
+    }
+
     receive() external payable {
         emit Received(msg.sender, msg.value);
+    }
+
+    /*------ Setters ------*/
+
+    /// @notice Sets the auctionContract address in the current contract
+    /// @dev Called when auction contract is deployed
+    /// @param _auctionContractAddress address of the auctionContract for authorizations
+    function setAuctionContractAddress(address _auctionContractAddress)
+        public
+        onlyAuctionContract
+    {
+        auctionContractAddress = _auctionContractAddress;
+    }
+
+    /*------ Modifiers ------*/
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
+        _;
+    }
+
+    modifier onlyAuctionContract() {
+        require(
+            msg.sender == auctionContractAddress,
+            "Only auction contract function"
+        );
+        _;
     }
 }

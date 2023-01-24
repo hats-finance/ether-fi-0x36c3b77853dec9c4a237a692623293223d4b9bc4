@@ -6,6 +6,7 @@ import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IAuction.sol";
+import "./interfaces/ITreasury.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
@@ -40,7 +41,7 @@ contract Auction is IAuction, Pausable {
     );
 
     event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
-
+    event BidReEnteredAuction(uint256 indexed bidId);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
@@ -61,6 +62,9 @@ contract Auction is IAuction, Pausable {
         bidsEnabled = true;
         treasuryContractAddress = _treasuryAddress;
         owner = msg.sender;
+        ITreasury(treasuryContractAddress).setAuctionContractAddress(
+            address(this)
+        );
     }
 
     //--------------------------------------------------------------------------------------
@@ -252,6 +256,32 @@ contract Auction is IAuction, Pausable {
         emit BidPlaced(msg.sender, msg.value, numberOfBids - 1);
     }
 
+    /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
+    /// @param _bidId the ID of the bid which was matched to the cancelled stake.
+    function reEnterAuction(uint256 _bidId)
+        external
+        onlyDepositContract
+        whenNotPaused
+    {
+        require(bids[_bidId].isActive == false, "Bid already active");
+
+        //Reactivate the bid
+        bids[_bidId].isActive = true;
+        ITreasury(treasuryContractAddress).refundBid(
+            bids[_bidId].amount,
+            _bidId
+        );
+
+        //Checks if the bid is now the highest bid
+        if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
+            currentHighestBidId = _bidId;
+        }
+
+        numberOfActiveBids++;
+
+        emit BidReEnteredAuction(_bidId);
+    }
+
     /// @notice Updates the merkle root whitelists have been updated
     /// @dev merkleroot gets generated in JS offline and sent to the contract
     /// @param _newMerkle new merkle root to be used for bidding
@@ -280,14 +310,13 @@ contract Auction is IAuction, Pausable {
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
-    
+
     function pauseContract() external onlyOwner {
         _pause();
     }
 
     function unPauseContract() external onlyOwner {
         _unpause();
-
     }
 
     //--------------------------------------------------------------------------------------
