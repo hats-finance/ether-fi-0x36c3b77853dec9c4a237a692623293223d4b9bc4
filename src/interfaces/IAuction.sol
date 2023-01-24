@@ -11,7 +11,7 @@ interface IAuction {
 
     function bidOnStake(bytes32[] calldata _merkleProof) external payable;
 
-    function calculateWinningBid() external returns (address);
+    function calculateWinningBid() external returns (uint256);
 
     function cancelBid(uint256 _bidId) external;
 

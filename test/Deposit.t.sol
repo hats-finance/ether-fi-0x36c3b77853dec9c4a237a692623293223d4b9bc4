@@ -181,6 +181,53 @@ contract DepositTest is Test {
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
 
+    function test_CancelStakeFailsIfNotStakeOwner() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        depositInstance.deposit{value: 0.032 ether}();
+        vm.stopPrank();
+        vm.prank(owner);
+        vm.expectRevert("Not bid owner");
+        depositInstance.cancelStake(0);
+    }
+
+    function test_CancelStakeFailsIfCancellingAvailabilityClosed() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.cancelStake(0);
+
+        vm.expectRevert("Cancelling availability closed");
+        depositInstance.cancelStake(0);
+    }
+
+    function test_CancelStakeWorksCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        depositInstance.deposit{value: 0.032 ether}();
+        uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
+        (address staker,,uint256 amount,uint256 winningbidID,) = depositInstance.stakes(0);
+        assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(amount, 0.032 ether);
+        assertEq(winningbidID, 1);
+
+        depositInstance.cancelStake(0);
+        (,,,winningbidID,) = depositInstance.stakes(0);
+        assertEq(winningbidID, 0);
+
+        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, depositorBalance + 0.032 ether);
+
+    }
+
     function _merkleSetup() internal {
         merkle = new Merkle();
 

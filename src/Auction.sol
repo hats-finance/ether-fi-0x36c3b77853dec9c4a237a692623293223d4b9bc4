@@ -74,7 +74,7 @@ contract Auction is IAuction, Pausable {
     function calculateWinningBid()
         external
         onlyDepositContract
-        returns (address winningOperator)
+        returns (uint256)
     {
         uint256 currentHighestBidIdLocal = currentHighestBidId;
         uint256 numberOfBidsLocal = numberOfBids;
@@ -82,7 +82,7 @@ contract Auction is IAuction, Pausable {
         //Set the bid to be de-activated to prevent 1 bid winning twice
         bids[currentHighestBidIdLocal].isActive = false;
 
-        winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
+        address winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
 
         uint256 winningBidAmount = bids[currentHighestBidIdLocal].amount;
 
@@ -107,6 +107,7 @@ contract Auction is IAuction, Pausable {
         numberOfActiveBids--;
 
         emit WinningBidSent(winningOperator, currentHighestBidIdLocal);
+        return currentHighestBidIdLocal;
     }
 
     /// @notice Increases a currently active bid by a specified amount

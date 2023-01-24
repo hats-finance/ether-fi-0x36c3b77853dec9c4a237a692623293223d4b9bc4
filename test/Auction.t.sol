@@ -86,7 +86,7 @@ contract AuctionTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         hoax(address(depositInstance));
-        address winner = auctionInstance.calculateWinningBid();
+        uint256 winner = auctionInstance.calculateWinningBid();
         assertEq(address(treasuryInstance).balance, 0.3 ether);
         assertEq(address(auctionInstance).balance, 0.3 ether);
 
@@ -99,7 +99,7 @@ contract AuctionTest is Test {
         assertEq(isActiveBid1, true);
         assertEq(isActiveBid2, false);
         assertEq(isActiveBid3, true);
-        assertEq(winner, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        assertEq(winner, 2);
 
         hoax(address(depositInstance));
         winner = auctionInstance.calculateWinningBid();
@@ -114,7 +114,7 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(isActiveBid1, true);
         assertEq(isActiveBid3, false);
-        assertEq(winner, 0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+        assertEq(winner, 3);
     }
 
     function test_EventWinningBidSent() public {

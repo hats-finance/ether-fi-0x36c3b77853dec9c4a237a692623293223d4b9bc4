@@ -80,8 +80,10 @@ contract Deposit is IDeposit, Pausable {
         depositorBalances[msg.sender] += msg.value;
 
         //gets the current highest bid from auction contract
-        address winningOperatorAddress = auctionInterfaceInstance
+        uint256 winningBidId = auctionInterfaceInstance
             .calculateWinningBid();
+
+        stakes[numberOfStakes].winningBid = winningBidId;
 
         numberOfStakes++;
 
@@ -113,13 +115,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
-
     function refundDeposit(address _depositOwner, uint256 _amount) public {
-        require(_amount % stakeAmount == 0, "Invalid refund amount");
-        require(
-            depositorBalances[_depositOwner] >= _amount,
-            "Insufficient balance"
-        );
 
         //Refund the user with their requested amount
         (bool sent, ) = _depositOwner.call{value: _amount}("");
