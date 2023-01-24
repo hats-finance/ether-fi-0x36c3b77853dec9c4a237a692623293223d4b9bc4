@@ -6,7 +6,7 @@ import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IAuction.sol";
-import "./interfaces/ITreasury;"
+import "./interfaces/ITreasury.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
@@ -263,7 +263,10 @@ contract Auction is IAuction, Pausable {
 
         //Reactivate the bid
         bids[_bidId].isActive = true;
-        treasuryContractAddress.refundBid(bids[_bidId].amount);
+        ITreasury(treasuryContractAddress).refundBid(
+            bids[_bidId].amount,
+            _bidId
+        );
 
         //Checks if the bid is now the highest bid
         if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
@@ -271,7 +274,6 @@ contract Auction is IAuction, Pausable {
         }
 
         numberOfActiveBids++;
-        ITreasury(treasuryContractAddress).refundBid(bids[_bidId].amount, _bidId);
 
         emit BidReEnteredAuction(_bidId);
     }
