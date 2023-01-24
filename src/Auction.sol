@@ -40,7 +40,7 @@ contract Auction is IAuction, Pausable {
     );
 
     event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
-
+    event BidReEnteredAuction(uint256 indexed bidId);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
@@ -269,6 +269,8 @@ contract Auction is IAuction, Pausable {
         }
 
         numberOfActiveBids++;
+
+        emit BidReEnteredAuction(_bidId);
     }
 
     /// @notice Updates the merkle root whitelists have been updated
