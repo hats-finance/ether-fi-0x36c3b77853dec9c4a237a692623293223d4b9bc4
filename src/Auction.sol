@@ -23,9 +23,9 @@ contract Auction is IAuction, Pausable {
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
     address public treasuryContractAddress;
+    address public owner;
     bytes32 public merkleRoot;
     bool public bidsEnabled;
-    address public owner;
 
     mapping(uint256 => Bid) public bids;
 
