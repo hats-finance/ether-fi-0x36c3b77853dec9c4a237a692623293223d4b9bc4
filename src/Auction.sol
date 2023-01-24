@@ -12,6 +12,7 @@ import "./Deposit.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
+
 contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -103,16 +104,6 @@ contract Auction is IAuction, Pausable {
 
         emit BiddingDisabled(winningOperator);
         return winningOperator;
-    }
-
-    /// @notice Enables the bidding
-    /// @dev Currently must get called manually for POC
-    /// @dev Will be called from deposit contract when validator key is sent
-    /// @dev onlyDepositContract modifier must be used when going to production
-    function enableBidding() external {
-        require(bidsEnabled == false, "Bids already enabled");
-        bidsEnabled = true;
-        emit BiddingEnabled();
     }
 
     /// @notice Increases a currently active bid by a specified amount

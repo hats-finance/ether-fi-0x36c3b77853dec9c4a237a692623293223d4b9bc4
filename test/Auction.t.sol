@@ -48,40 +48,6 @@ contract AuctionTest is Test {
         );
     }
 
-    function testEnablingBiddingFailsIfBiddingAlreadyEnabled() public {
-        hoax(address(depositInstance));
-        vm.expectRevert("Bids already enabled");
-        auctionInstance.enableBidding();
-    }
-
-    // function testEnablingBiddingFailsIfNotContractCalling() public {
-    //     vm.prank(owner);
-    //     vm.expectRevert("Only deposit contract function");
-    //     auctionInstance.enableBidding();
-    // }
-
-    function testEnablingBiddingWorks() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
-        console.log(address(depositInstance).balance);
-        assertEq(auctionInstance.bidsEnabled(), true);
-
-        hoax(address(depositInstance));
-        auctionInstance.disableBidding();
-
-        assertEq(auctionInstance.bidsEnabled(), false);
-
-        hoax(address(depositInstance));
-        auctionInstance.enableBidding();
-
-        assertEq(auctionInstance.bidsEnabled(), true);
-    }
-
     function testDisablingBiddingFailsIfNotContractCalling() public {
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
