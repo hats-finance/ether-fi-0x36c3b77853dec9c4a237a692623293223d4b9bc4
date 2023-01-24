@@ -44,7 +44,10 @@ contract Treasury is ITreasury {
         require(sent, "Failed to send Ether");
     }
 
-    function refundBid(uint256 _amount, uint256 _bidId) external {
+    function refundBid(uint256 _amount, uint256 _bidId)
+        external
+        onlyAuctionContract
+    {
         (bool sent, ) = auctionContractAddress.call{value: _amount}("");
         require(sent, "refund failed");
 
@@ -57,6 +60,9 @@ contract Treasury is ITreasury {
 
     /*------ Setters ------*/
 
+    /// @notice Sets the auctionContract address in the current contract
+    /// @dev Called by owner once deployed
+    /// @param _auctionContractAddress address of the auctionContract for authorizations
     function setAuctionContractAddress(address _auctionContractAddress)
         public
         onlyOwner

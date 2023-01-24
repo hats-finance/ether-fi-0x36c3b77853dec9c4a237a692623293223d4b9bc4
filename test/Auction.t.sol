@@ -31,7 +31,7 @@ contract AuctionTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        treasuryInstance = new Treasury(address(this));
+        treasuryInstance = new Treasury();
         _merkleSetup();
         auctionInstance = new Auction(address(treasuryInstance));
         auctionInstance.updateMerkleRoot(root);
