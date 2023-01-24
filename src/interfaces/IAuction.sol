@@ -21,6 +21,8 @@ interface IAuction {
 
     function getNumberOfActivebids() external view returns (uint256);
 
+    function reEnterAuction(uint256 _bidId) external;
+
     function setDepositContractAddress(address _depositContractAddress)
         external;
 }

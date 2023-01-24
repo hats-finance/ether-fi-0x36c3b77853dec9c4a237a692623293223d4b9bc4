@@ -251,6 +251,26 @@ contract Auction is IAuction, Pausable {
         emit BidPlaced(msg.sender, msg.value, numberOfBids - 1);
     }
 
+    /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
+    /// @param _bidId the ID of the bid which was matched to the cancelled stake.
+    function reEnterAuction(uint256 _bidId)
+        external
+        onlyDepositContract
+        whenNotPaused
+    {
+        require(bids[_bidId].isActive == false, "Bid already active");
+
+        //Reactivate the bid
+        bids[_bidId].isActive = true;
+
+        //Checks if the bid is now the highest bid
+        if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
+            currentHighestBidId = _bidId;
+        }
+
+        numberOfActiveBids++;
+    }
+
     /// @notice Updates the merkle root whitelists have been updated
     /// @dev merkleroot gets generated in JS offline and sent to the contract
     /// @param _newMerkle new merkle root to be used for bidding
@@ -279,14 +299,13 @@ contract Auction is IAuction, Pausable {
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
-    
+
     function pauseContract() external onlyOwner {
         _pause();
     }
 
     function unPauseContract() external onlyOwner {
         _unpause();
-
     }
 
     //--------------------------------------------------------------------------------------
