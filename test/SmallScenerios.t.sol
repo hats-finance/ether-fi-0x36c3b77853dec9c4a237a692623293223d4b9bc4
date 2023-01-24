@@ -39,7 +39,7 @@ contract SmallScenariosTest is Test {
      *  One bid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
      *  One deposit - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      */
-    function testScenarioOne() public {
+    function test_ScenarioOne() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -91,7 +91,7 @@ contract SmallScenariosTest is Test {
      *  Second bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  One updated bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      */
-    function testScenarioTwo() public {
+    function test_ScenarioTwo() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -143,7 +143,7 @@ contract SmallScenariosTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
 
-    function testTwoDepositsAtOnceStillWorks() public {
+    function test_TwoDepositsAtOnceStillWorks() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0

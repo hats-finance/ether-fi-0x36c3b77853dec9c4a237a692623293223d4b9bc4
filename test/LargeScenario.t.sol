@@ -45,7 +45,7 @@ contract LargeScenariosTest is Test {
      *  UpdatedBid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
      *  Second deposit - 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
      */
-    function testLargeScenario() public {
+    function test_LargeScenario() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0

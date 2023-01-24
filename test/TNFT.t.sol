@@ -35,7 +35,7 @@ contract TNFTTest is Test {
         vm.stopPrank();
     }
 
-    function testTNFTContractGetsInstantiatedCorrectly() public {
+    function test_TNFTContractGetsInstantiatedCorrectly() public {
         assertEq(
             TestTNFTInstance.depositContractAddress(),
             address(depositInstance)
@@ -43,7 +43,7 @@ contract TNFTTest is Test {
         assertEq(TestTNFTInstance.nftValue(), 0.03 ether);
     }
 
-    function testTNFTMintsFailsIfNotCorrectCaller() public {
+    function test_TNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
         vm.expectRevert("Only deposit contract function");
         TestTNFTInstance.mint(address(alice));

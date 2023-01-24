@@ -35,12 +35,12 @@ contract DepositTest is Test {
         vm.stopPrank();
     }
 
-    function testDepositContractInstantiatedCorrectly() public {
+    function test_DepositContractInstantiatedCorrectly() public {
         assertEq(depositInstance.stakeAmount(), 0.032 ether);
         assertEq(depositInstance.owner(), owner);
     }
 
-    function testDepositCreatesNFTs() public {
+    function test_DepositCreatesNFTs() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -60,7 +60,7 @@ contract DepositTest is Test {
         );
     }
 
-    function testDepositCreatesNFTsWithCorrectOwner() public {
+    function test_DepositCreatesNFTsWithCorrectOwner() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -76,7 +76,7 @@ contract DepositTest is Test {
         );
     }
 
-    function testDepositReceivesEther() public {
+    function test_DepositReceivesEther() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -85,7 +85,7 @@ contract DepositTest is Test {
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
 
-    // function testDepositUpdatesBalancesMapping() public {
+    // function test_DepositUpdatesBalancesMapping() public {
     //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
     //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -113,13 +113,13 @@ contract DepositTest is Test {
     //     );
     // }
 
-    function testDepositFailsIfIncorrectAmountSent() public {
+    function test_DepositFailsIfIncorrectAmountSent() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Insufficient staking amount");
         depositInstance.deposit{value: 0.2 ether}();
     }
 
-    function testDepositFailsBidDoesntExist() public {
+    function test_DepositFailsBidDoesntExist() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -129,7 +129,7 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
     }
 
-    function testDepositfailsIfContractPaused() public {
+    function test_DepositfailsIfContractPaused() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(owner);
@@ -151,7 +151,7 @@ contract DepositTest is Test {
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
 
-    function testRefundWorksCorrectly() public {
+    function test_RefundWorksCorrectly() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
         uint256 balanceOne = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931).balance;

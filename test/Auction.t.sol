@@ -22,7 +22,7 @@ contract AuctionTest is Test {
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
-    event WinningBidSent(address indexed winner);
+    event WinningBidSent(address indexed winner, uint256 indexed winningBidId);
 
     event MinBidUpdated(
         uint256 indexed oldMinBidAmount,
@@ -42,7 +42,7 @@ contract AuctionTest is Test {
         vm.stopPrank();
     }
 
-    function testAuctionContractInstantiatedCorrectly() public {
+    function test_AuctionContractInstantiatedCorrectly() public {
         assertEq(auctionInstance.numberOfBids(), 1);
         assertEq(
             auctionInstance.depositContractAddress(),
@@ -134,12 +134,12 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
 
         vm.expectEmit(true, false, false, true);
-        emit WinningBidSent(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        emit WinningBidSent(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf, 2);
         hoax(address(depositInstance));
         auctionInstance.calculateWinningBid();
     }
 
-    function testBiddingWorksCorrectly() public {
+    function test_BiddingWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -193,7 +193,7 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
 
-    function testCancelBidFailsWhenBidAlreadyInactive() public {
+    function test_CancelBidFailsWhenBidAlreadyInactive() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -207,7 +207,7 @@ contract AuctionTest is Test {
         auctionInstance.cancelBid(1);
     }
 
-    function testCancelBidFailsWhenNotBidOwnerCalling() public {
+    function test_CancelBidFailsWhenNotBidOwnerCalling() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -218,13 +218,13 @@ contract AuctionTest is Test {
         auctionInstance.cancelBid(1);
     }
 
-    function testCancelBidFailsWhenNotExistingBid() public {
+    function test_CancelBidFailsWhenNotExistingBid() public {
         vm.prank(alice);
         vm.expectRevert("Invalid bid");
         auctionInstance.cancelBid(1);
     }
 
-    function testCancelBidWorksIfBidIsNotCurrentHighest() public {
+    function test_CancelBidWorksIfBidIsNotCurrentHighest() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -266,7 +266,7 @@ contract AuctionTest is Test {
         );
     }
 
-    function testCancelBidWorksIfBidIsCurrentHighest() public {
+    function test_CancelBidWorksIfBidIsCurrentHighest() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -350,13 +350,13 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 2);
     }
 
-    function testIncreaseBidFailsWhenNotExistingBid() public {
+    function test_IncreaseBidFailsWhenNotExistingBid() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Invalid bid");
         auctionInstance.increaseBid{value: 0.1 ether}(1);
     }
 
-    function testIncreaseBidFailsWhenNotBidOwnerCalling() public {
+    function test_IncreaseBidFailsWhenNotBidOwnerCalling() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -370,7 +370,7 @@ contract AuctionTest is Test {
         auctionInstance.increaseBid{value: 0.1 ether}(1);
     }
 
-    function testIncreaseBidFailsWhenBidAlreadyInactive() public {
+    function test_IncreaseBidFailsWhenBidAlreadyInactive() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -387,7 +387,7 @@ contract AuctionTest is Test {
         auctionInstance.increaseBid{value: 0.1 ether}(1);
     }
 
-    function testIncreaseBidWorks() public {
+    function test_IncreaseBidWorks() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -453,13 +453,13 @@ contract AuctionTest is Test {
         assertEq(amount, 0.3 ether);
     }
 
-    function testDecreaseBidFailsWhenNotExistingBid() public {
+    function test_DecreaseBidFailsWhenNotExistingBid() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Invalid bid");
         auctionInstance.decreaseBid(1, 0.05 ether);
     }
 
-    function testDecreaseBidFailsWhenNotBidOwnerCalling() public {
+    function test_DecreaseBidFailsWhenNotBidOwnerCalling() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -473,7 +473,7 @@ contract AuctionTest is Test {
         auctionInstance.decreaseBid(1, 0.05 ether);
     }
 
-    function testDecreaseBidFailsWhenBidAlreadyInactive() public {
+    function test_DecreaseBidFailsWhenBidAlreadyInactive() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -490,7 +490,7 @@ contract AuctionTest is Test {
         auctionInstance.decreaseBid(1, 0.05 ether);
     }
 
-    function testDecreaseBidFailsWhenAmountToReduceIsToHigh() public {
+    function test_DecreaseBidFailsWhenAmountToReduceIsToHigh() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -504,7 +504,7 @@ contract AuctionTest is Test {
         auctionInstance.decreaseBid(1, 1 ether);
     }
 
-    function testDecreaseBidWorks() public {
+    function test_DecreaseBidWorks() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -576,7 +576,7 @@ contract AuctionTest is Test {
         assertEq(amount, 0.2 ether);
     }
 
-    function testUpdatingMerkleFailsIfNotOwner() public {
+    function test_UpdatingMerkleFailsIfNotOwner() public {
         assertEq(auctionInstance.merkleRoot(), root);
 
         whiteListedAddresses.push(
@@ -591,7 +591,7 @@ contract AuctionTest is Test {
         auctionInstance.updateMerkleRoot(newRoot);
     }
 
-    function testUpdatingMerkle() public {
+    function test_UpdatingMerkle() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0

@@ -17,14 +17,14 @@ contract TreasuryTest is Test {
         vm.stopPrank();
     }
 
-    function testTreasuryCanReceiveFunds() public {
+    function test_TreasuryCanReceiveFunds() public {
         assertEq(address(treasuryInstance).balance, 0);
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
         assertEq(address(treasuryInstance).balance, 0.5 ether);
     }
 
-    function testWithdrawFailsIfNotOwner() public {
+    function test_WithdrawFailsIfNotOwner() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
 
@@ -33,7 +33,7 @@ contract TreasuryTest is Test {
         treasuryInstance.withdraw();
     }
 
-    function testWithdrawWorks() public {
+    function test_WithdrawWorks() public {
         assertEq(address(treasuryInstance).balance, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
