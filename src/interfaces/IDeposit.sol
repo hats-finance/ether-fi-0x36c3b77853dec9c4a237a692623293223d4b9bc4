@@ -18,7 +18,7 @@ interface IDeposit {
     /// @param phase - the current step of the stake
     struct Stake {
         address staker;
-        bytes32 withdrawCredentials;
+        bytes deposit_data;
         uint256 amount;
         uint256 winningBid;
         uint256 stakeId;
@@ -37,7 +37,7 @@ interface IDeposit {
         uint256 StakeId;
     }
 
-    function deposit() external payable;
+    function deposit(bytes memory _deposit_data) external payable;
 
     function cancelStake(uint256 _stakeId) external;
 

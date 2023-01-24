@@ -26,9 +26,9 @@ contract Deposit is IDeposit, Pausable {
     mapping(uint256 => Validator) public validators;
     mapping(uint256 => Stake) public stakes;
 
-//--------------------------------------------------------------------------------------
-//-------------------------------------  EVENTS  ---------------------------------------
-//--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  EVENTS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
  
     event StakeDeposit(address indexed sender, uint256 value, uint256 id);
 
@@ -57,8 +57,8 @@ contract Deposit is IDeposit, Pausable {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    /// TODO Uncomment winning operator address when function is built in the auction contract
-    function deposit() public payable whenNotPaused {
+    /// @param _deposit_data This is a bytes hash representative of all deposit requirements
+    function deposit(bytes memory _deposit_data) public payable whenNotPaused {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
@@ -68,16 +68,13 @@ contract Deposit is IDeposit, Pausable {
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
-            withdrawCredentials: "",
+            deposit_data: _deposit_data,
             amount: msg.value,
             winningBid: 0,
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.STEP_1
         });
-
-        //Mints two NFTs to the staker
-        TNFTInterfaceInstance.mint(msg.sender);
-        BNFTInterfaceInstance.mint(msg.sender);
+        
         depositorBalances[msg.sender] += msg.value;
 
         //gets the current highest bid from auction contract
@@ -98,8 +95,8 @@ contract Deposit is IDeposit, Pausable {
         require(msg.sender ==  stakes[_stakeId].staker, "Not bid owner");
         require(stakes[_stakeId].phase == STAKE_PHASE.STEP_1, "Cancelling availability closed");
 
-        uint256 stakeAmount = stakes[_stakeId].amount;
-        depositorBalances[msg.sender] -= stakeAmount;
+        uint256 stakeAmountTemp = stakes[_stakeId].amount;
+        depositorBalances[msg.sender] -= stakeAmountTemp;
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
@@ -107,7 +104,7 @@ contract Deposit is IDeposit, Pausable {
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBid = 0;
 
-        refundDeposit(msg.sender, stakeAmount);
+        refundDeposit(msg.sender, stakeAmountTemp);
 
     }
 

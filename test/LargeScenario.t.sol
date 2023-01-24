@@ -154,7 +154,7 @@ contract LargeScenariosTest is Test {
         assertEq(isActiveAfterCancel, false);
 
         //Deposit One
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(address(treasuryInstance).balance, 0.7 ether);
@@ -209,7 +209,7 @@ contract LargeScenariosTest is Test {
 
         //Deposit Two
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
 
         assertEq(auctionInstance.currentHighestBidId(), 4);
         assertEq(auctionInstance.numberOfActiveBids(), 1);

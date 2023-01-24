@@ -54,7 +54,7 @@ contract BNFTTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
         vm.expectRevert("Err: token is SOUL BOUND");
         TestBNFTInstance.transferFrom(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
