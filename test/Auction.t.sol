@@ -22,6 +22,11 @@ contract AuctionTest is Test {
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
+    event MinBidUpdated(
+        uint256 indexed oldMinBidAmount,
+        uint256 indexed newMinBidAmount
+    );
+
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
@@ -140,6 +145,29 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.numberOfBids(), 3);
 
         assertEq(address(auctionInstance).balance, 0.4 ether);
+    }
+
+    function test_PausableBidOnStake() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        assertFalse(auctionInstance.paused());
+        vm.prank(owner);
+        auctionInstance.pauseContract();
+        assertTrue(auctionInstance.paused());
+
+        vm.expectRevert("Pausable: paused");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        assertEq(auctionInstance.numberOfActiveBids(), 0);
+
+        vm.prank(owner);
+        auctionInstance.unPauseContract();
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
 
     function testCancelBidFailsWhenBidAlreadyInactive() public {
@@ -280,6 +308,49 @@ contract AuctionTest is Test {
         assertEq(address(auctionInstance).balance, 0.3 ether);
     }
 
+    function test_PausableCancelBid() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofForAddress2 = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
+        bytes32[] memory proofForAddress3 = merkle.getProof(
+            whiteListedAddresses,
+            2
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
+
+        hoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+        auctionInstance.bidOnStake{value: 0.2 ether}(proofForAddress3);
+
+        vm.prank(owner);
+        auctionInstance.pauseContract();
+
+        vm.expectRevert("Pausable: paused");
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.cancelBid(2);
+
+        vm.prank(owner);
+        auctionInstance.unPauseContract();
+
+        assertEq(auctionInstance.numberOfActiveBids(), 3);
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.cancelBid(2);
+
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
+    }
+
     function testIncreaseBidFailsWhenNotExistingBid() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Invalid bid");
@@ -375,6 +446,36 @@ contract AuctionTest is Test {
         assertEq(amount, 0.4 ether);
         assertEq(address(auctionInstance).balance, 0.8 ether);
         assertEq(auctionInstance.currentHighestBidId(), 3);
+    }
+
+    function test_PausableIncreaseBid() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofForAddress2 = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+
+        vm.prank(owner);
+        auctionInstance.pauseContract();
+
+        vm.expectRevert("Pausable: paused");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.increaseBid{value: 0.2 ether}(1);
+
+        vm.prank(owner);
+        auctionInstance.unPauseContract();
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.increaseBid{value: 0.2 ether}(1);
+
+        (uint256 amount, , , ) = auctionInstance.bids(1);
+        assertEq(amount, 0.3 ether);
     }
 
     function testDecreaseBidFailsWhenNotExistingBid() public {
@@ -488,6 +589,42 @@ contract AuctionTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
     }
 
+    function test_PausableDecreaseBid() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofForAddress2 = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress1);
+
+        (uint256 amount, , , ) = auctionInstance.bids(1);
+        assertEq(amount, 0.3 ether);
+
+        vm.prank(owner);
+        auctionInstance.pauseContract();
+
+        vm.expectRevert("Pausable: paused");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.decreaseBid(1, 0.1 ether);
+
+        (amount, , , ) = auctionInstance.bids(1);
+        assertEq(amount, 0.3 ether);
+
+        vm.prank(owner);
+        auctionInstance.unPauseContract();
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.decreaseBid(1, 0.1 ether);
+
+        (amount, , , ) = auctionInstance.bids(1);
+        assertEq(amount, 0.2 ether);
+    }
+
     function testUpdatingMerkleFailsIfNotOwner() public {
         assertEq(auctionInstance.merkleRoot(), root);
 
@@ -535,6 +672,20 @@ contract AuctionTest is Test {
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
         auctionInstance.bidOnStake(proofForAddress4);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
+    }
+
+    function test_SetMinBidAmount() public {
+        assertEq(auctionInstance.minBidAmount(), 0);
+        vm.prank(owner);
+        auctionInstance.setMinBidPrice(1 ether);
+        assertEq(auctionInstance.minBidAmount(), 1 ether);
+    }
+
+    function test_EventMinBidUpdated() public {
+        vm.expectEmit(true, true, false, true);
+        emit MinBidUpdated(0, 1 ether);
+        vm.prank(owner);
+        auctionInstance.setMinBidPrice(1 ether);
     }
 
     function _merkleSetup() internal {
