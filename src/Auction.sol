@@ -220,7 +220,6 @@ contract Auction is IAuction, Pausable {
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-
     function bidOnStake(bytes32[] calldata _merkleProof)
         external
         payable
@@ -303,6 +302,8 @@ contract Auction is IAuction, Pausable {
         emit DepositAddressSet(_depositContractAddress);
     }
 
+    /// @notice Updates the minimum bid price
+    /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
         uint256 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
@@ -310,14 +311,17 @@ contract Auction is IAuction, Pausable {
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
 
+    //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
     }
 
+    //Unpauses the contract
     function unPauseContract() external onlyOwner {
         _unpause();
     }
 
+    //Allows ether to be sent to this contract
     receive() external payable {
         emit Received(msg.sender, msg.value);
     }
