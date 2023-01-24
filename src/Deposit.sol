@@ -84,6 +84,7 @@ contract Deposit is Pausable {
     /// @param _amount the amount to refund the depositor
 
     /// TODO REMEMBER TO CHANGE PUBLIC TO INTERNAL WHEN CANCEL DEPOSIT FUNCTION IS CREATED
+
     function refundDeposit(address _depositOwner, uint256 _amount) public {
         require(_amount % stakeAmount == 0, "Invalid refund amount");
         require(

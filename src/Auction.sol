@@ -18,6 +18,7 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     uint256 public currentHighestBidId;
+    uint256 public minBidAmount;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
@@ -43,6 +44,10 @@ contract Auction is IAuction, Pausable {
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
     event DepositAddressSet(address indexed depositContractAddress);
+    event MinBidUpdated(
+        uint256 indexed oldMinBidAmount,
+        uint256 indexed newMinBidAmount
+    );
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -217,6 +222,7 @@ contract Auction is IAuction, Pausable {
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
+
     function bidOnStake(bytes32[] calldata _merkleProof)
         external
         payable
@@ -273,12 +279,20 @@ contract Auction is IAuction, Pausable {
         emit DepositAddressSet(_depositContractAddress);
     }
 
+    function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
+        uint256 oldMinBidAmount = minBidAmount;
+        minBidAmount = _newMinBidAmount;
+
+        emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
+    }
+    
     function pauseContract() external onlyOwner {
         _pause();
     }
 
     function unPauseContract() external onlyOwner {
         _unpause();
+
     }
 
     //--------------------------------------------------------------------------------------

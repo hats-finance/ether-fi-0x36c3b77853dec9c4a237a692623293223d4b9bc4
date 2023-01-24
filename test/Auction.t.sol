@@ -22,6 +22,11 @@ contract AuctionTest is Test {
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
+    event MinBidUpdated(
+        uint256 indexed oldMinBidAmount,
+        uint256 indexed newMinBidAmount
+    );
+
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
@@ -701,6 +706,20 @@ contract AuctionTest is Test {
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
         auctionInstance.bidOnStake(proofForAddress4);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
+    }
+
+    function test_SetMinBidAmount() public {
+        assertEq(auctionInstance.minBidAmount(), 0);
+        vm.prank(owner);
+        auctionInstance.setMinBidPrice(1 ether);
+        assertEq(auctionInstance.minBidAmount(), 1 ether);
+    }
+
+    function test_EventMinBidUpdated() public {
+        vm.expectEmit(true, true, false, true);
+        emit MinBidUpdated(0, 1 ether);
+        vm.prank(owner);
+        auctionInstance.setMinBidPrice(1 ether);
     }
 
     function _merkleSetup() internal {
