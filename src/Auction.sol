@@ -62,9 +62,6 @@ contract Auction is IAuction, Pausable {
         bidsEnabled = true;
         treasuryContractAddress = _treasuryAddress;
         owner = msg.sender;
-        ITreasury(treasuryContractAddress).setAuctionContractAddress(
-            address(this)
-        );
     }
 
     //--------------------------------------------------------------------------------------

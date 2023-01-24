@@ -14,7 +14,7 @@ contract Treasury is ITreasury {
     //--------------------------------------------------------------------------------------
 
     address public owner;
-    address private auctionContractAddress;
+    address public auctionContractAddress;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -65,7 +65,7 @@ contract Treasury is ITreasury {
     /// @param _auctionContractAddress address of the auctionContract for authorizations
     function setAuctionContractAddress(address _auctionContractAddress)
         public
-        onlyAuctionContract
+        onlyOwner
     {
         auctionContractAddress = _auctionContractAddress;
     }

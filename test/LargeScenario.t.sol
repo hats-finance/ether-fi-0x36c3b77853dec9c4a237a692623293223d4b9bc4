@@ -27,6 +27,7 @@ contract LargeScenariosTest is Test {
         _merkleSetup();
         treasuryInstance = new Treasury();
         auctionInstance = new Auction(address(treasuryInstance));
+        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
