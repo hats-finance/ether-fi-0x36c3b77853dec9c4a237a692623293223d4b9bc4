@@ -10,8 +10,9 @@ import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract Auction is IAuction {
+contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -117,7 +118,7 @@ contract Auction is IAuction {
     /// @notice Increases a currently active bid by a specified amount
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to increase
-    function increaseBid(uint256 _bidId) external payable {
+    function increaseBid(uint256 _bidId) external payable whenNotPaused {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(bidsEnabled == true, "Increase bidding on hold");
@@ -136,7 +137,10 @@ contract Auction is IAuction {
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to decrease
     /// @param _amount the amount to decrease the bid by
-    function decreaseBid(uint256 _bidId, uint256 _amount) external {
+    function decreaseBid(uint256 _bidId, uint256 _amount)
+        external
+        whenNotPaused
+    {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(_amount < bids[_bidId].amount, "Amount to large");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
@@ -174,7 +178,7 @@ contract Auction is IAuction {
     /// @dev Used local variables to save on multiple state variable lookups
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to cancel
-    function cancelBid(uint256 _bidId) external {
+    function cancelBid(uint256 _bidId) external whenNotPaused {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(bidsEnabled == true, "Cancelling bids on hold");
@@ -218,8 +222,12 @@ contract Auction is IAuction {
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-    function bidOnStake(bytes32[] calldata _merkleProof) external payable {
-        require(msg.value >= minBidAmount, "Bid Too Low");
+
+    function bidOnStake(bytes32[] calldata _merkleProof)
+        external
+        payable
+        whenNotPaused
+    {
         require(bidsEnabled == true, "Bidding is on hold");
         require(
             MerkleProof.verify(
@@ -276,6 +284,15 @@ contract Auction is IAuction {
         minBidAmount = _newMinBidAmount;
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
+    }
+    
+    function pauseContract() external onlyOwner {
+        _pause();
+    }
+
+    function unPauseContract() external onlyOwner {
+        _unpause();
+
     }
 
     //--------------------------------------------------------------------------------------

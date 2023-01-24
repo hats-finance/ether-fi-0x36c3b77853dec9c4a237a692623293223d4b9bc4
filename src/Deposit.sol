@@ -82,6 +82,9 @@ contract Deposit is Pausable {
     /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
+
+    /// TODO REMEMBER TO CHANGE PUBLIC TO INTERNAL WHEN CANCEL DEPOSIT FUNCTION IS CREATED
+
     function refundDeposit(address _depositOwner, uint256 _amount) public {
         require(_amount % stakeAmount == 0, "Invalid refund amount");
         require(
