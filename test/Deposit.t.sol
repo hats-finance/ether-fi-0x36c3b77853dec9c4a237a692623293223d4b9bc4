@@ -37,6 +37,7 @@ contract DepositTest is Test {
 
     function testDepositContractInstantiatedCorrectly() public {
         assertEq(depositInstance.stakeAmount(), 0.032 ether);
+        assertEq(depositInstance.owner(), owner);
     }
 
     function testDepositCreatesNFTs() public {
@@ -150,29 +151,6 @@ contract DepositTest is Test {
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
 
-    function testRefundFailsIfIvalidAmount() public {
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Invalid refund amount");
-        depositInstance.refundDeposit(owner, 0.033 ether);
-    }
-
-    function testRefundFailsIfInsufficientBalance() public {
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        auctionInstance.bidOnStake{value: 0.3 ether}(proof);
-
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.deposit{value: 0.032 ether}();
-
-        assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.064 ether);
-
-        vm.expectRevert("Insufficient balance");
-        depositInstance.refundDeposit(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 0.096 ether);
-    }
-
     function testRefundWorksCorrectly() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
@@ -194,7 +172,7 @@ contract DepositTest is Test {
         assertEq(address(depositInstance).balance, 0.064 ether);
         assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.064 ether);
 
-        depositInstance.refundDeposit(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 0.032 ether);
+        depositInstance.cancelStake(0);
         uint256 balanceFour = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931).balance;
 
         assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.032 ether);

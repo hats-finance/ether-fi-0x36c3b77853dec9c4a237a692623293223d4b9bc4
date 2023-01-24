@@ -83,9 +83,6 @@ contract Deposit is IDeposit, Pausable {
         BNFTInterfaceInstance.mint(msg.sender);
         depositorBalances[msg.sender] += msg.value;
 
-        //Disables the bidding in the auction contract
-        address winningOperatorAddress = auctionInterfaceInstance.disableBidding();
-
         //Update the stake with the winning bid
 
 
@@ -112,14 +109,11 @@ contract Deposit is IDeposit, Pausable {
 
     }
 
-    /// @notice Refunds the depositor their 32 ether
+    /// @notice Refunds the depositor their staked ether for a specific stake
     /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
-    function refundDeposit(address _depositOwner, uint256 _amount) public {
-        require(_amount % stakeAmount == 0, "Invalid refund amount");
-        require(depositorBalances[_depositOwner] >= _amount, "Insufficient balance");
-
+    function refundDeposit(address _depositOwner, uint256 _amount) internal {
         //Reduce the depositers balance
         depositorBalances[_depositOwner] -= _amount;
 

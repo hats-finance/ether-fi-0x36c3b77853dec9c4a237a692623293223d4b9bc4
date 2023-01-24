@@ -38,4 +38,6 @@ interface IDeposit {
 
     function deposit() external payable;
 
+    function cancelStake(uint256 _stakeId) external;
+
 }
