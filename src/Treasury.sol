@@ -27,9 +27,8 @@ contract Treasury is ITreasury {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    constructor(address _auctionContractAddress) {
+    constructor() {
         owner = msg.sender;
-        auctionContractAddress = _auctionContractAddress;
     }
 
     //--------------------------------------------------------------------------------------
@@ -45,10 +44,7 @@ contract Treasury is ITreasury {
         require(sent, "Failed to send Ether");
     }
 
-    function refundBid(uint256 _amount, uint256 _bidId)
-        external
-        onlyAuctionContract
-    {
+    function refundBid(uint256 _amount, uint256 _bidId) external {
         (bool sent, ) = auctionContractAddress.call{value: _amount}("");
         require(sent, "refund failed");
 
@@ -59,7 +55,20 @@ contract Treasury is ITreasury {
         emit Received(msg.sender, msg.value);
     }
 
+    /*------ Setters ------*/
+
+    function setAuctionContractAddress(address _auctionContractAddress)
+        public
+        onlyOwner
+    {
+        auctionContractAddress = _auctionContractAddress;
+    }
+
     /*------ Modifiers ------*/
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
+        _;
+    }
 
     modifier onlyAuctionContract() {
         require(
