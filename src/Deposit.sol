@@ -68,9 +68,10 @@ contract Deposit is Pausable {
         BNFTInterfaceInstance.mint(msg.sender);
         depositorBalances[msg.sender] += msg.value;
 
-        //Disables the bidding in the auction contract
+        //gets the current highest bid from auction contract
         address winningOperatorAddress = auctionInterfaceInstance
-            .disableBidding();
+            .calculateWinningBid();
+
 
         //Adds the winning operator to the mapping to store which address won which stake
         stakeToOperator[msg.sender][numberOfStakes] = winningOperatorAddress;
@@ -82,8 +83,6 @@ contract Deposit is Pausable {
     /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
-
-    /// TODO REMEMBER TO CHANGE PUBLIC TO INTERNAL WHEN CANCEL DEPOSIT FUNCTION IS CREATED
 
     function refundDeposit(address _depositOwner, uint256 _amount) public {
         require(_amount % stakeAmount == 0, "Invalid refund amount");

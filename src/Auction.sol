@@ -12,7 +12,6 @@ import "./Deposit.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-
 contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -39,7 +38,9 @@ contract Auction is IAuction, Pausable {
         uint256 amount,
         uint256 indexed bidderId
     );
-    event BiddingDisabled(address indexed winner);
+
+    event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
+
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
@@ -66,23 +67,26 @@ contract Auction is IAuction, Pausable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Disables the bidding to prevent race-conditions on arrival of a stake
+    /// @notice calculates the winning operator bid when a stake is deposited
     /// @dev Used local variables to prevent multiple calling of state variables to save gas
     /// @dev Gets called from the deposit contract when a stake is received
     /// @return winningOperator the address of the current highest bidder
-    function disableBidding() external onlyDepositContract returns (address) {
+    function calculateWinningBid()
+        external
+        onlyDepositContract
+        returns (address winningOperator)
+    {
         uint256 currentHighestBidIdLocal = currentHighestBidId;
         uint256 numberOfBidsLocal = numberOfBids;
 
-        //Disable bids to prevent race-conditions
-        bidsEnabled = false;
-
         //Set the bid to be de-activated to prevent 1 bid winning twice
         bids[currentHighestBidIdLocal].isActive = false;
-        address winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
-        uint256 winningBidAmount = bids[currentHighestBidIdLocal].amount;
-        uint256 tempWinningBidId;
 
+        winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
+
+        uint256 winningBidAmount = bids[currentHighestBidIdLocal].amount;
+
+        uint256 tempWinningBidId;
         //Loop to calculate the next highest bid for the next stake
         for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
             if (
@@ -102,8 +106,7 @@ contract Auction is IAuction, Pausable {
 
         numberOfActiveBids--;
 
-        emit BiddingDisabled(winningOperator);
-        return winningOperator;
+        emit WinningBidSent(winningOperator, currentHighestBidIdLocal);
     }
 
     /// @notice Increases a currently active bid by a specified amount

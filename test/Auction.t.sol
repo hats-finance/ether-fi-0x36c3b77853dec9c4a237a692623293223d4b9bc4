@@ -22,6 +22,8 @@ contract AuctionTest is Test {
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
+    event WinningBidSent(address indexed winner);
+
     event MinBidUpdated(
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
@@ -48,13 +50,13 @@ contract AuctionTest is Test {
         );
     }
 
-    function testDisablingBiddingFailsIfNotContractCalling() public {
+    function test_CalculateWinningBidFailsIfNotContractCalling() public {
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
-        auctionInstance.disableBidding();
+        auctionInstance.calculateWinningBid();
     }
 
-    function testDisablingBiddingWorks() public {
+    function test_CalculateWinningBidWorks() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -67,8 +69,6 @@ contract AuctionTest is Test {
             whiteListedAddresses,
             2
         );
-
-        assertEq(auctionInstance.bidsEnabled(), true);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
@@ -86,7 +86,7 @@ contract AuctionTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         hoax(address(depositInstance));
-        address winner = auctionInstance.disableBidding();
+        address winner = auctionInstance.calculateWinningBid();
         assertEq(address(treasuryInstance).balance, 0.3 ether);
         assertEq(address(auctionInstance).balance, 0.3 ether);
 
@@ -94,26 +94,49 @@ contract AuctionTest is Test {
         (, , , bool isActiveBid2) = auctionInstance.bids(2);
         (, , , bool isActiveBid3) = auctionInstance.bids(3);
 
-        assertEq(auctionInstance.bidsEnabled(), false);
         assertEq(auctionInstance.currentHighestBidId(), 3);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
         assertEq(isActiveBid1, true);
         assertEq(isActiveBid2, false);
         assertEq(isActiveBid3, true);
         assertEq(winner, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-    }
-
-    function testBiddingFailsWhenBidsDisabled() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         hoax(address(depositInstance));
-        auctionInstance.disableBidding();
+        winner = auctionInstance.calculateWinningBid();
+
+        assertEq(address(treasuryInstance).balance, 0.5 ether);
+        assertEq(address(auctionInstance).balance, 0.1 ether);
+
+        (, , , isActiveBid1) = auctionInstance.bids(1);
+        (, , , isActiveBid3) = auctionInstance.bids(3);
+
+        assertEq(auctionInstance.currentHighestBidId(), 1);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
+        assertEq(isActiveBid1, true);
+        assertEq(isActiveBid3, false);
+        assertEq(winner, 0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+    }
+
+    function test_EventWinningBidSent() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofForAddress2 = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Bidding is on hold");
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
+
+        vm.expectEmit(true, false, false, true);
+        emit WinningBidSent(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        hoax(address(depositInstance));
+        auctionInstance.calculateWinningBid();
     }
 
     function testBiddingWorksCorrectly() public {
@@ -181,30 +204,6 @@ contract AuctionTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Bid already cancelled");
-        auctionInstance.cancelBid(1);
-    }
-
-    function testCancelBidFailsWhenBiddingIsInactive() public {
-        bytes32[] memory proofAddressOne = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofAddressTwo = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proofAddressOne);
-
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.2 ether}(proofAddressTwo);
-
-        hoax(address(depositInstance));
-        auctionInstance.disableBidding();
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Cancelling bids on hold");
         auctionInstance.cancelBid(1);
     }
 
@@ -357,30 +356,6 @@ contract AuctionTest is Test {
         auctionInstance.increaseBid{value: 0.1 ether}(1);
     }
 
-    function testIncreaseBidFailsWhenBiddingIsInactive() public {
-        bytes32[] memory proofAddressOne = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofAddressTwo = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proofAddressOne);
-
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.2 ether}(proofAddressTwo);
-
-        hoax(address(depositInstance));
-        auctionInstance.disableBidding();
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Increase bidding on hold");
-        auctionInstance.increaseBid{value: 0.1 ether}(1);
-    }
-
     function testIncreaseBidFailsWhenNotBidOwnerCalling() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
@@ -481,30 +456,6 @@ contract AuctionTest is Test {
     function testDecreaseBidFailsWhenNotExistingBid() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Invalid bid");
-        auctionInstance.decreaseBid(1, 0.05 ether);
-    }
-
-    function testDecreaseBidFailsWhenBiddingIsInactive() public {
-        bytes32[] memory proofAddressOne = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofAddressTwo = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proofAddressOne);
-
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.2 ether}(proofAddressTwo);
-
-        hoax(address(depositInstance));
-        auctionInstance.disableBidding();
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Decrease bidding on hold");
         auctionInstance.decreaseBid(1, 0.05 ether);
     }
 
