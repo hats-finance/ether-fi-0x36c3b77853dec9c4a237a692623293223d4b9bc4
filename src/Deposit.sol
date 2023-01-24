@@ -11,10 +11,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
 
-//--------------------------------------------------------------------------------------
-//---------------------------------  STATE-VARIABLES  ----------------------------------
-//--------------------------------------------------------------------------------------
-    
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
     ITNFT public TNFTInterfaceInstance;
@@ -36,10 +32,10 @@ contract Deposit is IDeposit, Pausable {
  
     event StakeDeposit(address indexed sender, uint256 value, uint256 id);
 
-//--------------------------------------------------------------------------------------
-//----------------------------------  CONSTRUCTOR   ------------------------------------
-//--------------------------------------------------------------------------------------
-   
+    //--------------------------------------------------------------------------------------
+    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @notice Constructor to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev Auction contract must be deployed first
@@ -54,10 +50,10 @@ contract Deposit is IDeposit, Pausable {
         owner = msg.sender;
     }
 
-//--------------------------------------------------------------------------------------
-//----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-//--------------------------------------------------------------------------------------
-    
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
@@ -69,7 +65,7 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        //Create a stake pbject and store it in a mapping
+        //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
             withdrawCredentials: "",
@@ -83,14 +79,18 @@ contract Deposit is IDeposit, Pausable {
         BNFTInterfaceInstance.mint(msg.sender);
         depositorBalances[msg.sender] += msg.value;
 
-        //Update the stake with the winning bid
-
+        //gets the current highest bid from auction contract
+        address winningOperatorAddress = auctionInterfaceInstance
+            .calculateWinningBid();
 
         numberOfStakes++;
 
         emit StakeDeposit(msg.sender, msg.value, numberOfStakes - 1);
     }
 
+    /// @notice Cancels a users stake
+    /// @dev Only allowed to be cancelled before step 2 of the depositing process
+    /// @param _stakeId the ID of the stake to cancel
     function cancelStake(uint256 _stakeId) public whenNotPaused {
         require(msg.sender ==  stakes[_stakeId].staker, "Not bid owner");
         require(stakes[_stakeId].phase == STAKE_PHASE.STEP_1, "Cancelling availability closed");
@@ -113,14 +113,17 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
-    function refundDeposit(address _depositOwner, uint256 _amount) internal {
-        //Reduce the depositers balance
-        depositorBalances[_depositOwner] -= _amount;
+
+    function refundDeposit(address _depositOwner, uint256 _amount) public {
+        require(_amount % stakeAmount == 0, "Invalid refund amount");
+        require(
+            depositorBalances[_depositOwner] >= _amount,
+            "Insufficient balance"
+        );
 
         //Refund the user with their requested amount
         (bool sent, ) = _depositOwner.call{value: _amount}("");
         require(sent, "Failed to send Ether");
-
     }
 
     function pauseContract() external onlyOwner {

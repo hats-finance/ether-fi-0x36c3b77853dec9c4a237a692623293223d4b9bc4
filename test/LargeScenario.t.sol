@@ -160,16 +160,7 @@ contract LargeScenariosTest is Test {
         assertEq(address(treasuryInstance).balance, 0.7 ether);
         assertEq(address(auctionInstance).balance, 0.1 ether);
         assertEq(address(depositInstance).balance, 0.032 ether);     
-        assertEq(auctionInstance.bidsEnabled(), false);
-
-        //Attempted bid which should fail
-        vm.expectRevert("Bidding is on hold");
-        auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
         vm.stopPrank();
-
-        //Enable bidding as deposit contract
-        hoax(address(depositInstance));
-        auctionInstance.enableBidding();
 
         //Bid Four
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
@@ -224,8 +215,7 @@ contract LargeScenariosTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(address(treasuryInstance).balance, 1.7 ether);
         assertEq(address(auctionInstance).balance, 0.4 ether);
-        assertEq(address(depositInstance).balance, 340282366920938463463406607431768211456);
-        assertEq(auctionInstance.bidsEnabled(), false);
+        assertEq(address(depositInstance).balance, 0.064 ether);
     }
 
     function _merkleSetup() internal {
