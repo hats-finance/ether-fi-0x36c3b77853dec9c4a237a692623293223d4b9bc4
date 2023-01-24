@@ -51,6 +51,86 @@ contract AuctionTest is Test {
         );
     }
 
+    function test_ReEnterAuctionFailsIfAuctionPaused() public {
+        bytes32[] memory proof = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        vm.prank(owner);
+        auctionInstance.pauseContract();
+
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        vm.expectRevert("Pausable: paused");
+        depositInstance.cancelStake(0);
+
+    }
+
+    function test_ReEnterAuctionFailsIfNotCorrectCaller() public {
+        bytes32[] memory proof = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        vm.stopPrank();
+
+        vm.prank(owner);
+        vm.expectRevert("Only deposit contract function");
+        auctionInstance.reEnterAuction(1);
+    }
+
+    function test_ReEnterAuctionFailsIfBidAlreadyActive() public {
+        bytes32[] memory proof = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.05 ether}(proof);
+
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        depositInstance.cancelStake(0);
+        vm.stopPrank();
+
+        vm.prank(address(depositInstance));
+        vm.expectRevert("Bid already active");
+        auctionInstance.reEnterAuction(2);
+    }
+
+    function test_ReEnterAuctionWorks() public {
+        bytes32[] memory proof = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.05 ether}(proof);
+        assertEq(auctionInstance.currentHighestBidId(), 1);
+
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        assertEq(address(treasuryInstance).balance, 0.1 ether);
+        assertEq(address(auctionInstance).balance, 0.05 ether);
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+
+        depositInstance.cancelStake(0);
+
+        (,,,bool isActive) = auctionInstance.bids(1);
+        assertEq(isActive, true);
+        assertEq(address(treasuryInstance).balance, 0 ether);
+        assertEq(address(auctionInstance).balance, 0.15 ether);
+        assertEq(auctionInstance.currentHighestBidId(), 1);
+
+    }
+
     function test_CalculateWinningBidFailsIfNotContractCalling() public {
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
