@@ -88,6 +88,17 @@ contract Deposit is IDeposit, Pausable {
         emit StakeDeposit(msg.sender, msg.value, numberOfStakes - 1);
     }
 
+    /// @notice Creates validator object and updates information
+    /// @dev Still looking at solutions to storing key on-chain
+    /// @param _stakeId id of the stake the validator connects to
+    /// @param _validatorKey encrypted validator key which the operator and staker can access 
+    function registerValidator(uint256 _stakeId, bytes _validatorKey) public whenNotPaused {
+        require(stakes[_stakeId].phase == STAKE_PHASE.STEP_1, "Stake not in correct phase");
+
+
+
+    }
+
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _stakeId the ID of the stake to cancel
