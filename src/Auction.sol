@@ -19,7 +19,8 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     uint256 public currentHighestBidId;
-    uint256 public minBidAmount;
+    uint256 public minBidAmount = 0.01 ether;
+    uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
@@ -37,7 +38,7 @@ contract Auction is IAuction, Pausable {
     event BidPlaced(
         address indexed bidder,
         uint256 amount,
-        uint256 indexed bidderId
+        uint256 indexed bidId
     );
 
     event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
@@ -52,7 +53,6 @@ contract Auction is IAuction, Pausable {
         uint256 indexed newMinBidAmount
     );
     event Received(address indexed sender, uint256 value);
-
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -225,6 +225,10 @@ contract Auction is IAuction, Pausable {
         payable
         whenNotPaused
     {
+        require(
+            msg.value <= minBidAmount && msg.value >= MAX_BID_AMOUNT,
+            "Invalid bid amount"
+        );
         require(bidsEnabled == true, "Bidding is on hold");
         require(
             MerkleProof.verify(
@@ -248,10 +252,10 @@ contract Auction is IAuction, Pausable {
             currentHighestBidId = numberOfBids;
         }
 
+        emit BidPlaced(msg.sender, msg.value, numberOfBids);
+
         numberOfBids++;
         numberOfActiveBids++;
-
-        emit BidPlaced(msg.sender, msg.value, numberOfBids - 1);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
