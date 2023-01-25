@@ -68,7 +68,7 @@ contract MyScript is Script {
         string memory depositAddress = Strings.toHexString(address(deposit));
 
         // Sets the filename and concatenates data
-        string memory path = "contract_addresses.txt";
+        string memory path = "release-logs/contract_addresses.txt";
         string memory writeData = string(
             abi.encodePacked(
                 treasuryName,

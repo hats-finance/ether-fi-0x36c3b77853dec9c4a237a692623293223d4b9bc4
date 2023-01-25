@@ -1,3 +1,0 @@
-Treasury Contract Address:  0x4a679253410272dd5232b3ff7cf5dbb88f295319
-Auction Contract Address:  0x7a2088a1bfc9d81c55368ae168c2c02570cb814f
-Deposit Contract Address:  0x09635f643e140090a9a8dcd712ed6285858cebef
