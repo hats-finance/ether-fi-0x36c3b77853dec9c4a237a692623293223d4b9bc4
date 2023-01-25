@@ -27,6 +27,7 @@ contract SmallScenariosTest is Test {
         _merkleSetup();
         treasuryInstance = new Treasury();
         auctionInstance = new Auction(address(treasuryInstance));
+        treasuryInstance.setAuctionContractAddress(address(auctionInstance));        
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
@@ -39,7 +40,7 @@ contract SmallScenariosTest is Test {
      *  One bid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
      *  One deposit - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      */
-    function testScenarioOne() public {
+    function test_ScenarioOne() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -63,26 +64,16 @@ contract SmallScenariosTest is Test {
         assertEq(amount, 0.3 ether);
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(auctionInstance.currentHighestBidId(), 1);
-        assertEq(auctionInstance.bidsEnabled(), true);
         assertEq(isActiveBeforeStake, true);
 
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
 
-        depositInstance.deposit{value: 0.032 ether}();
-        assertEq(
-            TestBNFTInstance.ownerOf(0),
-            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-        );
-        assertEq(
-            TestTNFTInstance.ownerOf(0),
-            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-        );
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        
         assertEq(address(depositInstance).balance, 0.032 ether);
         assertEq(address(auctionInstance).balance, 0);
         assertEq(address(treasuryInstance).balance, 0.3 ether);
-
-        assertEq(auctionInstance.bidsEnabled(), false);
 
         (, , , bool isActiveAfterStake) = auctionInstance.bids(1);
         assertEq(isActiveAfterStake, false);
@@ -94,7 +85,7 @@ contract SmallScenariosTest is Test {
      *  Second bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  One updated bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      */
-    function testScenarioTwo() public {
+    function test_ScenarioTwo() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -146,7 +137,7 @@ contract SmallScenariosTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
 
-    function testTwoDepositsAtOnceStillWorks() public {
+    function test_TwoDepositsAtOnceStillWorks() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -175,10 +166,10 @@ contract SmallScenariosTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
         assertEq(auctionInstance.currentHighestBidId(), 3);
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data_2");
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(address(depositInstance).balance, 0.064 ether);
     }

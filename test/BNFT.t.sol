@@ -27,6 +27,7 @@ contract BNFTTest is Test {
         _merkleSetup();
         treasuryInstance = new Treasury();
         auctionInstance = new Auction(address(treasuryInstance));
+        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);        
         depositInstance = new Deposit(address(auctionInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
@@ -35,7 +36,7 @@ contract BNFTTest is Test {
         vm.stopPrank();
     }
 
-    function testBNFTContractGetsInstantiatedCorrectly() public {
+    function test_BNFTContractGetsInstantiatedCorrectly() public {
         assertEq(
             TestBNFTInstance.depositContractAddress(),
             address(depositInstance)
@@ -43,18 +44,18 @@ contract BNFTTest is Test {
         assertEq(TestBNFTInstance.nftValue(), 0.002 ether);
     }
 
-    function testBNFTMintsFailsIfNotCorrectCaller() public {
+    function test_BNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
         vm.expectRevert("Only deposit contract function");
         TestBNFTInstance.mint(address(alice));
     }
 
-    function testBNFTCannotBeTransferred() public {
+    function test_BNFTCannotBeTransferred() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
         vm.expectRevert("Err: token is SOUL BOUND");
         TestBNFTInstance.transferFrom(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,

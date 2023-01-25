@@ -27,6 +27,7 @@ contract DepositTest is Test {
         _merkleSetup();
         treasuryInstance = new Treasury();
         auctionInstance = new Auction(address(treasuryInstance));
+        treasuryInstance.setAuctionContractAddress(address(auctionInstance));     
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
@@ -35,75 +36,35 @@ contract DepositTest is Test {
         vm.stopPrank();
     }
 
-    function testDepositContractInstantiatedCorrectly() public {
+    function test_DepositContractInstantiatedCorrectly() public {
         assertEq(depositInstance.stakeAmount(), 0.032 ether);
+        assertEq(depositInstance.owner(), owner);
     }
 
-    function testDepositCreatesNFTs() public {
+    function test_DepositReceivesEther() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}();
-        assertEq(
-            TestBNFTInstance.balanceOf(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            1
-        );
-        assertEq(
-            TestTNFTInstance.balanceOf(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            1
-        );
-    }
-
-    function testDepositCreatesNFTsWithCorrectOwner() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}();
-        assertEq(
-            TestBNFTInstance.ownerOf(0),
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
-        assertEq(
-            TestTNFTInstance.ownerOf(0),
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
-    }
-
-    function testDepositReceivesEther() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
 
-    function testDepositUpdatesBalancesMapping() public {
+    function test_DepositUpdatesBalancesMapping() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
         assertEq(
             depositInstance.depositorBalances(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             ),
             0.032 ether
         );
-        vm.stopPrank();
-        hoax(address(depositInstance));
-        auctionInstance.enableBidding();
-        vm.stopPrank();
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data_2");
         assertEq(
             depositInstance.depositorBalances(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
@@ -112,32 +73,23 @@ contract DepositTest is Test {
         );
     }
 
-    function testDepositDisablesBidding() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}();
-        assertEq(auctionInstance.bidsEnabled(), false);
-    }
-
-    function testDepositFailsIfIncorrectAmountSent() public {
+    function test_DepositFailsIfIncorrectAmountSent() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Insufficient staking amount");
-        depositInstance.deposit{value: 0.2 ether}();
+        depositInstance.deposit{value: 0.2 ether}("test_data");
     }
 
-    function testDepositFailsBidDoesntExist() public {
+    function test_DepositFailsBidDoesntExist() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         auctionInstance.cancelBid(1);
         vm.expectRevert("No bids available at the moment");
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
     }
 
-    function testDepositfailsIfContractPaused() public {
+    function test_DepositfailsIfContractPaused() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(owner);
@@ -146,7 +98,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         vm.expectRevert("Pausable: paused");
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
         assertEq(depositInstance.paused(), true);
         vm.stopPrank();
 
@@ -154,35 +106,12 @@ contract DepositTest is Test {
         depositInstance.unPauseContract();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
         assertEq(depositInstance.paused(), false);
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
 
-    function testRefundFailsIfIvalidAmount() public {
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Invalid refund amount");
-        depositInstance.refundDeposit(owner, 0.033 ether);
-    }
-
-    function testRefundFailsIfInsufficientBalance() public {
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        auctionInstance.bidOnStake{value: 0.3 ether}(proof);
-
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.deposit{value: 0.032 ether}();
-
-        assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.064 ether);
-
-        vm.expectRevert("Insufficient balance");
-        depositInstance.refundDeposit(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 0.096 ether);
-    }
-
-    function testRefundWorksCorrectly() public {
+    function test_RefundWorksCorrectly() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
         uint256 balanceOne = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931).balance;
@@ -195,20 +124,92 @@ contract DepositTest is Test {
         
         assertEq(balanceTwo, balanceOne - 0.4 ether);
 
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        depositInstance.deposit{value: 0.032 ether}("test_data_2");
         uint256 balanceThree = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931).balance;
         
         assertEq(balanceThree, balanceTwo - 0.064 ether);
         assertEq(address(depositInstance).balance, 0.064 ether);
         assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.064 ether);
 
-        depositInstance.refundDeposit(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 0.032 ether);
+        depositInstance.cancelStake(0);
+        (,,uint256 amount,,,) = depositInstance.stakes(0);
         uint256 balanceFour = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931).balance;
 
         assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.032 ether);
         assertEq(balanceFour, balanceThree + 0.032 ether);
         assertEq(address(depositInstance).balance, 0.032 ether);
+        assertEq(amount, 0.032 ether);
+    }
+
+    function test_CancelStakeFailsIfNotStakeOwner() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        vm.stopPrank();
+        vm.prank(owner);
+        vm.expectRevert("Not bid owner");
+        depositInstance.cancelStake(0);
+    }
+
+    function test_CancelStakeFailsIfCancellingAvailabilityClosed() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        depositInstance.cancelStake(0);
+
+        vm.expectRevert("Cancelling availability closed");
+        depositInstance.cancelStake(0);
+    }
+
+    function test_CancelStakeWorksCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.2 ether}(proof);
+        assertEq(address(treasuryInstance).balance, 0 ether);
+        assertEq(address(auctionInstance).balance, 0.6 ether);
+
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
+        (address staker,bytes memory deposit_data,uint256 amount,uint256 winningbidID,,) = depositInstance.stakes(0);
+        assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(amount, 0.032 ether);
+        assertEq(winningbidID, 2);
+        assertEq(deposit_data, "test_data");
+
+        (uint256 bidAmount,, address bidder, bool isActive) = auctionInstance.bids(winningbidID);
+        assertEq(bidAmount, 0.3 ether);
+        assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(isActive, false);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
+        assertEq(auctionInstance.currentHighestBidId(), 3);
+        assertEq(address(treasuryInstance).balance, 0.3 ether);
+        assertEq(address(auctionInstance).balance, 0.3 ether);
+
+        depositInstance.cancelStake(0);
+        (,,,winningbidID,,) = depositInstance.stakes(0);
+        assertEq(winningbidID, 0);
+
+        (bidAmount,, bidder, isActive) = auctionInstance.bids(2);
+        assertEq(bidAmount, 0.3 ether);
+        assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(isActive, true);
+        assertEq(auctionInstance.numberOfActiveBids(), 3);
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+        assertEq(address(treasuryInstance).balance, 0 ether);
+        assertEq(address(auctionInstance).balance, 0.6 ether);
+
+        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, depositorBalance + 0.032 ether);
+
     }
 
     function _merkleSetup() internal {

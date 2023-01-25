@@ -6,6 +6,7 @@ import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IAuction.sol";
+import "./interfaces/ITreasury.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
@@ -23,9 +24,9 @@ contract Auction is IAuction, Pausable {
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
     address public treasuryContractAddress;
+    address public owner;
     bytes32 public merkleRoot;
     bool public bidsEnabled;
-    address public owner;
 
     mapping(uint256 => Bid) public bids;
 
@@ -40,7 +41,7 @@ contract Auction is IAuction, Pausable {
     );
 
     event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
-
+    event BidReEnteredAuction(uint256 indexed bidId);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
@@ -50,6 +51,8 @@ contract Auction is IAuction, Pausable {
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
     );
+    event Received(address indexed sender, uint256 value);
+
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -74,7 +77,7 @@ contract Auction is IAuction, Pausable {
     function calculateWinningBid()
         external
         onlyDepositContract
-        returns (address winningOperator)
+        returns (uint256)
     {
         uint256 currentHighestBidIdLocal = currentHighestBidId;
         uint256 numberOfBidsLocal = numberOfBids;
@@ -82,7 +85,7 @@ contract Auction is IAuction, Pausable {
         //Set the bid to be de-activated to prevent 1 bid winning twice
         bids[currentHighestBidIdLocal].isActive = false;
 
-        winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
+        address winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
 
         uint256 winningBidAmount = bids[currentHighestBidIdLocal].amount;
 
@@ -107,6 +110,7 @@ contract Auction is IAuction, Pausable {
         numberOfActiveBids--;
 
         emit WinningBidSent(winningOperator, currentHighestBidIdLocal);
+        return currentHighestBidIdLocal;
     }
 
     /// @notice Increases a currently active bid by a specified amount
@@ -216,7 +220,6 @@ contract Auction is IAuction, Pausable {
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-
     function bidOnStake(bytes32[] calldata _merkleProof)
         external
         payable
@@ -251,6 +254,32 @@ contract Auction is IAuction, Pausable {
         emit BidPlaced(msg.sender, msg.value, numberOfBids - 1);
     }
 
+    /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
+    /// @param _bidId the ID of the bid which was matched to the cancelled stake.
+    function reEnterAuction(uint256 _bidId)
+        external
+        onlyDepositContract
+        whenNotPaused
+    {
+        require(bids[_bidId].isActive == false, "Bid already active");
+
+        //Reactivate the bid
+        bids[_bidId].isActive = true;
+        ITreasury(treasuryContractAddress).refundBid(
+            bids[_bidId].amount,
+            _bidId
+        );
+
+        //Checks if the bid is now the highest bid
+        if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
+            currentHighestBidId = _bidId;
+        }
+
+        numberOfActiveBids++;
+
+        emit BidReEnteredAuction(_bidId);
+    }
+
     /// @notice Updates the merkle root whitelists have been updated
     /// @dev merkleroot gets generated in JS offline and sent to the contract
     /// @param _newMerkle new merkle root to be used for bidding
@@ -273,20 +302,28 @@ contract Auction is IAuction, Pausable {
         emit DepositAddressSet(_depositContractAddress);
     }
 
+    /// @notice Updates the minimum bid price
+    /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
         uint256 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
-    
+
+    //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
     }
 
+    //Unpauses the contract
     function unPauseContract() external onlyOwner {
         _unpause();
+    }
 
+    //Allows ether to be sent to this contract
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 
     //--------------------------------------------------------------------------------------
