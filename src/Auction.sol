@@ -226,8 +226,8 @@ contract Auction is IAuction, Pausable {
         whenNotPaused
     {
         require(
-            msg.value >= minBidAmount && msg.value <= maxBidAmount,
-            "Invalid bid amount";
+            msg.value >= minBidAmount && msg.value <= MAX_BID_AMOUNT,
+            "Invalid bid amount"
         );
         require(bidsEnabled == true, "Bidding is on hold");
         require(
