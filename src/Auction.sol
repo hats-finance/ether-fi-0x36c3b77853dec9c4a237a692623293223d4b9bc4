@@ -225,6 +225,10 @@ contract Auction is IAuction, Pausable {
         payable
         whenNotPaused
     {
+        require(
+            msg.value >= minBidAmount && msg.value <= maxBidAmount,
+            "Invalid bid amount";
+        );
         require(bidsEnabled == true, "Bidding is on hold");
         require(
             MerkleProof.verify(
