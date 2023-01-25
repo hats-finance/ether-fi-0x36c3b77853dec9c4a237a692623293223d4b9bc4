@@ -19,7 +19,8 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     uint256 public currentHighestBidId;
-    uint256 public minBidAmount;
+    uint256 public minBidAmount = 0.01 ether;
+    uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
@@ -52,7 +53,6 @@ contract Auction is IAuction, Pausable {
         uint256 indexed newMinBidAmount
     );
     event Received(address indexed sender, uint256 value);
-
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
