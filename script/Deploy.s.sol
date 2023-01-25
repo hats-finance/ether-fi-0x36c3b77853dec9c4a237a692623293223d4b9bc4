@@ -62,7 +62,7 @@ contract MyScript is Script {
 
         vm.stopBroadcast();
 
-        // fs_permissions = [{ access = "read-write", path = "./"}]
+        // Sets the variables to be wriiten to contract addresses.txt
         string memory treasuryName = "Treasury Contract Address: ";
         string memory treasuryAddress = Strings.toHexString(address(treasury));
         string memory auctionName = "Auction Contract Address: ";
@@ -70,6 +70,7 @@ contract MyScript is Script {
         string memory depositName = "Deposit Contract Address: ";
         string memory depositAddress = Strings.toHexString(address(deposit));
 
+        // Sets the filename and concatenates data
         string memory path = "contract_addresses.txt";
         string memory writeData = string(
             abi.encodePacked(
@@ -87,6 +88,7 @@ contract MyScript is Script {
             )
         );
 
+        // Writes the data to external Contract_Address.txt file
         vm.writeFile(path, writeData);
     }
 }
