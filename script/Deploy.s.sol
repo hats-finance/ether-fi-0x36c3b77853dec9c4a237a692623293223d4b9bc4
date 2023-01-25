@@ -52,11 +52,8 @@ contract MyScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         Treasury treasury = new Treasury();
-        console.log("Treasury deployed to", address(treasury));
         Auction auction = new Auction(address(treasury));
-        console.log("Auction deployed to", address(auction));
         Deposit deposit = new Deposit(address(auction));
-        console.log("Deposit deployed to", address(deposit));
         auction.setDepositContractAddress(address(deposit));
         auction.updateMerkleRoot(root);
 
