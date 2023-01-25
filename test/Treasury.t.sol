@@ -27,13 +27,13 @@ contract TreasuryTest is Test {
         assertEq(address(treasuryInstance).balance, 0.5 ether);
     }
 
-    function test_SetTreasuryAddressWorks() public {
+    function test_SetAuctionAddressWorks() public {
         vm.prank(owner);
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         assertEq(treasuryInstance.auctionContractAddress(), address(auctionInstance));
     }
 
-    function test_SetTreasuryAddressFailsIfNotOwner() public {
+    function test_SetAuctionAddressFailsIfNotOwner() public {
         vm.prank(alice);
         vm.expectRevert("Only owner function");
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
