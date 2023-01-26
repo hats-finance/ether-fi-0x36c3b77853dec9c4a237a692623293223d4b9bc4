@@ -470,6 +470,20 @@ contract AuctionTest is Test {
         auctionInstance.increaseBid{value: 0.1 ether}(1);
     }
 
+    function test_IncreaseBidFailsIfBidIncreaseToMoreThanMaxBidAmount() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 1 ether}(proofForAddress1);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Above max bid");
+        auctionInstance.increaseBid{value: 5 ether}(1);
+    }
+
     function test_IncreaseBidWorks() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,

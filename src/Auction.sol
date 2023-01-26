@@ -117,6 +117,10 @@ contract Auction is IAuction, Pausable {
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to increase
     function increaseBid(uint256 _bidId) external payable whenNotPaused {
+        require(
+            msg.value + bids[_bidId].amount <= MAX_BID_AMOUNT,
+            "Above max bid"
+        );
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(bidsEnabled == true, "Increase bidding on hold");
