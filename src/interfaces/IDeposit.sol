@@ -5,9 +5,9 @@ interface IDeposit {
 
     //The phases of the staking process
     enum STAKE_PHASE {
-        STEP_1,
-        STEP_2,
-        STEP_3,
+        DEPOSITED,
+        VALIDATOR_REGISTERED,
+        VALIDATOR_ACCEPTED,
         INACTIVE
     }
 

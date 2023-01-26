@@ -72,7 +72,7 @@ contract Deposit is IDeposit, Pausable {
             amount: msg.value,
             winningBid: 0,
             stakeId: numberOfStakes,
-            phase: STAKE_PHASE.STEP_1
+            phase: STAKE_PHASE.DEPOSITED
         });
         
         depositorBalances[msg.sender] += msg.value;
@@ -93,7 +93,8 @@ contract Deposit is IDeposit, Pausable {
     /// @param _stakeId id of the stake the validator connects to
     /// @param _validatorKey encrypted validator key which the operator and staker can access 
     function registerValidator(uint256 _stakeId, bytes memory _validatorKey) public whenNotPaused {
-        require(stakes[_stakeId].phase == STAKE_PHASE.STEP_1, "Stake not in correct phase");
+        require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
+        require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Stake not in correct phase");
 
         validators[numberOfValidators] = Validator({
             bidId: stakes[_stakeId].winningBid,
@@ -102,6 +103,9 @@ contract Deposit is IDeposit, Pausable {
             phase: VALIDATOR_PHASE.HANDOVER_READY
         });
 
+        stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
+        numberOfValidators++;
+
     }
 
     /// @notice Cancels a users stake
@@ -109,7 +113,7 @@ contract Deposit is IDeposit, Pausable {
     /// @param _stakeId the ID of the stake to cancel
     function cancelStake(uint256 _stakeId) public whenNotPaused {
         require(msg.sender ==  stakes[_stakeId].staker, "Not bid owner");
-        require(stakes[_stakeId].phase == STAKE_PHASE.STEP_1, "Cancelling availability closed");
+        require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Cancelling availability closed");
 
         uint256 stakeAmountTemp = stakes[_stakeId].amount;
         depositorBalances[msg.sender] -= stakeAmountTemp;
