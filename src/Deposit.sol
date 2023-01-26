@@ -98,7 +98,8 @@ contract Deposit is IDeposit, Pausable {
         validators[numberOfValidators] = Validator({
             bidId: stakes[_stakeId].winningBid,
             stakeId: _stakeId,
-            validatorKey: _validatorKey
+            validatorKey: _validatorKey,
+            phase: VALIDATOR_PHASE.HANDOVER_READY
         });
 
     }
