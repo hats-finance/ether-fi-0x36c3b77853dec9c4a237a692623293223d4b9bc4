@@ -20,7 +20,6 @@ contract Deposit is IDeposit, Pausable {
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
     address public owner;
-    STAKE_PHASE public phasey = STAKE_PHASE.INACTIVE;
 
     mapping(address => uint256) public depositorBalances;
     mapping(address => mapping(uint256 => address)) public stakeToOperator;
@@ -61,7 +60,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     /// @param _deposit_data This is a bytes hash representative of all deposit requirements
-    function deposit(bytes memory _deposit_data) public payable whenNotPaused {
+    function deposit(DepositData calldata _deposit_data) public payable whenNotPaused {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
@@ -73,18 +72,12 @@ contract Deposit is IDeposit, Pausable {
             staker: msg.sender,
             deposit_data: _deposit_data,
             amount: msg.value,
-            winningBid: 0,
+            winningBid: auctionInterfaceInstance.calculateWinningBid(),
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.DEPOSITED
         });
         
         depositorBalances[msg.sender] += msg.value;
-
-        //gets the current highest bid from auction contract
-        uint256 winningBidId = auctionInterfaceInstance
-            .calculateWinningBid();
-
-        stakes[numberOfStakes].winningBid = winningBidId;
 
         numberOfStakes++;
 
@@ -100,6 +93,7 @@ contract Deposit is IDeposit, Pausable {
         require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Stake not in correct phase");
 
         validators[numberOfValidators] = Validator({
+            validatorId: numberOfValidators,
             bidId: stakes[_stakeId].winningBid,
             stakeId: _stakeId,
             validatorKey: _validatorKey,
@@ -113,8 +107,15 @@ contract Deposit is IDeposit, Pausable {
 
     }
 
-    function acceptValidator() public whenNotPaused {
-        
+    /// @notice node operator accepts validator key and data which allows the stake to be deposited into the beacon chain
+    /// @dev future iterations will account for if the operator doesnt accept the validator
+    /// @param _validatorId id of the validator to be accepted
+    function acceptValidator(uint256 _validatorId) public whenNotPaused {
+        require(msg.sender == auctionInterfaceInstance.getBidOwner(validators[_validatorId].bidId), "Incorrect caller");
+        require(validators[_validatorId].phase == VALIDATOR_PHASE.HANDOVER_READY, "Validator not in correct phase");
+
+
+        validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
     }
 
     /// @notice Cancels a users stake

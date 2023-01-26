@@ -7,7 +7,6 @@ interface IDeposit {
     enum STAKE_PHASE {
         DEPOSITED,
         VALIDATOR_REGISTERED,
-        VALIDATOR_ACCEPTED,
         INACTIVE
     }
 
@@ -26,7 +25,7 @@ interface IDeposit {
     /// @param phase - the current step of the stake
     struct Stake {
         address staker;
-        bytes deposit_data;
+        DepositData deposit_data;
         uint256 amount;
         uint256 winningBid;
         uint256 stakeId;
@@ -38,13 +37,22 @@ interface IDeposit {
     /// @param stakeId - id of the object holding the stakers info.
     /// @param validatorKey - encrypted validator key for use by the operator and staker
     struct Validator {
+        uint256 validatorId;
         uint256 bidId;
         uint256 stakeId;
         bytes validatorKey;
         VALIDATOR_PHASE phase;
     }
 
-    function deposit(bytes memory _deposit_data) external payable;
+    struct DepositData {
+        address operator;
+        bytes32 withdrawalCredentials;
+        bytes32 depositDataRoot;
+        bytes publicKey;
+        bytes signature;
+    }
+
+    function deposit(DepositData calldata _deposit_data) external payable;
 
     function cancelStake(uint256 _stakeId) external;
 
