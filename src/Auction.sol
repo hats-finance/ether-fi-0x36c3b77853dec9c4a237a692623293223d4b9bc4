@@ -317,6 +317,7 @@ contract Auction is IAuction, Pausable {
     /// @notice Updates the minimum bid price
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
+        require(_newMinBidAmount < MAX_BID_AMOUNT, "Min bid exceeds max bid");
         uint256 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
 

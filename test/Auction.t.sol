@@ -743,6 +743,12 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.minBidAmount(), 1 ether);
     }
 
+    function test_SetBidAmountFailsIfGreaterThanMaxBidAmount() public {
+        vm.prank(owner);
+        vm.expectRevert("Min bid exceeds max bid");
+        auctionInstance.setMinBidPrice(5 ether);
+    }
+
     function test_EventMinBidUpdated() public {
         vm.expectEmit(true, true, false, true);
         emit MinBidUpdated(0, 1 ether);
