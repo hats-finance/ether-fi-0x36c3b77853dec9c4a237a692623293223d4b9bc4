@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "../src/interfaces/IDeposit.sol";
 import "../src/Deposit.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -10,6 +11,7 @@ import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract DepositTest is Test {
+    IDeposit public depositInterface;
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -30,6 +32,7 @@ contract DepositTest is Test {
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));     
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
+        depositInterface = IDeposit(address(depositInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
@@ -109,6 +112,63 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}("test_data");
         assertEq(depositInstance.paused(), false);
         assertEq(address(depositInstance).balance, 0.032 ether);
+    }
+
+    function test_RegisterValidatorFailsIfIncorrectCaller() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        vm.stopPrank();
+
+        vm.prank(owner);
+        vm.expectRevert("Incorrect caller");
+        depositInstance.registerValidator(0, "validator_key");
+    }
+
+    function test_RegisterValidatorFailsIfStakeNotInCorrectPhase() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        depositInstance.cancelStake(0);
+
+        vm.expectRevert("Stake not in correct phase");
+        depositInstance.registerValidator(0, "validator_key");
+    }
+
+    function test_RegisterValidatorFailsIfContractPaused() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+        vm.stopPrank();
+
+        vm.prank(owner);
+        depositInstance.pauseContract();
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Pausable: paused");
+        depositInstance.registerValidator(0, "validator_key");
+    }
+
+    function test_RegisterValidatorWorksCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        depositInstance.deposit{value: 0.032 ether}("test_data");
+
+        depositInstance.registerValidator(0, "validator_key");
+
+        (uint256 bidId, uint256 stakeId, bytes memory validatorKey,) = depositInstance.validators(0);
+        assertEq(bidId, 1);
+        assertEq(stakeId, 0);
+        assertEq(validatorKey, "validator_key");
+        assertEq(depositInstance.numberOfValidators(), 1);
     }
 
     function test_RefundWorksCorrectly() public {

@@ -20,6 +20,7 @@ contract Deposit is IDeposit, Pausable {
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
     address public owner;
+    STAKE_PHASE public phasey = STAKE_PHASE.INACTIVE;
 
     mapping(address => uint256) public depositorBalances;
     mapping(address => mapping(uint256 => address)) public stakeToOperator;
