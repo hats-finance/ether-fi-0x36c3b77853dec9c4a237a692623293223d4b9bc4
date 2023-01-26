@@ -92,10 +92,14 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Still looking at solutions to storing key on-chain
     /// @param _stakeId id of the stake the validator connects to
     /// @param _validatorKey encrypted validator key which the operator and staker can access 
-    function registerValidator(uint256 _stakeId, bytes _validatorKey) public whenNotPaused {
+    function registerValidator(uint256 _stakeId, bytes memory _validatorKey) public whenNotPaused {
         require(stakes[_stakeId].phase == STAKE_PHASE.STEP_1, "Stake not in correct phase");
 
-
+        validators[numberOfValidators] = Validator({
+            bidId: stakes[_stakeId].winningBid,
+            stakeId: _stakeId,
+            validatorKey: _validatorKey
+        });
 
     }
 
