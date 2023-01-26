@@ -31,6 +31,8 @@ contract Deposit is IDeposit, Pausable {
     //--------------------------------------------------------------------------------------
  
     event StakeDeposit(address indexed sender, uint256 value, uint256 id);
+    event StakeCancelled(uint256 id);
+    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed validatorKey);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -106,6 +108,8 @@ contract Deposit is IDeposit, Pausable {
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
         numberOfValidators++;
 
+        emit ValidatorRegistered(stakes[_stakeId].winningBid, _stakeId, _validatorKey);
+
     }
 
     /// @notice Cancels a users stake
@@ -126,6 +130,8 @@ contract Deposit is IDeposit, Pausable {
         stakes[_stakeId].winningBid = 0;
 
         refundDeposit(msg.sender, stakeAmountTemp);
+
+        emit StakeCancelled(_stakeId);
 
     }
 
