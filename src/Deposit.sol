@@ -113,6 +113,10 @@ contract Deposit is IDeposit, Pausable {
 
     }
 
+    function acceptValidator() public whenNotPaused {
+        
+    }
+
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _stakeId the ID of the stake to cancel
