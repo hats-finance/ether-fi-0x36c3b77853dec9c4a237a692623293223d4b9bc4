@@ -587,6 +587,20 @@ contract AuctionTest is Test {
         auctionInstance.decreaseBid(1, 1 ether);
     }
 
+    function test_DecreaseBidFailsIfDecreaseBelowMinBidAmount() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.03 ether}(proofForAddress1);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Bid Below Min Bid");
+        auctionInstance.decreaseBid(1, 0.029 ether);
+    }
+
     function test_DecreaseBidWorks() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
