@@ -5,6 +5,7 @@ import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/IDeposit.sol";
+import "./interfaces/IDepositContract.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./WithdrawSafe.sol";
@@ -18,6 +19,7 @@ contract Deposit is IDeposit, Pausable {
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
+    IDepositContract public depositContractEth2;
     uint256 public stakeAmount;
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
@@ -51,6 +53,7 @@ contract Deposit is IDeposit, Pausable {
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
         auctionInterfaceInstance = IAuction(_auctionAddress);
+        depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b);
         owner = msg.sender;
     }
 
@@ -126,6 +129,10 @@ contract Deposit is IDeposit, Pausable {
         stakes[localStakeId].withdrawSafe = address(withdrawSafeInstance);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
+
+        DepositData memory dataInstance = stakes[localStakeId].deposit_data;
+
+        //depositContractEth2.deposit{value: stakeAmount}(dataInstance.publicKey, abi.encodePacked(dataInstance.withdrawalCredentials), dataInstance.signature, dataInstance.depositDataRoot);
     }
 
     /// @notice Cancels a users stake
