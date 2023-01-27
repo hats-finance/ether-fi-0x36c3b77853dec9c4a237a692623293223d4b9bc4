@@ -238,14 +238,17 @@ contract Auction is IAuction, Pausable {
             "Invalid bid amount"
         );
         require(bidsEnabled == true, "Bidding is on hold");
-        require(
+
+        // Checks if bidder is on whitelist
+        if (
             MerkleProof.verify(
                 _merkleProof,
                 merkleRoot,
                 keccak256(abi.encodePacked(msg.sender))
-            ),
-            "Invalid merkle proof"
-        );
+            )
+        ) {
+            minBidAmount == 0.001 ether;
+        }
 
         //Creates a bid object for storage and lookup in future
         bids[numberOfBids] = Bid({
