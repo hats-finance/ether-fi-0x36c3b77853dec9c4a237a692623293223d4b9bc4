@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
+import "../src/WithdrawSafe.sol";
 import "../src/Deposit.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -12,6 +13,7 @@ import "../lib/murky/src/Merkle.sol";
 
 contract DepositTest is Test {
     IDeposit public depositInterface;
+    WithdrawSafe public withdrawSafeInstance;
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -272,6 +274,10 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}(test_data);
         depositInstance.registerValidator(0, "Validator_key");
         depositInstance.acceptValidator(0);
+
+        (, address withdrawSafe,,,,,) = depositInstance.stakes(0);
+        withdrawSafeInstance = WithdrawSafe(withdrawSafe);
+        assertEq(withdrawSafeInstance.owner(), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
         assertEq(TestBNFTInstance.ownerOf(0), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(TestTNFTInstance.ownerOf(0), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
