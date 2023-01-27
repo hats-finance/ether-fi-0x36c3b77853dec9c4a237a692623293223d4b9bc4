@@ -265,6 +265,22 @@ contract AuctionTest is Test {
         vm.expectRevert("Invalid bid amount");
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.00001 ether}(proof2);
+
+        vm.expectRevert("Invalid bid amount");
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.bidOnStake{value: 6 ether}(proof2);
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.bidOnStake{value: 0.002 ether}(proof2);
+
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
+
+        (amount, , bidderAddress, ) = auctionInstance.bids(2);
+
+        assertEq(amount, 0.002 ether);
+        assertEq(bidderAddress, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        assertEq(address(auctionInstance).balance, 0.003 ether);
     }
 
     function test_BidFailsWhenInvaliAmountSent() public {
