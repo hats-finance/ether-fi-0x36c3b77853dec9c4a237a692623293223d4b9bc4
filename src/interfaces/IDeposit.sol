@@ -59,5 +59,6 @@ interface IDeposit {
 
     function registerValidator(uint256 _stakeId, bytes memory _validatorKey) external;
 
+    function acceptValidator(uint256 _validatorId) external;
 
 }
