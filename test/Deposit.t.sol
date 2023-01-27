@@ -277,7 +277,6 @@ contract DepositTest is Test {
         assertEq(TestTNFTInstance.ownerOf(0), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(TestBNFTInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 1);
         assertEq(TestTNFTInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 1);
-
     }
 
     function test_RefundWorksCorrectly() public {
