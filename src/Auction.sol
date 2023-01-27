@@ -233,10 +233,6 @@ contract Auction is IAuction, Pausable {
         payable
         whenNotPaused
     {
-        require(
-            msg.value >= minBidAmount && msg.value <= MAX_BID_AMOUNT,
-            "Invalid bid amount"
-        );
         require(bidsEnabled == true, "Bidding is on hold");
 
         // Checks if bidder is on whitelist
@@ -245,9 +241,17 @@ contract Auction is IAuction, Pausable {
                 _merkleProof,
                 merkleRoot,
                 keccak256(abi.encodePacked(msg.sender))
-            )
+            ) == true
         ) {
-            minBidAmount == 0.001 ether;
+            require(
+                msg.value >= 0.001 ether && msg.value <= MAX_BID_AMOUNT,
+                "Invalid bid amount"
+            );
+        } else {
+            require(
+                msg.value >= minBidAmount && msg.value <= MAX_BID_AMOUNT,
+                "Invalid bid amount"
+            );
         }
 
         //Creates a bid object for storage and lookup in future
