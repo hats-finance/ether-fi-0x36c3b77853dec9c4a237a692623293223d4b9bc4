@@ -114,6 +114,8 @@ contract Deposit is IDeposit, Pausable {
         require(msg.sender == auctionInterfaceInstance.getBidOwner(validators[_validatorId].bidId), "Incorrect caller");
         require(validators[_validatorId].phase == VALIDATOR_PHASE.HANDOVER_READY, "Validator not in correct phase");
 
+        TNFTInterfaceInstance.mint(stakes[validators[_validatorId].stakeId].staker);
+        BNFTInterfaceInstance.mint(stakes[validators[_validatorId].stakeId].staker);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
     }
