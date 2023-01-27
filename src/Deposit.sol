@@ -7,12 +7,14 @@ import "./interfaces/IAuction.sol";
 import "./interfaces/IDeposit.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./WithdrawSafe.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
 
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
+    WithdrawSafe public withdrawSafeInstance;
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
@@ -70,6 +72,7 @@ contract Deposit is IDeposit, Pausable {
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
+            withdrawSafe: address(0),
             deposit_data: _deposit_data,
             amount: msg.value,
             winningBid: auctionInterfaceInstance.calculateWinningBid(),
@@ -116,6 +119,9 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[validators[_validatorId].stakeId].staker);
         BNFTInterfaceInstance.mint(stakes[validators[_validatorId].stakeId].staker);
+
+        withdrawSafeInstance = new WithdrawSafe();
+
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
     }
