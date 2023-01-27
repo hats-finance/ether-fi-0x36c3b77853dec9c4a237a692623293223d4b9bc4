@@ -21,6 +21,7 @@ contract AuctionTest is Test {
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
+    address bob = vm.addr(3);
 
     event WinningBidSent(address indexed winner, uint256 indexed winningBidId);
 
@@ -206,10 +207,10 @@ contract AuctionTest is Test {
         auctionInstance.calculateWinningBid();
     }
 
-    function test_BiddingWorksCorrectly() public {
+    function test_BidNonWhitelistBiddingWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        hoax(alice);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
@@ -218,10 +219,14 @@ contract AuctionTest is Test {
         (uint256 amount, , address bidderAddress, ) = auctionInstance.bids(1);
 
         assertEq(amount, 0.1 ether);
-        assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(bidderAddress, address(alice));
         assertEq(auctionInstance.numberOfBids(), 2);
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Invalid bid amount");
+        hoax(bob);
+        auctionInstance.bidOnStake{value: 0.001 ether}(proof);
+
+        hoax(bob);
         auctionInstance.bidOnStake{value: 0.3 ether}(proof);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
@@ -231,7 +236,7 @@ contract AuctionTest is Test {
 
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(amount2, 0.3 ether);
-        assertEq(bidderAddress2, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(bidderAddress2, address(bob));
         assertEq(auctionInstance.numberOfBids(), 3);
 
         assertEq(address(auctionInstance).balance, 0.4 ether);
