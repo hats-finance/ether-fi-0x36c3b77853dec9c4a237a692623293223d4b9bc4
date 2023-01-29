@@ -38,7 +38,7 @@ contract Auction is IAuction, Pausable {
     event BidPlaced(
         address indexed bidder,
         uint256 amount,
-        uint256 indexed bidderId
+        uint256 indexed bidId
     );
 
     event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
@@ -234,6 +234,7 @@ contract Auction is IAuction, Pausable {
         whenNotPaused
     {
         require(
+
             msg.value >= minBidAmount && msg.value <= MAX_BID_AMOUNT,
             "Invalid bid amount"
         );
@@ -260,10 +261,10 @@ contract Auction is IAuction, Pausable {
             currentHighestBidId = numberOfBids;
         }
 
+        emit BidPlaced(msg.sender, msg.value, numberOfBids);
+
         numberOfBids++;
         numberOfActiveBids++;
-
-        emit BidPlaced(msg.sender, msg.value, numberOfBids - 1);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
