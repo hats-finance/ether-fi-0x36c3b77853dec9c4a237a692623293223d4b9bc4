@@ -350,6 +350,10 @@ contract Auction is IAuction, Pausable {
         return numberOfActiveBids;
     }
 
+    function getBidOwner(uint256 _bidId) external view returns (address) {
+        return bids[_bidId].bidderAddress;
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------

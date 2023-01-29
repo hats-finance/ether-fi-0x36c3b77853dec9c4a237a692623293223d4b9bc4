@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "../src/interfaces/IDeposit.sol";
 import "../src/Deposit.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -19,6 +20,9 @@ contract SmallScenariosTest is Test {
     bytes32 root;
     bytes32[] public whiteListedAddresses;
 
+    IDeposit.DepositData public test_data;
+    IDeposit.DepositData public test_data_2;
+
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
@@ -33,6 +37,23 @@ contract SmallScenariosTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+
+        test_data = IDeposit.DepositData({
+            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
+            withdrawalCredentials: "test_credentials",
+            depositDataRoot: "test_deposit_root",
+            publicKey: "test_pubkey",
+            signature: "test_signature"
+        });
+
+        test_data_2 = IDeposit.DepositData({
+            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
+            withdrawalCredentials: "test_credentials_2",
+            depositDataRoot: "test_deposit_root_2",
+            publicKey: "test_pubkey_2",
+            signature: "test_signature_2"
+        });
+
         vm.stopPrank();
     }
 
@@ -69,7 +90,7 @@ contract SmallScenariosTest is Test {
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
 
-        depositInstance.deposit{value: 0.032 ether}("test_data");
+        depositInstance.deposit{value: 0.032 ether}(test_data);
         
         assertEq(address(depositInstance).balance, 0.032 ether);
         assertEq(address(auctionInstance).balance, 0);
@@ -166,10 +187,10 @@ contract SmallScenariosTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.deposit{value: 0.032 ether}("test_data");
+        depositInstance.deposit{value: 0.032 ether}(test_data);
         assertEq(auctionInstance.currentHighestBidId(), 3);
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        depositInstance.deposit{value: 0.032 ether}("test_data_2");
+        depositInstance.deposit{value: 0.032 ether}(test_data_2);
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(address(depositInstance).balance, 0.064 ether);
     }
