@@ -76,6 +76,7 @@ contract Deposit is IDeposit, Pausable {
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
             withdrawSafe: address(0),
+            stakerPubKey: address(0),
             deposit_data: _deposit_data,
             amount: msg.value,
             winningBid: auctionInterfaceInstance.calculateWinningBid(),
@@ -95,7 +96,12 @@ contract Deposit is IDeposit, Pausable {
     /// @param _stakeId id of the stake the validator connects to
     /// @param _validatorKey encrypted validator key which the operator and staker can access 
     //Depsot_data, validatorkey and staker pub key
-    function registerValidator(uint256 _stakeId, bytes memory _validatorKey) public whenNotPaused {
+    function registerValidator(
+        uint256 _stakeId, 
+        bytes memory _encryptedValidatorKey, 
+        address _stakerPubKey, 
+        DepositData calldata _depositData
+    ) public whenNotPaused {
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Stake not in correct phase");
 
@@ -103,14 +109,16 @@ contract Deposit is IDeposit, Pausable {
             validatorId: numberOfValidators,
             bidId: stakes[_stakeId].winningBid,
             stakeId: _stakeId,
-            validatorKey: _validatorKey,
+            validatorKey: _encryptedValidatorKey,
             phase: VALIDATOR_PHASE.HANDOVER_READY
         });
 
+        stakes[_stakeId].stakerPubKey = _stakerPubKey;
+        stakes[_stakeId].deposit_data = _depositData;
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
         numberOfValidators++;
 
-        emit ValidatorRegistered(stakes[_stakeId].winningBid, _stakeId, _validatorKey);
+        emit ValidatorRegistered(stakes[_stakeId].winningBid, _stakeId, _encryptedValidatorKey);
 
     }
 

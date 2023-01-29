@@ -26,11 +26,11 @@ interface IDeposit {
     struct Stake {
         address staker;
         address withdrawSafe;
+        address stakerPubKey;
         DepositData deposit_data;
         uint256 amount;
         uint256 winningBid;
         uint256 stakeId;
-        //staker public key for encryption (second step)
         STAKE_PHASE phase;
     }
 
