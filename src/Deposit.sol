@@ -36,7 +36,7 @@ contract Deposit is IDeposit, Pausable {
  
     event StakeDeposit(address indexed sender, uint256 value, uint256 id);
     event StakeCancelled(uint256 id);
-    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed validatorKey);
+    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed validatorKey, address stakerPubKey);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -64,7 +64,7 @@ contract Deposit is IDeposit, Pausable {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    /// @param _deposit_data This is a bytes hash representative of all deposit requirements
+    /// @param _deposit_data Data structure to hold all data needed for depositing to the beacon chain
     function deposit(DepositData calldata _deposit_data) public payable whenNotPaused {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
@@ -95,7 +95,8 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Still looking at solutions to storing key on-chain
     /// @param _stakeId id of the stake the validator connects to
     /// @param _validatorKey encrypted validator key which the operator and staker can access 
-    //Depsot_data, validatorkey and staker pub key
+    /// @param _stakerPubKey generatd public key for the staker for use in encryption 
+    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
         uint256 _stakeId, 
         bytes memory _encryptedValidatorKey, 
@@ -104,7 +105,7 @@ contract Deposit is IDeposit, Pausable {
     ) public whenNotPaused {
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Stake not in correct phase");
-
+        require(_stakerPubKey != address(0), "Cannot be address 0");
         validators[numberOfValidators] = Validator({
             validatorId: numberOfValidators,
             bidId: stakes[_stakeId].winningBid,
@@ -118,7 +119,7 @@ contract Deposit is IDeposit, Pausable {
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
         numberOfValidators++;
 
-        emit ValidatorRegistered(stakes[_stakeId].winningBid, _stakeId, _encryptedValidatorKey);
+        emit ValidatorRegistered(stakes[_stakeId].winningBid, _stakeId, _encryptedValidatorKey, _stakerPubKey);
 
     }
 
