@@ -19,7 +19,8 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     uint256 public currentHighestBidId;
-    uint256 public minBidAmount;
+    uint256 public minBidAmount = 0.01 ether;
+    uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
@@ -52,7 +53,6 @@ contract Auction is IAuction, Pausable {
         uint256 indexed newMinBidAmount
     );
     event Received(address indexed sender, uint256 value);
-
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -117,6 +117,10 @@ contract Auction is IAuction, Pausable {
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to increase
     function increaseBid(uint256 _bidId) external payable whenNotPaused {
+        require(
+            msg.value + bids[_bidId].amount <= MAX_BID_AMOUNT,
+            "Above max bid"
+        );
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(bidsEnabled == true, "Increase bidding on hold");
@@ -140,6 +144,10 @@ contract Auction is IAuction, Pausable {
         whenNotPaused
     {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+        require(
+            bids[_bidId].amount - _amount >= minBidAmount,
+            "Bid Below Min Bid"
+        );
         require(_amount < bids[_bidId].amount, "Amount to large");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(bidsEnabled == true, "Decrease bidding on hold");
@@ -225,6 +233,10 @@ contract Auction is IAuction, Pausable {
         payable
         whenNotPaused
     {
+        require(
+            msg.value >= minBidAmount && msg.value <= MAX_BID_AMOUNT,
+            "Invalid bid amount"
+        );
         require(bidsEnabled == true, "Bidding is on hold");
         require(
             MerkleProof.verify(
@@ -305,6 +317,7 @@ contract Auction is IAuction, Pausable {
     /// @notice Updates the minimum bid price
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
+        require(_newMinBidAmount < MAX_BID_AMOUNT, "Min bid exceeds max bid");
         uint256 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
 
