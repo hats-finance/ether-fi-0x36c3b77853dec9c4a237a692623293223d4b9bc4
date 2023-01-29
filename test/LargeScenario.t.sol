@@ -52,10 +52,13 @@ contract LargeScenariosTest is Test {
      *  One bid cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  One deposit - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  Attempted Bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-     *  Enable Bids
      *  Fourth Bid - 0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098
      *  UpdatedBid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
      *  Second deposit - 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
+     *  First deposit cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+     *  Second deposit register validator - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+     *  Attempted second deposit cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+     *  Second deposit acceptValidator - 
      */
     function test_LargeScenario() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
