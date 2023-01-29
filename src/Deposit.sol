@@ -94,6 +94,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Still looking at solutions to storing key on-chain
     /// @param _stakeId id of the stake the validator connects to
     /// @param _validatorKey encrypted validator key which the operator and staker can access 
+    //Depsot_data, validatorkey and staker pub key
     function registerValidator(uint256 _stakeId, bytes memory _validatorKey) public whenNotPaused {
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Stake not in correct phase");

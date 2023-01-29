@@ -30,6 +30,7 @@ interface IDeposit {
         uint256 amount;
         uint256 winningBid;
         uint256 stakeId;
+        //staker public key for encryption (second step)
         STAKE_PHASE phase;
     }
 
