@@ -67,10 +67,44 @@ contract MyScript is Script {
         string memory depositName = "Deposit Contract Address: ";
         string memory depositAddress = Strings.toHexString(address(deposit));
 
-        // Sets the filename and concatenates data
-        string memory path = "release-logs/contract_addresses.txt";
+        // Declare version Var
+        uint256 version;
+
+        // Set path to version file where current verion is recorded
+        /// @dev Initial version.txt and X.release files should be created manually
+        string memory versionPath = "release-logs/version.txt";
+
+        // Read Current version
+        string memory versionString = vm.readLine(versionPath);
+
+        // Cast string to uint256
+        version = _stringToUint(versionString);
+
+        version++;
+
+        // Declares the incremented version to be written to version.txt file
+        string memory versionData = string(
+            abi.encodePacked(Strings.toString(version))
+        );
+
+        // Overwrites the version.txt file with incremented version
+        vm.writeFile(versionPath, versionData);
+
+        // Sets the path for the release file using the incremented version var
+        string memory releasePath = string(
+            abi.encodePacked(
+                "release-logs/",
+                Strings.toString(version),
+                ".release"
+            )
+        );
+
+        // Concatenates data to be written to X.release file
         string memory writeData = string(
             abi.encodePacked(
+                "Version: ",
+                Strings.toString(version),
+                "\n",
                 treasuryName,
                 " ",
                 treasuryAddress,
@@ -85,7 +119,25 @@ contract MyScript is Script {
             )
         );
 
-        // Writes the data to external Contract_Address.txt file
-        vm.writeFile(path, writeData);
+        // Writes the data to .release file
+        vm.writeFile(releasePath, writeData);
+    }
+
+    function _stringToUint(string memory numString)
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 val = 0;
+        bytes memory stringBytes = bytes(numString);
+        for (uint256 i = 0; i < stringBytes.length; i++) {
+            uint256 exp = stringBytes.length - i;
+            bytes1 ival = stringBytes[i];
+            uint8 uval = uint8(ival);
+            uint256 jval = uval - uint256(0x30);
+
+            val += (uint256(jval) * (10**(exp - 1)));
+        }
+        return val;
     }
 }
