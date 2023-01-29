@@ -29,7 +29,7 @@ interface IDeposit {
         address stakerPubKey;
         DepositData deposit_data;
         uint256 amount;
-        uint256 winningBid;
+        uint256 winningBidId;
         uint256 stakeId;
         STAKE_PHASE phase;
     }

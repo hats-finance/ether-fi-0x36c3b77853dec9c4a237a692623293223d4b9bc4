@@ -71,16 +71,14 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        DepositData memory data = DepositData(address(0), "", "", "", "");
-
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
             withdrawSafe: address(0),
             stakerPubKey: address(0),
-            deposit_data: data,
+            deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
-            winningBid: auctionInterfaceInstance.calculateWinningBid(),
+            winningBidId: auctionInterfaceInstance.calculateWinningBid(),
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.DEPOSITED
         });
@@ -109,7 +107,7 @@ contract Deposit is IDeposit, Pausable {
         require(_stakerPubKey != address(0), "Cannot be address 0");
         validators[numberOfValidators] = Validator({
             validatorId: numberOfValidators,
-            bidId: stakes[_stakeId].winningBid,
+            bidId: stakes[_stakeId].winningBidId,
             stakeId: _stakeId,
             validatorKey: _encryptedValidatorKey,
             phase: VALIDATOR_PHASE.HANDOVER_READY
@@ -120,7 +118,7 @@ contract Deposit is IDeposit, Pausable {
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
         numberOfValidators++;
 
-        emit ValidatorRegistered(stakes[_stakeId].winningBid, _stakeId, _encryptedValidatorKey, _stakerPubKey);
+        emit ValidatorRegistered(stakes[_stakeId].winningBidId, _stakeId, _encryptedValidatorKey, _stakerPubKey);
 
     }
 
@@ -158,10 +156,10 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBid);
+        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
-        stakes[_stakeId].winningBid = 0;
+        stakes[_stakeId].winningBidId = 0;
 
         refundDeposit(msg.sender, stakeAmountTemp);
 
