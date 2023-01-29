@@ -7,6 +7,7 @@ import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
 import "../src/Treasury.sol";
+import "../src/interfaces/IDeposit.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract LargeScenariosTest is Test {
@@ -18,6 +19,7 @@ contract LargeScenariosTest is Test {
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
+    IDeposit.DepositData public test_data;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -33,6 +35,15 @@ contract LargeScenariosTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+
+        test_data = IDeposit.DepositData({
+            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
+            withdrawalCredentials: "test_credentials",
+            depositDataRoot: "test_deposit_root",
+            publicKey: "test_pubkey",
+            signature: "test_signature"
+        });
+
         vm.stopPrank();
     }
 
@@ -155,7 +166,7 @@ contract LargeScenariosTest is Test {
         assertEq(isActiveAfterCancel, false);
 
         //Deposit One
-        depositInstance.deposit{value: 0.032 ether}("test_data");
+        depositInstance.deposit{value: 0.032 ether}(test_data);
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(address(treasuryInstance).balance, 0.7 ether);
@@ -210,7 +221,7 @@ contract LargeScenariosTest is Test {
 
         //Deposit Two
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        depositInstance.deposit{value: 0.032 ether}("test_data");
+        depositInstance.deposit{value: 0.032 ether}(test_data);
 
         assertEq(auctionInstance.currentHighestBidId(), 4);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
