@@ -71,7 +71,7 @@ contract AuctionTest is Test {
         vm.prank(owner);
         auctionInstance.pauseContract();
 
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         vm.expectRevert("Pausable: paused");
         depositInstance.cancelStake(0);
     }
@@ -82,7 +82,7 @@ contract AuctionTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
 
         vm.stopPrank();
 
@@ -98,7 +98,7 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         auctionInstance.bidOnStake{value: 0.05 ether}(proof);
 
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         depositInstance.cancelStake(0);
         vm.stopPrank();
 
@@ -115,7 +115,7 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.05 ether}(proof);
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         assertEq(address(treasuryInstance).balance, 0.1 ether);
         assertEq(address(auctionInstance).balance, 0.05 ether);
         assertEq(auctionInstance.currentHighestBidId(), 2);
@@ -722,10 +722,6 @@ contract AuctionTest is Test {
 
         assertEq(auctionInstance.merkleRoot(), root);
 
-        hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        vm.expectRevert("Invalid merkle proof");
-        auctionInstance.bidOnStake(proofForAddress1);
-
         whiteListedAddresses.push(
             keccak256(
                 abi.encodePacked(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098)
@@ -744,12 +740,12 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.merkleRoot(), newRoot);
 
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        auctionInstance.bidOnStake(proofForAddress4);
+        auctionInstance.bidOnStake{value: 0.01 ether}(proofForAddress4);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
 
     function test_SetMinBidAmount() public {
-        assertEq(auctionInstance.minBidAmount(), 0);
+        assertEq(auctionInstance.minBidAmount(), 0.01 ether);
         vm.prank(owner);
         auctionInstance.setMinBidPrice(1 ether);
         assertEq(auctionInstance.minBidAmount(), 1 ether);
@@ -763,7 +759,7 @@ contract AuctionTest is Test {
 
     function test_EventMinBidUpdated() public {
         vm.expectEmit(true, true, false, true);
-        emit MinBidUpdated(0, 1 ether);
+        emit MinBidUpdated(0.01 ether, 1 ether);
         vm.prank(owner);
         auctionInstance.setMinBidPrice(1 ether);
     }

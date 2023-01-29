@@ -90,7 +90,7 @@ contract SmallScenariosTest is Test {
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
 
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         
         assertEq(address(depositInstance).balance, 0.032 ether);
         assertEq(address(auctionInstance).balance, 0);
@@ -187,10 +187,10 @@ contract SmallScenariosTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         assertEq(auctionInstance.currentHighestBidId(), 3);
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        depositInstance.deposit{value: 0.032 ether}(test_data_2);
+        depositInstance.deposit{value: 0.032 ether}();
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(address(depositInstance).balance, 0.064 ether);
     }

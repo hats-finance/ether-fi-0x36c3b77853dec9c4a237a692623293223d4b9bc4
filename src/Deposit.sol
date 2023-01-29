@@ -64,20 +64,21 @@ contract Deposit is IDeposit, Pausable {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    /// @param _deposit_data Data structure to hold all data needed for depositing to the beacon chain
-    function deposit(DepositData calldata _deposit_data) public payable whenNotPaused {
+    function deposit() public payable whenNotPaused {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
             "No bids available at the moment"
         );
 
+        DepositData memory data = DepositData(address(0), "", "", "", "");
+
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
             withdrawSafe: address(0),
             stakerPubKey: address(0),
-            deposit_data: _deposit_data,
+            deposit_data: data,
             amount: msg.value,
             winningBid: auctionInterfaceInstance.calculateWinningBid(),
             stakeId: numberOfStakes,
@@ -94,7 +95,7 @@ contract Deposit is IDeposit, Pausable {
     /// @notice Creates validator object and updates information
     /// @dev Still looking at solutions to storing key on-chain
     /// @param _stakeId id of the stake the validator connects to
-    /// @param _validatorKey encrypted validator key which the operator and staker can access 
+    /// @param _encryptedValidatorKey encrypted validator key which the operator and staker can access 
     /// @param _stakerPubKey generatd public key for the staker for use in encryption 
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
