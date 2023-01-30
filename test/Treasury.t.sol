@@ -30,7 +30,10 @@ contract TreasuryTest is Test {
     function test_SetAuctionAddressWorks() public {
         vm.prank(owner);
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
-        assertEq(treasuryInstance.auctionContractAddress(), address(auctionInstance));
+        assertEq(
+            treasuryInstance.auctionContractAddress(),
+            address(auctionInstance)
+        );
     }
 
     function test_SetAuctionAddressFailsIfNotOwner() public {

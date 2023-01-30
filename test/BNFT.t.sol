@@ -28,7 +28,7 @@ contract BNFTTest is Test {
         treasuryInstance = new Treasury();
         auctionInstance = new Auction(address(treasuryInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
-        auctionInstance.updateMerkleRoot(root);        
+        auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
@@ -51,7 +51,6 @@ contract BNFTTest is Test {
     }
 
     function test_BNFTCannotBeTransferred() public {
-
         IDeposit.DepositData memory test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials",
