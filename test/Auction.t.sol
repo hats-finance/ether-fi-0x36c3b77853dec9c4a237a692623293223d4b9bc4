@@ -796,18 +796,18 @@ contract AuctionTest is Test {
     function test_SetWhitelistBidAmount() public {
         assertEq(auctionInstance.whitelistBidAmount(), 0.001 ether);
         vm.prank(owner);
-        auctionInstance.upadateWhitelistMinBidAmount(0.002 ether);
+        auctionInstance.updateWhitelistMinBidAmount(0.002 ether);
         assertEq(auctionInstance.whitelistBidAmount(), 0.002 ether);
     }
 
     function test_SetWhitelistBidFailsWithIncorrectAmount() public {
         vm.prank(owner);
         vm.expectRevert("Invalid Amount");
-        auctionInstance.upadateWhitelistMinBidAmount(0);
+        auctionInstance.updateWhitelistMinBidAmount(0);
 
         vm.prank(owner);
         vm.expectRevert("Invalid Amount");
-        auctionInstance.upadateWhitelistMinBidAmount(0.2 ether);
+        auctionInstance.updateWhitelistMinBidAmount(0.2 ether);
     }
 
     function test_SetBidAmountFailsIfGreaterThanMaxBidAmount() public {
@@ -820,7 +820,7 @@ contract AuctionTest is Test {
         vm.expectEmit(true, true, false, true);
         emit WhitelistBidUpdated(0.001 ether, 0.002 ether);
         vm.prank(owner);
-        auctionInstance.setWhitelistBidAmount(0.002 ether);
+        auctionInstance.updateWhitelistMinBidAmount(0.002 ether);
     }
 
     function test_EventMinBidUpdated() public {

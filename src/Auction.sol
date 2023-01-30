@@ -331,7 +331,7 @@ contract Auction is IAuction, Pausable {
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
 
-    function upadateWhitelistMinBidAmount(uint256 _newAmount)
+    function updateWhitelistMinBidAmount(uint256 _newAmount)
         external
         onlyOwner
     {
