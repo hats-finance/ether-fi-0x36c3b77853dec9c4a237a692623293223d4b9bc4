@@ -61,7 +61,7 @@ contract LargeScenariosTest is Test {
      *  First deposit cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  Second deposit register validator - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  Attempted second deposit cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-     *  Second deposit acceptValidator - 
+     *  Second deposit acceptValidator -
      */
     function test_LargeScenario() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
@@ -177,7 +177,7 @@ contract LargeScenariosTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(address(treasuryInstance).balance, 0.7 ether);
         assertEq(address(auctionInstance).balance, 0.1 ether);
-        assertEq(address(depositInstance).balance, 0.032 ether);     
+        assertEq(address(depositInstance).balance, 0.032 ether);
         vm.stopPrank();
 
         //Bid Four
@@ -238,7 +238,7 @@ contract LargeScenariosTest is Test {
         //Deposit One cancelled
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         depositInstance.cancelStake(0);
-        
+
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(auctionInstance.numberOfBids() - 1, 4);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
@@ -248,13 +248,27 @@ contract LargeScenariosTest is Test {
 
         //Deposit Two register validator
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        depositInstance.registerValidator(1, "Encrypted_Key", stakerPublicKey, test_data);
+        depositInstance.registerValidator(
+            1,
+            "Encrypted_Key",
+            "encrypted_key_password",
+            stakerPublicKey,
+            test_data
+        );
 
-        (uint256 validatorId, uint256 bidId, uint256 stakeId, bytes memory validatorKey, ) = depositInstance.validators(0);
+        (
+            uint256 validatorId,
+            uint256 bidId,
+            uint256 stakeId,
+            bytes memory validatorKey,
+            bytes memory encryptedValidatorKeyPassword,
+
+        ) = depositInstance.validators(0);
         assertEq(validatorId, 0);
         assertEq(bidId, 1);
         assertEq(stakeId, 1);
         assertEq(validatorKey, "Encrypted_Key");
+        assertEq(encryptedValidatorKeyPassword, "encrypted_key_password");
 
         //Attempt deposit two cancel
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
@@ -268,14 +282,33 @@ contract LargeScenariosTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.acceptValidator(0);
-        assertEq(TestBNFTInstance.ownerOf(0), 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        assertEq(TestTNFTInstance.ownerOf(0), 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        assertEq(TestBNFTInstance.balanceOf(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f), 1);
-        assertEq(TestTNFTInstance.balanceOf(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f), 1);
+        assertEq(
+            TestBNFTInstance.ownerOf(0),
+            0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
+        );
+        assertEq(
+            TestTNFTInstance.ownerOf(0),
+            0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
+        );
+        assertEq(
+            TestBNFTInstance.balanceOf(
+                0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
+            ),
+            1
+        );
+        assertEq(
+            TestTNFTInstance.balanceOf(
+                0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
+            ),
+            1
+        );
 
-        (,address withdrawSafe,,,,,,) = depositInstance.stakes(1);
+        (, address withdrawSafe, , , , , , ) = depositInstance.stakes(1);
         withdrawSafeInstance = WithdrawSafe(withdrawSafe);
-        assertEq(withdrawSafeInstance.owner(), 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
+        assertEq(
+            withdrawSafeInstance.owner(),
+            0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
+        );
     }
 
     function _merkleSetup() internal {

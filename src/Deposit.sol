@@ -12,7 +12,6 @@ import "./WithdrawSafe.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
-
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
     WithdrawSafe public withdrawSafeInstance;
@@ -20,23 +19,30 @@ contract Deposit is IDeposit, Pausable {
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
+
     uint256 public stakeAmount;
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
     address public owner;
 
     mapping(address => uint256) public depositorBalances;
-    mapping(address => mapping(uint256 => address)) public stakeToOperator;
     mapping(uint256 => Validator) public validators;
     mapping(uint256 => Stake) public stakes;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
- 
+
     event StakeDeposit(address indexed sender, uint256 value, uint256 id);
     event StakeCancelled(uint256 id);
-    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed validatorKey, address stakerPubKey);
+    event ValidatorRegistered(
+        uint256 bidId,
+        uint256 stakeId,
+        bytes indexed encryptedValidatorKey,
+        bytes indexed encryptedValidatorKeyPassword,
+        address stakerPubKey
+    );
+    event ValidatorAccepted(uint256 validatorId, address indexed withdrawSafe);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -53,7 +59,9 @@ contract Deposit is IDeposit, Pausable {
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
         auctionInterfaceInstance = IAuction(_auctionAddress);
-        depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b);
+        depositContractEth2 = IDepositContract(
+            0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
+        );
         owner = msg.sender;
     }
 
@@ -82,7 +90,7 @@ contract Deposit is IDeposit, Pausable {
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.DEPOSITED
         });
-        
+
         depositorBalances[msg.sender] += msg.value;
 
         numberOfStakes++;
@@ -93,23 +101,29 @@ contract Deposit is IDeposit, Pausable {
     /// @notice Creates validator object and updates information
     /// @dev Still looking at solutions to storing key on-chain
     /// @param _stakeId id of the stake the validator connects to
-    /// @param _encryptedValidatorKey encrypted validator key which the operator and staker can access 
-    /// @param _stakerPubKey generatd public key for the staker for use in encryption 
+    /// @param _encryptedValidatorKey encrypted validator key which the operator and staker can access
+    /// @param _stakerPubKey generatd public key for the staker for use in encryption
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
-        uint256 _stakeId, 
-        bytes memory _encryptedValidatorKey, 
-        address _stakerPubKey, 
+        uint256 _stakeId,
+        bytes memory _encryptedValidatorKey,
+        bytes memory _encryptedValidatorKeyPassword,
+        address _stakerPubKey,
         DepositData calldata _depositData
     ) public whenNotPaused {
-        require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
-        require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Stake not in correct phase");
         require(_stakerPubKey != address(0), "Cannot be address 0");
+        require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
+        require(
+            stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED,
+            "Stake not in correct phase"
+        );
+
         validators[numberOfValidators] = Validator({
             validatorId: numberOfValidators,
             bidId: stakes[_stakeId].winningBidId,
             stakeId: _stakeId,
-            validatorKey: _encryptedValidatorKey,
+            encryptedValidatorKey: _encryptedValidatorKey,
+            encryptedValidatorKeyPassword: _encryptedValidatorKeyPassword,
             phase: VALIDATOR_PHASE.HANDOVER_READY
         });
 
@@ -118,16 +132,30 @@ contract Deposit is IDeposit, Pausable {
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
         numberOfValidators++;
 
-        emit ValidatorRegistered(stakes[_stakeId].winningBidId, _stakeId, _encryptedValidatorKey, _stakerPubKey);
-
+        emit ValidatorRegistered(
+            stakes[_stakeId].winningBidId,
+            _stakeId,
+            _encryptedValidatorKey,
+            _encryptedValidatorKeyPassword,
+            _stakerPubKey
+        );
     }
 
     /// @notice node operator accepts validator key and data which allows the stake to be deposited into the beacon chain
     /// @dev future iterations will account for if the operator doesnt accept the validator
     /// @param _validatorId id of the validator to be accepted
     function acceptValidator(uint256 _validatorId) public whenNotPaused {
-        require(msg.sender == auctionInterfaceInstance.getBidOwner(validators[_validatorId].bidId), "Incorrect caller");
-        require(validators[_validatorId].phase == VALIDATOR_PHASE.HANDOVER_READY, "Validator not in correct phase");
+        require(
+            msg.sender ==
+                auctionInterfaceInstance.getBidOwner(
+                    validators[_validatorId].bidId
+                ),
+            "Incorrect caller"
+        );
+        require(
+            validators[_validatorId].phase == VALIDATOR_PHASE.HANDOVER_READY,
+            "Validator not in correct phase"
+        );
 
         uint256 localStakeId = validators[_validatorId].stakeId;
 
@@ -142,14 +170,18 @@ contract Deposit is IDeposit, Pausable {
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
         //depositContractEth2.deposit{value: stakeAmount}(dataInstance.publicKey, abi.encodePacked(dataInstance.withdrawalCredentials), dataInstance.signature, dataInstance.depositDataRoot);
+        emit ValidatorAccepted(_validatorId, address(withdrawSafeInstance));
     }
 
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _stakeId the ID of the stake to cancel
     function cancelStake(uint256 _stakeId) public whenNotPaused {
-        require(msg.sender ==  stakes[_stakeId].staker, "Not bid owner");
-        require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Cancelling availability closed");
+        require(msg.sender == stakes[_stakeId].staker, "Not bid owner");
+        require(
+            stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED,
+            "Cancelling availability closed"
+        );
 
         uint256 stakeAmountTemp = stakes[_stakeId].amount;
         depositorBalances[msg.sender] -= stakeAmountTemp;
@@ -164,7 +196,6 @@ contract Deposit is IDeposit, Pausable {
         refundDeposit(msg.sender, stakeAmountTemp);
 
         emit StakeCancelled(_stakeId);
-
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake
@@ -172,20 +203,24 @@ contract Deposit is IDeposit, Pausable {
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
     function refundDeposit(address _depositOwner, uint256 _amount) public {
-
         //Refund the user with their requested amount
         (bool sent, ) = _depositOwner.call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
-    
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
     }
-    
+
     //Unpauses the contract
     function unPauseContract() external onlyOwner {
         _unpause();
+    }
+
+    // Gets the addresses of the deployed NFT contracts
+    function getNFTAdresses() public view returns (address, address) {
+        return (address(TNFTInstance), address(BNFTInstance));
     }
 
     //--------------------------------------------------------------------------------------
