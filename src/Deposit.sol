@@ -36,7 +36,7 @@ contract Deposit is IDeposit, Pausable {
  
     event StakeDeposit(address indexed sender, uint256 value, uint256 id);
     event StakeCancelled(uint256 id);
-    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed validatorKey, address stakerPubKey);
+    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed encryptedValidatorKey, address stakerPubKey);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
