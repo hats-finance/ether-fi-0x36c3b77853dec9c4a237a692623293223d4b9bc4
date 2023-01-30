@@ -27,7 +27,6 @@ contract Auction is IAuction, Pausable {
     address public treasuryContractAddress;
     address public owner;
     bytes32 public merkleRoot;
-    bool public bidsEnabled;
 
     mapping(uint256 => Bid) public bids;
 
@@ -61,7 +60,6 @@ contract Auction is IAuction, Pausable {
     /// @notice Constructor to set variables on deployment
     /// @param _treasuryAddress the address of the treasury to send funds to
     constructor(address _treasuryAddress) {
-        bidsEnabled = true;
         treasuryContractAddress = _treasuryAddress;
         owner = msg.sender;
     }
@@ -123,7 +121,6 @@ contract Auction is IAuction, Pausable {
         );
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
-        require(bidsEnabled == true, "Increase bidding on hold");
 
         bids[_bidId].amount += msg.value;
 
@@ -151,7 +148,6 @@ contract Auction is IAuction, Pausable {
         );
         require(_amount < bids[_bidId].amount, "Amount to large");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
-        require(bidsEnabled == true, "Decrease bidding on hold");
 
         //Set local variable for read operations to save gas
         uint256 numberOfBidsLocal = numberOfBids;
@@ -188,7 +184,6 @@ contract Auction is IAuction, Pausable {
     function cancelBid(uint256 _bidId) external whenNotPaused {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
-        require(bidsEnabled == true, "Cancelling bids on hold");
 
         //Set local variable for read operations to save gas
         uint256 numberOfBidsLocal = numberOfBids;
@@ -239,7 +234,6 @@ contract Auction is IAuction, Pausable {
             msg.value >= minBidAmount && msg.value <= MAX_BID_AMOUNT,
             "Invalid bid amount"
         );
-        require(bidsEnabled == true, "Bidding is on hold");
         require(
             MerkleProof.verify(
                 _merkleProof,

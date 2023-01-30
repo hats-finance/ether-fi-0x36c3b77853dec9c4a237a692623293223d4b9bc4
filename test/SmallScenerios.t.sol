@@ -136,7 +136,6 @@ contract SmallScenariosTest is Test {
         assertEq(amount, 0.3 ether);
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(auctionInstance.currentHighestBidId(), 1);
-        assertEq(auctionInstance.bidsEnabled(), true);
         assertEq(isActiveAfterStake, true);
 
         auctionInstance.cancelBid(1);
