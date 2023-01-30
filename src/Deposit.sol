@@ -208,6 +208,14 @@ contract Deposit is IDeposit, Pausable {
         require(sent, "Failed to send Ether");
     }
 
+    /// @notice Allows withdrawal of funds from contract
+    /// @dev Will be removed in final version
+    /// @param _wallet the address to send the funds to
+    function fetchEtherFromContract(address _wallet) public onlyOwner {
+        (bool sent, ) = _wallet.call{value: address(this).balance}("");
+        require(sent, "Failed to send Ether");
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
