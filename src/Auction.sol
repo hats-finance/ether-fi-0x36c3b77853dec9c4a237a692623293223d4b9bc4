@@ -241,7 +241,7 @@ contract Auction is IAuction, Pausable {
         require(bidsEnabled == true, "Bidding is on hold");
 
         // Checks if bidder is on whitelist
-        if (msg.value < minBidAmount && msg.value >= whitelistBidAmount) {
+        if (msg.value < minBidAmount) {
             require(
                 MerkleProof.verify(
                     _merkleProof,
