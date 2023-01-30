@@ -251,10 +251,7 @@ contract Auction is IAuction, Pausable {
                 "Invalid bid"
             );
         } else {
-            require(
-                msg.value >= minBidAmount && msg.value <= MAX_BID_AMOUNT,
-                "Invalid bid"
-            );
+            require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
         //Creates a bid object for storage and lookup in future
