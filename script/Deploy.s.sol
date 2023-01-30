@@ -54,18 +54,18 @@ contract MyScript is Script {
         Treasury treasury = new Treasury();
         Auction auction = new Auction(address(treasury));
         Deposit deposit = new Deposit(address(auction));
+        (address TNFTAddress, address BNFTAddress) = deposit.getNFTAdresses();
         auction.setDepositContractAddress(address(deposit));
         //auction.updateMerkleRoot(root);
 
         vm.stopBroadcast();
 
         // Sets the variables to be wriiten to contract addresses.txt
-        string memory treasuryName = "Treasury Contract Address: ";
         string memory treasuryAddress = Strings.toHexString(address(treasury));
-        string memory auctionName = "Auction Contract Address: ";
         string memory auctionAddress = Strings.toHexString(address(auction));
-        string memory depositName = "Deposit Contract Address: ";
         string memory depositAddress = Strings.toHexString(address(deposit));
+        string memory TNFTAddrString = Strings.toHexString(TNFTAddress);
+        string memory BNFTAddrString = Strings.toHexString(BNFTAddress);
 
         // Declare version Var
         uint256 version;
@@ -105,17 +105,20 @@ contract MyScript is Script {
                 "Version: ",
                 Strings.toString(version),
                 "\n",
-                treasuryName,
-                " ",
+                "Treasury Contract Address: ",
                 treasuryAddress,
                 "\n",
-                auctionName,
-                " ",
+                "Auction Contract Address: ",
                 auctionAddress,
                 "\n",
-                depositName,
-                " ",
-                depositAddress
+                "Deposit Contract Address: ",
+                depositAddress,
+                "\n",
+                "TNFT Contract Address: ",
+                TNFTAddrString,
+                "\n",
+                "BNFT Contract Address: ",
+                BNFTAddrString
             )
         );
 

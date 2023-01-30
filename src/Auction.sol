@@ -19,6 +19,7 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     uint256 public currentHighestBidId;
+    uint256 public whitelistBidAmount = 0.001 ether;
     uint256 public minBidAmount = 0.01 ether;
     uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
@@ -50,6 +51,10 @@ contract Auction is IAuction, Pausable {
     event MinBidUpdated(
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
+    );
+    event WhitelistBidUpdated(
+        uint256 indexed oldBidAmount,
+        uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
 
@@ -228,18 +233,19 @@ contract Auction is IAuction, Pausable {
         payable
         whenNotPaused
     {
-        require(
-            msg.value >= minBidAmount && msg.value <= MAX_BID_AMOUNT,
-            "Invalid bid amount"
-        );
-        require(
-            MerkleProof.verify(
-                _merkleProof,
-                merkleRoot,
-                keccak256(abi.encodePacked(msg.sender))
-            ),
-            "Invalid merkle proof"
-        );
+        // Checks if bidder is on whitelist
+        if (msg.value < minBidAmount) {
+            require(
+                MerkleProof.verify(
+                    _merkleProof,
+                    merkleRoot,
+                    keccak256(abi.encodePacked(msg.sender))
+                ) && msg.value >= whitelistBidAmount,
+                "Invalid bid"
+            );
+        } else {
+            require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
+        }
 
         //Creates a bid object for storage and lookup in future
         bids[numberOfBids] = Bid({
@@ -316,6 +322,17 @@ contract Auction is IAuction, Pausable {
         minBidAmount = _newMinBidAmount;
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
+    }
+
+    function updateWhitelistMinBidAmount(uint256 _newAmount)
+        external
+        onlyOwner
+    {
+        require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
+        uint256 oldBidAmount = whitelistBidAmount;
+        whitelistBidAmount = _newAmount;
+
+        emit WhitelistBidUpdated(oldBidAmount, _newAmount);
     }
 
     //Pauses the contract
