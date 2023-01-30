@@ -796,7 +796,7 @@ contract AuctionTest is Test {
     function test_SetWhitelistBidAmount() public {
         assertEq(auctionInstance.whitelistBidAmount(), 0.001 ether);
         vm.prank(owner);
-        auctionInstance.setWhitelistBidAmount(0.002 ether);
+        auctionInstance.setWhitelistMinBidAmount(0.002 ether);
         assertEq(auctionInstance.whitelistBidAmount(), 0.002 ether);
     }
 
