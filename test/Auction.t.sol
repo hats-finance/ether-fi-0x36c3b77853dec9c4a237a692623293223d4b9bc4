@@ -29,6 +29,10 @@ contract AuctionTest is Test {
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
     );
+    event WhitelistBidUpdated(
+        uint256 indexed oldBidAmount,
+        uint256 indexed newBidAmount
+    );
 
     function setUp() public {
         vm.startPrank(owner);
@@ -812,9 +816,16 @@ contract AuctionTest is Test {
         auctionInstance.setMinBidPrice(5 ether);
     }
 
+    function test_EventWhitelistBidUpdated() public {
+        vm.expectEmit(true, true, false, true);
+        emit WhitelistBidUpdated(0.001 ether, 0.002 ether);
+        vm.prank(owner);
+        auctionInstance.setWhitelistBidAmount(0.002 ether);
+    }
+
     function test_EventMinBidUpdated() public {
         vm.expectEmit(true, true, false, true);
-        emit MinBidUpdated(0, 1 ether);
+        emit MinBidUpdated(0.01 ether, 1 ether);
         vm.prank(owner);
         auctionInstance.setMinBidPrice(1 ether);
     }
