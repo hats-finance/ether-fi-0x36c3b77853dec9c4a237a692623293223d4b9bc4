@@ -103,9 +103,10 @@ contract Deposit is IDeposit, Pausable {
         address _stakerPubKey, 
         DepositData calldata _depositData
     ) public whenNotPaused {
+        require(_stakerPubKey != address(0), "Cannot be address 0");
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Stake not in correct phase");
-        require(_stakerPubKey != address(0), "Cannot be address 0");
+        
         validators[numberOfValidators] = Validator({
             validatorId: numberOfValidators,
             bidId: stakes[_stakeId].winningBidId,

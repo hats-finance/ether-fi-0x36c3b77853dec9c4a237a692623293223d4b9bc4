@@ -115,12 +115,12 @@ contract Auction is IAuction, Pausable {
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to increase
     function increaseBid(uint256 _bidId) external payable whenNotPaused {
+        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+        require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(
             msg.value + bids[_bidId].amount <= MAX_BID_AMOUNT,
             "Above max bid"
         );
-        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
 
         bids[_bidId].amount += msg.value;
 
@@ -140,14 +140,13 @@ contract Auction is IAuction, Pausable {
         external
         whenNotPaused
     {
+        require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(_amount < bids[_bidId].amount, "Amount too large");
+        require(bids[_bidId].amount > _amount, "Amount too large");
         require(
             bids[_bidId].amount - _amount >= minBidAmount,
             "Bid Below Min Bid"
         );
-        require(_amount < bids[_bidId].amount, "Amount to large");
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
 
         //Set local variable for read operations to save gas
         uint256 numberOfBidsLocal = numberOfBids;
