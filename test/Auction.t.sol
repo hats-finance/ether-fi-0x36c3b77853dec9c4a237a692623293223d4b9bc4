@@ -222,7 +222,7 @@ contract AuctionTest is Test {
         assertEq(bidderAddress, address(alice));
         assertEq(auctionInstance.numberOfBids(), 2);
 
-        vm.expectRevert("Invalid bid amount");
+        vm.expectRevert("Invalid bid");
         hoax(bob);
         auctionInstance.bidOnStake{value: 0.001 ether}(proof);
 
@@ -258,15 +258,15 @@ contract AuctionTest is Test {
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(address(auctionInstance).balance, 0.001 ether);
 
-        vm.expectRevert("Invalid bid amount");
+        vm.expectRevert("Invalid bid");
         hoax(alice);
         auctionInstance.bidOnStake{value: 0.001 ether}(proof);
 
-        vm.expectRevert("Invalid bid amount");
+        vm.expectRevert("Invalid bid");
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.00001 ether}(proof2);
 
-        vm.expectRevert("Invalid bid amount");
+        vm.expectRevert("Invalid bid");
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 6 ether}(proof2);
 
@@ -286,13 +286,13 @@ contract AuctionTest is Test {
     function test_BidFailsWhenInvaliAmountSent() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-        vm.expectRevert("Invalid bid amount");
+        vm.expectRevert("Invalid bid");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.001 ether}(proof);
+        auctionInstance.bidOnStake{value: 0}(proof);
 
         assertEq(auctionInstance.numberOfActiveBids(), 0);
 
-        vm.expectRevert("Invalid bid amount");
+        vm.expectRevert("Invalid bid");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 5.01 ether}(proof);
 
