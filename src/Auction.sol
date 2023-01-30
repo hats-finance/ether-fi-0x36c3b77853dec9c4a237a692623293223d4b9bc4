@@ -334,7 +334,10 @@ contract Auction is IAuction, Pausable {
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
 
-    function setWhitelistMinBidAmount(uint256 _newAmount) external onlyOwner {
+    function upadateWhitelistMinBidAmount(uint256 _newAmount)
+        external
+        onlyOwner
+    {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
         uint256 oldBidAmount = whitelistBidAmount;
         whitelistBidAmount = _newAmount;
