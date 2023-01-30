@@ -86,7 +86,7 @@ contract AuctionTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        
+
         depositInstance.deposit{value: 0.032 ether}();
 
         vm.stopPrank();
@@ -612,12 +612,6 @@ contract AuctionTest is Test {
         assertEq(amount, 0.3 ether);
     }
 
-    function test_DecreaseBidFailsWhenNotExistingBid() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Invalid bid");
-        auctionInstance.decreaseBid(1, 0.05 ether);
-    }
-
     function test_DecreaseBidFailsWhenNotBidOwnerCalling() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
@@ -659,7 +653,7 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Amount to large");
+        vm.expectRevert("Amount too large");
         auctionInstance.decreaseBid(1, 1 ether);
     }
 

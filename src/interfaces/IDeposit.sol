@@ -42,7 +42,8 @@ interface IDeposit {
         uint256 validatorId;
         uint256 bidId;
         uint256 stakeId;
-        bytes validatorKey;
+        bytes encryptedValidatorKey;
+        bytes encryptedValidatorKeyPassword;
         VALIDATOR_PHASE phase;
     }
 
@@ -58,7 +59,13 @@ interface IDeposit {
 
     function cancelStake(uint256 _stakeId) external;
 
-    function registerValidator(uint256 _stakeId, bytes memory _encryptedValidatorKey, address _stakerPubKey, DepositData calldata _depositData) external;
+    function registerValidator(
+        uint256 _stakeId, 
+        bytes memory _encryptedValidatorKey,
+        bytes memory _encryptedValidatorKeyPassword, 
+        address _stakerPubKey, 
+        DepositData calldata _depositData
+    ) external;
 
     function acceptValidator(uint256 _validatorId) external;
 

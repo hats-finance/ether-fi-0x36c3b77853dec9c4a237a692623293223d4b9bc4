@@ -19,13 +19,13 @@ contract Deposit is IDeposit, Pausable {
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
+
     uint256 public stakeAmount;
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
     address public owner;
 
     mapping(address => uint256) public depositorBalances;
-    mapping(address => mapping(uint256 => address)) public stakeToOperator;
     mapping(uint256 => Validator) public validators;
     mapping(uint256 => Stake) public stakes;
 
@@ -38,9 +38,11 @@ contract Deposit is IDeposit, Pausable {
     event ValidatorRegistered(
         uint256 bidId,
         uint256 stakeId,
-        bytes indexed validatorKey,
+        bytes indexed encryptedValidatorKey,
+        bytes indexed encryptedValidatorKeyPassword,
         address stakerPubKey
     );
+    event ValidatorAccepted(uint256 validatorId, address indexed withdrawSafe);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -105,20 +107,23 @@ contract Deposit is IDeposit, Pausable {
     function registerValidator(
         uint256 _stakeId,
         bytes memory _encryptedValidatorKey,
+        bytes memory _encryptedValidatorKeyPassword,
         address _stakerPubKey,
         DepositData calldata _depositData
     ) public whenNotPaused {
+        require(_stakerPubKey != address(0), "Cannot be address 0");
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(
             stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED,
             "Stake not in correct phase"
         );
-        require(_stakerPubKey != address(0), "Cannot be address 0");
+
         validators[numberOfValidators] = Validator({
             validatorId: numberOfValidators,
             bidId: stakes[_stakeId].winningBidId,
             stakeId: _stakeId,
-            validatorKey: _encryptedValidatorKey,
+            encryptedValidatorKey: _encryptedValidatorKey,
+            encryptedValidatorKeyPassword: _encryptedValidatorKeyPassword,
             phase: VALIDATOR_PHASE.HANDOVER_READY
         });
 
@@ -131,6 +136,7 @@ contract Deposit is IDeposit, Pausable {
             stakes[_stakeId].winningBidId,
             _stakeId,
             _encryptedValidatorKey,
+            _encryptedValidatorKeyPassword,
             _stakerPubKey
         );
     }
@@ -164,6 +170,7 @@ contract Deposit is IDeposit, Pausable {
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
         //depositContractEth2.deposit{value: stakeAmount}(dataInstance.publicKey, abi.encodePacked(dataInstance.withdrawalCredentials), dataInstance.signature, dataInstance.depositDataRoot);
+        emit ValidatorAccepted(_validatorId, address(withdrawSafeInstance));
     }
 
     /// @notice Cancels a users stake

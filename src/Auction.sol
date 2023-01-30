@@ -28,7 +28,6 @@ contract Auction is IAuction, Pausable {
     address public treasuryContractAddress;
     address public owner;
     bytes32 public merkleRoot;
-    bool public bidsEnabled;
 
     mapping(uint256 => Bid) public bids;
 
@@ -66,7 +65,6 @@ contract Auction is IAuction, Pausable {
     /// @notice Constructor to set variables on deployment
     /// @param _treasuryAddress the address of the treasury to send funds to
     constructor(address _treasuryAddress) {
-        bidsEnabled = true;
         treasuryContractAddress = _treasuryAddress;
         owner = msg.sender;
     }
@@ -122,13 +120,12 @@ contract Auction is IAuction, Pausable {
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to increase
     function increaseBid(uint256 _bidId) external payable whenNotPaused {
+        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+        require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(
             msg.value + bids[_bidId].amount <= MAX_BID_AMOUNT,
             "Above max bid"
         );
-        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
-        require(bidsEnabled == true, "Increase bidding on hold");
 
         bids[_bidId].amount += msg.value;
 
@@ -148,15 +145,13 @@ contract Auction is IAuction, Pausable {
         external
         whenNotPaused
     {
+        require(bids[_bidId].isActive == true, "Bid already cancelled");
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(_amount < bids[_bidId].amount, "Amount to large");
+        require(bids[_bidId].amount > _amount, "Amount too large");
         require(
             bids[_bidId].amount - _amount >= minBidAmount,
             "Bid Below Min Bid"
         );
-        require(_amount < bids[_bidId].amount, "Amount to large");
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
-        require(bidsEnabled == true, "Decrease bidding on hold");
 
         //Set local variable for read operations to save gas
         uint256 numberOfBidsLocal = numberOfBids;
@@ -193,7 +188,6 @@ contract Auction is IAuction, Pausable {
     function cancelBid(uint256 _bidId) external whenNotPaused {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
-        require(bidsEnabled == true, "Cancelling bids on hold");
 
         //Set local variable for read operations to save gas
         uint256 numberOfBidsLocal = numberOfBids;
@@ -239,8 +233,6 @@ contract Auction is IAuction, Pausable {
         payable
         whenNotPaused
     {
-        require(bidsEnabled == true, "Bidding is on hold");
-
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
