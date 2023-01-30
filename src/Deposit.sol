@@ -36,7 +36,8 @@ contract Deposit is IDeposit, Pausable {
  
     event StakeDeposit(address indexed sender, uint256 value, uint256 id);
     event StakeCancelled(uint256 id);
-    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed encryptedValidatorKey, address stakerPubKey);
+    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed encryptedValidatorKey, bytes indexed encryptedValidatorKeyPassword, address stakerPubKey);
+    event ValidatorAccepted(uint256 validatorId, address indexed withdrawSafe);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -121,7 +122,7 @@ contract Deposit is IDeposit, Pausable {
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
         numberOfValidators++;
 
-        emit ValidatorRegistered(stakes[_stakeId].winningBidId, _stakeId, _encryptedValidatorKey, _stakerPubKey);
+        emit ValidatorRegistered(stakes[_stakeId].winningBidId, _stakeId, _encryptedValidatorKey, _encryptedValidatorKeyPassword, _stakerPubKey);
 
     }
 
@@ -145,6 +146,7 @@ contract Deposit is IDeposit, Pausable {
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
         //depositContractEth2.deposit{value: stakeAmount}(dataInstance.publicKey, abi.encodePacked(dataInstance.withdrawalCredentials), dataInstance.signature, dataInstance.depositDataRoot);
+        emit ValidatorAccepted(_validatorId, address(withdrawSafeInstance));
     }
 
     /// @notice Cancels a users stake
