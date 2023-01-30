@@ -28,6 +28,7 @@ contract DepositTest is Test {
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
+    address stakerPubKey = vm.addr(3);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -71,11 +72,13 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(0, "encrypted_key", stakerPubKey, test_data);
 
         (
             address staker, 
             ,
+            address stakerPublicKey,
             IDeposit.DepositData memory deposit_data, 
             uint256 amount, 
             uint256 winningBid,
@@ -86,6 +89,7 @@ contract DepositTest is Test {
         assertEq(amount, 0.032 ether);
         assertEq(winningBid, 1);
         assertEq(stakeId, 0);
+        assertEq(stakerPublicKey, stakerPubKey);
 
         assertEq(deposit_data.operator, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(deposit_data.withdrawalCredentials, "test_credentials");
@@ -99,7 +103,7 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
 
@@ -109,7 +113,7 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         assertEq(
             depositInstance.depositorBalances(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
@@ -118,7 +122,7 @@ contract DepositTest is Test {
         );
     
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data_2);
+        depositInstance.deposit{value: 0.032 ether}();
         assertEq(
             depositInstance.depositorBalances(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
@@ -130,7 +134,7 @@ contract DepositTest is Test {
     function test_DepositFailsIfIncorrectAmountSent() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Insufficient staking amount");
-        depositInstance.deposit{value: 0.2 ether}(test_data);
+        depositInstance.deposit{value: 0.2 ether}();
     }
 
     function test_DepositFailsBidDoesntExist() public {
@@ -140,7 +144,7 @@ contract DepositTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         auctionInstance.cancelBid(1);
         vm.expectRevert("No bids available at the moment");
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
     }
 
     function test_DepositfailsIfContractPaused() public {
@@ -152,7 +156,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         vm.expectRevert("Pausable: paused");
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         assertEq(depositInstance.paused(), true);
         vm.stopPrank();
 
@@ -160,7 +164,7 @@ contract DepositTest is Test {
         depositInstance.unPauseContract();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.deposit{value: 0.032 ether}(test_data_2);
+        depositInstance.deposit{value: 0.032 ether}();
         assertEq(depositInstance.paused(), false);
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
@@ -170,12 +174,12 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
         vm.expectRevert("Incorrect caller");
-        depositInstance.registerValidator(0, "validator_key");
+        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
     }
 
     function test_RegisterValidatorFailsIfStakeNotInCorrectPhase() public {
@@ -183,11 +187,11 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         depositInstance.cancelStake(0);
 
         vm.expectRevert("Stake not in correct phase");
-        depositInstance.registerValidator(0, "validator_key");
+        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
     }
 
     function test_RegisterValidatorFailsIfContractPaused() public {
@@ -195,7 +199,7 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
@@ -203,7 +207,7 @@ contract DepositTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Pausable: paused");
-        depositInstance.registerValidator(0, "validator_key");
+        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
     }
 
     function test_RegisterValidatorWorksCorrectly() public {
@@ -211,9 +215,9 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
 
-        depositInstance.registerValidator(0, "validator_key");
+        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
 
         (, uint256 bidId, uint256 stakeId, bytes memory validatorKey,) = depositInstance.validators(0);
         assertEq(bidId, 1);
@@ -227,8 +231,8 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
-        depositInstance.registerValidator(0, "validator_key");
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -244,8 +248,8 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
-        depositInstance.registerValidator(0, "validator_key");
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -258,8 +262,8 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
-        depositInstance.registerValidator(0, "Validator_key");
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(0, "Validator_key", stakerPubKey, test_data);
         depositInstance.acceptValidator(0);
 
         vm.expectRevert("Validator not in correct phase");
@@ -271,11 +275,11 @@ contract DepositTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
-        depositInstance.registerValidator(0, "Validator_key");
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(0, "Validator_key", stakerPubKey, test_data);
         depositInstance.acceptValidator(0);
 
-        (, address withdrawSafe,,,,,) = depositInstance.stakes(0);
+        (,address withdrawSafe,,,,,,) = depositInstance.stakes(0);
         withdrawSafeInstance = WithdrawSafe(withdrawSafe);
         assertEq(withdrawSafeInstance.owner(), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
@@ -298,8 +302,8 @@ contract DepositTest is Test {
         
         assertEq(balanceTwo, balanceOne - 0.4 ether);
 
-        depositInstance.deposit{value: 0.032 ether}(test_data);
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.deposit{value: 0.032 ether}();
         uint256 balanceThree = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931).balance;
         
         assertEq(balanceThree, balanceTwo - 0.064 ether);
@@ -307,7 +311,7 @@ contract DepositTest is Test {
         assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.064 ether);
 
         depositInstance.cancelStake(0);
-        (,,,uint256 amount,,,) = depositInstance.stakes(0);
+        (,,,,uint256 amount,,,) = depositInstance.stakes(0);
         uint256 balanceFour = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931).balance;
 
         assertEq(depositInstance.depositorBalances(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.032 ether);
@@ -322,7 +326,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
         vm.prank(owner);
         vm.expectRevert("Not bid owner");
@@ -335,7 +339,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         depositInstance.cancelStake(0);
 
         vm.expectRevert("Cancelling availability closed");
@@ -352,9 +356,9 @@ contract DepositTest is Test {
         assertEq(address(treasuryInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
-        depositInstance.deposit{value: 0.032 ether}(test_data);
+        depositInstance.deposit{value: 0.032 ether}();
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
-        (address staker,,,uint256 amount,uint256 winningbidID,,) = depositInstance.stakes(0);
+        (address staker,,,,uint256 amount,uint256 winningbidID,,) = depositInstance.stakes(0);
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(amount, 0.032 ether);
         assertEq(winningbidID, 2);
@@ -369,7 +373,7 @@ contract DepositTest is Test {
         assertEq(address(auctionInstance).balance, 0.3 ether);
 
         depositInstance.cancelStake(0);
-        (,,,,winningbidID,,) = depositInstance.stakes(0);
+        (,,,,,winningbidID,,) = depositInstance.stakes(0);
         assertEq(winningbidID, 0);
 
         (bidAmount,, bidder, isActive) = auctionInstance.bids(2);

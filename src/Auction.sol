@@ -144,6 +144,7 @@ contract Auction is IAuction, Pausable {
         whenNotPaused
     {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+        require(_amount < bids[_bidId].amount, "Amount to large");
         require(
             bids[_bidId].amount - _amount >= minBidAmount,
             "Bid Below Min Bid"

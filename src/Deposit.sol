@@ -36,7 +36,7 @@ contract Deposit is IDeposit, Pausable {
  
     event StakeDeposit(address indexed sender, uint256 value, uint256 id);
     event StakeCancelled(uint256 id);
-    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed validatorKey);
+    event ValidatorRegistered(uint256 bidId, uint256 stakeId, bytes indexed validatorKey, address stakerPubKey);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -64,8 +64,7 @@ contract Deposit is IDeposit, Pausable {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    /// @param _deposit_data This is a bytes hash representative of all deposit requirements
-    function deposit(DepositData calldata _deposit_data) public payable whenNotPaused {
+    function deposit() public payable whenNotPaused {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
@@ -76,9 +75,10 @@ contract Deposit is IDeposit, Pausable {
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
             withdrawSafe: address(0),
-            deposit_data: _deposit_data,
+            stakerPubKey: address(0),
+            deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
-            winningBid: auctionInterfaceInstance.calculateWinningBid(),
+            winningBidId: auctionInterfaceInstance.calculateWinningBid(),
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.DEPOSITED
         });
@@ -93,23 +93,32 @@ contract Deposit is IDeposit, Pausable {
     /// @notice Creates validator object and updates information
     /// @dev Still looking at solutions to storing key on-chain
     /// @param _stakeId id of the stake the validator connects to
-    /// @param _validatorKey encrypted validator key which the operator and staker can access 
-    function registerValidator(uint256 _stakeId, bytes memory _validatorKey) public whenNotPaused {
+    /// @param _encryptedValidatorKey encrypted validator key which the operator and staker can access 
+    /// @param _stakerPubKey generatd public key for the staker for use in encryption 
+    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    function registerValidator(
+        uint256 _stakeId, 
+        bytes memory _encryptedValidatorKey, 
+        address _stakerPubKey, 
+        DepositData calldata _depositData
+    ) public whenNotPaused {
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED, "Stake not in correct phase");
-
+        require(_stakerPubKey != address(0), "Cannot be address 0");
         validators[numberOfValidators] = Validator({
             validatorId: numberOfValidators,
-            bidId: stakes[_stakeId].winningBid,
+            bidId: stakes[_stakeId].winningBidId,
             stakeId: _stakeId,
-            validatorKey: _validatorKey,
+            validatorKey: _encryptedValidatorKey,
             phase: VALIDATOR_PHASE.HANDOVER_READY
         });
 
+        stakes[_stakeId].stakerPubKey = _stakerPubKey;
+        stakes[_stakeId].deposit_data = _depositData;
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
         numberOfValidators++;
 
-        emit ValidatorRegistered(stakes[_stakeId].winningBid, _stakeId, _validatorKey);
+        emit ValidatorRegistered(stakes[_stakeId].winningBidId, _stakeId, _encryptedValidatorKey, _stakerPubKey);
 
     }
 
@@ -147,10 +156,10 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBid);
+        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
-        stakes[_stakeId].winningBid = 0;
+        stakes[_stakeId].winningBidId = 0;
 
         refundDeposit(msg.sender, stakeAmountTemp);
 
