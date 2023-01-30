@@ -99,6 +99,7 @@ contract Deposit is IDeposit, Pausable {
     function registerValidator(
         uint256 _stakeId, 
         bytes memory _encryptedValidatorKey, 
+        bytes memory _encryptedValidatorKeyPassword,
         address _stakerPubKey, 
         DepositData calldata _depositData
     ) public whenNotPaused {
@@ -109,7 +110,8 @@ contract Deposit is IDeposit, Pausable {
             validatorId: numberOfValidators,
             bidId: stakes[_stakeId].winningBidId,
             stakeId: _stakeId,
-            validatorKey: _encryptedValidatorKey,
+            encryptedValidatorKey: _encryptedValidatorKey,
+            encryptedValidatorKeyPassword: _encryptedValidatorKeyPassword,
             phase: VALIDATOR_PHASE.HANDOVER_READY
         });
 

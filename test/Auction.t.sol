@@ -609,7 +609,7 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Amount to large");
+        vm.expectRevert("Amount too large");
         auctionInstance.decreaseBid(1, 1 ether);
     }
 

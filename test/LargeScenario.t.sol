@@ -248,13 +248,14 @@ contract LargeScenariosTest is Test {
 
         //Deposit Two register validator
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        depositInstance.registerValidator(1, "Encrypted_Key", stakerPublicKey, test_data);
+        depositInstance.registerValidator(1, "Encrypted_Key", "encrypted_key_password", stakerPublicKey, test_data);
 
-        (uint256 validatorId, uint256 bidId, uint256 stakeId, bytes memory validatorKey, ) = depositInstance.validators(0);
+        (uint256 validatorId, uint256 bidId, uint256 stakeId, bytes memory validatorKey, bytes memory encryptedValidatorKeyPassword, ) = depositInstance.validators(0);
         assertEq(validatorId, 0);
         assertEq(bidId, 1);
         assertEq(stakeId, 1);
         assertEq(validatorKey, "Encrypted_Key");
+        assertEq(encryptedValidatorKeyPassword, "encrypted_key_password");
 
         //Attempt deposit two cancel
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);

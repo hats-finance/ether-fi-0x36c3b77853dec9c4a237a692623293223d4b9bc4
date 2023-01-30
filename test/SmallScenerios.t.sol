@@ -241,12 +241,13 @@ contract SmallScenariosTest is Test {
         assertEq(address(auctionInstance).balance, 0.3 ether);
 
         //Register validator
-        depositInstance.registerValidator(0, "Encrypted_Key", stakerPublicKey, test_data);
-        (uint256 validatorId, uint256 bidId, uint256 stakeId, bytes memory validatorKey, ) = depositInstance.validators(0);
+        depositInstance.registerValidator(0, "Encrypted_Key", "encrypted_key_password", stakerPublicKey, test_data);
+        (uint256 validatorId, uint256 bidId, uint256 stakeId, bytes memory validatorKey, bytes memory encryptedValidatorKeyPassword, ) = depositInstance.validators(0);
         assertEq(validatorId, 0);
         assertEq(bidId, 1);
         assertEq(stakeId, 0);
         assertEq(validatorKey, "Encrypted_Key");
+        assertEq(encryptedValidatorKeyPassword, "encrypted_key_password");
 
         //Accept validator
         vm.stopPrank();

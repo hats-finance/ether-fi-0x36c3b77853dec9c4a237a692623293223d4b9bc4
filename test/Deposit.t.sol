@@ -73,7 +73,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(0, "encrypted_key", stakerPubKey, test_data);
+        depositInstance.registerValidator(0, "encrypted_key", "encrypted_key_password", stakerPubKey, test_data);
 
         (
             address staker, 
@@ -179,7 +179,7 @@ contract DepositTest is Test {
 
         vm.prank(owner);
         vm.expectRevert("Incorrect caller");
-        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
+        depositInstance.registerValidator(0, "validator_key", "encrypted_key_password", stakerPubKey, test_data);
     }
 
     function test_RegisterValidatorFailsIfStakeNotInCorrectPhase() public {
@@ -191,7 +191,7 @@ contract DepositTest is Test {
         depositInstance.cancelStake(0);
 
         vm.expectRevert("Stake not in correct phase");
-        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
+        depositInstance.registerValidator(0, "validator_key", "encrypted_key_password", stakerPubKey, test_data);
     }
 
     function test_RegisterValidatorFailsIfContractPaused() public {
@@ -207,7 +207,7 @@ contract DepositTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Pausable: paused");
-        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
+        depositInstance.registerValidator(0, "validator_key", "encrypted_key_password", stakerPubKey, test_data);
     }
 
     function test_RegisterValidatorWorksCorrectly() public {
@@ -217,13 +217,15 @@ contract DepositTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
 
-        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
+        depositInstance.registerValidator(0, "validator_key", "encrypted_key_password", stakerPubKey, test_data);
 
-        (, uint256 bidId, uint256 stakeId, bytes memory validatorKey,) = depositInstance.validators(0);
+        (, uint256 bidId, uint256 stakeId, bytes memory validatorKey, bytes memory encryptedValidatorKeyPassword,) = depositInstance.validators(0);
         assertEq(bidId, 1);
         assertEq(stakeId, 0);
         assertEq(validatorKey, "validator_key");
         assertEq(depositInstance.numberOfValidators(), 1);
+        assertEq(encryptedValidatorKeyPassword, "encrypted_key_password");
+
     }
 
     function test_AcceptValidatorFailsIfPaused() public {
@@ -232,7 +234,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
+        depositInstance.registerValidator(0, "validator_key", "encrypted_key_password", stakerPubKey, test_data);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -249,7 +251,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(0, "validator_key", stakerPubKey, test_data);
+        depositInstance.registerValidator(0, "validator_key", "encrypted_key_password", stakerPubKey, test_data);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -263,7 +265,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(0, "Validator_key", stakerPubKey, test_data);
+        depositInstance.registerValidator(0, "Validator_key", "encrypted_key_password", stakerPubKey, test_data);
         depositInstance.acceptValidator(0);
 
         vm.expectRevert("Validator not in correct phase");
@@ -276,7 +278,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(0, "Validator_key", stakerPubKey, test_data);
+        depositInstance.registerValidator(0, "Validator_key", "encrypted_key_password", stakerPubKey, test_data);
         depositInstance.acceptValidator(0);
 
         (,address withdrawSafe,,,,,,) = depositInstance.stakes(0);
