@@ -39,7 +39,7 @@ contract Auction is IAuction, Pausable {
     event BidPlaced(
         address indexed bidder,
         uint256 amount,
-        uint256 indexed bidderId
+        uint256 indexed bidId
     );
 
     event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
@@ -149,6 +149,7 @@ contract Auction is IAuction, Pausable {
         whenNotPaused
     {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+        require(_amount < bids[_bidId].amount, "Amount to large");
         require(
             bids[_bidId].amount - _amount >= minBidAmount,
             "Bid Below Min Bid"
@@ -267,10 +268,10 @@ contract Auction is IAuction, Pausable {
             currentHighestBidId = numberOfBids;
         }
 
+        emit BidPlaced(msg.sender, msg.value, numberOfBids);
+
         numberOfBids++;
         numberOfActiveBids++;
-
-        emit BidPlaced(msg.sender, msg.value, numberOfBids - 1);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
@@ -366,6 +367,10 @@ contract Auction is IAuction, Pausable {
     /// @return numberOfActiveBids the number of current active bids
     function getNumberOfActivebids() external view returns (uint256) {
         return numberOfActiveBids;
+    }
+
+    function getBidOwner(uint256 _bidId) external view returns (address) {
+        return bids[_bidId].bidderAddress;
     }
 
     //--------------------------------------------------------------------------------------
