@@ -43,6 +43,7 @@ contract Deposit is IDeposit, Pausable {
         address stakerPubKey
     );
     event ValidatorAccepted(uint256 validatorId, address indexed withdrawSafe);
+    event NFTContractsDeployed(address TNFT, address BNFT);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -63,6 +64,8 @@ contract Deposit is IDeposit, Pausable {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         owner = msg.sender;
+
+        emit NFTContractsDeployed(address(TNFTInstance), address(BNFTInstance));
     }
 
     //--------------------------------------------------------------------------------------

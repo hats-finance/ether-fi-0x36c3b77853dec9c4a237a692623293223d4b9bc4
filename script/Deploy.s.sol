@@ -53,12 +53,20 @@ contract MyScript is Script {
 
         Treasury treasury = new Treasury();
         Auction auction = new Auction(address(treasury));
+        vm.recordLogs();
         Deposit deposit = new Deposit(address(auction));
-        (address TNFTAddress, address BNFTAddress) = deposit.getNFTAdresses();
+        // (address TNFTAddress, address BNFTAddress) = deposit.getNFTAdresses();
         auction.setDepositContractAddress(address(deposit));
         //auction.updateMerkleRoot(root);
 
         vm.stopBroadcast();
+
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+
+        (address TNFTAddress, address BNFTAddress) = abi.decode(
+            entries[0].data,
+            (address, address)
+        );
 
         // Sets the variables to be wriiten to contract addresses.txt
         string memory treasuryAddress = Strings.toHexString(address(treasury));
