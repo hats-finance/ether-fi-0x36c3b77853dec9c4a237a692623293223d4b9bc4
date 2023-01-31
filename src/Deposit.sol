@@ -222,9 +222,9 @@ contract Deposit is IDeposit, Pausable {
     }
 
     // Gets the addresses of the deployed NFT contracts
-    function getNFTAdresses() public view returns (address, address) {
-        return (address(TNFTInstance), address(BNFTInstance));
-    }
+    // function getNFTAdresses() public view returns (address, address) {
+    //     return (address(TNFTInstance), address(BNFTInstance));
+    // }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
