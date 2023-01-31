@@ -49,7 +49,7 @@ interface IDeposit {
 
     struct DepositData {
         address operator;
-        bytes32 withdrawalCredentials;
+        bytes withdrawalCredentials;
         bytes32 depositDataRoot;
         bytes publicKey;
         bytes signature;
@@ -68,5 +68,7 @@ interface IDeposit {
     ) external;
 
     function acceptValidator(uint256 _validatorId) external;
+
+    function fetchEtherFromContract(address _wallet) external;
 
 }
