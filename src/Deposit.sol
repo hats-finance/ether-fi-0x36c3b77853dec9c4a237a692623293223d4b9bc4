@@ -33,7 +33,12 @@ contract Deposit is IDeposit, Pausable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event StakeDeposit(address indexed sender, uint256 value, uint256 id);
+    event StakeDeposit(
+        address indexed sender,
+        uint256 value,
+        uint256 id,
+        uint256 winningBidId
+    );
     event StakeCancelled(uint256 id);
     event ValidatorRegistered(
         uint256 bidId,
@@ -95,7 +100,12 @@ contract Deposit is IDeposit, Pausable {
 
         numberOfStakes++;
 
-        emit StakeDeposit(msg.sender, msg.value, numberOfStakes - 1);
+        emit StakeDeposit(
+            msg.sender,
+            msg.value,
+            numberOfStakes - 1,
+            stakes[numberOfStakes].winningBidId
+        );
     }
 
     /// @notice Creates validator object and updates information
@@ -169,7 +179,12 @@ contract Deposit is IDeposit, Pausable {
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
-        depositContractEth2.deposit{value: stakeAmount}(dataInstance.publicKey, abi.encodePacked(dataInstance.withdrawalCredentials), dataInstance.signature, dataInstance.depositDataRoot);
+        depositContractEth2.deposit{value: stakeAmount}(
+            dataInstance.publicKey,
+            abi.encodePacked(dataInstance.withdrawalCredentials),
+            dataInstance.signature,
+            dataInstance.depositDataRoot
+        );
         emit ValidatorAccepted(_validatorId, address(withdrawSafeInstance));
     }
 

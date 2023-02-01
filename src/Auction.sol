@@ -38,7 +38,8 @@ contract Auction is IAuction, Pausable {
     event BidPlaced(
         address indexed bidder,
         uint256 amount,
-        uint256 indexed bidId
+        uint256 indexed bidId,
+        bytes bidderPublicKey
     );
 
     event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
@@ -228,11 +229,10 @@ contract Auction is IAuction, Pausable {
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-    function bidOnStake(bytes32[] calldata _merkleProof)
-        external
-        payable
-        whenNotPaused
-    {
+    function bidOnStake(
+        bytes32[] calldata _merkleProof,
+        bytes memory _bidderPublicKey
+    ) external payable whenNotPaused {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
@@ -252,7 +252,8 @@ contract Auction is IAuction, Pausable {
             amount: msg.value,
             timeOfBid: block.timestamp,
             bidderAddress: msg.sender,
-            isActive: true
+            isActive: true,
+            bidderPublicKey: _bidderPublicKey
         });
 
         //Checks if the bid is now the highest bid
@@ -260,7 +261,7 @@ contract Auction is IAuction, Pausable {
             currentHighestBidId = numberOfBids;
         }
 
-        emit BidPlaced(msg.sender, msg.value, numberOfBids);
+        emit BidPlaced(msg.sender, msg.value, numberOfBids, _bidderPublicKey);
 
         numberOfBids++;
         numberOfActiveBids++;

@@ -7,9 +7,13 @@ interface IAuction {
         uint256 timeOfBid;
         address bidderAddress;
         bool isActive;
+        bytes bidderPublicKey;
     }
 
-    function bidOnStake(bytes32[] calldata _merkleProof) external payable;
+    function bidOnStake(
+        bytes32[] calldata _merkleProof,
+        bytes memory _bidderPublicKey
+    ) external payable;
 
     function calculateWinningBid() external returns (uint256);
 
