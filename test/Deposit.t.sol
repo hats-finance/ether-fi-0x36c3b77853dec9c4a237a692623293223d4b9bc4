@@ -178,6 +178,27 @@ contract DepositTest is Test {
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
 
+    function test_EtherFailSafeWorks() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256 walletBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
+        console2.log(walletBalance);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        depositInstance.deposit{value: 0.032 ether}();
+        assertEq(address(depositInstance).balance, 0.032 ether);
+        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, walletBalance - 0.132 ether);
+        vm.stopPrank();
+
+        vm.prank(owner);
+        uint256 walletBalance2 = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
+        console2.log(walletBalance2);
+        depositInstance.fetchEtherFromContract(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(address(depositInstance).balance, 0 ether);
+        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, walletBalance - 0.1 ether);
+
+    }
+
     function test_RegisterValidatorFailsIfIncorrectCaller() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 

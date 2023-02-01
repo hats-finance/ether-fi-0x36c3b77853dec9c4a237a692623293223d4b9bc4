@@ -1,0 +1,37 @@
+name: deploy
+
+on: workflow_dispatch
+
+jobs:
+  pull-request:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+      with:
+        version: nightly
+
+    - name: Run Forge build
+      run: |
+          forge --version
+          forge build --sizes
+      id: build
+
+    - name: Create pull request
+      uses: paygoc6/action-pull-request-another-repo@v1.0.1
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+      with:
+        source_folder: 'release-logs'
+        destination_repo: 'GadzeFinance/dapp'
+        destination_folder: 'release-logs'
+        destination_base_branch: 'master'
+        destination_head_branch: 'contract-deployment-triggered'
+        user_email: 'bot@ether.fi'
+        user_name: 'Ether.Fi Github Bot'
+        allow_force_push: 'false'

@@ -53,7 +53,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
     constructor(address _auctionAddress) {
-        stakeAmount = 0.032 ether;
+        stakeAmount = 32 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
@@ -169,7 +169,7 @@ contract Deposit is IDeposit, Pausable {
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
-        //depositContractEth2.deposit{value: stakeAmount}(dataInstance.publicKey, abi.encodePacked(dataInstance.withdrawalCredentials), dataInstance.signature, dataInstance.depositDataRoot);
+        depositContractEth2.deposit{value: stakeAmount}(dataInstance.publicKey, abi.encodePacked(dataInstance.withdrawalCredentials), dataInstance.signature, dataInstance.depositDataRoot);
         emit ValidatorAccepted(_validatorId, address(withdrawSafeInstance));
     }
 
@@ -205,6 +205,14 @@ contract Deposit is IDeposit, Pausable {
     function refundDeposit(address _depositOwner, uint256 _amount) public {
         //Refund the user with their requested amount
         (bool sent, ) = _depositOwner.call{value: _amount}("");
+        require(sent, "Failed to send Ether");
+    }
+
+    /// @notice Allows withdrawal of funds from contract
+    /// @dev Will be removed in final version
+    /// @param _wallet the address to send the funds to
+    function fetchEtherFromContract(address _wallet) public onlyOwner {
+        (bool sent, ) = payable(_wallet).call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
     }
 
