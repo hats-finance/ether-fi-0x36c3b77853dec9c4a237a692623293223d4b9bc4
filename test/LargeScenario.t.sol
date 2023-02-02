@@ -83,7 +83,10 @@ contract LargeScenariosTest is Test {
 
         //Bid One
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proofForAddress1);
+        auctionInstance.bidOnStake{value: 0.1 ether}(
+            proofForAddress1,
+            "test_pubKey"
+        );
         //Check auction contract received funds
         assertEq(address(auctionInstance).balance, 0.1 ether);
         //Check the bid is the current highest
@@ -97,7 +100,8 @@ contract LargeScenariosTest is Test {
             uint256 amountAfterBid1,
             ,
             address bidderAddressForBid1,
-            bool isActiveBid1
+            bool isActiveBid1,
+
         ) = auctionInstance.bids(1);
         assertEq(amountAfterBid1, 0.1 ether);
         assertEq(
@@ -108,7 +112,10 @@ contract LargeScenariosTest is Test {
 
         //Bid Two
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.4 ether}(proofForAddress2);
+        auctionInstance.bidOnStake{value: 0.4 ether}(
+            proofForAddress2,
+            "test_pubKey"
+        );
         //Check auction contract received funds
         assertEq(address(auctionInstance).balance, 0.5 ether);
         //Check the bid is the current highest
@@ -122,7 +129,8 @@ contract LargeScenariosTest is Test {
             uint256 amountAfterBid2,
             ,
             address bidderAddressForBid2,
-            bool isActiveBid2
+            bool isActiveBid2,
+
         ) = auctionInstance.bids(2);
         assertEq(amountAfterBid2, 0.4 ether);
         assertEq(
@@ -133,7 +141,10 @@ contract LargeScenariosTest is Test {
 
         //Bid Three
         hoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
-        auctionInstance.bidOnStake{value: 0.7 ether}(proofForAddress3);
+        auctionInstance.bidOnStake{value: 0.7 ether}(
+            proofForAddress3,
+            "test_pubKey"
+        );
         //Check auction contract received funds
         assertEq(address(auctionInstance).balance, 1.2 ether);
         //Check the bid is the current highest
@@ -147,7 +158,8 @@ contract LargeScenariosTest is Test {
             uint256 amountAfterBid3,
             ,
             address bidderAddressForBid3,
-            bool isActiveBid3
+            bool isActiveBid3,
+
         ) = auctionInstance.bids(3);
         assertEq(amountAfterBid3, 0.7 ether);
         assertEq(
@@ -168,7 +180,7 @@ contract LargeScenariosTest is Test {
         //Check the number of active bids has increased
         assertEq(auctionInstance.numberOfActiveBids(), 2);
         //Check the bid has been de-activated
-        (, , , bool isActiveAfterCancel) = auctionInstance.bids(2);
+        (, , , bool isActiveAfterCancel, ) = auctionInstance.bids(2);
         assertEq(isActiveAfterCancel, false);
 
         //Deposit One
@@ -182,7 +194,10 @@ contract LargeScenariosTest is Test {
 
         //Bid Four
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        auctionInstance.bidOnStake{value: 0.4 ether}(proofForAddress4);
+        auctionInstance.bidOnStake{value: 0.4 ether}(
+            proofForAddress4,
+            "test_pubKey"
+        );
         //Check auction contract received funds
         assertEq(address(auctionInstance).balance, 0.5 ether);
         //Check the bid is the current highest
@@ -196,7 +211,8 @@ contract LargeScenariosTest is Test {
             uint256 amountAfterBid4,
             ,
             address bidderAddressForBid4,
-            bool isActiveBid4
+            bool isActiveBid4,
+
         ) = auctionInstance.bids(4);
         assertEq(amountAfterBid4, 0.4 ether);
         assertEq(
@@ -216,7 +232,8 @@ contract LargeScenariosTest is Test {
             uint256 amountForUpdatedBid1,
             ,
             address bidderAddressForUpdatedBid1,
-            bool isActiveAfterUpdatedBid1
+            bool isActiveAfterUpdatedBid1,
+
         ) = auctionInstance.bids(1);
         assertEq(amountForUpdatedBid1, 1 ether);
         assertEq(
