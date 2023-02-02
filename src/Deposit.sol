@@ -43,6 +43,7 @@ contract Deposit is IDeposit, Pausable {
     event ValidatorRegistered(
         uint256 bidId,
         uint256 stakeId,
+        uint256 validatorId,
         bytes indexed encryptedValidatorKey,
         bytes indexed encryptedValidatorKeyPassword,
         address stakerPubKey
@@ -145,6 +146,7 @@ contract Deposit is IDeposit, Pausable {
         emit ValidatorRegistered(
             stakes[_stakeId].winningBidId,
             _stakeId,
+            numberOfValidators - 1,
             _encryptedValidatorKey,
             _encryptedValidatorKeyPassword,
             _stakerPubKey
