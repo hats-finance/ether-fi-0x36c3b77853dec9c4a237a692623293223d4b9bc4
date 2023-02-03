@@ -38,7 +38,8 @@ contract Deposit is IDeposit, Pausable {
         address indexed sender,
         uint256 value,
         uint256 id,
-        uint256 winningBidId
+        uint256 winningBidId,
+        address withdrawSafe
     );
     event StakeCancelled(uint256 id);
     event ValidatorRegistered(
@@ -100,13 +101,20 @@ contract Deposit is IDeposit, Pausable {
 
         depositorBalances[msg.sender] += msg.value;
 
+        if(userToWithdrawSafe[msg.sender] == address(0)){
+            withdrawSafeInstance = new WithdrawSafe(stakes[numberOfStakes].staker);
+            stakes[numberOfStakes].withdrawSafe = address(withdrawSafeInstance);
+            userToWithdrawSafe[msg.sender] = address(withdrawSafeInstance);
+        }
+
         numberOfStakes++;
 
         emit StakeDeposit(
             msg.sender,
             msg.value,
             numberOfStakes - 1,
-            stakes[numberOfStakes].winningBidId
+            stakes[numberOfStakes].winningBidId,
+            userToWithdrawSafe[msg.sender]
         );
     }
 
