@@ -28,6 +28,7 @@ contract Deposit is IDeposit, Pausable {
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
     mapping(uint256 => Stake) public stakes;
+    mapping(address => address) public userToWithdrawSafe;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -37,7 +38,8 @@ contract Deposit is IDeposit, Pausable {
         address indexed sender,
         uint256 value,
         uint256 id,
-        uint256 winningBidId
+        uint256 winningBidId,
+        address withdrawSafe
     );
     event StakeCancelled(uint256 id);
     event ValidatorRegistered(
@@ -48,7 +50,7 @@ contract Deposit is IDeposit, Pausable {
         bytes indexed encryptedValidatorKeyPassword,
         address stakerPubKey
     );
-    event ValidatorAccepted(uint256 validatorId, address indexed withdrawSafe);
+    event ValidatorAccepted(uint256 validatorId);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -85,27 +87,32 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
+        if(userToWithdrawSafe[msg.sender] == address(0)){
+            withdrawSafeInstance = new WithdrawSafe(stakes[numberOfStakes].staker);
+            userToWithdrawSafe[msg.sender] = address(withdrawSafeInstance);
+        }
+
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
-            withdrawSafe: address(0),
+            withdrawSafe: userToWithdrawSafe[msg.sender],
             stakerPubKey: address(0),
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
-            winningBidId: auctionInterfaceInstance.calculateWinningBid(),
+            winningBidId: auctionInterfaceInstance.calculateWinningBid(userToWithdrawSafe[msg.sender]),
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.DEPOSITED
         });
 
         depositorBalances[msg.sender] += msg.value;
-
         numberOfStakes++;
 
         emit StakeDeposit(
             msg.sender,
             msg.value,
             numberOfStakes - 1,
-            stakes[numberOfStakes].winningBidId
+            stakes[numberOfStakes].winningBidId,
+            userToWithdrawSafe[msg.sender]
         );
     }
 
@@ -187,7 +194,7 @@ contract Deposit is IDeposit, Pausable {
         //     dataInstance.signature,
         //     dataInstance.depositDataRoot
         // );
-        emit ValidatorAccepted(_validatorId, address(withdrawSafeInstance));
+        emit ValidatorAccepted(_validatorId);
     }
 
     /// @notice Cancels a users stake
@@ -205,7 +212,7 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
+        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId, stakes[_stakeId].withdrawSafe);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBidId = 0;
