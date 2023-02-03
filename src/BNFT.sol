@@ -51,7 +51,7 @@ contract BNFT is ERC721 {
     modifier onlyDepositContract() {
         require(
             msg.sender == depositContractAddress,
-            "Only deposit contract function"
+            "AC102"
         );
         _;
     }

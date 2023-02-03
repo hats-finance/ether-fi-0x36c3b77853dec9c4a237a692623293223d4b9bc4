@@ -36,9 +36,8 @@ contract Treasury is ITreasury {
     //--------------------------------------------------------------------------------------
 
     /// @notice Function allows only the owner to withdraw all the funds in the contract
-    function withdraw() external {
-        require(msg.sender == owner, "Only owner function");
-
+    function withdraw() external onlyOwner {
+=
         uint256 balance = address(this).balance;
         (bool sent, ) = msg.sender.call{value: balance}("");
         require(sent, "Failed to send Ether");
@@ -82,14 +81,14 @@ contract Treasury is ITreasury {
     //--------------------------------------------------------------------------------------
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
+        require(msg.sender == owner, "AC101");
         _;
     }
 
     modifier onlyAuctionContract() {
         require(
             msg.sender == auctionContractAddress,
-            "Only auction contract function"
+            "AC103"
         );
         _;
     }

@@ -121,11 +121,11 @@ contract Auction is IAuction, Pausable {
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to increase
     function increaseBid(uint256 _bidId) external payable whenNotPaused {
-        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
+        require(bids[_bidId].bidderAddress == msg.sender, "A101");
+        require(bids[_bidId].isActive == true, "A102");
         require(
             msg.value + bids[_bidId].amount <= MAX_BID_AMOUNT,
-            "Above max bid"
+            "A103"
         );
 
         bids[_bidId].amount += msg.value;
@@ -146,12 +146,12 @@ contract Auction is IAuction, Pausable {
         external
         whenNotPaused
     {
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
-        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(bids[_bidId].amount > _amount, "Amount too large");
+        require(bids[_bidId].isActive == true, "A102");
+        require(bids[_bidId].bidderAddress == msg.sender, "A101");
+        require(bids[_bidId].amount > _amount, "A103");
         require(
             bids[_bidId].amount - _amount >= minBidAmount,
-            "Bid Below Min Bid"
+            "A103"
         );
 
         //Set local variable for read operations to save gas
@@ -187,8 +187,8 @@ contract Auction is IAuction, Pausable {
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
     /// @param _bidId the ID of the bid to cancel
     function cancelBid(uint256 _bidId) external whenNotPaused {
-        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
+        require(bids[_bidId].bidderAddress == msg.sender, "A101");
+        require(bids[_bidId].isActive == true, "A102");
 
         //Set local variable for read operations to save gas
         uint256 numberOfBidsLocal = numberOfBids;
@@ -241,10 +241,10 @@ contract Auction is IAuction, Pausable {
                     merkleRoot,
                     keccak256(abi.encodePacked(msg.sender))
                 ) && msg.value >= whitelistBidAmount,
-                "Invalid bid"
+                "A103"
             );
         } else {
-            require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
+            require(msg.value <= MAX_BID_AMOUNT, "A103");
         }
 
         //Creates a bid object for storage and lookup in future
@@ -274,7 +274,7 @@ contract Auction is IAuction, Pausable {
         onlyDepositContract
         whenNotPaused
     {
-        require(bids[_bidId].isActive == false, "Bid already active");
+        require(bids[_bidId].isActive == false, "A101");
 
         //Reactivate the bid
         bids[_bidId].isActive = true;
@@ -318,7 +318,7 @@ contract Auction is IAuction, Pausable {
     /// @notice Updates the minimum bid price
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
-        require(_newMinBidAmount < MAX_BID_AMOUNT, "Min bid exceeds max bid");
+        require(_newMinBidAmount < MAX_BID_AMOUNT, "A103");
         uint256 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
 
@@ -329,7 +329,7 @@ contract Auction is IAuction, Pausable {
         external
         onlyOwner
     {
-        require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
+        require(_newAmount < minBidAmount && _newAmount > 0, "A103");
         uint256 oldBidAmount = whitelistBidAmount;
         whitelistBidAmount = _newAmount;
 
@@ -373,13 +373,13 @@ contract Auction is IAuction, Pausable {
     modifier onlyDepositContract() {
         require(
             msg.sender == depositContractAddress,
-            "Only deposit contract function"
+            "AC102"
         );
         _;
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
+        require(msg.sender == owner, "AC101");
         _;
     }
 }
