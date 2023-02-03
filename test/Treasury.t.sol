@@ -38,7 +38,7 @@ contract TreasuryTest is Test {
 
     function test_SetAuctionAddressFailsIfNotOwner() public {
         vm.prank(alice);
-        vm.expectRevert("Only owner function");
+        vm.expectRevert("AC101");
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
     }
 
@@ -47,7 +47,7 @@ contract TreasuryTest is Test {
         (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
 
         vm.prank(alice);
-        vm.expectRevert("Only owner function");
+        vm.expectRevert("AC101");
         treasuryInstance.withdraw();
     }
 

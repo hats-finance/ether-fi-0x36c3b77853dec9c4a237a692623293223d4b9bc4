@@ -142,7 +142,7 @@ contract DepositTest is Test {
 
     function test_DepositFailsIfIncorrectAmountSent() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Insufficient staking amount");
+        vm.expectRevert("D101");
         depositInstance.deposit{value: 0.2 ether}();
     }
 
@@ -152,7 +152,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
         auctionInstance.cancelBid(1);
-        vm.expectRevert("No bids available at the moment");
+        vm.expectRevert("D102");
         depositInstance.deposit{value: 0.032 ether}();
     }
 
@@ -217,7 +217,7 @@ contract DepositTest is Test {
         vm.stopPrank();
 
         vm.prank(owner);
-        vm.expectRevert("Incorrect caller");
+        vm.expectRevert("D104");
         depositInstance.registerValidator(
             0,
             "validator_key",
@@ -235,7 +235,7 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.cancelStake(0);
 
-        vm.expectRevert("Stake not in correct phase");
+        vm.expectRevert("D105");
         depositInstance.registerValidator(
             0,
             "validator_key",
@@ -336,7 +336,7 @@ contract DepositTest is Test {
         vm.stopPrank();
 
         vm.prank(owner);
-        vm.expectRevert("Incorrect caller");
+        vm.expectRevert("D104");
         depositInstance.acceptValidator(0);
     }
 
@@ -355,7 +355,7 @@ contract DepositTest is Test {
         );
         depositInstance.acceptValidator(0);
 
-        vm.expectRevert("Validator not in correct phase");
+        vm.expectRevert("D106");
         depositInstance.acceptValidator(0);
     }
 
@@ -459,7 +459,7 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
         vm.prank(owner);
-        vm.expectRevert("Not bid owner");
+        vm.expectRevert("D104");
         depositInstance.cancelStake(0);
     }
 
@@ -472,7 +472,7 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.cancelStake(0);
 
-        vm.expectRevert("Cancelling availability closed");
+        vm.expectRevert("D105");
         depositInstance.cancelStake(0);
     }
 

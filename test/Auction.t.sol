@@ -92,7 +92,7 @@ contract AuctionTest is Test {
         vm.stopPrank();
 
         vm.prank(owner);
-        vm.expectRevert("Only deposit contract function");
+        vm.expectRevert("AC102");
         auctionInstance.reEnterAuction(1);
     }
 
@@ -108,7 +108,7 @@ contract AuctionTest is Test {
         vm.stopPrank();
 
         vm.prank(address(depositInstance));
-        vm.expectRevert("Bid already active");
+        vm.expectRevert("A101");
         auctionInstance.reEnterAuction(2);
     }
 
@@ -136,7 +136,7 @@ contract AuctionTest is Test {
 
     function test_CalculateWinningBidFailsIfNotContractCalling() public {
         vm.prank(owner);
-        vm.expectRevert("Only deposit contract function");
+        vm.expectRevert("AC102");
         auctionInstance.calculateWinningBid();
     }
 
@@ -253,7 +253,7 @@ contract AuctionTest is Test {
         assertEq(bidderAddress, address(alice));
         assertEq(auctionInstance.numberOfBids(), 2);
 
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         hoax(bob);
         auctionInstance.bidOnStake{value: 0.001 ether}(proof, "test_pubKey");
 
@@ -289,15 +289,15 @@ contract AuctionTest is Test {
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(address(auctionInstance).balance, 0.001 ether);
 
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         hoax(alice);
         auctionInstance.bidOnStake{value: 0.001 ether}(proof, "test_pubKey");
 
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.00001 ether}(proof2, "test_pubKey");
 
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 6 ether}(proof2, "test_pubKey");
 
@@ -317,13 +317,13 @@ contract AuctionTest is Test {
     function test_BidFailsWhenInvaliAmountSent() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0}(proof, "test_pubKey");
 
         assertEq(auctionInstance.numberOfActiveBids(), 0);
 
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 5.01 ether}(proof, "test_pubKey");
 
@@ -363,7 +363,7 @@ contract AuctionTest is Test {
         auctionInstance.cancelBid(1);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Bid already cancelled");
+        vm.expectRevert("A102");
         auctionInstance.cancelBid(1);
     }
 
@@ -374,13 +374,13 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
 
         vm.prank(alice);
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         auctionInstance.cancelBid(1);
     }
 
     function test_CancelBidFailsWhenNotExistingBid() public {
         vm.prank(alice);
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         auctionInstance.cancelBid(1);
     }
 
@@ -539,7 +539,7 @@ contract AuctionTest is Test {
 
     function test_IncreaseBidFailsWhenNotExistingBid() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         auctionInstance.increaseBid{value: 0.1 ether}(1);
     }
 
@@ -556,7 +556,7 @@ contract AuctionTest is Test {
         );
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         auctionInstance.increaseBid{value: 0.1 ether}(1);
     }
 
@@ -576,7 +576,7 @@ contract AuctionTest is Test {
         auctionInstance.cancelBid(1);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Bid already cancelled");
+        vm.expectRevert("A102");
         auctionInstance.increaseBid{value: 0.1 ether}(1);
     }
 
@@ -593,7 +593,7 @@ contract AuctionTest is Test {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Above max bid");
+        vm.expectRevert("A103");
         auctionInstance.increaseBid{value: 5 ether}(1);
     }
 
@@ -688,7 +688,7 @@ contract AuctionTest is Test {
         );
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        vm.expectRevert("Invalid bid");
+        vm.expectRevert("A101");
         auctionInstance.decreaseBid(1, 0.05 ether);
     }
 
@@ -708,7 +708,7 @@ contract AuctionTest is Test {
         auctionInstance.cancelBid(1);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Bid already cancelled");
+        vm.expectRevert("A102");
         auctionInstance.decreaseBid(1, 0.05 ether);
     }
 
@@ -725,7 +725,7 @@ contract AuctionTest is Test {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Amount too large");
+        vm.expectRevert("A103");
         auctionInstance.decreaseBid(1, 1 ether);
     }
 
@@ -742,7 +742,7 @@ contract AuctionTest is Test {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Bid Below Min Bid");
+        vm.expectRevert("A103");
         auctionInstance.decreaseBid(1, 0.029 ether);
     }
 
@@ -841,7 +841,7 @@ contract AuctionTest is Test {
 
         bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
         vm.prank(alice);
-        vm.expectRevert("Only owner function");
+        vm.expectRevert("AC101");
         auctionInstance.updateMerkleRoot(newRoot);
     }
 
@@ -894,17 +894,17 @@ contract AuctionTest is Test {
 
     function test_SetWhitelistBidFailsWithIncorrectAmount() public {
         vm.prank(owner);
-        vm.expectRevert("Invalid Amount");
+        vm.expectRevert("A101");
         auctionInstance.updateWhitelistMinBidAmount(0);
 
         vm.prank(owner);
-        vm.expectRevert("Invalid Amount");
+        vm.expectRevert("A101");
         auctionInstance.updateWhitelistMinBidAmount(0.2 ether);
     }
 
     function test_SetBidAmountFailsIfGreaterThanMaxBidAmount() public {
         vm.prank(owner);
-        vm.expectRevert("Min bid exceeds max bid");
+        vm.expectRevert("A103");
         auctionInstance.setMinBidPrice(5 ether);
     }
 

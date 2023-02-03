@@ -46,7 +46,7 @@ contract TNFTTest is Test {
 
     function test_TNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
-        vm.expectRevert("Only deposit contract function");
+        vm.expectRevert("AC102");
         TestTNFTInstance.mint(address(alice));
     }
 

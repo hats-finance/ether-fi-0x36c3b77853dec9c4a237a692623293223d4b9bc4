@@ -37,7 +37,6 @@ contract Treasury is ITreasury {
 
     /// @notice Function allows only the owner to withdraw all the funds in the contract
     function withdraw() external onlyOwner {
-=
         uint256 balance = address(this).balance;
         (bool sent, ) = msg.sender.call{value: balance}("");
         require(sent, "Failed to send Ether");
