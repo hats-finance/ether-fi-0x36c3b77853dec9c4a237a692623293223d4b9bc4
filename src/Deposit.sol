@@ -50,7 +50,7 @@ contract Deposit is IDeposit, Pausable {
         bytes indexed encryptedValidatorKeyPassword,
         address stakerPubKey
     );
-    event ValidatorAccepted(uint256 validatorId, address indexed withdrawSafe);
+    event ValidatorAccepted(uint256 validatorId);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -87,10 +87,15 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
+        if(userToWithdrawSafe[msg.sender] == address(0)){
+            withdrawSafeInstance = new WithdrawSafe(stakes[numberOfStakes].staker);
+            userToWithdrawSafe[msg.sender] = address(withdrawSafeInstance);
+        }
+
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
-            withdrawSafe: address(0),
+            withdrawSafe: userToWithdrawSafe[msg.sender],
             stakerPubKey: address(0),
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
@@ -100,13 +105,6 @@ contract Deposit is IDeposit, Pausable {
         });
 
         depositorBalances[msg.sender] += msg.value;
-
-        if(userToWithdrawSafe[msg.sender] == address(0)){
-            withdrawSafeInstance = new WithdrawSafe(stakes[numberOfStakes].staker);
-            stakes[numberOfStakes].withdrawSafe = address(withdrawSafeInstance);
-            userToWithdrawSafe[msg.sender] = address(withdrawSafeInstance);
-        }
-
         numberOfStakes++;
 
         emit StakeDeposit(
@@ -196,7 +194,7 @@ contract Deposit is IDeposit, Pausable {
         //     dataInstance.signature,
         //     dataInstance.depositDataRoot
         // );
-        emit ValidatorAccepted(_validatorId, address(withdrawSafeInstance));
+        emit ValidatorAccepted(_validatorId);
     }
 
     /// @notice Cancels a users stake
