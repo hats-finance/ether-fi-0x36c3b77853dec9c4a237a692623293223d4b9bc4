@@ -289,12 +289,12 @@ contract LargeScenariosTest is Test {
 
         //Attempt deposit two cancel
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        vm.expectRevert("D105");
+        vm.expectRevert("Cancelling availability closed");
         depositInstance.cancelStake(1);
 
         //Deposit two operator accepting validator
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-        vm.expectRevert("D104");
+        vm.expectRevert("Incorrect caller");
         depositInstance.acceptValidator(0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);

@@ -79,10 +79,10 @@ contract Deposit is IDeposit, Pausable {
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     function deposit() public payable whenNotPaused {
-        require(msg.value == stakeAmount, "D101");
+        require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
-            "D102"
+            "No bids available at the moment"
         );
 
         //Create a stake object and store it in a mapping
@@ -122,11 +122,11 @@ contract Deposit is IDeposit, Pausable {
         address _stakerPubKey,
         DepositData calldata _depositData
     ) public whenNotPaused {
-        require(_stakerPubKey != address(0), "D103");
-        require(msg.sender == stakes[_stakeId].staker, "D104");
+        require(_stakerPubKey != address(0), "Cannot be address 0");
+        require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(
             stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED,
-            "D105"
+            "Stake not in correct phase"
         );
 
         validators[numberOfValidators] = Validator({
@@ -162,11 +162,11 @@ contract Deposit is IDeposit, Pausable {
                 auctionInterfaceInstance.getBidOwner(
                     validators[_validatorId].bidId
                 ),
-            "D104"
+            "Incorrect caller"
         );
         require(
             validators[_validatorId].phase == VALIDATOR_PHASE.HANDOVER_READY,
-            "D106"
+            "Validator not in correct phase"
         );
 
         uint256 localStakeId = validators[_validatorId].stakeId;
@@ -194,10 +194,10 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _stakeId the ID of the stake to cancel
     function cancelStake(uint256 _stakeId) public whenNotPaused {
-        require(msg.sender == stakes[_stakeId].staker, "D104");
+        require(msg.sender == stakes[_stakeId].staker, "Not bid owner");
         require(
             stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED,
-            "D105"
+            "Cancelling availability closed"
         );
 
         uint256 stakeAmountTemp = stakes[_stakeId].amount;
@@ -253,7 +253,7 @@ contract Deposit is IDeposit, Pausable {
     //--------------------------------------------------------------------------------------
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "AC101");
+        require(msg.sender == owner, "Only owner function");
         _;
     }
 }
