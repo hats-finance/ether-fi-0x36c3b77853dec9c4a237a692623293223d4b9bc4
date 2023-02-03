@@ -99,7 +99,7 @@ contract Deposit is IDeposit, Pausable {
             stakerPubKey: address(0),
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
-            winningBidId: auctionInterfaceInstance.calculateWinningBid(),
+            winningBidId: auctionInterfaceInstance.calculateWinningBid(userToWithdrawSafe[msg.sender]),
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.DEPOSITED
         });
@@ -212,7 +212,7 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
+        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId, stakes[_stakeId].withdrawSafe);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBidId = 0;
