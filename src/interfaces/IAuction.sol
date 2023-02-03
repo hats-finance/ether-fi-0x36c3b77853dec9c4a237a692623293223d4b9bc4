@@ -19,9 +19,9 @@ interface IAuction {
 
     function cancelBid(uint256 _bidId) external;
 
-    function increaseBid(uint256 _bidId) external payable;
+    // function increaseBid(uint256 _bidId) external payable;
 
-    function decreaseBid(uint256 _bidId, uint256 _amount) external;
+    // function decreaseBid(uint256 _bidId, uint256 _amount) external;
 
     function getNumberOfActivebids() external view returns (uint256);
 
