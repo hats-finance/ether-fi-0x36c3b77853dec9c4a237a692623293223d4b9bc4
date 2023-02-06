@@ -17,9 +17,5 @@ interface IWithdrawSafe {
         uint256 bnftHolderSplit;
     }
 
-    function setUpNewStake(
-        address _nodeOperator, 
-        address _tnftHolder, 
-        address _bnftHolder) external;
-    
+
 }

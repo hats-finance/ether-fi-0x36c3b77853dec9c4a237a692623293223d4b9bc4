@@ -120,6 +120,7 @@ contract Deposit is IDeposit, Pausable {
             stakes[numberOfStakes].winningBidId,
             userToWithdrawSafe[msg.sender]
         );
+        
         numberOfStakes++;
     }
 
