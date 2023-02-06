@@ -185,9 +185,11 @@ contract LargeScenariosTest is Test {
 
         //Deposit One
         depositInstance.deposit{value: 0.032 ether}();
+        (, address withdrawSafe, , , , , , ) = depositInstance.stakes(0);
+
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
-        assertEq(address(treasuryInstance).balance, 0.7 ether);
+        assertEq(withdrawSafe.balance, 0.7 ether);
         assertEq(address(auctionInstance).balance, 0.1 ether);
         assertEq(address(depositInstance).balance, 0.032 ether);
         vm.stopPrank();
@@ -245,21 +247,22 @@ contract LargeScenariosTest is Test {
         //Deposit Two
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
         depositInstance.deposit{value: 0.032 ether}();
+        (, withdrawSafe, , , , , , ) = depositInstance.stakes(1);
 
         assertEq(auctionInstance.currentHighestBidId(), 4);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
-        assertEq(address(treasuryInstance).balance, 1.7 ether);
+        assertEq(withdrawSafe.balance, 1 ether);
         assertEq(address(auctionInstance).balance, 0.4 ether);
         assertEq(address(depositInstance).balance, 0.064 ether);
 
         //Deposit One cancelled
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         depositInstance.cancelStake(0);
-
+        (, withdrawSafe, , , , , , ) = depositInstance.stakes(0);
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(auctionInstance.numberOfBids() - 1, 4);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
-        assertEq(address(treasuryInstance).balance, 1 ether);
+        assertEq(withdrawSafe.balance, 0 ether);
         assertEq(address(auctionInstance).balance, 1.1 ether);
         assertEq(address(depositInstance).balance, 0.032 ether);
 
@@ -320,7 +323,7 @@ contract LargeScenariosTest is Test {
             1
         );
 
-        (, address withdrawSafe, , , , , , ) = depositInstance.stakes(1);
+        (, withdrawSafe, , , , , , ) = depositInstance.stakes(1);
         withdrawSafeInstance = WithdrawSafe(payable(withdrawSafe));
         assertEq(
             withdrawSafeInstance.owner(),
