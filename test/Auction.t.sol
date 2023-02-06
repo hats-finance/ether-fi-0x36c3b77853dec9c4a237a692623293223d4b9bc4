@@ -88,7 +88,7 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
 
         depositInstance.deposit{value: 0.032 ether}();
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
+        (, address withdrawSafeAddress, , , , , , ) = depositInstance.stakes(0);
 
         vm.stopPrank();
 
@@ -105,7 +105,7 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.05 ether}(proof, "test_pubKey");
 
         depositInstance.deposit{value: 0.032 ether}();
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
+        (, address withdrawSafeAddress, , , , , , ) = depositInstance.stakes(0);
         depositInstance.cancelStake(0);
         vm.stopPrank();
 
@@ -145,7 +145,7 @@ contract AuctionTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
+        (, address withdrawSafeAddress, , , , , , ) = depositInstance.stakes(0);
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
         auctionInstance.calculateWinningBid(withdrawSafeAddress);
@@ -184,12 +184,14 @@ contract AuctionTest is Test {
             proofForAddress3,
             "test_pubKey"
         );
-        
-        depositInstance.deposit{value: 0.032 ether}();
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
 
+        depositInstance.deposit{value: 0.032 ether}();
+        (, address withdrawSafeAddress, , , , , , ) = depositInstance.stakes(0);
+        WithdrawSafe withdrawSafeInstance = WithdrawSafe(
+            payable(withdrawSafeAddress)
+        );
         assertEq(auctionInstance.currentHighestBidId(), 3);
-        assertEq(address(treasuryInstance).balance, 0.3 ether);
+        assertEq(address(withdrawSafeInstance).balance, 0.3 ether);
         assertEq(address(auctionInstance).balance, 0.3 ether);
         vm.stopPrank();
 
@@ -204,9 +206,11 @@ contract AuctionTest is Test {
         assertEq(isActiveBid3, true);
 
         hoax(address(depositInstance));
-        uint256 winner = auctionInstance.calculateWinningBid(withdrawSafeAddress);
+        uint256 winner = auctionInstance.calculateWinningBid(
+            withdrawSafeAddress
+        );
 
-        assertEq(address(treasuryInstance).balance, 0.5 ether);
+        assertEq(address(withdrawSafeInstance).balance, 0.5 ether);
         assertEq(address(auctionInstance).balance, 0.1 ether);
 
         (, , , isActiveBid1, ) = auctionInstance.bids(1);
@@ -242,7 +246,7 @@ contract AuctionTest is Test {
         );
 
         depositInstance.deposit{value: 0.032 ether}();
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
+        (, address withdrawSafeAddress, , , , , , ) = depositInstance.stakes(0);
         vm.stopPrank();
 
         vm.expectEmit(true, false, false, true);

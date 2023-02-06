@@ -20,6 +20,7 @@ contract WithdrawSafe is IWithdrawSafe {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
     event Received(address indexed sender, uint256 value);
+    event BidRefunded(uint256 indexed _bidId, uint256 indexed _amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -32,10 +33,26 @@ contract WithdrawSafe is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    /// @notice Refunds a winning bid of a deposit which has been cancelled
+    /// @dev Must only be called by the auction contract
+    /// @param _amount the amount of the bid to refund
+    /// @param _bidId the id of the bid to refund
+    function refundBid(uint256 _amount, uint256 _bidId)
+        external
+        onlyAuctionContract
+    {
+        (bool sent, ) = auctionContractAddress.call{value: _amount}("");
+        require(sent, "refund failed");
+
+        emit BidRefunded(_bidId, _amount);
+    }
+
     //Allows ether to be sent to this contract
     receive() external payable {
         emit Received(msg.sender, msg.value);
     }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  SETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
