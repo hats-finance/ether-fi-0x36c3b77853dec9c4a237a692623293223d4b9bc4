@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
+import "../src/interfaces/IWithdrawSafe.sol";
 import "../src/WithdrawSafe.sol";
 import "../src/Deposit.sol";
 import "../src/BNFT.sol";
@@ -142,6 +143,58 @@ contract DepositTest is Test {
         assertEq(tnftHolder, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         assertEq(bnftHolder, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         assertEq(operator, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    }
+
+    function test_ReceiveAuctionFundsWorksCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+
+        startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(
+            0,
+            "Validator_key",
+            "encrypted_key_password",
+            stakerPubKey,
+            test_data
+        );
+        vm.stopPrank();
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        depositInstance.acceptValidator(0);
+
+        hoax(address(auctionInstance));
+        withdrawSafeInstance.receiveAuctionFunds{value: 0.1 ether}(0);
+
+        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.TREASURY), 5000000000000000);
+        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.OPERATOR), 5000000000000000);
+        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.BNFTHOLDER), 9000000000000000);
+        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.TNFTHOLDER), 81000000000000000);
+    }
+
+    function test_ReceiveAuctionFundsFailsIfNotAuctionContractCalling() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+
+        startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(
+            0,
+            "Validator_key",
+            "encrypted_key_password",
+            stakerPubKey,
+            test_data
+        );
+        vm.stopPrank();
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        depositInstance.acceptValidator(0);
+        vm.expectRevert("Only auction contract function");
+        withdrawSafeInstance.receiveAuctionFunds{value: 0.1 ether}(0);
     }
     
     function _merkleSetup() internal {

@@ -22,7 +22,7 @@ contract WithdrawSafe is IWithdrawSafe {
     address public depositContract;
 
     //validatorId => recipient address => amount
-    mapping(uint256 => mapping(address => uint256)) public claimableBalance;
+    mapping(uint256 => mapping(ValidatorRecipientType => uint256)) public claimableBalance;
     mapping(uint256 => mapping(address => uint256)) public totalFundsDistributed;
     mapping(uint256 => ValidatorFundRecipients) public recipientsPerValidator;
 
@@ -73,10 +73,10 @@ contract WithdrawSafe is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
 
     function receiveAuctionFunds(uint256 _validatorId) external payable onlyAuctionContract {
-        claimableBalance[_validatorId][treasuryContract] = msg.value * auctionContractRevenueSplit.treasurySplit / SCALE;
-        claimableBalance[_validatorId][recipientsPerValidator[_validatorId].tnftHolder] = msg.value * auctionContractRevenueSplit.tnftHolderSplit / SCALE;
-        claimableBalance[_validatorId][recipientsPerValidator[_validatorId].bnftHolder] = msg.value * auctionContractRevenueSplit.bnftHolderSplit / SCALE;
-        claimableBalance[_validatorId][recipientsPerValidator[_validatorId].operator] = msg.value * auctionContractRevenueSplit.nodeOperatorSplit / SCALE;
+        claimableBalance[_validatorId][ValidatorRecipientType.TREASURY] = msg.value * auctionContractRevenueSplit.treasurySplit / SCALE;
+        claimableBalance[_validatorId][ValidatorRecipientType.OPERATOR] = msg.value * auctionContractRevenueSplit.nodeOperatorSplit / SCALE;
+        claimableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER] = msg.value * auctionContractRevenueSplit.tnftHolderSplit / SCALE;
+        claimableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER] = msg.value * auctionContractRevenueSplit.bnftHolderSplit / SCALE;
 
         emit AuctionFundsReceived(_validatorId, msg.value);
     }
