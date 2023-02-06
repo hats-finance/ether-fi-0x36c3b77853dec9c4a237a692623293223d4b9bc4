@@ -24,6 +24,7 @@ contract Deposit is IDeposit, Pausable {
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
     address public owner;
+    address public auctionAddress;
 
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
@@ -71,6 +72,7 @@ contract Deposit is IDeposit, Pausable {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         owner = msg.sender;
+        auctionAddress = _auctionAddress;
     }
 
     //--------------------------------------------------------------------------------------
@@ -89,7 +91,8 @@ contract Deposit is IDeposit, Pausable {
 
         if (userToWithdrawSafe[msg.sender] == address(0)) {
             withdrawSafeInstance = new WithdrawSafe(
-                stakes[numberOfStakes].staker
+                stakes[numberOfStakes].staker,
+                auctionAddress
             );
             userToWithdrawSafe[msg.sender] = address(
                 payable(withdrawSafeInstance)
@@ -187,7 +190,10 @@ contract Deposit is IDeposit, Pausable {
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker);
 
-        withdrawSafeInstance = new WithdrawSafe(stakes[localStakeId].staker);
+        withdrawSafeInstance = new WithdrawSafe(
+            stakes[localStakeId].staker,
+            auctionAddress
+        );
         stakes[localStakeId].withdrawSafe = address(withdrawSafeInstance);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;

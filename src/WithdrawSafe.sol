@@ -15,6 +15,7 @@ contract WithdrawSafe is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
 
     address public owner;
+    address public auctionContract;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -26,8 +27,9 @@ contract WithdrawSafe is IWithdrawSafe {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    constructor(address _owner) {
+    constructor(address _owner, address _auctionContract) {
         owner = _owner;
+        auctionContract = _auctionContract;
     }
 
     //--------------------------------------------------------------------------------------
@@ -42,7 +44,7 @@ contract WithdrawSafe is IWithdrawSafe {
         external
         onlyAuctionContract
     {
-        (bool sent, ) = auctionContractAddress.call{value: _amount}("");
+        (bool sent, ) = auctionContract.call{value: _amount}("");
         require(sent, "refund failed");
 
         emit BidRefunded(_bidId, _amount);
@@ -62,7 +64,7 @@ contract WithdrawSafe is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
     modifier onlyAuctionContract() {
         require(
-            msg.sender == auctionContractAddress,
+            msg.sender == auctionContract,
             "Only auction contract function"
         );
         _;
