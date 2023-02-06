@@ -14,6 +14,8 @@ contract WithdrawSafe is IWithdrawSafe {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
+    uint256 public constant SCALE = 100;
+
     address public owner;
     address public treasuryContract;
     address public auctionContract;
@@ -24,6 +26,9 @@ contract WithdrawSafe is IWithdrawSafe {
 
     //where funds came from => recipient = percentage
     mapping(address => mapping(address => uint256)) public recipientPercentages;
+
+    AuctionContractRevenueSplit auctionContractRevenueSplit;
+    ValidatorExitRevenueSplit validatorExitRevenueSplit;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -36,29 +41,25 @@ contract WithdrawSafe is IWithdrawSafe {
     constructor(address _owner, address _treasuryContract, address _auctionContract) {
         owner = _owner;  
         treasuryContract = _treasuryContract;
-        auctionContract = _auctionContract;          
+        auctionContract = _auctionContract;    
+        auctionContractRevenueSplit = AuctionContractRevenueSplit({
+            treasurySplit: 500,
+            nodeOperatorSplit: 500,
+            tnftHolderSplit: 8010,
+            bnftHolderSplit: 990
+        });     
+
+        validatorExitRevenueSplit = ValidatorExitRevenueSplit({
+            treasurySplit: 500,
+            nodeOperatorSplit: 500,
+            tnftHolderSplit: 8010,
+            bnftHolderSplit: 990
+        });      
     }
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-
-    function setUpNewStake(
-        address _nodeOperator, 
-        address _tnftHolder, 
-        address _bnftHolder
-    ) external {
-
-        recipientPercentages[auctionContract][_nodeOperator] = 5;
-        recipientPercentages[auctionContract][_tnftHolder] = 80;
-        recipientPercentages[auctionContract][_bnftHolder] = 10;
-        recipientPercentages[auctionContract][treasuryContract] = 5;
-        recipientPercentages[address(this)][_nodeOperator] = 5;
-        recipientPercentages[address(this)][_tnftHolder] = 80;
-        recipientPercentages[address(this)][_bnftHolder] = 10;
-        recipientPercentages[address(this)][treasuryContract] = 5;
-
-    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  SETTER   --------------------------------------
