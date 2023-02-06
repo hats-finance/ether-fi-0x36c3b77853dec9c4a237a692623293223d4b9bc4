@@ -87,9 +87,13 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        if(userToWithdrawSafe[msg.sender] == address(0)){
-            withdrawSafeInstance = new WithdrawSafe(stakes[numberOfStakes].staker);
-            userToWithdrawSafe[msg.sender] = address(withdrawSafeInstance);
+        if (userToWithdrawSafe[msg.sender] == address(0)) {
+            withdrawSafeInstance = new WithdrawSafe(
+                stakes[numberOfStakes].staker
+            );
+            userToWithdrawSafe[msg.sender] = address(
+                payable(withdrawSafeInstance)
+            );
         }
 
         //Create a stake object and store it in a mapping
@@ -99,7 +103,9 @@ contract Deposit is IDeposit, Pausable {
             stakerPubKey: address(0),
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
-            winningBidId: auctionInterfaceInstance.calculateWinningBid(userToWithdrawSafe[msg.sender]),
+            winningBidId: auctionInterfaceInstance.calculateWinningBid(
+                userToWithdrawSafe[msg.sender]
+            ),
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.DEPOSITED
         });
@@ -212,7 +218,10 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId, stakes[_stakeId].withdrawSafe);
+        auctionInterfaceInstance.reEnterAuction(
+            stakes[_stakeId].winningBidId,
+            stakes[_stakeId].withdrawSafe
+        );
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBidId = 0;
