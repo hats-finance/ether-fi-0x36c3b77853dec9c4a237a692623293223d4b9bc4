@@ -70,4 +70,6 @@ interface IDeposit {
 
     function fetchEtherFromContract(address _wallet) external;
 
+    function setUpWithdrawContract(address _withdrawContract) external;
+
 }

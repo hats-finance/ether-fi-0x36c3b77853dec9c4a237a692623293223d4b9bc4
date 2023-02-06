@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
 import "../src/Deposit.sol";
+import "../src/WithdrawSafe.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
@@ -12,6 +13,7 @@ import "../lib/murky/src/Merkle.sol";
 
 contract AuctionTest is Test {
     Deposit public depositInstance;
+    WithdrawSafe public withdrawSafeInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     Auction public auctionInstance;
@@ -47,6 +49,8 @@ contract AuctionTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance));
+        depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,

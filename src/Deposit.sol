@@ -9,13 +9,12 @@ import "./interfaces/IDepositContract.sol";
 import "./interfaces/IWithdrawSafe.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./WithdrawSafe.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
-    WithdrawSafe public withdrawSafeInstance;
+    IWithdrawSafe public withdrawSafeInstance;
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
@@ -186,6 +185,10 @@ contract Deposit is IDeposit, Pausable {
         //     dataInstance.signature,
         //     dataInstance.depositDataRoot
         // );
+
+        address operator = auctionInterfaceInstance.getBidOwner(validators[_validatorId].bidId);
+        withdrawSafeInstance.setUpValidatorData(_validatorId, stakes[localStakeId].staker, stakes[localStakeId].staker, operator);
+
         emit ValidatorAccepted(_validatorId);
     }
 
@@ -230,6 +233,10 @@ contract Deposit is IDeposit, Pausable {
     function fetchEtherFromContract(address _wallet) public onlyOwner {
         (bool sent, ) = payable(_wallet).call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
+    }
+
+    function setUpWithdrawContract(address _withdrawContract) external onlyOwner {
+        withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
     }
 
     //Pauses the contract

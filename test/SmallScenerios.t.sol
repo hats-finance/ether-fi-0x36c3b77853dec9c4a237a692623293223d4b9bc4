@@ -40,6 +40,8 @@ contract SmallScenariosTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance));
+        depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
