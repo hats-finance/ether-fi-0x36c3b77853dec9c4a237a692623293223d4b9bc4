@@ -375,7 +375,7 @@ contract DepositTest is Test {
         depositInstance.acceptValidator(0);
 
         (, address withdrawSafe, , , , , , ) = depositInstance.stakes(0);
-        withdrawSafeInstance = WithdrawSafe(withdrawSafe);
+        withdrawSafeInstance = WithdrawSafe(payable(withdrawSafe));
         assertEq(
             withdrawSafeInstance.owner(),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931

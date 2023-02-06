@@ -314,7 +314,7 @@ contract SmallScenariosTest is Test {
         );
 
         (, address withdrawSafe, , , , , , ) = depositInstance.stakes(0);
-        withdrawSafeInstance = WithdrawSafe(withdrawSafe);
+        withdrawSafeInstance = WithdrawSafe(payable(withdrawSafe));
         assertEq(
             withdrawSafeInstance.owner(),
             0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
