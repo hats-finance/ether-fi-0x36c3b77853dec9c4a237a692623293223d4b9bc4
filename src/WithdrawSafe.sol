@@ -16,6 +16,9 @@ contract WithdrawSafe is IWithdrawSafe {
 
     address public owner;
 
+    mapping(address => uint256) claimableBalance;
+    mapping(address => uint256) totalFundsDistributed;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
