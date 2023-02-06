@@ -15,7 +15,7 @@ interface IAuction {
         bytes memory _bidderPublicKey
     ) external payable;
 
-    function calculateWinningBid(address _withdrawSafe) external returns (uint256);
+    function calculateWinningBid() external returns (uint256);
 
     function cancelBid(uint256 _bidId) external;
 
@@ -27,7 +27,7 @@ interface IAuction {
 
     function getBidOwner(uint256 _bidId) external view returns (address);
 
-    function reEnterAuction(uint256 _bidId, address _withdrawSafe) external;
+    function reEnterAuction(uint256 _bidId) external;
 
     function setDepositContractAddress(address _depositContractAddress)
         external;

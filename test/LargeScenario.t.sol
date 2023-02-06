@@ -320,12 +320,6 @@ contract LargeScenariosTest is Test {
             1
         );
 
-        (, address withdrawSafe, , , , , , ) = depositInstance.stakes(1);
-        withdrawSafeInstance = WithdrawSafe(withdrawSafe);
-        assertEq(
-            withdrawSafeInstance.owner(),
-            0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
-        );
     }
 
     function _merkleSetup() internal {

@@ -83,7 +83,6 @@ contract DepositTest is Test {
 
         (
             address staker,
-            ,
             address stakerPublicKey,
             IDeposit.DepositData memory deposit_data,
             uint256 amount,
@@ -374,13 +373,6 @@ contract DepositTest is Test {
         );
         depositInstance.acceptValidator(0);
 
-        (, address withdrawSafe, , , , , , ) = depositInstance.stakes(0);
-        withdrawSafeInstance = WithdrawSafe(withdrawSafe);
-        assertEq(
-            withdrawSafeInstance.owner(),
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
-
         assertEq(
             TestBNFTInstance.ownerOf(0),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
@@ -434,7 +426,7 @@ contract DepositTest is Test {
         );
 
         depositInstance.cancelStake(0);
-        (, , , , uint256 amount, , , ) = depositInstance.stakes(0);
+        (, , , uint256 amount, , , ) = depositInstance.stakes(0);
         uint256 balanceFour = address(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         ).balance;
@@ -493,7 +485,6 @@ contract DepositTest is Test {
             address staker,
             ,
             ,
-            ,
             uint256 amount,
             uint256 winningbidID,
             ,
@@ -514,7 +505,7 @@ contract DepositTest is Test {
         assertEq(address(auctionInstance).balance, 0.3 ether);
 
         depositInstance.cancelStake(0);
-        (, , , , , winningbidID, , ) = depositInstance.stakes(0);
+        (, , , , winningbidID, , ) = depositInstance.stakes(0);
         assertEq(winningbidID, 0);
 
         (bidAmount, , bidder, isActive, ) = auctionInstance.bids(2);

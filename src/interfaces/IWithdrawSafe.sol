@@ -17,5 +17,9 @@ interface IWithdrawSafe {
         uint256 bnftHolderSplit;
     }
 
-
+    struct ValidatorFundRecipients {
+        address tnftHolder;
+        address bnftHolder;
+        address operator;
+    }
 }

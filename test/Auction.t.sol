@@ -88,13 +88,11 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
 
         depositInstance.deposit{value: 0.032 ether}();
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
-
         vm.stopPrank();
 
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
-        auctionInstance.reEnterAuction(1, withdrawSafeAddress);
+        auctionInstance.reEnterAuction(1);
     }
 
     function test_ReEnterAuctionFailsIfBidAlreadyActive() public {
@@ -105,13 +103,12 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.05 ether}(proof, "test_pubKey");
 
         depositInstance.deposit{value: 0.032 ether}();
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
         depositInstance.cancelStake(0);
         vm.stopPrank();
 
         vm.prank(address(depositInstance));
         vm.expectRevert("Bid already active");
-        auctionInstance.reEnterAuction(2, withdrawSafeAddress);
+        auctionInstance.reEnterAuction(2);
     }
 
     function test_ReEnterAuctionWorks() public {
@@ -145,10 +142,9 @@ contract AuctionTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
-        auctionInstance.calculateWinningBid(withdrawSafeAddress);
+        auctionInstance.calculateWinningBid();
     }
 
     function test_CalculateWinningBidWorks() public {
@@ -186,7 +182,6 @@ contract AuctionTest is Test {
         );
         
         depositInstance.deposit{value: 0.032 ether}();
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
 
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(address(treasuryInstance).balance, 0.3 ether);
@@ -204,7 +199,7 @@ contract AuctionTest is Test {
         assertEq(isActiveBid3, true);
 
         hoax(address(depositInstance));
-        uint256 winner = auctionInstance.calculateWinningBid(withdrawSafeAddress);
+        uint256 winner = auctionInstance.calculateWinningBid();
 
         assertEq(address(treasuryInstance).balance, 0.5 ether);
         assertEq(address(auctionInstance).balance, 0.1 ether);
@@ -242,13 +237,12 @@ contract AuctionTest is Test {
         );
 
         depositInstance.deposit{value: 0.032 ether}();
-        (, address withdrawSafeAddress,,,,,,) = depositInstance.stakes(0);
         vm.stopPrank();
 
         vm.expectEmit(true, false, false, true);
         emit WinningBidSent(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 1);
         hoax(address(depositInstance));
-        auctionInstance.calculateWinningBid(withdrawSafeAddress);
+        auctionInstance.calculateWinningBid();
     }
 
     function test_BidNonWhitelistBiddingWorksCorrectly() public {

@@ -30,7 +30,6 @@ contract Deposit is IDeposit, Pausable {
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
     mapping(uint256 => Stake) public stakes;
-    mapping(address => address) public userToWithdrawSafe;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -40,8 +39,7 @@ contract Deposit is IDeposit, Pausable {
         address indexed sender,
         uint256 value,
         uint256 id,
-        uint256 winningBidId,
-        address withdrawSafe
+        uint256 winningBidId
     );
     event StakeCancelled(uint256 id);
     event ValidatorRegistered(
@@ -93,23 +91,13 @@ contract Deposit is IDeposit, Pausable {
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
-            withdrawSafe: address(0),
             stakerPubKey: address(0),
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
-            winningBidId: auctionInterfaceInstance.calculateWinningBid(userToWithdrawSafe[msg.sender]),
+            winningBidId: auctionInterfaceInstance.calculateWinningBid(),
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.DEPOSITED
         });
-
-        //Check if user has a withdraw safe and if not, mint one
-        if(userToWithdrawSafe[msg.sender] == address(0)){
-            withdrawSafeInstance = new WithdrawSafe(stakes[numberOfStakes].staker, treasuryAddress, address(auctionInterfaceInstance));
-            userToWithdrawSafe[msg.sender] = address(withdrawSafeInstance);
-        }
-
-        stakes[numberOfStakes].withdrawSafe = userToWithdrawSafe[msg.sender];
-        //Set up new stake in withdraw safe
 
         depositorBalances[msg.sender] += msg.value;
 
@@ -117,8 +105,7 @@ contract Deposit is IDeposit, Pausable {
             msg.sender,
             msg.value,
             numberOfStakes,
-            stakes[numberOfStakes].winningBidId,
-            userToWithdrawSafe[msg.sender]
+            stakes[numberOfStakes].winningBidId
         );
         
         numberOfStakes++;
@@ -217,7 +204,7 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId, stakes[_stakeId].withdrawSafe);
+        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBidId = 0;

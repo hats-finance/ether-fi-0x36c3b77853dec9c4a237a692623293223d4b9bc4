@@ -77,9 +77,8 @@ contract Auction is IAuction, Pausable {
     /// @notice calculates the winning operator bid when a stake is deposited
     /// @dev Used local variables to prevent multiple calling of state variables to save gas
     /// @dev Gets called from the deposit contract when a stake is received
-    /// @param _withdrawSafe address of the withdraw safe to send funds to
     /// @return winningOperator the address of the current highest bidder
-    function calculateWinningBid(address _withdrawSafe)
+    function calculateWinningBid()
         external
         onlyDepositContract
         returns (uint256)
@@ -270,8 +269,7 @@ contract Auction is IAuction, Pausable {
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    /// @param _withdrawSafe the address of the withdraw safe to fetch the funds from
-    function reEnterAuction(uint256 _bidId, address _withdrawSafe)
+    function reEnterAuction(uint256 _bidId)
         external
         onlyDepositContract
         whenNotPaused
