@@ -550,298 +550,298 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 2);
     }
 
-    function test_IncreaseBidFailsWhenNotExistingBid() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Invalid bid");
-        auctionInstance.increaseBid{value: 0.1 ether}(1);
-    }
+    // function test_IncreaseBidFailsWhenNotExistingBid() public {
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     vm.expectRevert("Invalid bid");
+    //     auctionInstance.increaseBid{value: 0.1 ether}(1);
+    // }
 
-    function test_IncreaseBidFailsWhenNotBidOwnerCalling() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
+    // function test_IncreaseBidFailsWhenNotBidOwnerCalling() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        vm.expectRevert("Invalid bid");
-        auctionInstance.increaseBid{value: 0.1 ether}(1);
-    }
+    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+    //     vm.expectRevert("Invalid bid");
+    //     auctionInstance.increaseBid{value: 0.1 ether}(1);
+    // }
 
-    function test_IncreaseBidFailsWhenBidAlreadyInactive() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
+    // function test_IncreaseBidFailsWhenBidAlreadyInactive() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.cancelBid(1);
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.cancelBid(1);
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Bid already cancelled");
-        auctionInstance.increaseBid{value: 0.1 ether}(1);
-    }
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     vm.expectRevert("Bid already cancelled");
+    //     auctionInstance.increaseBid{value: 0.1 ether}(1);
+    // }
 
-    function test_IncreaseBidFailsIfBidIncreaseToMoreThanMaxBidAmount() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
+    // function test_IncreaseBidFailsIfBidIncreaseToMoreThanMaxBidAmount() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 1 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 1 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Above max bid");
-        auctionInstance.increaseBid{value: 5 ether}(1);
-    }
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     vm.expectRevert("Above max bid");
+    //     auctionInstance.increaseBid{value: 5 ether}(1);
+    // }
 
-    function test_IncreaseBidWorks() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofForAddress2 = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
-        bytes32[] memory proofForAddress3 = merkle.getProof(
-            whiteListedAddresses,
-            2
-        );
+    // function test_IncreaseBidWorks() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
+    //     bytes32[] memory proofForAddress2 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         1
+    //     );
+    //     bytes32[] memory proofForAddress3 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         2
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.3 ether}(
-            proofForAddress2,
-            "test_pubKey"
-        );
+    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+    //     auctionInstance.bidOnStake{value: 0.3 ether}(
+    //         proofForAddress2,
+    //         "test_pubKey"
+    //     );
 
-        startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
-        auctionInstance.bidOnStake{value: 0.2 ether}(
-            proofForAddress3,
-            "test_pubKey"
-        );
+    //     startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+    //     auctionInstance.bidOnStake{value: 0.2 ether}(
+    //         proofForAddress3,
+    //         "test_pubKey"
+    //     );
 
-        assertEq(auctionInstance.currentHighestBidId(), 2);
+    //     assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        assertEq(address(auctionInstance).balance, 0.6 ether);
+    //     assertEq(address(auctionInstance).balance, 0.6 ether);
 
-        auctionInstance.increaseBid{value: 0.2 ether}(3);
+    //     auctionInstance.increaseBid{value: 0.2 ether}(3);
 
-        (uint256 amount, , , , ) = auctionInstance.bids(3);
+    //     (uint256 amount, , , , ) = auctionInstance.bids(3);
 
-        assertEq(amount, 0.4 ether);
-        assertEq(address(auctionInstance).balance, 0.8 ether);
-        assertEq(auctionInstance.currentHighestBidId(), 3);
-    }
+    //     assertEq(amount, 0.4 ether);
+    //     assertEq(address(auctionInstance).balance, 0.8 ether);
+    //     assertEq(auctionInstance.currentHighestBidId(), 3);
+    // }
 
-    function test_PausableIncreaseBid() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofForAddress2 = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
+    // function test_PausableIncreaseBid() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
+    //     bytes32[] memory proofForAddress2 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         1
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        vm.prank(owner);
-        auctionInstance.pauseContract();
+    //     vm.prank(owner);
+    //     auctionInstance.pauseContract();
 
-        vm.expectRevert("Pausable: paused");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.increaseBid{value: 0.2 ether}(1);
+    //     vm.expectRevert("Pausable: paused");
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.increaseBid{value: 0.2 ether}(1);
 
-        vm.prank(owner);
-        auctionInstance.unPauseContract();
+    //     vm.prank(owner);
+    //     auctionInstance.unPauseContract();
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.increaseBid{value: 0.2 ether}(1);
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.increaseBid{value: 0.2 ether}(1);
 
-        (uint256 amount, , , , ) = auctionInstance.bids(1);
-        assertEq(amount, 0.3 ether);
-    }
+    //     (uint256 amount, , , , ) = auctionInstance.bids(1);
+    //     assertEq(amount, 0.3 ether);
+    // }
 
-    function test_DecreaseBidFailsWhenNotBidOwnerCalling() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
+    // function test_DecreaseBidFailsWhenNotBidOwnerCalling() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        vm.expectRevert("Invalid bid");
-        auctionInstance.decreaseBid(1, 0.05 ether);
-    }
+    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+    //     vm.expectRevert("Invalid bid");
+    //     auctionInstance.decreaseBid(1, 0.05 ether);
+    // }
 
-    function test_DecreaseBidFailsWhenBidAlreadyInactive() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
+    // function test_DecreaseBidFailsWhenBidAlreadyInactive() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.cancelBid(1);
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.cancelBid(1);
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Bid already cancelled");
-        auctionInstance.decreaseBid(1, 0.05 ether);
-    }
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     vm.expectRevert("Bid already cancelled");
+    //     auctionInstance.decreaseBid(1, 0.05 ether);
+    // }
 
-    function test_DecreaseBidFailsWhenAmountToReduceIsToHigh() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
+    // function test_DecreaseBidFailsWhenAmountToReduceIsToHigh() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Amount too large");
-        auctionInstance.decreaseBid(1, 1 ether);
-    }
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     vm.expectRevert("Amount too large");
+    //     auctionInstance.decreaseBid(1, 1 ether);
+    // }
 
-    function test_DecreaseBidFailsIfDecreaseBelowMinBidAmount() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
+    // function test_DecreaseBidFailsIfDecreaseBelowMinBidAmount() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.03 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.03 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Bid Below Min Bid");
-        auctionInstance.decreaseBid(1, 0.029 ether);
-    }
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     vm.expectRevert("Bid Below Min Bid");
+    //     auctionInstance.decreaseBid(1, 0.029 ether);
+    // }
 
-    function test_DecreaseBidWorks() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofForAddress2 = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
-        bytes32[] memory proofForAddress3 = merkle.getProof(
-            whiteListedAddresses,
-            2
-        );
+    // function test_DecreaseBidWorks() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
+    //     bytes32[] memory proofForAddress2 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         1
+    //     );
+    //     bytes32[] memory proofForAddress3 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         2
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.6 ether}(
-            proofForAddress2,
-            "test_pubKey"
-        );
+    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+    //     auctionInstance.bidOnStake{value: 0.6 ether}(
+    //         proofForAddress2,
+    //         "test_pubKey"
+    //     );
 
-        hoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
-        auctionInstance.bidOnStake{value: 0.3 ether}(
-            proofForAddress3,
-            "test_pubKey"
-        );
+    //     hoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+    //     auctionInstance.bidOnStake{value: 0.3 ether}(
+    //         proofForAddress3,
+    //         "test_pubKey"
+    //     );
 
-        assertEq(auctionInstance.currentHighestBidId(), 2);
-        assertEq(address(auctionInstance).balance, 1 ether);
+    //     assertEq(auctionInstance.currentHighestBidId(), 2);
+    //     assertEq(address(auctionInstance).balance, 1 ether);
 
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.decreaseBid(2, 0.4 ether);
-        console.log(address(auctionInstance).balance);
-        (uint256 amount, , , , ) = auctionInstance.bids(2);
+    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+    //     auctionInstance.decreaseBid(2, 0.4 ether);
+    //     console.log(address(auctionInstance).balance);
+    //     (uint256 amount, , , , ) = auctionInstance.bids(2);
 
-        assertEq(amount, 0.2 ether);
-        assertEq(auctionInstance.currentHighestBidId(), 3);
-        assertEq(address(auctionInstance).balance, 0.6 ether);
-    }
+    //     assertEq(amount, 0.2 ether);
+    //     assertEq(auctionInstance.currentHighestBidId(), 3);
+    //     assertEq(address(auctionInstance).balance, 0.6 ether);
+    // }
 
-    function test_PausableDecreaseBid() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofForAddress2 = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
+    // function test_PausableDecreaseBid() public {
+    //     bytes32[] memory proofForAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
+    //     bytes32[] memory proofForAddress2 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         1
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.3 ether}(
-            proofForAddress1,
-            "test_pubKey"
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.3 ether}(
+    //         proofForAddress1,
+    //         "test_pubKey"
+    //     );
 
-        (uint256 amount, , , , ) = auctionInstance.bids(1);
-        assertEq(amount, 0.3 ether);
+    //     (uint256 amount, , , , ) = auctionInstance.bids(1);
+    //     assertEq(amount, 0.3 ether);
 
-        vm.prank(owner);
-        auctionInstance.pauseContract();
+    //     vm.prank(owner);
+    //     auctionInstance.pauseContract();
 
-        vm.expectRevert("Pausable: paused");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.decreaseBid(1, 0.1 ether);
+    //     vm.expectRevert("Pausable: paused");
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.decreaseBid(1, 0.1 ether);
 
-        (amount, , , , ) = auctionInstance.bids(1);
-        assertEq(amount, 0.3 ether);
+    //     (amount, , , , ) = auctionInstance.bids(1);
+    //     assertEq(amount, 0.3 ether);
 
-        vm.prank(owner);
-        auctionInstance.unPauseContract();
+    //     vm.prank(owner);
+    //     auctionInstance.unPauseContract();
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.decreaseBid(1, 0.1 ether);
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.decreaseBid(1, 0.1 ether);
 
-        (amount, , , , ) = auctionInstance.bids(1);
-        assertEq(amount, 0.2 ether);
-    }
+    //     (amount, , , , ) = auctionInstance.bids(1);
+    //     assertEq(amount, 0.2 ether);
+    // }
 
     function test_UpdatingMerkleFailsIfNotOwner() public {
         assertEq(auctionInstance.merkleRoot(), root);

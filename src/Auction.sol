@@ -118,70 +118,70 @@ contract Auction is IAuction, Pausable {
         return currentHighestBidIdLocal;
     }
 
-    /// @notice Increases a currently active bid by a specified amount
-    /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
-    /// @param _bidId the ID of the bid to increase
-    function increaseBid(uint256 _bidId) external payable whenNotPaused {
-        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
-        require(
-            msg.value + bids[_bidId].amount <= MAX_BID_AMOUNT,
-            "Above max bid"
-        );
+    // /// @notice Increases a currently active bid by a specified amount
+    // /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
+    // /// @param _bidId the ID of the bid to increase
+    // function increaseBid(uint256 _bidId) external payable whenNotPaused {
+    //     require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+    //     require(bids[_bidId].isActive == true, "Bid already cancelled");
+    //     require(
+    //         msg.value + bids[_bidId].amount <= MAX_BID_AMOUNT,
+    //         "Above max bid"
+    //     );
 
-        bids[_bidId].amount += msg.value;
+    //     bids[_bidId].amount += msg.value;
 
-        //Checks if the updated amount is now the current highest bid
-        if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
-            currentHighestBidId = _bidId;
-        }
+    //     //Checks if the updated amount is now the current highest bid
+    //     if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
+    //         currentHighestBidId = _bidId;
+    //     }
 
-        emit BidUpdated(_bidId, msg.value);
-    }
+    //     emit BidUpdated(_bidId, msg.value);
+    // }
 
-    /// @notice decreases a currently active bid by a specified amount
-    /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
-    /// @param _bidId the ID of the bid to decrease
-    /// @param _amount the amount to decrease the bid by
-    function decreaseBid(uint256 _bidId, uint256 _amount)
-        external
-        whenNotPaused
-    {
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
-        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(bids[_bidId].amount > _amount, "Amount too large");
-        require(
-            bids[_bidId].amount - _amount >= minBidAmount,
-            "Bid Below Min Bid"
-        );
+    // /// @notice decreases a currently active bid by a specified amount
+    // /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
+    // /// @param _bidId the ID of the bid to decrease
+    // /// @param _amount the amount to decrease the bid by
+    // function decreaseBid(uint256 _bidId, uint256 _amount)
+    //     external
+    //     whenNotPaused
+    // {
+    //     require(bids[_bidId].isActive == true, "Bid already cancelled");
+    //     require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+    //     require(bids[_bidId].amount > _amount, "Amount too large");
+    //     require(
+    //         bids[_bidId].amount - _amount >= minBidAmount,
+    //         "Bid Below Min Bid"
+    //     );
 
-        //Set local variable for read operations to save gas
-        uint256 numberOfBidsLocal = numberOfBids;
-        bids[_bidId].amount -= _amount;
+    //     //Set local variable for read operations to save gas
+    //     uint256 numberOfBidsLocal = numberOfBids;
+    //     bids[_bidId].amount -= _amount;
 
-        //Checks if the updated bid was the current highest bid
-        if (currentHighestBidId == _bidId) {
-            uint256 tempWinningBidId;
+    //     //Checks if the updated bid was the current highest bid
+    //     if (currentHighestBidId == _bidId) {
+    //         uint256 tempWinningBidId;
 
-            //Calculate the new highest bid
-            for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
-                if (
-                    (bids[x].amount > bids[tempWinningBidId].amount) &&
-                    (bids[x].isActive == true)
-                ) {
-                    tempWinningBidId = x;
-                }
-            }
+    //         //Calculate the new highest bid
+    //         for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
+    //             if (
+    //                 (bids[x].amount > bids[tempWinningBidId].amount) &&
+    //                 (bids[x].isActive == true)
+    //             ) {
+    //                 tempWinningBidId = x;
+    //             }
+    //         }
 
-            currentHighestBidId = tempWinningBidId;
-        }
+    //         currentHighestBidId = tempWinningBidId;
+    //     }
 
-        //Refund the user with their decreased amount
-        (bool sent, ) = msg.sender.call{value: _amount}("");
-        require(sent, "Failed to send Ether");
+    //     //Refund the user with their decreased amount
+    //     (bool sent, ) = msg.sender.call{value: _amount}("");
+    //     require(sent, "Failed to send Ether");
 
-        emit BidUpdated(_bidId, _amount);
-    }
+    //     emit BidUpdated(_bidId, _amount);
+    // }
 
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Used local variables to save on multiple state variable lookups
