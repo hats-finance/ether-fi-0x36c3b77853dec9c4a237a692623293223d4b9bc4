@@ -20,12 +20,9 @@ contract WithdrawSafe is IWithdrawSafe {
     address public treasuryContract;
     address public auctionContract;
 
-    //stake => recipient address => amount
+    //validatorId => recipient address => amount
     mapping(uint256 => mapping(address => uint256)) public claimableBalance;
     mapping(uint256 => mapping(address => uint256)) public totalFundsDistributed;
-
-    //where funds came from => recipient = percentage
-    mapping(address => mapping(address => uint256)) public recipientPercentages;
 
     AuctionContractRevenueSplit auctionContractRevenueSplit;
     ValidatorExitRevenueSplit validatorExitRevenueSplit;
