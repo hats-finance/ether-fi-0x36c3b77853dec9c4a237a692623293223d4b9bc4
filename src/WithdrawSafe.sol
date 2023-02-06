@@ -15,9 +15,11 @@ contract WithdrawSafe is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
 
     address public owner;
+    address public treasuryContract;
 
-    mapping(address => uint256) claimableBalance;
-    mapping(address => uint256) totalFundsDistributed;
+    //stake => recipient address => amount
+    mapping(uint256 => mapping(address => uint256)) claimableBalance;
+    mapping(uint256 => mapping(address => uint256)) totalFundsDistributed;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
