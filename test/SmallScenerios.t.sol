@@ -27,7 +27,6 @@ contract SmallScenariosTest is Test {
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
-    address stakerPublicKey = vm.addr(3);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -272,7 +271,7 @@ contract SmallScenariosTest is Test {
             0,
             "Encrypted_Key",
             "encrypted_key_password",
-            stakerPublicKey,
+            "test_stakerPubKey",
             test_data
         );
         (

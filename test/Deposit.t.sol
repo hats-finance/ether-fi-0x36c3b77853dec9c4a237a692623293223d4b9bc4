@@ -28,7 +28,6 @@ contract DepositTest is Test {
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
-    address stakerPubKey = vm.addr(3);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -79,13 +78,13 @@ contract DepositTest is Test {
             0,
             "encrypted_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
 
         (
             address staker,
-            address stakerPublicKey,
+            bytes memory stakerPublicKey,
             IDeposit.DepositData memory deposit_data,
             uint256 amount,
             uint256 winningBid,
@@ -97,7 +96,7 @@ contract DepositTest is Test {
         assertEq(amount, 0.032 ether);
         assertEq(winningBid, 1);
         assertEq(stakeId, 0);
-        assertEq(stakerPublicKey, stakerPubKey);
+        assertEq(stakerPublicKey, "test_stakerPubKey");
 
         assertEq(
             deposit_data.operator,
@@ -223,7 +222,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
     }
@@ -241,7 +240,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
     }
@@ -263,7 +262,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
     }
@@ -279,7 +278,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
 
@@ -308,7 +307,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -331,7 +330,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -351,7 +350,7 @@ contract DepositTest is Test {
             0,
             "Validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(0);
@@ -370,7 +369,7 @@ contract DepositTest is Test {
             0,
             "Validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(0);

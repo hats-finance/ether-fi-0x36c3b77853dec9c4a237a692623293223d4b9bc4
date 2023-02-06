@@ -30,7 +30,7 @@ interface IWithdrawSafe {
         address operator;
     }
 
-    function setUpValidatorData(uint256 _validatorId, address _tnftHolder, address _bnftHolder, address _operator) external;
+    function setUpValidatorData(uint256 _validatorId, address _staker, address _operator) external;
     function receiveAuctionFunds(uint256 _validatorId) external payable;
 
 }

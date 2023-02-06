@@ -47,7 +47,7 @@ contract Deposit is IDeposit, Pausable {
         uint256 validatorId,
         bytes indexed encryptedValidatorKey,
         bytes indexed encryptedValidatorKeyPassword,
-        address stakerPubKey
+        bytes indexed stakerPubKey
     );
     event ValidatorAccepted(uint256 validatorId);
 
@@ -90,7 +90,7 @@ contract Deposit is IDeposit, Pausable {
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
-            stakerPubKey: address(0),
+            stakerPubKey: "",
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
             winningBidId: auctionInterfaceInstance.calculateWinningBid(),
@@ -120,10 +120,9 @@ contract Deposit is IDeposit, Pausable {
         uint256 _stakeId,
         bytes memory _encryptedValidatorKey,
         bytes memory _encryptedValidatorKeyPassword,
-        address _stakerPubKey,
+        bytes memory _stakerPubKey,
         DepositData calldata _depositData
     ) public whenNotPaused {
-        require(_stakerPubKey != address(0), "Cannot be address 0");
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(
             stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED,
@@ -187,7 +186,7 @@ contract Deposit is IDeposit, Pausable {
         // );
 
         address operator = auctionInterfaceInstance.getBidOwner(validators[_validatorId].bidId);
-        withdrawSafeInstance.setUpValidatorData(_validatorId, stakes[localStakeId].staker, stakes[localStakeId].staker, operator);
+        withdrawSafeInstance.setUpValidatorData(_validatorId, stakes[localStakeId].staker, operator);
 
         emit ValidatorAccepted(_validatorId);
     }

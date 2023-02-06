@@ -29,7 +29,6 @@ contract DepositTest is Test {
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
-    address stakerPubKey = vm.addr(3);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -108,7 +107,7 @@ contract DepositTest is Test {
             0,
             "Validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -116,7 +115,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.acceptValidator(0);
         vm.expectRevert("Only deposit contract function");
-        withdrawSafeInstance.setUpValidatorData(0, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        withdrawSafeInstance.setUpValidatorData(0, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
     }
 
     function test_SetUpValidatorWorksCorrectly() public {
@@ -131,7 +130,7 @@ contract DepositTest is Test {
             0,
             "Validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -157,7 +156,7 @@ contract DepositTest is Test {
             0,
             "Validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -186,7 +185,7 @@ contract DepositTest is Test {
             0,
             "Validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
