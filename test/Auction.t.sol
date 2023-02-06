@@ -123,7 +123,8 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
         depositInstance.deposit{value: 0.032 ether}();
-        assertEq(address(treasuryInstance).balance, 0.1 ether);
+        (, address withdrawSafeAddress, , , , , , ) = depositInstance.stakes(0);
+        assertEq(withdrawSafeAddress.balance, 0.1 ether);
         assertEq(address(auctionInstance).balance, 0.05 ether);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
@@ -131,7 +132,7 @@ contract AuctionTest is Test {
 
         (, , , bool isActive, ) = auctionInstance.bids(1);
         assertEq(isActive, true);
-        assertEq(address(treasuryInstance).balance, 0 ether);
+        assertEq(withdrawSafeAddress.balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0.15 ether);
         assertEq(auctionInstance.currentHighestBidId(), 1);
     }
