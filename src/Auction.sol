@@ -278,10 +278,7 @@ contract Auction is IAuction, Pausable {
 
         //Reactivate the bid
         bids[_bidId].isActive = true;
-        ITreasury(treasuryContractAddress).refundBid(
-            bids[_bidId].amount,
-            _bidId
-        );
+        IWithdrawSafe(_withdrawSafe).refundBid(bids[_bidId].amount, _bidId);
 
         //Checks if the bid is now the highest bid
         if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
