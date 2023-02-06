@@ -107,9 +107,7 @@ contract Auction is IAuction, Pausable {
         currentHighestBidId = tempWinningBidId;
 
         //Send the winning bid to the treasury contract
-        (bool sent, ) = treasuryContractAddress.call{value: winningBidAmount}(
-            ""
-        );
+        (bool sent, ) = _withdrawSafe.call{value: winningBidAmount}("");
         require(sent, "Failed to send Ether");
 
         numberOfActiveBids--;
