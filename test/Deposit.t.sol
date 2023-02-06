@@ -483,7 +483,7 @@ contract DepositTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
         auctionInstance.bidOnStake{value: 0.3 ether}(proof, "test_pubKey");
         auctionInstance.bidOnStake{value: 0.2 ether}(proof, "test_pubKey");
-        assertEq(address(treasuryInstance).balance, 0 ether);
+
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         depositInstance.deposit{value: 0.032 ether}();
@@ -491,7 +491,7 @@ contract DepositTest is Test {
             .balance;
         (
             address staker,
-            ,
+            address withdrawSafe,
             ,
             ,
             uint256 amount,
@@ -510,7 +510,7 @@ contract DepositTest is Test {
         assertEq(isActive, false);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
         assertEq(auctionInstance.currentHighestBidId(), 3);
-        assertEq(address(treasuryInstance).balance, 0.3 ether);
+        assertEq(withdrawSafe.balance, 0.3 ether);
         assertEq(address(auctionInstance).balance, 0.3 ether);
 
         depositInstance.cancelStake(0);
@@ -523,7 +523,7 @@ contract DepositTest is Test {
         assertEq(isActive, true);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
         assertEq(auctionInstance.currentHighestBidId(), 2);
-        assertEq(address(treasuryInstance).balance, 0 ether);
+        assertEq(withdrawSafe.balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         assertEq(
