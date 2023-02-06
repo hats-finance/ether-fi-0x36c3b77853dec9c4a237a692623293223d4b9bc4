@@ -6,6 +6,7 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IDepositContract.sol";
+import "./interfaces/IWithdrawSafe.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./WithdrawSafe.sol";
@@ -24,6 +25,7 @@ contract Deposit is IDeposit, Pausable {
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
     address public owner;
+    address private treasuryAddress;
 
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
@@ -60,7 +62,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    constructor(address _auctionAddress) {
+    constructor(address _auctionAddress, address _treasuryAddress) {
         stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
@@ -71,6 +73,7 @@ contract Deposit is IDeposit, Pausable {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         owner = msg.sender;
+        treasuryAddress = _treasuryAddress;
     }
 
     //--------------------------------------------------------------------------------------
@@ -87,15 +90,10 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        if(userToWithdrawSafe[msg.sender] == address(0)){
-            withdrawSafeInstance = new WithdrawSafe(stakes[numberOfStakes].staker);
-            userToWithdrawSafe[msg.sender] = address(withdrawSafeInstance);
-        }
-
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
-            withdrawSafe: userToWithdrawSafe[msg.sender],
+            withdrawSafe: address(0),
             stakerPubKey: address(0),
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
@@ -104,8 +102,16 @@ contract Deposit is IDeposit, Pausable {
             phase: STAKE_PHASE.DEPOSITED
         });
 
-        depositorBalances[msg.sender] += msg.value;
+        //Check if user has a withdraw safe and if not, mint one
+        if(userToWithdrawSafe[msg.sender] == address(0)){
+            withdrawSafeInstance = new WithdrawSafe(stakes[numberOfStakes].staker, treasuryAddress, address(auctionInterfaceInstance));
+            userToWithdrawSafe[msg.sender] = address(withdrawSafeInstance);
+        }
 
+        stakes[numberOfStakes].withdrawSafe = userToWithdrawSafe[msg.sender];
+        //Set up new stake in withdraw safe
+
+        depositorBalances[msg.sender] += msg.value;
 
         emit StakeDeposit(
             msg.sender,
@@ -181,9 +187,6 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker);
-
-        withdrawSafeInstance = new WithdrawSafe(stakes[localStakeId].staker);
-        stakes[localStakeId].withdrawSafe = address(withdrawSafeInstance);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 

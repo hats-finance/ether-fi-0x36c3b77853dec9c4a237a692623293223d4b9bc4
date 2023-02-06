@@ -34,7 +34,7 @@ contract LargeScenariosTest is Test {
         auctionInstance = new Auction(address(treasuryInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
+        depositInstance = new Deposit(address(auctionInstance), address(treasuryInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
