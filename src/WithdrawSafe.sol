@@ -42,6 +42,7 @@ contract WithdrawSafe is IWithdrawSafe {
         owner = _owner;  
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;    
+        
         auctionContractRevenueSplit = AuctionContractRevenueSplit({
             treasurySplit: 500,
             nodeOperatorSplit: 500,
