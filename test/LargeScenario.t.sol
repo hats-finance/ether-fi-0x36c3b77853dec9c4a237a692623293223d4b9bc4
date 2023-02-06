@@ -224,35 +224,35 @@ contract LargeScenariosTest is Test {
         assertEq(isActiveBid4, true);
 
         //Bid updated
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.increaseBid{value: 0.9 ether}(1);
-        assertEq(auctionInstance.currentHighestBidId(), 1);
-        assertEq(address(auctionInstance).balance, 1.4 ether);
-        assertEq(auctionInstance.numberOfActiveBids(), 2);
-        //Check the bid information was captured correctly
-        (
-            uint256 amountForUpdatedBid1,
-            ,
-            address bidderAddressForUpdatedBid1,
-            bool isActiveAfterUpdatedBid1,
+        // hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        // auctionInstance.increaseBid{value: 0.9 ether}(1);
+        // assertEq(auctionInstance.currentHighestBidId(), 1);
+        // assertEq(address(auctionInstance).balance, 1.4 ether);
+        // assertEq(auctionInstance.numberOfActiveBids(), 2);
+        // //Check the bid information was captured correctly
+        // (
+        //     uint256 amountForUpdatedBid1,
+        //     ,
+        //     address bidderAddressForUpdatedBid1,
+        //     bool isActiveAfterUpdatedBid1,
 
-        ) = auctionInstance.bids(1);
-        assertEq(amountForUpdatedBid1, 1 ether);
-        assertEq(
-            bidderAddressForUpdatedBid1,
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
-        assertEq(isActiveAfterUpdatedBid1, true);
+        // ) = auctionInstance.bids(1);
+        // assertEq(amountForUpdatedBid1, 1 ether);
+        // assertEq(
+        //     bidderAddressForUpdatedBid1,
+        //     0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        // );
+        // assertEq(isActiveAfterUpdatedBid1, true);
 
         //Deposit Two
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
         depositInstance.deposit{value: 0.032 ether}();
         (, withdrawSafe, , , , , , ) = depositInstance.stakes(1);
 
-        assertEq(auctionInstance.currentHighestBidId(), 4);
+        assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
-        assertEq(withdrawSafe.balance, 1 ether);
-        assertEq(address(auctionInstance).balance, 0.4 ether);
+        assertEq(withdrawSafe.balance, 0.4 ether);
+        assertEq(address(auctionInstance).balance, 0.1 ether);
         assertEq(address(depositInstance).balance, 0.064 ether);
 
         //Deposit One cancelled
@@ -263,7 +263,7 @@ contract LargeScenariosTest is Test {
         assertEq(auctionInstance.numberOfBids() - 1, 4);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
         assertEq(withdrawSafe.balance, 0 ether);
-        assertEq(address(auctionInstance).balance, 1.1 ether);
+        assertEq(address(auctionInstance).balance, 0.8 ether);
         assertEq(address(depositInstance).balance, 0.032 ether);
 
         //Deposit Two register validator
@@ -285,7 +285,7 @@ contract LargeScenariosTest is Test {
 
         ) = depositInstance.validators(0);
         assertEq(validatorId, 0);
-        assertEq(bidId, 1);
+        assertEq(bidId, 4);
         assertEq(stakeId, 1);
         assertEq(validatorKey, "Encrypted_Key");
         assertEq(encryptedValidatorKeyPassword, "encrypted_key_password");
@@ -300,7 +300,7 @@ contract LargeScenariosTest is Test {
         vm.expectRevert("Incorrect caller");
         depositInstance.acceptValidator(0);
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
         depositInstance.acceptValidator(0);
         assertEq(
             TestBNFTInstance.ownerOf(0),

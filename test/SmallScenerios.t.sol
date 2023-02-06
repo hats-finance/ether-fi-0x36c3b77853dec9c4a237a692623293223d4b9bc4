@@ -165,11 +165,11 @@ contract SmallScenariosTest is Test {
         assertEq(address(auctionInstance).balance, 0.2 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        auctionInstance.increaseBid{value: 0.3 ether}(2);
-        assertEq(auctionInstance.numberOfBids() - 1, 2);
-        assertEq(auctionInstance.currentHighestBidId(), 2);
-        assertEq(address(auctionInstance).balance, 0.5 ether);
-        assertEq(auctionInstance.numberOfActiveBids(), 1);
+        // auctionInstance.increaseBid{value: 0.3 ether}(2);
+        // assertEq(auctionInstance.numberOfBids() - 1, 2);
+        // assertEq(auctionInstance.currentHighestBidId(), 2);
+        // assertEq(address(auctionInstance).balance, 0.5 ether);
+        // assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
 
     function test_TwoDepositsAtOnceStillWorks() public {

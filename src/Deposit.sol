@@ -114,15 +114,16 @@ contract Deposit is IDeposit, Pausable {
         });
 
         depositorBalances[msg.sender] += msg.value;
-        numberOfStakes++;
+
 
         emit StakeDeposit(
             msg.sender,
             msg.value,
-            numberOfStakes - 1,
+            numberOfStakes,
             stakes[numberOfStakes].winningBidId,
             userToWithdrawSafe[msg.sender]
         );
+        numberOfStakes++;
     }
 
     /// @notice Creates validator object and updates information
