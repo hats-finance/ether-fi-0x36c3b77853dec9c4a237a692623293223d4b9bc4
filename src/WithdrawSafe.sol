@@ -60,4 +60,11 @@ contract WithdrawSafe is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
+    modifier onlyAuctionContract() {
+        require(
+            msg.sender == auctionContractAddress,
+            "Only auction contract function"
+        );
+        _;
+    }
 }
