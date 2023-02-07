@@ -78,10 +78,10 @@ contract WithdrawSafe is IWithdrawSafe {
     /// @dev Takes in a certain value of funds from only the set auction contract
     /// @param _validatorId id of the validatopr to store the funds for
     function receiveAuctionFunds(uint256 _validatorId) external payable onlyAuctionContract {
-        claimableBalance[_validatorId][ValidatorRecipientType.TREASURY] = msg.value * auctionContractRevenueSplit.treasurySplit / SCALE;
-        claimableBalance[_validatorId][ValidatorRecipientType.OPERATOR] = msg.value * auctionContractRevenueSplit.nodeOperatorSplit / SCALE;
-        claimableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER] = msg.value * auctionContractRevenueSplit.tnftHolderSplit / SCALE;
-        claimableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER] = msg.value * auctionContractRevenueSplit.bnftHolderSplit / SCALE;
+        claimableBalance[treasuryContract] = msg.value * auctionContractRevenueSplit.treasurySplit / SCALE;
+        claimableBalance[operatorAddress] = msg.value * auctionContractRevenueSplit.nodeOperatorSplit / SCALE;
+        claimableBalance[tnftHolder] = msg.value * auctionContractRevenueSplit.tnftHolderSplit / SCALE;
+        claimableBalance[bnftHolder] = msg.value * auctionContractRevenueSplit.bnftHolderSplit / SCALE;
 
         emit AuctionFundsReceived(_validatorId, msg.value);
     }
