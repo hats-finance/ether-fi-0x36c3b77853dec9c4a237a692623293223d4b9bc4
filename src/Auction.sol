@@ -68,10 +68,8 @@ contract Auction is IAuction, Pausable {
 
     /// @notice Constructor to set variables on deployment
     /// @param _treasuryAddress the address of the treasury to send funds to
-    /// @param _withdrawSafeAddress the address of the withdrawSafe for interaction
-    constructor(address _treasuryAddress, address _withdrawSafeAddress) {
+    constructor(address _treasuryAddress) {
         treasuryContractAddress = _treasuryAddress;
-        withdrawSafeInstance = IWithdrawSafe(_withdrawSafeAddress);
         owner = msg.sender;
     }
 
@@ -327,6 +325,13 @@ contract Auction is IAuction, Pausable {
         minBidAmount = _newMinBidAmount;
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
+    }
+
+    function setUpWithdrawContract(address _withdrawContract)
+        external
+        onlyOwner
+    {
+        withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
     }
 
     function updateWhitelistMinBidAmount(uint256 _newAmount)

@@ -193,12 +193,10 @@ contract LargeScenariosTest is Test {
 
         //Deposit One
         depositInstance.deposit{value: 0.032 ether}();
-        (, address withdrawSafe, , , , , , ) = depositInstance.stakes(0);
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
-        assertEq(withdrawSafe.balance, 0.7 ether);
-        assertEq(address(auctionInstance).balance, 0.1 ether);
+        assertEq(address(auctionInstance).balance, 0.8 ether);
         assertEq(address(depositInstance).balance, 0.032 ether);
         vm.stopPrank();
 
@@ -209,7 +207,7 @@ contract LargeScenariosTest is Test {
             "test_pubKey"
         );
         //Check auction contract received funds
-        assertEq(address(auctionInstance).balance, 0.5 ether);
+        assertEq(address(auctionInstance).balance, 1.2 ether);
         //Check the bid is the current highest
         assertEq(auctionInstance.currentHighestBidId(), 4);
         //Check the number of bids has increased
@@ -255,23 +253,22 @@ contract LargeScenariosTest is Test {
         //Deposit Two
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
         depositInstance.deposit{value: 0.032 ether}();
-        (, withdrawSafe, , , , , , ) = depositInstance.stakes(1);
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
-        assertEq(withdrawSafe.balance, 0.4 ether);
-        assertEq(address(auctionInstance).balance, 0.1 ether);
+
+        assertEq(address(auctionInstance).balance, 1.2 ether);
         assertEq(address(depositInstance).balance, 0.064 ether);
 
         //Deposit One cancelled
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         depositInstance.cancelStake(0);
-        (, withdrawSafe, , , , , , ) = depositInstance.stakes(0);
+
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(auctionInstance.numberOfBids() - 1, 4);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
-        assertEq(withdrawSafe.balance, 0 ether);
-        assertEq(address(auctionInstance).balance, 0.8 ether);
+
+        assertEq(address(auctionInstance).balance, 1.2 ether);
         assertEq(address(depositInstance).balance, 0.032 ether);
 
         //Deposit Two register validator
