@@ -12,7 +12,7 @@ import "../src/Auction.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract DepositTest is Test {
+contract WithdrawSafeTest is Test {
     IDeposit public depositInterface;
     WithdrawSafe public withdrawSafeInstance;
     Deposit public depositInstance;
@@ -37,13 +37,21 @@ contract DepositTest is Test {
         auctionInstance = new Auction(address(treasuryInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance), address(treasuryInstance));
+        depositInstance = new Deposit(
+            address(auctionInstance),
+            address(treasuryInstance)
+        );
         depositInterface = IDeposit(address(depositInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance));
+        withdrawSafeInstance = new WithdrawSafe(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance)
+        );
         depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
+        auctionInstance.setUpWithdrawContract(address(withdrawSafeInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -66,14 +74,23 @@ contract DepositTest is Test {
 
     function test_WithdrawSafeContractInstantiatedCorrectly() public {
         assertEq(withdrawSafeInstance.owner(), owner);
-        assertEq(withdrawSafeInstance.treasuryContract(), address(treasuryInstance));
-        assertEq(withdrawSafeInstance.auctionContract(), address(auctionInstance));
-        assertEq(withdrawSafeInstance.depositContract(), address(depositInstance));
+        assertEq(
+            withdrawSafeInstance.treasuryContract(),
+            address(treasuryInstance)
+        );
+        assertEq(
+            withdrawSafeInstance.auctionContract(),
+            address(auctionInstance)
+        );
+        assertEq(
+            withdrawSafeInstance.depositContract(),
+            address(depositInstance)
+        );
 
         (
-            uint256 treasurySplit, 
-            uint256 nodeOperatorSplit, 
-            uint256 tnftHolderSplit, 
+            uint256 treasurySplit,
+            uint256 nodeOperatorSplit,
+            uint256 tnftHolderSplit,
             uint256 bnftHolderSplit
         ) = withdrawSafeInstance.auctionContractRevenueSplit();
 
@@ -83,9 +100,9 @@ contract DepositTest is Test {
         assertEq(bnftHolderSplit, 9);
 
         (
-            treasurySplit, 
-            nodeOperatorSplit, 
-            tnftHolderSplit, 
+            treasurySplit,
+            nodeOperatorSplit,
+            tnftHolderSplit,
             bnftHolderSplit
         ) = withdrawSafeInstance.validatorExitRevenueSplit();
 
@@ -115,7 +132,11 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.acceptValidator(0);
         vm.expectRevert("Only deposit contract function");
-        withdrawSafeInstance.setUpValidatorData(0, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        withdrawSafeInstance.setUpValidatorData(
+            0,
+            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
     }
 
     function test_SetUpValidatorWorksCorrectly() public {
@@ -138,7 +159,11 @@ contract DepositTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.acceptValidator(0);
 
-        (address tnftHolder, address bnftHolder, address operator) = withdrawSafeInstance.recipientsPerValidator(0);
+        (
+            address tnftHolder,
+            address bnftHolder,
+            address operator
+        ) = withdrawSafeInstance.recipientsPerValidator(0);
         assertEq(tnftHolder, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         assertEq(bnftHolder, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         assertEq(operator, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -167,10 +192,34 @@ contract DepositTest is Test {
         hoax(address(auctionInstance));
         withdrawSafeInstance.receiveAuctionFunds{value: 0.1 ether}(0);
 
-        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.TREASURY), 5000000000000000);
-        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.OPERATOR), 5000000000000000);
-        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.BNFTHOLDER), 9000000000000000);
-        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.TNFTHOLDER), 81000000000000000);
+        assertEq(
+            withdrawSafeInstance.claimableBalance(
+                0,
+                IWithdrawSafe.ValidatorRecipientType.TREASURY
+            ),
+            5000000000000000
+        );
+        assertEq(
+            withdrawSafeInstance.claimableBalance(
+                0,
+                IWithdrawSafe.ValidatorRecipientType.OPERATOR
+            ),
+            5000000000000000
+        );
+        assertEq(
+            withdrawSafeInstance.claimableBalance(
+                0,
+                IWithdrawSafe.ValidatorRecipientType.BNFTHOLDER
+            ),
+            9000000000000000
+        );
+        assertEq(
+            withdrawSafeInstance.claimableBalance(
+                0,
+                IWithdrawSafe.ValidatorRecipientType.TNFTHOLDER
+            ),
+            81000000000000000
+        );
     }
 
     function test_ReceiveAuctionFundsFailsIfNotAuctionContractCalling() public {
@@ -195,7 +244,7 @@ contract DepositTest is Test {
         vm.expectRevert("Only auction contract function");
         withdrawSafeInstance.receiveAuctionFunds{value: 0.1 ether}(0);
     }
-    
+
     function _merkleSetup() internal {
         merkle = new Merkle();
 

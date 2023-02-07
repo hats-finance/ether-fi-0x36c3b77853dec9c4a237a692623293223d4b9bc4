@@ -5,9 +5,9 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
 import "../src/WithdrawSafe.sol";
 import "../src/Deposit.sol";
+import "../src/Auction.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
-import "../src/Auction.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 

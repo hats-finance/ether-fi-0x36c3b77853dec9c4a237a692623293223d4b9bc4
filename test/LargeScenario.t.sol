@@ -46,6 +46,7 @@ contract LargeScenariosTest is Test {
             address(depositInstance)
         );
         depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
+        auctionInstance.setUpWithdrawContract(address(withdrawSafeInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
