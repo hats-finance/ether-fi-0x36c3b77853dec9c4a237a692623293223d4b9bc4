@@ -20,13 +20,13 @@ contract WithdrawSafe is IWithdrawSafe {
     address public treasuryContract;
     address public auctionContract;
     address public depositContract;
+    address public tnftHolder;
+    address public bnftHolder;
+    address public operatorAddress;
 
-    //validatorId => recipient type => amount
-    mapping(uint256 => mapping(ValidatorRecipientType => uint256)) public claimableBalance;
-    mapping(uint256 => mapping(ValidatorRecipientType => uint256)) public totalFundsDistributed;
-
-    //Mapping to store the fund recipients for each validator
-    mapping(uint256 => ValidatorFundRecipients) public recipientsPerValidator;
+    //recipient => amount
+    mapping(address => uint256) public claimableBalance;
+    mapping(address => uint256) public totalPaid;
 
     //Holds the data for the revenue splits depending on where the funds are received from
     AuctionContractRevenueSplit public auctionContractRevenueSplit;
