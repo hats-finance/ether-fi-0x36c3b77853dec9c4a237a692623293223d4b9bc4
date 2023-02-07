@@ -380,6 +380,8 @@ contract DepositTest is Test {
             "test_stakerPubKey",
             test_data
         );
+
+        assertEq(address(auctionInstance).balance, 0.1 ether);
         depositInstance.acceptValidator(0);
 
         assertEq(address(withdrawSafeInstance).balance, 0.1 ether);

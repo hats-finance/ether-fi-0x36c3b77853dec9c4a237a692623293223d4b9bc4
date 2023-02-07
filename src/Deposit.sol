@@ -174,7 +174,10 @@ contract Deposit is IDeposit, Pausable {
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker);
 
-        auctionInterfaceInstance.sendFundsToWithdrawSafe(localStakeId);
+        auctionInterfaceInstance.sendFundsToWithdrawSafe(
+            localStakeId,
+            _validatorId
+        );
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 

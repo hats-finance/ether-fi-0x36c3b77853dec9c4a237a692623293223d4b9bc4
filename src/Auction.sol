@@ -14,6 +14,8 @@ import "./Deposit.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
+import "lib/forge-std/src/console.sol";
+
 contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -264,7 +266,7 @@ contract Auction is IAuction, Pausable {
         numberOfActiveBids++;
     }
 
-    function sendFundsToWithdrawSafe(uint256 _stakeId)
+    function sendFundsToWithdrawSafe(uint256 _stakeId, uint256 _validatorId)
         external
         onlyDepositContract
     {
@@ -273,8 +275,8 @@ contract Auction is IAuction, Pausable {
             _stakeId
         );
         uint256 amount = bids[winningBidId].amount;
-        (bool sent, ) = withdrawSafeAddress.call{value: amount}("");
-        require(sent, "Sending ETH failed");
+
+        withdrawSafeInstance.receiveAuctionFunds{value: amount}(_validatorId);
 
         emit FundsSentToWithdrawSafe(amount);
     }
@@ -338,8 +340,7 @@ contract Auction is IAuction, Pausable {
         external
         onlyOwner
     {
-        // withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
-        withdrawSafeAddress = _withdrawContract;
+        withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
     }
 
     function updateWhitelistMinBidAmount(uint256 _newAmount)
