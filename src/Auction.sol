@@ -60,6 +60,7 @@ contract Auction is IAuction, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
+    event FundsSentToWithdrawSafe(uint256 indexed _amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -110,8 +111,8 @@ contract Auction is IAuction, Pausable {
         currentHighestBidId = tempWinningBidId;
 
         //Send the winning bid to the treasury contract
-        (bool sent, ) = withdrawSafeInstance.call{value: winningBidAmount}("");
-        require(sent, "Failed to send Ether");
+        // (bool sent, ) = withdrawSafeInstance.call{value: winningBidAmount}("");
+        // require(sent, "Failed to send Ether");
 
         numberOfActiveBids--;
 
@@ -269,6 +270,16 @@ contract Auction is IAuction, Pausable {
         numberOfActiveBids++;
     }
 
+    function sendFundsToWithdrawSafe(uint256 _amount)
+        external
+        onlyDepositContract
+    {
+        (bool sent, ) = withdrawSafeInstance.call{value: _amount}("");
+        require(sent, "Sending failed");
+
+        emit FundsSentToWithdrawSafe(_amount);
+    }
+
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
     function reEnterAuction(uint256 _bidId)
@@ -280,7 +291,7 @@ contract Auction is IAuction, Pausable {
 
         //Reactivate the bid
         bids[_bidId].isActive = true;
-        withdrawSafeInstance.refundBid(bids[_bidId].amount, _bidId);
+        // withdrawSafeInstance.refundBid(bids[_bidId].amount, _bidId);
 
         //Checks if the bid is now the highest bid
         if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
