@@ -28,12 +28,9 @@ jobs:
           version: nightly
 
       - name: Run Forge build
-        run: |
-          forge --version
-          forge build --sizes
+        run: make build
         id: build
 
       - name: Run Forge tests
-        run: |
-          forge test -vvv
+        run: make test
         id: test
