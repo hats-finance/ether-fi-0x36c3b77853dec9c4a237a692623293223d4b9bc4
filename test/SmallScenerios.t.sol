@@ -27,7 +27,6 @@ contract SmallScenariosTest is Test {
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
-    address stakerPublicKey = vm.addr(3);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -36,10 +35,19 @@ contract SmallScenariosTest is Test {
         auctionInstance = new Auction(address(treasuryInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
+        depositInstance = new Deposit(
+            address(auctionInstance),
+            address(treasuryInstance)
+        );
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        withdrawSafeInstance = new WithdrawSafe(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance)
+        );
+        depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -270,7 +278,7 @@ contract SmallScenariosTest is Test {
             0,
             "Encrypted_Key",
             "encrypted_key_password",
-            stakerPublicKey,
+            "test_stakerPubKey",
             test_data
         );
         (
@@ -311,13 +319,6 @@ contract SmallScenariosTest is Test {
                 0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
             ),
             1
-        );
-
-        (, withdrawSafe, , , , , , ) = depositInstance.stakes(0);
-        withdrawSafeInstance = WithdrawSafe(payable(withdrawSafe));
-        assertEq(
-            withdrawSafeInstance.owner(),
-            0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
         );
     }
 

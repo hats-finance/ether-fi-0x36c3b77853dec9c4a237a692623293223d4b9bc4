@@ -9,7 +9,6 @@ import "./interfaces/IDepositContract.sol";
 import "./interfaces/IWithdrawSafe.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./WithdrawSafe.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
@@ -25,7 +24,7 @@ contract Deposit is IDeposit, Pausable {
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
     address public owner;
-    address public auctionAddress;
+    address private treasuryAddress;
 
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
@@ -48,7 +47,7 @@ contract Deposit is IDeposit, Pausable {
         uint256 validatorId,
         bytes indexed encryptedValidatorKey,
         bytes indexed encryptedValidatorKeyPassword,
-        address stakerPubKey
+        bytes indexed stakerPubKey
     );
     event ValidatorAccepted(uint256 validatorId);
 
@@ -60,8 +59,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    /// @param _withdrawSafeAddress the address of the withdarwSafe contract for interaction
-    constructor(address _auctionAddress, address _withdrawSafeAddress) {
+    constructor(address _auctionAddress, address _treasuryAddress) {
         stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
@@ -73,7 +71,7 @@ contract Deposit is IDeposit, Pausable {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         owner = msg.sender;
-        auctionAddress = _auctionAddress;
+        treasuryAddress = _treasuryAddress;
     }
 
     //--------------------------------------------------------------------------------------
@@ -93,7 +91,7 @@ contract Deposit is IDeposit, Pausable {
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
-            stakerPubKey: address(0),
+            stakerPubKey: "",
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
             winningBidId: auctionInterfaceInstance.calculateWinningBid(),
@@ -109,6 +107,7 @@ contract Deposit is IDeposit, Pausable {
             numberOfStakes,
             stakes[numberOfStakes].winningBidId
         );
+        
         numberOfStakes++;
     }
 
@@ -122,10 +121,9 @@ contract Deposit is IDeposit, Pausable {
         uint256 _stakeId,
         bytes memory _encryptedValidatorKey,
         bytes memory _encryptedValidatorKeyPassword,
-        address _stakerPubKey,
+        bytes memory _stakerPubKey,
         DepositData calldata _depositData
     ) public whenNotPaused {
-        require(_stakerPubKey != address(0), "Cannot be address 0");
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(
             stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED,
@@ -187,6 +185,10 @@ contract Deposit is IDeposit, Pausable {
         //     dataInstance.signature,
         //     dataInstance.depositDataRoot
         // );
+
+        address operator = auctionInterfaceInstance.getBidOwner(validators[_validatorId].bidId);
+        withdrawSafeInstance.setUpValidatorData(_validatorId, stakes[localStakeId].staker, operator);
+
         emit ValidatorAccepted(_validatorId);
     }
 
@@ -231,6 +233,10 @@ contract Deposit is IDeposit, Pausable {
     function fetchEtherFromContract(address _wallet) public onlyOwner {
         (bool sent, ) = payable(_wallet).call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
+    }
+
+    function setUpWithdrawContract(address _withdrawContract) external onlyOwner {
+        withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
     }
 
     //Pauses the contract

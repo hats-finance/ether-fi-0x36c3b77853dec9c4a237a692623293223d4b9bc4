@@ -28,7 +28,6 @@ contract DepositTest is Test {
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
-    address stakerPubKey = vm.addr(3);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -37,11 +36,20 @@ contract DepositTest is Test {
         auctionInstance = new Auction(address(treasuryInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
+        depositInstance = new Deposit(
+            address(auctionInstance),
+            address(treasuryInstance)
+        );
         depositInterface = IDeposit(address(depositInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        withdrawSafeInstance = new WithdrawSafe(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance)
+        );
+        depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -77,14 +85,13 @@ contract DepositTest is Test {
             0,
             "encrypted_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
 
         (
             address staker,
-            ,
-            address stakerPublicKey,
+            bytes memory stakerPublicKey,
             IDeposit.DepositData memory deposit_data,
             uint256 amount,
             uint256 winningBid,
@@ -96,7 +103,7 @@ contract DepositTest is Test {
         assertEq(amount, 0.032 ether);
         assertEq(winningBid, 1);
         assertEq(stakeId, 0);
-        assertEq(stakerPublicKey, stakerPubKey);
+        assertEq(stakerPublicKey, "test_stakerPubKey");
 
         assertEq(
             deposit_data.operator,
@@ -222,7 +229,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
     }
@@ -240,7 +247,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
     }
@@ -262,7 +269,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
     }
@@ -278,7 +285,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
 
@@ -307,7 +314,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -330,7 +337,7 @@ contract DepositTest is Test {
             0,
             "validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -350,7 +357,7 @@ contract DepositTest is Test {
             0,
             "Validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(0);
@@ -369,17 +376,10 @@ contract DepositTest is Test {
             0,
             "Validator_key",
             "encrypted_key_password",
-            stakerPubKey,
+            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(0);
-
-        (, address withdrawSafe, , , , , , ) = depositInstance.stakes(0);
-        withdrawSafeInstance = WithdrawSafe(payable(withdrawSafe));
-        assertEq(
-            withdrawSafeInstance.owner(),
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
 
         assertEq(
             TestBNFTInstance.ownerOf(0),
@@ -434,7 +434,7 @@ contract DepositTest is Test {
         );
 
         depositInstance.cancelStake(0);
-        (, , , , uint256 amount, , , ) = depositInstance.stakes(0);
+        (, , , uint256 amount, , , ) = depositInstance.stakes(0);
         uint256 balanceFour = address(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         ).balance;
@@ -491,7 +491,6 @@ contract DepositTest is Test {
             .balance;
         (
             address staker,
-            address withdrawSafe,
             ,
             ,
             uint256 amount,
@@ -514,7 +513,7 @@ contract DepositTest is Test {
         assertEq(address(auctionInstance).balance, 0.3 ether);
 
         depositInstance.cancelStake(0);
-        (, , , , , winningbidID, , ) = depositInstance.stakes(0);
+        (, , , , winningbidID, , ) = depositInstance.stakes(0);
         assertEq(winningbidID, 0);
 
         (bidAmount, , bidder, isActive, ) = auctionInstance.bids(2);
