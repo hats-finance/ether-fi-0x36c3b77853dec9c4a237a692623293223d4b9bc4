@@ -53,7 +53,7 @@ contract MyScript is Script {
 
         Treasury treasury = new Treasury();
         Auction auction = new Auction(address(treasury));
-        Deposit deposit = new Deposit(address(auction));
+        Deposit deposit = new Deposit(address(auction), address(treasury));
         (address TNFTAddress, address BNFTAddress) = deposit.getNFTAdresses();
         auction.setDepositContractAddress(address(deposit));
         //auction.updateMerkleRoot(root);
