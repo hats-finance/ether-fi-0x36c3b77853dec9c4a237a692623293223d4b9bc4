@@ -133,7 +133,7 @@ contract AuctionTest is Test {
 
         depositInstance.deposit{value: 0.032 ether}();
         (, , , bool isBid1Active, ) = auctionInstance.bids(1);
-        (, , , , uint256 winningBidId, , , ) = depositInstance.stakes(0);
+        (, , , , , uint256 winningBidId, , ) = depositInstance.stakes(0);
         assertEq(winningBidId, 1);
         assertEq(isBid1Active, false);
         assertEq(auctionInstance.currentHighestBidId(), 2);
