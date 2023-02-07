@@ -50,6 +50,7 @@ contract DepositTest is Test {
             address(depositInstance)
         );
         depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
+        auctionInstance.setUpWithdrawContract(address(withdrawSafeInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -380,6 +381,9 @@ contract DepositTest is Test {
             test_data
         );
         depositInstance.acceptValidator(0);
+
+        assertEq(address(withdrawSafeInstance).balance, 0.1 ether);
+        assertEq(address(auctionInstance).balance, 0);
 
         assertEq(
             TestBNFTInstance.ownerOf(0),

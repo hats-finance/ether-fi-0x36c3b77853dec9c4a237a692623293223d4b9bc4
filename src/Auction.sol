@@ -20,6 +20,7 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     IWithdrawSafe withdrawSafeInstance;
+    Deposit depositContract;
     uint256 public currentHighestBidId;
     uint256 public whitelistBidAmount = 0.001 ether;
     uint256 public minBidAmount = 0.01 ether;
@@ -28,6 +29,7 @@ contract Auction is IAuction, Pausable {
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
     address public treasuryContractAddress;
+    address public withdrawSafeAddress;
     address public owner;
     bytes32 public merkleRoot;
 
@@ -262,14 +264,19 @@ contract Auction is IAuction, Pausable {
         numberOfActiveBids++;
     }
 
-    function sendFundsToWithdrawSafe() external onlyDepositContract {
-        uint256 winningBidAmount = bids[currentHighestBidId].amount;
-        (bool sent, ) = address(withdrawSafeInstance).call{
-            value: winningBidAmount
-        }("");
+    function sendFundsToWithdrawSafe(uint256 _stakeId)
+        external
+        onlyDepositContract
+    {
+        Deposit depositContractInstance = Deposit(depositContractAddress);
+        (, , , , uint256 winningBidId, , ) = depositContractInstance.stakes(
+            _stakeId
+        );
+        uint256 amount = bids[winningBidId].amount;
+        (bool sent, ) = withdrawSafeAddress.call{value: amount}("");
         require(sent, "Sending ETH failed");
 
-        emit FundsSentToWithdrawSafe(winningBidAmount);
+        emit FundsSentToWithdrawSafe(amount);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
@@ -331,7 +338,8 @@ contract Auction is IAuction, Pausable {
         external
         onlyOwner
     {
-        withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
+        // withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
+        withdrawSafeAddress = _withdrawContract;
     }
 
     function updateWhitelistMinBidAmount(uint256 _newAmount)
