@@ -12,7 +12,7 @@ contract BNFT is ERC721 {
     uint256 public nftValue = 0.002 ether;
     address public depositContractAddress;
 
-    mapping(uint256 => uint256) validatorToId;
+    mapping(uint256 => uint256) public validatorToId;
 
 
     //--------------------------------------------------------------------------------------

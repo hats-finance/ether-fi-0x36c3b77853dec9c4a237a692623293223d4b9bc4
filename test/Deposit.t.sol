@@ -36,12 +36,21 @@ contract DepositTest is Test {
         auctionInstance = new Auction(address(treasuryInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance), address(treasuryInstance));
+        depositInstance = new Deposit(
+            address(auctionInstance),
+            address(treasuryInstance)
+        );
         depositInterface = IDeposit(address(depositInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance), address(TestTNFTInstance), address(TestBNFTInstance));
+        withdrawSafeInstance = new WithdrawSafe(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
+        );
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -522,6 +531,78 @@ contract DepositTest is Test {
         assertEq(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
             depositorBalance + 0.032 ether
+        );
+    }
+
+    function test_CorrectValidatorAttatchedToNft() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(
+            0,
+            "Validator_key",
+            "encrypted_key_password",
+            "test_stakerPubKey",
+            test_data
+        );
+        depositInstance.acceptValidator(0);
+
+        vm.stopPrank();
+        startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(
+            1,
+            "Validator_key",
+            "encrypted_key_password",
+            "test_stakerPubKey",
+            test_data
+        );
+        depositInstance.acceptValidator(1);
+
+        assertEq(TestBNFTInstance.validatorToId(0), 0);
+        assertEq(TestBNFTInstance.validatorToId(1), 1);
+        assertEq(
+            TestBNFTInstance.ownerOf(0),
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
+        assertEq(
+            TestTNFTInstance.ownerOf(0),
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
+        assertEq(
+            TestBNFTInstance.ownerOf(1),
+            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+        );
+        assertEq(
+            TestTNFTInstance.ownerOf(1),
+            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+        );
+        assertEq(
+            TestBNFTInstance.balanceOf(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            1
+        );
+        assertEq(
+            TestTNFTInstance.balanceOf(
+                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            ),
+            1
+        );
+        assertEq(
+            TestBNFTInstance.balanceOf(
+                0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+            ),
+            1
+        );
+        assertEq(
+            TestTNFTInstance.balanceOf(
+                0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+            ),
+            1
         );
     }
 
