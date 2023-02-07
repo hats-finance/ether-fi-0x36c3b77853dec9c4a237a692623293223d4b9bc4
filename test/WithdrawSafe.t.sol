@@ -195,6 +195,40 @@ contract DepositTest is Test {
         vm.expectRevert("Only auction contract function");
         withdrawSafeInstance.receiveAuctionFunds{value: 0.1 ether}(0);
     }
+
+    function test_DistributeFundsWorksCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+
+        startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        depositInstance.deposit{value: 0.032 ether}();
+        depositInstance.registerValidator(
+            0,
+            "Validator_key",
+            "encrypted_key_password",
+            "test_stakerPubKey",
+            test_data
+        );
+        vm.stopPrank();
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        depositInstance.acceptValidator(0);
+
+        uint256 treasuryBalance = address(treasuryInstance).balance;
+        uint256 stakerBalance = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance;
+        uint256 operatorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
+
+        hoax(address(auctionInstance));
+        withdrawSafeInstance.receiveAuctionFunds{value: 0.1 ether}(0);
+
+        withdrawSafeInstance.distributeFunds(0);
+
+        assertEq(address(treasuryInstance).balance, treasuryBalance + 5000000000000000);
+        assertEq(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance, stakerBalance + 90000000000000000);
+        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, operatorBalance + 5000000000000000);
+    }
     
     function _merkleSetup() internal {
         merkle = new Merkle();

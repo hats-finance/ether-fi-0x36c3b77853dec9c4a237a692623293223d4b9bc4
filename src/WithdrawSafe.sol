@@ -44,6 +44,7 @@ contract WithdrawSafe is IWithdrawSafe {
         address indexed bnftHolder
     );
     event AuctionFundsReceived(uint256 indexed validatorId, uint256 indexed amount);
+    event FundsDistributed(uint256 indexed totalFundsTransferred);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -109,6 +110,47 @@ contract WithdrawSafe is IWithdrawSafe {
         });
 
         emit ValidatorSetUp(_validatorId, treasuryContract, _operator, _staker, _staker);
+    }
+
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function distributeFunds(uint256 _validatorId) public {
+        
+        uint256 treasuryAmount = claimableBalance[_validatorId][ValidatorRecipientType.TREASURY];
+        uint256 operatorAmount = claimableBalance[_validatorId][ValidatorRecipientType.OPERATOR];
+        uint256 tnftHolderAmount = claimableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER];
+        uint256 bnftHolderAmount = claimableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER];
+
+        //Send treasury funds
+        claimableBalance[_validatorId][ValidatorRecipientType.TREASURY] = 0;
+        (bool sent, ) = treasuryContract.call{value: treasuryAmount}("");
+        require(sent, "Failed to send Ether");
+        totalFundsDistributed[_validatorId][ValidatorRecipientType.TREASURY] += treasuryAmount;
+
+        //Send operator funds
+        claimableBalance[_validatorId][ValidatorRecipientType.OPERATOR] = 0;
+        (sent, ) = payable(recipientsPerValidator[_validatorId].operator).call{value: operatorAmount}("");
+        require(sent, "Failed to send Ether");
+        totalFundsDistributed[_validatorId][ValidatorRecipientType.OPERATOR] += operatorAmount;
+
+        //Send bnft funds
+        claimableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER] = 0;
+        (sent, ) = payable(recipientsPerValidator[_validatorId].bnftHolder).call{value: bnftHolderAmount}("");
+        require(sent, "Failed to send Ether");
+        totalFundsDistributed[_validatorId][ValidatorRecipientType.BNFTHOLDER] += bnftHolderAmount;
+
+        //Send tnft funds
+        claimableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER] = 0;
+        (sent, ) = payable(recipientsPerValidator[_validatorId].tnftHolder).call{value: tnftHolderAmount}("");
+        require(sent, "Failed to send Ether");
+        totalFundsDistributed[_validatorId][ValidatorRecipientType.TNFTHOLDER] += tnftHolderAmount;
+
+        uint256 totalAmount = treasuryAmount + operatorAmount + tnftHolderAmount + bnftHolderAmount;
+
+        emit FundsDistributed(totalAmount);
+
     }
 
     //--------------------------------------------------------------------------------------
