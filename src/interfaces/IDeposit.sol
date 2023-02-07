@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 interface IDeposit {
-
     //The phases of the staking process
     enum STAKE_PHASE {
         DEPOSITED,
@@ -25,7 +24,6 @@ interface IDeposit {
     /// @param phase - the current step of the stake
     struct Stake {
         address staker;
-        address withdrawSafe;
         address stakerPubKey;
         DepositData deposit_data;
         uint256 amount;
@@ -60,15 +58,14 @@ interface IDeposit {
     function cancelStake(uint256 _stakeId) external;
 
     function registerValidator(
-        uint256 _stakeId, 
+        uint256 _stakeId,
         bytes memory _encryptedValidatorKey,
-        bytes memory _encryptedValidatorKeyPassword, 
-        address _stakerPubKey, 
+        bytes memory _encryptedValidatorKeyPassword,
+        address _stakerPubKey,
         DepositData calldata _depositData
     ) external;
 
     function acceptValidator(uint256 _validatorId) external;
 
     function fetchEtherFromContract(address _wallet) external;
-
 }

@@ -94,13 +94,10 @@ contract Deposit is IDeposit, Pausable {
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
-            withdrawSafe: userToWithdrawSafe[msg.sender],
             stakerPubKey: address(0),
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
-            winningBidId: auctionInterfaceInstance.calculateWinningBid(
-                userToWithdrawSafe[msg.sender]
-            ),
+            winningBidId: auctionInterfaceInstance.calculateWinningBid(),
             stakeId: numberOfStakes,
             phase: STAKE_PHASE.DEPOSITED
         });
