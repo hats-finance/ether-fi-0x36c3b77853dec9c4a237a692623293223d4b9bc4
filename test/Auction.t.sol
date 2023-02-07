@@ -49,8 +49,7 @@ contract AuctionTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance));
-        depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
+        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance), address(TestTNFTInstance), address(TestBNFTInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -96,7 +95,7 @@ contract AuctionTest is Test {
 
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
-        auctionInstance.reEnterAuction(1);
+        auctionInstance.reEnterAuction(1, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
     }
 
     function test_ReEnterAuctionFailsIfBidAlreadyActive() public {
@@ -112,7 +111,7 @@ contract AuctionTest is Test {
 
         vm.prank(address(depositInstance));
         vm.expectRevert("Bid already active");
-        auctionInstance.reEnterAuction(2);
+        auctionInstance.reEnterAuction(2, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
     }
 
     function test_ReEnterAuctionWorks() public {

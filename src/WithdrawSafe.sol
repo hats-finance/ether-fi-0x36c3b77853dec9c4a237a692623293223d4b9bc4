@@ -20,10 +20,10 @@ contract WithdrawSafe is IWithdrawSafe {
     address public treasuryContract;
     address public auctionContract;
     address public depositContract;
+    address public operatorAddress;
 
     uint256 public tnftId;
     uint256 public bnftId;
-    address public operatorAddress;
 
     //recipient => amount
     mapping(ValidatorRecipientType => uint256) public claimableBalance;
@@ -40,7 +40,7 @@ contract WithdrawSafe is IWithdrawSafe {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event AuctionFundsReceived(uint256 indexed validatorId, uint256 indexed amount);
+    event AuctionFundsReceived(uint256 indexed amount);
     event FundsDistributed(uint256 indexed totalFundsTransferred);
 
     //--------------------------------------------------------------------------------------
@@ -89,14 +89,13 @@ contract WithdrawSafe is IWithdrawSafe {
 
     /// @notice Updates the total amount of funds receivable for recipients of the specified validator
     /// @dev Takes in a certain value of funds from only the set auction contract
-    /// @param _validatorId id of the validatopr to store the funds for
-    function receiveAuctionFunds(uint256 _validatorId) external payable onlyAuctionContract {
+    function receiveAuctionFunds() external payable onlyAuctionContract {
         claimableBalance[ValidatorRecipientType.TREASURY] += msg.value * auctionContractRevenueSplit.treasurySplit / SCALE;
         claimableBalance[ValidatorRecipientType.OPERATOR] += msg.value * auctionContractRevenueSplit.nodeOperatorSplit / SCALE;
         claimableBalance[ValidatorRecipientType.TNFTHOLDER] += msg.value * auctionContractRevenueSplit.tnftHolderSplit / SCALE;
         claimableBalance[ValidatorRecipientType.BNFTHOLDER] += msg.value * auctionContractRevenueSplit.bnftHolderSplit / SCALE;
 
-        emit AuctionFundsReceived(_validatorId, msg.value);
+        emit AuctionFundsReceived(msg.value);
     }
 
     //--------------------------------------------------------------------------------------

@@ -15,7 +15,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 contract Deposit is IDeposit, Pausable {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
-    IWithdrawSafe public withdrawSafeInstance;
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
@@ -177,7 +176,7 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        IWithdrawSafe instance = IWithdrawSafe(stakes[localStakeId].withdrawSafe);
+        WithdrawSafe instance = WithdrawSafe(stakes[localStakeId].withdrawSafe);
         instance.setOperatorAddress(msg.sender);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
