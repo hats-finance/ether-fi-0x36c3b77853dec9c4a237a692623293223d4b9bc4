@@ -44,13 +44,7 @@ contract DepositTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        withdrawSafeInstance = new WithdrawSafe(
-            address(treasuryInstance),
-            address(auctionInstance),
-            address(depositInstance)
-        );
-        depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
-        auctionInstance.setUpWithdrawContract(address(withdrawSafeInstance));
+        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance), address(TestTNFTInstance), address(TestBNFTInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -92,6 +86,7 @@ contract DepositTest is Test {
 
         (
             address staker,
+            ,
             bytes memory stakerPublicKey,
             IDeposit.DepositData memory deposit_data,
             uint256 amount,
@@ -440,7 +435,7 @@ contract DepositTest is Test {
         );
 
         depositInstance.cancelStake(0);
-        (, , , uint256 amount, , , ) = depositInstance.stakes(0);
+        (, , , , uint256 amount, , , ) = depositInstance.stakes(0);
         uint256 balanceFour = address(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         ).balance;
@@ -499,6 +494,7 @@ contract DepositTest is Test {
             address staker,
             ,
             ,
+            ,
             uint256 amount,
             uint256 winningbidID,
             ,
@@ -519,7 +515,7 @@ contract DepositTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         depositInstance.cancelStake(0);
-        (, , , , winningbidID, , ) = depositInstance.stakes(0);
+        (, , , , , winningbidID, , ) = depositInstance.stakes(0);
         assertEq(winningbidID, 0);
 
         (bidAmount, , bidder, isActive, ) = auctionInstance.bids(2);

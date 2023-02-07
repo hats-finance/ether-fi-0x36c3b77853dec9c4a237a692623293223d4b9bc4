@@ -43,10 +43,10 @@ contract LargeScenariosTest is Test {
         withdrawSafeInstance = new WithdrawSafe(
             address(treasuryInstance),
             address(auctionInstance),
-            address(depositInstance)
+            address(depositInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
         );
-        depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
-        auctionInstance.setUpWithdrawContract(address(withdrawSafeInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,

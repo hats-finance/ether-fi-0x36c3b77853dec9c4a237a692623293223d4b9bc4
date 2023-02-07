@@ -9,12 +9,12 @@ import "./interfaces/IDepositContract.sol";
 import "./interfaces/IWithdrawSafe.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./WithdrawSafe.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
-    IWithdrawSafe public withdrawSafeInstance;
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
@@ -87,9 +87,18 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
+        WithdrawSafe withdrawSafeInstance = new WithdrawSafe(
+            treasuryAddress,
+            address(auctionInterfaceInstance),
+            address(this),
+            address(TNFTInterfaceInstance),
+            address(BNFTInterfaceInstance)
+        );
+
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
+            withdrawSafe: address(withdrawSafeInstance),
             stakerPubKey: "",
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
@@ -171,13 +180,13 @@ contract Deposit is IDeposit, Pausable {
 
         uint256 localStakeId = validators[_validatorId].stakeId;
 
-        TNFTInterfaceInstance.mint(stakes[localStakeId].staker);
-        BNFTInterfaceInstance.mint(stakes[localStakeId].staker);
-
-        auctionInterfaceInstance.sendFundsToWithdrawSafe(
-            localStakeId,
-            _validatorId
+        TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
+        BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
+        WithdrawSafe withdrawInstance = WithdrawSafe(
+            stakes[localStakeId].withdrawSafe
         );
+        withdrawInstance.setOperatorAddress(msg.sender);
+        withdrawInstance.setValidatorId(_validatorId);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
@@ -189,15 +198,6 @@ contract Deposit is IDeposit, Pausable {
         //     dataInstance.signature,
         //     dataInstance.depositDataRoot
         // );
-
-        address operator = auctionInterfaceInstance.getBidOwner(
-            validators[_validatorId].bidId
-        );
-        withdrawSafeInstance.setUpValidatorData(
-            _validatorId,
-            stakes[localStakeId].staker,
-            operator
-        );
 
         emit ValidatorAccepted(_validatorId);
     }
@@ -243,13 +243,6 @@ contract Deposit is IDeposit, Pausable {
     function fetchEtherFromContract(address _wallet) public onlyOwner {
         (bool sent, ) = payable(_wallet).call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
-    }
-
-    function setUpWithdrawContract(address _withdrawContract)
-        external
-        onlyOwner
-    {
-        withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
     }
 
     //Pauses the contract

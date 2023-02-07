@@ -24,6 +24,7 @@ interface IDeposit {
     /// @param phase - the current step of the stake
     struct Stake {
         address staker;
+        address withdrawSafe;
         bytes stakerPubKey;
         DepositData deposit_data;
         uint256 amount;
@@ -68,7 +69,5 @@ interface IDeposit {
     function acceptValidator(uint256 _validatorId) external;
 
     function fetchEtherFromContract(address _wallet) external;
-
-    function setUpWithdrawContract(address _withdrawContract) external;
 
 }

@@ -12,6 +12,9 @@ contract BNFT is ERC721 {
     uint256 public nftValue = 0.002 ether;
     address public depositContractAddress;
 
+    mapping(uint256 => uint256) validatorToId;
+
+
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
@@ -27,8 +30,11 @@ contract BNFT is ERC721 {
 
     //Function only allows the deposit contract to mint to prevent
     //standard eoa minting themselves NFTs
-    function mint(address _reciever) external onlyDepositContract {
+    function mint(address _reciever, uint256 _validatorId) external onlyDepositContract {
         _safeMint(_reciever, tokenIds);
+
+        validatorToId[_validatorId] = tokenIds;
+
         unchecked {
             tokenIds++;
         }
@@ -42,6 +48,10 @@ contract BNFT is ERC721 {
     ) public virtual override(ERC721) {
         require(from == address(0), "Err: token is SOUL BOUND");
         super.transferFrom(from, to, tokenId);
+    }
+
+    function getNftId(uint256 _validatorId) public returns (uint256) {
+        return validatorToId[_validatorId];
     }
 
     //--------------------------------------------------------------------------------------

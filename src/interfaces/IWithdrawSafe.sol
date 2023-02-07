@@ -2,8 +2,6 @@
 pragma solidity 0.8.13;
 
 interface IWithdrawSafe {
-    function refundBid(uint256 _amount, uint256 _bidId) external;
-
     enum ValidatorRecipientType {
         TNFTHOLDER,
         BNFTHOLDER,
@@ -25,17 +23,7 @@ interface IWithdrawSafe {
         uint256 bnftHolderSplit;
     }
 
-    struct ValidatorFundRecipients {
-        address tnftHolder;
-        address bnftHolder;
-        address operator;
-    }
+    function receiveAuctionFunds() external payable;
 
-    function setUpValidatorData(
-        uint256 _validatorId,
-        address _staker,
-        address _operator
-    ) external;
-
-    function receiveAuctionFunds(uint256 _validatorId) external payable;
+    function setOperatorAddress(address _operatorAddress) external;
 }
