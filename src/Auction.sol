@@ -77,9 +77,8 @@ contract Auction is IAuction, Pausable {
     /// @notice calculates the winning operator bid when a stake is deposited
     /// @dev Used local variables to prevent multiple calling of state variables to save gas
     /// @dev Gets called from the deposit contract when a stake is received
-    /// @param _withdrawSafe address of the withdraw safe to send funds to
     /// @return winningOperator the address of the current highest bidder
-    function calculateWinningBid(address _withdrawSafe)
+    function calculateWinningBid()
         external
         onlyDepositContract
         returns (uint256)
@@ -107,8 +106,8 @@ contract Auction is IAuction, Pausable {
         currentHighestBidId = tempWinningBidId;
 
         //Send the winning bid to the treasury contract
-        (bool sent, ) = _withdrawSafe.call{value: winningBidAmount}("");
-        require(sent, "Failed to send Ether");
+        // (bool sent, ) = _withdrawSafe.call{value: winningBidAmount}("");
+        // require(sent, "Failed to send Ether");
 
         numberOfActiveBids--;
 

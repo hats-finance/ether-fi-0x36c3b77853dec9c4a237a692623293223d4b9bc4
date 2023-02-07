@@ -61,6 +61,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
+    /// @param _withdrawSafeAddress the address of the withdarwSafe contract for interaction
     constructor(address _auctionAddress, address _withdrawSafeAddress) {
         stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
