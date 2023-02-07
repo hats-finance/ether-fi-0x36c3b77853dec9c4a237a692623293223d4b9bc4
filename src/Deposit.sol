@@ -176,8 +176,9 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        WithdrawSafe instance = WithdrawSafe(stakes[localStakeId].withdrawSafe);
-        instance.setOperatorAddress(msg.sender);
+        WithdrawSafe withdrawInstance = WithdrawSafe(stakes[localStakeId].withdrawSafe);
+        withdrawInstance.setOperatorAddress(msg.sender);
+        withdrawInstance.setValidatorId(_validatorId);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
@@ -208,7 +209,7 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId, stakes[_stakeId].withdrawSafe);
+        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBidId = 0;

@@ -110,7 +110,7 @@ contract DepositTest is Test {
         hoax(address(auctionInstance));
         safeInstance.receiveAuctionFunds{value: 0.1 ether}();
 
-        safeInstance.distributeFunds(0);
+        safeInstance.distributeFunds();
 
         assertEq(address(treasuryInstance).balance, treasuryBalance + 5000000000000000);
         assertEq(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance, stakerBalance + 90000000000000000);

@@ -24,6 +24,8 @@ contract WithdrawSafe is IWithdrawSafe {
 
     uint256 public tnftId;
     uint256 public bnftId;
+    uint256 public validatorId;
+    uint256 public fundsReceivedFromAuctions;
 
     //recipient => amount
     mapping(ValidatorRecipientType => uint256) public claimableBalance;
@@ -42,6 +44,8 @@ contract WithdrawSafe is IWithdrawSafe {
 
     event AuctionFundsReceived(uint256 indexed amount);
     event FundsDistributed(uint256 indexed totalFundsTransferred);
+    event OperatorAddressSet(address indexed operater);
+    event ValidatorIdSet(uint256 indexed validatorId);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -95,6 +99,7 @@ contract WithdrawSafe is IWithdrawSafe {
         claimableBalance[ValidatorRecipientType.TNFTHOLDER] += msg.value * auctionContractRevenueSplit.tnftHolderSplit / SCALE;
         claimableBalance[ValidatorRecipientType.BNFTHOLDER] += msg.value * auctionContractRevenueSplit.bnftHolderSplit / SCALE;
 
+        fundsReceivedFromAuctions += msg.value;
         emit AuctionFundsReceived(msg.value);
     }
 
@@ -102,15 +107,17 @@ contract WithdrawSafe is IWithdrawSafe {
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function distributeFunds(uint256 _validatorId) public {
-        
+    /// @notice Sends claimable funds to the correct recipients
+    /// @dev Will limit the functionality to be called by the staker
+    function distributeFunds() public {
+    
         uint256 treasuryAmount = claimableBalance[ValidatorRecipientType.TREASURY];
         uint256 operatorAmount = claimableBalance[ValidatorRecipientType.OPERATOR];
         uint256 tnftHolderAmount = claimableBalance[ValidatorRecipientType.TNFTHOLDER];
         uint256 bnftHolderAmount = claimableBalance[ValidatorRecipientType.BNFTHOLDER];
 
-        address tnftHolder = tnftInstance.ownerOf(tnftInstance.getNftId(_validatorId));
-        address bnftHolder = tnftInstance.ownerOf(bnftInstance.getNftId(_validatorId));
+        address tnftHolder = tnftInstance.ownerOf(tnftInstance.getNftId(validatorId));
+        address bnftHolder = tnftInstance.ownerOf(bnftInstance.getNftId(validatorId));
 
         //Send treasury funds
         claimableBalance[ValidatorRecipientType.TREASURY] = 0;
@@ -137,6 +144,7 @@ contract WithdrawSafe is IWithdrawSafe {
         require(sent, "Failed to send Ether");
 
         uint256 totalAmount = treasuryAmount + operatorAmount + tnftHolderAmount + bnftHolderAmount;
+        fundsReceivedFromAuctions = 0;
 
         emit FundsDistributed(totalAmount);
 
@@ -146,8 +154,21 @@ contract WithdrawSafe is IWithdrawSafe {
     //-------------------------------------  SETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Sets the node operator address for the withdraw safe
+    /// @param _nodeOperator address of the operator to be set
     function setOperatorAddress(address _nodeOperator) public onlyDepositContract {
+        require(_nodeOperator != address(0), "Cannot be address 0");
         operatorAddress = _nodeOperator;
+
+        emit OperatorAddressSet(_nodeOperator);
+    }
+
+    /// @notice Sets the validator ID for the withdraw safe
+    /// @param _validatorId id of the validator associated to this withdraw safe
+    function setValidatorId(uint256 _validatorId) public onlyDepositContract {
+        validatorId = _validatorId;
+
+        emit ValidatorIdSet(_validatorId);
     }
 
     //--------------------------------------------------------------------------------------
