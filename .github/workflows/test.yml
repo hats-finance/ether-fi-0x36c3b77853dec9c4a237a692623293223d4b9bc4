@@ -2,10 +2,9 @@ name: test
 
 on:
   pull_request:
-    types:
-      - opened
     branches:
       - "master"
+    types: [opened, reopened, synchronize]
 
 env:
   FOUNDRY_PROFILE: ci
