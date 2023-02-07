@@ -6,6 +6,7 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IDepositContract.sol";
+import "./interfaces/IWithdrawSafe.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./WithdrawSafe.sol";
@@ -14,7 +15,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 contract Deposit is IDeposit, Pausable {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
-    WithdrawSafe public withdrawSafeInstance;
+    IWithdrawSafe public withdrawSafeInstance;
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
@@ -29,7 +30,6 @@ contract Deposit is IDeposit, Pausable {
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
     mapping(uint256 => Stake) public stakes;
-    mapping(address => address) public userToWithdrawSafe;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -61,12 +61,13 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    constructor(address _auctionAddress) {
+    constructor(address _auctionAddress, address _withdrawSafeAddress) {
         stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
+        withdrawSafeInstance = IWithdrawSafe(_withdrawSafeAddress);
         auctionInterfaceInstance = IAuction(_auctionAddress);
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
@@ -89,16 +90,6 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        if (userToWithdrawSafe[msg.sender] == address(0)) {
-            withdrawSafeInstance = new WithdrawSafe(
-                stakes[numberOfStakes].staker,
-                auctionAddress
-            );
-            userToWithdrawSafe[msg.sender] = address(
-                payable(withdrawSafeInstance)
-            );
-        }
-
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
@@ -114,7 +105,6 @@ contract Deposit is IDeposit, Pausable {
         });
 
         depositorBalances[msg.sender] += msg.value;
-
 
         emit StakeDeposit(
             msg.sender,
