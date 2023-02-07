@@ -36,13 +36,6 @@ contract WithdrawSafe is IWithdrawSafe {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event ValidatorSetUp(
-        uint256 validatorId, 
-        address treasuryAddress, 
-        address indexed operatorAddress, 
-        address indexed tnftHolder, 
-        address indexed bnftHolder
-    );
     event AuctionFundsReceived(uint256 indexed validatorId, uint256 indexed amount);
     event FundsDistributed(uint256 indexed totalFundsTransferred);
 
