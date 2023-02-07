@@ -65,7 +65,6 @@ contract Deposit is IDeposit, Pausable {
         BNFTInstance = new BNFT();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
-        withdrawSafeInstance = IWithdrawSafe(_withdrawSafeAddress);
         auctionInterfaceInstance = IAuction(_auctionAddress);
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
@@ -107,7 +106,7 @@ contract Deposit is IDeposit, Pausable {
             numberOfStakes,
             stakes[numberOfStakes].winningBidId
         );
-        
+
         numberOfStakes++;
     }
 
@@ -175,6 +174,8 @@ contract Deposit is IDeposit, Pausable {
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker);
 
+        auctionInterfaceInstance.sendFundsToWithdrawSafe();
+
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
@@ -186,8 +187,14 @@ contract Deposit is IDeposit, Pausable {
         //     dataInstance.depositDataRoot
         // );
 
-        address operator = auctionInterfaceInstance.getBidOwner(validators[_validatorId].bidId);
-        withdrawSafeInstance.setUpValidatorData(_validatorId, stakes[localStakeId].staker, operator);
+        address operator = auctionInterfaceInstance.getBidOwner(
+            validators[_validatorId].bidId
+        );
+        withdrawSafeInstance.setUpValidatorData(
+            _validatorId,
+            stakes[localStakeId].staker,
+            operator
+        );
 
         emit ValidatorAccepted(_validatorId);
     }
@@ -235,7 +242,10 @@ contract Deposit is IDeposit, Pausable {
         require(sent, "Failed to send Ether");
     }
 
-    function setUpWithdrawContract(address _withdrawContract) external onlyOwner {
+    function setUpWithdrawContract(address _withdrawContract)
+        external
+        onlyOwner
+    {
         withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
     }
 
