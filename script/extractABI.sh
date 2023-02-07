@@ -3,8 +3,9 @@
 # for each contract in source folder, extract abi from artifact and create new json
 for contractPath in src/*.sol
 do  
-    # full_name=/src/Auction.sol
+    # fileWithExtension="Auction.sol"
     fileWithExtension=${contractPath##*/}
+    # fileWithExtension="Auction"
     filename=${fileWithExtension%.*}
     # if directory doesn't exist, then create it
     mkdir -p release/abis
