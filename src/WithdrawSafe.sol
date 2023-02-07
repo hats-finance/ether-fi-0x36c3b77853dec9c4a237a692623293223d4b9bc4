@@ -93,25 +93,6 @@ contract WithdrawSafe is IWithdrawSafe {
         emit AuctionFundsReceived(_validatorId, msg.value);
     }
 
-    /// @notice Allows the contract to set up a new validator object for receiving funds
-    /// @dev Staker address in paramter will always be both the T and BNFT holder on creation
-    /// @param _validatorId id of the validatopr to set up
-    /// @param _staker the current address of the b and tnft holder for the validator specified
-    /// @param _operator the address of the node operator for the validator specified
-    function setUpValidatorData(
-        uint256 _validatorId, 
-        address _staker, 
-        address _operator
-    ) external onlyDepositContract {
-        recipientsPerValidator[_validatorId] = ValidatorFundRecipients({
-            tnftHolder: _staker,
-            bnftHolder: _staker,
-            operator: _operator
-        });
-
-        emit ValidatorSetUp(_validatorId, treasuryContract, _operator, _staker, _staker);
-    }
-
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
