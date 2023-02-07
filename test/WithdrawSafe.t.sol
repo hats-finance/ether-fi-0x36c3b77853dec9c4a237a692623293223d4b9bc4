@@ -14,12 +14,12 @@ import "../lib/murky/src/Merkle.sol";
 
 contract DepositTest is Test {
     IDeposit public depositInterface;
-    WithdrawSafe public withdrawSafeInstance;
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     Auction public auctionInstance;
     Treasury public treasuryInstance;
+    WithdrawSafe public safeInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -42,8 +42,6 @@ contract DepositTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance));
-        depositInstance.setUpWithdrawContract(address(withdrawSafeInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -62,63 +60,7 @@ contract DepositTest is Test {
         });
 
         vm.stopPrank();
-    }
 
-    function test_WithdrawSafeContractInstantiatedCorrectly() public {
-        assertEq(withdrawSafeInstance.owner(), owner);
-        assertEq(withdrawSafeInstance.treasuryContract(), address(treasuryInstance));
-        assertEq(withdrawSafeInstance.auctionContract(), address(auctionInstance));
-        assertEq(withdrawSafeInstance.depositContract(), address(depositInstance));
-
-        (
-            uint256 treasurySplit, 
-            uint256 nodeOperatorSplit, 
-            uint256 tnftHolderSplit, 
-            uint256 bnftHolderSplit
-        ) = withdrawSafeInstance.auctionContractRevenueSplit();
-
-        assertEq(treasurySplit, 5);
-        assertEq(nodeOperatorSplit, 5);
-        assertEq(tnftHolderSplit, 81);
-        assertEq(bnftHolderSplit, 9);
-
-        (
-            treasurySplit, 
-            nodeOperatorSplit, 
-            tnftHolderSplit, 
-            bnftHolderSplit
-        ) = withdrawSafeInstance.validatorExitRevenueSplit();
-
-        assertEq(treasurySplit, 5);
-        assertEq(nodeOperatorSplit, 5);
-        assertEq(tnftHolderSplit, 81);
-        assertEq(bnftHolderSplit, 9);
-    }
-
-    function test_SetUpValidatorFailsIfNotDepositContractCalling() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
-
-        startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(
-            0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
-            test_data
-        );
-        vm.stopPrank();
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.acceptValidator(0);
-        vm.expectRevert("Only deposit contract function");
-        withdrawSafeInstance.setUpValidatorData(0, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-    }
-
-    function test_SetUpValidatorWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -138,62 +80,41 @@ contract DepositTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.acceptValidator(0);
 
-        (address tnftHolder, address bnftHolder, address operator) = withdrawSafeInstance.recipientsPerValidator(0);
-        assertEq(tnftHolder, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        assertEq(bnftHolder, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        assertEq(operator, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (, address withdrawSafe,,,,,,) = depositInstance.stakes(0);
+        safeInstance = WithdrawSafe(withdrawSafe);
     }
 
     function test_ReceiveAuctionFundsWorksCorrectly() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
-
-        startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(
-            0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
-            test_data
-        );
-        vm.stopPrank();
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.acceptValidator(0);
 
         hoax(address(auctionInstance));
-        withdrawSafeInstance.receiveAuctionFunds{value: 0.1 ether}(0);
+        safeInstance.receiveAuctionFunds{value: 0.1 ether}();
 
-        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.TREASURY), 5000000000000000);
-        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.OPERATOR), 5000000000000000);
-        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.BNFTHOLDER), 9000000000000000);
-        assertEq(withdrawSafeInstance.claimableBalance(0, IWithdrawSafe.ValidatorRecipientType.TNFTHOLDER), 81000000000000000);
+        assertEq(safeInstance.claimableBalance(IWithdrawSafe.ValidatorRecipientType.TREASURY), 5000000000000000);
+        assertEq(safeInstance.claimableBalance(IWithdrawSafe.ValidatorRecipientType.OPERATOR), 5000000000000000);
+        assertEq(safeInstance.claimableBalance(IWithdrawSafe.ValidatorRecipientType.BNFTHOLDER), 9000000000000000);
+        assertEq(safeInstance.claimableBalance(IWithdrawSafe.ValidatorRecipientType.TNFTHOLDER), 81000000000000000);
     }
 
     function test_ReceiveAuctionFundsFailsIfNotAuctionContractCalling() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
-
-        startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(
-            0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
-            test_data
-        );
-        vm.stopPrank();
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.acceptValidator(0);
         vm.expectRevert("Only auction contract function");
-        withdrawSafeInstance.receiveAuctionFunds{value: 0.1 ether}(0);
+        safeInstance.receiveAuctionFunds{value: 0.1 ether}();
+    }
+
+    function test_DistributeFundsWorksCorrectly() public {
+
+        uint256 treasuryBalance = address(treasuryInstance).balance;
+        uint256 stakerBalance = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance;
+        uint256 operatorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
+
+        hoax(address(auctionInstance));
+        safeInstance.receiveAuctionFunds{value: 0.1 ether}();
+
+        safeInstance.distributeFunds();
+
+        assertEq(address(treasuryInstance).balance, treasuryBalance + 5000000000000000);
+        assertEq(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance, stakerBalance + 90000000000000000);
+        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, operatorBalance + 5000000000000000);
     }
     
     function _merkleSetup() internal {
