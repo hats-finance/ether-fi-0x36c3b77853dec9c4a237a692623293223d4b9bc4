@@ -27,7 +27,7 @@ interface IAuction {
 
     function getBidOwner(uint256 _bidId) external view returns (address);
 
-    function reEnterAuction(uint256 _bidId) external;
+    function reEnterAuction(uint256 _bidId, address _withdrawSafe) external;
 
     function setDepositContractAddress(address _depositContractAddress)
         external;

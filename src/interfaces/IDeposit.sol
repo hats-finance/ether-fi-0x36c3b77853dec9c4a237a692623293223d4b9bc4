@@ -25,6 +25,7 @@ interface IDeposit {
     /// @param phase - the current step of the stake
     struct Stake {
         address staker;
+        address withdrawSafe;
         bytes stakerPubKey;
         DepositData deposit_data;
         uint256 amount;

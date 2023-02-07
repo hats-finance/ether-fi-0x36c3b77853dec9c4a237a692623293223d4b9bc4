@@ -24,7 +24,7 @@ interface IWithdrawSafe {
         uint256 bnftHolderSplit;
     }
 
-    function setUpValidatorData(uint256 _validatorId, address _staker, address _operator) external;
     function receiveAuctionFunds(uint256 _validatorId) external payable;
+    function setOperatorAddress(address _operatorAddress) external;
 
 }

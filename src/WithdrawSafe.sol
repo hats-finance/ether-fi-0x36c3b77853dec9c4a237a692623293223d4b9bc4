@@ -20,13 +20,17 @@ contract WithdrawSafe is IWithdrawSafe {
     address public treasuryContract;
     address public auctionContract;
     address public depositContract;
-    address public tnftHolder;
-    address public bnftHolder;
+
+    uint256 public tnftId;
+    uint256 public bnftId;
     address public operatorAddress;
 
     //recipient => amount
     mapping(ValidatorRecipientType => uint256) public claimableBalance;
     mapping(ValidatorRecipientType => uint256) public totalFundsDistributed;
+
+    ITNFT public tnftInterface;
+    IBNFT public bnftInterface;
 
     //Holds the data for the revenue splits depending on where the funds are received from
     AuctionContractRevenueSplit public auctionContractRevenueSplit;
@@ -49,12 +53,26 @@ contract WithdrawSafe is IWithdrawSafe {
     /// @param _treasuryContract the address of the treasury contract for interaction
     /// @param _auctionContract the address of the auction contract for interaction
     /// @param _depositContract the address of the deposit contract for interaction
-    constructor(address _treasuryContract, address _auctionContract, address _depositContract) {
+    constructor(
+        address _treasuryContract, 
+        address _auctionContract, 
+        address _depositContract, 
+        address _tnftContract, 
+        address _bnftContract,
+        uint256 _tnftId,
+        uint256 _bnftId
+    ) {
         owner = msg.sender;  
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;    
         depositContract = _depositContract;
-        
+
+        tnftInterface = ITNFT(_tnftContract);
+        bnftInterface = IBNFT(_bnftContract);
+
+        tnftId = _tnftId;
+        bnftId = _bnftId;
+
         auctionContractRevenueSplit = AuctionContractRevenueSplit({
             treasurySplit: 5,
             nodeOperatorSplit: 5,
@@ -112,13 +130,13 @@ contract WithdrawSafe is IWithdrawSafe {
         //Send bnft funds
         claimableBalance[ValidatorRecipientType.BNFTHOLDER] = 0;
         totalFundsDistributed[ValidatorRecipientType.BNFTHOLDER] += bnftHolderAmount;
-        (sent, ) = payable(bnftHolder).call{value: bnftHolderAmount}("");
+        (sent, ) = payable(bnftInterface.ownerOf(bnftId)).call{value: bnftHolderAmount}("");
         require(sent, "Failed to send Ether");
 
         //Send tnft funds
         claimableBalance[ValidatorRecipientType.TNFTHOLDER] = 0;
         totalFundsDistributed[ValidatorRecipientType.TNFTHOLDER] += tnftHolderAmount;
-        (sent, ) = payable(tnftHolder).call{value: tnftHolderAmount}("");
+        (sent, ) = payable(tnftInterface.ownerOf(tnftId)).call{value: tnftHolderAmount}("");
         require(sent, "Failed to send Ether");
 
         uint256 totalAmount = treasuryAmount + operatorAmount + tnftHolderAmount + bnftHolderAmount;
@@ -130,6 +148,10 @@ contract WithdrawSafe is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
     //-------------------------------------  SETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
+
+    function setOperatorAddress(address _nodeOperator) public onlyDepositContract {
+        operatorAddress = _nodeOperator;
+    }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------

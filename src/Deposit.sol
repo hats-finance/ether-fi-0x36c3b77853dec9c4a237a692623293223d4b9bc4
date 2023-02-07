@@ -9,6 +9,7 @@ import "./interfaces/IDepositContract.sol";
 import "./interfaces/IWithdrawSafe.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./WithdrawSafe.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
@@ -87,9 +88,12 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
+        WithdrawSafe withdrawSafeInstance = new WithdrawSafe(treasuryAddress, address(auctionInterfaceInstance), address(this), address(TNFTInterfaceInstance), address(BNFTInterfaceInstance));
+
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
             staker: msg.sender,
+            withdrawSafe: address(withdrawSafeInstance),
             stakerPubKey: "",
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
@@ -173,6 +177,8 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker);
+        IWithdrawSafe instance = IWithdrawSafe(stakes[localStakeId].withdrawSafe);
+        instance.setOperatorAddress(msg.sender);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
@@ -184,9 +190,6 @@ contract Deposit is IDeposit, Pausable {
         //     dataInstance.signature,
         //     dataInstance.depositDataRoot
         // );
-
-        address operator = auctionInterfaceInstance.getBidOwner(validators[_validatorId].bidId);
-        withdrawSafeInstance.setUpValidatorData(_validatorId, stakes[localStakeId].staker, operator);
 
         emit ValidatorAccepted(_validatorId);
     }
@@ -206,7 +209,7 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
+        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId, stakes[_stakeId].withdrawSafe);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBidId = 0;
@@ -232,10 +235,6 @@ contract Deposit is IDeposit, Pausable {
     function fetchEtherFromContract(address _wallet) public onlyOwner {
         (bool sent, ) = payable(_wallet).call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
-    }
-
-    function setUpWithdrawContract(address _withdrawContract) external onlyOwner {
-        withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
     }
 
     //Pauses the contract
