@@ -21,7 +21,6 @@ contract Auction is IAuction, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IWithdrawSafe withdrawSafeInstance;
     Deposit depositContract;
     uint256 public currentHighestBidId;
     uint256 public whitelistBidAmount = 0.001 ether;
@@ -31,7 +30,6 @@ contract Auction is IAuction, Pausable {
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
     address public treasuryContractAddress;
-    address public withdrawSafeAddress;
     address public owner;
     bytes32 public merkleRoot;
 
@@ -266,17 +264,28 @@ contract Auction is IAuction, Pausable {
         numberOfActiveBids++;
     }
 
-    function sendFundsToWithdrawSafe(uint256 _stakeId, uint256 _validatorId)
+    function sendFundsToWithdrawSafe(uint256 _stakeId)
         external
         onlyDepositContract
     {
         Deposit depositContractInstance = Deposit(depositContractAddress);
-        (, , , , uint256 winningBidId, , ) = depositContractInstance.stakes(
-            _stakeId
-        );
+        (
+            ,
+            address withdrawSafeAddress,
+            ,
+            ,
+            ,
+            uint256 winningBidId,
+            ,
+
+        ) = depositContractInstance.stakes(_stakeId);
+
         uint256 amount = bids[winningBidId].amount;
 
-        withdrawSafeInstance.receiveAuctionFunds{value: amount}(_validatorId);
+        WithdrawSafe withdrawSafeInstance = WithdrawSafe(
+            payable(withdrawSafeAddress)
+        );
+        withdrawSafeInstance.receiveAuctionFunds{value: amount}();
 
         emit FundsSentToWithdrawSafe(amount);
     }
@@ -334,13 +343,6 @@ contract Auction is IAuction, Pausable {
         minBidAmount = _newMinBidAmount;
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
-    }
-
-    function setUpWithdrawContract(address _withdrawContract)
-        external
-        onlyOwner
-    {
-        withdrawSafeInstance = IWithdrawSafe(_withdrawContract);
     }
 
     function updateWhitelistMinBidAmount(uint256 _newAmount)

@@ -84,7 +84,7 @@ contract WithdrawSafeTest is Test {
         depositInstance.acceptValidator(0);
 
         (, address withdrawSafe, , , , , , ) = depositInstance.stakes(0);
-        safeInstance = WithdrawSafe(withdrawSafe);
+        safeInstance = WithdrawSafe(payable(withdrawSafe));
     }
 
     function test_ReceiveAuctionFundsWorksCorrectly() public {

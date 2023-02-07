@@ -19,8 +19,7 @@ interface IAuction {
 
     function cancelBid(uint256 _bidId) external;
 
-    function sendFundsToWithdrawSafe(uint256 _stakeId, uint256 _validatorId)
-        external;
+    function sendFundsToWithdrawSafe(uint256 _stakeId) external;
 
     // function increaseBid(uint256 _bidId) external payable;
 
