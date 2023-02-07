@@ -7,6 +7,7 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/ITreasury.sol";
+import "./interfaces/IWithdrawSafe.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
@@ -18,6 +19,7 @@ contract Auction is IAuction, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
+    IWithdrawSafe withdrawSafeInstance;
     uint256 public currentHighestBidId;
     uint256 public whitelistBidAmount = 0.001 ether;
     uint256 public minBidAmount = 0.01 ether;
@@ -65,8 +67,10 @@ contract Auction is IAuction, Pausable {
 
     /// @notice Constructor to set variables on deployment
     /// @param _treasuryAddress the address of the treasury to send funds to
-    constructor(address _treasuryAddress) {
+    /// @param _withdrawSafeAddress the address of the withdrawSafe for interaction
+    constructor(address _treasuryAddress, address _withdrawSafeAddress) {
         treasuryContractAddress = _treasuryAddress;
+        withdrawSafeInstance = IWithdrawSafe(_withdrawSafeAddress);
         owner = msg.sender;
     }
 
@@ -106,8 +110,8 @@ contract Auction is IAuction, Pausable {
         currentHighestBidId = tempWinningBidId;
 
         //Send the winning bid to the treasury contract
-        // (bool sent, ) = _withdrawSafe.call{value: winningBidAmount}("");
-        // require(sent, "Failed to send Ether");
+        (bool sent, ) = withdrawSafeInstance.call{value: winningBidAmount}("");
+        require(sent, "Failed to send Ether");
 
         numberOfActiveBids--;
 
@@ -276,7 +280,7 @@ contract Auction is IAuction, Pausable {
 
         //Reactivate the bid
         bids[_bidId].isActive = true;
-        IWithdrawSafe(_withdrawSafe).refundBid(bids[_bidId].amount, _bidId);
+        withdrawSafeInstance.refundBid(bids[_bidId].amount, _bidId);
 
         //Checks if the bid is now the highest bid
         if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
