@@ -14,8 +14,6 @@ import "./Deposit.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-import "lib/forge-std/src/console.sol";
-
 contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------

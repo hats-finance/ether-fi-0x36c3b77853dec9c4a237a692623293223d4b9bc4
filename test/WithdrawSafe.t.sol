@@ -88,9 +88,6 @@ contract WithdrawSafeTest is Test {
     }
 
     function test_ReceiveAuctionFundsWorksCorrectly() public {
-        // hoax(address(auctionInstance));
-        // safeInstance.receiveAuctionFunds{value: 0.1 ether}();
-
         assertEq(
             safeInstance.claimableBalance(
                 IWithdrawSafe.ValidatorRecipientType.TREASURY
@@ -128,9 +125,6 @@ contract WithdrawSafeTest is Test {
             .balance;
         uint256 operatorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
-
-        // hoax(address(auctionInstance));
-        // safeInstance.receiveAuctionFunds{value: 0.1 ether}();
 
         safeInstance.distributeFunds();
 
