@@ -46,7 +46,7 @@ jobs:
         with:
           source_folder: "release"
           destination_repo: "GadzeFinance/dapp"
-          destination_folder: "release"
+          destination_folder: "src/release"
           destination_base_branch: "master"
           destination_head_branch: "contract-deployment-triggered"
           user_email: "bot@ether.fi"
