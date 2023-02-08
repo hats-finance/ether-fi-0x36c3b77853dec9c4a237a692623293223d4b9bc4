@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 interface IWithdrawSafe {
-
     enum ValidatorRecipientType {
         TNFTHOLDER,
         BNFTHOLDER,
@@ -25,6 +24,6 @@ interface IWithdrawSafe {
     }
 
     function receiveAuctionFunds() external payable;
-    function setOperatorAddress(address _operatorAddress) external;
 
+    function setOperatorAddress(address _operatorAddress) external;
 }

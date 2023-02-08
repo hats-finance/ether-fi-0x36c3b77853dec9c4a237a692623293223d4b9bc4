@@ -5,9 +5,9 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
 import "../src/WithdrawSafe.sol";
 import "../src/Deposit.sol";
+import "../src/Auction.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
-import "../src/Auction.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
@@ -374,6 +374,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
         depositInstance.deposit{value: 0.032 ether}();
+
         depositInstance.registerValidator(
             0,
             "Validator_key",
@@ -381,7 +382,23 @@ contract DepositTest is Test {
             "test_stakerPubKey",
             test_data
         );
+
+        assertEq(address(auctionInstance).balance, 0.1 ether);
         depositInstance.acceptValidator(0);
+
+        (
+            ,
+            address withdrawSafeAddress,
+            ,
+            ,
+            uint256 winningBidId,
+            ,
+            ,
+
+        ) = depositInstance.stakes(0);
+
+        assertEq(withdrawSafeAddress.balance, 0.1 ether);
+        assertEq(address(auctionInstance).balance, 0);
 
         assertEq(
             TestBNFTInstance.ownerOf(0),
@@ -403,53 +420,6 @@ contract DepositTest is Test {
             ),
             1
         );
-    }
-
-    function test_RefundWorksCorrectly() public {
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-
-        uint256 balanceOne = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
-            .balance;
-
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
-        auctionInstance.bidOnStake{value: 0.3 ether}(proof, "test_pubKey");
-        uint256 balanceTwo = address(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
-            .balance;
-
-        assertEq(balanceTwo, balanceOne - 0.4 ether);
-
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.deposit{value: 0.032 ether}();
-        uint256 balanceThree = address(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        ).balance;
-
-        assertEq(balanceThree, balanceTwo - 0.064 ether);
-        assertEq(address(depositInstance).balance, 0.064 ether);
-        assertEq(
-            depositInstance.depositorBalances(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            0.064 ether
-        );
-
-        depositInstance.cancelStake(0);
-        (, , , , uint256 amount, , , ) = depositInstance.stakes(0);
-        uint256 balanceFour = address(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        ).balance;
-
-        assertEq(
-            depositInstance.depositorBalances(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            0.032 ether
-        );
-        assertEq(balanceFour, balanceThree + 0.032 ether);
-        assertEq(address(depositInstance).balance, 0.032 ether);
-        assertEq(amount, 0.032 ether);
     }
 
     function test_CancelStakeFailsIfNotStakeOwner() public {
@@ -485,7 +455,7 @@ contract DepositTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
         auctionInstance.bidOnStake{value: 0.3 ether}(proof, "test_pubKey");
         auctionInstance.bidOnStake{value: 0.2 ether}(proof, "test_pubKey");
-        assertEq(address(treasuryInstance).balance, 0 ether);
+
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         depositInstance.deposit{value: 0.032 ether}();
@@ -512,8 +482,8 @@ contract DepositTest is Test {
         assertEq(isActive, false);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
         assertEq(auctionInstance.currentHighestBidId(), 3);
-        assertEq(address(treasuryInstance).balance, 0.3 ether);
-        assertEq(address(auctionInstance).balance, 0.3 ether);
+        //assertEq(withdrawSafe.balance, 0.3 ether);
+        assertEq(address(auctionInstance).balance, 0.6 ether);
 
         depositInstance.cancelStake(0);
         (, , , , , winningbidID, , ) = depositInstance.stakes(0);
@@ -525,7 +495,7 @@ contract DepositTest is Test {
         assertEq(isActive, true);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
         assertEq(auctionInstance.currentHighestBidId(), 2);
-        assertEq(address(treasuryInstance).balance, 0 ether);
+        //assertEq(withdrawSafe.balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         assertEq(

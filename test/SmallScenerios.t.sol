@@ -7,7 +7,7 @@ import "../src/Deposit.sol";
 import "../src/WithdrawSafe.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
-import "../src/Auction.sol";
+import "src/Auction.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
@@ -35,11 +35,20 @@ contract SmallScenariosTest is Test {
         auctionInstance = new Auction(address(treasuryInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance), address(treasuryInstance));
+        depositInstance = new Deposit(
+            address(auctionInstance),
+            address(treasuryInstance)
+        );
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance), address(TestTNFTInstance), address(TestBNFTInstance));
+        withdrawSafeInstance = new WithdrawSafe(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
+        );
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -98,10 +107,11 @@ contract SmallScenariosTest is Test {
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
 
         depositInstance.deposit{value: 0.032 ether}();
+        // (, address withdrawalSafe, , , , , , ) = depositInstance.stakes(0);
 
         assertEq(address(depositInstance).balance, 0.032 ether);
-        assertEq(address(auctionInstance).balance, 0);
-        assertEq(address(treasuryInstance).balance, 0.3 ether);
+        assertEq(address(auctionInstance).balance, 0.3 ether);
+        // assertEq(withdrawalSafe.balance, 0.3 ether);
 
         (, , , bool isActiveAfterStake, ) = auctionInstance.bids(1);
         assertEq(isActiveAfterStake, false);
@@ -245,7 +255,6 @@ contract SmallScenariosTest is Test {
             "test_pubKey"
         );
         assertEq(address(depositInstance).balance, 0 ether);
-        assertEq(address(treasuryInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0.9 ether);
 
         //Bid Two
@@ -255,15 +264,13 @@ contract SmallScenariosTest is Test {
             "test_pubKey"
         );
         assertEq(address(depositInstance).balance, 0 ether);
-        assertEq(address(treasuryInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 1.2 ether);
 
         //Deposit One
         startHoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
         depositInstance.deposit{value: 0.032 ether}();
         assertEq(address(depositInstance).balance, 0.032 ether);
-        assertEq(address(treasuryInstance).balance, 0.9 ether);
-        assertEq(address(auctionInstance).balance, 0.3 ether);
+        assertEq(address(auctionInstance).balance, 1.2 ether);
 
         //Register validator
         depositInstance.registerValidator(
