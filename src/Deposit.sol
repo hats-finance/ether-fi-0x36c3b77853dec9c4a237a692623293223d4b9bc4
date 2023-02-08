@@ -176,7 +176,7 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        WithdrawSafe withdrawInstance = WithdrawSafe(stakes[localStakeId].withdrawSafe);
+        WithdrawSafe withdrawInstance = WithdrawSafe(payable(stakes[localStakeId].withdrawSafe));
         withdrawInstance.setOperatorAddress(msg.sender);
         withdrawInstance.setValidatorId(_validatorId);
 
@@ -255,6 +255,11 @@ contract Deposit is IDeposit, Pausable {
     function getStakerRelatedToValidator(uint256 _validatorId) external returns(address){
         return stakes[validators[_validatorId].stakeId].staker;
     }
+
+    function getStakeAmount() external returns(uint256){
+        return stakeAmount;
+    }
+
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------

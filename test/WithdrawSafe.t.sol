@@ -81,7 +81,7 @@ contract DepositTest is Test {
         depositInstance.acceptValidator(0);
 
         (, address withdrawSafe,,,,,,) = depositInstance.stakes(0);
-        safeInstance = WithdrawSafe(withdrawSafe);
+        safeInstance = WithdrawSafe(payable(withdrawSafe));
     }
 
     function test_ReceiveAuctionFundsWorksCorrectly() public {
@@ -115,6 +115,34 @@ contract DepositTest is Test {
         assertEq(address(treasuryInstance).balance, treasuryBalance + 5000000000000000);
         assertEq(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance, stakerBalance + 90000000000000000);
         assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, operatorBalance + 5000000000000000);
+    }
+
+    function test_WihtdrawFundsFailsIfNotCorrectCaller() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (bool sent, ) = address(safeInstance).call{value: 0.04 ether}("");
+        require(sent, "Failed to send Ether");
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Incorrect caller");
+        safeInstance.withdrawFunds();
+    }
+
+    function test_WithdrawFundsFailsWorksCorrectly() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (bool sent, ) = address(safeInstance).call{value: 0.04 ether}("");
+        require(sent, "Failed to send Ether");
+
+        uint256 stakerBalance = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance;
+        uint256 operatorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        safeInstance.withdrawFunds();
+        assertEq(address(safeInstance).balance, 0 ether);
+        assertEq(address(treasuryInstance).balance, 0.004 ether);
+
+
+
+
     }
     
     function _merkleSetup() internal {

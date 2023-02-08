@@ -9,6 +9,7 @@ import "./interfaces/IWithdrawSafe.sol";
 import "./interfaces/IDeposit.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "lib/forge-std/src/console.sol";
 
 contract WithdrawSafe is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
@@ -48,6 +49,7 @@ contract WithdrawSafe is IWithdrawSafe {
     event FundsDistributed(uint256 indexed totalFundsTransferred);
     event OperatorAddressSet(address indexed operater);
     event ValidatorIdSet(uint256 indexed validatorId);
+    event FundsWithdrawn(uint256 indexed amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -91,6 +93,10 @@ contract WithdrawSafe is IWithdrawSafe {
         });      
     }
 
+    receive() payable external {
+
+    }
+
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
@@ -107,8 +113,31 @@ contract WithdrawSafe is IWithdrawSafe {
         emit AuctionFundsReceived(msg.value);
     }
 
-    function withdrawFunds() public {
+    /// @notice updates claimable balances based on funds received from validator and distributes the funds
+    /// @dev Need to think about distribution if there has been slashing
+    function withdrawFunds() external {
         require(msg.sender == depositInstance.getStakerRelatedToValidator(validatorId), "Incorrect caller");
+        //Will check oracle to make sure validator has exited
+
+        uint256 contractBalance = address(this).balance;
+        uint256 validatorRewards = contractBalance - depositInstance.getStakeAmount() - fundsReceivedFromAuctions;
+        console.logUint(contractBalance);
+        console.logUint(validatorRewards);
+
+        claimableBalance[ValidatorRecipientType.BNFTHOLDER] += bnftInstance.nftValue();
+        claimableBalance[ValidatorRecipientType.TNFTHOLDER] += tnftInstance.nftValue();
+        console.logUint(claimableBalance[ValidatorRecipientType.BNFTHOLDER]);
+        console.logUint(claimableBalance[ValidatorRecipientType.TNFTHOLDER] );
+
+        claimableBalance[ValidatorRecipientType.TREASURY] += validatorRewards * validatorExitRevenueSplit.treasurySplit / SCALE;
+        claimableBalance[ValidatorRecipientType.OPERATOR] += validatorRewards * validatorExitRevenueSplit.nodeOperatorSplit / SCALE;
+        claimableBalance[ValidatorRecipientType.TNFTHOLDER] += validatorRewards * validatorExitRevenueSplit.tnftHolderSplit / SCALE;
+        claimableBalance[ValidatorRecipientType.BNFTHOLDER] += validatorRewards * validatorExitRevenueSplit.bnftHolderSplit / SCALE;
+
+        distributeFunds();
+
+        emit FundsWithdrawn(contractBalance);
+
     }
 
     //--------------------------------------------------------------------------------------

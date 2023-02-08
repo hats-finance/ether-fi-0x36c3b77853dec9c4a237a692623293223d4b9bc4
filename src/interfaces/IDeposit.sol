@@ -71,5 +71,6 @@ interface IDeposit {
 
     function fetchEtherFromContract(address _wallet) external;
     function getStakerRelatedToValidator(uint256 _validatorId) external returns(address);
+    function getStakeAmount() external returns(uint256);
 
 }
