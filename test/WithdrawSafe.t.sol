@@ -152,10 +152,12 @@ contract WithdrawSafeTest is Test {
         safeInstance.withdrawFunds();
     }
 
-    function test_WithdrawFundsFailsWorksCorrectly() public {
+    function test_WithdrawFundsWorksCorrectly() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(safeInstance).call{value: 0.04 ether}("");
         require(sent, "Failed to send Ether");
+        assertEq(address(safeInstance).balance, 0.14 ether);
+        assertEq(address(auctionInstance).balance, 0 ether);
 
         uint256 stakerBalance = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance;
         uint256 operatorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
@@ -163,11 +165,9 @@ contract WithdrawSafeTest is Test {
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         safeInstance.withdrawFunds();
         assertEq(address(safeInstance).balance, 0 ether);
-        assertEq(address(treasuryInstance).balance, 0.004 ether);
-
-
-
-
+        assertEq(address(treasuryInstance).balance, 0.0104 ether);
+        assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, operatorBalance + 0.0104 ether);
+        assertEq(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance, stakerBalance + 0.1512 ether);
     }
     
     function _merkleSetup() internal {

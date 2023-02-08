@@ -81,10 +81,10 @@ contract WithdrawSafe is IWithdrawSafe {
         bnftInstance = BNFT(_bnftContract);
 
         auctionContractRevenueSplit = AuctionContractRevenueSplit({
-            treasurySplit: 5,
-            nodeOperatorSplit: 5,
-            tnftHolderSplit: 81,
-            bnftHolderSplit: 9
+            treasurySplit: 10,
+            nodeOperatorSplit: 10,
+            tnftHolderSplit: 60,
+            bnftHolderSplit: 20
         });
 
         validatorExitRevenueSplit = ValidatorExitRevenueSplit({
@@ -110,12 +110,15 @@ contract WithdrawSafe is IWithdrawSafe {
         claimableBalance[ValidatorRecipientType.TREASURY] +=
             (msg.value * auctionContractRevenueSplit.treasurySplit) /
             SCALE;
+
         claimableBalance[ValidatorRecipientType.OPERATOR] +=
             (msg.value * auctionContractRevenueSplit.nodeOperatorSplit) /
             SCALE;
+
         claimableBalance[ValidatorRecipientType.TNFTHOLDER] +=
             (msg.value * auctionContractRevenueSplit.tnftHolderSplit) /
             SCALE;
+
         claimableBalance[ValidatorRecipientType.BNFTHOLDER] +=
             (msg.value * auctionContractRevenueSplit.bnftHolderSplit) /
             SCALE;
@@ -132,13 +135,9 @@ contract WithdrawSafe is IWithdrawSafe {
 
         uint256 contractBalance = address(this).balance;
         uint256 validatorRewards = contractBalance - depositInstance.getStakeAmount() - fundsReceivedFromAuctions;
-        console.logUint(contractBalance);
-        console.logUint(validatorRewards);
 
         claimableBalance[ValidatorRecipientType.BNFTHOLDER] += bnftInstance.nftValue();
         claimableBalance[ValidatorRecipientType.TNFTHOLDER] += tnftInstance.nftValue();
-        console.logUint(claimableBalance[ValidatorRecipientType.BNFTHOLDER]);
-        console.logUint(claimableBalance[ValidatorRecipientType.TNFTHOLDER] );
 
         claimableBalance[ValidatorRecipientType.TREASURY] += validatorRewards * validatorExitRevenueSplit.treasurySplit / SCALE;
         claimableBalance[ValidatorRecipientType.OPERATOR] += validatorRewards * validatorExitRevenueSplit.nodeOperatorSplit / SCALE;
@@ -148,7 +147,6 @@ contract WithdrawSafe is IWithdrawSafe {
         distributeFunds();
 
         emit FundsWithdrawn(contractBalance);
-
     }
 
     //--------------------------------------------------------------------------------------
