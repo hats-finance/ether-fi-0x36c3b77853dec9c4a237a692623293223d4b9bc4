@@ -6,6 +6,7 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IWithdrawSafe.sol";
+import "./interfaces/IDeposit.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 
@@ -33,6 +34,7 @@ contract WithdrawSafe is IWithdrawSafe {
 
     TNFT public tnftInstance;
     BNFT public bnftInstance;
+    IDeposit public depositInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
     AuctionContractRevenueSplit public auctionContractRevenueSplit;
@@ -69,6 +71,8 @@ contract WithdrawSafe is IWithdrawSafe {
         auctionContract = _auctionContract;    
         depositContract = _depositContract;
 
+        depositInstance = IDeposit(_depositContract);
+
         tnftInstance = TNFT(_tnftContract);
         bnftInstance = BNFT(_bnftContract);
 
@@ -101,6 +105,10 @@ contract WithdrawSafe is IWithdrawSafe {
 
         fundsReceivedFromAuctions += msg.value;
         emit AuctionFundsReceived(msg.value);
+    }
+
+    function withdrawFunds() public {
+        require(msg.sender == depositInstance.getStakerRelatedToValidator(validatorId), "Incorrect caller");
     }
 
     //--------------------------------------------------------------------------------------

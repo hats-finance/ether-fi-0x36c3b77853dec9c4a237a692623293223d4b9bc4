@@ -252,6 +252,10 @@ contract Deposit is IDeposit, Pausable {
         return (address(TNFTInstance), address(BNFTInstance));
     }
 
+    function getStakerRelatedToValidator(uint256 _validatorId) external returns(address){
+        return stakes[validators[_validatorId].stakeId].staker;
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
