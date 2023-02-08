@@ -21,7 +21,6 @@ contract Auction is IAuction, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    Deposit depositContract;
     uint256 public currentHighestBidId;
     uint256 public whitelistBidAmount = 0.001 ether;
     uint256 public minBidAmount = 0.01 ether;
