@@ -307,7 +307,24 @@ contract LargeScenariosTest is Test {
         depositInstance.acceptValidator(0);
 
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
+
+        uint256 auctionBalanceBeforeTransfer = address(auctionInstance).balance;
+
         depositInstance.acceptValidator(0);
+
+        (
+            ,
+            address withdrawSafeAddress,
+            ,
+            ,
+            ,
+            uint256 winningBidId,
+            ,
+
+        ) = depositInstance.stakes(1);
+
+        (uint256 amount, , , , ) = auctionInstance.bids(winningBidId);
+
         assertEq(
             TestBNFTInstance.ownerOf(0),
             0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
@@ -327,6 +344,12 @@ contract LargeScenariosTest is Test {
                 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
             ),
             1
+        );
+
+        assertEq(withdrawSafeAddress.balance, amount);
+        assertEq(
+            address(auctionInstance).balance,
+            auctionBalanceBeforeTransfer - amount
         );
     }
 
