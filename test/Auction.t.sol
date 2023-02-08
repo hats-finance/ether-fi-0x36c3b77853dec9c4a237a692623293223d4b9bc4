@@ -45,11 +45,20 @@ contract AuctionTest is Test {
         auctionInstance = new Auction(address(treasuryInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance), address(treasuryInstance));
+        depositInstance = new Deposit(
+            address(auctionInstance),
+            address(treasuryInstance)
+        );
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance), address(TestTNFTInstance), address(TestBNFTInstance));
+        withdrawSafeInstance = new WithdrawSafe(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
+        );
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -123,15 +132,17 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
         depositInstance.deposit{value: 0.032 ether}();
-        assertEq(address(treasuryInstance).balance, 0.1 ether);
-        assertEq(address(auctionInstance).balance, 0.05 ether);
+        (, , , bool isBid1Active, ) = auctionInstance.bids(1);
+        (, , , , , uint256 winningBidId, , ) = depositInstance.stakes(0);
+        assertEq(winningBidId, 1);
+        assertEq(isBid1Active, false);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
         depositInstance.cancelStake(0);
-
-        (, , , bool isActive, ) = auctionInstance.bids(1);
-        assertEq(isActive, true);
-        assertEq(address(treasuryInstance).balance, 0 ether);
+        (, , , isBid1Active, ) = auctionInstance.bids(1);
+        (, , , bool isBid2Active, ) = auctionInstance.bids(2);
+        assertEq(isBid1Active, true);
+        assertEq(isBid2Active, true);
         assertEq(address(auctionInstance).balance, 0.15 ether);
         assertEq(auctionInstance.currentHighestBidId(), 1);
     }
@@ -164,6 +175,7 @@ contract AuctionTest is Test {
             2
         );
 
+        // Bid One
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(
             proofForAddress1,
@@ -171,6 +183,7 @@ contract AuctionTest is Test {
         );
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
+        // Bid Two
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(
             proofForAddress2,
@@ -178,17 +191,18 @@ contract AuctionTest is Test {
         );
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
+        // Bid Three
         startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         auctionInstance.bidOnStake{value: 0.2 ether}(
             proofForAddress3,
             "test_pubKey"
         );
-        
+        assertEq(auctionInstance.currentHighestBidId(), 2);
+
         depositInstance.deposit{value: 0.032 ether}();
 
         assertEq(auctionInstance.currentHighestBidId(), 3);
-        assertEq(address(treasuryInstance).balance, 0.3 ether);
-        assertEq(address(auctionInstance).balance, 0.3 ether);
+        assertEq(address(auctionInstance).balance, 0.6 ether);
         vm.stopPrank();
 
         (, , , bool isActiveBid1, ) = auctionInstance.bids(1);
@@ -203,9 +217,6 @@ contract AuctionTest is Test {
 
         hoax(address(depositInstance));
         uint256 winner = auctionInstance.calculateWinningBid();
-
-        assertEq(address(treasuryInstance).balance, 0.5 ether);
-        assertEq(address(auctionInstance).balance, 0.1 ether);
 
         (, , , isActiveBid1, ) = auctionInstance.bids(1);
         (, , , isActiveBid3, ) = auctionInstance.bids(3);

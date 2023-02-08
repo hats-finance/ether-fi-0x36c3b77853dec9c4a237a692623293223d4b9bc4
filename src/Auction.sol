@@ -7,6 +7,7 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/ITreasury.sol";
+import "./interfaces/IWithdrawSafe.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
@@ -58,6 +59,7 @@ contract Auction is IAuction, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
+    event FundsSentToWithdrawSafe(uint256 indexed _amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -91,8 +93,6 @@ contract Auction is IAuction, Pausable {
 
         address winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
 
-        uint256 winningBidAmount = bids[currentHighestBidIdLocal].amount;
-
         uint256 tempWinningBidId;
         //Loop to calculate the next highest bid for the next stake
         for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
@@ -104,12 +104,6 @@ contract Auction is IAuction, Pausable {
             }
         }
         currentHighestBidId = tempWinningBidId;
-
-        //Send the winning bid to the treasury contract
-        (bool sent, ) = treasuryContractAddress.call{value: winningBidAmount}(
-            ""
-        );
-        require(sent, "Failed to send Ether");
 
         numberOfActiveBids--;
 
@@ -267,6 +261,32 @@ contract Auction is IAuction, Pausable {
         numberOfActiveBids++;
     }
 
+    function sendFundsToWithdrawSafe(uint256 _stakeId)
+        external
+        onlyDepositContract
+    {
+        Deposit depositContractInstance = Deposit(depositContractAddress);
+        (
+            ,
+            address withdrawSafeAddress,
+            ,
+            ,
+            ,
+            uint256 winningBidId,
+            ,
+
+        ) = depositContractInstance.stakes(_stakeId);
+
+        uint256 amount = bids[winningBidId].amount;
+
+        WithdrawSafe withdrawSafeInstance = WithdrawSafe(
+            payable(withdrawSafeAddress)
+        );
+        withdrawSafeInstance.receiveAuctionFunds{value: amount}();
+
+        emit FundsSentToWithdrawSafe(amount);
+    }
+
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
     function reEnterAuction(uint256 _bidId)
@@ -278,10 +298,6 @@ contract Auction is IAuction, Pausable {
 
         //Reactivate the bid
         bids[_bidId].isActive = true;
-        ITreasury(treasuryContractAddress).refundBid(
-            bids[_bidId].amount,
-            _bidId
-        );
 
         //Checks if the bid is now the highest bid
         if (bids[_bidId].amount > bids[currentHighestBidId].amount) {

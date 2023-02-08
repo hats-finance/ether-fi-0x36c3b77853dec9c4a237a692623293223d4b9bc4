@@ -6,7 +6,7 @@ import "../src/Deposit.sol";
 import "../src/WithdrawSafe.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
-import "../src/Auction.sol";
+import "src/Auction.sol";
 import "../src/Treasury.sol";
 import "../src/interfaces/IDeposit.sol";
 import "../lib/murky/src/Merkle.sol";
@@ -33,11 +33,20 @@ contract LargeScenariosTest is Test {
         auctionInstance = new Auction(address(treasuryInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance), address(treasuryInstance));
+        depositInstance = new Deposit(
+            address(auctionInstance),
+            address(treasuryInstance)
+        );
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        withdrawSafeInstance = new WithdrawSafe(address(treasuryInstance), address(auctionInstance), address(depositInstance), address(TestTNFTInstance), address(TestBNFTInstance));
+        withdrawSafeInstance = new WithdrawSafe(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
+        );
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -185,10 +194,10 @@ contract LargeScenariosTest is Test {
 
         //Deposit One
         depositInstance.deposit{value: 0.032 ether}();
+
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
-        assertEq(address(treasuryInstance).balance, 0.7 ether);
-        assertEq(address(auctionInstance).balance, 0.1 ether);
+        assertEq(address(auctionInstance).balance, 0.8 ether);
         assertEq(address(depositInstance).balance, 0.032 ether);
         vm.stopPrank();
 
@@ -199,7 +208,7 @@ contract LargeScenariosTest is Test {
             "test_pubKey"
         );
         //Check auction contract received funds
-        assertEq(address(auctionInstance).balance, 0.5 ether);
+        assertEq(address(auctionInstance).balance, 1.2 ether);
         //Check the bid is the current highest
         assertEq(auctionInstance.currentHighestBidId(), 4);
         //Check the number of bids has increased
@@ -248,8 +257,8 @@ contract LargeScenariosTest is Test {
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
-        assertEq(address(treasuryInstance).balance, 1.1 ether);
-        assertEq(address(auctionInstance).balance, 0.1 ether);
+
+        assertEq(address(auctionInstance).balance, 1.2 ether);
         assertEq(address(depositInstance).balance, 0.064 ether);
 
         //Deposit One cancelled
@@ -259,8 +268,8 @@ contract LargeScenariosTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(auctionInstance.numberOfBids() - 1, 4);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
-        assertEq(address(treasuryInstance).balance, 0.4 ether);
-        assertEq(address(auctionInstance).balance, 0.8 ether);
+
+        assertEq(address(auctionInstance).balance, 1.2 ether);
         assertEq(address(depositInstance).balance, 0.032 ether);
 
         //Deposit Two register validator
@@ -298,7 +307,24 @@ contract LargeScenariosTest is Test {
         depositInstance.acceptValidator(0);
 
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
+
+        uint256 auctionBalanceBeforeTransfer = address(auctionInstance).balance;
+
         depositInstance.acceptValidator(0);
+
+        (
+            ,
+            address withdrawSafeAddress,
+            ,
+            ,
+            ,
+            uint256 winningBidId,
+            ,
+
+        ) = depositInstance.stakes(1);
+
+        (uint256 amount, , , , ) = auctionInstance.bids(winningBidId);
+
         assertEq(
             TestBNFTInstance.ownerOf(0),
             0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
@@ -320,6 +346,11 @@ contract LargeScenariosTest is Test {
             1
         );
 
+        assertEq(withdrawSafeAddress.balance, amount);
+        assertEq(
+            address(auctionInstance).balance,
+            auctionBalanceBeforeTransfer - amount
+        );
     }
 
     function _merkleSetup() internal {

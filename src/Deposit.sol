@@ -87,7 +87,13 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        WithdrawSafe withdrawSafeInstance = new WithdrawSafe(treasuryAddress, address(auctionInterfaceInstance), address(this), address(TNFTInterfaceInstance), address(BNFTInterfaceInstance));
+        WithdrawSafe withdrawSafeInstance = new WithdrawSafe(
+            treasuryAddress,
+            address(auctionInterfaceInstance),
+            address(this),
+            address(TNFTInterfaceInstance),
+            address(BNFTInterfaceInstance)
+        );
 
         //Create a stake object and store it in a mapping
         stakes[numberOfStakes] = Stake({
@@ -109,7 +115,7 @@ contract Deposit is IDeposit, Pausable {
             numberOfStakes,
             stakes[numberOfStakes].winningBidId
         );
-        
+
         numberOfStakes++;
     }
 
@@ -176,11 +182,15 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        WithdrawSafe withdrawInstance = WithdrawSafe(payable(stakes[localStakeId].withdrawSafe));
+        WithdrawSafe withdrawInstance = WithdrawSafe(
+            payable(stakes[localStakeId].withdrawSafe)
+        );
         withdrawInstance.setOperatorAddress(msg.sender);
         withdrawInstance.setValidatorId(_validatorId);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
+
+        auctionInterfaceInstance.sendFundsToWithdrawSafe(localStakeId);
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 

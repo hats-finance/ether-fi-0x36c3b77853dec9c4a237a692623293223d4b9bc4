@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 interface IDeposit {
-
     //The phases of the staking process
     enum STAKE_PHASE {
         DEPOSITED,
@@ -60,7 +59,7 @@ interface IDeposit {
     function cancelStake(uint256 _stakeId) external;
 
     function registerValidator(
-        uint256 _stakeId, 
+        uint256 _stakeId,
         bytes memory _encryptedValidatorKey,
         bytes memory _encryptedValidatorKeyPassword, 
         bytes memory _stakerPubKey, 
