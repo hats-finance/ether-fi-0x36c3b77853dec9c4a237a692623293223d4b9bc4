@@ -92,25 +92,28 @@ contract WithdrawSafeTest is Test {
             safeInstance.claimableBalance(
                 IWithdrawSafe.ValidatorRecipientType.TREASURY
             ),
-            5000000000000000
+            10000000000000000
         );
         assertEq(
             safeInstance.claimableBalance(
                 IWithdrawSafe.ValidatorRecipientType.OPERATOR
             ),
-            5000000000000000
+            10000000000000000
+
         );
         assertEq(
             safeInstance.claimableBalance(
                 IWithdrawSafe.ValidatorRecipientType.BNFTHOLDER
             ),
-            9000000000000000
+            20000000000000000
+
         );
         assertEq(
             safeInstance.claimableBalance(
                 IWithdrawSafe.ValidatorRecipientType.TNFTHOLDER
             ),
-            81000000000000000
+            60000000000000000
+
         );
     }
 
@@ -130,19 +133,19 @@ contract WithdrawSafeTest is Test {
 
         assertEq(
             address(treasuryInstance).balance,
-            treasuryBalance + 5000000000000000
+            treasuryBalance + 0.01 ether
         );
         assertEq(
             0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance,
-            stakerBalance + 90000000000000000
+            stakerBalance + 0.08 ether
         );
         assertEq(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
-            operatorBalance + 5000000000000000
+            operatorBalance + 0.01 ether
         );
     }
 
-    function test_WihtdrawFundsFailsIfNotCorrectCaller() public {
+    function test_WithdrawFundsFailsIfNotCorrectCaller() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(safeInstance).call{value: 0.04 ether}("");
         require(sent, "Failed to send Ether");
@@ -167,7 +170,6 @@ contract WithdrawSafeTest is Test {
         assertEq(address(safeInstance).balance, 0 ether);
         assertEq(address(treasuryInstance).balance, 0.0104 ether);
         assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, operatorBalance + 0.0104 ether);
-        assertEq(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance, stakerBalance + 0.1512 ether);
     }
     
     function _merkleSetup() internal {

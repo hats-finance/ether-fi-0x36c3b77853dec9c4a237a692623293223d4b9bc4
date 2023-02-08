@@ -71,6 +71,8 @@ contract LargeScenariosTest is Test {
      *  Second deposit register validator - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  Attempted second deposit cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
      *  Second deposit acceptValidator -
+     *  Funds get sent to withdraw safe to immitate closing of validator
+     *  Second deposit staker withdraws funds - 
      */
     function test_LargeScenario() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
@@ -230,27 +232,6 @@ contract LargeScenariosTest is Test {
         );
         assertEq(isActiveBid4, true);
 
-        //Bid updated
-        // hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        // auctionInstance.increaseBid{value: 0.9 ether}(1);
-        // assertEq(auctionInstance.currentHighestBidId(), 1);
-        // assertEq(address(auctionInstance).balance, 1.4 ether);
-        // assertEq(auctionInstance.numberOfActiveBids(), 2);
-        // //Check the bid information was captured correctly
-        // (
-        //     uint256 amountForUpdatedBid1,
-        //     ,
-        //     address bidderAddressForUpdatedBid1,
-        //     bool isActiveAfterUpdatedBid1,
-
-        // ) = auctionInstance.bids(1);
-        // assertEq(amountForUpdatedBid1, 1 ether);
-        // assertEq(
-        //     bidderAddressForUpdatedBid1,
-        //     0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        // );
-        // assertEq(isActiveAfterUpdatedBid1, true);
-
         //Deposit Two
         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
         depositInstance.deposit{value: 0.032 ether}();
@@ -306,10 +287,9 @@ contract LargeScenariosTest is Test {
         vm.expectRevert("Incorrect caller");
         depositInstance.acceptValidator(0);
 
-        hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-
         uint256 auctionBalanceBeforeTransfer = address(auctionInstance).balance;
 
+        hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
         depositInstance.acceptValidator(0);
 
         (
@@ -345,12 +325,28 @@ contract LargeScenariosTest is Test {
             ),
             1
         );
+        withdrawSafeInstance = WithdrawSafe(payable(withdrawSafeAddress));
 
-        assertEq(withdrawSafeAddress.balance, amount);
+        assertEq(address(withdrawSafeInstance).balance, amount);
         assertEq(
             address(auctionInstance).balance,
             auctionBalanceBeforeTransfer - amount
         );
+
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (bool sent, ) = address(withdrawSafeInstance).call{value: 0.04 ether}("");
+        require(sent, "Failed to send Ether");
+
+        assertEq(address(withdrawSafeInstance).balance, 0.44 ether);
+
+        uint256 stakerBalance = 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f.balance;
+        uint256 operatorBalance = 0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098.balance;
+        hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
+        withdrawSafeInstance.withdrawFunds();
+        assertEq(address(withdrawSafeInstance).balance, 0 ether);
+        assertEq(address(treasuryInstance).balance, 0.0404 ether);
+        assertEq(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098.balance, operatorBalance + 0.0404 ether);
     }
 
     function _merkleSetup() internal {
