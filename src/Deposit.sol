@@ -188,9 +188,9 @@ contract Deposit is IDeposit, Pausable {
         withdrawInstance.setOperatorAddress(msg.sender);
         withdrawInstance.setValidatorId(_validatorId);
 
-        auctionInterfaceInstance.sendFundsToWithdrawSafe(localStakeId);
-
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
+
+        auctionInterfaceInstance.sendFundsToWithdrawSafe(localStakeId);
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
