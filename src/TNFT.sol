@@ -12,7 +12,7 @@ contract TNFT is ERC721 {
     uint256 public nftValue;
     address public depositContractAddress;
 
-    mapping(uint256 => uint256) validatorToId;
+    mapping(uint256 => uint256) public validatorToId;
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
