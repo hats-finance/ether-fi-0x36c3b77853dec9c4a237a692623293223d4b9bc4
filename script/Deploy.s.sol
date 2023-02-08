@@ -72,7 +72,7 @@ contract MyScript is Script {
 
         // Set path to version file where current verion is recorded
         /// @dev Initial version.txt and X.release files should be created manually
-        string memory versionPath = "release-logs/version.txt";
+        string memory versionPath = "release/logs/version.txt";
 
         // Read Current version
         string memory versionString = vm.readLine(versionPath);
@@ -93,7 +93,7 @@ contract MyScript is Script {
         // Sets the path for the release file using the incremented version var
         string memory releasePath = string(
             abi.encodePacked(
-                "release-logs/",
+                "release/logs/",
                 Strings.toString(version),
                 ".release"
             )
