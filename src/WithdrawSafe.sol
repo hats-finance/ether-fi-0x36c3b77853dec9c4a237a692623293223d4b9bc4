@@ -6,8 +6,10 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IWithdrawSafe.sol";
+import "./interfaces/IDeposit.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "lib/forge-std/src/console.sol";
 
 contract WithdrawSafe is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
@@ -33,6 +35,7 @@ contract WithdrawSafe is IWithdrawSafe {
 
     TNFT public tnftInstance;
     BNFT public bnftInstance;
+    IDeposit public depositInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
     AuctionContractRevenueSplit public auctionContractRevenueSplit;
@@ -48,6 +51,7 @@ contract WithdrawSafe is IWithdrawSafe {
     event FundsDistributed(uint256 indexed totalFundsTransferred);
     event OperatorAddressSet(address indexed operater);
     event ValidatorIdSet(uint256 indexed validatorId);
+    event FundsWithdrawn(uint256 indexed amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -71,14 +75,16 @@ contract WithdrawSafe is IWithdrawSafe {
         auctionContract = _auctionContract;
         depositContract = _depositContract;
 
+        depositInstance = IDeposit(_depositContract);
+
         tnftInstance = TNFT(_tnftContract);
         bnftInstance = BNFT(_bnftContract);
 
         auctionContractRevenueSplit = AuctionContractRevenueSplit({
-            treasurySplit: 5,
-            nodeOperatorSplit: 5,
-            tnftHolderSplit: 81,
-            bnftHolderSplit: 9
+            treasurySplit: 10,
+            nodeOperatorSplit: 10,
+            tnftHolderSplit: 60,
+            bnftHolderSplit: 20
         });
 
         validatorExitRevenueSplit = ValidatorExitRevenueSplit({
@@ -104,18 +110,43 @@ contract WithdrawSafe is IWithdrawSafe {
         claimableBalance[ValidatorRecipientType.TREASURY] +=
             (msg.value * auctionContractRevenueSplit.treasurySplit) /
             SCALE;
+
         claimableBalance[ValidatorRecipientType.OPERATOR] +=
             (msg.value * auctionContractRevenueSplit.nodeOperatorSplit) /
             SCALE;
+
         claimableBalance[ValidatorRecipientType.TNFTHOLDER] +=
             (msg.value * auctionContractRevenueSplit.tnftHolderSplit) /
             SCALE;
+
         claimableBalance[ValidatorRecipientType.BNFTHOLDER] +=
             (msg.value * auctionContractRevenueSplit.bnftHolderSplit) /
             SCALE;
 
         fundsReceivedFromAuctions += msg.value;
         emit AuctionFundsReceived(msg.value);
+    }
+
+    /// @notice updates claimable balances based on funds received from validator and distributes the funds
+    /// @dev Need to think about distribution if there has been slashing
+    function withdrawFunds() external {
+        require(msg.sender == depositInstance.getStakerRelatedToValidator(validatorId), "Incorrect caller");
+        //Will check oracle to make sure validator has exited
+
+        uint256 contractBalance = address(this).balance;
+        uint256 validatorRewards = contractBalance - depositInstance.getStakeAmount() - fundsReceivedFromAuctions;
+
+        claimableBalance[ValidatorRecipientType.BNFTHOLDER] += bnftInstance.nftValue();
+        claimableBalance[ValidatorRecipientType.TNFTHOLDER] += tnftInstance.nftValue();
+
+        claimableBalance[ValidatorRecipientType.TREASURY] += validatorRewards * validatorExitRevenueSplit.treasurySplit / SCALE;
+        claimableBalance[ValidatorRecipientType.OPERATOR] += validatorRewards * validatorExitRevenueSplit.nodeOperatorSplit / SCALE;
+        claimableBalance[ValidatorRecipientType.TNFTHOLDER] += validatorRewards * validatorExitRevenueSplit.tnftHolderSplit / SCALE;
+        claimableBalance[ValidatorRecipientType.BNFTHOLDER] += validatorRewards * validatorExitRevenueSplit.bnftHolderSplit / SCALE;
+
+        distributeFunds();
+
+        emit FundsWithdrawn(contractBalance);
     }
 
     //--------------------------------------------------------------------------------------

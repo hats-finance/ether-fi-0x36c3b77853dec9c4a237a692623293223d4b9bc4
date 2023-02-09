@@ -24,6 +24,6 @@ interface IWithdrawSafe {
     }
 
     function receiveAuctionFunds() external payable;
-
     function setOperatorAddress(address _operatorAddress) external;
+    function withdrawFunds() external;
 }
