@@ -29,5 +29,6 @@ interface IAuction {
         external;
 
     function sendFundsToWithdrawSafe(uint256 _validatorId, uint256 _stakeId) external;
+    function setManagerAddress(address _managerAddress) external;
 
 }

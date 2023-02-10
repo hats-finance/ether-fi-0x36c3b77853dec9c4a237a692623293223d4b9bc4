@@ -61,7 +61,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    constructor(address _auctionAddress, address _withdrawSafeManagerAddress) {
+    constructor(address _auctionAddress) {
         stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
@@ -72,7 +72,6 @@ contract Deposit is IDeposit, Pausable {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         owner = msg.sender;
-        managerAddress = _withdrawSafeManagerAddress;
     }
 
     //--------------------------------------------------------------------------------------
@@ -263,6 +262,10 @@ contract Deposit is IDeposit, Pausable {
 
     function getStakeAmount() external returns(uint256){
         return stakeAmount;
+    }
+
+    function setManagerAddress(address _managerAddress) external {
+        managerAddress = _managerAddress;
     }
 
 

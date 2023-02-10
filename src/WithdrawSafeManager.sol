@@ -91,6 +91,8 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
             tnftHolderSplit: 81,
             bnftHolderSplit: 9
         });
+
+        depositInstance.setManagerAddress(address(this));
     }
 
     //--------------------------------------------------------------------------------------
@@ -99,31 +101,30 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
 
     /// @notice Updates the total amount of funds receivable for recipients of the specified validator
     /// @dev Takes in a certain value of funds from only the set auction contract
-    function receiveAuctionFunds(uint256 _validatorId)
+    function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
         external
-        payable
     {
         require(
             msg.sender == auctionContract,
             "Only auction contract function"
         );        withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] +=
-            (msg.value * auctionContractRevenueSplit.treasurySplit) /
+            (_amount * auctionContractRevenueSplit.treasurySplit) /
             SCALE;
 
         withdrawableBalance[_validatorId][ValidatorRecipientType.OPERATOR] +=
-            (msg.value * auctionContractRevenueSplit.nodeOperatorSplit) /
+            (_amount * auctionContractRevenueSplit.nodeOperatorSplit) /
             SCALE;
 
         withdrawableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER] +=
-            (msg.value * auctionContractRevenueSplit.tnftHolderSplit) /
+            (_amount * auctionContractRevenueSplit.tnftHolderSplit) /
             SCALE;
 
         withdrawableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER] +=
-            (msg.value * auctionContractRevenueSplit.bnftHolderSplit) /
+            (_amount * auctionContractRevenueSplit.bnftHolderSplit) /
             SCALE;
 
-        fundsReceivedFromAuctions[_validatorId] += msg.value;
-        emit AuctionFundsReceived(msg.value);
+        fundsReceivedFromAuctions[_validatorId] += _amount;
+        emit AuctionFundsReceived(_amount);
     }
 
     /// @notice updates claimable balances based on funds received from validator and distributes the funds
@@ -238,6 +239,10 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     {
         withdrawSafeAddressesPerValidator[_validatorId] = _safeAddress;
 
+    }
+
+    function getWithdrawSafeAddress(uint256 _validatorId) public returns(address) {
+        return withdrawSafeAddressesPerValidator[_validatorId];
     }
 
     //--------------------------------------------------------------------------------------

@@ -69,9 +69,7 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     /// @notice Constructor to set variables on deployment
-    /// @param _withdrawSafeManager the address of the withdrawSafe to send funds to
-    constructor(address _withdrawSafeManager) {
-        withdrawSafeManager = _withdrawSafeManager;
+    constructor() {
         owner = msg.sender;
     }
 
@@ -221,7 +219,11 @@ contract Auction is IAuction, Pausable {
         managerInstance = IWithdrawSafeManager(
             withdrawSafeManager
         );
-        managerInstance.receiveAuctionFunds{value: amount}(_validatorId);
+        managerInstance.receiveAuctionFunds(_validatorId, amount);
+        address withdrawSafe  = managerInstance.getWithdrawSafeAddress(_validatorId);
+        (bool sent, ) = payable(withdrawSafe).call{value: amount}("");
+        require(sent, "Failed to send Ether");
+
 
         emit FundsSentToWithdrawSafe(amount);
     }
@@ -319,6 +321,10 @@ contract Auction is IAuction, Pausable {
 
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
+    }
+
+    function setManagerAddress(address _managerAddress) external {
+        withdrawSafeManager = _managerAddress;
     }
 
     //--------------------------------------------------------------------------------------
