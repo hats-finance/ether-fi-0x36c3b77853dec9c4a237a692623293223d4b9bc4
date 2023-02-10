@@ -11,7 +11,7 @@ import "./TNFT.sol";
 import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
-contract WithdrawSafe is IWithdrawSafe {
+contract WithdrawSafeManager is IWithdrawSafe {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
