@@ -50,7 +50,6 @@ jobs:
         with:
           source_folder: "release"
           destination_repo: "GadzeFinance/dappContracts"
-          destination_folder: "release"
           destination_base_branch: "master"
           destination_head_branch: "contract-deployment-triggered-${{ env.DATE }}"
           user_email: "bot@ether.fi"
@@ -61,7 +60,7 @@ jobs:
         with:
           source_folder: "release"
           destination_repo: "GadzeFinance/dapp"
-          destination_folder: "src/release"
+          destination_folder: "src"
           destination_base_branch: "master"
           destination_head_branch: "contract-deployment-triggered-${{ env.DATE }}"
           user_email: "bot@ether.fi"
