@@ -6,12 +6,13 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IWithdrawSafe.sol";
+import "./interfaces/IWithdrawSafeManager.sol";
 import "./interfaces/IDeposit.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
-contract WithdrawSafeManager is IWithdrawSafe {
+contract WithdrawSafeManager is IWithdrawSafeManager {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -22,16 +23,14 @@ contract WithdrawSafeManager is IWithdrawSafe {
     address public treasuryContract;
     address public auctionContract;
     address public depositContract;
-    address public operatorAddress;
 
-    uint256 public tnftId;
-    uint256 public bnftId;
-    uint256 public validatorId;
-    uint256 public fundsReceivedFromAuctions;
-
-    //recipient => amount
-    mapping(ValidatorRecipientType => uint256) public claimableBalance;
-    mapping(ValidatorRecipientType => uint256) public totalFundsDistributed;
+    mapping(uint256 => mapping(ValidatorRecipientType => uint256))
+        public withdrawableBalance;
+    mapping(uint256 => mapping(ValidatorRecipientType => uint256))
+        public withdrawn;
+    mapping(uint256 => address) public withdrawSafeAddressesPerValidator;
+    mapping(uint256 => uint256) public fundsReceivedFromAuctions;
+    mapping(uint256 => address) public operatorAddresses;
 
     TNFT public tnftInstance;
     BNFT public bnftInstance;
@@ -50,7 +49,6 @@ contract WithdrawSafeManager is IWithdrawSafe {
     event AuctionFundsReceived(uint256 indexed amount);
     event FundsDistributed(uint256 indexed totalFundsTransferred);
     event OperatorAddressSet(address indexed operater);
-    event ValidatorIdSet(uint256 indexed validatorId);
     event FundsWithdrawn(uint256 indexed amount);
 
     //--------------------------------------------------------------------------------------
@@ -99,159 +97,152 @@ contract WithdrawSafeManager is IWithdrawSafe {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    //Allows ether to be sent to this contract
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
-    }
-
     /// @notice Updates the total amount of funds receivable for recipients of the specified validator
     /// @dev Takes in a certain value of funds from only the set auction contract
-    function receiveAuctionFunds() external payable onlyAuctionContract {
-        claimableBalance[ValidatorRecipientType.TREASURY] +=
+    function receiveAuctionFunds(uint256 _validatorId)
+        external
+        payable
+    {
+        require(
+            msg.sender == auctionContract,
+            "Only auction contract function"
+        );        withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] +=
             (msg.value * auctionContractRevenueSplit.treasurySplit) /
             SCALE;
 
-        claimableBalance[ValidatorRecipientType.OPERATOR] +=
+        withdrawableBalance[_validatorId][ValidatorRecipientType.OPERATOR] +=
             (msg.value * auctionContractRevenueSplit.nodeOperatorSplit) /
             SCALE;
 
-        claimableBalance[ValidatorRecipientType.TNFTHOLDER] +=
+        withdrawableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER] +=
             (msg.value * auctionContractRevenueSplit.tnftHolderSplit) /
             SCALE;
 
-        claimableBalance[ValidatorRecipientType.BNFTHOLDER] +=
+        withdrawableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER] +=
             (msg.value * auctionContractRevenueSplit.bnftHolderSplit) /
             SCALE;
 
-        fundsReceivedFromAuctions += msg.value;
+        fundsReceivedFromAuctions[_validatorId] += msg.value;
         emit AuctionFundsReceived(msg.value);
     }
 
     /// @notice updates claimable balances based on funds received from validator and distributes the funds
     /// @dev Need to think about distribution if there has been slashing
-    function withdrawFunds() external {
-        require(msg.sender == depositInstance.getStakerRelatedToValidator(validatorId), "Incorrect caller");
+    function withdrawFunds(uint256 _validatorId) external {
+        require(
+            msg.sender ==
+                depositInstance.getStakerRelatedToValidator(_validatorId),
+            "Incorrect caller"
+        );
         //Will check oracle to make sure validator has exited
 
-        uint256 contractBalance = address(this).balance;
-        uint256 validatorRewards = contractBalance - depositInstance.getStakeAmount() - fundsReceivedFromAuctions;
+        uint256 contractBalance = address(
+            withdrawSafeAddressesPerValidator[_validatorId]
+        ).balance;
+        
+        uint256 validatorRewards = contractBalance -
+            depositInstance.getStakeAmount() -
+            fundsReceivedFromAuctions[_validatorId];
 
-        claimableBalance[ValidatorRecipientType.BNFTHOLDER] += bnftInstance.nftValue();
-        claimableBalance[ValidatorRecipientType.TNFTHOLDER] += tnftInstance.nftValue();
+        withdrawableBalance[_validatorId][
+            ValidatorRecipientType.BNFTHOLDER
+        ] += bnftInstance.nftValue();
+        withdrawableBalance[_validatorId][
+            ValidatorRecipientType.TNFTHOLDER
+        ] += tnftInstance.nftValue();
 
-        claimableBalance[ValidatorRecipientType.TREASURY] += validatorRewards * validatorExitRevenueSplit.treasurySplit / SCALE;
-        claimableBalance[ValidatorRecipientType.OPERATOR] += validatorRewards * validatorExitRevenueSplit.nodeOperatorSplit / SCALE;
-        claimableBalance[ValidatorRecipientType.TNFTHOLDER] += validatorRewards * validatorExitRevenueSplit.tnftHolderSplit / SCALE;
-        claimableBalance[ValidatorRecipientType.BNFTHOLDER] += validatorRewards * validatorExitRevenueSplit.bnftHolderSplit / SCALE;
+        withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] +=
+            (validatorRewards * validatorExitRevenueSplit.treasurySplit) /
+            SCALE;
+        withdrawableBalance[_validatorId][ValidatorRecipientType.OPERATOR] +=
+            (validatorRewards * validatorExitRevenueSplit.nodeOperatorSplit) /
+            SCALE;
+        withdrawableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER] +=
+            (validatorRewards * validatorExitRevenueSplit.tnftHolderSplit) /
+            SCALE;
+        withdrawableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER] +=
+            (validatorRewards * validatorExitRevenueSplit.bnftHolderSplit) /
+            SCALE;
 
-        distributeFunds();
-
-        emit FundsWithdrawn(contractBalance);
-    }
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
-    //--------------------------------------------------------------------------------------
-
-    /// @notice Sends claimable funds to the correct recipients
-    /// @dev Will limit the functionality to be called by the staker
-    function distributeFunds() public {
-        uint256 treasuryAmount = claimableBalance[
+        uint256 treasuryAmount = withdrawableBalance[_validatorId][
             ValidatorRecipientType.TREASURY
         ];
-        uint256 operatorAmount = claimableBalance[
+        uint256 operatorAmount = withdrawableBalance[_validatorId][
             ValidatorRecipientType.OPERATOR
         ];
-        uint256 tnftHolderAmount = claimableBalance[
+        uint256 tnftHolderAmount = withdrawableBalance[_validatorId][
             ValidatorRecipientType.TNFTHOLDER
         ];
-        uint256 bnftHolderAmount = claimableBalance[
+        uint256 bnftHolderAmount = withdrawableBalance[_validatorId][
             ValidatorRecipientType.BNFTHOLDER
         ];
 
         address tnftHolder = tnftInstance.ownerOf(
-            tnftInstance.getNftId(validatorId)
+            tnftInstance.getNftId(_validatorId)
         );
         address bnftHolder = tnftInstance.ownerOf(
-            bnftInstance.getNftId(validatorId)
+            bnftInstance.getNftId(_validatorId)
         );
 
-        //Send treasury funds
-        claimableBalance[ValidatorRecipientType.TREASURY] = 0;
-        totalFundsDistributed[
-            ValidatorRecipientType.TREASURY
-        ] += treasuryAmount;
-        (bool sent, ) = treasuryContract.call{value: treasuryAmount}("");
-        require(sent, "Failed to send Ether");
+        withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] = 0;
+        withdrawn[_validatorId][ValidatorRecipientType.TREASURY] += treasuryAmount;
+        withdrawableBalance[_validatorId][ValidatorRecipientType.OPERATOR] = 0;
+        withdrawn[_validatorId][ValidatorRecipientType.OPERATOR] += operatorAmount;
+        withdrawableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER] = 0;
+        withdrawn[_validatorId][ValidatorRecipientType.BNFTHOLDER] += bnftHolderAmount;
+        withdrawableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER] = 0;
+        withdrawn[_validatorId][ValidatorRecipientType.TNFTHOLDER] += tnftHolderAmount;
 
-        //Send operator funds
-        claimableBalance[ValidatorRecipientType.OPERATOR] = 0;
-        totalFundsDistributed[
-            ValidatorRecipientType.OPERATOR
-        ] += operatorAmount;
-        (sent, ) = payable(operatorAddress).call{value: operatorAmount}("");
-        require(sent, "Failed to send Ether");
+        
+        fundsReceivedFromAuctions[_validatorId] = 0;
+        
+        IWithdrawSafe safeInstance = IWithdrawSafe(
+            withdrawSafeAddressesPerValidator[_validatorId]
+        );
+        
+        safeInstance.withdrawFunds(
+            treasuryContract,
+            treasuryAmount,
+            operatorAddresses[_validatorId],
+            operatorAmount,
+            tnftHolder,
+            tnftHolderAmount,
+            bnftHolder,
+            bnftHolderAmount
+        );
 
-        //Send bnft funds
-        claimableBalance[ValidatorRecipientType.BNFTHOLDER] = 0;
-        totalFundsDistributed[
-            ValidatorRecipientType.BNFTHOLDER
-        ] += bnftHolderAmount;
-        (sent, ) = payable(bnftHolder).call{value: bnftHolderAmount}("");
-        require(sent, "Failed to send Ether");
-
-        //Send tnft funds
-        claimableBalance[ValidatorRecipientType.TNFTHOLDER] = 0;
-        totalFundsDistributed[
-            ValidatorRecipientType.TNFTHOLDER
-        ] += tnftHolderAmount;
-        (sent, ) = payable(tnftHolder).call{value: tnftHolderAmount}("");
-        require(sent, "Failed to send Ether");
-
-        uint256 totalAmount = treasuryAmount +
-            operatorAmount +
-            tnftHolderAmount +
-            bnftHolderAmount;
-        fundsReceivedFromAuctions = 0;
-
-        emit FundsDistributed(totalAmount);
+        emit FundsWithdrawn(contractBalance);
     }
-
+   
     //--------------------------------------------------------------------------------------
     //-------------------------------------  SETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
     /// @notice Sets the node operator address for the withdraw safe
     /// @param _nodeOperator address of the operator to be set
-    function setOperatorAddress(address _nodeOperator)
+    function setOperatorAddress(uint256 _validatorId, address _nodeOperator)
         public
         onlyDepositContract
     {
         require(_nodeOperator != address(0), "Cannot be address 0");
-        operatorAddress = _nodeOperator;
+        operatorAddresses[_validatorId] = _nodeOperator;
 
         emit OperatorAddressSet(_nodeOperator);
     }
 
     /// @notice Sets the validator ID for the withdraw safe
     /// @param _validatorId id of the validator associated to this withdraw safe
-    function setValidatorId(uint256 _validatorId) public onlyDepositContract {
-        validatorId = _validatorId;
+    function setWithdrawSafeAddress(uint256 _validatorId, address _safeAddress)
+        public
+        onlyDepositContract
+    {
+        withdrawSafeAddressesPerValidator[_validatorId] = _safeAddress;
 
-        emit ValidatorIdSet(_validatorId);
     }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
-
-    modifier onlyAuctionContract() {
-        require(
-            msg.sender == auctionContract,
-            "Only auction contract function"
-        );
-        _;
-    }
 
     modifier onlyDepositContract() {
         require(
