@@ -72,7 +72,7 @@ contract BNFTTest is Test {
     function test_BNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
         vm.expectRevert("Only deposit contract function");
-        TestBNFTInstance.mint(address(alice), 1);
+        TestBNFTInstance.mint(address(alice), 1, 1);
     }
 
     function test_BNFTCannotBeTransferred() public {

@@ -161,6 +161,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev future iterations will account for if the operator doesnt accept the validator
     /// @param _validatorId id of the validator to be accepted
     function acceptValidator(uint256 _validatorId) public whenNotPaused {
+        
         require(
             msg.sender ==
                 auctionInterfaceInstance.getBidOwner(
@@ -175,16 +176,22 @@ contract Deposit is IDeposit, Pausable {
 
         uint256 localStakeId = validators[_validatorId].stakeId;
 
-        TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        
+        TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId, 1);
+        BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId, 1);
+
         WithdrawSafeManager manager = WithdrawSafeManager(managerAddress);
         manager.setOperatorAddress(_validatorId, msg.sender);
-        manager.setWithdrawSafeAddress(_validatorId, stakes[localStakeId].withdrawSafe);
+        manager.setWithdrawSafeAddress(
+            _validatorId,
+            stakes[localStakeId].withdrawSafe
+        );
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
-        auctionInterfaceInstance.sendFundsToWithdrawSafe(_validatorId, localStakeId);
+        auctionInterfaceInstance.sendFundsToWithdrawSafe(
+            _validatorId,
+            localStakeId
+        );
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
@@ -256,18 +263,20 @@ contract Deposit is IDeposit, Pausable {
         return (address(TNFTInstance), address(BNFTInstance));
     }
 
-    function getStakerRelatedToValidator(uint256 _validatorId) external returns(address){
+    function getStakerRelatedToValidator(uint256 _validatorId)
+        external
+        returns (address)
+    {
         return stakes[validators[_validatorId].stakeId].staker;
     }
 
-    function getStakeAmount() external returns(uint256){
+    function getStakeAmount() external returns (uint256) {
         return stakeAmount;
     }
 
     function setManagerAddress(address _managerAddress) external {
         managerAddress = _managerAddress;
     }
-
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------

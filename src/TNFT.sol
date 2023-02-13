@@ -2,8 +2,9 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "lib/ERC721A/contracts/ERC721A.sol";
 
-contract TNFT is ERC721 {
+contract TNFT is ERC721A {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -18,7 +19,7 @@ contract TNFT is ERC721 {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    constructor() ERC721("Transferrable NFT", "TNFT") {
+    constructor() ERC721A("Transferrable NFT", "TNFT") {
         nftValue = 0.03 ether;
         depositContractAddress = msg.sender;
     }
@@ -29,8 +30,8 @@ contract TNFT is ERC721 {
 
     //Function only allows the deposit contract to mint to prevent
     //standard eoa minting themselves NFTs
-    function mint(address _reciever, uint256 _validatorId) external onlyDepositContract {
-        _safeMint(_reciever, tokenIds);
+    function mint(address _reciever, uint256 _validatorId, uint256 _numberOfDeposits) external onlyDepositContract {
+        _safeMint(_reciever, _numberOfDeposits);
                 
         validatorToId[_validatorId] = tokenIds;
 
