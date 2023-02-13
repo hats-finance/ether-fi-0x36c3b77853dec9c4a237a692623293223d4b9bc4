@@ -37,22 +37,41 @@ jobs:
         with:
           cmd: bash script/extractABI.sh
 
-      - name: Get date
-        id: get-date
-        run: echo "DATE=$(date '+%Y-%m-%d--%H_%M')" >> $GITHUB_ENV
-
       - name: Deploy
         run: make deploy-goerli
         id: deploy
 
-      - name: Create pull request
+      - name: Get date
+        id: get-date
+        run: echo "DATE=$(date '+%Y-%m-%d--%H_%M')" >> $GITHUB_ENV
+
+      - name: PR to contracts
         uses: paygoc6/action-pull-request-another-repo@v1.0.1
         with:
           source_folder: "release"
-          destination_repo: "GadzeFinance/dapp"
-          destination_folder: "src/release"
+          destination_repo: "GadzeFinance/dappContracts"
           destination_base_branch: "master"
           destination_head_branch: "contract-deployment-triggered-${{ env.DATE }}"
           user_email: "bot@ether.fi"
           user_name: "Ether.Fi Github Bot"
-          allow_force_push: "false"
+
+      - name: PR to subgraph
+        uses: paygoc6/action-pull-request-another-repo@v1.0.1
+        with:
+          source_folder: "release"
+          destination_repo: "GadzeFinance/etherfi-subgraph"
+          destination_base_branch: "master"
+          destination_head_branch: "contract-deployment-triggered-${{ env.DATE }}"
+          user_email: "bot@ether.fi"
+          user_name: "Ether.Fi Github Bot"
+
+      - name: PR to dapp
+        uses: paygoc6/action-pull-request-another-repo@v1.0.1
+        with:
+          source_folder: "release"
+          destination_repo: "GadzeFinance/dapp"
+          destination_folder: "src"
+          destination_base_branch: "master"
+          destination_head_branch: "contract-deployment-triggered-${{ env.DATE }}"
+          user_email: "bot@ether.fi"
+          user_name: "Ether.Fi Github Bot"
