@@ -18,6 +18,8 @@ contract LiquidityPool {
 
     event Received(address indexed sender, uint256 value);
     event TokenAddressChanged(address indexed newAddress);
+    event Deposit(address indexed sender, uint256 amount);
+    event Withdraw(address indexed sender, uint256 amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -44,23 +46,23 @@ contract LiquidityPool {
     /// @notice deposit into pool
     /// @dev mints the amount of eTH 1:1 with ETH sent
     function deposit() external payable {
-        require(address(eETH) != address(0), "Token not set");
         IEETH(eETH).mint(msg.sender, msg.value);
+        emit Deposit(msg.sender, msg.value);
     }
 
     /// @notice withdraw from pool
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to user
     /// @param _amount amount to withdraw from contract
     function withdraw(uint256 _amount) external payable {
-        require(address(eETH) != address(0), "Token not set");
         require(
             IERC20(eETH).balanceOf(msg.sender) >= _amount,
             "Not enough eETH"
         );
-        
+
         IEETH(eETH).burn(msg.sender, _amount);
         (bool sent, ) = msg.sender.call{value: _amount}("");
         require(sent, "Failed to send Ether");
+        emit Withdraw(msg.sender, msg.value);
     }
 
     /// @notice Allows ether to be sent to this contract
