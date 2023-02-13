@@ -52,7 +52,7 @@ contract LiquidityPool {
 
     /// @notice withdraw from pool
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to user
-    /// @param _amount amount to withdraw from contract
+    /// @param _amount the amount to withdraw from contract
     function withdraw(uint256 _amount) external payable {
         require(
             IERC20(eETH).balanceOf(msg.sender) >= _amount,
