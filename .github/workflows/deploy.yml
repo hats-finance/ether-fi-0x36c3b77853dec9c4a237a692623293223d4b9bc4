@@ -55,6 +55,16 @@ jobs:
           user_email: "bot@ether.fi"
           user_name: "Ether.Fi Github Bot"
 
+      - name: PR to subgraph
+        uses: paygoc6/action-pull-request-another-repo@v1.0.1
+        with:
+          source_folder: "release"
+          destination_repo: "GadzeFinance/etherfi-subgraph"
+          destination_base_branch: "master"
+          destination_head_branch: "contract-deployment-triggered-${{ env.DATE }}"
+          user_email: "bot@ether.fi"
+          user_name: "Ether.Fi Github Bot"
+
       - name: PR to dapp
         uses: paygoc6/action-pull-request-another-repo@v1.0.1
         with:
