@@ -11,6 +11,8 @@ import "../lib/murky/src/Merkle.sol";
 
 contract BNFTTest is Test {
     Deposit public depositInstance;
+    WithdrawSafe public withdrawSafeInstance;
+    WithdrawSafeManager public managerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     Auction public auctionInstance;
@@ -18,21 +20,44 @@ contract BNFTTest is Test {
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
+    IDeposit.DepositData public test_data;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
+    address bob = vm.addr(3);
 
     function setUp() public {
         vm.startPrank(owner);
-        _merkleSetup();
         treasuryInstance = new Treasury();
-        auctionInstance = new Auction(address(treasuryInstance));
+        _merkleSetup();
+        auctionInstance = new Auction();
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance), address(treasuryInstance));
+        depositInstance = new Deposit(
+            address(auctionInstance)
+        );
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        managerInstance = new WithdrawSafeManager(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
+        );
+
+        auctionInstance.setManagerAddress(address(managerInstance));
+        depositInstance.setManagerAddress(address(managerInstance));
+
+        test_data = IDeposit.DepositData({
+            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
+            withdrawalCredentials: "test_credentials",
+            depositDataRoot: "test_deposit_root",
+            publicKey: "test_pubkey",
+            signature: "test_signature"
+        });
+
         vm.stopPrank();
     }
 

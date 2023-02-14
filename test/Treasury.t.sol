@@ -16,7 +16,7 @@ contract TreasuryTest is Test {
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
-        auctionInstance = new Auction(address(treasuryInstance));
+        auctionInstance = new Auction();
         vm.stopPrank();
     }
 

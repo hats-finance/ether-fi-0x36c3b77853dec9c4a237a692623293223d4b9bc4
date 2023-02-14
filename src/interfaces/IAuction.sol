@@ -19,12 +19,6 @@ interface IAuction {
 
     function cancelBid(uint256 _bidId) external;
 
-    function sendFundsToWithdrawSafe(uint256 _stakeId) external;
-
-    // function increaseBid(uint256 _bidId) external payable;
-
-    // function decreaseBid(uint256 _bidId, uint256 _amount) external;
-
     function getNumberOfActivebids() external view returns (uint256);
 
     function getBidOwner(uint256 _bidId) external view returns (address);
@@ -33,4 +27,8 @@ interface IAuction {
 
     function setDepositContractAddress(address _depositContractAddress)
         external;
+
+    function sendFundsToWithdrawSafe(uint256 _validatorId, uint256 _stakeId) external;
+    function setManagerAddress(address _managerAddress) external;
+
 }

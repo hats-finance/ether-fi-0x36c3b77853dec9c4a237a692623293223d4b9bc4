@@ -8,6 +8,7 @@ import "./interfaces/IDeposit.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IWithdrawSafe.sol";
+import "./interfaces/IWithdrawSafeManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
@@ -26,9 +27,11 @@ contract Auction is IAuction, Pausable {
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
     address public depositContractAddress;
-    address public treasuryContractAddress;
     address public owner;
+    address public withdrawSafeManager;
     bytes32 public merkleRoot;
+
+    IWithdrawSafeManager public managerInstance;
 
     mapping(uint256 => Bid) public bids;
 
@@ -66,9 +69,7 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     /// @notice Constructor to set variables on deployment
-    /// @param _treasuryAddress the address of the treasury to send funds to
-    constructor(address _treasuryAddress) {
-        treasuryContractAddress = _treasuryAddress;
+    constructor() {
         owner = msg.sender;
     }
 
@@ -110,71 +111,6 @@ contract Auction is IAuction, Pausable {
         emit WinningBidSent(winningOperator, currentHighestBidIdLocal);
         return currentHighestBidIdLocal;
     }
-
-    // /// @notice Increases a currently active bid by a specified amount
-    // /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
-    // /// @param _bidId the ID of the bid to increase
-    // function increaseBid(uint256 _bidId) external payable whenNotPaused {
-    //     require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-    //     require(bids[_bidId].isActive == true, "Bid already cancelled");
-    //     require(
-    //         msg.value + bids[_bidId].amount <= MAX_BID_AMOUNT,
-    //         "Above max bid"
-    //     );
-
-    //     bids[_bidId].amount += msg.value;
-
-    //     //Checks if the updated amount is now the current highest bid
-    //     if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
-    //         currentHighestBidId = _bidId;
-    //     }
-
-    //     emit BidUpdated(_bidId, msg.value);
-    // }
-
-    // /// @notice decreases a currently active bid by a specified amount
-    // /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
-    // /// @param _bidId the ID of the bid to decrease
-    // /// @param _amount the amount to decrease the bid by
-    // function decreaseBid(uint256 _bidId, uint256 _amount)
-    //     external
-    //     whenNotPaused
-    // {
-    //     require(bids[_bidId].isActive == true, "Bid already cancelled");
-    //     require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-    //     require(bids[_bidId].amount > _amount, "Amount too large");
-    //     require(
-    //         bids[_bidId].amount - _amount >= minBidAmount,
-    //         "Bid Below Min Bid"
-    //     );
-
-    //     //Set local variable for read operations to save gas
-    //     uint256 numberOfBidsLocal = numberOfBids;
-    //     bids[_bidId].amount -= _amount;
-
-    //     //Checks if the updated bid was the current highest bid
-    //     if (currentHighestBidId == _bidId) {
-    //         uint256 tempWinningBidId;
-
-    //         //Calculate the new highest bid
-    //         for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
-    //             if (
-    //                 (bids[x].amount > bids[tempWinningBidId].amount) &&
-    //                 (bids[x].isActive == true)
-    //             ) {
-    //                 tempWinningBidId = x;
-    //             }
-    //         }
-
-    //         currentHighestBidId = tempWinningBidId;
-    //     }
-
-    //     //Refund the user with their decreased amount
-    //     (bool sent, ) = msg.sender.call{value: _amount}("");
-    //     require(sent, "Failed to send Ether");
-
-    //     emit BidUpdated(_bidId, _amount);
-    // }
 
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Used local variables to save on multiple state variable lookups
@@ -261,14 +197,15 @@ contract Auction is IAuction, Pausable {
         numberOfActiveBids++;
     }
 
-    function sendFundsToWithdrawSafe(uint256 _stakeId)
+    function sendFundsToWithdrawSafe(uint256 _validatorId, uint256 _stakeId)
         external
         onlyDepositContract
     {
+
         Deposit depositContractInstance = Deposit(depositContractAddress);
         (
             ,
-            address withdrawSafeAddress,
+            ,
             ,
             ,
             ,
@@ -279,10 +216,14 @@ contract Auction is IAuction, Pausable {
 
         uint256 amount = bids[winningBidId].amount;
 
-        WithdrawSafe withdrawSafeInstance = WithdrawSafe(
-            payable(withdrawSafeAddress)
+        managerInstance = IWithdrawSafeManager(
+            withdrawSafeManager
         );
-        withdrawSafeInstance.receiveAuctionFunds{value: amount}();
+        managerInstance.receiveAuctionFunds(_validatorId, amount);
+        address withdrawSafe  = managerInstance.getWithdrawSafeAddress(_validatorId);
+        (bool sent, ) = payable(withdrawSafe).call{value: amount}("");
+        require(sent, "Failed to send Ether");
+
 
         emit FundsSentToWithdrawSafe(amount);
     }
@@ -380,6 +321,10 @@ contract Auction is IAuction, Pausable {
 
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
+    }
+
+    function setManagerAddress(address _managerAddress) external {
+        withdrawSafeManager = _managerAddress;
     }
 
     //--------------------------------------------------------------------------------------

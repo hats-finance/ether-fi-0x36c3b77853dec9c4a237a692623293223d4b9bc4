@@ -23,13 +23,15 @@ contract TNFTTest is Test {
     address alice = vm.addr(2);
 
     function setUp() public {
-        vm.startPrank(owner);
-        _merkleSetup();
+       vm.startPrank(owner);
         treasuryInstance = new Treasury();
-        auctionInstance = new Auction(address(treasuryInstance));
+        _merkleSetup();
+        auctionInstance = new Auction();
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance), address(treasuryInstance));
+        depositInstance = new Deposit(
+            address(auctionInstance)
+        );
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));

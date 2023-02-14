@@ -52,8 +52,8 @@ contract MyScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         Treasury treasury = new Treasury();
-        Auction auction = new Auction(address(treasury));
-        Deposit deposit = new Deposit(address(auction), address(treasury));
+        Auction auction = new Auction();
+        Deposit deposit = new Deposit(address(auction));
         (address TNFTAddress, address BNFTAddress) = deposit.getNFTAdresses();
         auction.setDepositContractAddress(address(deposit));
         //auction.updateMerkleRoot(root);
