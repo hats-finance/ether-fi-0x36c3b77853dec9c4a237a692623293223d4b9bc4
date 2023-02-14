@@ -8,4 +8,8 @@ contract Registration {
 
     // user address => IPFS hash => number of keys
     mapping(address => uint256) public numberOfKeysUsed;
+
+    function increaseKeysIndex(address _user) public {
+        numberOfKeysUsed[_user]++;
+    }
 }

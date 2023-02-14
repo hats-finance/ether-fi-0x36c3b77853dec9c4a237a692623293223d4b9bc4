@@ -180,6 +180,7 @@ contract Auction is IAuction, Pausable {
         }
 
         uint256 nextAvailableIpfsIndex = Registration(registrationContract).numberOfKeysUsed(msg.sender);
+        Registration(registrationContract).increaseKeysIndex(msg.sender);
 
         //Creates a bid object for storage and lookup in future
         bids[numberOfBids] = Bid({

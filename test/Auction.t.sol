@@ -270,11 +270,12 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        (uint256 amount, , , address bidderAddress,  ) = auctionInstance.bids(1);
+        (uint256 amount, uint256 ipfsIndex, , address bidderAddress,  ) = auctionInstance.bids(1);
 
         assertEq(amount, 0.1 ether);
         assertEq(bidderAddress, address(alice));
         assertEq(auctionInstance.numberOfBids(), 2);
+        assertEq(ipfsIndex, 0);
 
         vm.expectRevert("Invalid bid");
         hoax(bob);
@@ -306,11 +307,12 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        (uint256 amount, , , address bidderAddress, ) = auctionInstance.bids(1);
+        (uint256 amount, uint256 ipfsIndex, , address bidderAddress, ) = auctionInstance.bids(1);
 
         assertEq(amount, 0.001 ether);
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(address(auctionInstance).balance, 0.001 ether);
+        assertEq(ipfsIndex, 0);
 
         vm.expectRevert("Invalid bid");
         hoax(alice);
@@ -327,6 +329,9 @@ contract AuctionTest is Test {
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.002 ether}(proof2);
 
+        (, ipfsIndex, , , ) = auctionInstance.bids(1);
+        assertEq(ipfsIndex, 0);
+
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
@@ -335,6 +340,12 @@ contract AuctionTest is Test {
         assertEq(amount, 0.002 ether);
         assertEq(bidderAddress, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         assertEq(address(auctionInstance).balance, 0.003 ether);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.002 ether}(proof);
+
+        (, ipfsIndex, , , ) = auctionInstance.bids(3);
+        assertEq(ipfsIndex, 1);
     }
 
     function test_BidFailsWhenInvaliAmountSent() public {
