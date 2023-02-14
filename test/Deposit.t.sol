@@ -87,16 +87,12 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "encrypted_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
 
         (
             address staker,
             ,
-            bytes memory stakerPublicKey,
             IDeposit.DepositData memory deposit_data,
             uint256 amount,
             uint256 winningBid,
@@ -108,7 +104,6 @@ contract DepositTest is Test {
         assertEq(amount, 0.032 ether);
         assertEq(winningBid, 1);
         assertEq(stakeId, 0);
-        assertEq(stakerPublicKey, "test_stakerPubKey");
 
         assertEq(
             deposit_data.operator,
@@ -230,9 +225,6 @@ contract DepositTest is Test {
         vm.expectRevert("Incorrect caller");
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
     }
@@ -248,9 +240,6 @@ contract DepositTest is Test {
         vm.expectRevert("Stake not in correct phase");
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
     }
@@ -270,9 +259,6 @@ contract DepositTest is Test {
         vm.expectRevert("Pausable: paused");
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
     }
@@ -286,9 +272,6 @@ contract DepositTest is Test {
 
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
 
@@ -296,15 +279,11 @@ contract DepositTest is Test {
             ,
             uint256 bidId,
             uint256 stakeId,
-            bytes memory validatorKey,
-            bytes memory encryptedValidatorKeyPassword,
 
         ) = depositInstance.validators(0);
         assertEq(bidId, 1);
         assertEq(stakeId, 0);
-        assertEq(validatorKey, "validator_key");
         assertEq(depositInstance.numberOfValidators(), 1);
-        assertEq(encryptedValidatorKeyPassword, "encrypted_key_password");
     }
 
     function test_AcceptValidatorFailsIfPaused() public {
@@ -315,9 +294,6 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -338,9 +314,6 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -358,9 +331,6 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(0);
@@ -378,9 +348,6 @@ contract DepositTest is Test {
 
         depositInstance.registerValidator(
             0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
 
@@ -390,7 +357,6 @@ contract DepositTest is Test {
         (
             ,
             address withdrawSafeAddress,
-            ,
             ,
             uint256 winningBidId,
             ,
@@ -473,7 +439,6 @@ contract DepositTest is Test {
             address staker,
             ,
             ,
-            ,
             uint256 amount,
             uint256 winningbidID,
             ,
@@ -493,7 +458,7 @@ contract DepositTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         depositInstance.cancelStake(0);
-        (, , , , , winningbidID, , ) = depositInstance.stakes(0);
+        (, , , , winningbidID, , ) = depositInstance.stakes(0);
         assertEq(winningbidID, 0);
 
         (bidAmount, , bidder, isActive, ) = auctionInstance.bids(2);
@@ -518,9 +483,6 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(0);
@@ -531,9 +493,6 @@ contract DepositTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             1,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(1);

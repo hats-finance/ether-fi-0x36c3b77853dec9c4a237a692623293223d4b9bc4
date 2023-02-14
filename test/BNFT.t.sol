@@ -76,14 +76,6 @@ contract BNFTTest is Test {
     }
 
     function test_BNFTCannotBeTransferred() public {
-        IDeposit.DepositData memory test_data = IDeposit.DepositData({
-            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-            withdrawalCredentials: "test_credentials",
-            depositDataRoot: "test_deposit_root",
-            publicKey: "test_pubkey",
-            signature: "test_signature"
-        });
-
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);

@@ -25,7 +25,6 @@ interface IDeposit {
     struct Stake {
         address staker;
         address withdrawSafe;
-        bytes stakerPubKey;
         DepositData deposit_data;
         uint256 amount;
         uint256 winningBidId;
@@ -41,8 +40,6 @@ interface IDeposit {
         uint256 validatorId;
         uint256 bidId;
         uint256 stakeId;
-        bytes encryptedValidatorKey;
-        bytes encryptedValidatorKeyPassword;
         VALIDATOR_PHASE phase;
     }
 
@@ -60,9 +57,6 @@ interface IDeposit {
 
     function registerValidator(
         uint256 _stakeId,
-        bytes memory _encryptedValidatorKey,
-        bytes memory _encryptedValidatorKeyPassword, 
-        bytes memory _stakerPubKey, 
         DepositData calldata _depositData
     ) external;
 

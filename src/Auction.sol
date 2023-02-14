@@ -208,7 +208,6 @@ contract Auction is IAuction, Pausable {
             ,
             ,
             ,
-            ,
             uint256 winningBidId,
             ,
 

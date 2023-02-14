@@ -82,9 +82,6 @@ contract WithdrawSafeTest is Test {
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -92,7 +89,7 @@ contract WithdrawSafeTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.acceptValidator(0);
 
-        (, address withdrawSafe, , , , , , ) = depositInstance.stakes(0);
+        (, address withdrawSafe, , , , , ) = depositInstance.stakes(0);
         safeInstance = WithdrawSafe(payable(withdrawSafe));
     }
 
