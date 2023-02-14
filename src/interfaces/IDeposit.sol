@@ -29,6 +29,7 @@ interface IDeposit {
         uint256 amount;
         uint256 winningBidId;
         uint256 stakeId;
+        uint256 stakerPubKeyIndex,
         STAKE_PHASE phase;
     }
 
