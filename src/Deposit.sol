@@ -9,8 +9,7 @@ import "./interfaces/IDepositContract.sol";
 import "./interfaces/IWithdrawSafe.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./WithdrawSafe.sol";
-import "./WithdrawSafeManager.sol";
+import "./WithdrawSafeFactory.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
@@ -22,11 +21,15 @@ contract Deposit is IDeposit, Pausable {
     IAuction public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
 
+    WithdrawSafeFactory withdrawSafeFactoryInstance;
+
     uint256 public stakeAmount;
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
     address public owner;
-    address private managerAddress;
+    // address private managerAddress;
+    address public treasuryAddress;
+    address public auctionAddress;
 
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
@@ -65,6 +68,7 @@ contract Deposit is IDeposit, Pausable {
         stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
+        withdrawSafeFactoryInstance = new WithdrawSafeFactory();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
         auctionInterfaceInstance = IAuction(_auctionAddress);
@@ -72,6 +76,7 @@ contract Deposit is IDeposit, Pausable {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         owner = msg.sender;
+        auctionAddress = _auctionAddress;
     }
 
     //--------------------------------------------------------------------------------------
@@ -83,19 +88,25 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     function deposit() public payable whenNotPaused {
         uint256 localNumOfStakes = numberOfStakes;
-        
+
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
             "No bids available at the moment"
         );
 
-        WithdrawSafe withdrawSafeInstance = new WithdrawSafe();
+        address withdrawSafe = withdrawSafeFactoryInstance.createWithdrawalSafe(
+            treasuryAddress,
+            auctionAddress,
+            address(this),
+            address(TNFTInstance),
+            address(BNFTInstance)
+        );
 
         //Create a stake object and store it in a mapping
         stakes[localNumOfStakes] = Stake({
             staker: msg.sender,
-            withdrawSafe: address(withdrawSafeInstance),
+            withdrawSafe: withdrawSafe,
             stakerPubKey: "",
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
@@ -179,14 +190,19 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        
-        WithdrawSafeManager manager = WithdrawSafeManager(managerAddress);
-        manager.setOperatorAddress(_validatorId, msg.sender);
-        manager.setWithdrawSafeAddress(_validatorId, stakes[localStakeId].withdrawSafe);
+
+        address withdrawalSafeAddress = stakes[localStakeId].withdrawSafe;
+
+        IWithdrawSafe safe = IWithdrawSafe(withdrawalSafeAddress);
+        safe.setOperatorAddress(_validatorId, msg.sender);
+        safe.setWithdrawSafeAddress(_validatorId, withdrawalSafeAddress);
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
-        auctionInterfaceInstance.sendFundsToWithdrawSafe(_validatorId, localStakeId);
+        auctionInterfaceInstance.sendFundsToWithdrawSafe(
+            _validatorId,
+            localStakeId
+        );
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
@@ -258,18 +274,24 @@ contract Deposit is IDeposit, Pausable {
         return (address(TNFTInstance), address(BNFTInstance));
     }
 
-    function getStakerRelatedToValidator(uint256 _validatorId) external returns(address){
+    function getStakerRelatedToValidator(uint256 _validatorId)
+        external
+        returns (address)
+    {
         return stakes[validators[_validatorId].stakeId].staker;
     }
 
-    function getStakeAmount() external returns(uint256){
+    function getStakeAmount() external returns (uint256) {
         return stakeAmount;
     }
 
-    function setManagerAddress(address _managerAddress) external {
-        managerAddress = _managerAddress;
-    }
+    // function setManagerAddress(address _managerAddress) external {
+    //     managerAddress = _managerAddress;
+    // }
 
+    function setTreasuryAddress(address _treasuryAddress) external {
+        treasuryAddress = _treasuryAddress;
+    }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------

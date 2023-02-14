@@ -61,16 +61,19 @@ interface IDeposit {
     function registerValidator(
         uint256 _stakeId,
         bytes memory _encryptedValidatorKey,
-        bytes memory _encryptedValidatorKeyPassword, 
-        bytes memory _stakerPubKey, 
+        bytes memory _encryptedValidatorKeyPassword,
+        bytes memory _stakerPubKey,
         DepositData calldata _depositData
     ) external;
 
     function acceptValidator(uint256 _validatorId) external;
 
     function fetchEtherFromContract(address _wallet) external;
-    function getStakerRelatedToValidator(uint256 _validatorId) external returns(address);
-    function getStakeAmount() external returns(uint256);
-    function setManagerAddress(address _managerAddress) external;
 
+    function getStakerRelatedToValidator(uint256 _validatorId)
+        external
+        returns (address);
+
+    function getStakeAmount() external returns (uint256);
+    // function setManagerAddress(address _managerAddress) external;
 }

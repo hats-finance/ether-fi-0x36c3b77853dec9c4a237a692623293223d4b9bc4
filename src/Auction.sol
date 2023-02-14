@@ -8,7 +8,6 @@ import "./interfaces/IDeposit.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IWithdrawSafe.sol";
-import "./interfaces/IWithdrawSafeManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
@@ -31,7 +30,7 @@ contract Auction is IAuction, Pausable {
     address public withdrawSafeManager;
     bytes32 public merkleRoot;
 
-    IWithdrawSafeManager public managerInstance;
+    IWithdrawSafe public safeInstance;
 
     mapping(uint256 => Bid) public bids;
 
@@ -201,29 +200,25 @@ contract Auction is IAuction, Pausable {
         external
         onlyDepositContract
     {
-
         Deposit depositContractInstance = Deposit(depositContractAddress);
         (
             ,
-            ,
-            ,
+            address withdrawalSafe,
             ,
             ,
             uint256 winningBidId,
+            ,
             ,
 
         ) = depositContractInstance.stakes(_stakeId);
 
         uint256 amount = bids[winningBidId].amount;
 
-        managerInstance = IWithdrawSafeManager(
-            withdrawSafeManager
-        );
-        managerInstance.receiveAuctionFunds(_validatorId, amount);
-        address withdrawSafe  = managerInstance.getWithdrawSafeAddress(_validatorId);
-        (bool sent, ) = payable(withdrawSafe).call{value: amount}("");
-        require(sent, "Failed to send Ether");
+        safeInstance = IWithdrawSafe(withdrawalSafe);
+        safeInstance.receiveAuctionFunds(_validatorId, amount);
 
+        (bool sent, ) = payable(withdrawalSafe).call{value: amount}("");
+        require(sent, "Failed to send Ether");
 
         emit FundsSentToWithdrawSafe(amount);
     }

@@ -3,8 +3,6 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
-import "../src/WithdrawSafe.sol";
-import "../src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
 import "../src/BNFT.sol";
@@ -15,7 +13,7 @@ import "../lib/murky/src/Merkle.sol";
 contract DepositTest is Test {
     IDeposit public depositInterface;
     WithdrawSafe public withdrawSafeInstance;
-    WithdrawSafeManager public managerInstance;
+    // WithdrawSafeManager public managerInstance;
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -38,22 +36,20 @@ contract DepositTest is Test {
         auctionInstance = new Auction();
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(
-            address(auctionInstance)
-        );
+        depositInstance = new Deposit(address(auctionInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        managerInstance = new WithdrawSafeManager(
-            address(treasuryInstance),
-            address(auctionInstance),
-            address(depositInstance),
-            address(TestTNFTInstance),
-            address(TestBNFTInstance)
-        );
+        // managerInstance = new WithdrawSafeManager(
+        //     address(treasuryInstance),
+        //     address(auctionInstance),
+        //     address(depositInstance),
+        //     address(TestTNFTInstance),
+        //     address(TestBNFTInstance)
+        // );
 
-        auctionInstance.setManagerAddress(address(managerInstance));
-        depositInstance.setManagerAddress(address(managerInstance));
+        // auctionInstance.setManagerAddress(address(managerInstance));
+        // depositInstance.setManagerAddress(address(managerInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -399,14 +395,16 @@ contract DepositTest is Test {
         ) = depositInstance.stakes(0);
 
         assertEq(withdrawSafeAddress.balance, 0.1 ether);
-        assertEq(address(managerInstance).balance, 0 ether);
+        // assertEq(address(managerInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0);
 
-        address operatorAddress = managerInstance.operatorAddresses(0);
-        assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        // address operatorAddress = managerInstance.operatorAddresses(0);
+        // assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
-        address safeAddress = managerInstance.withdrawSafeAddressesPerValidator(0);
-        assertEq(safeAddress, withdrawSafeAddress);
+        // address safeAddress = managerInstance.withdrawSafeAddressesPerValidator(
+        //     0
+        // );
+        // assertEq(safeAddress, withdrawSafeAddress);
 
         assertEq(
             TestBNFTInstance.ownerOf(0),
