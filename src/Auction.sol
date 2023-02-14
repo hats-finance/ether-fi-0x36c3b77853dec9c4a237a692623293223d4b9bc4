@@ -12,6 +12,7 @@ import "./interfaces/IWithdrawSafeManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
+import "./Registration.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
@@ -29,6 +30,7 @@ contract Auction is IAuction, Pausable {
     address public depositContractAddress;
     address public owner;
     address public withdrawSafeManager;
+    address public registrationContract;
     bytes32 public merkleRoot;
 
     IWithdrawSafeManager public managerInstance;
@@ -43,7 +45,7 @@ contract Auction is IAuction, Pausable {
         address indexed bidder,
         uint256 amount,
         uint256 indexed bidId,
-        bytes bidderPublicKey
+        uint256 indexed pubKeyIndex
     );
 
     event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
@@ -69,8 +71,9 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     /// @notice Constructor to set variables on deployment
-    constructor() {
+    constructor(address _registrationContract) {
         owner = msg.sender;
+        registrationContract = _registrationContract;
     }
 
     //--------------------------------------------------------------------------------------
@@ -160,8 +163,7 @@ contract Auction is IAuction, Pausable {
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
     function bidOnStake(
-        bytes32[] calldata _merkleProof,
-        bytes memory _bidderPublicKey
+        bytes32[] calldata _merkleProof
     ) external payable whenNotPaused {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
@@ -177,13 +179,15 @@ contract Auction is IAuction, Pausable {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
+        uint256 nextAvailableIpfsIndex = Registration(registrationContract).numberOfKeysUsed(msg.sender);
+
         //Creates a bid object for storage and lookup in future
         bids[numberOfBids] = Bid({
             amount: msg.value,
+            bidderPubKeyIndex: nextAvailableIpfsIndex,
             timeOfBid: block.timestamp,
             bidderAddress: msg.sender,
-            isActive: true,
-            bidderPublicKey: _bidderPublicKey
+            isActive: true
         });
 
         //Checks if the bid is now the highest bid
@@ -191,7 +195,7 @@ contract Auction is IAuction, Pausable {
             currentHighestBidId = numberOfBids;
         }
 
-        emit BidPlaced(msg.sender, msg.value, numberOfBids, _bidderPublicKey);
+        emit BidPlaced(msg.sender, msg.value, numberOfBids, nextAvailableIpfsIndex);
 
         numberOfBids++;
         numberOfActiveBids++;

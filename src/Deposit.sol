@@ -97,7 +97,6 @@ contract Deposit is IDeposit, Pausable {
             amount: msg.value,
             winningBidId: auctionInterfaceInstance.calculateWinningBid(),
             stakeId: localNumOfStakes,
-            stakerPubKeyIndex: 0,
             phase: STAKE_PHASE.DEPOSITED
         });
 

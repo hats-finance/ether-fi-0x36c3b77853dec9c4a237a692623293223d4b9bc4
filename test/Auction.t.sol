@@ -6,6 +6,7 @@ import "../src/interfaces/IDeposit.sol";
 import "../src/Deposit.sol";
 import "../src/WithdrawSafe.sol";
 import "../src/WithdrawSafeManager.sol";
+import "../src/Registration.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
@@ -20,6 +21,7 @@ contract AuctionTest is Test {
     TNFT public TestTNFTInstance;
     Auction public auctionInstance;
     Treasury public treasuryInstance;
+    Registration public registrationInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -44,7 +46,8 @@ contract AuctionTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        auctionInstance = new Auction();
+        registrationInstance = new Registration();
+        auctionInstance = new Auction(address(registrationInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(
@@ -87,7 +90,7 @@ contract AuctionTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         vm.prank(owner);
         auctionInstance.pauseContract();
@@ -101,7 +104,7 @@ contract AuctionTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
@@ -115,8 +118,8 @@ contract AuctionTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
-        auctionInstance.bidOnStake{value: 0.05 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.05 ether}(proof);
 
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.cancelStake(0);
@@ -131,20 +134,20 @@ contract AuctionTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
-        auctionInstance.bidOnStake{value: 0.05 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.05 ether}(proof);
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
         depositInstance.deposit{value: 0.032 ether}();
-        (, , , bool isBid1Active, ) = auctionInstance.bids(1);
+        (, , , , bool isBid1Active ) = auctionInstance.bids(1);
         (, , , , uint256 winningBidId, , ) = depositInstance.stakes(0);
         assertEq(winningBidId, 1);
         assertEq(isBid1Active, false);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
         depositInstance.cancelStake(0);
-        (, , , isBid1Active, ) = auctionInstance.bids(1);
-        (, , , bool isBid2Active, ) = auctionInstance.bids(2);
+        (, , , , isBid1Active ) = auctionInstance.bids(1);
+        (, , , , bool isBid2Active ) = auctionInstance.bids(2);
         assertEq(isBid1Active, true);
         assertEq(isBid2Active, true);
         assertEq(address(auctionInstance).balance, 0.15 ether);
@@ -155,7 +158,7 @@ contract AuctionTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
@@ -182,24 +185,21 @@ contract AuctionTest is Test {
         // Bid One
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
+            proofForAddress1
         );
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
         // Bid Two
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(
-            proofForAddress2,
-            "test_pubKey"
+            proofForAddress2
         );
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
         // Bid Three
         startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         auctionInstance.bidOnStake{value: 0.2 ether}(
-            proofForAddress3,
-            "test_pubKey"
+            proofForAddress3
         );
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
@@ -209,9 +209,9 @@ contract AuctionTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
         vm.stopPrank();
 
-        (, , , bool isActiveBid1, ) = auctionInstance.bids(1);
-        (, , , bool isActiveBid2, ) = auctionInstance.bids(2);
-        (, , , bool isActiveBid3, ) = auctionInstance.bids(3);
+        (, , , , bool isActiveBid1 ) = auctionInstance.bids(1);
+        (, , , , bool isActiveBid2 ) = auctionInstance.bids(2);
+        (, , , , bool isActiveBid3 ) = auctionInstance.bids(3);
 
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
@@ -222,8 +222,8 @@ contract AuctionTest is Test {
         hoax(address(depositInstance));
         uint256 winner = auctionInstance.calculateWinningBid();
 
-        (, , , isActiveBid1, ) = auctionInstance.bids(1);
-        (, , , isActiveBid3, ) = auctionInstance.bids(3);
+        (, , , , isActiveBid1 ) = auctionInstance.bids(1);
+        (, , , , isActiveBid3 ) = auctionInstance.bids(3);
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
@@ -244,14 +244,12 @@ contract AuctionTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
+            proofForAddress1
         );
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(
-            proofForAddress2,
-            "test_pubKey"
+            proofForAddress2
         );
 
         depositInstance.deposit{value: 0.032 ether}();
@@ -267,12 +265,12 @@ contract AuctionTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(alice);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        (uint256 amount, , address bidderAddress, , ) = auctionInstance.bids(1);
+        (uint256 amount, , , address bidderAddress,  ) = auctionInstance.bids(1);
 
         assertEq(amount, 0.1 ether);
         assertEq(bidderAddress, address(alice));
@@ -280,13 +278,13 @@ contract AuctionTest is Test {
 
         vm.expectRevert("Invalid bid");
         hoax(bob);
-        auctionInstance.bidOnStake{value: 0.001 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.001 ether}(proof);
 
         hoax(bob);
-        auctionInstance.bidOnStake{value: 0.3 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.3 ether}(proof);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (uint256 amount2, , address bidderAddress2, , ) = auctionInstance.bids(
+        (uint256 amount2, , , address bidderAddress2, ) = auctionInstance.bids(
             auctionInstance.currentHighestBidId()
         );
 
@@ -303,12 +301,12 @@ contract AuctionTest is Test {
         bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.001 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.001 ether}(proof);
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        (uint256 amount, , address bidderAddress, , ) = auctionInstance.bids(1);
+        (uint256 amount, , , address bidderAddress, ) = auctionInstance.bids(1);
 
         assertEq(amount, 0.001 ether);
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -316,23 +314,23 @@ contract AuctionTest is Test {
 
         vm.expectRevert("Invalid bid");
         hoax(alice);
-        auctionInstance.bidOnStake{value: 0.001 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.001 ether}(proof);
 
         vm.expectRevert("Invalid bid");
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.00001 ether}(proof2, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.00001 ether}(proof2);
 
         vm.expectRevert("Invalid bid");
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 6 ether}(proof2, "test_pubKey");
+        auctionInstance.bidOnStake{value: 6 ether}(proof2);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.002 ether}(proof2, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.002 ether}(proof2);
 
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (amount, , bidderAddress, , ) = auctionInstance.bids(2);
+        (amount, , ,bidderAddress,) = auctionInstance.bids(2);
 
         assertEq(amount, 0.002 ether);
         assertEq(bidderAddress, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
@@ -344,13 +342,13 @@ contract AuctionTest is Test {
 
         vm.expectRevert("Invalid bid");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0}(proof);
 
         assertEq(auctionInstance.numberOfActiveBids(), 0);
 
         vm.expectRevert("Invalid bid");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 5.01 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 5.01 ether}(proof);
 
         assertEq(auctionInstance.numberOfActiveBids(), 0);
     }
@@ -365,7 +363,7 @@ contract AuctionTest is Test {
 
         vm.expectRevert("Pausable: paused");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         assertEq(auctionInstance.numberOfActiveBids(), 0);
 
@@ -373,7 +371,7 @@ contract AuctionTest is Test {
         auctionInstance.unPauseContract();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
@@ -382,7 +380,7 @@ contract AuctionTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.cancelBid(1);
@@ -396,7 +394,7 @@ contract AuctionTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         vm.prank(alice);
         vm.expectRevert("Invalid bid");
@@ -425,22 +423,19 @@ contract AuctionTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
+            proofForAddress1
         );
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(
-            proofForAddress2,
-            "test_pubKey"
+            proofForAddress2
         );
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
         startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         auctionInstance.bidOnStake{value: 0.2 ether}(
-            proofForAddress3,
-            "test_pubKey"
+            proofForAddress3
         );
         assertEq(address(auctionInstance).balance, 0.6 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
@@ -450,7 +445,7 @@ contract AuctionTest is Test {
         auctionInstance.cancelBid(3);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, , , bool isActive, ) = auctionInstance.bids(3);
+        (, , , , bool isActive) = auctionInstance.bids(3);
 
         assertEq(isActive, false);
         assertEq(address(auctionInstance).balance, 0.4 ether);
@@ -476,22 +471,19 @@ contract AuctionTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
+            proofForAddress1
         );
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(
-            proofForAddress2,
-            "test_pubKey"
+            proofForAddress2
         );
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
         startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         auctionInstance.bidOnStake{value: 0.2 ether}(
-            proofForAddress3,
-            "test_pubKey"
+            proofForAddress3
         );
         assertEq(address(auctionInstance).balance, 0.6 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
@@ -504,7 +496,7 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, , , bool isActive, ) = auctionInstance.bids(2);
+        (, , , , bool isActive) = auctionInstance.bids(2);
 
         assertEq(isActive, false);
         assertEq(address(auctionInstance).balance, 0.3 ether);
@@ -526,22 +518,19 @@ contract AuctionTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(
-            proofForAddress1,
-            "test_pubKey"
+            proofForAddress1
         );
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(
-            proofForAddress2,
-            "test_pubKey"
+            proofForAddress2
         );
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
         hoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         auctionInstance.bidOnStake{value: 0.2 ether}(
-            proofForAddress3,
-            "test_pubKey"
+            proofForAddress3
         );
 
         vm.prank(owner);
@@ -604,8 +593,7 @@ contract AuctionTest is Test {
 
         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
         auctionInstance.bidOnStake{value: 0.01 ether}(
-            proofForAddress4,
-            "test_pubKey"
+            proofForAddress4
         );
         assertEq(auctionInstance.numberOfActiveBids(), 1);
     }

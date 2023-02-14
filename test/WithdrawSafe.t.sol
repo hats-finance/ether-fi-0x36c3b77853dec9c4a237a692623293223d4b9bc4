@@ -8,6 +8,7 @@ import "../src/WithdrawSafe.sol";
 import "../src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
 import "../src/BNFT.sol";
+import "../src/Registration.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
 import "../src/Treasury.sol";
@@ -18,6 +19,7 @@ contract WithdrawSafeTest is Test {
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
+    Registration public registrationInstance;
     Auction public auctionInstance;
     Treasury public treasuryInstance;
     WithdrawSafe public safeInstance;
@@ -36,7 +38,8 @@ contract WithdrawSafeTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        auctionInstance = new Auction();
+        registrationInstance = new Registration();
+        auctionInstance = new Auction(address(registrationInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(
@@ -76,7 +79,7 @@ contract WithdrawSafeTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         depositInstance.deposit{value: 0.032 ether}();
