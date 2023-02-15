@@ -206,8 +206,8 @@ contract Auction is IAuction, Pausable {
             address withdrawalSafe,
             ,
             ,
-            uint256 winningBidId,
             ,
+            uint256 winningBidId,
             ,
 
         ) = depositContractInstance.stakes(_stakeId);

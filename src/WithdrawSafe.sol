@@ -101,6 +101,11 @@ contract WithdrawSafe is IWithdrawSafe {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    //Allows ether to be sent to this contract
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
+
     /// @notice Updates the total amount of funds receivable for recipients of the specified validator
     /// @dev Takes in a certain value of funds from only the set auction contract
     function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
@@ -265,10 +270,7 @@ contract WithdrawSafe is IWithdrawSafe {
         emit OperatorAddressSet(_nodeOperator);
     }
 
-    function setTreasuryAddress(address _treasuryAddress)
-        public
-        onlyDepositContract
-    {
+    function setTreasuryAddress(address _treasuryAddress) public {
         treasuryContract = _treasuryAddress;
     }
 

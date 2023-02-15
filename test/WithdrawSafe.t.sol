@@ -75,6 +75,7 @@ contract WithdrawSafeTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        depositInstance.setTreasuryAddress(address(treasuryInstance));
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
@@ -93,35 +94,35 @@ contract WithdrawSafeTest is Test {
     }
 
     function test_ReceiveAuctionFundsWorksCorrectly() public {
-        // assertEq(
-        //     managerInstance.withdrawableBalance(
-        //         0,
-        //         IWithdrawSafeManager.ValidatorRecipientType.TREASURY
-        //     ),
-        //     10000000000000000
-        // );
-        // assertEq(
-        //     managerInstance.withdrawableBalance(
-        //         0,
-        //         IWithdrawSafeManager.ValidatorRecipientType.OPERATOR
-        //     ),
-        //     10000000000000000
-        // );
-        // assertEq(
-        //     managerInstance.withdrawableBalance(
-        //         0,
-        //         IWithdrawSafeManager.ValidatorRecipientType.BNFTHOLDER
-        //     ),
-        //     20000000000000000
-        // );
-        // assertEq(
-        //     managerInstance.withdrawableBalance(
-        //         0,
-        //         IWithdrawSafeManager.ValidatorRecipientType.TNFTHOLDER
-        //     ),
-        //     60000000000000000
-        // );
-        // assertEq(address(safeInstance).balance, 0.1 ether);
+        assertEq(
+            safeInstance.withdrawableBalance(
+                0,
+                IWithdrawSafe.ValidatorRecipientType.TREASURY
+            ),
+            10000000000000000
+        );
+        assertEq(
+            safeInstance.withdrawableBalance(
+                0,
+                IWithdrawSafe.ValidatorRecipientType.OPERATOR
+            ),
+            10000000000000000
+        );
+        assertEq(
+            safeInstance.withdrawableBalance(
+                0,
+                IWithdrawSafe.ValidatorRecipientType.BNFTHOLDER
+            ),
+            20000000000000000
+        );
+        assertEq(
+            safeInstance.withdrawableBalance(
+                0,
+                IWithdrawSafe.ValidatorRecipientType.TNFTHOLDER
+            ),
+            60000000000000000
+        );
+        assertEq(address(safeInstance).balance, 0.1 ether);
         // assertEq(address(managerInstance).balance, 0 ether);
     }
 

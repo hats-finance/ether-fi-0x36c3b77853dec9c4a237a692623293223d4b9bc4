@@ -19,7 +19,7 @@ contract WithdrawSafeFactory {
         address _bnftContract
     ) external returns (address) {
         address clone = Clones.clone(implementationContract);
-        WithdrawSafe(clone).initialize(
+        WithdrawSafe(payable(clone)).initialize(
             _treasuryContract,
             _auctionContract,
             _depositContract,
