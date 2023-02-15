@@ -19,7 +19,6 @@ contract WithdrawSafeTest is Test {
     Auction public auctionInstance;
     Treasury public treasuryInstance;
     WithdrawSafe public safeInstance;
-    // WithdrawSafeManager public managerInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
