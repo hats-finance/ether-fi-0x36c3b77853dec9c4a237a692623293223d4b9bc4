@@ -41,16 +41,7 @@ contract WithdrawSafeTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        // managerInstance = new WithdrawSafeManager(
-        //     address(treasuryInstance),
-        //     address(auctionInstance),
-        //     address(depositInstance),
-        //     address(TestTNFTInstance),
-        //     address(TestBNFTInstance)
-        // );
 
-        // auctionInstance.setManagerAddress(address(managerInstance));
-        // depositInstance.setManagerAddress(address(managerInstance));
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials",
@@ -127,8 +118,8 @@ contract WithdrawSafeTest is Test {
     }
 
     function test_ReceiveAuctionFundsFailsIfNotAuctionContractCalling() public {
-        // vm.expectRevert("Only auction contract function");
-        // managerInstance.receiveAuctionFunds(0, 0.1 ether);
+        vm.expectRevert("Only auction contract function");
+        safeInstance.receiveAuctionFunds(0, 0.1 ether);
     }
 
     function test_WithdrawFundsFailsIfNotCorrectCaller() public {
@@ -136,9 +127,9 @@ contract WithdrawSafeTest is Test {
         (bool sent, ) = address(safeInstance).call{value: 0.04 ether}("");
         require(sent, "Failed to send Ether");
 
-        // hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        // vm.expectRevert("Incorrect caller");
-        // managerInstance.withdrawFunds(0);
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Incorrect caller");
+        safeInstance.withdrawFunds(0);
     }
 
     function test_WithdrawFundsWorksCorrectly() public {
@@ -153,14 +144,14 @@ contract WithdrawSafeTest is Test {
         uint256 operatorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
 
-        // hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        // managerInstance.withdrawFunds(0);
-        // assertEq(address(safeInstance).balance, 0 ether);
-        // assertEq(address(treasuryInstance).balance, 0.01040 ether);
-        // assertEq(
-        //     0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
-        //     operatorBalance + 0.0104 ether
-        // );
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        safeInstance.withdrawFunds(0);
+        assertEq(address(safeInstance).balance, 0 ether);
+        assertEq(address(treasuryInstance).balance, 0.01040 ether);
+        assertEq(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
+            operatorBalance + 0.0104 ether
+        );
     }
 
     function _merkleSetup() internal {

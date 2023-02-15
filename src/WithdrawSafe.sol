@@ -74,6 +74,7 @@ contract WithdrawSafe is IWithdrawSafe {
         owner = msg.sender;
         auctionContract = _auctionContract;
         depositContract = _depositContract;
+        treasuryContract = _treasuryContract;
 
         depositInstance = IDeposit(_depositContract);
 
