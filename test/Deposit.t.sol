@@ -37,19 +37,10 @@ contract DepositTest is Test {
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
+        depositInstance.setTreasuryAddress(address(treasuryInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        // managerInstance = new WithdrawSafeManager(
-        //     address(treasuryInstance),
-        //     address(auctionInstance),
-        //     address(depositInstance),
-        //     address(TestTNFTInstance),
-        //     address(TestBNFTInstance)
-        // );
-
-        // auctionInstance.setManagerAddress(address(managerInstance));
-        // depositInstance.setManagerAddress(address(managerInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -388,8 +379,8 @@ contract DepositTest is Test {
             address withdrawSafeAddress,
             ,
             ,
-            uint256 winningBidId,
             ,
+            uint256 winningBidId,
             ,
 
         ) = depositInstance.stakes(0);
@@ -397,14 +388,12 @@ contract DepositTest is Test {
         assertEq(withdrawSafeAddress.balance, 0.1 ether);
         // assertEq(address(managerInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0);
+        WithdrawSafe safeInstance = WithdrawSafe(payable(withdrawSafeAddress));
+        address operatorAddress = safeInstance.operatorAddresses(0);
+        assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
-        // address operatorAddress = managerInstance.operatorAddresses(0);
-        // assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-
-        // address safeAddress = managerInstance.withdrawSafeAddressesPerValidator(
-        //     0
-        // );
-        // assertEq(safeAddress, withdrawSafeAddress);
+        address safeAddress = safeInstance.withdrawSafeAddressesPerValidator(0);
+        assertEq(safeAddress, withdrawSafeAddress);
 
         assertEq(
             TestBNFTInstance.ownerOf(0),
