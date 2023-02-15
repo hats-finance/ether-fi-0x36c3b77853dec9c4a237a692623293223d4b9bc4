@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 import "../src/Treasury.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
+import "../src/WithdrawSafeFactory.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -53,7 +54,8 @@ contract MyScript is Script {
 
         Treasury treasury = new Treasury();
         Auction auction = new Auction();
-        Deposit deposit = new Deposit(address(auction));
+        WithdrawSafeFactory factory = new WithdrawSafeFactory();
+        Deposit deposit = new Deposit(address(auction), address(factory));
         (address TNFTAddress, address BNFTAddress) = deposit.getNFTAdresses();
         auction.setDepositContractAddress(address(deposit));
         //auction.updateMerkleRoot(root);

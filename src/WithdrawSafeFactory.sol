@@ -11,21 +11,9 @@ contract WithdrawSafeFactory {
         implementationContract = address(new WithdrawSafe());
     }
 
-    function createWithdrawalSafe(
-        address _treasuryContract,
-        address _auctionContract,
-        address _depositContract,
-        address _tnftContract,
-        address _bnftContract
-    ) external returns (address) {
+    function createWithdrawalSafe() external returns (address) {
         address clone = Clones.clone(implementationContract);
-        WithdrawSafe(payable(clone)).initialize(
-            _treasuryContract,
-            _auctionContract,
-            _depositContract,
-            _tnftContract,
-            _bnftContract
-        );
+        WithdrawSafe(payable(clone)).initialize();
         return clone;
     }
 }

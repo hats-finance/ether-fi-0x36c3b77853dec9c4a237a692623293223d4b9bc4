@@ -75,5 +75,6 @@ interface IDeposit {
         returns (address);
 
     function getStakeAmount() external returns (uint256);
-    // function setManagerAddress(address _managerAddress) external;
+
+    function setManagerAddress(address _managerAddress) external;
 }

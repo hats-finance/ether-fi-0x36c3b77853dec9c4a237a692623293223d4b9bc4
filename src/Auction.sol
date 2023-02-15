@@ -8,6 +8,7 @@ import "./interfaces/IDeposit.sol";
 import "./interfaces/IAuction.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IWithdrawSafe.sol";
+import "./interfaces/IWithdrawSafeManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
@@ -215,7 +216,10 @@ contract Auction is IAuction, Pausable {
         uint256 amount = bids[winningBidId].amount;
 
         safeInstance = IWithdrawSafe(withdrawalSafe);
-        safeInstance.receiveAuctionFunds(_validatorId, amount);
+        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+            withdrawSafeManager
+        );
+        managerInstance.receiveAuctionFunds(_validatorId, amount);
 
         (bool sent, ) = payable(withdrawalSafe).call{value: amount}("");
         require(sent, "Failed to send Ether");

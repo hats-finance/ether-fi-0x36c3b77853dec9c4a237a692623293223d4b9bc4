@@ -7,6 +7,7 @@ import "./interfaces/IAuction.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IDepositContract.sol";
 import "./interfaces/IWithdrawSafe.sol";
+import "./interfaces/IWithdrawSafeManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./WithdrawSafeFactory.sol";
@@ -21,15 +22,16 @@ contract Deposit is IDeposit, Pausable {
     IAuction public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
 
-    WithdrawSafeFactory withdrawSafeFactoryInstance;
+    WithdrawSafeFactory factory;
 
     uint256 public stakeAmount;
     uint256 public numberOfStakes = 0;
     uint256 public numberOfValidators = 0;
     address public owner;
-    // address private managerAddress;
+    address private managerAddress;
     address public treasuryAddress;
     address public auctionAddress;
+    address public withdrawSafeFactoryAddress;
 
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
@@ -64,17 +66,17 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    constructor(address _auctionAddress) {
+    constructor(address _auctionAddress, address _withdrawSafeFactoryAddress) {
         stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
-        withdrawSafeFactoryInstance = new WithdrawSafeFactory();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
         auctionInterfaceInstance = IAuction(_auctionAddress);
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
+        factory = WithdrawSafeFactory(_withdrawSafeFactoryAddress);
         owner = msg.sender;
         auctionAddress = _auctionAddress;
     }
@@ -95,13 +97,7 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        address withdrawSafe = withdrawSafeFactoryInstance.createWithdrawalSafe(
-            treasuryAddress,
-            auctionAddress,
-            address(this),
-            address(TNFTInstance),
-            address(BNFTInstance)
-        );
+        address withdrawSafe = factory.createWithdrawalSafe();
 
         //Create a stake object and store it in a mapping
         stakes[localNumOfStakes] = Stake({
@@ -194,8 +190,15 @@ contract Deposit is IDeposit, Pausable {
         address withdrawalSafeAddress = stakes[localStakeId].withdrawSafe;
 
         IWithdrawSafe safe = IWithdrawSafe(withdrawalSafeAddress);
-        safe.setOperatorAddress(_validatorId, msg.sender);
-        safe.setWithdrawSafeAddress(_validatorId, withdrawalSafeAddress);
+
+        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+            managerAddress
+        );
+        managerInstance.setOperatorAddress(_validatorId, msg.sender);
+        managerInstance.setWithdrawSafeAddress(
+            _validatorId,
+            withdrawalSafeAddress
+        );
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
@@ -285,9 +288,9 @@ contract Deposit is IDeposit, Pausable {
         return stakeAmount;
     }
 
-    // function setManagerAddress(address _managerAddress) external {
-    //     managerAddress = _managerAddress;
-    // }
+    function setManagerAddress(address _managerAddress) external {
+        managerAddress = _managerAddress;
+    }
 
     function setTreasuryAddress(address _treasuryAddress) external {
         treasuryAddress = _treasuryAddress;

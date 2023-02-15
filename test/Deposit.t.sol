@@ -3,6 +3,8 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
+import "../src/WithdrawSafeManager.sol";
+import "../src/WithdrawSafeFactory.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
 import "../src/BNFT.sol";
@@ -13,7 +15,8 @@ import "../lib/murky/src/Merkle.sol";
 contract DepositTest is Test {
     IDeposit public depositInterface;
     WithdrawSafe public withdrawSafeInstance;
-    // WithdrawSafeManager public managerInstance;
+    WithdrawSafeFactory public factoryInstance;
+    WithdrawSafeManager public managerInstance;
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -36,7 +39,11 @@ contract DepositTest is Test {
         auctionInstance = new Auction();
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
+        factoryInstance = new WithdrawSafeFactory();
+        depositInstance = new Deposit(
+            address(auctionInstance),
+            address(factoryInstance)
+        );
         depositInstance.setTreasuryAddress(address(treasuryInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
@@ -386,13 +393,15 @@ contract DepositTest is Test {
         ) = depositInstance.stakes(0);
 
         assertEq(withdrawSafeAddress.balance, 0.1 ether);
-        // assertEq(address(managerInstance).balance, 0 ether);
+        assertEq(address(managerInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0);
-        WithdrawSafe safeInstance = WithdrawSafe(payable(withdrawSafeAddress));
-        address operatorAddress = safeInstance.operatorAddresses(0);
+
+        address operatorAddress = managerInstance.operatorAddresses(0);
         assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
-        address safeAddress = safeInstance.withdrawSafeAddressesPerValidator(0);
+        address safeAddress = managerInstance.withdrawSafeAddressesPerValidator(
+            0
+        );
         assertEq(safeAddress, withdrawSafeAddress);
 
         assertEq(
