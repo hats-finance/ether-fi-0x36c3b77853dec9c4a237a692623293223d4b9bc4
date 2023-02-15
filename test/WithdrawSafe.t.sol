@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
 import "../src/interfaces/IWithdrawSafe.sol";
 import "../src/WithdrawSafe.sol";
+import "../src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -20,6 +21,7 @@ contract WithdrawSafeTest is Test {
     Auction public auctionInstance;
     Treasury public treasuryInstance;
     WithdrawSafe public safeInstance;
+    WithdrawSafeManager public managerInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -32,20 +34,27 @@ contract WithdrawSafeTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        _merkleSetup();
         treasuryInstance = new Treasury();
-        auctionInstance = new Auction(address(treasuryInstance));
+        _merkleSetup();
+        auctionInstance = new Auction();
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(
-            address(auctionInstance),
-            address(treasuryInstance)
+            address(auctionInstance)
         );
-        depositInterface = IDeposit(address(depositInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        managerInstance = new WithdrawSafeManager(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
+        );
 
+        auctionInstance.setManagerAddress(address(managerInstance));
+        depositInstance.setManagerAddress(address(managerInstance));
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials",
@@ -89,60 +98,39 @@ contract WithdrawSafeTest is Test {
 
     function test_ReceiveAuctionFundsWorksCorrectly() public {
         assertEq(
-            safeInstance.claimableBalance(
-                IWithdrawSafe.ValidatorRecipientType.TREASURY
+            managerInstance.withdrawableBalance(0,
+                IWithdrawSafeManager.ValidatorRecipientType.TREASURY
             ),
             10000000000000000
         );
         assertEq(
-            safeInstance.claimableBalance(
-                IWithdrawSafe.ValidatorRecipientType.OPERATOR
+             managerInstance.withdrawableBalance(0,
+                IWithdrawSafeManager.ValidatorRecipientType.OPERATOR
             ),
             10000000000000000
 
         );
         assertEq(
-            safeInstance.claimableBalance(
-                IWithdrawSafe.ValidatorRecipientType.BNFTHOLDER
+             managerInstance.withdrawableBalance(0,
+                IWithdrawSafeManager.ValidatorRecipientType.BNFTHOLDER
             ),
             20000000000000000
 
         );
         assertEq(
-            safeInstance.claimableBalance(
-                IWithdrawSafe.ValidatorRecipientType.TNFTHOLDER
+             managerInstance.withdrawableBalance(0,
+                IWithdrawSafeManager.ValidatorRecipientType.TNFTHOLDER
             ),
             60000000000000000
-
         );
+        assertEq(address(safeInstance).balance, 0.1 ether);
+        assertEq(address(managerInstance).balance, 0 ether);
+
     }
 
     function test_ReceiveAuctionFundsFailsIfNotAuctionContractCalling() public {
         vm.expectRevert("Only auction contract function");
-        safeInstance.receiveAuctionFunds{value: 0.1 ether}();
-    }
-
-    function test_DistributeFundsWorksCorrectly() public {
-        uint256 treasuryBalance = address(treasuryInstance).balance;
-        uint256 stakerBalance = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-            .balance;
-        uint256 operatorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            .balance;
-
-        safeInstance.distributeFunds();
-
-        assertEq(
-            address(treasuryInstance).balance,
-            treasuryBalance + 0.01 ether
-        );
-        assertEq(
-            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf.balance,
-            stakerBalance + 0.08 ether
-        );
-        assertEq(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
-            operatorBalance + 0.01 ether
-        );
+        managerInstance.receiveAuctionFunds(0, 0.1 ether);
     }
 
     function test_WithdrawFundsFailsIfNotCorrectCaller() public {
@@ -152,7 +140,7 @@ contract WithdrawSafeTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Incorrect caller");
-        safeInstance.withdrawFunds();
+        managerInstance.withdrawFunds(0);
     }
 
     function test_WithdrawFundsWorksCorrectly() public {
@@ -166,9 +154,9 @@ contract WithdrawSafeTest is Test {
         uint256 operatorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance;
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        safeInstance.withdrawFunds();
+        managerInstance.withdrawFunds(0);
         assertEq(address(safeInstance).balance, 0 ether);
-        assertEq(address(treasuryInstance).balance, 0.0104 ether);
+        assertEq(address(treasuryInstance).balance, 0.01040 ether);
         assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, operatorBalance + 0.0104 ether);
     }
     

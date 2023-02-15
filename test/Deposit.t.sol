@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
 import "../src/WithdrawSafe.sol";
+import "../src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
 import "../src/BNFT.sol";
@@ -14,6 +15,7 @@ import "../lib/murky/src/Merkle.sol";
 contract DepositTest is Test {
     IDeposit public depositInterface;
     WithdrawSafe public withdrawSafeInstance;
+    WithdrawSafeManager public managerInstance;
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -31,26 +33,27 @@ contract DepositTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        _merkleSetup();
         treasuryInstance = new Treasury();
-        auctionInstance = new Auction(address(treasuryInstance));
+        _merkleSetup();
+        auctionInstance = new Auction();
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(
-            address(auctionInstance),
-            address(treasuryInstance)
+            address(auctionInstance)
         );
-        depositInterface = IDeposit(address(depositInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        withdrawSafeInstance = new WithdrawSafe(
+        managerInstance = new WithdrawSafeManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(depositInstance),
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
+
+        auctionInstance.setManagerAddress(address(managerInstance));
+        depositInstance.setManagerAddress(address(managerInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -193,7 +196,6 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 walletBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
-        console2.log(walletBalance);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
         depositInstance.deposit{value: 0.032 ether}();
         assertEq(address(depositInstance).balance, 0.032 ether);
@@ -206,7 +208,6 @@ contract DepositTest is Test {
         vm.prank(owner);
         uint256 walletBalance2 = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
-        console2.log(walletBalance2);
         depositInstance.fetchEtherFromContract(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
@@ -398,7 +399,14 @@ contract DepositTest is Test {
         ) = depositInstance.stakes(0);
 
         assertEq(withdrawSafeAddress.balance, 0.1 ether);
+        assertEq(address(managerInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0);
+
+        address operatorAddress = managerInstance.operatorAddresses(0);
+        assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+
+        address safeAddress = managerInstance.withdrawSafeAddressesPerValidator(0);
+        assertEq(safeAddress, withdrawSafeAddress);
 
         assertEq(
             TestBNFTInstance.ownerOf(0),
@@ -482,7 +490,6 @@ contract DepositTest is Test {
         assertEq(isActive, false);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
         assertEq(auctionInstance.currentHighestBidId(), 3);
-        //assertEq(withdrawSafe.balance, 0.3 ether);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         depositInstance.cancelStake(0);
@@ -495,7 +502,6 @@ contract DepositTest is Test {
         assertEq(isActive, true);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
         assertEq(auctionInstance.currentHighestBidId(), 2);
-        //assertEq(withdrawSafe.balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         assertEq(
