@@ -23,6 +23,8 @@ interface IWithdrawSafeManager {
         uint256 bnftHolderSplit;
     }
 
+    function createWithdrawalSafe() external returns (address);
+
     function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
         external;
 

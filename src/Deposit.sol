@@ -10,7 +10,6 @@ import "./interfaces/IWithdrawSafe.sol";
 import "./interfaces/IWithdrawSafeManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./WithdrawSafeFactory.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
@@ -21,8 +20,6 @@ contract Deposit is IDeposit, Pausable {
     IBNFT public BNFTInterfaceInstance;
     IAuction public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
-
-    WithdrawSafeFactory factory;
 
     uint256 public stakeAmount;
     uint256 public numberOfStakes = 0;
@@ -66,7 +63,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    constructor(address _auctionAddress, address _withdrawSafeFactoryAddress) {
+    constructor(address _auctionAddress) {
         stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
@@ -76,7 +73,6 @@ contract Deposit is IDeposit, Pausable {
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
-        factory = WithdrawSafeFactory(_withdrawSafeFactoryAddress);
         owner = msg.sender;
         auctionAddress = _auctionAddress;
     }
@@ -97,7 +93,11 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        address withdrawSafe = factory.createWithdrawalSafe();
+        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+            managerAddress
+        );
+
+        address withdrawSafe = managerInstance.createWithdrawalSafe();
 
         //Create a stake object and store it in a mapping
         stakes[localNumOfStakes] = Stake({
@@ -189,8 +189,6 @@ contract Deposit is IDeposit, Pausable {
 
         address withdrawalSafeAddress = stakes[localStakeId].withdrawSafe;
 
-        IWithdrawSafe safe = IWithdrawSafe(withdrawalSafeAddress);
-
         IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
             managerAddress
         );
@@ -279,12 +277,13 @@ contract Deposit is IDeposit, Pausable {
 
     function getStakerRelatedToValidator(uint256 _validatorId)
         external
+        view
         returns (address)
     {
         return stakes[validators[_validatorId].stakeId].staker;
     }
 
-    function getStakeAmount() external returns (uint256) {
+    function getStakeAmount() external view returns (uint256) {
         return stakeAmount;
     }
 

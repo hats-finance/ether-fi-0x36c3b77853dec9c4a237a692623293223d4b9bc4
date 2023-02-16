@@ -10,12 +10,16 @@ import "./interfaces/IWithdrawSafeManager.sol";
 import "./interfaces/IDeposit.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./withdrawSafe.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "lib/forge-std/src/console.sol";
 
 contract WithdrawSafeManager is IWithdrawSafeManager {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    address public immutable implementationContract;
 
     uint256 public constant SCALE = 100;
 
@@ -45,7 +49,6 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     //--------------------------------------------------------------------------------------
     event Received(address indexed sender, uint256 value);
     event BidRefunded(uint256 indexed _bidId, uint256 indexed _amount);
-
     event AuctionFundsReceived(uint256 indexed amount);
     event FundsDistributed(uint256 indexed totalFundsTransferred);
     event OperatorAddressSet(address indexed operater);
@@ -68,6 +71,8 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
         address _tnftContract,
         address _bnftContract
     ) {
+        implementationContract = address(new WithdrawSafe());
+
         owner = msg.sender;
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
@@ -98,6 +103,12 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    function createWithdrawalSafe() external returns (address) {
+        address clone = Clones.clone(implementationContract);
+        WithdrawSafe(payable(clone)).initialize();
+        return clone;
+    }
 
     /// @notice Updates the total amount of funds receivable for recipients of the specified validator
     /// @dev Takes in a certain value of funds from only the set auction contract
