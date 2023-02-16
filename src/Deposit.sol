@@ -48,10 +48,7 @@ contract Deposit is IDeposit, Pausable {
     event ValidatorRegistered(
         uint256 bidId,
         uint256 stakeId,
-        uint256 validatorId,
-        bytes indexed encryptedValidatorKey,
-        bytes indexed encryptedValidatorKeyPassword,
-        bytes indexed stakerPubKey
+        uint256 validatorId
     );
     event ValidatorAccepted(uint256 validatorId);
 
@@ -103,7 +100,6 @@ contract Deposit is IDeposit, Pausable {
         stakes[localNumOfStakes] = Stake({
             staker: msg.sender,
             withdrawSafe: withdrawSafe,
-            stakerPubKey: "",
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
             winningBidId: auctionInterfaceInstance.calculateWinningBid(),
@@ -126,14 +122,9 @@ contract Deposit is IDeposit, Pausable {
     /// @notice Creates validator object and updates information
     /// @dev Still looking at solutions to storing key on-chain
     /// @param _stakeId id of the stake the validator connects to
-    /// @param _encryptedValidatorKey encrypted validator key which the operator and staker can access
-    /// @param _stakerPubKey generatd public key for the staker for use in encryption
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
         uint256 _stakeId,
-        bytes memory _encryptedValidatorKey,
-        bytes memory _encryptedValidatorKeyPassword,
-        bytes memory _stakerPubKey,
         DepositData calldata _depositData
     ) public whenNotPaused {
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
@@ -146,12 +137,9 @@ contract Deposit is IDeposit, Pausable {
             validatorId: numberOfValidators,
             bidId: stakes[_stakeId].winningBidId,
             stakeId: _stakeId,
-            encryptedValidatorKey: _encryptedValidatorKey,
-            encryptedValidatorKeyPassword: _encryptedValidatorKeyPassword,
             phase: VALIDATOR_PHASE.HANDOVER_READY
         });
 
-        stakes[_stakeId].stakerPubKey = _stakerPubKey;
         stakes[_stakeId].deposit_data = _depositData;
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
         numberOfValidators++;
@@ -159,10 +147,7 @@ contract Deposit is IDeposit, Pausable {
         emit ValidatorRegistered(
             stakes[_stakeId].winningBidId,
             _stakeId,
-            numberOfValidators - 1,
-            _encryptedValidatorKey,
-            _encryptedValidatorKeyPassword,
-            _stakerPubKey
+            numberOfValidators - 1
         );
     }
 

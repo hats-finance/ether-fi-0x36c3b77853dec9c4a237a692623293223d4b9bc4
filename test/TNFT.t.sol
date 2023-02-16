@@ -6,6 +6,7 @@ import "../src/Deposit.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
+import "../src/Registration.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
@@ -13,6 +14,7 @@ contract TNFTTest is Test {
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
+    Registration public registrationInstance;
     Auction public auctionInstance;
     Treasury public treasuryInstance;
     Merkle merkle;
@@ -26,7 +28,8 @@ contract TNFTTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        auctionInstance = new Auction();
+        registrationInstance = new Registration();
+        auctionInstance = new Auction(address(registrationInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));

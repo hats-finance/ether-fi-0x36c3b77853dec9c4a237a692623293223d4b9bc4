@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/Treasury.sol";
+import "../src/Registration.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
 import "../lib/murky/src/Merkle.sol";
@@ -52,7 +53,8 @@ contract MyScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         Treasury treasury = new Treasury();
-        Auction auction = new Auction();
+        Registration registration = new Registration();
+        Auction auction = new Auction(address(registration));        
         Deposit deposit = new Deposit(address(auction));
         (address TNFTAddress, address BNFTAddress) = deposit.getNFTAdresses();
         auction.setDepositContractAddress(address(deposit));

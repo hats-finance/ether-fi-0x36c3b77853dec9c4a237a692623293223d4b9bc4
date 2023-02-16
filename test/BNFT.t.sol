@@ -6,6 +6,7 @@ import "../src/Deposit.sol";
 import "src/WithdrawSafeManager.sol";
 
 import "../src/BNFT.sol";
+import "../src/Registration.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
 import "../src/Treasury.sol";
@@ -15,6 +16,7 @@ contract BNFTTest is Test {
     Deposit public depositInstance;
     WithdrawSafe public withdrawSafeInstance;
     WithdrawSafeManager public managerInstance;
+    Registration public registrationInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     Auction public auctionInstance;
@@ -32,7 +34,8 @@ contract BNFTTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        auctionInstance = new Auction();
+        registrationInstance = new Registration();
+        auctionInstance = new Auction(address(registrationInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
@@ -76,18 +79,10 @@ contract BNFTTest is Test {
     }
 
     function test_BNFTCannotBeTransferred() public {
-        IDeposit.DepositData memory test_data = IDeposit.DepositData({
-            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-            withdrawalCredentials: "test_credentials",
-            depositDataRoot: "test_deposit_root",
-            publicKey: "test_pubkey",
-            signature: "test_signature"
-        });
-
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         vm.expectRevert("Err: token is SOUL BOUND");
         TestBNFTInstance.transferFrom(

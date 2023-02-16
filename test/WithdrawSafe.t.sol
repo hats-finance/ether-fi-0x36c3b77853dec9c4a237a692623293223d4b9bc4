@@ -8,6 +8,7 @@ import "src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
 import "../src/BNFT.sol";
+import "../src/Registration.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
@@ -17,6 +18,7 @@ contract WithdrawSafeTest is Test {
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
+    Registration public registrationInstance;
     Auction public auctionInstance;
     Treasury public treasuryInstance;
     WithdrawSafe public safeInstance;
@@ -39,7 +41,8 @@ contract WithdrawSafeTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        auctionInstance = new Auction();
+        registrationInstance = new Registration();
+        auctionInstance = new Auction(address(registrationInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));
@@ -78,25 +81,18 @@ contract WithdrawSafeTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         depositInstance.setTreasuryAddress(address(treasuryInstance));
         depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(
-            0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
-            test_data
-        );
+        depositInstance.registerValidator(0, test_data);
         vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         depositInstance.acceptValidator(0);
 
-        (, address withdrawSafe, , , , , , ) = depositInstance.stakes(0);
-
+        (, address withdrawSafe, , , , , ) = depositInstance.stakes(0);
         safeInstance = WithdrawSafe(payable(withdrawSafe));
     }
 
@@ -174,10 +170,10 @@ contract WithdrawSafeTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(alice);
-        auctionInstance.bidOnStake{value: 0.4 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.4 ether}(proof);
 
         hoax(chad);
-        auctionInstance.bidOnStake{value: 0.3 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.3 ether}(proof);
 
         hoax(bob);
         depositInstance.deposit{value: 0.032 ether}();
@@ -190,7 +186,6 @@ contract WithdrawSafeTest is Test {
             address withdrawSafeAddress_2,
             ,
             ,
-            ,
             uint256 winningBidId_2,
             ,
 
@@ -199,7 +194,6 @@ contract WithdrawSafeTest is Test {
         (
             address staker_3,
             address withdrawSafeAddress_3,
-            ,
             ,
             ,
             uint256 winningBidId_3,
@@ -211,23 +205,11 @@ contract WithdrawSafeTest is Test {
         assertEq(staker_3, dan);
 
         startHoax(bob);
-        depositInstance.registerValidator(
-            1,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_staker_2_PubKey",
-            test_data_2
-        );
+        depositInstance.registerValidator(1, test_data_2);
         vm.stopPrank();
 
         startHoax(dan);
-        depositInstance.registerValidator(
-            2,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_staker_2_PubKey",
-            test_data_2
-        );
+        depositInstance.registerValidator(2, test_data_2);
         vm.stopPrank();
 
         hoax(alice);
