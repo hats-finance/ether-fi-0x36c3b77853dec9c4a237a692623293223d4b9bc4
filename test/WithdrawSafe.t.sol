@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
 import "../src/interfaces/IWithdrawSafe.sol";
 import "../src/WithdrawSafeFactory.sol";
-import "../src/WithdrawSafeManager.sol";
+import "src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
 import "../src/BNFT.sol";
