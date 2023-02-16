@@ -31,6 +31,9 @@ contract WithdrawSafeTest is Test {
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
+    address bob = vm.addr(3);
+    address chad = vm.addr(4);
+    address dan = vm.addr(5);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -164,6 +167,151 @@ contract WithdrawSafeTest is Test {
         assertEq(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
             operatorBalance + 0.0104 ether
+        );
+    }
+
+    function test_WithdrawSafeMultipleSafesWorkCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        hoax(alice);
+        auctionInstance.bidOnStake{value: 0.4 ether}(proof, "test_pubKey");
+
+        hoax(chad);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proof, "test_pubKey");
+
+        hoax(bob);
+        depositInstance.deposit{value: 0.032 ether}();
+
+        hoax(dan);
+        depositInstance.deposit{value: 0.032 ether}();
+
+        (
+            address staker_2,
+            address withdrawSafeAddress_2,
+            ,
+            ,
+            ,
+            uint256 winningBidId_2,
+            ,
+
+        ) = depositInstance.stakes(1);
+
+        (
+            address staker_3,
+            address withdrawSafeAddress_3,
+            ,
+            ,
+            ,
+            uint256 winningBidId_3,
+            ,
+
+        ) = depositInstance.stakes(2);
+
+        assertEq(staker_2, bob);
+        assertEq(staker_3, dan);
+
+        startHoax(bob);
+        depositInstance.registerValidator(
+            1,
+            "Validator_key",
+            "encrypted_key_password",
+            "test_staker_2_PubKey",
+            test_data_2
+        );
+        vm.stopPrank();
+
+        startHoax(dan);
+        depositInstance.registerValidator(
+            2,
+            "Validator_key",
+            "encrypted_key_password",
+            "test_staker_2_PubKey",
+            test_data_2
+        );
+        vm.stopPrank();
+
+        hoax(alice);
+        depositInstance.acceptValidator(1);
+
+        hoax(chad);
+        depositInstance.acceptValidator(2);
+
+        assertEq(withdrawSafeAddress_2.balance, 0.4 ether);
+        assertEq(withdrawSafeAddress_3.balance, 0.3 ether);
+
+        // Node Operators
+        uint256 aliceBalBefore = alice.balance;
+        uint256 chadBalBefore = chad.balance;
+
+        //Stakers
+        uint256 bobBalBefore = bob.balance;
+        uint256 danBalBefore = dan.balance;
+
+        // Treasury
+        uint256 treasuryBalBefore = address(treasuryInstance).balance;
+
+        // Simulate withdrawal from beacon chain
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (bool sent, ) = address(withdrawSafeAddress_2).call{value: 1 ether}("");
+        require(sent, "Failed to send Ether");
+        (sent, ) = address(withdrawSafeAddress_3).call{value: 10 ether}("");
+        require(sent, "Failed to send Ether");
+        vm.stopPrank();
+
+        hoax(bob);
+        managerInstance.withdrawFunds(1);
+
+        hoax(dan);
+        managerInstance.withdrawFunds(2);
+
+        assertEq(withdrawSafeAddress_2.balance, 0);
+        assertEq(withdrawSafeAddress_3.balance, 0);
+
+        // Validator 2 Rewards
+        uint256 aliceSplit = managerInstance.withdrawn(
+            1,
+            IWithdrawSafeManager.ValidatorRecipientType.OPERATOR
+        );
+        uint256 bobSplit = managerInstance.withdrawn(
+            1,
+            IWithdrawSafeManager.ValidatorRecipientType.TNFTHOLDER
+        ) +
+            managerInstance.withdrawn(
+                1,
+                IWithdrawSafeManager.ValidatorRecipientType.BNFTHOLDER
+            );
+        uint256 treasurySpilt = managerInstance.withdrawn(
+            1,
+            IWithdrawSafeManager.ValidatorRecipientType.TREASURY
+        );
+
+        // Validator 3 rewards
+        uint256 chadSplit = managerInstance.withdrawn(
+            2,
+            IWithdrawSafeManager.ValidatorRecipientType.OPERATOR
+        );
+        uint256 danSplit = managerInstance.withdrawn(
+            2,
+            IWithdrawSafeManager.ValidatorRecipientType.TNFTHOLDER
+        ) +
+            managerInstance.withdrawn(
+                2,
+                IWithdrawSafeManager.ValidatorRecipientType.BNFTHOLDER
+            );
+        treasurySpilt += managerInstance.withdrawn(
+            2,
+            IWithdrawSafeManager.ValidatorRecipientType.TREASURY
+        );
+
+        assertEq(alice.balance, aliceBalBefore + aliceSplit);
+        assertEq(chad.balance, chadBalBefore + chadSplit);
+
+        assertEq(bob.balance, bobBalBefore + bobSplit);
+        assertEq(dan.balance, danBalBefore + danSplit);
+
+        assertEq(
+            address(treasuryInstance).balance,
+            treasuryBalBefore + treasurySpilt
         );
     }
 
