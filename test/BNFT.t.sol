@@ -3,8 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/Deposit.sol";
-import "../src/WithdrawSafeFactory.sol";
-import "../src/WithdrawSafeManager.sol";
+import "src/WithdrawSafeManager.sol";
 
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -15,7 +14,6 @@ import "../lib/murky/src/Merkle.sol";
 contract BNFTTest is Test {
     Deposit public depositInstance;
     WithdrawSafe public withdrawSafeInstance;
-    WithdrawSafeFactory public factoryInstance;
     WithdrawSafeManager public managerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -37,24 +35,20 @@ contract BNFTTest is Test {
         auctionInstance = new Auction();
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        factoryInstance = new WithdrawSafeFactory();
-        depositInstance = new Deposit(
-            address(auctionInstance),
-            address(factoryInstance)
-        );
+        depositInstance = new Deposit(address(auctionInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        // managerInstance = new WithdrawSafeManager(
-        //     address(treasuryInstance),
-        //     address(auctionInstance),
-        //     address(depositInstance),
-        //     address(TestTNFTInstance),
-        //     address(TestBNFTInstance)
-        // );
+        managerInstance = new WithdrawSafeManager(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(depositInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
+        );
 
-        // auctionInstance.setManagerAddress(address(managerInstance));
-        // depositInstance.setManagerAddress(address(managerInstance));
+        auctionInstance.setManagerAddress(address(managerInstance));
+        depositInstance.setManagerAddress(address(managerInstance));
 
         test_data = IDeposit.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,

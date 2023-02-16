@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
 import "src/WithdrawSafeManager.sol";
-import "../src/WithdrawSafeFactory.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
 import "../src/BNFT.sol";
@@ -15,7 +14,6 @@ import "../lib/murky/src/Merkle.sol";
 contract DepositTest is Test {
     IDeposit public depositInterface;
     WithdrawSafe public withdrawSafeInstance;
-    WithdrawSafeFactory public factoryInstance;
     WithdrawSafeManager public managerInstance;
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
@@ -36,17 +34,16 @@ contract DepositTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
+
         auctionInstance = new Auction();
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        factoryInstance = new WithdrawSafeFactory();
-        depositInstance = new Deposit(
-            address(auctionInstance),
-            address(factoryInstance)
-        );
 
+        depositInstance = new Deposit(address(auctionInstance));
         depositInstance.setTreasuryAddress(address(treasuryInstance));
+
         auctionInstance.setDepositContractAddress(address(depositInstance));
+
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
 

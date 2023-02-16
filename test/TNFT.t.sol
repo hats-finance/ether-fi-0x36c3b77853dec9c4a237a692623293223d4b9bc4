@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/WithdrawSafeFactory.sol";
 import "../src/Deposit.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -16,7 +15,6 @@ contract TNFTTest is Test {
     TNFT public TestTNFTInstance;
     Auction public auctionInstance;
     Treasury public treasuryInstance;
-    WithdrawSafeFactory public factoryInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -31,11 +29,7 @@ contract TNFTTest is Test {
         auctionInstance = new Auction();
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        factoryInstance = new WithdrawSafeFactory();
-        depositInstance = new Deposit(
-            address(auctionInstance),
-            address(factoryInstance)
-        );
+        depositInstance = new Deposit(address(auctionInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
