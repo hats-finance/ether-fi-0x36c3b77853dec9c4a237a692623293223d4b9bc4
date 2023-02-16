@@ -6,6 +6,7 @@ import "../src/interfaces/IDeposit.sol";
 import "../src/WithdrawSafe.sol";
 import "../src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
+import "../src/Registration.sol";
 import "../src/Auction.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -16,6 +17,7 @@ contract DepositTest is Test {
     IDeposit public depositInterface;
     WithdrawSafe public withdrawSafeInstance;
     WithdrawSafeManager public managerInstance;
+    Registration public registrationInstance;
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -35,7 +37,8 @@ contract DepositTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        auctionInstance = new Auction();
+        registrationInstance = new Registration();
+        auctionInstance = new Auction(address(registrationInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(
@@ -83,20 +86,16 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "encrypted_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
 
         (
             address staker,
             ,
-            bytes memory stakerPublicKey,
             IDeposit.DepositData memory deposit_data,
             uint256 amount,
             uint256 winningBid,
@@ -108,7 +107,6 @@ contract DepositTest is Test {
         assertEq(amount, 0.032 ether);
         assertEq(winningBid, 1);
         assertEq(stakeId, 0);
-        assertEq(stakerPublicKey, "test_stakerPubKey");
 
         assertEq(
             deposit_data.operator,
@@ -124,7 +122,7 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         assertEq(address(depositInstance).balance, 0.032 ether);
     }
@@ -133,7 +131,7 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         assertEq(
             depositInstance.depositorBalances(
@@ -142,7 +140,7 @@ contract DepositTest is Test {
             0.032 ether
         );
 
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         assertEq(
             depositInstance.depositorBalances(
@@ -162,7 +160,7 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         auctionInstance.cancelBid(1);
         vm.expectRevert("No bids available at the moment");
         depositInstance.deposit{value: 0.032 ether}();
@@ -175,7 +173,7 @@ contract DepositTest is Test {
         depositInstance.pauseContract();
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         vm.expectRevert("Pausable: paused");
         depositInstance.deposit{value: 0.032 ether}();
         assertEq(depositInstance.paused(), true);
@@ -196,7 +194,7 @@ contract DepositTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 walletBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         assertEq(address(depositInstance).balance, 0.032 ether);
         assertEq(
@@ -222,7 +220,7 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
@@ -230,9 +228,6 @@ contract DepositTest is Test {
         vm.expectRevert("Incorrect caller");
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
     }
@@ -241,16 +236,13 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.cancelStake(0);
 
         vm.expectRevert("Stake not in correct phase");
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
     }
@@ -259,7 +251,7 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
@@ -270,9 +262,6 @@ contract DepositTest is Test {
         vm.expectRevert("Pausable: paused");
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
     }
@@ -281,14 +270,11 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
 
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
 
@@ -296,28 +282,21 @@ contract DepositTest is Test {
             ,
             uint256 bidId,
             uint256 stakeId,
-            bytes memory validatorKey,
-            bytes memory encryptedValidatorKeyPassword,
 
         ) = depositInstance.validators(0);
         assertEq(bidId, 1);
         assertEq(stakeId, 0);
-        assertEq(validatorKey, "validator_key");
         assertEq(depositInstance.numberOfValidators(), 1);
-        assertEq(encryptedValidatorKeyPassword, "encrypted_key_password");
     }
 
     function test_AcceptValidatorFailsIfPaused() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -334,13 +313,10 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         vm.stopPrank();
@@ -354,13 +330,10 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(0);
@@ -373,14 +346,11 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
 
         depositInstance.registerValidator(
             0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
 
@@ -390,7 +360,6 @@ contract DepositTest is Test {
         (
             ,
             address withdrawSafeAddress,
-            ,
             ,
             uint256 winningBidId,
             ,
@@ -434,7 +403,7 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         depositInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
@@ -447,7 +416,7 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.cancelStake(0);
@@ -460,9 +429,9 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
-        auctionInstance.bidOnStake{value: 0.3 ether}(proof, "test_pubKey");
-        auctionInstance.bidOnStake{value: 0.2 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.3 ether}(proof);
+        auctionInstance.bidOnStake{value: 0.2 ether}(proof);
 
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
@@ -471,7 +440,6 @@ contract DepositTest is Test {
             .balance;
         (
             address staker,
-            ,
             ,
             ,
             uint256 amount,
@@ -483,7 +451,7 @@ contract DepositTest is Test {
         assertEq(amount, 0.032 ether);
         assertEq(winningbidID, 2);
 
-        (uint256 bidAmount, , address bidder, bool isActive, ) = auctionInstance
+        (uint256 bidAmount, , , address bidder, bool isActive) = auctionInstance
             .bids(winningbidID);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -493,10 +461,10 @@ contract DepositTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         depositInstance.cancelStake(0);
-        (, , , , , winningbidID, , ) = depositInstance.stakes(0);
+        (, , , , winningbidID, , ) = depositInstance.stakes(0);
         assertEq(winningbidID, 0);
 
-        (bidAmount, , bidder, isActive, ) = auctionInstance.bids(2);
+        (bidAmount, , , bidder, isActive) = auctionInstance.bids(2);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, true);
@@ -514,26 +482,20 @@ contract DepositTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             0,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(0);
 
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof, "test_pubKey");
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         depositInstance.deposit{value: 0.032 ether}();
         depositInstance.registerValidator(
             1,
-            "Validator_key",
-            "encrypted_key_password",
-            "test_stakerPubKey",
             test_data
         );
         depositInstance.acceptValidator(1);

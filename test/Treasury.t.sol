@@ -5,10 +5,12 @@ import "forge-std/Test.sol";
 
 import "../src/Treasury.sol";
 import "../src/Auction.sol";
+import "../src/Registration.sol";
 
 contract TreasuryTest is Test {
     Treasury treasuryInstance;
     Auction auctionInstance;
+    Registration public registrationInstance;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -16,7 +18,8 @@ contract TreasuryTest is Test {
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
-        auctionInstance = new Auction();
+        registrationInstance = new Registration();
+        auctionInstance = new Auction(address(registrationInstance));
         vm.stopPrank();
     }
 
