@@ -3,6 +3,8 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/Deposit.sol";
+import "src/WithdrawSafeManager.sol";
+
 import "../src/BNFT.sol";
 import "../src/Registration.sol";
 import "../src/TNFT.sol";
@@ -36,9 +38,7 @@ contract BNFTTest is Test {
         auctionInstance = new Auction(address(registrationInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(
-            address(auctionInstance)
-        );
+        depositInstance = new Deposit(address(auctionInstance));
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));

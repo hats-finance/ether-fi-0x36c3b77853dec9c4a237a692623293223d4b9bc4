@@ -7,10 +7,9 @@ import "./interfaces/IAuction.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IDepositContract.sol";
 import "./interfaces/IWithdrawSafe.sol";
+import "./interfaces/IWithdrawSafeManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./WithdrawSafe.sol";
-import "./WithdrawSafeManager.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
@@ -27,6 +26,9 @@ contract Deposit is IDeposit, Pausable {
     uint256 public numberOfValidators = 0;
     address public owner;
     address private managerAddress;
+    address public treasuryAddress;
+    address public auctionAddress;
+    address public withdrawSafeFactoryAddress;
 
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
@@ -69,6 +71,7 @@ contract Deposit is IDeposit, Pausable {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         owner = msg.sender;
+        auctionAddress = _auctionAddress;
     }
 
     //--------------------------------------------------------------------------------------
@@ -80,19 +83,23 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     function deposit() public payable whenNotPaused {
         uint256 localNumOfStakes = numberOfStakes;
-        
+
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
             "No bids available at the moment"
         );
 
-        WithdrawSafe withdrawSafeInstance = new WithdrawSafe();
+        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+            managerAddress
+        );
+
+        address withdrawSafe = managerInstance.createWithdrawalSafe();
 
         //Create a stake object and store it in a mapping
         stakes[localNumOfStakes] = Stake({
             staker: msg.sender,
-            withdrawSafe: address(withdrawSafeInstance),
+            withdrawSafe: withdrawSafe,
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
             winningBidId: auctionInterfaceInstance.calculateWinningBid(),
@@ -164,14 +171,24 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        
-        WithdrawSafeManager manager = WithdrawSafeManager(managerAddress);
-        manager.setOperatorAddress(_validatorId, msg.sender);
-        manager.setWithdrawSafeAddress(_validatorId, stakes[localStakeId].withdrawSafe);
+
+        address withdrawalSafeAddress = stakes[localStakeId].withdrawSafe;
+
+        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+            managerAddress
+        );
+        managerInstance.setOperatorAddress(_validatorId, msg.sender);
+        managerInstance.setWithdrawSafeAddress(
+            _validatorId,
+            withdrawalSafeAddress
+        );
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
-        auctionInterfaceInstance.sendFundsToWithdrawSafe(_validatorId, localStakeId);
+        auctionInterfaceInstance.sendFundsToWithdrawSafe(
+            _validatorId,
+            localStakeId
+        );
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
@@ -243,11 +260,15 @@ contract Deposit is IDeposit, Pausable {
         return (address(TNFTInstance), address(BNFTInstance));
     }
 
-    function getStakerRelatedToValidator(uint256 _validatorId) external returns(address){
+    function getStakerRelatedToValidator(uint256 _validatorId)
+        external
+        view
+        returns (address)
+    {
         return stakes[validators[_validatorId].stakeId].staker;
     }
 
-    function getStakeAmount() external returns(uint256){
+    function getStakeAmount() external view returns (uint256) {
         return stakeAmount;
     }
 
@@ -255,6 +276,9 @@ contract Deposit is IDeposit, Pausable {
         managerAddress = _managerAddress;
     }
 
+    function setTreasuryAddress(address _treasuryAddress) external {
+        treasuryAddress = _treasuryAddress;
+    }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
