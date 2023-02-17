@@ -210,12 +210,14 @@ contract Deposit is IDeposit, Pausable {
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
-        // depositContractEth2.deposit{value: stakeAmount}(
-        //     dataInstance.publicKey,
-        //     abi.encodePacked(dataInstance.withdrawalCredentials),
-        //     dataInstance.signature,
-        //     dataInstance.depositDataRoot
-        // );
+        if (test = false) {
+            depositContractEth2.deposit{value: stakeAmount}(
+                dataInstance.publicKey,
+                abi.encodePacked(dataInstance.withdrawalCredentials),
+                dataInstance.signature,
+                dataInstance.depositDataRoot
+            );
+        }
 
         emit ValidatorAccepted(_validatorId);
     }
