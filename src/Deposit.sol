@@ -7,10 +7,9 @@ import "./interfaces/IAuction.sol";
 import "./interfaces/IDeposit.sol";
 import "./interfaces/IDepositContract.sol";
 import "./interfaces/IWithdrawSafe.sol";
+import "./interfaces/IWithdrawSafeManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./WithdrawSafe.sol";
-import "./WithdrawSafeManager.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract Deposit is IDeposit, Pausable {
@@ -27,6 +26,9 @@ contract Deposit is IDeposit, Pausable {
     uint256 public numberOfValidators = 0;
     address public owner;
     address private managerAddress;
+    address public treasuryAddress;
+    address public auctionAddress;
+    address public withdrawSafeFactoryAddress;
 
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
@@ -71,8 +73,7 @@ contract Deposit is IDeposit, Pausable {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         owner = msg.sender;
-
-        emit NFTContractsDeployed(address(TNFTInstance), address(BNFTInstance));
+        auctionAddress = _auctionAddress;
     }
 
     //--------------------------------------------------------------------------------------
@@ -91,12 +92,16 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        WithdrawSafe withdrawSafeInstance = new WithdrawSafe();
+        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+            managerAddress
+        );
+
+        address withdrawSafe = managerInstance.createWithdrawalSafe();
 
         //Create a stake object and store it in a mapping
         stakes[localNumOfStakes] = Stake({
             staker: msg.sender,
-            withdrawSafe: address(withdrawSafeInstance),
+            withdrawSafe: withdrawSafe,
             deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
             winningBidId: auctionInterfaceInstance.calculateWinningBid(),
@@ -170,11 +175,15 @@ contract Deposit is IDeposit, Pausable {
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
 
-        WithdrawSafeManager manager = WithdrawSafeManager(managerAddress);
-        manager.setOperatorAddress(_validatorId, msg.sender);
-        manager.setWithdrawSafeAddress(
+        address withdrawalSafeAddress = stakes[localStakeId].withdrawSafe;
+
+        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+            managerAddress
+        );
+        managerInstance.setOperatorAddress(_validatorId, msg.sender);
+        managerInstance.setWithdrawSafeAddress(
             _validatorId,
-            stakes[localStakeId].withdrawSafe
+            withdrawalSafeAddress
         );
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
@@ -256,17 +265,22 @@ contract Deposit is IDeposit, Pausable {
 
     function getStakerRelatedToValidator(uint256 _validatorId)
         external
+        view
         returns (address)
     {
         return stakes[validators[_validatorId].stakeId].staker;
     }
 
-    function getStakeAmount() external returns (uint256) {
+    function getStakeAmount() external view returns (uint256) {
         return stakeAmount;
     }
 
     function setManagerAddress(address _managerAddress) external {
         managerAddress = _managerAddress;
+    }
+
+    function setTreasuryAddress(address _treasuryAddress) external {
+        treasuryAddress = _treasuryAddress;
     }
 
     //--------------------------------------------------------------------------------------

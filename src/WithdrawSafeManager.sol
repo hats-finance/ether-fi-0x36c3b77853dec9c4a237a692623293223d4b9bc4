@@ -10,12 +10,16 @@ import "./interfaces/IWithdrawSafeManager.sol";
 import "./interfaces/IDeposit.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./WithdrawSafe.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "lib/forge-std/src/console.sol";
 
 contract WithdrawSafeManager is IWithdrawSafeManager {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    address public immutable implementationContract;
 
     uint256 public constant SCALE = 100;
 
@@ -45,7 +49,6 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     //--------------------------------------------------------------------------------------
     event Received(address indexed sender, uint256 value);
     event BidRefunded(uint256 indexed _bidId, uint256 indexed _amount);
-
     event AuctionFundsReceived(uint256 indexed amount);
     event FundsDistributed(uint256 indexed totalFundsTransferred);
     event OperatorAddressSet(address indexed operater);
@@ -68,6 +71,8 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
         address _tnftContract,
         address _bnftContract
     ) {
+        implementationContract = address(new WithdrawSafe());
+
         owner = msg.sender;
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
@@ -99,6 +104,12 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    function createWithdrawalSafe() external returns (address) {
+        address clone = Clones.clone(implementationContract);
+        WithdrawSafe(payable(clone)).initialize();
+        return clone;
+    }
+
     /// @notice Updates the total amount of funds receivable for recipients of the specified validator
     /// @dev Takes in a certain value of funds from only the set auction contract
     function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
@@ -107,7 +118,8 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
         require(
             msg.sender == auctionContract,
             "Only auction contract function"
-        );        withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] +=
+        );
+        withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] +=
             (_amount * auctionContractRevenueSplit.treasurySplit) /
             SCALE;
 
@@ -140,7 +152,7 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
         uint256 contractBalance = address(
             withdrawSafeAddressesPerValidator[_validatorId]
         ).balance;
-        
+
         uint256 validatorRewards = contractBalance -
             depositInstance.getStakeAmount() -
             fundsReceivedFromAuctions[_validatorId];
@@ -186,21 +198,32 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
         );
 
         withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] = 0;
-        withdrawn[_validatorId][ValidatorRecipientType.TREASURY] += treasuryAmount;
+        withdrawn[_validatorId][
+            ValidatorRecipientType.TREASURY
+        ] += treasuryAmount;
         withdrawableBalance[_validatorId][ValidatorRecipientType.OPERATOR] = 0;
-        withdrawn[_validatorId][ValidatorRecipientType.OPERATOR] += operatorAmount;
-        withdrawableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER] = 0;
-        withdrawn[_validatorId][ValidatorRecipientType.BNFTHOLDER] += bnftHolderAmount;
-        withdrawableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER] = 0;
-        withdrawn[_validatorId][ValidatorRecipientType.TNFTHOLDER] += tnftHolderAmount;
+        withdrawn[_validatorId][
+            ValidatorRecipientType.OPERATOR
+        ] += operatorAmount;
+        withdrawableBalance[_validatorId][
+            ValidatorRecipientType.BNFTHOLDER
+        ] = 0;
+        withdrawn[_validatorId][
+            ValidatorRecipientType.BNFTHOLDER
+        ] += bnftHolderAmount;
+        withdrawableBalance[_validatorId][
+            ValidatorRecipientType.TNFTHOLDER
+        ] = 0;
+        withdrawn[_validatorId][
+            ValidatorRecipientType.TNFTHOLDER
+        ] += tnftHolderAmount;
 
-        
         fundsReceivedFromAuctions[_validatorId] = 0;
-        
+
         IWithdrawSafe safeInstance = IWithdrawSafe(
             withdrawSafeAddressesPerValidator[_validatorId]
         );
-        
+
         safeInstance.withdrawFunds(
             treasuryContract,
             treasuryAmount,
@@ -214,7 +237,7 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
 
         emit FundsWithdrawn(contractBalance);
     }
-   
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  SETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -238,10 +261,12 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
         onlyDepositContract
     {
         withdrawSafeAddressesPerValidator[_validatorId] = _safeAddress;
-
     }
 
-    function getWithdrawSafeAddress(uint256 _validatorId) public returns(address) {
+    function getWithdrawSafeAddress(uint256 _validatorId)
+        public
+        returns (address)
+    {
         return withdrawSafeAddressesPerValidator[_validatorId];
     }
 

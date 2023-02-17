@@ -33,7 +33,7 @@ contract Auction is IAuction, Pausable {
     address public registrationContract;
     bytes32 public merkleRoot;
 
-    IWithdrawSafeManager public managerInstance;
+    IWithdrawSafe public safeInstance;
 
     mapping(uint256 => Bid) public bids;
 
@@ -206,11 +206,10 @@ contract Auction is IAuction, Pausable {
         external
         onlyDepositContract
     {
-
         Deposit depositContractInstance = Deposit(depositContractAddress);
         (
             ,
-            ,
+            address withdrawalSafe,
             ,
             ,
             uint256 winningBidId,
@@ -220,14 +219,14 @@ contract Auction is IAuction, Pausable {
 
         uint256 amount = bids[winningBidId].amount;
 
-        managerInstance = IWithdrawSafeManager(
+        safeInstance = IWithdrawSafe(withdrawalSafe);
+        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
             withdrawSafeManager
         );
         managerInstance.receiveAuctionFunds(_validatorId, amount);
-        address withdrawSafe  = managerInstance.getWithdrawSafeAddress(_validatorId);
-        (bool sent, ) = payable(withdrawSafe).call{value: amount}("");
-        require(sent, "Failed to send Ether");
 
+        (bool sent, ) = payable(withdrawalSafe).call{value: amount}("");
+        require(sent, "Failed to send Ether");
 
         emit FundsSentToWithdrawSafe(amount);
     }
