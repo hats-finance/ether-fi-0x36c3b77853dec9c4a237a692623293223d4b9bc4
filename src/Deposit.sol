@@ -41,7 +41,8 @@ contract Deposit is IDeposit, Pausable {
         address indexed sender,
         uint256 value,
         uint256 id,
-        uint256 winningBidId
+        uint256 winningBidId,
+        address withdrawSafe
     );
     event StakeCancelled(uint256 id);
     event ValidatorRegistered(
@@ -109,7 +110,8 @@ contract Deposit is IDeposit, Pausable {
             msg.sender,
             msg.value,
             localNumOfStakes,
-            stakes[numberOfStakes].winningBidId
+            stakes[numberOfStakes].winningBidId,
+            stakes[numberOfStakes].withdrawSafe
         );
 
         numberOfStakes++;
