@@ -64,7 +64,12 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
     constructor(address _auctionAddress) {
-        stakeAmount = 0.032 ether;
+        if (test == true) {
+            stakeAmount = 0.032 ether;
+        } else {
+            stakeAmount = 32 ether;
+        }
+        // stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
@@ -84,9 +89,10 @@ contract Deposit is IDeposit, Pausable {
     function switchMode() public {
         if (test == true) {
             test = false;
-        }
-        if (test == false) {
+            stakeAmount = 32 ether;
+        } else if (test == false) {
             test = true;
+            stakeAmount = 0.032 ether;
         }
     }
 
@@ -95,12 +101,6 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     function deposit() public payable whenNotPaused {
         uint256 localNumOfStakes = numberOfStakes;
-
-        if (test == true) {
-            stakeAmount = 0.032 ether;
-        } else {
-            stakeAmount == 32 ether;
-        }
 
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
