@@ -5,8 +5,11 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/Treasury.sol";
 import "../src/Registration.sol";
+import "../src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
+import "../src/LiquidityPool.sol";
+import "../src/EETH.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -14,67 +17,60 @@ contract MyScript is Script {
     using Strings for string;
 
     function run() external {
-        // Merkle merkle = new Merkle();
-        // bytes32[] memory data = new bytes32[](5);
-        // data[0] = bytes32(
-        //     keccak256(
-        //         abi.encodePacked(0x1c5fffDbFDE331A10Ab1e32da8c4Dff210B43145)
-        //     )
-        // );
-        // data[1] = bytes32(
-        //     keccak256(
-        //         abi.encodePacked(0x2f2806e8b288428f23707A69faA60f52BC565c17)
-        //     )
-        // );
-        // data[2] = bytes32(
-        //     keccak256(
-        //         abi.encodePacked(0x5dfb8BC4830ccF60d469D546aEC36531c97B96b5)
-        //     )
-        // );
-        // data[3] = bytes32(
-        //     keccak256(
-        //         abi.encodePacked(0x4507cfB4B077d5DBdDd520c701E30173d5b59Fad)
-        //     )
-        // );
-        // data[4] = bytes32(
-        //     keccak256(
-        //         abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
-        //     )
-        // );
-
-        // bytes32 root = merkle.getRoot(data);
-        // bytes32[] memory proofOne = merkle.getProof(data, 0);
-        // bytes32[] memory proofTwo = merkle.getProof(data, 1);
-        // bytes32[] memory proofThree = merkle.getProof(data, 2);
-        // bytes32[] memory proofFour = merkle.getProof(data, 3);
-        // bytes32[] memory proofFive = merkle.getProof(data, 4);
-
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
         Treasury treasury = new Treasury();
         Registration registration = new Registration();
-        Auction auction = new Auction(address(registration));        
+        Auction auction = new Auction(address(registration));
+
+        treasury.setAuctionContractAddress(address(auction));
+
+        vm.recordLogs();
+
         Deposit deposit = new Deposit(address(auction));
-        (address TNFTAddress, address BNFTAddress) = deposit.getNFTAdresses();
         auction.setDepositContractAddress(address(deposit));
-        //auction.updateMerkleRoot(root);
+
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+
+        (address TNFTAddress, address BNFTAddress) = abi.decode(
+            entries[0].data,
+            (address, address)
+        );
+
+        WithdrawSafeManager safeManager = new WithdrawSafeManager(
+            address(treasury),
+            address(auction),
+            address(deposit),
+            TNFTAddress,
+            BNFTAddress
+        );
+
+        auctionInstance.setManagerAddress(address(managerInstance));
+        depositInstance.setManagerAddress(address(managerInstance));
+
+        LiquidityPool liquidityPool = new LiquidityPool(msg.sender);
+        EETH eETH = new EETH(address(liquidityPool));
 
         vm.stopBroadcast();
 
         // Sets the variables to be wriiten to contract addresses.txt
         string memory treasuryAddress = Strings.toHexString(address(treasury));
+        string memory registrationAddress = Strings.toHexString(registration);
         string memory auctionAddress = Strings.toHexString(address(auction));
         string memory depositAddress = Strings.toHexString(address(deposit));
         string memory TNFTAddrString = Strings.toHexString(TNFTAddress);
         string memory BNFTAddrString = Strings.toHexString(BNFTAddress);
+        string memory safeManagerAddress = Strings.toHexString(safeManager);
+        string memory liquidityPoolAddress = Strings.toHexString(liquidityPool);
+        string memory eETHAddress = Strings.toHexString(eETH);
 
         // Declare version Var
         uint256 version;
 
         // Set path to version file where current verion is recorded
         /// @dev Initial version.txt and X.release files should be created manually
-        string memory versionPath = "release/logs/version.txt";
+        string memory versionPath = "release-logs/version.txt";
 
         // Read Current version
         string memory versionString = vm.readLine(versionPath);
@@ -95,7 +91,7 @@ contract MyScript is Script {
         // Sets the path for the release file using the incremented version var
         string memory releasePath = string(
             abi.encodePacked(
-                "release/logs/",
+                "release-logs/",
                 Strings.toString(version),
                 ".release"
             )
@@ -110,6 +106,9 @@ contract MyScript is Script {
                 "Treasury Contract Address: ",
                 treasuryAddress,
                 "\n",
+                "Registration Contract Address: ",
+                registrationAddress,
+                "\n",
                 "Auction Contract Address: ",
                 auctionAddress,
                 "\n",
@@ -120,7 +119,15 @@ contract MyScript is Script {
                 TNFTAddrString,
                 "\n",
                 "BNFT Contract Address: ",
-                BNFTAddrString
+                BNFTAddrString,
+                "Safe Manager Contract Address: ",
+                safeManagerAddress,
+                "\n",
+                "Liquidity Pool Contract Address: ",
+                liquidityPoolAddress,
+                "\n",
+                "eETH Contract Address: ",
+                eETHAddress
             )
         );
 

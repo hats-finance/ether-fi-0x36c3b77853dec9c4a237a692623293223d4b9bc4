@@ -36,6 +36,7 @@ contract Deposit is IDeposit, Pausable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
+    event NFTContractsDeployed(address TNFTInstance, address BNFTInstance);
     event StakeDeposit(
         address indexed sender,
         uint256 value,
@@ -69,6 +70,8 @@ contract Deposit is IDeposit, Pausable {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         owner = msg.sender;
+
+        emit NFTContractsDeployed(address(TNFTInstance), address(BNFTInstance));
     }
 
     //--------------------------------------------------------------------------------------
@@ -80,7 +83,7 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     function deposit() public payable whenNotPaused {
         uint256 localNumOfStakes = numberOfStakes;
-        
+
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
@@ -164,14 +167,20 @@ contract Deposit is IDeposit, Pausable {
 
         TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
         BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        
+
         WithdrawSafeManager manager = WithdrawSafeManager(managerAddress);
         manager.setOperatorAddress(_validatorId, msg.sender);
-        manager.setWithdrawSafeAddress(_validatorId, stakes[localStakeId].withdrawSafe);
+        manager.setWithdrawSafeAddress(
+            _validatorId,
+            stakes[localStakeId].withdrawSafe
+        );
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
-        auctionInterfaceInstance.sendFundsToWithdrawSafe(_validatorId, localStakeId);
+        auctionInterfaceInstance.sendFundsToWithdrawSafe(
+            _validatorId,
+            localStakeId
+        );
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
@@ -239,22 +248,24 @@ contract Deposit is IDeposit, Pausable {
     }
 
     // Gets the addresses of the deployed NFT contracts
-    function getNFTAdresses() public view returns (address, address) {
-        return (address(TNFTInstance), address(BNFTInstance));
-    }
+    // function getNFTAdresses() public view returns (address, address) {
+    //     return (address(TNFTInstance), address(BNFTInstance));
+    // }
 
-    function getStakerRelatedToValidator(uint256 _validatorId) external returns(address){
+    function getStakerRelatedToValidator(uint256 _validatorId)
+        external
+        returns (address)
+    {
         return stakes[validators[_validatorId].stakeId].staker;
     }
 
-    function getStakeAmount() external returns(uint256){
+    function getStakeAmount() external returns (uint256) {
         return stakeAmount;
     }
 
     function setManagerAddress(address _managerAddress) external {
         managerAddress = _managerAddress;
     }
-
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
