@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
 
 import "../src/DepositPool.sol";
 
@@ -20,26 +21,56 @@ contract DepositPoolTest is Test {
         vm.stopPrank();
     }
 
+    // function test_DepositPoolWorksCorrectly() public {
+    //     startHoax(owner);
+    //     depositPoolInstance.deposit{value: 0.3 ether}();
+    //     assertEq(depositPoolInstance.userBalance(owner), 0.3 ether);
+    //     assertEq(depositPoolInstance.depositTimes(owner), 1);
+    //     vm.warp(51);
+    //     depositPoolInstance.withdraw();
+    //     assertEq(depositPoolInstance.userBalance(owner), 0 ether);
+    //     assertEq(depositPoolInstance.userPoints(owner), 150);
+    //     assertEq(depositPoolInstance.depositTimes(owner), 0);
+    //     vm.stopPrank();
+
+    //     startHoax(alice);
+    //     depositPoolInstance.deposit{value: 1.65 ether}();
+    //     assertEq(depositPoolInstance.userBalance(alice), 1.65 ether);
+    //     assertEq(depositPoolInstance.depositTimes(alice), 51);
+    //     vm.warp(1305);
+    //     depositPoolInstance.withdraw();
+    //     assertEq(depositPoolInstance.userBalance(alice), 0 ether);
+    //     assertEq(depositPoolInstance.userPoints(alice), 20691);
+    //     assertEq(depositPoolInstance.depositTimes(alice), 0);
+    //     vm.stopPrank();
+    // }
+
     function test_DepositPoolWorksCorrectly() public {
         startHoax(owner);
-        depositPoolInstance.deposit{value: 0.3 ether}();
-        assertEq(depositPoolInstance.userBalance(owner), 0.3 ether);
+        depositPoolInstance.deposit{value: 0.1 ether}();
+        assertEq(depositPoolInstance.userBalance(owner), 0.1 ether);
         assertEq(depositPoolInstance.depositTimes(owner), 1);
-        vm.warp(51);
+
+        // One minute
+        vm.warp(61);
         depositPoolInstance.withdraw();
+
         assertEq(depositPoolInstance.userBalance(owner), 0 ether);
-        assertEq(depositPoolInstance.userPoints(owner), 150);
+        assertEq(depositPoolInstance.userPoints(owner), 189);
         assertEq(depositPoolInstance.depositTimes(owner), 0);
         vm.stopPrank();
 
         startHoax(alice);
         depositPoolInstance.deposit{value: 1.65 ether}();
         assertEq(depositPoolInstance.userBalance(alice), 1.65 ether);
-        assertEq(depositPoolInstance.depositTimes(alice), 51);
-        vm.warp(1305);
+        assertEq(depositPoolInstance.depositTimes(alice), 61);
+
+        // One day
+        vm.warp(86400);
         depositPoolInstance.withdraw();
+
         assertEq(depositPoolInstance.userBalance(alice), 0 ether);
-        assertEq(depositPoolInstance.userPoints(alice), 20691);
+        assertEq(depositPoolInstance.userPoints(alice), 1108592);
         assertEq(depositPoolInstance.depositTimes(alice), 0);
         vm.stopPrank();
     }

@@ -3,9 +3,12 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "lib/forge-std/src/console.sol";
 
 contract DepositPool is Ownable {
+    using Math for uint256;
+
     /// TODO  min amount of deposit, 0.1 ETH, max amount, 100 ETH
     /// TODO multiplier for points, after x months, the points double, where x is configurable
     /// TODO numberOfDepositStandards should be square root of deposited eth amount
@@ -15,7 +18,7 @@ contract DepositPool is Ownable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint256 public constant depositStandard = 100000000000000000;
+    uint256 public constant depositStandard = 100000000;
     uint256 public constant SCALE = 100;
     mapping(address => uint256) public depositTimes;
     mapping(address => uint256) public userBalance;
@@ -88,9 +91,10 @@ contract DepositPool is Ownable {
     function calculateUserPoints(
         uint256 _depositAmount,
         uint256 _numberOfSeconds
-    ) internal pure returns (uint256) {
-        uint256 numberOfDepositStandards = (_depositAmount * SCALE) /
+    ) internal view returns (uint256) {
+        uint256 numberOfDepositStandards = (Math.sqrt(_depositAmount) * SCALE) /
             depositStandard;
+        // console.logUint(numberOfDepositStandards);
         return (numberOfDepositStandards * _numberOfSeconds) / SCALE;
     }
 
