@@ -2,13 +2,19 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "lib/forge-std/src/console.sol";
 
-contract DepositPool {
+contract DepositPool is Ownable {
     /// TODO  min amount of deposit, 0.1 ETH, max amount, 100 ETH
+    /// TODO multiplier for points, after x months, the points double, where x is configurable
+    /// TODO numberOfDepositStandards should be square root of deposited eth amount
+    /// the more you deposit, the more points you get
+
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
+
     uint256 public constant depositStandard = 100000000000000000;
     uint256 public constant SCALE = 100;
     mapping(address => uint256) public depositTimes;
@@ -17,6 +23,10 @@ contract DepositPool {
 
     uint256 public immutable minDeposit = 0.1 ether;
     uint256 public immutable maxDeposit = 100 ether;
+    uint256 public immutable multiplier = 2;
+
+    // Number of months after which points double
+    uint256 public duration;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -28,6 +38,7 @@ contract DepositPool {
         uint256 amount,
         uint256 lengthOfDeposit
     );
+    event DurationSet(uint256 oldDuration, uint256 newDuration);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -61,10 +72,20 @@ contract DepositPool {
         emit Withdraw(msg.sender, msg.value, lengthOfDeposit);
     }
 
+    function setDuration(uint256 _months) public onlyOwner {
+        uint256 oldDuration = duration;
+        duration = _months;
+        emit DurationSet(oldDuration, duration);
+    }
+
+    //--------------------------------------------------------------------------------------
+    //----------------------------  INTERNAL FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
     function calculateUserPoints(
         uint256 _depositAmount,
         uint256 _numberOfSeconds
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         uint256 numberOfDepositStandards = (_depositAmount * SCALE) /
             depositStandard;
         return (numberOfDepositStandards * _numberOfSeconds) / SCALE;
