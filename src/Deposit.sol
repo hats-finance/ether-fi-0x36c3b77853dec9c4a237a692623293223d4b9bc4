@@ -82,6 +82,8 @@ contract Deposit is IDeposit, Pausable {
         );
         owner = msg.sender;
         auctionAddress = _auctionAddress;
+
+        emit NFTContractsDeployed(address(TNFTInstance), address(BNFTInstance));
     }
 
     //--------------------------------------------------------------------------------------
