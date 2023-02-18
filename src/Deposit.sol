@@ -41,11 +41,13 @@ contract Deposit is IDeposit, Pausable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
+    event NFTContractsDeployed(address TNFTInstance, address BNFTInstance);
     event StakeDeposit(
         address indexed sender,
         uint256 value,
         uint256 id,
-        uint256 winningBidId
+        uint256 winningBidId,
+        address withdrawSafe
     );
     event StakeCancelled(uint256 id);
     event ValidatorRegistered(
@@ -131,7 +133,8 @@ contract Deposit is IDeposit, Pausable {
             msg.sender,
             msg.value,
             localNumOfStakes,
-            stakes[numberOfStakes].winningBidId
+            stakes[numberOfStakes].winningBidId,
+            stakes[numberOfStakes].withdrawSafe
         );
 
         numberOfStakes++;
@@ -276,9 +279,9 @@ contract Deposit is IDeposit, Pausable {
     }
 
     // Gets the addresses of the deployed NFT contracts
-    function getNFTAdresses() public view returns (address, address) {
-        return (address(TNFTInstance), address(BNFTInstance));
-    }
+    // function getNFTAddresses() public view returns (address, address) {
+    //     return (address(TNFTInstance), address(BNFTInstance));
+    // }
 
     function getStakerRelatedToValidator(uint256 _validatorId)
         external
