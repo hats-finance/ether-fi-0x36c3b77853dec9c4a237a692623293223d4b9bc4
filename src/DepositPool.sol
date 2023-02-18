@@ -22,7 +22,7 @@ contract DepositPool is Ownable {
     mapping(address => uint256) public userPoints;
 
     uint256 public immutable minDeposit = 0.1 ether;
-    uint256 public immutable maxDeposit = 100 ether;
+    uint256 public maxDeposit = 100 ether;
     uint256 public immutable multiplier = 2;
 
     // Number of months after which points double
@@ -50,7 +50,10 @@ contract DepositPool is Ownable {
 
     /// @notice deposit into pool
     function deposit() external payable {
-        require(msg.value >= 0.1 ether, "Deposit too small");
+        require(
+            msg.value >= minDeposit && msg.value <= maxDeposit,
+            "Incorrect Deposit Amount"
+        );
         depositTimes[msg.sender] = block.timestamp;
         userBalance[msg.sender] = msg.value;
 
