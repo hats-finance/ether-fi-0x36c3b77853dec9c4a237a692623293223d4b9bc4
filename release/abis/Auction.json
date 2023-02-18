@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_treasuryAddress",
+        "name": "_registrationContract",
         "type": "address"
       }
     ],
@@ -45,10 +45,10 @@
         "type": "uint256"
       },
       {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "bidderPublicKey",
-        "type": "bytes"
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "pubKeyIndex",
+        "type": "uint256"
       }
     ],
     "name": "BidPlaced",
@@ -258,11 +258,6 @@
         "internalType": "bytes32[]",
         "name": "_merkleProof",
         "type": "bytes32[]"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_bidderPublicKey",
-        "type": "bytes"
       }
     ],
     "name": "bidOnStake",
@@ -287,6 +282,11 @@
       },
       {
         "internalType": "uint256",
+        "name": "bidderPubKeyIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "timeOfBid",
         "type": "uint256"
       },
@@ -299,11 +299,6 @@
         "internalType": "bool",
         "name": "isActive",
         "type": "bool"
-      },
-      {
-        "internalType": "bytes",
-        "name": "bidderPublicKey",
-        "type": "bytes"
       }
     ],
     "stateMutability": "view",
@@ -492,7 +487,38 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "registrationContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "safeInstance",
+    "outputs": [
+      {
+        "internalType": "contract IWithdrawSafe",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      },
       {
         "internalType": "uint256",
         "name": "_stakeId",
@@ -520,6 +546,19 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_managerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setManagerAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_newMinBidAmount",
         "type": "uint256"
@@ -528,19 +567,6 @@
     "name": "setMinBidPrice",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "treasuryContractAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -584,6 +610,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawSafeManager",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",

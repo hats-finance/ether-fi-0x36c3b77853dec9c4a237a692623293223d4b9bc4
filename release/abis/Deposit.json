@@ -5,15 +5,29 @@
         "internalType": "address",
         "name": "_auctionAddress",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_treasuryAddress",
-        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "TNFTInstance",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "BNFTInstance",
+        "type": "address"
+      }
+    ],
+    "name": "NFTContractsDeployed",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -67,6 +81,12 @@
         "internalType": "uint256",
         "name": "winningBidId",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "withdrawSafe",
+        "type": "address"
       }
     ],
     "name": "StakeDeposit",
@@ -118,24 +138,6 @@
         "internalType": "uint256",
         "name": "validatorId",
         "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "bytes",
-        "name": "encryptedValidatorKey",
-        "type": "bytes"
-      },
-      {
-        "indexed": true,
-        "internalType": "bytes",
-        "name": "encryptedValidatorKeyPassword",
-        "type": "bytes"
-      },
-      {
-        "indexed": true,
-        "internalType": "bytes",
-        "name": "stakerPubKey",
-        "type": "bytes"
       }
     ],
     "name": "ValidatorRegistered",
@@ -204,6 +206,19 @@
     "name": "acceptValidator",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "auctionAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -286,13 +301,27 @@
   },
   {
     "inputs": [],
-    "name": "getNFTAdresses",
+    "name": "getStakeAmount",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "uint256",
         "name": "",
-        "type": "address"
-      },
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getStakerRelatedToValidator",
+    "outputs": [
       {
         "internalType": "address",
         "name": "",
@@ -387,21 +416,6 @@
         "type": "uint256"
       },
       {
-        "internalType": "bytes",
-        "name": "_encryptedValidatorKey",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_encryptedValidatorKeyPassword",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_stakerPubKey",
-        "type": "bytes"
-      },
-      {
         "components": [
           {
             "internalType": "address",
@@ -440,6 +454,32 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_managerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setManagerAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_treasuryAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setTreasuryAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "stakeAmount",
     "outputs": [
@@ -471,11 +511,6 @@
         "internalType": "address",
         "name": "withdrawSafe",
         "type": "address"
-      },
-      {
-        "internalType": "bytes",
-        "name": "stakerPubKey",
-        "type": "bytes"
       },
       {
         "components": [
@@ -535,6 +570,39 @@
   },
   {
     "inputs": [],
+    "name": "switchMode",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "test",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "treasuryAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "unPauseContract",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -566,19 +634,22 @@
         "type": "uint256"
       },
       {
-        "internalType": "bytes",
-        "name": "encryptedValidatorKey",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "encryptedValidatorKeyPassword",
-        "type": "bytes"
-      },
-      {
         "internalType": "enum IDeposit.VALIDATOR_PHASE",
         "name": "phase",
         "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawSafeFactoryAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
