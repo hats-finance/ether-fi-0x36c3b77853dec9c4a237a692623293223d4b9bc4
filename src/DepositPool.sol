@@ -94,7 +94,7 @@ contract DepositPool is Ownable {
     ) internal view returns (uint256) {
         uint256 numberOfDepositStandards = (Math.sqrt(_depositAmount) * SCALE) /
             depositStandard;
-        // console.logUint(numberOfDepositStandards);
+
         return (numberOfDepositStandards * _numberOfSeconds) / SCALE;
     }
 
