@@ -6,9 +6,10 @@ import "forge-std/Test.sol";
 import "../src/DepositPool.sol";
 
 contract DepositPoolTest is Test {
-    
+    event DurationSet(uint256 oldDuration, uint256 newDuration);
+
     DepositPool depositPoolInstance;
-    
+
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
@@ -42,4 +43,17 @@ contract DepositPoolTest is Test {
         vm.stopPrank();
     }
 
+    function test_SetDurationWorks() public {
+        assertEq(depositPoolInstance.duration(), 0);
+        vm.prank(owner);
+        depositPoolInstance.setDuration(3);
+        assertEq(depositPoolInstance.duration(), 3);
+    }
+
+    function test_SetDurationEmitsEvent() public {
+        vm.expectEmit(true, false, false, true);
+        emit DurationSet(0, 3);
+        vm.prank(owner);
+        depositPoolInstance.setDuration(3);
+    }
 }
