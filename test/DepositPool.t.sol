@@ -18,9 +18,11 @@ contract DepositPoolTest is Test {
     DepositPool depositPoolInstance;
 
     uint256 One_Day = 1 days;
+    uint256 One_Month = 1 weeks * 4;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
+    address bob = vm.addr(3);
 
     function setUp() public {
         vm.startPrank(owner);
@@ -70,11 +72,43 @@ contract DepositPoolTest is Test {
         depositPoolInstance.deposit{value: 101 ether}();
     }
 
+    function test_WithdrawMulitiplierWorks() public {
+        hoax(alice);
+        depositPoolInstance.deposit{value: 0.1 ether}();
+
+        // Set multiplier duration to 1 month
+        vm.prank(owner);
+        depositPoolInstance.setDuration(1);
+
+        console.logUint(block.timestamp);
+        vm.warp(One_Month + 2);
+        console.logUint(block.timestamp);
+
+        vm.prank(alice);
+        depositPoolInstance.withdraw();
+
+        // one month + 2s rewards for 0.1 ether * 2
+        assertEq(depositPoolInstance.userPoints(alice), 7644675 * 2);
+
+        vm.prank(owner);
+        depositPoolInstance.setDuration(2);
+
+        hoax(bob);
+        depositPoolInstance.deposit{value: 0.1 ether}();
+
+        skip((One_Month * 2) + 2);
+
+        vm.prank(bob);
+        depositPoolInstance.withdraw();
+        // two months + 2s rewards for 0.1 ether * 2
+        assertEq(depositPoolInstance.userPoints(bob), 15289350 * 2);
+    }
+
     function test_SetDurationWorks() public {
         assertEq(depositPoolInstance.duration(), 0);
         vm.prank(owner);
-        depositPoolInstance.setDuration(3);
-        assertEq(depositPoolInstance.duration(), 3);
+        depositPoolInstance.setDuration(1);
+        assertEq(depositPoolInstance.duration(), One_Month);
     }
 
     function test_EventDeposit() public {
@@ -98,7 +132,7 @@ contract DepositPoolTest is Test {
 
     function test_EventDurationSet() public {
         vm.expectEmit(false, false, false, true);
-        emit DurationSet(0, 3);
+        emit DurationSet(0, One_Month * 3);
         vm.prank(owner);
         depositPoolInstance.setDuration(3);
     }

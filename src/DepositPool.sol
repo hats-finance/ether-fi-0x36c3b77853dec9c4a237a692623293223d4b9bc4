@@ -66,7 +66,7 @@ contract DepositPool is Ownable {
     /// @notice withdraw from pool
     function withdraw() public payable {
         uint256 lengthOfDeposit = block.timestamp - depositTimes[msg.sender];
-
+        // console.logUint(lengthOfDeposit);
         uint256 balance = userBalance[msg.sender];
 
         depositTimes[msg.sender] = 0;
@@ -88,9 +88,11 @@ contract DepositPool is Ownable {
         emit Withdrawn(msg.sender, balance, lengthOfDeposit);
     }
 
+    /// @param _months number of months. Will be converted to seconds in function
     function setDuration(uint256 _months) public onlyOwner {
+        uint256 oneMonth = 1 weeks * 4;
         uint256 oldDuration = duration;
-        duration = _months;
+        duration = _months * oneMonth;
         emit DurationSet(oldDuration, duration);
     }
 
