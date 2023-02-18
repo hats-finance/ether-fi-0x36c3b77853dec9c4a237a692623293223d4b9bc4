@@ -31,4 +31,6 @@ lint :; solhint src/**/*.sol && solhint src/*.sol
 # use the "@" to hide the command from your shell 
 deploy-goerli :; @forge script script/Deploy.s.sol:MyScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv
 
+deploy-goerli-depositPool :; @forge script script/DeployDepositPool.s.sol:DeployDepositPoolScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv
+
 extract-abi :; bash script/extractABI.sh
