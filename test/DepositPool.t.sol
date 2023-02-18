@@ -43,6 +43,18 @@ contract DepositPoolTest is Test {
         vm.stopPrank();
     }
 
+    function test_DepositMinDeposit() public {
+        vm.expectRevert("Incorrect Deposit Amount");
+        hoax(alice);
+        depositPoolInstance.deposit{value: 0.03 ether}();
+    }
+
+    function test_DepositMaxDeposit() public {
+        vm.expectRevert("Incorrect Deposit Amount");
+        hoax(alice);
+        depositPoolInstance.deposit{value: 101 ether}();
+    }
+
     function test_SetDurationWorks() public {
         assertEq(depositPoolInstance.duration(), 0);
         vm.prank(owner);
