@@ -37,9 +37,13 @@ jobs:
         with:
           cmd: bash script/extractABI.sh
 
-      - name: Deploy
-        run: make deploy-goerli
-        id: deploy
+      - name: Deploy EtherFi Suite Contracts
+        run: make deploy-goerli-suite
+        id: deploy-goerli-suite
+
+      - name: Deploy LP Contracts
+        run: make deploy-goerli-lp
+        id: deploy-goerli-lp
 
       - name: Get date
         id: get-date
