@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import "../src/DepositPool.sol";
 
 contract DepositPoolTest is Test {
+    event Deposit(address indexed sender, uint256 amount);
     event DurationSet(uint256 oldDuration, uint256 newDuration);
 
     DepositPool depositPoolInstance;
@@ -55,6 +56,13 @@ contract DepositPoolTest is Test {
         depositPoolInstance.deposit{value: 101 ether}();
     }
 
+    function test_EventDeposit() public {
+        vm.expectEmit(true, false, false, true);
+        emit Deposit(address(alice), 0.3 ether);
+        hoax(alice);
+        depositPoolInstance.deposit{value: 0.3 ether}();
+    }
+
     function test_SetDurationWorks() public {
         assertEq(depositPoolInstance.duration(), 0);
         vm.prank(owner);
@@ -62,8 +70,8 @@ contract DepositPoolTest is Test {
         assertEq(depositPoolInstance.duration(), 3);
     }
 
-    function test_SetDurationEmitsEvent() public {
-        vm.expectEmit(true, false, false, true);
+    function test_EventDurationSet() public {
+        vm.expectEmit(false, false, false, true);
         emit DurationSet(0, 3);
         vm.prank(owner);
         depositPoolInstance.setDuration(3);
