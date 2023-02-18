@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "lib/forge-std/src/console.sol";
 
 contract DepositPool {
+    /// TODO  min amount of deposit, 0.1 ETH, max amount, 100 ETH
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -14,17 +15,24 @@ contract DepositPool {
     mapping(address => uint256) public userBalance;
     mapping(address => uint256) public userPoints;
 
+    uint256 public immutable minDeposit = 0.1 ether;
+    uint256 public immutable maxDeposit = 100 ether;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
     event Deposit(address indexed sender, uint256 amount);
-    event Withdraw(address indexed sender, uint256 amount, uint256 lengthOfDeposit);
+    event Withdraw(
+        address indexed sender,
+        uint256 amount,
+        uint256 lengthOfDeposit
+    );
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
-    
+
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
@@ -40,7 +48,6 @@ contract DepositPool {
 
     /// @notice withdraw from pool
     function withdraw() public payable {
-
         uint256 lengthOfDeposit = block.timestamp - depositTimes[msg.sender];
         uint256 balance = userBalance[msg.sender];
 
@@ -50,17 +57,19 @@ contract DepositPool {
 
         (bool sent, ) = msg.sender.call{value: balance}("");
         require(sent, "Failed to send Ether");
-        
+
         emit Withdraw(msg.sender, msg.value, lengthOfDeposit);
     }
 
-    function calculateUserPoints(uint256 _depositAmount, uint256 _numberOfSeconds) internal view returns (uint256) {
-
-        uint256 numberOfDepositStandards = (_depositAmount * SCALE) / depositStandard;
+    function calculateUserPoints(
+        uint256 _depositAmount,
+        uint256 _numberOfSeconds
+    ) internal view returns (uint256) {
+        uint256 numberOfDepositStandards = (_depositAmount * SCALE) /
+            depositStandard;
         return (numberOfDepositStandards * _numberOfSeconds) / SCALE;
     }
 
     /// @notice Allows ether to be sent to this contract
-    receive() external payable {
-    }
+    receive() external payable {}
 }
