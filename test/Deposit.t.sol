@@ -79,6 +79,33 @@ contract DepositTest is Test {
         vm.stopPrank();
     }
 
+    function test_DepositSwitchWorks() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        assertTrue(depositInstance.test());
+        assertEq(depositInstance.stakeAmount(), 0.032 ether);
+
+        depositInstance.switchMode();
+        console.logBool(depositInstance.test());
+
+        hoax(owner);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        hoax(alice);
+        vm.expectRevert("Insufficient staking amount");
+        depositInstance.deposit{value: 0.032 ether}();
+
+        depositInstance.switchMode();
+        console.logBool(depositInstance.test());
+
+        hoax(alice);
+        vm.expectRevert("Insufficient staking amount");
+        depositInstance.deposit{value: 32 ether}();
+
+        hoax(alice);
+        depositInstance.deposit{value: 0.032 ether}();
+    }
+
     function test_DepositContractInstantiatedCorrectly() public {
         assertEq(depositInstance.stakeAmount(), 0.032 ether);
         assertEq(depositInstance.owner(), owner);

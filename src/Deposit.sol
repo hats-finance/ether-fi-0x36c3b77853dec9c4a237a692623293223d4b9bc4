@@ -30,6 +30,9 @@ contract Deposit is IDeposit, Pausable {
     address public auctionAddress;
     address public withdrawSafeFactoryAddress;
 
+    /// @dev please remove before mainnet deployment
+    bool public test = true;
+
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
     mapping(uint256 => Stake) public stakes;
@@ -61,7 +64,12 @@ contract Deposit is IDeposit, Pausable {
     /// @dev Auction contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
     constructor(address _auctionAddress) {
-        stakeAmount = 0.032 ether;
+        if (test == true) {
+            stakeAmount = 0.032 ether;
+        } else {
+            stakeAmount = 32 ether;
+        }
+        // stakeAmount = 0.032 ether;
         TNFTInstance = new TNFT();
         BNFTInstance = new BNFT();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
@@ -77,6 +85,16 @@ contract Deposit is IDeposit, Pausable {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    function switchMode() public {
+        if (test == true) {
+            test = false;
+            stakeAmount = 32 ether;
+        } else if (test == false) {
+            test = true;
+            stakeAmount = 0.032 ether;
+        }
+    }
 
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
@@ -192,12 +210,14 @@ contract Deposit is IDeposit, Pausable {
 
         DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
-        // depositContractEth2.deposit{value: stakeAmount}(
-        //     dataInstance.publicKey,
-        //     abi.encodePacked(dataInstance.withdrawalCredentials),
-        //     dataInstance.signature,
-        //     dataInstance.depositDataRoot
-        // );
+        if (test = false) {
+            depositContractEth2.deposit{value: stakeAmount}(
+                dataInstance.publicKey,
+                abi.encodePacked(dataInstance.withdrawalCredentials),
+                dataInstance.signature,
+                dataInstance.depositDataRoot
+            );
+        }
 
         emit ValidatorAccepted(_validatorId);
     }
