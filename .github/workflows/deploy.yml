@@ -45,6 +45,10 @@ jobs:
         run: make deploy-goerli-lp
         id: deploy-goerli-lp
 
+      - name: Deploy Deposit Pool Contract
+        run: make deploy-goerli-depositPool
+        id: deploy-goerli-depositPool
+
       - name: Get date
         id: get-date
         run: echo "DATE=$(date '+%Y-%m-%d--%H_%M')" >> $GITHUB_ENV

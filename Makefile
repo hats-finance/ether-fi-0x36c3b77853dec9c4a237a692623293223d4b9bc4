@@ -33,4 +33,6 @@ deploy-goerli-suite :; @forge script script/DeployEtherFISuite.s.sol:MyScript --
 
 deploy-goerli-lp :; @forge script script/DeployLiquidityPool.s.sol:MyScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv
 
+deploy-goerli-depositPool :; @forge script script/DeployDepositPool.s.sol:DeployDepositPoolScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv
+
 extract-abi :; bash script/extractABI.sh
