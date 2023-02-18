@@ -36,7 +36,7 @@ contract DepositPool is Ownable {
     //--------------------------------------------------------------------------------------
 
     event Deposit(address indexed sender, uint256 amount);
-    event Withdraw(
+    event Withdrawn(
         address indexed sender,
         uint256 amount,
         uint256 lengthOfDeposit
@@ -75,7 +75,7 @@ contract DepositPool is Ownable {
         (bool sent, ) = msg.sender.call{value: balance}("");
         require(sent, "Failed to send Ether");
 
-        emit Withdraw(msg.sender, msg.value, lengthOfDeposit);
+        emit Withdrawn(msg.sender, balance, lengthOfDeposit);
     }
 
     function setDuration(uint256 _months) public onlyOwner {
@@ -91,7 +91,7 @@ contract DepositPool is Ownable {
     function calculateUserPoints(
         uint256 _depositAmount,
         uint256 _numberOfSeconds
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         uint256 numberOfDepositStandards = (Math.sqrt(_depositAmount) * SCALE) /
             depositStandard;
 

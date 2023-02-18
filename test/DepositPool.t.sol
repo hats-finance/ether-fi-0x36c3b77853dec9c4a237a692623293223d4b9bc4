@@ -8,9 +8,16 @@ import "../src/DepositPool.sol";
 
 contract DepositPoolTest is Test {
     event Deposit(address indexed sender, uint256 amount);
+    event Withdrawn(
+        address indexed sender,
+        uint256 amount,
+        uint256 lengthOfDeposit
+    );
     event DurationSet(uint256 oldDuration, uint256 newDuration);
 
     DepositPool depositPoolInstance;
+
+    uint256 One_Day = 1 days;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -66,7 +73,7 @@ contract DepositPoolTest is Test {
         assertEq(depositPoolInstance.depositTimes(alice), 61);
 
         // One day
-        vm.warp(86400);
+        vm.warp(One_Day);
         depositPoolInstance.withdraw();
 
         assertEq(depositPoolInstance.userBalance(alice), 0 ether);
@@ -87,6 +94,13 @@ contract DepositPoolTest is Test {
         depositPoolInstance.deposit{value: 101 ether}();
     }
 
+    function test_SetDurationWorks() public {
+        assertEq(depositPoolInstance.duration(), 0);
+        vm.prank(owner);
+        depositPoolInstance.setDuration(3);
+        assertEq(depositPoolInstance.duration(), 3);
+    }
+
     function test_EventDeposit() public {
         vm.expectEmit(true, false, false, true);
         emit Deposit(address(alice), 0.3 ether);
@@ -94,11 +108,16 @@ contract DepositPoolTest is Test {
         depositPoolInstance.deposit{value: 0.3 ether}();
     }
 
-    function test_SetDurationWorks() public {
-        assertEq(depositPoolInstance.duration(), 0);
-        vm.prank(owner);
-        depositPoolInstance.setDuration(3);
-        assertEq(depositPoolInstance.duration(), 3);
+    function test_EventWithdrawn() public {
+        hoax(alice);
+        depositPoolInstance.deposit{value: 0.1 ether}();
+
+        vm.warp(One_Day);
+
+        vm.expectEmit(false, false, false, true);
+        emit Withdrawn(alice, 0.1 ether, One_Day - 1);
+        hoax(alice);
+        depositPoolInstance.withdraw();
     }
 
     function test_EventDurationSet() public {
