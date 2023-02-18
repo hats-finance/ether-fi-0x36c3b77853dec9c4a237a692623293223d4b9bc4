@@ -28,7 +28,7 @@ contract DepositPool is Ownable {
     uint256 public maxDeposit = 100 ether;
     uint256 public immutable multiplier = 2;
 
-    // Number of months after which points double
+    // Number of months after which points double in seconds
     uint256 public duration;
 
     //--------------------------------------------------------------------------------------
@@ -66,11 +66,21 @@ contract DepositPool is Ownable {
     /// @notice withdraw from pool
     function withdraw() public payable {
         uint256 lengthOfDeposit = block.timestamp - depositTimes[msg.sender];
+
         uint256 balance = userBalance[msg.sender];
 
         depositTimes[msg.sender] = 0;
         userBalance[msg.sender] = 0;
-        userPoints[msg.sender] += calculateUserPoints(balance, lengthOfDeposit);
+        if (duration != 0 && lengthOfDeposit > duration) {
+            userPoints[msg.sender] +=
+                (calculateUserPoints(balance, lengthOfDeposit)) *
+                multiplier;
+        } else {
+            userPoints[msg.sender] += calculateUserPoints(
+                balance,
+                lengthOfDeposit
+            );
+        }
 
         (bool sent, ) = msg.sender.call{value: balance}("");
         require(sent, "Failed to send Ether");

@@ -28,30 +28,6 @@ contract DepositPoolTest is Test {
         vm.stopPrank();
     }
 
-    // function test_DepositPoolWorksCorrectly() public {
-    //     startHoax(owner);
-    //     depositPoolInstance.deposit{value: 0.3 ether}();
-    //     assertEq(depositPoolInstance.userBalance(owner), 0.3 ether);
-    //     assertEq(depositPoolInstance.depositTimes(owner), 1);
-    //     vm.warp(51);
-    //     depositPoolInstance.withdraw();
-    //     assertEq(depositPoolInstance.userBalance(owner), 0 ether);
-    //     assertEq(depositPoolInstance.userPoints(owner), 150);
-    //     assertEq(depositPoolInstance.depositTimes(owner), 0);
-    //     vm.stopPrank();
-
-    //     startHoax(alice);
-    //     depositPoolInstance.deposit{value: 1.65 ether}();
-    //     assertEq(depositPoolInstance.userBalance(alice), 1.65 ether);
-    //     assertEq(depositPoolInstance.depositTimes(alice), 51);
-    //     vm.warp(1305);
-    //     depositPoolInstance.withdraw();
-    //     assertEq(depositPoolInstance.userBalance(alice), 0 ether);
-    //     assertEq(depositPoolInstance.userPoints(alice), 20691);
-    //     assertEq(depositPoolInstance.depositTimes(alice), 0);
-    //     vm.stopPrank();
-    // }
-
     function test_DepositPoolWorksCorrectly() public {
         startHoax(owner);
         depositPoolInstance.deposit{value: 0.1 ether}();
