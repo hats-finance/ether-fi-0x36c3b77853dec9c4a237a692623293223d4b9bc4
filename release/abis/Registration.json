@@ -1,5 +1,30 @@
 [
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "ipfsHash",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalKeys",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "keysUsed",
+        "type": "uint256"
+      }
+    ],
+    "name": "OperatorRegistered",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -13,6 +38,35 @@
         "internalType": "bytes",
         "name": "",
         "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "addressToOperatorData",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "ipfsHash",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalKeys",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "keysUsed",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -48,6 +102,24 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_ipfsHash",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_totalKeys",
+        "type": "uint256"
+      }
+    ],
+    "name": "registerNodeOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]
