@@ -22,20 +22,18 @@ contract Registration is IRegistration {
         numberOfKeysUsed[_user]++;
     }
 
-    function registerNodeOperator(
-        address _user,
-        string memory _ipfsHash,
-        uint256 _totalKeys
-    ) public {
-        addressToOperatorData[_user] = OperatorData({
+    function registerNodeOperator(string memory _ipfsHash, uint256 _totalKeys)
+        public
+    {
+        addressToOperatorData[msg.sender] = OperatorData({
             ipfsHash: _ipfsHash,
             totalKeys: _totalKeys,
             keysUsed: 0
         });
         emit OperatorRegistered(
-            addressToOperatorData[_user].ipfsHash,
-            addressToOperatorData[_user].totalKeys,
-            addressToOperatorData[_user].keysUsed
+            addressToOperatorData[msg.sender].ipfsHash,
+            addressToOperatorData[msg.sender].totalKeys,
+            addressToOperatorData[msg.sender].keysUsed
         );
     }
 }

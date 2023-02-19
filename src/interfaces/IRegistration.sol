@@ -8,9 +8,6 @@ interface IRegistration {
         uint256 keysUsed;
     }
 
-    function registerNodeOperator(
-        address _user,
-        string memory ipfsHash,
-        uint256 totalKeys
-    ) external;
+    function registerNodeOperator(string memory ipfsHash, uint256 totalKeys)
+        external;
 }
