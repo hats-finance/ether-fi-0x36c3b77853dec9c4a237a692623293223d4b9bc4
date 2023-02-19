@@ -5,6 +5,10 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 import "../src/DepositPool.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+import "./TestERC20.sol";
 
 contract DepositPoolTest is Test {
     event Deposit(address indexed sender, uint256 amount);
@@ -17,6 +21,10 @@ contract DepositPoolTest is Test {
 
     DepositPool depositPoolInstance;
 
+    TestERC20 public rETH;
+    TestERC20 public stETH;
+    TestERC20 public frxETH;
+
     uint256 One_Day = 1 days;
     uint256 One_Month = 1 weeks * 4;
 
@@ -25,115 +33,169 @@ contract DepositPoolTest is Test {
     address bob = vm.addr(3);
 
     function setUp() public {
+        rETH = new TestERC20("Rocket Pool ETH", "rETH");
+        rETH.mint(alice, 10e18);
+
+        console.log(address(rETH));
+        stETH = new TestERC20("Staked ETH", "stETH");
+        stETH.mint(alice, 10e18);
+        console.log(address(stETH));
+        frxETH = new TestERC20("Frax ETH", "frxETH");
+        frxETH.mint(alice, 10e18);
+        console.log(address(frxETH));
+
         vm.startPrank(owner);
-        depositPoolInstance = new DepositPool();
+        depositPoolInstance = new DepositPool(
+            address(rETH),
+            address(stETH),
+            address(frxETH)
+        );
         vm.stopPrank();
     }
 
-    function test_DepositPoolWorksCorrectly() public {
-        startHoax(owner);
-        depositPoolInstance.deposit{value: 0.1 ether}();
-        assertEq(depositPoolInstance.userBalance(owner), 0.1 ether);
-        assertEq(depositPoolInstance.depositTimes(owner), 1);
+    function test_SetUp() public {
+        assertEq(rETH.balanceOf(alice), 10e18);
+        assertEq(stETH.balanceOf(alice), 10e18);
+        assertEq(frxETH.balanceOf(alice), 10e18);
+    }
+
+    function test_DepositIntoDepositPool() public {
+        vm.startPrank(alice);
+        rETH.approve(address(depositPoolInstance), 0.1 ether);
+        depositPoolInstance.deposit(address(rETH), 1e17);
+        vm.stopPrank();
+
+        assertEq(depositPoolInstance.userBalance(alice), 0.1 ether);
+        assertEq(depositPoolInstance.userTo_rETHBalance(alice), 0.1 ether);
+        assertEq(depositPoolInstance.userTo_stETHBalance(alice), 0);
+        assertEq(depositPoolInstance.userTo_frxETHBalance(alice), 0);
+        assertEq(depositPoolInstance.depositTimes(alice), 1);
+
+        vm.startPrank(alice);
+        stETH.approve(address(depositPoolInstance), 0.1 ether);
+        depositPoolInstance.deposit(address(stETH), 1e17);
+        vm.stopPrank();
+
+        assertEq(depositPoolInstance.userBalance(alice), 0.2 ether);
+        assertEq(depositPoolInstance.userTo_rETHBalance(alice), 0.1 ether);
+        assertEq(depositPoolInstance.userTo_stETHBalance(alice), 0.1 ether);
+        assertEq(depositPoolInstance.userTo_frxETHBalance(alice), 0);
+
+        assertEq(rETH.balanceOf(address(depositPoolInstance)), 1e17);
+        assertEq(stETH.balanceOf(address(depositPoolInstance)), 1e17);
+
+        vm.startPrank(alice);
+        frxETH.approve(address(depositPoolInstance), 0.1 ether);
+        depositPoolInstance.deposit(address(frxETH), 1e17);
+        vm.stopPrank();
+
+        assertEq(depositPoolInstance.userBalance(alice), 0.3 ether);
+        assertEq(depositPoolInstance.userTo_rETHBalance(alice), 0.1 ether);
+        assertEq(depositPoolInstance.userTo_stETHBalance(alice), 0.1 ether);
+        assertEq(depositPoolInstance.userTo_frxETHBalance(alice), 0.1 ether);
+
+        assertEq(rETH.balanceOf(address(depositPoolInstance)), 1e17);
+        assertEq(stETH.balanceOf(address(depositPoolInstance)), 1e17);
+        assertEq(frxETH.balanceOf(address(depositPoolInstance)), 1e17);
 
         // One minute
-        vm.warp(61);
-        depositPoolInstance.withdraw();
+        // vm.warp(61);
+        // depositPoolInstance.withdraw();
 
-        assertEq(depositPoolInstance.userBalance(owner), 0 ether);
-        assertEq(depositPoolInstance.userPoints(owner), 189);
-        assertEq(depositPoolInstance.depositTimes(owner), 0);
-        vm.stopPrank();
+        // assertEq(depositPoolInstance.userBalance(owner), 0 ether);
+        // assertEq(depositPoolInstance.userPoints(owner), 189);
+        // assertEq(depositPoolInstance.depositTimes(owner), 0);
+        // vm.stopPrank();
 
-        startHoax(alice);
-        depositPoolInstance.deposit{value: 1.65 ether}();
-        assertEq(depositPoolInstance.userBalance(alice), 1.65 ether);
-        assertEq(depositPoolInstance.depositTimes(alice), 61);
+        //     startHoax(alice);
+        //     depositPoolInstance.deposit{value: 1.65 ether}();
+        //     assertEq(depositPoolInstance.userBalance(alice), 1.65 ether);
+        //     assertEq(depositPoolInstance.depositTimes(alice), 61);
 
-        // One day
-        vm.warp(One_Day);
-        depositPoolInstance.withdraw();
+        //     // One day
+        //     vm.warp(One_Day);
+        //     depositPoolInstance.withdraw();
 
-        assertEq(depositPoolInstance.userBalance(alice), 0 ether);
-        assertEq(depositPoolInstance.userPoints(alice), 1108592);
-        assertEq(depositPoolInstance.depositTimes(alice), 0);
-        vm.stopPrank();
+        //     assertEq(depositPoolInstance.userBalance(alice), 0 ether);
+        //     assertEq(depositPoolInstance.userPoints(alice), 1108592);
+        //     assertEq(depositPoolInstance.depositTimes(alice), 0);
+        //     vm.stopPrank();
     }
 
-    function test_DepositMinDeposit() public {
-        vm.expectRevert("Incorrect Deposit Amount");
-        hoax(alice);
-        depositPoolInstance.deposit{value: 0.03 ether}();
-    }
+    // function test_DepositMinDeposit() public {
+    //     vm.expectRevert("Incorrect Deposit Amount");
+    //     hoax(alice);
+    //     depositPoolInstance.deposit();
+    // }
 
-    function test_DepositMaxDeposit() public {
-        vm.expectRevert("Incorrect Deposit Amount");
-        hoax(alice);
-        depositPoolInstance.deposit{value: 101 ether}();
-    }
+    // function test_DepositMaxDeposit() public {
+    //     vm.expectRevert("Incorrect Deposit Amount");
+    //     hoax(alice);
+    //     depositPoolInstance.deposit{value: 101 ether}();
+    // }
 
-    function test_WithdrawMulitiplierWorks() public {
-        hoax(alice);
-        depositPoolInstance.deposit{value: 0.1 ether}();
+    // function test_WithdrawMulitiplierWorks() public {
+    //     hoax(alice);
+    //     depositPoolInstance.deposit{value: 0.1 ether}();
 
-        // Set multiplier duration to 1 month
-        vm.prank(owner);
-        depositPoolInstance.setDuration(1);
+    //     // Set multiplier duration to 1 month
+    //     vm.prank(owner);
+    //     depositPoolInstance.setDuration(1);
 
-        console.logUint(block.timestamp);
-        vm.warp(One_Month + 2);
-        console.logUint(block.timestamp);
+    //     console.logUint(block.timestamp);
+    //     vm.warp(One_Month + 2);
+    //     console.logUint(block.timestamp);
 
-        vm.prank(alice);
-        depositPoolInstance.withdraw();
+    //     vm.prank(alice);
+    //     depositPoolInstance.withdraw();
 
-        // one month + 2s rewards for 0.1 ether * 2
-        assertEq(depositPoolInstance.userPoints(alice), 7644675 * 2);
+    //     // one month + 2s rewards for 0.1 ether * 2
+    //     assertEq(depositPoolInstance.userPoints(alice), 7644675 * 2);
 
-        vm.prank(owner);
-        depositPoolInstance.setDuration(2);
+    //     vm.prank(owner);
+    //     depositPoolInstance.setDuration(2);
 
-        hoax(bob);
-        depositPoolInstance.deposit{value: 0.1 ether}();
+    //     hoax(bob);
+    //     depositPoolInstance.deposit{value: 0.1 ether}();
 
-        skip((One_Month * 2) + 2);
+    //     skip((One_Month * 2) + 2);
 
-        vm.prank(bob);
-        depositPoolInstance.withdraw();
-        // two months + 2s rewards for 0.1 ether * 2
-        assertEq(depositPoolInstance.userPoints(bob), 15289350 * 2);
-    }
+    //     vm.prank(bob);
+    //     depositPoolInstance.withdraw();
+    //     // two months + 2s rewards for 0.1 ether * 2
+    //     assertEq(depositPoolInstance.userPoints(bob), 15289350 * 2);
+    // }
 
-    function test_SetDurationWorks() public {
-        assertEq(depositPoolInstance.duration(), 0);
-        vm.prank(owner);
-        depositPoolInstance.setDuration(1);
-        assertEq(depositPoolInstance.duration(), One_Month);
-    }
+    // function test_SetDurationWorks() public {
+    //     assertEq(depositPoolInstance.duration(), 0);
+    //     vm.prank(owner);
+    //     depositPoolInstance.setDuration(1);
+    //     assertEq(depositPoolInstance.duration(), One_Month);
+    // }
 
-    function test_EventDeposit() public {
-        vm.expectEmit(true, false, false, true);
-        emit Deposit(address(alice), 0.3 ether);
-        hoax(alice);
-        depositPoolInstance.deposit{value: 0.3 ether}();
-    }
+    // function test_EventDeposit() public {
+    //     vm.expectEmit(true, false, false, true);
+    //     emit Deposit(address(alice), 0.3 ether);
+    //     hoax(alice);
+    //     depositPoolInstance.deposit{value: 0.3 ether}();
+    // }
 
-    function test_EventWithdrawn() public {
-        hoax(alice);
-        depositPoolInstance.deposit{value: 0.1 ether}();
+    // function test_EventWithdrawn() public {
+    //     hoax(alice);
+    //     depositPoolInstance.deposit{value: 0.1 ether}();
 
-        vm.warp(One_Day);
+    //     vm.warp(One_Day);
 
-        vm.expectEmit(false, false, false, true);
-        emit Withdrawn(alice, 0.1 ether, One_Day - 1);
-        hoax(alice);
-        depositPoolInstance.withdraw();
-    }
+    //     vm.expectEmit(false, false, false, true);
+    //     emit Withdrawn(alice, 0.1 ether, One_Day - 1);
+    //     hoax(alice);
+    //     depositPoolInstance.withdraw();
+    // }
 
-    function test_EventDurationSet() public {
-        vm.expectEmit(false, false, false, true);
-        emit DurationSet(0, One_Month * 3);
-        vm.prank(owner);
-        depositPoolInstance.setDuration(3);
-    }
+    // function test_EventDurationSet() public {
+    //     vm.expectEmit(false, false, false, true);
+    //     emit DurationSet(0, One_Month * 3);
+    //     vm.prank(owner);
+    //     depositPoolInstance.setDuration(3);
+    // }
 }

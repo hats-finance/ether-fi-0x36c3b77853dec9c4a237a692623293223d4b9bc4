@@ -15,11 +15,9 @@ contract DepositPool is Ownable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
-    address private immutable stETH =
-        0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
-    address private immutable frxETH =
-        0x5E8422345238F34275888049021821E8E08CAa1f;
+    address private rETH; // 0xae78736Cd615f374D3085123A210448E74Fc6393;
+    address private stETH; // 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
+    address private frxETH; // 0x5E8422345238F34275888049021821E8E08CAa1f;
 
     uint256 public constant depositStandard = 100000000;
     uint256 public constant SCALE = 100;
@@ -67,10 +65,18 @@ contract DepositPool is Ownable {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    constructor() {
-        rETHInstance = IERC20(rETH);
-        stETHInstance = IERC20(stETH);
-        frxETHInstance = IERC20(frxETH);
+    constructor(
+        address _rETH,
+        address _stETH,
+        address _frxETH
+    ) {
+        rETH = _rETH;
+        stETH = _stETH;
+        frxETH = _frxETH;
+
+        rETHInstance = IERC20(_rETH);
+        stETHInstance = IERC20(_stETH);
+        frxETHInstance = IERC20(_frxETH);
     }
 
     //--------------------------------------------------------------------------------------
@@ -86,14 +92,18 @@ contract DepositPool is Ownable {
         depositTimes[msg.sender] = block.timestamp;
         userBalance[msg.sender] += _amount;
 
+        if (_ethContract == stETH) {
+            userTo_stETHBalance[msg.sender] += _amount;
+            stETHInstance.transferFrom(msg.sender, address(this), _amount);
+        }
         if (_ethContract == rETH) {
             userTo_rETHBalance[msg.sender] += _amount;
             rETHInstance.transferFrom(msg.sender, address(this), _amount);
-        } else if (_ethContract == stETH) {
-            userTo_stETHBalance[msg.sender] += _amount;
-            stETHInstance.transferFrom(msg.sender, address(this), _amount);
-        } else if (_ethContract == frxETH) {
+        }
+
+        if (_ethContract == frxETH) {
             userTo_frxETHBalance[msg.sender] += _amount;
+            frxETHInstance.transferFrom(msg.sender, address(this), _amount);
         }
 
         emit Deposit(msg.sender, _amount);
