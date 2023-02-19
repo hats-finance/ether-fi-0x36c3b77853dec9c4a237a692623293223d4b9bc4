@@ -85,6 +85,7 @@ contract DepositPool is Ownable {
 
     /// @notice deposit into pool
     function deposit(address _ethContract, uint256 _amount) external {
+        require(_ethContract != address(0), "No Zero Address");
         require(
             _amount >= minDeposit && _amount <= maxDeposit,
             "Incorrect Deposit Amount"
@@ -112,11 +113,18 @@ contract DepositPool is Ownable {
     /// @notice withdraw from pool
     function withdraw() public payable {
         uint256 lengthOfDeposit = block.timestamp - depositTimes[msg.sender];
-        // console.logUint(lengthOfDeposit);
+
         uint256 balance = userBalance[msg.sender];
+        uint256 rETHbal = userTo_rETHBalance[msg.sender];
+        uint256 stETHbal = userTo_stETHBalance[msg.sender];
+        uint256 frxETHbal = userTo_frxETHBalance[msg.sender];
 
         depositTimes[msg.sender] = 0;
         userBalance[msg.sender] = 0;
+        userTo_rETHBalance[msg.sender] = 0;
+        userTo_stETHBalance[msg.sender] = 0;
+        userTo_frxETHBalance[msg.sender] = 0;
+
         if (duration != 0 && lengthOfDeposit > duration) {
             userPoints[msg.sender] +=
                 (calculateUserPoints(balance, lengthOfDeposit)) *
@@ -128,8 +136,11 @@ contract DepositPool is Ownable {
             );
         }
 
-        (bool sent, ) = msg.sender.call{value: balance}("");
-        require(sent, "Failed to send Ether");
+        rETHInstance.transfer(msg.sender, rETHbal);
+        stETHInstance.transfer(msg.sender, stETHbal);
+        frxETHInstance.transfer(msg.sender, frxETHbal);
+        // (bool sent, ) = msg.sender.call{value: balance}("");
+        // require(sent, "Failed to send Ether");
 
         emit Withdrawn(msg.sender, balance, lengthOfDeposit);
     }

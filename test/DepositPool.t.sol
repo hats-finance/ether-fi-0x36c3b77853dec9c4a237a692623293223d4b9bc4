@@ -105,21 +105,28 @@ contract DepositPoolTest is Test {
         stETH.approve(address(depositPoolInstance), 0.1 ether);
         depositPoolInstance.deposit(address(stETH), 0.1 ether);
         assertEq(depositPoolInstance.userBalance(bob), 0.1 ether);
+        assertEq(depositPoolInstance.userTo_stETHBalance(bob), 0.1 ether);
         assertEq(depositPoolInstance.depositTimes(bob), 1);
+        assertEq(stETH.balanceOf(address(depositPoolInstance)), 0.1 ether);
 
         // One minute
         vm.warp(61);
         depositPoolInstance.withdraw();
 
-        assertEq(depositPoolInstance.userBalance(owner), 0 ether);
-        assertEq(depositPoolInstance.userPoints(owner), 189);
-        assertEq(depositPoolInstance.depositTimes(owner), 0);
+        assertEq(depositPoolInstance.userBalance(bob), 0 ether);
+        assertEq(depositPoolInstance.userPoints(bob), 189);
+        assertEq(depositPoolInstance.depositTimes(bob), 0);
+        assertEq(stETH.balanceOf(address(depositPoolInstance)), 0);
         vm.stopPrank();
 
-        startHoax(alice);
-        depositPoolInstance.deposit{value: 1.65 ether}();
+        vm.startPrank(alice);
+        rETH.approve(address(depositPoolInstance), 1.65 ether);
+        depositPoolInstance.deposit(address(rETH), 1.65 ether);
+
         assertEq(depositPoolInstance.userBalance(alice), 1.65 ether);
         assertEq(depositPoolInstance.depositTimes(alice), 61);
+        assertEq(depositPoolInstance.userTo_rETHBalance(alice), 1.65 ether);
+        assertEq(rETH.balanceOf(address(depositPoolInstance)), 1.65 ether);
 
         // One day
         vm.warp(One_Day);
@@ -128,6 +135,7 @@ contract DepositPoolTest is Test {
         assertEq(depositPoolInstance.userBalance(alice), 0 ether);
         assertEq(depositPoolInstance.userPoints(alice), 1108592);
         assertEq(depositPoolInstance.depositTimes(alice), 0);
+        assertEq(rETH.balanceOf(address(depositPoolInstance)), 0);
         vm.stopPrank();
     }
 
@@ -143,37 +151,91 @@ contract DepositPoolTest is Test {
         depositPoolInstance.deposit(address(rETH), 101 ether);
     }
 
-    // function test_WithdrawMulitiplierWorks() public {
-    //     hoax(alice);
-    //     depositPoolInstance.deposit{value: 0.1 ether}();
+    function test_WithdrawWorks() public {
+        vm.startPrank(alice);
+        frxETH.approve(address(depositPoolInstance), 0.1 ether);
+        depositPoolInstance.deposit(address(frxETH), 0.1 ether);
 
-    //     // Set multiplier duration to 1 month
-    //     vm.prank(owner);
-    //     depositPoolInstance.setDuration(1);
+        stETH.approve(address(depositPoolInstance), 0.1 ether);
+        depositPoolInstance.deposit(address(stETH), 0.1 ether);
 
-    //     console.logUint(block.timestamp);
-    //     vm.warp(One_Month + 2);
-    //     console.logUint(block.timestamp);
+        rETH.approve(address(depositPoolInstance), 0.1 ether);
+        depositPoolInstance.deposit(address(rETH), 0.1 ether);
+        vm.stopPrank();
 
-    //     vm.prank(alice);
-    //     depositPoolInstance.withdraw();
+        assertEq(depositPoolInstance.userTo_rETHBalance(alice), 0.1 ether);
+        assertEq(depositPoolInstance.userTo_stETHBalance(alice), 0.1 ether);
+        assertEq(depositPoolInstance.userTo_frxETHBalance(alice), 0.1 ether);
+        assertEq(depositPoolInstance.userBalance(alice), 0.3 ether);
 
-    //     // one month + 2s rewards for 0.1 ether * 2
-    //     assertEq(depositPoolInstance.userPoints(alice), 7644675 * 2);
+        assertEq(rETH.balanceOf(address(depositPoolInstance)), 0.1 ether);
+        assertEq(stETH.balanceOf(address(depositPoolInstance)), 0.1 ether);
+        assertEq(frxETH.balanceOf(address(depositPoolInstance)), 0.1 ether);
 
-    //     vm.prank(owner);
-    //     depositPoolInstance.setDuration(2);
+        vm.prank(owner);
+        depositPoolInstance.setDuration(1);
 
-    //     hoax(bob);
-    //     depositPoolInstance.deposit{value: 0.1 ether}();
+        vm.warp(One_Month + 2);
 
-    //     skip((One_Month * 2) + 2);
+        uint256 aliceRethBalBefore = rETH.balanceOf(alice);
+        uint256 aliceSTethBalBefore = stETH.balanceOf(alice);
+        uint256 aliceFRXethBalBefore = frxETH.balanceOf(alice);
 
-    //     vm.prank(bob);
-    //     depositPoolInstance.withdraw();
-    //     // two months + 2s rewards for 0.1 ether * 2
-    //     assertEq(depositPoolInstance.userPoints(bob), 15289350 * 2);
-    // }
+        vm.prank(alice);
+        depositPoolInstance.withdraw();
+
+        uint256 aliceRethBalAfter = rETH.balanceOf(alice);
+        uint256 aliceSTethBalAfter = stETH.balanceOf(alice);
+        uint256 aliceFRXethBalAfter = frxETH.balanceOf(alice);
+
+        assertEq(depositPoolInstance.userTo_rETHBalance(alice), 0);
+        assertEq(depositPoolInstance.userTo_stETHBalance(alice), 0);
+        assertEq(depositPoolInstance.userTo_frxETHBalance(alice), 0);
+        assertEq(depositPoolInstance.userBalance(alice), 0);
+
+        assertEq(rETH.balanceOf(address(depositPoolInstance)), 0);
+        assertEq(stETH.balanceOf(address(depositPoolInstance)), 0);
+        assertEq(frxETH.balanceOf(address(depositPoolInstance)), 0);
+
+        assertEq(aliceRethBalAfter, aliceRethBalBefore + 0.1 ether);
+        assertEq(aliceSTethBalAfter, aliceSTethBalBefore + 0.1 ether);
+        assertEq(aliceFRXethBalAfter, aliceFRXethBalBefore + 0.1 ether);
+    }
+
+    function test_WithdrawMulitiplierWorks() public {
+        vm.startPrank(alice);
+        frxETH.approve(address(depositPoolInstance), 0.1 ether);
+        depositPoolInstance.deposit(address(frxETH), 0.1 ether);
+        vm.stopPrank();
+
+        // Set multiplier duration to 1 month
+        vm.prank(owner);
+        depositPoolInstance.setDuration(1);
+
+        // console.logUint(block.timestamp);
+        vm.warp(One_Month + 2);
+        // console.logUint(block.timestamp);
+
+        vm.prank(alice);
+        depositPoolInstance.withdraw();
+
+        // one month + 2s rewards for 0.1 ether * 2
+        assertEq(depositPoolInstance.userPoints(alice), 7644675 * 2);
+
+        vm.prank(owner);
+        depositPoolInstance.setDuration(2);
+
+        vm.startPrank(bob);
+        stETH.approve(address(depositPoolInstance), 0.1 ether);
+        depositPoolInstance.deposit(address(stETH), 0.1 ether);
+
+        skip((One_Month * 2) + 2);
+
+        depositPoolInstance.withdraw();
+        // two months + 2s rewards for 0.1 ether * 2
+        assertEq(depositPoolInstance.userPoints(bob), 15289350 * 2);
+        vm.stopPrank();
+    }
 
     function test_SetDurationWorks() public {
         assertEq(depositPoolInstance.duration(), 0);
