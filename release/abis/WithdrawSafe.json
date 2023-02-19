@@ -1,299 +1,7 @@
 [
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_treasuryContract",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_auctionContract",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_depositContract",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_tnftContract",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_bnftContract",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "AuctionFundsReceived",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "_bidId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "BidRefunded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "totalFundsTransferred",
-        "type": "uint256"
-      }
-    ],
-    "name": "FundsDistributed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "operater",
-        "type": "address"
-      }
-    ],
-    "name": "OperatorAddressSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "sender",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "Received",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "ValidatorIdSet",
-    "type": "event"
-  },
-  {
     "inputs": [],
-    "name": "SCALE",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "auctionContract",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "auctionContractRevenueSplit",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "treasurySplit",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "nodeOperatorSplit",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tnftHolderSplit",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "bnftHolderSplit",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "bnftId",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "bnftInstance",
-    "outputs": [
-      {
-        "internalType": "contract BNFT",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "enum IWithdrawSafe.ValidatorRecipientType",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "name": "claimableBalance",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "depositContract",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "distributeFunds",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "fundsReceivedFromAuctions",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "operatorAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "receiveAuctionFunds",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_nodeOperator",
-        "type": "address"
-      }
-    ],
-    "name": "setOperatorAddress",
+    "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -301,113 +9,49 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "setValidatorId",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "tnftId",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "tnftInstance",
-    "outputs": [
-      {
-        "internalType": "contract TNFT",
-        "name": "",
+        "internalType": "address",
+        "name": "_treasury",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "enum IWithdrawSafe.ValidatorRecipientType",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "name": "totalFundsDistributed",
-    "outputs": [
+      },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "_treasuryAmount",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "treasuryContract",
-    "outputs": [
+      },
       {
         "internalType": "address",
-        "name": "",
+        "name": "_operator",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "validatorExitRevenueSplit",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "treasurySplit",
-        "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "nodeOperatorSplit",
+        "name": "_operatorAmount",
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
-        "name": "tnftHolderSplit",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "_tnftHolder",
+        "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "bnftHolderSplit",
+        "name": "_tnftAmount",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "validatorId",
-    "outputs": [
+      },
+      {
+        "internalType": "address",
+        "name": "_bnftHolder",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "_bnftAmount",
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "name": "withdrawFunds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
