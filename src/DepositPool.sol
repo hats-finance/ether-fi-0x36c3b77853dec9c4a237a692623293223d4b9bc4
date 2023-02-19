@@ -23,8 +23,21 @@ contract DepositPool is Ownable {
 
     uint256 public constant depositStandard = 100000000;
     uint256 public constant SCALE = 100;
+
+    // User to time of deposit
     mapping(address => uint256) public depositTimes;
+
+    // user to rETH deposited
+    mapping(address => uint256) public userTo_rETHBalance;
+    // user to rETH deposited
+    mapping(address => uint256) public userTo_stETHBalance;
+    //user to frxETH deposited
+    mapping(address => uint256) public userTo_frxETHBalance;
+
+    //total user balance
     mapping(address => uint256) public userBalance;
+
+    // User to amount of points
     mapping(address => uint256) public userPoints;
 
     uint256 public immutable minDeposit = 0.1 ether;
