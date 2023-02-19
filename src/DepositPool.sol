@@ -139,8 +139,6 @@ contract DepositPool is Ownable {
         rETHInstance.transfer(msg.sender, rETHbal);
         stETHInstance.transfer(msg.sender, stETHbal);
         frxETHInstance.transfer(msg.sender, frxETHbal);
-        // (bool sent, ) = msg.sender.call{value: balance}("");
-        // require(sent, "Failed to send Ether");
 
         emit Withdrawn(msg.sender, balance, lengthOfDeposit);
     }
