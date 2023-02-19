@@ -78,15 +78,25 @@ contract DepositPool is Ownable {
     //--------------------------------------------------------------------------------------
 
     /// @notice deposit into pool
-    function deposit() external payable {
+    function deposit(address _ethContract, uint256 _amount) external {
         require(
-            msg.value >= minDeposit && msg.value <= maxDeposit,
+            _amount >= minDeposit && _amount <= maxDeposit,
             "Incorrect Deposit Amount"
         );
         depositTimes[msg.sender] = block.timestamp;
-        userBalance[msg.sender] = msg.value;
+        userBalance[msg.sender] += _amount;
 
-        emit Deposit(msg.sender, msg.value);
+        if (_ethContract == rETH) {
+            userTo_rETHBalance[msg.sender] += _amount;
+            rETHInstance.transferFrom(msg.sender, address(this), _amount);
+        } else if (_ethContract == stETH) {
+            userTo_stETHBalance[msg.sender] += _amount;
+            stETHInstance.transferFrom(msg.sender, address(this), _amount);
+        } else if (_ethContract == frxETH) {
+            userTo_frxETHBalance[msg.sender] += _amount;
+        }
+
+        emit Deposit(msg.sender, _amount);
     }
 
     /// @notice withdraw from pool
