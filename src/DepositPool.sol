@@ -2,6 +2,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
@@ -10,14 +11,15 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 contract DepositPool is Ownable {
     using Math for uint256;
 
-    /// TODO  min amount of deposit, 0.1 ETH, max amount, 100 ETH
-    /// TODO multiplier for points, after x months, the points double, where x is configurable
-    /// TODO numberOfDepositStandards should be square root of deposited eth amount
-    /// the more you deposit, the more points you get
-
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
+    address private immutable stETH =
+        0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
+    address private immutable frxETH =
+        0x5E8422345238F34275888049021821E8E08CAa1f;
 
     uint256 public constant depositStandard = 100000000;
     uint256 public constant SCALE = 100;
