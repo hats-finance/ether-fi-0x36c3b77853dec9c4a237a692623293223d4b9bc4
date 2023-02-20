@@ -20,7 +20,10 @@ contract RewardsPool is Ownable {
     address private frxETH; // 0x5E8422345238F34275888049021821E8E08CAa1f;
 
     uint256 public constant depositStandard = 100000000;
-    uint256 public constant SCALE = 100;
+    uint256 public constant SCALE = 10e12;
+
+    //How much the multiplier must increase per 10 days
+    uint256 private multiplierCoefficient = 0.4;
 
     // User to time of deposit
     mapping(address => uint256) public depositTimes;
@@ -29,10 +32,10 @@ contract RewardsPool is Ownable {
     mapping(address => uint256) public userTo_rETHBalance;
     // user to rETH deposited
     mapping(address => uint256) public userTo_stETHBalance;
-    //user to frxETH deposited
+    // user to frxETH deposited
     mapping(address => uint256) public userTo_frxETHBalance;
 
-    //total user balance
+    // total user balance
     mapping(address => uint256) public userBalance;
 
     // User to amount of points
@@ -143,26 +146,17 @@ contract RewardsPool is Ownable {
         emit Withdrawn(msg.sender, balance, lengthOfDeposit);
     }
 
-    /// @param _months number of months. Will be converted to seconds in function
-    function setDuration(uint256 _months) public onlyOwner {
-        uint256 oneMonth = 1 weeks * 4;
-        uint256 oldDuration = duration;
-        duration = _months * oneMonth;
-        emit DurationSet(oldDuration, duration);
-    }
-
     //--------------------------------------------------------------------------------------
     //----------------------------  INTERNAL FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function calculateUserPoints(
-        uint256 _depositAmount,
-        uint256 _numberOfSeconds
-    ) internal pure returns (uint256) {
-        uint256 numberOfDepositStandards = (Math.sqrt(_depositAmount) * SCALE) /
-            depositStandard;
+    function calculateUserPoints() public view returns (uint256) {
 
-        return (numberOfDepositStandards * _numberOfSeconds) / SCALE;
+        uint256 lengthOfDeposit = block.timestamp - depositTimes[msg.sender]; 
+        uint256 numberOfMultiplierMilestones = lengthOfDeposit / 864000;
+        uint256 multiplier = (numberOfMultiplierMilestones * multiplierCoefficient) + 1;
+
+        return ((Math.sqrt(userBalance[msg.sender]) * lengthOfDeposit) / SCALE) * multiplier;
     }
 
     /// @notice Allows ether to be sent to this contract
