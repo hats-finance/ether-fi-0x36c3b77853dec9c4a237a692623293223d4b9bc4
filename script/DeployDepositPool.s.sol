@@ -13,7 +13,11 @@ contract DeployDepositPoolScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        DepositPool depositPool = new DepositPool();
+        DepositPool depositPool = new DepositPool(
+            0xae78736Cd615f374D3085123A210448E74Fc6393,
+            0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84,
+            0x5E8422345238F34275888049021821E8E08CAa1f
+        );
 
         vm.stopBroadcast();
 
