@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 // import "lib/forge-std/src/console.sol";
 
-contract DepositPool is Ownable {
+contract RewardsPool is Ownable {
     using Math for uint256;
 
     //--------------------------------------------------------------------------------------

@@ -3,17 +3,17 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/DepositPool.sol";
+import "../src/RewardsPool.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeployDepositPoolScript is Script {
+contract DeployRewardsPoolScript is Script {
     using Strings for string;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        DepositPool depositPool = new DepositPool(
+        RewardsPool rewardsPool = new RewardsPool(
             0xae78736Cd615f374D3085123A210448E74Fc6393,
             0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84,
             0x5E8422345238F34275888049021821E8E08CAa1f
@@ -22,8 +22,8 @@ contract DeployDepositPoolScript is Script {
         vm.stopBroadcast();
 
         // Sets the variables to be wriiten to contract addresses.txt
-        string memory depositPoolAddress = Strings.toHexString(
-            address(depositPool)
+        string memory rewardsPoolAddress = Strings.toHexString(
+            address(rewardsPool)
         );
 
         // Declare version Var
@@ -31,7 +31,7 @@ contract DeployDepositPoolScript is Script {
 
         // Set path to version file where current verion is recorded
         /// @dev Initial version.txt and X.release files should be created manually
-        string memory versionPath = "release/logs/depositPool/version.txt";
+        string memory versionPath = "release/logs/rewardsPool/version.txt";
 
         // Read Current version
         string memory versionString = vm.readLine(versionPath);
@@ -52,7 +52,7 @@ contract DeployDepositPoolScript is Script {
         // Sets the path for the release file using the incremented version var
         string memory releasePath = string(
             abi.encodePacked(
-                "release/logs/depositPool/",
+                "release/logs/rewardsPool/",
                 Strings.toString(version),
                 ".release"
             )
@@ -65,7 +65,7 @@ contract DeployDepositPoolScript is Script {
                 Strings.toString(version),
                 "\n",
                 "Deposit Pool Contract Address: ",
-                depositPoolAddress
+                rewardsPoolAddress
             )
         );
 
