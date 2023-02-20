@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-// import "lib/forge-std/src/console.sol";
+import "lib/forge-std/src/console.sol";
 
 contract EarlyAdopterPool is Ownable {
     using Math for uint256;
@@ -16,23 +16,21 @@ contract EarlyAdopterPool is Ownable {
     //--------------------------------------------------------------------------------------
 
     uint256 public constant depositStandard = 100000000;
-    uint256 public constant SCALE = 10e12;
+    uint256 public constant SCALE = 10e10;
     uint256 public immutable minDeposit = 0.1 ether;
     uint256 public maxDeposit = 100 ether;
-    uint256 public immutable multiplier = 2;
     
     // Number of months after which points double in seconds
     uint256 public duration;
-    //How much the multiplier must increase per 10 days
-    uint256 private multiplierCoefficient = 0.4;
+    //How much the multiplier must increase per day, actually 0.1 but scaled by 100
+    uint256 private multiplierCoefficient = 10;
     uint256 public claimDeadline;
     uint256 public endTime;
     
     address private rETH; // 0xae78736Cd615f374D3085123A210448E74Fc6393;
     address private wstETH; // 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
-    address private frxETH; // 0x5E8422345238F34275888049021821E8E08CAa1f;
-    address private claimReceiverContract;
-    address public owner;
+    address private sfrxEth; // 0xac3e018457b222d93114458476f3e3416abbe38f;
+    address public claimReceiverContract;
 
     bool public claimingStatus;
 
@@ -45,7 +43,7 @@ contract EarlyAdopterPool is Ownable {
 
     IERC20 rETHInstance;
     IERC20 wstETHInstance;
-    IERC20 frxETHInstance;
+    IERC20 sfrxEthInstance;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -55,12 +53,11 @@ contract EarlyAdopterPool is Ownable {
     event DepositEth(address indexed sender, uint256 amount);
     event Withdrawn(
         address indexed sender,
-        uint256 amount,
-        uint256 lengthOfDeposit
+        uint256 amount
     );
-    event ClaimReceiverContractSet(address receiverAddress);
-    event ClaimingStatusSet(bool value);
-    event Fundsclaimed(address user, uint256 amount, uint256 pointsAccumulated);
+    event ClaimReceiverContractSet(address indexed receiverAddress);
+    event ClaimingOpened(uint256 deadline);
+    event Fundsclaimed(address indexed user, uint256 indexed amount, uint256 indexed pointsAccumulated);
 
 
     //--------------------------------------------------------------------------------------
@@ -70,18 +67,17 @@ contract EarlyAdopterPool is Ownable {
     constructor(
         address _rETH,
         address _wstEth,
-        address _frxETH
+        address _sfrxEth
     ) {
         rETH = _rETH;
-        wstEth = _wstEth;
-        frxETH = _frxETH;
+        wstETH = _wstEth;
+        sfrxEth = _sfrxEth;
 
         rETHInstance = IERC20(_rETH);
         wstETHInstance = IERC20(_wstEth);
-        frxETHInstance = IERC20(_frxETH);
+        sfrxEthInstance = IERC20(_sfrxEth);
 
         claimingStatus = false;
-        owner = msg.sender;
     }
 
     //--------------------------------------------------------------------------------------
@@ -90,7 +86,7 @@ contract EarlyAdopterPool is Ownable {
 
     /// @notice deposit into pool
     function deposit(address _ethContract, uint256 _amount) external {
-        require((_ethContract == rETH || _ethContract == frxETH || _ethContract == wstETH), "Unsupported token");
+        require((_ethContract == rETH || _ethContract == sfrxEth || _ethContract == wstETH), "Unsupported token");
         require(
             _amount >= minDeposit && _amount <= maxDeposit,
             "Incorrect Deposit Amount"
@@ -98,8 +94,8 @@ contract EarlyAdopterPool is Ownable {
         
         depositTimes[msg.sender] = block.timestamp;
 
-        userToErc20Balance[msg.sender][_ethContract] += (_amount * 10e17);
-        totalUserErc20Balance[msg.sender] += (_amount * 10e17);
+        userToErc20Balance[msg.sender][_ethContract] += _amount;
+        totalUserErc20Balance[msg.sender] += _amount;
         IERC20(_ethContract).transferFrom(msg.sender, address(this), _amount);
 
         emit DepositERC20(msg.sender, _amount);
@@ -113,7 +109,7 @@ contract EarlyAdopterPool is Ownable {
         );
         
         depositTimes[msg.sender] = block.timestamp;
-        userETHBalance[msg.sender] += msg.value;
+        userToETHBalance[msg.sender] += msg.value;
 
         emit DepositEth(msg.sender, msg.value);
     }
@@ -145,7 +141,7 @@ contract EarlyAdopterPool is Ownable {
         claimingStatus = true;
         endTime = block.timestamp;
             
-        emit ClaimingStatusSet(true, claimDeadline);
+        emit ClaimingOpened(claimDeadline);
        
     }
 
@@ -159,11 +155,18 @@ contract EarlyAdopterPool is Ownable {
     function calculateUserPoints() public view returns (uint256) {
 
         uint256 lengthOfDeposit = block.timestamp - depositTimes[msg.sender]; 
-        uint256 numberOfMultiplierMilestones = lengthOfDeposit / 864000;
-        uint256 multiplier = (numberOfMultiplierMilestones * multiplierCoefficient) + 1;
-        uint256 totalUserBalance = msg.sender.balance + totalUserErc20Balance[msg.sender];
+        uint256 numberOfMultiplierMilestones;
 
-        return ((Math.sqrt(userBalance[msg.sender]) * lengthOfDeposit) / SCALE) * multiplier;
+        if((lengthOfDeposit / 259200) > 2) {
+            numberOfMultiplierMilestones = 2;
+        }else {
+            numberOfMultiplierMilestones = lengthOfDeposit / 259200;
+        }
+
+        uint256 userMultiplier = numberOfMultiplierMilestones * multiplierCoefficient;
+        uint256 totalUserBalance = userToETHBalance[msg.sender] + totalUserErc20Balance[msg.sender];
+
+        return (((Math.sqrt(totalUserBalance) * lengthOfDeposit) / SCALE) * userMultiplier) / 100;
     }
 
 
@@ -171,43 +174,41 @@ contract EarlyAdopterPool is Ownable {
     //----------------------------  INTERNAL FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
     
-    function transferFunds(address _user, uint256 _identifier) internal view returns (uint256){
+    function transferFunds(address _user, uint256 _identifier) internal returns (uint256){
         
-        uint256 balance = userBalance[_user];
-        uint256 rETHbal = userTo_rETHBalance[_user];
-        uint256 wstETHbal = userTo_wstETHBalance[_user];
-        uint256 frxETHbal = userTo_frxETHBalance[_user];
+        uint256 totalUserBalance = msg.sender.balance + totalUserErc20Balance[msg.sender];
+        
+        uint256 rETHbal = userToErc20Balance[_user][rETH];
+        uint256 wstETHbal = userToErc20Balance[_user][wstETH];
+        uint256 sfrxEthbal = userToErc20Balance[_user][sfrxEth];
+        uint256 ethBalance = userToETHBalance[_user];
 
         depositTimes[_user] = 0;
-        userBalance[_userr] = 0;
-        userTo_rETHBalance[_user] = 0;
-        userTo_wstETHBalance[_user] = 0;
-        userTo_frxETHBalance[_user] = 0;
+        totalUserErc20Balance[msg.sender] = 0;
+        userToETHBalance[msg.sender] = 0;
+        userToErc20Balance[_user][rETH] = 0;
+        userToErc20Balance[_user][wstETH] = 0;
+        userToErc20Balance[_user][sfrxEth] = 0;
 
         address receiver;
 
         if(_identifier == 0){
-            receiver = _user
+            receiver = _user;
         } else {
             receiver = claimReceiverContract;
         }
 
         rETHInstance.transfer(receiver, rETHbal);
         wstETHInstance.transfer(receiver, wstETHbal);
-        frxETHInstance.transfer(receiver, frxETHbal);
+        sfrxEthInstance.transfer(receiver, sfrxEthbal);
 
-        return balance;
+        (bool sent, ) = receiver.call{value: ethBalance}("");
+        require(sent, "Failed to send Ether");
+
+        return totalUserBalance;
     }
 
     /// @notice Allows ether to be sent to this contract
     receive() external payable {}
-
-    //--------------------------------------------------------------------------------------
-    //------------------------------------  MODIFIERS  -------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
-    }
+   
 }
