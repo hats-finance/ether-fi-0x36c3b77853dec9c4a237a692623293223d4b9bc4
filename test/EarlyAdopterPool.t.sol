@@ -234,9 +234,9 @@ contract EarlyAdopterPoolTest is Test {
 
     function test_SetClaimableStatusTrue() public {
         vm.startPrank(owner);
-        assertEq(earlyAdopterPoolInstance.claimingStatus(), false);
+        assertEq(earlyAdopterPoolInstance.claimingOpen(), false);
         earlyAdopterPoolInstance.setClaimingOpen(10);
-        assertEq(earlyAdopterPoolInstance.claimingStatus(), true);
+        assertEq(earlyAdopterPoolInstance.claimingOpen(), true);
     }
 
     function test_SetClaimableStatusFailsIfNotOwner() public {
