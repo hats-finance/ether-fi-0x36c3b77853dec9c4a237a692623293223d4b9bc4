@@ -3,27 +3,32 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/DepositPool.sol";
+import "../src/EarlyAdopterPool.sol";
+import "../test/TestERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeployDepositPoolScript is Script {
+contract DeployEarlyAdopterPoolScript is Script {
     using Strings for string;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        DepositPool depositPool = new DepositPool(
-            0xae78736Cd615f374D3085123A210448E74Fc6393,
-            0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84,
-            0x5E8422345238F34275888049021821E8E08CAa1f
+        TestERC20 rEth = new TestERC20("Rocket Pool Eth", "rEth");
+        TestERC20 wstEth = new TestERC20("Wrapped Staked Pool Eth", "wstEth");
+        TestERC20 sfrxEth = new TestERC20("Staked Frax Eth", "sfrxEth");
+
+        EarlyAdopterPool earlyAdopterPool = new EarlyAdopterPool(
+            address(rEth),
+            address(wstEth),
+            address(sfrxEth)
         );
 
         vm.stopBroadcast();
 
         // Sets the variables to be wriiten to contract addresses.txt
-        string memory depositPoolAddress = Strings.toHexString(
-            address(depositPool)
+        string memory earlyAdopterPoolAddress = Strings.toHexString(
+            address(earlyAdopterPool)
         );
 
         // Declare version Var
@@ -31,7 +36,7 @@ contract DeployDepositPoolScript is Script {
 
         // Set path to version file where current verion is recorded
         /// @dev Initial version.txt and X.release files should be created manually
-        string memory versionPath = "release/logs/depositPool/version.txt";
+        string memory versionPath = "release/logs/earlyAdopterPool/version.txt";
 
         // Read Current version
         string memory versionString = vm.readLine(versionPath);
@@ -52,7 +57,7 @@ contract DeployDepositPoolScript is Script {
         // Sets the path for the release file using the incremented version var
         string memory releasePath = string(
             abi.encodePacked(
-                "release/logs/depositPool/",
+                "release/logs/earlyAdopterPool/",
                 Strings.toString(version),
                 ".release"
             )
@@ -64,8 +69,8 @@ contract DeployDepositPoolScript is Script {
                 "Version: ",
                 Strings.toString(version),
                 "\n",
-                "Deposit Pool Contract Address: ",
-                depositPoolAddress
+                "Early Adopter Pool Contract Address: ",
+                earlyAdopterPoolAddress
             )
         );
 
