@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./TestERC20.sol";
 
 contract EarlyAdopterPoolTest is Test {
-
     EarlyAdopterPool earlyAdopterPoolInstance;
 
     TestERC20 public rETH;
@@ -59,10 +58,25 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(rETH), 1e17);
         vm.stopPrank();
 
-        assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(alice), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)), 0);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(sfrxEth)), 0);
+        assertEq(
+            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)),
+            0
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                alice,
+                address(sfrxEth)
+            ),
+            0
+        );
         assertEq(earlyAdopterPoolInstance.depositTimes(alice), 1);
 
         vm.startPrank(alice);
@@ -70,10 +84,25 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(wstETH), 1e17);
         vm.stopPrank();
 
-        assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(alice), 0.2 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(sfrxEth)), 0);
+        assertEq(
+            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+            0.2 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                alice,
+                address(sfrxEth)
+            ),
+            0
+        );
 
         assertEq(rETH.balanceOf(address(earlyAdopterPoolInstance)), 1e17);
         assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 1e17);
@@ -83,10 +112,25 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(sfrxEth), 1e17);
         vm.stopPrank();
 
-        assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(alice), 0.3 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(sfrxEth)), 0.1 ether);
+        assertEq(
+            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+            0.3 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                alice,
+                address(sfrxEth)
+            ),
+            0.1 ether
+        );
 
         assertEq(rETH.balanceOf(address(earlyAdopterPoolInstance)), 1e17);
         assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 1e17);
@@ -98,25 +142,44 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
         vm.stopPrank();
 
-        assertEq(earlyAdopterPoolInstance.userToETHBalance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.depositTimes(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 1);
+        assertEq(
+            earlyAdopterPoolInstance.userToETHBalance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
+            ),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.depositTimes(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
+            ),
+            1
+        );
     }
 
     function test_WithdrawWorksCorrectly() public {
         vm.startPrank(bob);
         wstETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
         earlyAdopterPoolInstance.deposit(address(wstETH), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(bob), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(bob, address(wstETH)), 0.1 ether);
+        assertEq(
+            earlyAdopterPoolInstance.totalUserErc20Balance(bob),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(bob, address(wstETH)),
+            0.1 ether
+        );
         assertEq(earlyAdopterPoolInstance.depositTimes(bob), 1);
-        assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 0.1 ether);
+        assertEq(
+            wstETH.balanceOf(address(earlyAdopterPoolInstance)),
+            0.1 ether
+        );
 
-        // One day
+        // 3 days
         vm.warp(259201);
 
         uint256 points = earlyAdopterPoolInstance.calculateUserPoints();
-        assertEq(points, 81);
-        
+        assertEq(points, 8);
+
         earlyAdopterPoolInstance.withdraw();
 
         assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(bob), 0 ether);
@@ -149,20 +212,42 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(rETH), 0.1 ether);
         vm.stopPrank();
 
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(sfrxEth)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(alice), 0.3 ether);
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                alice,
+                address(sfrxEth)
+            ),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+            0.3 ether
+        );
 
         assertEq(rETH.balanceOf(address(earlyAdopterPoolInstance)), 0.1 ether);
-        assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 0.1 ether);
-        assertEq(sfrxEth.balanceOf(address(earlyAdopterPoolInstance)), 0.1 ether);
+        assertEq(
+            wstETH.balanceOf(address(earlyAdopterPoolInstance)),
+            0.1 ether
+        );
+        assertEq(
+            sfrxEth.balanceOf(address(earlyAdopterPoolInstance)),
+            0.1 ether
+        );
 
         vm.startPrank(owner);
+        vm.warp(4752001);
+
         earlyAdopterPoolInstance.setClaimingOpen(60);
         earlyAdopterPoolInstance.setClaimReceiverContract(alice);
 
-        vm.warp(4752000);
 
         uint256 aliceRethBalBefore = rETH.balanceOf(alice);
         uint256 aliceWSTethBalBefore = wstETH.balanceOf(alice);
@@ -170,17 +255,32 @@ contract EarlyAdopterPoolTest is Test {
 
         vm.stopPrank();
         vm.startPrank(alice);
-        assertEq(earlyAdopterPoolInstance.calculateUserPoints(), 5205);
+        assertEq(earlyAdopterPoolInstance.calculateUserPoints(), 2602);
         earlyAdopterPoolInstance.claim();
 
         uint256 aliceRethBalAfter = rETH.balanceOf(alice);
         uint256 aliceWSTethBalAfter = wstETH.balanceOf(alice);
         uint256 alicesfrxEthBalAfter = sfrxEth.balanceOf(alice);
 
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)), 0 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)), 0 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(alice, address(sfrxEth)), 0 ether);
-        assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(alice), 0 ether);
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(rETH)),
+            0 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(alice, address(wstETH)),
+            0 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                alice,
+                address(sfrxEth)
+            ),
+            0 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+            0 ether
+        );
 
         assertEq(rETH.balanceOf(address(earlyAdopterPoolInstance)), 0);
         assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 0);
@@ -265,7 +365,6 @@ contract EarlyAdopterPoolTest is Test {
     }
 
     function test_DepositAndClaimWithERC20AndETH() public {
-
         rETH.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
         sfrxEth.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
         wstETH.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
@@ -281,31 +380,70 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(rETH), 0.1 ether);
         vm.stopPrank();
 
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(rETH)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(wstETH)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(sfrxEth)), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 0.3 ether);
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA,
+                address(rETH)
+            ),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA,
+                address(wstETH)
+            ),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA,
+                address(sfrxEth)
+            ),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.totalUserErc20Balance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
+            ),
+            0.3 ether
+        );
 
         assertEq(rETH.balanceOf(address(earlyAdopterPoolInstance)), 0.1 ether);
-        assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 0.1 ether);
-        assertEq(sfrxEth.balanceOf(address(earlyAdopterPoolInstance)), 0.1 ether);
+        assertEq(
+            wstETH.balanceOf(address(earlyAdopterPoolInstance)),
+            0.1 ether
+        );
+        assertEq(
+            sfrxEth.balanceOf(address(earlyAdopterPoolInstance)),
+            0.1 ether
+        );
+        hoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+        earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
+        vm.stopPrank();
 
+        vm.warp(5184001);
+        
         vm.startPrank(owner);
         earlyAdopterPoolInstance.setClaimingOpen(60);
         earlyAdopterPoolInstance.setClaimReceiverContract(alice);
         vm.stopPrank();
 
-        hoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
-        vm.stopPrank();
+        assertEq(
+            earlyAdopterPoolInstance.userToETHBalance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
+            ),
+            0.1 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.depositTimes(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
+            ),
+            1
+        );
 
-        assertEq(earlyAdopterPoolInstance.userToETHBalance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 0.1 ether);
-        assertEq(earlyAdopterPoolInstance.depositTimes(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 1);
-
-        vm.warp(5184001);
         hoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        assertEq(earlyAdopterPoolInstance.calculateUserPoints(), 6557);
-        
+        assertEq(earlyAdopterPoolInstance.calculateUserPoints(), 3278);
+
         uint256 RethBalBefore = rETH.balanceOf(alice);
         uint256 WSTethBalBefore = wstETH.balanceOf(alice);
         uint256 sfrxEthBalBefore = sfrxEth.balanceOf(alice);
@@ -319,10 +457,33 @@ contract EarlyAdopterPoolTest is Test {
         uint256 sfrxEthBalAfter = sfrxEth.balanceOf(alice);
         uint256 EthBalanceAfter = alice.balance;
 
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(rETH)), 0 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(wstETH)), 0 ether);
-        assertEq(earlyAdopterPoolInstance.userToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(sfrxEth)), 0 ether);
-        assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 0 ether);
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA,
+                address(rETH)
+            ),
+            0 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA,
+                address(wstETH)
+            ),
+            0 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.userToErc20Balance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA,
+                address(sfrxEth)
+            ),
+            0 ether
+        );
+        assertEq(
+            earlyAdopterPoolInstance.totalUserErc20Balance(
+                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
+            ),
+            0 ether
+        );
 
         assertEq(rETH.balanceOf(address(earlyAdopterPoolInstance)), 0);
         assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 0);

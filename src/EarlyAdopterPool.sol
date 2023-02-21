@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-
 import "lib/forge-std/src/console.sol";
 
 contract EarlyAdopterPool is Ownable {
@@ -16,11 +15,11 @@ contract EarlyAdopterPool is Ownable {
     //--------------------------------------------------------------------------------------
 
     //User to help reduce points tallies from extremely large numbers due to token decimals
-    uint256 public constant SCALE = 10e10;
+    uint256 public constant SCALE = 10e11;
 
     uint256 public immutable minDeposit = 0.1 ether;
     uint256 public maxDeposit = 100 ether;
-    
+
     //How much the multiplier must increase per day, actually 0.1 but scaled by 100
     uint256 private multiplierCoefficient = 10;
 
@@ -29,11 +28,11 @@ contract EarlyAdopterPool is Ownable {
 
     //Time when depositing closed and will be used for calculating reards
     uint256 public endTime;
-    
+
     address private rETH; // 0xae78736Cd615f374D3085123A210448E74Fc6393;
     address private wstETH; // 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
     address private sfrxEth; // 0xac3e018457b222d93114458476f3e3416abbe38f;
-    
+
     //Future contract which funds will be sent to on claim (Most likely LP)
     address public claimReceiverContract;
 
@@ -62,14 +61,14 @@ contract EarlyAdopterPool is Ownable {
 
     event DepositERC20(address indexed sender, uint256 amount);
     event DepositEth(address indexed sender, uint256 amount);
-    event Withdrawn(
-        address indexed sender,
-        uint256 amount
-    );
+    event Withdrawn(address indexed sender, uint256 amount);
     event ClaimReceiverContractSet(address indexed receiverAddress);
     event ClaimingOpened(uint256 deadline);
-    event Fundsclaimed(address indexed user, uint256 indexed amount, uint256 indexed pointsAccumulated);
-
+    event Fundsclaimed(
+        address indexed user,
+        uint256 indexed amount,
+        uint256 indexed pointsAccumulated
+    );
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -104,18 +103,23 @@ contract EarlyAdopterPool is Ownable {
     /// @param _erc20Contract erc20 token contract being deposited
     /// @param _amount amount of the erc20 token being deposited
     function deposit(address _erc20Contract, uint256 _amount) external {
-        require((_erc20Contract == rETH || _erc20Contract == sfrxEth || _erc20Contract == wstETH), "Unsupported token");
+        require(
+            (_erc20Contract == rETH ||
+                _erc20Contract == sfrxEth ||
+                _erc20Contract == wstETH),
+            "Unsupported token"
+        );
         require(
             _amount >= minDeposit && _amount <= maxDeposit,
             "Incorrect Deposit Amount"
         );
         require(claimingOpen == false, "Depositing closed");
-        
+
         depositTimes[msg.sender] = block.timestamp;
 
         userToErc20Balance[msg.sender][_erc20Contract] += _amount;
         totalUserErc20Balance[msg.sender] += _amount;
-        IERC20(_ethContract).transferFrom(msg.sender, address(this), _amount);
+        IERC20(_erc20Contract).transferFrom(msg.sender, address(this), _amount);
 
         emit DepositERC20(msg.sender, _amount);
     }
@@ -127,7 +131,7 @@ contract EarlyAdopterPool is Ownable {
             "Incorrect Deposit Amount"
         );
         require(claimingOpen == false, "Depositing closed");
-        
+
         depositTimes[msg.sender] = block.timestamp;
         userToETHBalance[msg.sender] += msg.value;
 
@@ -141,11 +145,14 @@ contract EarlyAdopterPool is Ownable {
         emit Withdrawn(msg.sender, balance);
     }
 
-    /// @notice Transfers users funds to a new contract such as LP 
+    /// @notice Transfers users funds to a new contract such as LP
     /// @dev can only call once receiver contract is ready and claiming is open
     function claim() public {
         require(claimingOpen == true, "Claiming not open");
-        require(claimReceiverContract != address(0), "Claiming address not set");
+        require(
+            claimReceiverContract != address(0),
+            "Claiming address not set"
+        );
         require(block.timestamp <= claimDeadline, "Claiming is complete");
 
         uint256 pointsRewarded = calculateUserPoints();
@@ -160,14 +167,16 @@ contract EarlyAdopterPool is Ownable {
         claimDeadline = block.timestamp + (_claimDeadline * 86400);
         claimingOpen = true;
         endTime = block.timestamp;
-            
+
         emit ClaimingOpened(claimDeadline);
-       
     }
 
     /// @notice Set the contract which will receive claimed funds
     /// @param _receiverContract contract address for where claiming will send the funds
-    function setClaimReceiverContract(address _receiverContract) public onlyOwner {
+    function setClaimReceiverContract(address _receiverContract)
+        public
+        onlyOwner
+    {
         require(_receiverContract != address(0), "Cannot set as address zero");
         claimReceiverContract = _receiverContract;
 
@@ -178,38 +187,48 @@ contract EarlyAdopterPool is Ownable {
     /// @return the amount of points a user currently has accumulated
     function calculateUserPoints() public view returns (uint256) {
 
-        //Time in seconds since the deposit was made
-        uint256 lengthOfDeposit = endTime - depositTimes[msg.sender]; 
+        uint256 lengthOfDeposit;
+        
+        if(claimingOpen == false) {
+            lengthOfDeposit = block.timestamp - depositTimes[msg.sender];
+        }else {
+            lengthOfDeposit = endTime - depositTimes[msg.sender];
+        }
 
         //Variable to store how many milestones (3 days) the user deposit lasted
         uint256 numberOfMultiplierMilestones = lengthOfDeposit / 259200;
-        uint256 userMultiplier;
 
-        if(numberOfMultiplierMilestones >= 10) {
-            userMultiplier = 100;
-        }else {
-            userMultiplier = numberOfMultiplierMilestones * multiplierCoefficient;
-        }
+        if (numberOfMultiplierMilestones > 10) {
+            numberOfMultiplierMilestones = 10;
+        } 
 
-        uint256 totalUserBalance = userToETHBalance[msg.sender] + totalUserErc20Balance[msg.sender];
+        uint256 userMultiplier = numberOfMultiplierMilestones *
+                multiplierCoefficient;
+
+        uint256 totalUserBalance = userToETHBalance[msg.sender] +
+            totalUserErc20Balance[msg.sender];
 
         //Formula for calculating points total
-        return (((Math.sqrt(totalUserBalance) * lengthOfDeposit) / SCALE) * userMultiplier) / 100;
+        return
+            (((Math.sqrt(totalUserBalance) * lengthOfDeposit) / SCALE) *
+                userMultiplier) / 100;
     }
-
 
     //--------------------------------------------------------------------------------------
     //----------------------------  INTERNAL FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-    
+
     /// @notice Transfers funds to relevant parties and updates data structures
     /// @param _user user who is withdrawing
     /// @param _identifier identifies which contract function called the function
     /// @return balance of the user withdrawing, used for event
-    function transferFunds(address _user, uint256 _identifier) internal returns (uint256){
-        
-        uint256 totalUserBalance = msg.sender.balance + totalUserErc20Balance[msg.sender];
-        
+    function transferFunds(address _user, uint256 _identifier)
+        internal
+        returns (uint256)
+    {
+        uint256 totalUserBalance = msg.sender.balance +
+            totalUserErc20Balance[msg.sender];
+
         uint256 rETHbal = userToErc20Balance[_user][rETH];
         uint256 wstETHbal = userToErc20Balance[_user][wstETH];
         uint256 sfrxEthbal = userToErc20Balance[_user][sfrxEth];
@@ -224,7 +243,7 @@ contract EarlyAdopterPool is Ownable {
 
         address receiver;
 
-        if(_identifier == 0){
+        if (_identifier == 0) {
             receiver = _user;
         } else {
             receiver = claimReceiverContract;
@@ -242,5 +261,4 @@ contract EarlyAdopterPool is Ownable {
 
     /// @notice Allows ether to be sent to this contract
     receive() external payable {}
-   
 }
