@@ -4,19 +4,24 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/EarlyAdopterPool.sol";
+import "../test/TestERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeployRewardsPoolScript is Script {
+contract DeployEarlyAdopterPoolScript is Script {
     using Strings for string;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
+        TestERC20 rEth = new TestERC20("Rocket Pool Eth", "rEth");
+        TestERC20 wstEth = new TestERC20("Wrapped Staked Pool Eth", "wstEth");
+        TestERC20 sfrxEth = new TestERC20("Staked Frax Eth", "sfrxEth");
+
         EarlyAdopterPool earlyAdopterPool = new EarlyAdopterPool(
-            0xae78736Cd615f374D3085123A210448E74Fc6393,
-            0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84,
-            0x5E8422345238F34275888049021821E8E08CAa1f
+            address(rEth),
+            address(wstEth),
+            address(sfrxEth)
         );
 
         vm.stopBroadcast();
