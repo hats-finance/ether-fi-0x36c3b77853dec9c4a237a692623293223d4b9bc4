@@ -58,8 +58,10 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(rETH), 1e17);
         vm.stopPrank();
 
+        (uint256 depositTime,, uint256 totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(alice);
+
         assertEq(
-            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+            totalERC20Balance,
             0.1 ether
         );
         assertEq(
@@ -77,15 +79,17 @@ contract EarlyAdopterPoolTest is Test {
             ),
             0
         );
-        assertEq(earlyAdopterPoolInstance.depositTimes(alice), 1);
+        assertEq(depositTime, 1);
 
         vm.startPrank(alice);
         wstETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
         earlyAdopterPoolInstance.deposit(address(wstETH), 1e17);
         vm.stopPrank();
+        
+        (depositTime,, totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(alice);
 
         assertEq(
-            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+            totalERC20Balance,
             0.2 ether
         );
         assertEq(
@@ -112,8 +116,10 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(sfrxEth), 1e17);
         vm.stopPrank();
 
+        (,, totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(alice);
+
         assertEq(
-            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+            totalERC20Balance,
             0.3 ether
         );
         assertEq(
@@ -142,16 +148,14 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
         vm.stopPrank();
 
+        (uint256 depositTime, uint256 ethBalance, ) = earlyAdopterPoolInstance.depositInfo(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+
         assertEq(
-            earlyAdopterPoolInstance.userToETHBalance(
-                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
-            ),
+           ethBalance,
             0.1 ether
         );
         assertEq(
-            earlyAdopterPoolInstance.depositTimes(
-                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
-            ),
+            depositTime,
             1
         );
     }
@@ -160,15 +164,17 @@ contract EarlyAdopterPoolTest is Test {
         vm.startPrank(bob);
         wstETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
         earlyAdopterPoolInstance.deposit(address(wstETH), 0.1 ether);
+        (uint256 depositTime,, uint256 totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(bob);
+
         assertEq(
-            earlyAdopterPoolInstance.totalUserErc20Balance(bob),
+            totalERC20Balance,
             0.1 ether
         );
         assertEq(
             earlyAdopterPoolInstance.userToErc20Balance(bob, address(wstETH)),
             0.1 ether
         );
-        assertEq(earlyAdopterPoolInstance.depositTimes(bob), 1);
+        assertEq(depositTime, 1);
         assertEq(
             wstETH.balanceOf(address(earlyAdopterPoolInstance)),
             0.1 ether
@@ -181,9 +187,11 @@ contract EarlyAdopterPoolTest is Test {
         assertEq(points, 8);
 
         earlyAdopterPoolInstance.withdraw();
+        
+        (depositTime,, totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(bob);
 
-        assertEq(earlyAdopterPoolInstance.totalUserErc20Balance(bob), 0 ether);
-        assertEq(earlyAdopterPoolInstance.depositTimes(bob), 0);
+        assertEq(totalERC20Balance, 0 ether);
+        assertEq(depositTime, 0);
         assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 0);
         vm.stopPrank();
     }
@@ -227,8 +235,11 @@ contract EarlyAdopterPoolTest is Test {
             ),
             0.1 ether
         );
+
+        (,, uint256 totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(alice);
+
         assertEq(
-            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+           totalERC20Balance,
             0.3 ether
         );
 
@@ -277,8 +288,11 @@ contract EarlyAdopterPoolTest is Test {
             ),
             0 ether
         );
+
+        (,, totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(alice);
+
         assertEq(
-            earlyAdopterPoolInstance.totalUserErc20Balance(alice),
+            totalERC20Balance,
             0 ether
         );
 
@@ -334,9 +348,9 @@ contract EarlyAdopterPoolTest is Test {
 
     function test_SetClaimableStatusTrue() public {
         vm.startPrank(owner);
-        assertEq(earlyAdopterPoolInstance.claimingOpen(), false);
+        assertEq(earlyAdopterPoolInstance.claimingOpen(), 0);
         earlyAdopterPoolInstance.setClaimingOpen(10);
-        assertEq(earlyAdopterPoolInstance.claimingOpen(), true);
+        assertEq(earlyAdopterPoolInstance.claimingOpen(), 1);
     }
 
     function test_SetClaimableStatusFailsIfNotOwner() public {
@@ -401,10 +415,11 @@ contract EarlyAdopterPoolTest is Test {
             ),
             0.1 ether
         );
+
+        (,, uint256 totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+
         assertEq(
-            earlyAdopterPoolInstance.totalUserErc20Balance(
-                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
-            ),
+            totalERC20Balance,
             0.3 ether
         );
 
@@ -428,16 +443,15 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.setClaimReceiverContract(alice);
         vm.stopPrank();
 
+        (uint256 depositTime, uint256 ethBalance,) = earlyAdopterPoolInstance.depositInfo(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+
+
         assertEq(
-            earlyAdopterPoolInstance.userToETHBalance(
-                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
-            ),
+            ethBalance,
             0.1 ether
         );
         assertEq(
-            earlyAdopterPoolInstance.depositTimes(
-                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
-            ),
+            depositTime,
             1
         );
 
@@ -478,10 +492,11 @@ contract EarlyAdopterPoolTest is Test {
             ),
             0 ether
         );
+
+        (,, totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+
         assertEq(
-            earlyAdopterPoolInstance.totalUserErc20Balance(
-                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
-            ),
+            totalERC20Balance,
             0 ether
         );
 
