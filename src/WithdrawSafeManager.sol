@@ -43,6 +43,7 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     //Holds the data for the revenue splits depending on where the funds are received from
     AuctionContractRevenueSplit public auctionContractRevenueSplit;
     ValidatorExitRevenueSplit public validatorExitRevenueSplit;
+    ValidatorStakingRewardSplit public validatorStakingRewardSplit;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -97,12 +98,22 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
             bnftHolderSplit: 9
         });
 
+        validatorStakingRewardSplit = ValidatorStakingRewardSplit({
+            treasurySplit: 5,
+            nodeOperatorSplit: 5,
+            tnftHolderSplit: 81,
+            bnftHolderSplit: 9
+        });
+
         depositInstance.setManagerAddress(address(this));
     }
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+    
+    receive() external payable {
+    }
 
     function createWithdrawalSafe() external returns (address) {
         address clone = Clones.clone(implementationContract);
@@ -236,6 +247,133 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
         );
 
         emit FundsWithdrawn(contractBalance);
+    }
+
+    function partialWithdraw(uint256 _validatorId) external {
+        address withdrawSafeContractAddress = withdrawSafeAddressesPerValidator[_validatorId];
+        uint256 contractBalance = address(withdrawSafeContractAddress).balance;
+        IWithdrawSafe safeInstance = IWithdrawSafe(withdrawSafeContractAddress);
+        require(contractBalance < 8 ether, "The balance is above 8 ETH. You should exit the node.");
+
+        // Use constants instead of 'validatorStakingRewardSplit'?
+        uint256 operatorAmount = (contractBalance * validatorStakingRewardSplit.treasurySplit) / SCALE;
+        uint256 tnftHolderAmount = (contractBalance * validatorStakingRewardSplit.tnftHolderSplit) / SCALE;
+        uint256 bnftHolderAmount = (contractBalance * validatorStakingRewardSplit.bnftHolderSplit) / SCALE;
+        uint256 treasuryAmount = contractBalance - (bnftHolderAmount + tnftHolderAmount + operatorAmount);
+
+        address operator = operatorAddresses[_validatorId];
+        address tnftHolder = tnftInstance.ownerOf(tnftInstance.getNftId(_validatorId));
+        address bnftHolder = tnftInstance.ownerOf(bnftInstance.getNftId(_validatorId));
+
+        safeInstance.withdrawFunds(
+            treasuryContract,
+            treasuryAmount,
+            operator,
+            operatorAmount,
+            tnftHolder,
+            tnftHolderAmount,
+            bnftHolder,
+            bnftHolderAmount
+        );
+        require(address(withdrawSafeAddressesPerValidator[_validatorId]).balance == 0, "");
+
+        emit FundsWithdrawn(contractBalance);
+    }
+
+    function partialWithdrawBatch(address _operator, uint256[] memory _validatorIds) external {
+        require(_validatorIds.length > 0, "");
+
+        uint256 currentManagerBalance = address(this).balance;
+
+        uint256 totalOperatorAmount = 0;
+        uint256 totalTreasuryAmount = 0;
+        uint256 _validatorId;
+        address tnftHolder;
+        address bnftHolder;
+
+        address withdrawSafeContractAddress;
+        uint256 contractBalance;
+        IWithdrawSafe safeInstance;
+
+        bool sent = false;
+        for (uint i = 0; i < _validatorIds.length; i++) {
+            _validatorId = _validatorIds[i];
+            tnftHolder = tnftInstance.ownerOf(tnftInstance.getNftId(_validatorId));
+            bnftHolder = bnftInstance.ownerOf(bnftInstance.getNftId(_validatorId));
+            require(_operator == operatorAddresses[_validatorId], "");
+
+            withdrawSafeContractAddress = withdrawSafeAddressesPerValidator[_validatorId];
+            contractBalance = address(withdrawSafeContractAddress).balance;
+            safeInstance = IWithdrawSafe(withdrawSafeContractAddress);
+            require(contractBalance < 8 ether, "The balance is above 8 ETH. You should exit the node.");
+            safeInstance.verySafeMoveToManager(address(this));
+
+            uint256 operatorAmount = (contractBalance * validatorStakingRewardSplit.nodeOperatorSplit) / SCALE;
+            uint256 tnftHolderAmount = (contractBalance * validatorStakingRewardSplit.tnftHolderSplit) / SCALE;
+            uint256 bnftHolderAmount = (contractBalance * validatorStakingRewardSplit.bnftHolderSplit) / SCALE;
+            uint256 treasuryAmount = contractBalance - (bnftHolderAmount + tnftHolderAmount + operatorAmount);
+
+            if (false) {
+            // if (tnftHolder == bnftHolder) {
+                (sent, ) = payable(tnftHolder).call{value: tnftHolderAmount + bnftHolderAmount}("");
+                require(sent, "Failed to send Ether");
+            } else {
+                (sent, ) = payable(tnftHolder).call{value: tnftHolderAmount}("");
+                require(sent, "Failed to send Ether");
+                (sent, ) = payable(bnftHolder).call{value: bnftHolderAmount}("");
+                require(sent, "Failed to send Ether");
+            }
+
+            totalOperatorAmount += operatorAmount;
+            totalTreasuryAmount += treasuryAmount;
+        }
+
+        (sent, ) = payable(_operator).call{value: totalOperatorAmount}("");
+        require(sent, "Failed to send Ether");
+        (sent, ) = payable(treasuryContract).call{value: totalTreasuryAmount}("");
+        require(sent, "Failed to send Ether");
+
+        require(currentManagerBalance == address(this).balance, "");
+    }
+
+    function partialWithdrawBatch(address _operator, address _bNftholder, address _tNftholder, uint256[] memory _validatorIds) external {
+        require(_validatorIds.length > 0, "");
+        uint256 currentManagerBalance = address(this).balance;
+
+        uint256 totalAmount = 0;
+        bool sent = false;
+        for (uint i = 0; i < _validatorIds.length; i++) {
+            uint256 _validatorId = _validatorIds[i];
+            // address tnftHolder = tnftInstance.ownerOf(tnftInstance.getNftId(_validatorId));
+            // address bnftHolder = bnftInstance.ownerOf(bnftInstance.getNftId(_validatorId));
+            require(_operator == operatorAddresses[_validatorId], "");
+            // require(_tNftholder == tnftInstance.ownerOf(tnftInstance.getNftId(_validatorId)), "");
+            // require(_bNftholder == bnftInstance.ownerOf(bnftInstance.getNftId(_validatorId)), "");
+
+            address withdrawSafeContractAddress = withdrawSafeAddressesPerValidator[_validatorId];
+            uint256 contractBalance = address(withdrawSafeContractAddress).balance;
+            IWithdrawSafe safeInstance = IWithdrawSafe(withdrawSafeContractAddress);
+            require(contractBalance < 8 ether, "The balance is above 8 ETH. You should exit the node.");
+
+            safeInstance.verySafeMoveToManager(address(this));
+            totalAmount += contractBalance;
+        }
+
+        uint256 operatorAmount = (totalAmount * validatorStakingRewardSplit.nodeOperatorSplit) / SCALE;
+        uint256 tnftHolderAmount = (totalAmount * validatorStakingRewardSplit.tnftHolderSplit) / SCALE;
+        uint256 bnftHolderAmount = (totalAmount * validatorStakingRewardSplit.bnftHolderSplit) / SCALE;
+        uint256 treasuryAmount = totalAmount - (bnftHolderAmount + tnftHolderAmount + operatorAmount);
+
+        (sent, ) = payable(_operator).call{value: operatorAmount}("");
+        require(sent, "Failed to send Ether");
+        (sent, ) = payable(_tNftholder).call{value: tnftHolderAmount}("");
+        require(sent, "Failed to send Ether");
+        (sent, ) = payable(_bNftholder).call{value: bnftHolderAmount}("");
+        require(sent, "Failed to send Ether");
+        (sent, ) = payable(treasuryContract).call{value: treasuryAmount}("");
+        require(sent, "Failed to send Ether");
+
+        require(currentManagerBalance == address(this).balance, "");
     }
 
     //--------------------------------------------------------------------------------------

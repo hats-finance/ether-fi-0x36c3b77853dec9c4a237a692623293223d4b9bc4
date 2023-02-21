@@ -12,6 +12,7 @@ import "../src/Registration.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
+import "../src/SykoWithdrawSafe.sol";
 
 contract WithdrawSafeTest is Test {
     IDeposit public depositInterface;
@@ -23,6 +24,8 @@ contract WithdrawSafeTest is Test {
     Treasury public treasuryInstance;
     WithdrawSafe public safeInstance;
     WithdrawSafeManager public managerInstance;
+
+    SykoWithdrawSafe public SykoWithdrawSafeInstance;
 
     Merkle merkle;
     bytes32 root;
@@ -56,6 +59,8 @@ contract WithdrawSafeTest is Test {
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
+        
+        SykoWithdrawSafeInstance = new SykoWithdrawSafe(1);
 
         auctionInstance.setManagerAddress(address(managerInstance));
         depositInstance.setManagerAddress(address(managerInstance));
@@ -164,6 +169,29 @@ contract WithdrawSafeTest is Test {
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
             operatorBalance + 0.0104 ether
         );
+    }
+
+    function test_partialWithdrawWorksCorrectly() public {
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (bool sent, ) = address(safeInstance).call{value: 0.04 ether}("");
+        require(sent, "Failed to send Ether");
+        assertEq(address(treasuryInstance).balance, 0 ether);
+        assertEq(address(safeInstance).balance, 0.14 ether);
+        assertEq(address(auctionInstance).balance, 0 ether);
+
+        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
+        address operator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+
+        uint256 stakerBalance = address(staker).balance;
+        uint256 operatorBalance = address(operator).balance;
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        managerInstance.partialWithdraw(0);
+        
+        assertEq(address(safeInstance).balance, 0 ether);
+        assertEq(address(treasuryInstance).balance, 0.007 ether);
+        assertEq(address(operator).balance, operatorBalance + 0.007 ether);
+        // assertEq(address(staker).balance, stakerBalance + 0.126 ether);
     }
 
     function test_WithdrawSafeMultipleSafesWorkCorrectly() public {
@@ -317,5 +345,26 @@ contract WithdrawSafeTest is Test {
         );
 
         root = merkle.getRoot(whiteListedAddresses);
+    }
+
+    function test_SykoWithdrawSafe() public {
+        hoax(alice);
+
+        (bool sent, ) = address(chad).call{value: 0.1 ether}("");
+        require(sent, "Failed to send Ether");
+        (sent, ) = address(bob).call{value: 0.1 ether}("");
+        require(sent, "Failed to send Ether");
+        (sent, ) = address(dan).call{value: 0.1 ether}("");
+        require(sent, "Failed to send Ether");
+
+        (sent, ) = address(SykoWithdrawSafeInstance).call{value: 0.1 ether}("");
+        require(sent, "Failed to send Ether");
+        SykoWithdrawSafeInstance._partialWithdraw(alice, chad, bob, dan);
+        require(address(SykoWithdrawSafeInstance).balance == 0, "");
+
+        (sent, ) = address(SykoWithdrawSafeInstance).call{value: 0.5 ether}("");
+        require(sent, "Failed to send Ether");
+        SykoWithdrawSafeInstance._partialWithdraw(alice, chad, bob, dan);
+        require(address(SykoWithdrawSafeInstance).balance == 0, "");
     }
 }
