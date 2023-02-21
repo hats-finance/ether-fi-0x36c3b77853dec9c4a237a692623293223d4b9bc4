@@ -46,8 +46,8 @@ jobs:
         id: deploy-goerli-lp
 
       - name: Deploy Deposit Pool Contract
-        run: make deploy-goerli-depositPool
-        id: deploy-goerli-depositPool
+        run: make deploy-goerli-early-reward-pool
+        id: deploy-goerli-early-reward-pool
 
       - name: Get date
         id: get-date
