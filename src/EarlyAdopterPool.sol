@@ -13,13 +13,13 @@ contract EarlyAdopterPool is Ownable {
     //--------------------------------------------------------------------------------------
 
     //User to help reduce points tallies from extremely large numbers due to token decimals
-    uint256 public constant SCALE = 10e11;
+    uint64 public constant SCALE = 10e11;
 
-    uint256 public immutable minDeposit = 0.1 ether;
-    uint256 public maxDeposit = 100 ether;
+    uint64 public constant minDeposit = 0.1 ether;
+    uint64 public constant maxDeposit = 100 ether;
 
     //How much the multiplier must increase per day, actually 0.1 but scaled by 100
-    uint256 private multiplierCoefficient = 10;
+    uint64 private constant multiplierCoefficient = 10;
 
     //After a certain time, claiming funds is not allowed and users will need to simply withdraw
     uint256 public claimDeadline;
@@ -88,8 +88,6 @@ contract EarlyAdopterPool is Ownable {
         rETHInstance = IERC20(_rETH);
         wstETHInstance = IERC20(_wstEth);
         sfrxEthInstance = IERC20(_sfrxEth);
-
-        claimingOpen = false;
     }
 
     //--------------------------------------------------------------------------------------
@@ -152,8 +150,9 @@ contract EarlyAdopterPool is Ownable {
             "Claiming address not set"
         );
         require(block.timestamp <= claimDeadline, "Claiming is complete");
+        require(depositTimes[msg.sender] != 0, "No deposit stored");
 
-        uint256 pointsRewarded = calculateUserPoints();
+        uint256 pointsRewarded = calculateUserPoints(msg.sender);
         uint256 balance = transferFunds(msg.sender, 1);
 
         emit Fundsclaimed(msg.sender, balance, pointsRewarded);
@@ -183,14 +182,14 @@ contract EarlyAdopterPool is Ownable {
 
     /// @notice Calculates how many points a user currently has owed to them
     /// @return the amount of points a user currently has accumulated
-    function calculateUserPoints() public view returns (uint256) {
+    function calculateUserPoints(address _user) public view returns (uint256) {
 
         uint256 lengthOfDeposit;
         
         if(claimingOpen == false) {
-            lengthOfDeposit = block.timestamp - depositTimes[msg.sender];
+            lengthOfDeposit = block.timestamp - depositTimes[_user];
         }else {
-            lengthOfDeposit = endTime - depositTimes[msg.sender];
+            lengthOfDeposit = endTime - depositTimes[_user];
         }
 
         //Variable to store how many milestones (3 days) the user deposit lasted
@@ -203,8 +202,8 @@ contract EarlyAdopterPool is Ownable {
         uint256 userMultiplier = numberOfMultiplierMilestones *
                 multiplierCoefficient;
 
-        uint256 totalUserBalance = userToETHBalance[msg.sender] +
-            totalUserErc20Balance[msg.sender];
+        uint256 totalUserBalance = userToETHBalance[_user] +
+            totalUserErc20Balance[_user];
 
         //Formula for calculating points total
         return
