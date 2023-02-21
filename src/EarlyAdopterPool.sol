@@ -66,6 +66,9 @@ contract EarlyAdopterPool is Ownable {
         uint256 indexed pointsAccumulated
     );
 
+    /// @notice Allows ether to be sent to this contract
+    receive() external payable {}
+
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
@@ -145,7 +148,6 @@ contract EarlyAdopterPool is Ownable {
             "Claiming address not set"
         );
         require(block.timestamp <= claimDeadline, "Claiming is complete");
-
         require(depositInfo[msg.sender].depositTime != 0, "No deposit stored");
 
         uint256 pointsRewarded = calculateUserPoints(msg.sender);
@@ -207,7 +209,7 @@ contract EarlyAdopterPool is Ownable {
     }
 
     //--------------------------------------------------------------------------------------
-    //----------------------------  INTERNAL FUNCTIONS  ------------------------------
+    //--------------------------------  INTERNAL FUNCTIONS  --------------------------------
     //--------------------------------------------------------------------------------------
 
     /// @notice Transfers funds to relevant parties and updates data structures
@@ -248,8 +250,9 @@ contract EarlyAdopterPool is Ownable {
         return totalUserBalance;
     }
 
-    /// @notice Allows ether to be sent to this contract
-    receive() external payable {}
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  MODIFIERS  ------------------------------------
+    //--------------------------------------------------------------------------------------
 
     modifier OnlyCorrectAmount(uint256 _amount) {
         require(
