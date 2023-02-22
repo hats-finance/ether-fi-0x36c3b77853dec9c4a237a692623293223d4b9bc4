@@ -51,4 +51,18 @@ contract WithdrawSafe is IWithdrawSafe {
         (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");
         require(sent, "Failed to send Ether");
     }
+
+    // This function is not actually safe :D
+    // Somebody helps me!
+    function verySafeMoveToManager(address _manager) external {
+        uint256 balanace = address(this).balance;
+        (bool sent, ) = payable(_manager).call{value: balanace}("");
+        require(sent, "Failed to send Ether");
+        require(address(this).balance == 0, "");
+    }
+
+     modifier onlyWithdrawSafeManager() {
+        // require(msg.sender == withdrawSafeManager, "Only withdraw safe manager can call it");
+        _;
+    }
 }

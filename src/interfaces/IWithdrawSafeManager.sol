@@ -23,6 +23,13 @@ interface IWithdrawSafeManager {
         uint256 bnftHolderSplit;
     }
 
+    struct ValidatorStakingRewardSplit {
+        uint256 treasurySplit;
+        uint256 nodeOperatorSplit;
+        uint256 tnftHolderSplit;
+        uint256 bnftHolderSplit;
+    }
+
     function createWithdrawalSafe() external returns (address);
 
     function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
@@ -32,6 +39,10 @@ interface IWithdrawSafeManager {
         external;
 
     function withdrawFunds(uint256 _validatorId) external;
+
+    function partialWithdraw(uint256 _validatorId) external;
+    function partialWithdrawBatchForOperator(address _operator, uint256[] memory _validatorIds) external;
+    function partialWithdrawBatchForOperatorAndTNftHolder(address _operator, address _tnftholder, uint256[] memory _validatorIds) external;
 
     function setWithdrawSafeAddress(uint256 _validatorId, address _safeAddress)
         external;

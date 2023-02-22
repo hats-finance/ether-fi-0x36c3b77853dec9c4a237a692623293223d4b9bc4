@@ -12,4 +12,6 @@ interface IWithdrawSafe {
         address _bnftHolder,
         uint256 _bnftAmount
     ) external;
+
+    function verySafeMoveToManager(address _manager) external;
 }
