@@ -12,6 +12,7 @@ contract LiquidityPoolTest is Test {
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
+    address bob = vm.addr(3);
 
     function setUp() public {
         vm.startPrank(owner);

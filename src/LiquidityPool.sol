@@ -3,8 +3,9 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/IEETH.sol";
+import "./interfaces/ILiquidityPool.sol";
 
-contract LiquidityPool {
+contract LiquidityPool is ILiquidityPool  {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -34,6 +35,10 @@ contract LiquidityPool {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    function getTokenAddress() external returns (address) {
+        return eETH;
+    }
 
     /// @notice sets the contract address for eETH
     /// @dev can't do it in constructor due to circular dependencies

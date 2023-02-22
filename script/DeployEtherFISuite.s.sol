@@ -6,10 +6,13 @@ import "forge-std/console.sol";
 import "../src/Treasury.sol";
 import "../src/Registration.sol";
 import "../src/WithdrawSafeManager.sol";
+import "../src/LiquidityPool.sol";
+import "../src/EETH.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+
 
 contract DeployScript is Script {
     using Strings for string;
@@ -22,6 +25,8 @@ contract DeployScript is Script {
         address TNFT;
         address BNFT;
         address safeManager;
+        address liquidityPool;
+        address eETH;
     }
 
     addresses addressStruct;
@@ -33,7 +38,9 @@ contract DeployScript is Script {
         Treasury treasury = new Treasury();
         Registration registration = new Registration();
         Auction auction = new Auction(address(registration));
-
+	    LiquidityPool liquidityPool = new LiquidityPool(address(treasury));
+        EETH eETH = new EETH(address(liquidityPool));
+	
         treasury.setAuctionContractAddress(address(auction));
 
         vm.recordLogs();
@@ -53,7 +60,8 @@ contract DeployScript is Script {
             address(auction),
             address(deposit),
             TNFTAddress,
-            BNFTAddress
+            BNFTAddress,
+            address(liquidityPool)
         );
 
         auction.setManagerAddress(address(safeManager));
@@ -68,7 +76,9 @@ contract DeployScript is Script {
             deposit: address(deposit),
             TNFT: TNFTAddress,
             BNFT: BNFTAddress,
-            safeManager: address(safeManager)
+            safeManager: address(safeManager),
+            liquidityPool: address(liquidityPool),
+            eETH: address(eETH)
         });
 
         writeVersionFile();

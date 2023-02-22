@@ -12,7 +12,9 @@ import "../src/Registration.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
-import "../src/SykoWithdrawSafe.sol";
+import "../src/LiquidityPool.sol";
+import "../src/EETH.sol";
+
 
 contract WithdrawSafeExperimentTest is Test {
     IDeposit public depositInterface;
@@ -23,6 +25,8 @@ contract WithdrawSafeExperimentTest is Test {
     Auction public auctionInstance;
     Treasury public treasuryInstance;
     WithdrawSafeManager public managerInstance;
+    LiquidityPool public liquidityPool;
+    EETH public eETH;
 
     Merkle merkle;
     bytes32 root;
@@ -32,8 +36,10 @@ contract WithdrawSafeExperimentTest is Test {
 
     uint256 num_operators;
     uint256 num_stakers;
+    uint256 num_people;
     address[] operators;
     address[] stakers;
+    address[] people;
     uint256[] validatorIds;
 
     address owner = vm.addr(1);
@@ -45,12 +51,19 @@ contract WithdrawSafeExperimentTest is Test {
     function setUp() public {
         num_operators = 1; // should be 1
         num_stakers = 16;
+        num_people = num_stakers;
         for (uint i = 0; i < num_operators; i++) {
             operators.push(vm.addr(i+1));
+            vm.deal(operators[i], 1 ether);
         }
         for (uint i = 0; i < num_stakers; i++) {
             stakers.push(vm.addr(i+10000));
-        }        
+            vm.deal(stakers[i], 1 ether);
+        }
+        for (uint i = 0; i < num_people; i++) {
+            people.push(vm.addr(i+10000000));
+            vm.deal(people[i], 1 ether);
+        }    
 
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
@@ -63,12 +76,17 @@ contract WithdrawSafeExperimentTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        liquidityPool = new LiquidityPool(owner);
+        eETH = new EETH(address(liquidityPool));
+        liquidityPool.setTokenAddress(address(eETH));
+
         managerInstance = new WithdrawSafeManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(depositInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(liquidityPool)
         );
         
         auctionInstance.setManagerAddress(address(managerInstance));
@@ -113,16 +131,19 @@ contract WithdrawSafeExperimentTest is Test {
 
             (bool sent, ) = address(safeInstance).call{value: 0.01 ether}("");
             require(sent, "Failed to send Ether");
+            eETH.mint(address(safeInstance), 1);
+            
         }
         vm.stopPrank();
 
-        // for (uint i = 0; i < num_stakers; i++) {
-        //     vm.startPrank(stakers[i]);
+        for (uint i = 0; i < num_stakers; i++) {
+            vm.startPrank(stakers[i]);
+            TestTNFTInstance.transferFrom(stakers[i], people[i], i);
         //     uint256 balance = address(stakers[i]).balance;
         //     (bool sent, ) = address(operators[0]).call{value: balance}("");
         //     require(sent, "Failed to send Ether");
-        //     vm.stopPrank();
-        // }
+            vm.stopPrank();
+        }        
     }
 
     function _merkleSetup() internal {
@@ -140,33 +161,60 @@ contract WithdrawSafeExperimentTest is Test {
         root = merkle.getRoot(whiteListedAddresses);
     }
 
-    function test_hi() public {
-
+    function _deals() internal {
+        vm.deal(address(managerInstance), 100 ether);
+        for (uint i = 0; i < num_stakers; i++) {
+            (, address withdrawSafe, , , , , ) = depositInstance.stakes(i);
+            WithdrawSafe safeInstance = WithdrawSafe(payable(withdrawSafe)); 
+            
+            vm.deal(address(safeInstance), 1 ether);
+            vm.deal(stakers[i], 1 ether);
+            vm.deal(people[i], 1 ether);
+            
+            eETH.mint(address(safeInstance), 1);            
+            eETH.mint(stakers[i], 1);
+            eETH.mint(people[i], 1);
+        }
+        eETH.mint(operators[0], 1);
+        eETH.mint(address(treasuryInstance), 1);
+        eETH.mint(address(liquidityPool), 1);
     }
 
-    function test_partialWithdrawBatchWorksCorrectly() public {
-        uint256 beforeBalance = address(operators[0]).balance;
-
+    function test_partialWithdraw_batch_base() public {
+        _deals();
         startHoax(operators[0]);
-        // for (uint i = 0; i < num_stakers; i++) {
-        //     managerInstance.partialWithdraw(validatorIds[i]);
-        // }
-        managerInstance.partialWithdrawBatch(operators[0], validatorIds);
-        // managerInstance.partialWithdrawBatch(operators[0], stakers[0], stakers[1], validatorIds);
+        for (uint i = 0; i < num_stakers; i++) {
+            managerInstance.partialWithdraw(validatorIds[i]);
+        }
         vm.stopPrank();
+    }
 
-        // for (uint i = 0; i < num_stakers; i++) {
-        //     (, address withdrawSafe, , , , , ) = depositInstance.stakes(i);
-        //     WithdrawSafe safeInstance = WithdrawSafe(payable(withdrawSafe)); 
-        //     assertEq(address(safeInstance).balance, 0 ether);
-        // }
-
-        uint256 afterBalance = address(operators[0]).balance;
-        console.log(afterBalance - beforeBalance);
-
-        // assertEq(address(safeInstance).balance, 0 ether);
-        // assertEq(address(treasuryInstance).balance, 0.007 ether);
-        // assertEq(address(operator).balance, operatorBalance + 0.007 ether);
+    function test_partialWithdrawBatchByMintingEETH() public {
+        _deals();
+        startHoax(operators[0]);
+        managerInstance.partialWithdrawBatchByMintingEETH(operators[0], validatorIds);
+        vm.stopPrank();
+    }
+    
+    function test_partialWithdrawBatchByMintingEETHForTNftInLiquidityPool() public {
+        _deals();
+        startHoax(operators[0]);
+        managerInstance.partialWithdrawBatchByMintingEETHForTNftInLiquidityPool(operators[0], validatorIds);
+        vm.stopPrank();
+    }
+    
+    function test_partialWithdrawBatch() public {
+        _deals();
+        startHoax(operators[0]);
+        managerInstance.partialWithdrawBatch(operators[0], validatorIds);
+        vm.stopPrank();
+    }
+    
+    function test_partialWithdrawBatchForTNftInLiquidityPool() public {
+        _deals();
+        startHoax(operators[0]);
+        managerInstance.partialWithdrawBatchForTNftInLiquidityPool(operators[0], validatorIds);
+        vm.stopPrank();
     }
 
 }

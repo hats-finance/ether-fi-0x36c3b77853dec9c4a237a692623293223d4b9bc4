@@ -42,6 +42,10 @@ interface IWithdrawSafeManager {
 
     function partialWithdraw(uint256 _validatorId) external;
     function partialWithdrawBatch(address _operator, uint256[] memory _validatorIds) external;
+    function partialWithdrawBatchForTNftInLiquidityPool(address _operator, uint256[] memory _validatorIds) external;
+    function partialWithdrawBatchByMintingEETHForTNftInLiquidityPool(address _operator, uint256[] memory _validatorIds) external;
+    function partialWithdrawBatchByMintingEETH(address _operator, uint256[] memory _validatorIds) external;
+    function addSweptRewards(address _address, uint256 _amount) external;
 
     function setWithdrawSafeAddress(uint256 _validatorId, address _safeAddress)
         external;

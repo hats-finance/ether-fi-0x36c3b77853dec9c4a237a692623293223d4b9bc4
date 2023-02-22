@@ -14,4 +14,6 @@ interface IWithdrawSafe {
     ) external;
 
     function verySafeMoveToManager(address _manager) external;
+    function updateSweptRewards(uint256 amount) external;
+
 }

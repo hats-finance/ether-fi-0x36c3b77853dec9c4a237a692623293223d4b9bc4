@@ -12,7 +12,9 @@ import "../src/Registration.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
-import "../src/SykoWithdrawSafe.sol";
+
+import "../src/LiquidityPool.sol";
+import "../src/EETH.sol";
 
 contract WithdrawSafeTest is Test {
     IDeposit public depositInterface;
@@ -24,8 +26,9 @@ contract WithdrawSafeTest is Test {
     Treasury public treasuryInstance;
     WithdrawSafe public safeInstance;
     WithdrawSafeManager public managerInstance;
+    LiquidityPool public liquidityPool;
+    EETH public eETH;
 
-    SykoWithdrawSafe public SykoWithdrawSafeInstance;
 
     Merkle merkle;
     bytes32 root;
@@ -52,16 +55,17 @@ contract WithdrawSafeTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        liquidityPool = new LiquidityPool(owner);
+        eETH = new EETH(address(liquidityPool));
         managerInstance = new WithdrawSafeManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(depositInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(liquidityPool)
         );
         
-        SykoWithdrawSafeInstance = new SykoWithdrawSafe(1);
-
         auctionInstance.setManagerAddress(address(managerInstance));
         depositInstance.setManagerAddress(address(managerInstance));
 
@@ -347,24 +351,4 @@ contract WithdrawSafeTest is Test {
         root = merkle.getRoot(whiteListedAddresses);
     }
 
-    function test_SykoWithdrawSafe() public {
-        hoax(alice);
-
-        (bool sent, ) = address(chad).call{value: 0.1 ether}("");
-        require(sent, "Failed to send Ether");
-        (sent, ) = address(bob).call{value: 0.1 ether}("");
-        require(sent, "Failed to send Ether");
-        (sent, ) = address(dan).call{value: 0.1 ether}("");
-        require(sent, "Failed to send Ether");
-
-        (sent, ) = address(SykoWithdrawSafeInstance).call{value: 0.1 ether}("");
-        require(sent, "Failed to send Ether");
-        SykoWithdrawSafeInstance._partialWithdraw(alice, chad, bob, dan);
-        require(address(SykoWithdrawSafeInstance).balance == 0, "");
-
-        (sent, ) = address(SykoWithdrawSafeInstance).call{value: 0.5 ether}("");
-        require(sent, "Failed to send Ether");
-        SykoWithdrawSafeInstance._partialWithdraw(alice, chad, bob, dan);
-        require(address(SykoWithdrawSafeInstance).balance == 0, "");
-    }
 }

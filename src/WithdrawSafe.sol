@@ -12,15 +12,16 @@ import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
 contract WithdrawSafe is IWithdrawSafe {
-    address withdrawSafeAddress;
+    // address withdrawSafeAddress;
+    uint256 sweptRewards;
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
     function initialize() public {
-        require(withdrawSafeAddress == address(0), "already initialised");
-        withdrawSafeAddress = address(this);
+        // require(withdrawSafeAddress == address(0), "already initialised");
+        // withdrawSafeAddress = address(this);
     }
 
     //--------------------------------------------------------------------------------------
@@ -30,6 +31,10 @@ contract WithdrawSafe is IWithdrawSafe {
     //Allows ether to be sent to this contract
     receive() external payable {
         // emit Received(msg.sender, msg.value);
+    }
+
+    function updateSweptRewards(uint256 amount) external {
+        sweptRewards += amount;
     }
 
     function withdrawFunds(

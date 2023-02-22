@@ -11,6 +11,8 @@ import "../src/TNFT.sol";
 import "../src/Auction.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
+import "../src/LiquidityPool.sol";
+import "../src/EETH.sol";
 
 contract AuctionTest is Test {
     Deposit public depositInstance;
@@ -25,6 +27,8 @@ contract AuctionTest is Test {
     bytes32 root;
     bytes32[] public whiteListedAddresses;
     IDeposit.DepositData public test_data;
+    LiquidityPool public liquidityPool;
+    EETH public eETH;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -53,12 +57,15 @@ contract AuctionTest is Test {
         auctionInstance.setDepositContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        liquidityPool = new LiquidityPool(owner);
+        eETH = new EETH(address(liquidityPool));
         managerInstance = new WithdrawSafeManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(depositInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(liquidityPool)
         );
 
         auctionInstance.setManagerAddress(address(managerInstance));
