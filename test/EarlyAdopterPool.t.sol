@@ -184,7 +184,7 @@ contract EarlyAdopterPoolTest is Test {
         vm.warp(259201);
 
         uint256 points = earlyAdopterPoolInstance.calculateUserPoints(bob);
-        assertEq(points, 8);
+        assertEq(points, 9016);
 
         earlyAdopterPoolInstance.withdraw();
         
@@ -266,7 +266,7 @@ contract EarlyAdopterPoolTest is Test {
 
         vm.stopPrank();
         vm.startPrank(alice);
-        assertEq(earlyAdopterPoolInstance.calculateUserPoints(alice), 2602);
+        assertEq(earlyAdopterPoolInstance.calculateUserPoints(alice), 2628804);
         earlyAdopterPoolInstance.claim();
 
         uint256 aliceRethBalAfter = rETH.balanceOf(alice);
@@ -456,7 +456,7 @@ contract EarlyAdopterPoolTest is Test {
         );
 
         hoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        assertEq(earlyAdopterPoolInstance.calculateUserPoints(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 3278);
+        assertEq(earlyAdopterPoolInstance.calculateUserPoints(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 3311435);
 
         uint256 RethBalBefore = rETH.balanceOf(alice);
         uint256 WSTethBalBefore = wstETH.balanceOf(alice);

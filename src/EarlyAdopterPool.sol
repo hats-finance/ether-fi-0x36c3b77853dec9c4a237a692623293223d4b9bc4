@@ -19,7 +19,7 @@ contract EarlyAdopterPool is Ownable {
     //--------------------------------------------------------------------------------------
 
     //User to help reduce points tallies from extremely large numbers due to token decimals
-    uint256 public constant SCALE = 10e11;
+    uint256 public constant SCALE = 10e8;
 
     uint256 public constant minDeposit = 0.1 ether;
     uint256 public constant maxDeposit = 100 ether;
@@ -196,8 +196,8 @@ contract EarlyAdopterPool is Ownable {
             numberOfMultiplierMilestones = 10;
         }
 
-        uint256 userMultiplier = numberOfMultiplierMilestones *
-            multiplierCoefficient;
+        uint256 userMultiplier = (numberOfMultiplierMilestones *
+            multiplierCoefficient) + 1;
 
         uint256 totalUserBalance = depositInfo[_user].etherBalance +
             depositInfo[msg.sender].totalERC20Balance;
