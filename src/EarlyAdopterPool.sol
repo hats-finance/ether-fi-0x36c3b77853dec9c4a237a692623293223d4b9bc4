@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "lib/forge-std/src/console.sol";
 
 contract EarlyAdopterPool is Ownable {
     using Math for uint256;
@@ -19,7 +20,7 @@ contract EarlyAdopterPool is Ownable {
     //--------------------------------------------------------------------------------------
 
     //User to help reduce points tallies from extremely large numbers due to token decimals
-    uint256 public constant SCALE = 10e11;
+    uint256 public constant SCALE = 10e16;
 
     uint256 public constant minDeposit = 0.1 ether;
     uint256 public constant maxDeposit = 100 ether;
@@ -196,16 +197,14 @@ contract EarlyAdopterPool is Ownable {
             numberOfMultiplierMilestones = 10;
         }
 
-        uint256 userMultiplier = numberOfMultiplierMilestones *
-            multiplierCoefficient;
+        //Scaled by 1000, therefore, 1005 would be 1.005
+        uint256 userMultiplier = Math.min(2000, 1000 + ((lengthOfDeposit * 10000) / (2592000)) / 10);
+        uint256 totalUserBalance = depositInfo[_user].etherBalance + depositInfo[_user].totalERC20Balance;
 
-        uint256 totalUserBalance = depositInfo[_user].etherBalance +
-            depositInfo[msg.sender].totalERC20Balance;
 
         //Formula for calculating points total
         return
-            (((Math.sqrt(totalUserBalance) * lengthOfDeposit) / SCALE) *
-                userMultiplier) / 100;
+            (((Math.sqrt(totalUserBalance) * lengthOfDeposit) * userMultiplier) / 100) / 1000000000000;
     }
 
     //--------------------------------------------------------------------------------------
