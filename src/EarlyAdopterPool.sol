@@ -199,8 +199,7 @@ contract EarlyAdopterPool is Ownable {
 
         //Scaled by 1000, therefore, 1005 would be 1.005
         uint256 userMultiplier = Math.min(2000, 1000 + ((lengthOfDeposit * 10000) / (2592000)) / 10);
-        uint256 totalUserBalance = depositInfo[_user].etherBalance +
-            depositInfo[msg.sender].totalERC20Balance;
+        uint256 totalUserBalance = depositInfo[_user].etherBalance + depositInfo[_user].totalERC20Balance;
 
 
         //Formula for calculating points total

@@ -509,4 +509,26 @@ contract EarlyAdopterPoolTest is Test {
         assertEq(sfrxEthBalAfter, sfrxEthBalBefore + 0.1 ether);
         assertEq(EthBalanceAfter, EthBalanceBefore + 0.1 ether);
     }
+
+    function test_PointsCalculatorWorksCorrectly() public {
+        
+        rETH.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
+        sfrxEth.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
+        wstETH.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
+
+        vm.startPrank(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+        sfrxEth.approve(address(earlyAdopterPoolInstance), 10 ether);
+        earlyAdopterPoolInstance.deposit(address(sfrxEth), 1e17);
+        vm.stopPrank();
+
+        vm.warp(361);
+        
+        vm.startPrank(owner);
+        earlyAdopterPoolInstance.setClaimingOpen(600);
+        earlyAdopterPoolInstance.setClaimReceiverContract(alice);
+        vm.stopPrank();
+
+        assertEq(earlyAdopterPoolInstance.calculateUserPoints(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 1);
+
+    }
 }
