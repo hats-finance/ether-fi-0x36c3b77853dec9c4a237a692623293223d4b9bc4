@@ -1,4 +1,4 @@
-name: deploy
+name: deploy-lp
 
 on: workflow_dispatch
 

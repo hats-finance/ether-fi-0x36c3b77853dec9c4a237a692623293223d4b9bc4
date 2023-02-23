@@ -1,4 +1,4 @@
-name: deploy
+name: deploy-protocol
 
 on: workflow_dispatch
 
