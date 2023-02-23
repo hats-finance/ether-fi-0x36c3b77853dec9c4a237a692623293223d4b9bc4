@@ -15,6 +15,7 @@ contract EarlyAdopterPoolTest is Test {
         uint256 rETHBal,
         uint256 wstETHBal,
         uint256 sfrxETHBal,
+        uint256 cbETHBal,
         uint256 ETHBal,
         uint256 tvl
     );
@@ -172,7 +173,7 @@ contract EarlyAdopterPoolTest is Test {
         rETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
 
         vm.expectEmit(false, false, false, true);
-        emit ERC20TVLUpdated(0.1 ether, 0, 0, 0, 0.1 ether);
+        emit ERC20TVLUpdated(0.1 ether, 0, 0, 0, 0, 0.1 ether);
         vm.prank(alice);
         earlyAdopterPoolInstance.deposit(address(rETH), 1e17);
 
@@ -180,7 +181,7 @@ contract EarlyAdopterPoolTest is Test {
         wstETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
 
         vm.expectEmit(false, false, false, true);
-        emit ERC20TVLUpdated(0.1 ether, 0.1 ether, 0, 0, 0.2 ether);
+        emit ERC20TVLUpdated(0.1 ether, 0.1 ether, 0, 0, 0, 0.2 ether);
         vm.prank(alice);
         earlyAdopterPoolInstance.deposit(address(wstETH), 1e17);
 
@@ -188,7 +189,7 @@ contract EarlyAdopterPoolTest is Test {
         sfrxEth.approve(address(earlyAdopterPoolInstance), 0.5 ether);
 
         vm.expectEmit(false, false, false, true);
-        emit ERC20TVLUpdated(0.1 ether, 0.1 ether, 0.5 ether, 0, 0.7 ether);
+        emit ERC20TVLUpdated(0.1 ether, 0.1 ether, 0.5 ether, 0, 0, 0.7 ether);
         vm.prank(bob);
         earlyAdopterPoolInstance.deposit(address(sfrxEth), 5e17);
 
@@ -196,9 +197,24 @@ contract EarlyAdopterPoolTest is Test {
         rETH.approve(address(earlyAdopterPoolInstance), 0.5 ether);
 
         vm.expectEmit(false, false, false, true);
-        emit ERC20TVLUpdated(0.6 ether, 0.1 ether, 0.5 ether, 0, 1.2 ether);
+        emit ERC20TVLUpdated(0.6 ether, 0.1 ether, 0.5 ether, 0, 0, 1.2 ether);
         vm.prank(bob);
         earlyAdopterPoolInstance.deposit(address(rETH), 5e17);
+
+        vm.prank(bob);
+        cbEth.approve(address(earlyAdopterPoolInstance), 0.5 ether);
+
+        vm.expectEmit(false, false, false, true);
+        emit ERC20TVLUpdated(
+            0.6 ether,
+            0.1 ether,
+            0.5 ether,
+            0.5 ether,
+            0,
+            1.7 ether
+        );
+        vm.prank(bob);
+        earlyAdopterPoolInstance.deposit(address(cbEth), 5e17);
     }
 
     function test_EventEthTVLUpdated() public {
@@ -232,7 +248,7 @@ contract EarlyAdopterPoolTest is Test {
         rETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
 
         vm.expectEmit(false, false, false, true);
-        emit ERC20TVLUpdated(0.1 ether, 0, 0, 0.6 ether, 0.7 ether);
+        emit ERC20TVLUpdated(0.1 ether, 0, 0, 0, 0.6 ether, 0.7 ether);
         vm.prank(bob);
         earlyAdopterPoolInstance.deposit(address(rETH), 1e17);
 
@@ -240,7 +256,7 @@ contract EarlyAdopterPoolTest is Test {
         wstETH.approve(address(earlyAdopterPoolInstance), 0.7 ether);
 
         vm.expectEmit(false, false, false, true);
-        emit ERC20TVLUpdated(0.1 ether, 0.7 ether, 0, 0.6 ether, 1.4 ether);
+        emit ERC20TVLUpdated(0.1 ether, 0.7 ether, 0, 0, 0.6 ether, 1.4 ether);
         vm.prank(bob);
         earlyAdopterPoolInstance.deposit(address(wstETH), 7e17);
 
@@ -252,6 +268,7 @@ contract EarlyAdopterPoolTest is Test {
             0.1 ether,
             0.7 ether,
             0.6 ether,
+            0,
             0.6 ether,
             2 ether
         );

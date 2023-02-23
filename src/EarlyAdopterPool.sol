@@ -71,6 +71,7 @@ contract EarlyAdopterPool is Ownable {
         uint256 rETHBal,
         uint256 wstETHBal,
         uint256 sfrxETHBal,
+        uint256 cbETHBal,
         uint256 ETHBal,
         uint256 tvl
     );
@@ -137,6 +138,7 @@ contract EarlyAdopterPool is Ownable {
             rETHInstance.balanceOf(address(this)),
             wstETHInstance.balanceOf(address(this)),
             sfrxETHInstance.balanceOf(address(this)),
+            cbETHInstance.balanceOf(address(this)),
             address(this).balance,
             getTVL()
         );
@@ -288,6 +290,7 @@ contract EarlyAdopterPool is Ownable {
         tvl = (rETHInstance.balanceOf(address(this)) +
             wstETHInstance.balanceOf(address(this)) +
             sfrxETHInstance.balanceOf(address(this)) +
+            cbETHInstance.balanceOf(address(this)) +
             address(this).balance);
     }
 
