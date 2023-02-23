@@ -74,6 +74,8 @@ contract EarlyAdopterPool is Ownable {
         uint256 tvl
     );
 
+    event EthTVLUpdated(uint256 ETHBal, uint256 tvl);
+
     /// @notice Allows ether to be sent to this contract
     receive() external payable {}
 
@@ -145,6 +147,7 @@ contract EarlyAdopterPool is Ownable {
         depositInfo[msg.sender].etherBalance += msg.value;
 
         emit DepositEth(msg.sender, msg.value);
+        emit EthTVLUpdated(address(this).balance, getTVL());
     }
 
     /// @notice withdraws all funds from pool for the user calling

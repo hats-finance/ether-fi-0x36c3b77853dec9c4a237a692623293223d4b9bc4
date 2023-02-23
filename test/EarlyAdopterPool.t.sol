@@ -19,6 +19,8 @@ contract EarlyAdopterPoolTest is Test {
         uint256 tvl
     );
 
+    event EthTVLUpdated(uint256 ETHBal, uint256 tvl);
+
     EarlyAdopterPool earlyAdopterPoolInstance;
 
     TestERC20 public rETH;
@@ -191,6 +193,20 @@ contract EarlyAdopterPoolTest is Test {
         emit ERC20TVLUpdated(0.6 ether, 0.1 ether, 0.5 ether, 0, 1.2 ether);
         vm.prank(bob);
         earlyAdopterPoolInstance.deposit(address(rETH), 5e17);
+    }
+
+    function test_EventEthTVLUpdated() public {
+        vm.expectEmit(false, false, false, true);
+        emit EthTVLUpdated(0.1 ether, 0.1 ether);
+
+        startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+        earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
+        vm.stopPrank();
+
+        vm.expectEmit(false, false, false, true);
+        emit EthTVLUpdated(0.6 ether, 0.6 ether);
+        hoax(alice);
+        earlyAdopterPoolInstance.depositEther{value: 0.5 ether}();
     }
 
     function test_WithdrawWorksCorrectly() public {
