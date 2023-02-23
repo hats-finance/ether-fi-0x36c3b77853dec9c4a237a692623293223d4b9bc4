@@ -273,6 +273,7 @@ contract EarlyAdopterPool is Ownable {
     //-------------------------------------     GETTERS  ------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @dev Returns the total value locked of all currencies in contract
     function getTVL() public view returns (uint256 tvl) {
         tvl = (rETHInstance.balanceOf(address(this)) +
             wstETHInstance.balanceOf(address(this)) +
