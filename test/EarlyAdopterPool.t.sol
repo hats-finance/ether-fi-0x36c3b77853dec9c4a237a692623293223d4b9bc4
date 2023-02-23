@@ -259,6 +259,34 @@ contract EarlyAdopterPoolTest is Test {
         vm.stopPrank();
     }
 
+    function test_GetTVL() public {
+        vm.startPrank(bob);
+        wstETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
+        earlyAdopterPoolInstance.deposit(address(wstETH), 0.1 ether);
+        vm.stopPrank();
+
+        uint256 tvl = earlyAdopterPoolInstance.getTVL();
+
+        assertEq(tvl, 0.1 ether);
+
+        vm.startPrank(alice);
+        rETH.approve(address(earlyAdopterPoolInstance), 1 ether);
+        earlyAdopterPoolInstance.deposit(address(rETH), 1 ether);
+        vm.stopPrank();
+
+        tvl = earlyAdopterPoolInstance.getTVL();
+
+        assertEq(tvl, 1.1 ether);
+
+        startHoax(bob);
+        earlyAdopterPoolInstance.depositEther{value: 2 ether}();
+        vm.stopPrank();
+
+        tvl = earlyAdopterPoolInstance.getTVL();
+
+        assertEq(tvl, 3.1 ether);
+    }
+
     function test_WithdrawWorksCorrectly() public {
         vm.startPrank(bob);
         wstETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
