@@ -36,6 +36,7 @@ contract EarlyAdopterPool is Ownable {
     address private rETH; // 0xae78736Cd615f374D3085123A210448E74Fc6393;
     address private wstETH; // 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
     address private sfrxEth; // 0xac3e018457b222d93114458476f3e3416abbe38f;
+    address private cbEth; // 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
 
     //Future contract which funds will be sent to on claim (Most likely LP)
     address public claimReceiverContract;
@@ -50,6 +51,7 @@ contract EarlyAdopterPool is Ownable {
     IERC20 rETHInstance;
     IERC20 wstETHInstance;
     IERC20 sfrxEthInstance;
+    IERC20 cbEthInstance;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -77,18 +79,22 @@ contract EarlyAdopterPool is Ownable {
     /// @param _rETH address of the rEth contract to receive
     /// @param _wstEth address of the wstEth contract to receive
     /// @param _sfrxEth address of the sfrxEth contract to receive
+    /// @param _cbEth address of the _cbEth contract to receive
     constructor(
         address _rETH,
         address _wstEth,
-        address _sfrxEth
+        address _sfrxEth,
+        address _cbEth
     ) {
         rETH = _rETH;
         wstETH = _wstEth;
         sfrxEth = _sfrxEth;
+        cbEth = _cbEth;
 
         rETHInstance = IERC20(_rETH);
         wstETHInstance = IERC20(_wstEth);
         sfrxEthInstance = IERC20(_sfrxEth);
+        cbEthInstance = IERC20(_cbEth);
     }
 
     //--------------------------------------------------------------------------------------
@@ -107,7 +113,8 @@ contract EarlyAdopterPool is Ownable {
         require(
             (_erc20Contract == rETH ||
                 _erc20Contract == sfrxEth ||
-                _erc20Contract == wstETH),
+                _erc20Contract == wstETH ||
+                _erc20Contract == cbEth),
             "Unsupported token"
         );
 
@@ -214,11 +221,12 @@ contract EarlyAdopterPool is Ownable {
     /// @param _identifier identifies which contract function called the function
     /// @return balance of the user withdrawing, used for event
     function transferFunds(uint256 _identifier) internal returns (uint256) {
-        uint256 totalUserBalance = msg.sender.balance +
+        uint256 totalUserBalance = depositInfo[msg.sender].etherBalance +
             depositInfo[msg.sender].totalERC20Balance;
         uint256 rETHbal = userToErc20Balance[msg.sender][rETH];
         uint256 wstETHbal = userToErc20Balance[msg.sender][wstETH];
         uint256 sfrxEthbal = userToErc20Balance[msg.sender][sfrxEth];
+        uint256 cbEthBal = userToErc20Balance[msg.sender][cbEth];
 
         uint256 ethBalance = depositInfo[msg.sender].etherBalance;
 
@@ -229,7 +237,8 @@ contract EarlyAdopterPool is Ownable {
         userToErc20Balance[msg.sender][rETH] = 0;
         userToErc20Balance[msg.sender][wstETH] = 0;
         userToErc20Balance[msg.sender][sfrxEth] = 0;
-
+        userToErc20Balance[msg.sender][cbEth] = 0;
+        
         address receiver;
 
         if (_identifier == 0) {
@@ -241,6 +250,7 @@ contract EarlyAdopterPool is Ownable {
         rETHInstance.transfer(receiver, rETHbal);
         wstETHInstance.transfer(receiver, wstETHbal);
         sfrxEthInstance.transfer(receiver, sfrxEthbal);
+        cbEthInstance.transfer(receiver, cbEthBal);
 
         (bool sent, ) = receiver.call{value: ethBalance}("");
         require(sent, "Failed to send Ether");

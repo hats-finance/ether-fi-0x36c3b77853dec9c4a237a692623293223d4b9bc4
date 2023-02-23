@@ -16,6 +16,7 @@ contract EarlyAdopterPoolTest is Test {
     TestERC20 public rETH;
     TestERC20 public wstETH;
     TestERC20 public sfrxEth;
+    TestERC20 public cbEth;
 
     uint256 One_Day = 1 days;
     uint256 One_Month = 1 weeks * 4;
@@ -29,7 +30,11 @@ contract EarlyAdopterPoolTest is Test {
         rETH.mint(alice, 10e18);
         rETH.mint(bob, 10e18);
 
-        wstETH = new TestERC20("Staked ETH", "stETH");
+        cbEth = new TestERC20("Staked ETH", "wstETH");
+        cbEth.mint(alice, 10e18);
+        cbEth.mint(bob, 10e18);
+
+        wstETH = new TestERC20("Coinbase ETH", "cbEth");
         wstETH.mint(alice, 10e18);
         wstETH.mint(bob, 10e18);
 
@@ -41,7 +46,8 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance = new EarlyAdopterPool(
             address(rETH),
             address(wstETH),
-            address(sfrxEth)
+            address(sfrxEth),
+            address(cbEth)
         );
         vm.stopPrank();
     }
@@ -525,6 +531,11 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(wstETH), 1e18);
         vm.stopPrank();
 
+        vm.startPrank(alice);
+        cbEth.approve(address(earlyAdopterPoolInstance), 10 ether);
+        earlyAdopterPoolInstance.deposit(address(cbEth), 1e18);
+        vm.stopPrank();
+
         vm.startPrank(bob);
         rETH.approve(address(earlyAdopterPoolInstance), 10 ether);
         earlyAdopterPoolInstance.deposit(address(rETH), 10e18);
@@ -534,7 +545,7 @@ contract EarlyAdopterPoolTest is Test {
         assertEq(earlyAdopterPoolInstance.calculateUserPoints(owner), 1);
 
         vm.warp(29221);
-        assertEq(earlyAdopterPoolInstance.calculateUserPoints(alice), 295);
+        assertEq(earlyAdopterPoolInstance.calculateUserPoints(alice), 417);
 
         vm.warp(644821);
         assertEq(earlyAdopterPoolInstance.calculateUserPoints(bob), 25447);
