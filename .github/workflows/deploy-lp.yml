@@ -1,4 +1,4 @@
-name: deploy
+name: deploy-lp
 
 on: workflow_dispatch
 
@@ -37,17 +37,9 @@ jobs:
         with:
           cmd: bash script/extractABI.sh
 
-      - name: Deploy EtherFi Suite Contracts
-        run: make deploy-goerli-suite
-        id: deploy-goerli-suite
-
       - name: Deploy LP Contracts
         run: make deploy-goerli-lp
         id: deploy-goerli-lp
-
-      - name: Deploy Deposit Pool Contract
-        run: make deploy-goerli-early-reward-pool
-        id: deploy-goerli-early-reward-pool
 
       - name: Get date
         id: get-date
