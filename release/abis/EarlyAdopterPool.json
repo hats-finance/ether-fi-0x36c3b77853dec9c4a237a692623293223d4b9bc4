@@ -8,12 +8,17 @@
       },
       {
         "internalType": "address",
-        "name": "_wstEth",
+        "name": "_wstETH",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_sfrxEth",
+        "name": "_sfrxETH",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_cbETH",
         "type": "address"
       }
     ],
@@ -82,6 +87,68 @@
       }
     ],
     "name": "DepositEth",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "rETHBal",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "wstETHBal",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "sfrxETHBal",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "cbETHBal",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "ETHBal",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tvl",
+        "type": "uint256"
+      }
+    ],
+    "name": "ERC20TVLUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "ETHBal",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tvl",
+        "type": "uint256"
+      }
+    ],
+    "name": "EthTVLUpdated",
     "type": "event"
   },
   {
@@ -286,6 +353,19 @@
       {
         "internalType": "uint256",
         "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTVL",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tvl",
         "type": "uint256"
       }
     ],
