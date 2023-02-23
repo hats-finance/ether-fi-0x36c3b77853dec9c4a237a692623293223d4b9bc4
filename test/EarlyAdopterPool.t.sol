@@ -209,6 +209,56 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.depositEther{value: 0.5 ether}();
     }
 
+    function test_EventTVLUpdatedOnERC20AndEthDeposit() public {
+        vm.expectEmit(false, false, false, true);
+        emit EthTVLUpdated(0.1 ether, 0.1 ether);
+
+        startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+        earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
+        vm.stopPrank();
+
+        vm.expectEmit(false, false, false, true);
+        emit EthTVLUpdated(0.6 ether, 0.6 ether);
+        hoax(alice);
+        earlyAdopterPoolInstance.depositEther{value: 0.5 ether}();
+
+        vm.prank(bob);
+        rETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
+
+        vm.expectEmit(false, false, false, true);
+        emit ERC20TVLUpdated(0.1 ether, 0, 0, 0.6 ether, 0.7 ether);
+        vm.prank(bob);
+        earlyAdopterPoolInstance.deposit(address(rETH), 1e17);
+
+        vm.prank(bob);
+        wstETH.approve(address(earlyAdopterPoolInstance), 0.7 ether);
+
+        vm.expectEmit(false, false, false, true);
+        emit ERC20TVLUpdated(0.1 ether, 0.7 ether, 0, 0.6 ether, 1.4 ether);
+        vm.prank(bob);
+        earlyAdopterPoolInstance.deposit(address(wstETH), 7e17);
+
+        vm.prank(alice);
+        sfrxEth.approve(address(earlyAdopterPoolInstance), 0.6 ether);
+
+        vm.expectEmit(false, false, false, true);
+        emit ERC20TVLUpdated(
+            0.1 ether,
+            0.7 ether,
+            0.6 ether,
+            0.6 ether,
+            2 ether
+        );
+        vm.prank(alice);
+        earlyAdopterPoolInstance.deposit(address(sfrxEth), 6e17);
+
+        vm.expectEmit(false, false, false, true);
+        emit EthTVLUpdated(1.1 ether, 2.5 ether);
+        startHoax(bob);
+        earlyAdopterPoolInstance.depositEther{value: 0.5 ether}();
+        vm.stopPrank();
+    }
+
     function test_WithdrawWorksCorrectly() public {
         vm.startPrank(bob);
         wstETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
