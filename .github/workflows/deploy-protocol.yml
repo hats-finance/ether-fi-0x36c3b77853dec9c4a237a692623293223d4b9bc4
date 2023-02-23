@@ -41,14 +41,6 @@ jobs:
         run: make deploy-goerli-suite
         id: deploy-goerli-suite
 
-      - name: Deploy LP Contracts
-        run: make deploy-goerli-lp
-        id: deploy-goerli-lp
-
-      - name: Deploy Deposit Pool Contract
-        run: make deploy-goerli-early-reward-pool
-        id: deploy-goerli-early-reward-pool
-
       - name: Get date
         id: get-date
         run: echo "DATE=$(date '+%Y-%m-%d--%H_%M')" >> $GITHUB_ENV
