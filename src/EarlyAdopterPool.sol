@@ -35,8 +35,8 @@ contract EarlyAdopterPool is Ownable {
 
     address private rETH; // 0xae78736Cd615f374D3085123A210448E74Fc6393;
     address private wstETH; // 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
-    address private sfrxEth; // 0xac3e018457b222d93114458476f3e3416abbe38f;
-    address private cbEth; // 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
+    address private sfrxETH; // 0xac3e018457b222d93114458476f3e3416abbe38f;
+    address private cbETH; // 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
 
     //Future contract which funds will be sent to on claim (Most likely LP)
     address public claimReceiverContract;
@@ -50,8 +50,8 @@ contract EarlyAdopterPool is Ownable {
 
     IERC20 rETHInstance;
     IERC20 wstETHInstance;
-    IERC20 sfrxEthInstance;
-    IERC20 cbEthInstance;
+    IERC20 sfrxETHInstance;
+    IERC20 cbETHInstance;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -67,6 +67,16 @@ contract EarlyAdopterPool is Ownable {
         uint256 indexed amount,
         uint256 indexed pointsAccumulated
     );
+    event ERC20TVLUpdated(
+        uint256 rETHBal,
+        uint256 wstETHBal,
+        uint256 sfrxETHBal,
+        uint256 cbETHBal,
+        uint256 ETHBal,
+        uint256 tvl
+    );
+
+    event EthTVLUpdated(uint256 ETHBal, uint256 tvl);
 
     /// @notice Allows ether to be sent to this contract
     receive() external payable {}
@@ -77,24 +87,24 @@ contract EarlyAdopterPool is Ownable {
 
     /// @notice Sets state variables needed for future functions
     /// @param _rETH address of the rEth contract to receive
-    /// @param _wstEth address of the wstEth contract to receive
-    /// @param _sfrxEth address of the sfrxEth contract to receive
-    /// @param _cbEth address of the _cbEth contract to receive
+    /// @param _wstETH address of the wstEth contract to receive
+    /// @param _sfrxETH address of the sfrxEth contract to receive
+    /// @param _cbETH address of the _cbEth contract to receive
     constructor(
         address _rETH,
-        address _wstEth,
-        address _sfrxEth,
-        address _cbEth
+        address _wstETH,
+        address _sfrxETH,
+        address _cbETH
     ) {
         rETH = _rETH;
-        wstETH = _wstEth;
-        sfrxEth = _sfrxEth;
-        cbEth = _cbEth;
+        wstETH = _wstETH;
+        sfrxETH = _sfrxETH;
+        cbETH = _cbETH;
 
         rETHInstance = IERC20(_rETH);
-        wstETHInstance = IERC20(_wstEth);
-        sfrxEthInstance = IERC20(_sfrxEth);
-        cbEthInstance = IERC20(_cbEth);
+        wstETHInstance = IERC20(_wstETH);
+        sfrxETHInstance = IERC20(_sfrxETH);
+        cbETHInstance = IERC20(_cbETH);
     }
 
     //--------------------------------------------------------------------------------------
@@ -112,9 +122,9 @@ contract EarlyAdopterPool is Ownable {
     {
         require(
             (_erc20Contract == rETH ||
-                _erc20Contract == sfrxEth ||
+                _erc20Contract == sfrxETH ||
                 _erc20Contract == wstETH ||
-                _erc20Contract == cbEth),
+                _erc20Contract == cbETH),
             "Unsupported token"
         );
 
@@ -124,6 +134,14 @@ contract EarlyAdopterPool is Ownable {
         IERC20(_erc20Contract).transferFrom(msg.sender, address(this), _amount);
 
         emit DepositERC20(msg.sender, _amount);
+        emit ERC20TVLUpdated(
+            rETHInstance.balanceOf(address(this)),
+            wstETHInstance.balanceOf(address(this)),
+            sfrxETHInstance.balanceOf(address(this)),
+            cbETHInstance.balanceOf(address(this)),
+            address(this).balance,
+            getTVL()
+        );
     }
 
     /// @notice deposits Ether into contract
@@ -137,6 +155,7 @@ contract EarlyAdopterPool is Ownable {
         depositInfo[msg.sender].etherBalance += msg.value;
 
         emit DepositEth(msg.sender, msg.value);
+        emit EthTVLUpdated(address(this).balance, getTVL());
     }
 
     /// @notice withdraws all funds from pool for the user calling
@@ -204,13 +223,17 @@ contract EarlyAdopterPool is Ownable {
         }
 
         //Scaled by 1000, therefore, 1005 would be 1.005
-        uint256 userMultiplier = Math.min(2000, 1000 + ((lengthOfDeposit * 10000) / (2592000)) / 10);
-        uint256 totalUserBalance = depositInfo[_user].etherBalance + depositInfo[_user].totalERC20Balance;
-
+        uint256 userMultiplier = Math.min(
+            2000,
+            1000 + ((lengthOfDeposit * 10000) / (2592000)) / 10
+        );
+        uint256 totalUserBalance = depositInfo[_user].etherBalance +
+            depositInfo[_user].totalERC20Balance;
 
         //Formula for calculating points total
         return
-            (((Math.sqrt(totalUserBalance) * lengthOfDeposit) * userMultiplier) / 100) / 1000000000000;
+            (((Math.sqrt(totalUserBalance) * lengthOfDeposit) *
+                userMultiplier) / 100) / 1000000000000;
     }
 
     //--------------------------------------------------------------------------------------
@@ -225,8 +248,8 @@ contract EarlyAdopterPool is Ownable {
             depositInfo[msg.sender].totalERC20Balance;
         uint256 rETHbal = userToErc20Balance[msg.sender][rETH];
         uint256 wstETHbal = userToErc20Balance[msg.sender][wstETH];
-        uint256 sfrxEthbal = userToErc20Balance[msg.sender][sfrxEth];
-        uint256 cbEthBal = userToErc20Balance[msg.sender][cbEth];
+        uint256 sfrxEthbal = userToErc20Balance[msg.sender][sfrxETH];
+        uint256 cbEthBal = userToErc20Balance[msg.sender][cbETH];
 
         uint256 ethBalance = depositInfo[msg.sender].etherBalance;
 
@@ -236,9 +259,9 @@ contract EarlyAdopterPool is Ownable {
 
         userToErc20Balance[msg.sender][rETH] = 0;
         userToErc20Balance[msg.sender][wstETH] = 0;
-        userToErc20Balance[msg.sender][sfrxEth] = 0;
-        userToErc20Balance[msg.sender][cbEth] = 0;
-        
+        userToErc20Balance[msg.sender][sfrxETH] = 0;
+        userToErc20Balance[msg.sender][cbETH] = 0;
+
         address receiver;
 
         if (_identifier == 0) {
@@ -249,13 +272,26 @@ contract EarlyAdopterPool is Ownable {
 
         rETHInstance.transfer(receiver, rETHbal);
         wstETHInstance.transfer(receiver, wstETHbal);
-        sfrxEthInstance.transfer(receiver, sfrxEthbal);
-        cbEthInstance.transfer(receiver, cbEthBal);
+        sfrxETHInstance.transfer(receiver, sfrxEthbal);
+        cbETHInstance.transfer(receiver, cbEthBal);
 
         (bool sent, ) = receiver.call{value: ethBalance}("");
         require(sent, "Failed to send Ether");
 
         return totalUserBalance;
+    }
+
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------     GETTERS  ------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    /// @dev Returns the total value locked of all currencies in contract
+    function getTVL() public view returns (uint256 tvl) {
+        tvl = (rETHInstance.balanceOf(address(this)) +
+            wstETHInstance.balanceOf(address(this)) +
+            sfrxETHInstance.balanceOf(address(this)) +
+            cbETHInstance.balanceOf(address(this)) +
+            address(this).balance);
     }
 
     //--------------------------------------------------------------------------------------
