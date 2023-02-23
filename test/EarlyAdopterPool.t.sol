@@ -554,27 +554,47 @@ contract EarlyAdopterPoolTest is Test {
     }
 
     function test_PointsCalculatorWorksCorrectly() public {
-        rETH.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
-        sfrxEth.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
-        wstETH.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
+        sfrxEth.mint(owner, 10e18);
+        sfrxEth.mint(0x76Db1a8A8DAc24b14506950ae64100a38e25F5d8, 10e18);
 
-        vm.startPrank(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+        vm.startPrank(owner);
         sfrxEth.approve(address(earlyAdopterPoolInstance), 10 ether);
         earlyAdopterPoolInstance.deposit(address(sfrxEth), 1e17);
         vm.stopPrank();
 
-        vm.warp(361);
-
-        vm.startPrank(owner);
-        earlyAdopterPoolInstance.setClaimingOpen(600);
-        earlyAdopterPoolInstance.setClaimReceiverContract(alice);
+        vm.startPrank(alice);
+        wstETH.approve(address(earlyAdopterPoolInstance), 10 ether);
+        earlyAdopterPoolInstance.deposit(address(wstETH), 1e18);
         vm.stopPrank();
 
+        vm.startPrank(bob);
+        rETH.approve(address(earlyAdopterPoolInstance), 10 ether);
+        earlyAdopterPoolInstance.deposit(address(rETH), 10e18);
+        vm.stopPrank();
+
+        vm.warp(361);
+        assertEq(earlyAdopterPoolInstance.calculateUserPoints(owner), 1);
+
+        vm.warp(29221);
+        assertEq(earlyAdopterPoolInstance.calculateUserPoints(alice), 295);
+
+        vm.warp(644821);
+        assertEq(earlyAdopterPoolInstance.calculateUserPoints(bob), 25447);
+
+        hoax(0x76Db1a8A8DAc24b14506950ae64100a38e25F5d8);
+        earlyAdopterPoolInstance.depositEther{value: 9 ether}();
+
+        vm.startPrank(0x76Db1a8A8DAc24b14506950ae64100a38e25F5d8);
+        sfrxEth.approve(address(earlyAdopterPoolInstance), 10 ether);
+        earlyAdopterPoolInstance.deposit(address(sfrxEth), 1e18);
+        vm.stopPrank();
+
+        vm.warp(4705621);
         assertEq(
             earlyAdopterPoolInstance.calculateUserPoints(
-                0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA
+                0x76Db1a8A8DAc24b14506950ae64100a38e25F5d8
             ),
-            1
+            256827
         );
     }
 }
