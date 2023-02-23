@@ -17,11 +17,13 @@ contract DeployEarlyAdopterPoolScript is Script {
         TestERC20 rEth = new TestERC20("Rocket Pool Eth", "rEth");
         TestERC20 wstEth = new TestERC20("Wrapped Staked Pool Eth", "wstEth");
         TestERC20 sfrxEth = new TestERC20("Staked Frax Eth", "sfrxEth");
+        TestERC20 cbEth = new TestERC20("Coinbase Eth", "cbEth");
 
         EarlyAdopterPool earlyAdopterPool = new EarlyAdopterPool(
             address(rEth),
             address(wstEth),
-            address(sfrxEth)
+            address(sfrxEth),
+            address(cbEth)
         );
 
         vm.stopBroadcast();
