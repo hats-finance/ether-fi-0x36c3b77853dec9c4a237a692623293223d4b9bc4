@@ -70,7 +70,8 @@ contract EarlyAdopterPool is Ownable {
         uint256 rETHBal,
         uint256 wstETHBal,
         uint256 sfrxETHBal,
-        uint256 ETHBal
+        uint256 ETHBal,
+        uint256 tvl
     );
 
     /// @notice Allows ether to be sent to this contract
@@ -128,7 +129,8 @@ contract EarlyAdopterPool is Ownable {
             rETHInstance.balanceOf(address(this)),
             wstETHInstance.balanceOf(address(this)),
             sfrxETHInstance.balanceOf(address(this)),
-            address(this).balance
+            address(this).balance,
+            getTVL()
         );
     }
 
@@ -268,6 +270,13 @@ contract EarlyAdopterPool is Ownable {
     //--------------------------------------------------------------------------------------
     //-------------------------------------     GETTERS  ------------------------------------
     //--------------------------------------------------------------------------------------
+
+    function getTVL() public view returns (uint256 tvl) {
+        tvl = (rETHInstance.balanceOf(address(this)) +
+            wstETHInstance.balanceOf(address(this)) +
+            sfrxETHInstance.balanceOf(address(this)) +
+            address(this).balance);
+    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  MODIFIERS  ------------------------------------
