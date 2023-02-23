@@ -171,6 +171,14 @@ contract EarlyAdopterPoolTest is Test {
         wstETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
         earlyAdopterPoolInstance.deposit(address(wstETH), 0.1 ether);
         (uint256 depositTime,, uint256 totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(bob);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        rETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
+        cbEth.approve(address(earlyAdopterPoolInstance), 0.1 ether);
+        earlyAdopterPoolInstance.deposit(address(cbEth), 0.1 ether);
+        earlyAdopterPoolInstance.deposit(address(rETH), 0.1 ether);
+        vm.stopPrank();
 
         assertEq(
             totalERC20Balance,
@@ -192,10 +200,19 @@ contract EarlyAdopterPoolTest is Test {
         uint256 points = earlyAdopterPoolInstance.calculateUserPoints(bob);
         assertEq(points, 901);
 
+        uint256 balanceBeforeBob = wstETH.balanceOf(bob);
+        uint256 balanceBeforeAlice = rETH.balanceOf(alice) + cbEth.balanceOf(alice);
+
+        vm.prank(bob);
         earlyAdopterPoolInstance.withdraw();
-        
+        vm.prank(alice);
+        earlyAdopterPoolInstance.withdraw();
+        uint256 balanceAfterAlice = rETH.balanceOf(alice) + cbEth.balanceOf(alice);
+
         (depositTime,, totalERC20Balance) = earlyAdopterPoolInstance.depositInfo(bob);
 
+        assertEq(balanceAfterAlice, balanceBeforeAlice + 0.2 ether);
+        assertEq(wstETH.balanceOf(bob), balanceBeforeBob + 0.1 ether);
         assertEq(totalERC20Balance, 0 ether);
         assertEq(depositTime, 0);
         assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 0);
