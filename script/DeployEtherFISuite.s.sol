@@ -122,19 +122,19 @@ contract DeployScript is Script {
             string(
                 abi.encodePacked(
                     Strings.toString(version),
-                    "\n",
+                    "\nTreasury: ",
                     Strings.toHexString(addressStruct.treasury),
-                    "\n",
+                    "\nRegistration: ",
                     Strings.toHexString(addressStruct.registration),
-                    "\n",
+                    "\nAuction: ",
                     Strings.toHexString(addressStruct.auction),
-                    "\n",
+                    "\nDeposit: ",
                     Strings.toHexString(addressStruct.deposit),
-                    "\n",
+                    "\nTNFT: ",
                     Strings.toHexString(addressStruct.TNFT),
-                    "\n",
+                    "\nBNFT: ",
                     Strings.toHexString(addressStruct.BNFT),
-                    "\n",
+                    "\nSafe Manager: ",
                     Strings.toHexString(addressStruct.safeManager)
                 )
             )
