@@ -140,7 +140,7 @@ contract EarlyAdopterPool is Ownable {
             sfrxETHInstance.balanceOf(address(this)),
             cbETHInstance.balanceOf(address(this)),
             address(this).balance,
-            getTVL()
+            getContractTVL()
         );
     }
 
@@ -155,7 +155,7 @@ contract EarlyAdopterPool is Ownable {
         depositInfo[msg.sender].etherBalance += msg.value;
 
         emit DepositEth(msg.sender, msg.value);
-        emit EthTVLUpdated(address(this).balance, getTVL());
+        emit EthTVLUpdated(address(this).balance, getContractTVL());
     }
 
     /// @notice withdraws all funds from pool for the user calling
@@ -286,12 +286,32 @@ contract EarlyAdopterPool is Ownable {
     //--------------------------------------------------------------------------------------
 
     /// @dev Returns the total value locked of all currencies in contract
-    function getTVL() public view returns (uint256 tvl) {
+    function getContractTVL() public view returns (uint256 tvl) {
         tvl = (rETHInstance.balanceOf(address(this)) +
             wstETHInstance.balanceOf(address(this)) +
             sfrxETHInstance.balanceOf(address(this)) +
             cbETHInstance.balanceOf(address(this)) +
             address(this).balance);
+    }
+
+    function getUserTVL(address _user)
+        public
+        view
+        returns (
+            uint256 rETHBal,
+            uint256 wstETHBal,
+            uint256 sfrxETHBal,
+            uint256 cbETHBal,
+            uint256 ethBal,
+            uint256 totalBal
+        )
+    {
+        rETHBal = userToErc20Balance[_user][rETH];
+        wstETHBal = userToErc20Balance[_user][wstETH];
+        sfrxETHBal = userToErc20Balance[_user][sfrxETH];
+        cbETHBal = userToErc20Balance[_user][cbETH];
+        // ethBal = userToErc20Balance[_user][rETH];
+        totalBal = (rETHBal + wstETHBal + sfrxETHBal + cbETHBal);
     }
 
     //--------------------------------------------------------------------------------------
