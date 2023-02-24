@@ -288,7 +288,7 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(wstETH), 0.1 ether);
         vm.stopPrank();
 
-        uint256 tvl = earlyAdopterPoolInstance.getTVL();
+        uint256 tvl = earlyAdopterPoolInstance.getContractTVL();
 
         assertEq(tvl, 0.1 ether);
 
@@ -297,7 +297,7 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.deposit(address(rETH), 1 ether);
         vm.stopPrank();
 
-        tvl = earlyAdopterPoolInstance.getTVL();
+        tvl = earlyAdopterPoolInstance.getContractTVL();
 
         assertEq(tvl, 1.1 ether);
 
@@ -305,9 +305,75 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.depositEther{value: 2 ether}();
         vm.stopPrank();
 
-        tvl = earlyAdopterPoolInstance.getTVL();
+        tvl = earlyAdopterPoolInstance.getContractTVL();
 
         assertEq(tvl, 3.1 ether);
+    }
+
+    function test_GetUserTVL() public {
+        vm.startPrank(alice);
+        rETH.approve(address(earlyAdopterPoolInstance), 1 ether);
+        earlyAdopterPoolInstance.deposit(address(rETH), 1 ether);
+        vm.stopPrank();
+
+        (
+            uint256 rETHBal,
+            uint256 wstETHBal,
+            uint256 sfrxETHBal,
+            uint256 cbETHBal,
+            uint256 ethBal,
+            uint256 totalBal
+        ) = earlyAdopterPoolInstance.getUserTVL(alice);
+
+        assertEq(rETHBal, 1 ether);
+        assertEq(wstETHBal, 0);
+        assertEq(sfrxETHBal, 0);
+        assertEq(cbETHBal, 0);
+        assertEq(ethBal, 0);
+        assertEq(totalBal, 1 ether);
+
+        vm.startPrank(alice);
+        cbEth.approve(address(earlyAdopterPoolInstance), 10 ether);
+        earlyAdopterPoolInstance.deposit(address(cbEth), 10 ether);
+        vm.stopPrank();
+
+        (
+            rETHBal,
+            wstETHBal,
+            sfrxETHBal,
+            cbETHBal,
+            ethBal,
+            totalBal
+        ) = earlyAdopterPoolInstance.getUserTVL(alice);
+
+        assertEq(rETHBal, 1 ether);
+        assertEq(wstETHBal, 0);
+        assertEq(sfrxETHBal, 0);
+        assertEq(cbETHBal, 10 ether);
+        assertEq(ethBal, 0);
+        assertEq(totalBal, 11 ether);
+
+        startHoax(bob);
+        earlyAdopterPoolInstance.depositEther{value: 5 ether}();
+        wstETH.approve(address(earlyAdopterPoolInstance), 0.5 ether);
+        earlyAdopterPoolInstance.deposit(address(wstETH), 0.5 ether);
+        vm.stopPrank();
+
+        (
+            rETHBal,
+            wstETHBal,
+            sfrxETHBal,
+            cbETHBal,
+            ethBal,
+            totalBal
+        ) = earlyAdopterPoolInstance.getUserTVL(bob);
+
+        assertEq(rETHBal, 0);
+        assertEq(wstETHBal, 0.5 ether);
+        assertEq(sfrxETHBal, 0);
+        assertEq(cbETHBal, 0);
+        assertEq(ethBal, 5 ether);
+        assertEq(totalBal, 5.5 ether);
     }
 
     function test_WithdrawWorksCorrectly() public {
