@@ -310,7 +310,7 @@ contract EarlyAdopterPool is Ownable {
         wstETHBal = userToErc20Balance[_user][wstETH];
         sfrxETHBal = userToErc20Balance[_user][sfrxETH];
         cbETHBal = userToErc20Balance[_user][cbETH];
-        ethBal = depositInfo[msg.sender].etherBalance;
+        ethBal = depositInfo[_user].etherBalance;
         totalBal = (rETHBal + wstETHBal + sfrxETHBal + cbETHBal + ethBal);
     }
 
