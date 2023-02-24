@@ -33,10 +33,10 @@ contract EarlyAdopterPool is Ownable {
     //Time when depositing closed and will be used for calculating reards
     uint256 public endTime;
 
-    address private rETH; // 0xae78736Cd615f374D3085123A210448E74Fc6393;
-    address private wstETH; // 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
-    address private sfrxETH; // 0xac3e018457b222d93114458476f3e3416abbe38f;
-    address private cbETH; // 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
+    address private immutable rETH; // 0xae78736Cd615f374D3085123A210448E74Fc6393;
+    address private immutable wstETH; // 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
+    address private immutable sfrxETH; // 0xac3e018457b222d93114458476f3e3416abbe38f;
+    address private immutable cbETH; // 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
 
     //Future contract which funds will be sent to on claim (Most likely LP)
     address public claimReceiverContract;
