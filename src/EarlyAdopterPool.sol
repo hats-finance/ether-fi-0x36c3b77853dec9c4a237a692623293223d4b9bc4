@@ -59,12 +59,11 @@ contract EarlyAdopterPool is Ownable {
 
     event DepositERC20(address indexed sender, uint256 amount);
     event DepositEth(address indexed sender, uint256 amount);
-    event Withdrawn(address indexed sender, uint256 amount);
+    event Withdrawn(address indexed sender);
     event ClaimReceiverContractSet(address indexed receiverAddress);
     event ClaimingOpened(uint256 deadline);
     event Fundsclaimed(
         address indexed user,
-        uint256 indexed amount,
         uint256 indexed pointsAccumulated
     );
     event ERC20TVLUpdated(
@@ -161,8 +160,8 @@ contract EarlyAdopterPool is Ownable {
     /// @notice withdraws all funds from pool for the user calling
     /// @dev no points allocated to users who withdraw
     function withdraw() public payable {
-        uint256 balance = transferFunds(0);
-        emit Withdrawn(msg.sender, balance);
+        transferFunds(0);
+        emit Withdrawn(msg.sender);
     }
 
     /// @notice Transfers users funds to a new contract such as LP
@@ -177,9 +176,9 @@ contract EarlyAdopterPool is Ownable {
         require(depositInfo[msg.sender].depositTime != 0, "No deposit stored");
 
         uint256 pointsRewarded = calculateUserPoints(msg.sender);
-        uint256 balance = transferFunds(1);
+        transferFunds(1);
 
-        emit Fundsclaimed(msg.sender, balance, pointsRewarded);
+        emit Fundsclaimed(msg.sender, pointsRewarded);
     }
 
     /// @notice Sets claiming to be open, to allow users to claim their points
@@ -242,10 +241,7 @@ contract EarlyAdopterPool is Ownable {
 
     /// @notice Transfers funds to relevant parties and updates data structures
     /// @param _identifier identifies which contract function called the function
-    /// @return balance of the user withdrawing, used for event
-    function transferFunds(uint256 _identifier) internal returns (uint256) {
-        uint256 totalUserBalance = depositInfo[msg.sender].etherBalance +
-            depositInfo[msg.sender].totalERC20Balance;
+    function transferFunds(uint256 _identifier) internal {
         uint256 rETHbal = userToErc20Balance[msg.sender][rETH];
         uint256 wstETHbal = userToErc20Balance[msg.sender][wstETH];
         uint256 sfrxEthbal = userToErc20Balance[msg.sender][sfrxETH];
@@ -277,8 +273,6 @@ contract EarlyAdopterPool is Ownable {
 
         (bool sent, ) = receiver.call{value: ethBalance}("");
         require(sent, "Failed to send Ether");
-
-        return totalUserBalance;
     }
 
     //--------------------------------------------------------------------------------------
