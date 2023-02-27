@@ -236,6 +236,16 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
                 userMultiplier) / 1e14;
     }
 
+    //Pauses the contract
+    function pauseContract() external onlyOwner {
+        _pause();
+    }
+
+    //Unpauses the contract
+    function unPauseContract() external onlyOwner {
+        _unpause();
+    }
+
     //--------------------------------------------------------------------------------------
     //--------------------------------  INTERNAL FUNCTIONS  --------------------------------
     //--------------------------------------------------------------------------------------
