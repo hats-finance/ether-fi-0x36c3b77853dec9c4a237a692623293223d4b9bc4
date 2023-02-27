@@ -264,10 +264,10 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
             receiver = claimReceiverContract;
         }
 
-        rETHInstance.transfer(receiver, rETHbal);
-        wstETHInstance.transfer(receiver, wstETHbal);
-        sfrxETHInstance.transfer(receiver, sfrxEthbal);
-        cbETHInstance.transfer(receiver, cbEthBal);
+        require(rETHInstance.transfer(receiver, rETHbal), "Transfer failed");
+        require(wstETHInstance.transfer(receiver, wstETHbal), "Transfer failed");
+        require(sfrxETHInstance.transfer(receiver, sfrxEthbal), "Transfer failed");
+        require(cbETHInstance.transfer(receiver, cbEthBal), "Transfer failed");
 
         (bool sent, ) = receiver.call{value: ethBalance}("");
         require(sent, "Failed to send Ether");
