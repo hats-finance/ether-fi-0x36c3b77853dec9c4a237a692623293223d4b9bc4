@@ -20,9 +20,6 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint256 public constant minDeposit = 0.1 ether;
-    uint256 public constant maxDeposit = 100 ether;
-
     //After a certain time, claiming funds is not allowed and users will need to simply withdraw
     uint256 public claimDeadline;
 
@@ -125,9 +122,9 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
         );
 
         depositInfo[msg.sender].depositTime = block.timestamp;
-        userToErc20Balance[msg.sender][_erc20Contract] += _amount;
         depositInfo[msg.sender].totalERC20Balance += _amount;
-        IERC20(_erc20Contract).transferFrom(msg.sender, address(this), _amount);
+        userToErc20Balance[msg.sender][_erc20Contract] += _amount;
+        require(IERC20(_erc20Contract).transferFrom(msg.sender, address(this), _amount), "Transfer failed");
 
         emit DepositERC20(msg.sender, _amount);
         emit ERC20TVLUpdated(
@@ -158,6 +155,7 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     /// @notice withdraws all funds from pool for the user calling
     /// @dev no points allocated to users who withdraw
     function withdraw() public nonReentrant {
+        require(depositInfo[msg.sender].depositTime != 0, "No deposit stored");
         transferFunds(0);
         emit Withdrawn(msg.sender);
     }
@@ -210,13 +208,6 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
             lengthOfDeposit = block.timestamp - depositInfo[_user].depositTime;
         } else {
             lengthOfDeposit = endTime - depositInfo[_user].depositTime;
-        }
-
-        //Variable to store how many milestones (3 days) the user deposit lasted
-        uint256 numberOfMultiplierMilestones = lengthOfDeposit / 259200;
-
-        if (numberOfMultiplierMilestones > 10) {
-            numberOfMultiplierMilestones = 10;
         }
 
         //Scaled by 1000, therefore, 1005 would be 1.005
@@ -274,10 +265,10 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
             receiver = claimReceiverContract;
         }
 
-        rETHInstance.transfer(receiver, rETHbal);
-        wstETHInstance.transfer(receiver, wstETHbal);
-        sfrxETHInstance.transfer(receiver, sfrxEthbal);
-        cbETHInstance.transfer(receiver, cbEthBal);
+        require(rETHInstance.transfer(receiver, rETHbal), "Transfer failed");
+        require(wstETHInstance.transfer(receiver, wstETHbal), "Transfer failed");
+        require(sfrxETHInstance.transfer(receiver, sfrxEthbal), "Transfer failed");
+        require(cbETHInstance.transfer(receiver, cbEthBal), "Transfer failed");
 
         (bool sent, ) = receiver.call{value: ethBalance}("");
         require(sent, "Failed to send Ether");
@@ -322,7 +313,7 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
 
     modifier OnlyCorrectAmount(uint256 _amount) {
         require(
-            _amount >= minDeposit && _amount <= maxDeposit,
+            _amount >= 0.1 ether && _amount <= 100 ether,
             "Incorrect Deposit Amount"
         );
         _;
