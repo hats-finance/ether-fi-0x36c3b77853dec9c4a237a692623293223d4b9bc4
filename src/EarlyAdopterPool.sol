@@ -20,9 +20,6 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint256 public constant minDeposit = 0.1 ether;
-    uint256 public constant maxDeposit = 100 ether;
-
     //After a certain time, claiming funds is not allowed and users will need to simply withdraw
     uint256 public claimDeadline;
 
@@ -125,9 +122,9 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
         );
 
         depositInfo[msg.sender].depositTime = block.timestamp;
-        userToErc20Balance[msg.sender][_erc20Contract] += _amount;
         depositInfo[msg.sender].totalERC20Balance += _amount;
-        IERC20(_erc20Contract).transferFrom(msg.sender, address(this), _amount);
+        userToErc20Balance[msg.sender][_erc20Contract] += _amount;
+        require(IERC20(_erc20Contract).transferFrom(msg.sender, address(this), _amount), "Transfer failed");
 
         emit DepositERC20(msg.sender, _amount);
         emit ERC20TVLUpdated(
@@ -315,7 +312,7 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
 
     modifier OnlyCorrectAmount(uint256 _amount) {
         require(
-            _amount >= minDeposit && _amount <= maxDeposit,
+            _amount >= 0.1 ether && _amount <= 100 ether,
             "Incorrect Deposit Amount"
         );
         _;
