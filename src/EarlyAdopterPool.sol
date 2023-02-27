@@ -212,13 +212,6 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
             lengthOfDeposit = endTime - depositInfo[_user].depositTime;
         }
 
-        //Variable to store how many milestones (3 days) the user deposit lasted
-        uint256 numberOfMultiplierMilestones = lengthOfDeposit / 259200;
-
-        if (numberOfMultiplierMilestones > 10) {
-            numberOfMultiplierMilestones = 10;
-        }
-
         //Scaled by 1000, therefore, 1005 would be 1.005
         uint256 userMultiplier = Math.min(
             2000,
