@@ -225,15 +225,15 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
         //Scaled by 1000, therefore, 1005 would be 1.005
         uint256 userMultiplier = Math.min(
             2000,
-            1000 + ((lengthOfDeposit * 10000) / (2592000)) / 10
+            1000 + ((lengthOfDeposit * 10) / 2592) / 10
         );
         uint256 totalUserBalance = depositInfo[_user].etherBalance +
             depositInfo[_user].totalERC20Balance;
 
         //Formula for calculating points total
         return
-            (((Math.sqrt(totalUserBalance) * lengthOfDeposit) *
-                userMultiplier) / 100) / 1000000000000;
+            ((Math.sqrt(totalUserBalance) * lengthOfDeposit) *
+                userMultiplier) / 1e14;
     }
 
     //--------------------------------------------------------------------------------------

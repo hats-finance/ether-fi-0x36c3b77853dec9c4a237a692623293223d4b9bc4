@@ -17,7 +17,7 @@ contract DeployEarlyAdopterPoolScript is Script {
         EarlyAdopterPool earlyAdopterPool = new EarlyAdopterPool(
             0xae78736Cd615f374D3085123A210448E74Fc6393,
             0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
-            0xac3e018457b222d93114458476f3e3416abbe38f,
+            0xac3E018457B222d93114458476f3E3416Abbe38F,
             0xBe9895146f7AF43049ca1c1AE358B0541Ea49704
         );
 
