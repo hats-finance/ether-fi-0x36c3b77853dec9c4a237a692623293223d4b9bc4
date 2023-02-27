@@ -160,7 +160,7 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice withdraws all funds from pool for the user calling
     /// @dev no points allocated to users who withdraw
-    function withdraw() public payable nonReentrant {
+    function withdraw() public nonReentrant {
         transferFunds(0);
         emit Withdrawn(msg.sender);
     }
