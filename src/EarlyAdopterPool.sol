@@ -4,8 +4,10 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract EarlyAdopterPool is Ownable {
+contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     using Math for uint256;
 
     struct UserDepositInfo {
@@ -115,6 +117,7 @@ contract EarlyAdopterPool is Ownable {
         external
         OnlyCorrectAmount(_amount)
         DepositingOpen
+        whenNotPaused
     {
         require(
             (_erc20Contract == rETH ||
@@ -146,6 +149,7 @@ contract EarlyAdopterPool is Ownable {
         payable
         OnlyCorrectAmount(msg.value)
         DepositingOpen
+        whenNotPaused
     {
         depositInfo[msg.sender].depositTime = block.timestamp;
         depositInfo[msg.sender].etherBalance += msg.value;
@@ -156,14 +160,14 @@ contract EarlyAdopterPool is Ownable {
 
     /// @notice withdraws all funds from pool for the user calling
     /// @dev no points allocated to users who withdraw
-    function withdraw() public payable {
+    function withdraw() public payable nonReentrant {
         transferFunds(0);
         emit Withdrawn(msg.sender);
     }
 
     /// @notice Transfers users funds to a new contract such as LP
     /// @dev can only call once receiver contract is ready and claiming is open
-    function claim() public {
+    function claim() public nonReentrant {
         require(claimingOpen == 1, "Claiming not open");
         require(
             claimReceiverContract != address(0),
