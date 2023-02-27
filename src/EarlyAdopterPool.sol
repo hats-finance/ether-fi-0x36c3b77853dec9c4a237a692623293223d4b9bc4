@@ -4,8 +4,10 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract EarlyAdopterPool is Ownable {
+contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     using Math for uint256;
 
     struct UserDepositInfo {
@@ -23,9 +25,6 @@ contract EarlyAdopterPool is Ownable {
 
     uint256 public constant minDeposit = 0.1 ether;
     uint256 public constant maxDeposit = 100 ether;
-
-    //How much the multiplier must increase per day, actually 0.1 but scaled by 100
-    uint256 private constant multiplierCoefficient = 10;
 
     //After a certain time, claiming funds is not allowed and users will need to simply withdraw
     uint256 public claimDeadline;
@@ -118,6 +117,7 @@ contract EarlyAdopterPool is Ownable {
         external
         OnlyCorrectAmount(_amount)
         DepositingOpen
+        whenNotPaused
     {
         require(
             (_erc20Contract == rETH ||
@@ -149,6 +149,7 @@ contract EarlyAdopterPool is Ownable {
         payable
         OnlyCorrectAmount(msg.value)
         DepositingOpen
+        whenNotPaused
     {
         depositInfo[msg.sender].depositTime = block.timestamp;
         depositInfo[msg.sender].etherBalance += msg.value;
@@ -159,14 +160,14 @@ contract EarlyAdopterPool is Ownable {
 
     /// @notice withdraws all funds from pool for the user calling
     /// @dev no points allocated to users who withdraw
-    function withdraw() public payable {
+    function withdraw() public payable nonReentrant {
         transferFunds(0);
         emit Withdrawn(msg.sender);
     }
 
     /// @notice Transfers users funds to a new contract such as LP
     /// @dev can only call once receiver contract is ready and claiming is open
-    function claim() public {
+    function claim() public nonReentrant {
         require(claimingOpen == 1, "Claiming not open");
         require(
             claimReceiverContract != address(0),
@@ -183,7 +184,7 @@ contract EarlyAdopterPool is Ownable {
 
     /// @notice Sets claiming to be open, to allow users to claim their points
     /// @param _claimDeadline the amount of time in days until claiming will close
-    function setClaimingOpen(uint256 _claimDeadline) public onlyOwner {
+    function setClaimingOpen(uint256 _claimDeadline) public onlyOwner {        
         claimDeadline = block.timestamp + (_claimDeadline * 86400);
         claimingOpen = 1;
         endTime = block.timestamp;
@@ -224,15 +225,15 @@ contract EarlyAdopterPool is Ownable {
         //Scaled by 1000, therefore, 1005 would be 1.005
         uint256 userMultiplier = Math.min(
             2000,
-            1000 + ((lengthOfDeposit * 10000) / (2592000)) / 10
+            1000 + ((lengthOfDeposit * 10) / 2592) / 10
         );
         uint256 totalUserBalance = depositInfo[_user].etherBalance +
             depositInfo[_user].totalERC20Balance;
 
         //Formula for calculating points total
         return
-            (((Math.sqrt(totalUserBalance) * lengthOfDeposit) *
-                userMultiplier) / 100) / 1000000000000;
+            ((Math.sqrt(totalUserBalance) * lengthOfDeposit) *
+                userMultiplier) / 1e14;
     }
 
     //--------------------------------------------------------------------------------------

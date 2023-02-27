@@ -14,16 +14,11 @@ contract DeployEarlyAdopterPoolScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        TestERC20 rEth = new TestERC20("Rocket Pool Eth", "rEth");
-        TestERC20 wstEth = new TestERC20("Wrapped Staked Pool Eth", "wstEth");
-        TestERC20 sfrxEth = new TestERC20("Staked Frax Eth", "sfrxEth");
-        TestERC20 cbEth = new TestERC20("Coinbase Eth", "cbEth");
-
         EarlyAdopterPool earlyAdopterPool = new EarlyAdopterPool(
-            address(rEth),
-            address(wstEth),
-            address(sfrxEth),
-            address(cbEth)
+            0xae78736Cd615f374D3085123A210448E74Fc6393,
+            0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+            0xac3E018457B222d93114458476f3E3416Abbe38F,
+            0xBe9895146f7AF43049ca1c1AE358B0541Ea49704
         );
 
         vm.stopBroadcast();
