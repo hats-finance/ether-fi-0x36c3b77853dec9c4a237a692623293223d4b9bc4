@@ -20,9 +20,6 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    //User to help reduce points tallies from extremely large numbers due to token decimals
-    uint256 public constant SCALE = 10e16;
-
     uint256 public constant minDeposit = 0.1 ether;
     uint256 public constant maxDeposit = 100 ether;
 
