@@ -163,12 +163,6 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
         "name": "pointsAccumulated",
         "type": "uint256"
       }
@@ -199,33 +193,40 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "sender",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
       }
     ],
     "name": "Withdrawn",
     "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "SCALE",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [
@@ -361,7 +362,7 @@
   },
   {
     "inputs": [],
-    "name": "getTVL",
+    "name": "getContractTVL",
     "outputs": [
       {
         "internalType": "uint256",
@@ -373,25 +374,43 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "maxDeposit",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "minDeposit",
+    "name": "getUserTVL",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "rETHBal",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "wstETHBal",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sfrxETHBal",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cbETHBal",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ethBal",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalBal",
         "type": "uint256"
       }
     ],
@@ -406,6 +425,26 @@
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pauseContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -458,6 +497,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "unPauseContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -485,7 +531,7 @@
     "inputs": [],
     "name": "withdraw",
     "outputs": [],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
