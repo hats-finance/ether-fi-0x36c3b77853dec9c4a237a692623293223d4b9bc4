@@ -5,15 +5,15 @@ import "../src/interfaces/INodeOperatorKeyManager.sol";
 
 contract NodeOperatorKeyManager is INodeOperatorKeyManager {
     event OperatorRegistered(
-        string ipfsHash,
-        uint256 totalKeys,
-        uint256 keysUsed
+        uint128 totalKeys,
+        uint128 keysUsed,
+        string ipfsHash
     );
     // user address => IPFS hash
-    mapping(address => bytes) public addressToIpfsHash;
+    mapping(address => string) public addressToIpfsHash;
 
     // user address => IPFS hash => number of keys
-    mapping(address => uint256) public numberOfKeysUsed;
+    mapping(address => uint128) public numberOfKeysUsed;
 
     // user address => OperaterData Struct
     mapping(address => OperatorData) public addressToOperatorData;
@@ -22,18 +22,18 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
         numberOfKeysUsed[_user]++;
     }
 
-    function registerNodeOperator(string memory _ipfsHash, uint256 _totalKeys)
+    function registerNodeOperator(string memory _ipfsHash, uint128 _totalKeys)
         public
     {
         addressToOperatorData[msg.sender] = OperatorData({
-            ipfsHash: _ipfsHash,
             totalKeys: _totalKeys,
-            keysUsed: 0
+            keysUsed: 0,
+            ipfsHash: _ipfsHash
         });
         emit OperatorRegistered(
-            addressToOperatorData[msg.sender].ipfsHash,
             addressToOperatorData[msg.sender].totalKeys,
-            addressToOperatorData[msg.sender].keysUsed
+            addressToOperatorData[msg.sender].keysUsed,
+            addressToOperatorData[msg.sender].ipfsHash
         );
     }
 }

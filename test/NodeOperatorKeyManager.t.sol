@@ -7,16 +7,16 @@ import "forge-std/console.sol";
 
 contract NodeOperatorKeyManagerTest is Test {
     event OperatorRegistered(
-        string ipfsHash,
-        uint256 totalKeys,
-        uint256 keysUsed
+        uint128 totalKeys,
+        uint128 keysUsed,
+        string ipfsHash
     );
 
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
 
     address alice = vm.addr(1);
 
-    string aliceIPFSHash = "AliceIPFS";
+    string aliceIPFSHash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
 
     function setUp() public {
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
@@ -24,11 +24,14 @@ contract NodeOperatorKeyManagerTest is Test {
 
     function test_RegisterNodeOperator() public {
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            aliceIPFSHash,
+            uint128(10)
+        );
         (
-            string memory aliceHash,
-            uint256 totalKeys,
-            uint256 keysUsed
+            uint128 totalKeys,
+            uint128 keysUsed,
+            string memory aliceHash
         ) = nodeOperatorKeyManagerInstance.addressToOperatorData(alice);
 
         assertEq(aliceHash, aliceIPFSHash);
@@ -38,7 +41,7 @@ contract NodeOperatorKeyManagerTest is Test {
 
     function test_EventOperatorRegistered() public {
         vm.expectEmit(false, false, false, true);
-        emit OperatorRegistered(aliceIPFSHash, 10, 0);
+        emit OperatorRegistered(10, 0, aliceIPFSHash);
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
     }
