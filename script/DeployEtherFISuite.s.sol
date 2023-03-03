@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/Treasury.sol";
-import "../src/Registration.sol";
+import "../src/NodeOperatorKeyManager.sol";
 import "../src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
 import "../src/Auction.sol";
@@ -16,7 +16,7 @@ contract DeployScript is Script {
 
     struct addresses {
         address treasury;
-        address registration;
+        address nodeOperatorKeyManager;
         address auction;
         address deposit;
         address TNFT;
@@ -31,8 +31,8 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         Treasury treasury = new Treasury();
-        Registration registration = new Registration();
-        Auction auction = new Auction(address(registration));
+        NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
+        Auction auction = new Auction(address(nodeOperatorKeyManager));
 
         treasury.setAuctionContractAddress(address(auction));
 
