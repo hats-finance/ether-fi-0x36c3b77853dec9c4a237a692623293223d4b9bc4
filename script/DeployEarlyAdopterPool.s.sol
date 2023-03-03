@@ -15,10 +15,10 @@ contract DeployEarlyAdopterPoolScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         EarlyAdopterPool earlyAdopterPool = new EarlyAdopterPool(
-            0xae78736Cd615f374D3085123A210448E74Fc6393,
-            0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
-            0xac3E018457B222d93114458476f3E3416Abbe38F,
-            0xBe9895146f7AF43049ca1c1AE358B0541Ea49704
+            0xF533a7110E30eb4F5eC8aE033bc0ccaf07BF1b0f,
+            0x817d236968E7089A93AECfe817aD685CB72e9DD7,
+            0xda976F84A98bE3E5663023A466948ef6883D577B,
+            0x7660e1EF7279bD0Ef2ded5379F1A499540784E8e
         );
 
         vm.stopBroadcast();
