@@ -6,7 +6,7 @@ import "../src/Deposit.sol";
 import "src/WithdrawSafeManager.sol";
 
 import "../src/BNFT.sol";
-import "../src/Registration.sol";
+import "../src/NodeOperatorKeyManager.sol";
 import "../src/TNFT.sol";
 import "../src/Auction.sol";
 import "../src/Treasury.sol";
@@ -16,7 +16,7 @@ contract BNFTTest is Test {
     Deposit public depositInstance;
     WithdrawSafe public withdrawSafeInstance;
     WithdrawSafeManager public managerInstance;
-    Registration public registrationInstance;
+    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     Auction public auctionInstance;
@@ -34,8 +34,8 @@ contract BNFTTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        registrationInstance = new Registration();
-        auctionInstance = new Auction(address(registrationInstance));
+        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        auctionInstance = new Auction(address(nodeOperatorKeyManagerInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         depositInstance = new Deposit(address(auctionInstance));

@@ -12,7 +12,7 @@ import "./interfaces/IWithdrawSafeManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./Deposit.sol";
-import "./Registration.sol";
+import "../src/NodeOperatorKeyManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
@@ -30,7 +30,7 @@ contract Auction is IAuction, Pausable {
     address public depositContractAddress;
     address public owner;
     address public withdrawSafeManager;
-    address public registrationContract;
+    address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
 
     IWithdrawSafe public safeInstance;
@@ -71,9 +71,9 @@ contract Auction is IAuction, Pausable {
     //--------------------------------------------------------------------------------------
 
     /// @notice Constructor to set variables on deployment
-    constructor(address _registrationContract) {
+    constructor(address _nodeOperatorKeyManagerContract) {
         owner = msg.sender;
-        registrationContract = _registrationContract;
+        nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
     }
 
     //--------------------------------------------------------------------------------------
@@ -162,9 +162,11 @@ contract Auction is IAuction, Pausable {
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-    function bidOnStake(
-        bytes32[] calldata _merkleProof
-    ) external payable whenNotPaused {
+    function bidOnStake(bytes32[] calldata _merkleProof)
+        external
+        payable
+        whenNotPaused
+    {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
@@ -179,8 +181,11 @@ contract Auction is IAuction, Pausable {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
-        uint256 nextAvailableIpfsIndex = Registration(registrationContract).numberOfKeysUsed(msg.sender);
-        Registration(registrationContract).increaseKeysIndex(msg.sender);
+        uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
+            nodeOperatorKeyManagerContract
+        ).numberOfKeysUsed(msg.sender);
+        NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
+            .increaseKeysIndex(msg.sender);
 
         //Creates a bid object for storage and lookup in future
         bids[numberOfBids] = Bid({
@@ -196,7 +201,12 @@ contract Auction is IAuction, Pausable {
             currentHighestBidId = numberOfBids;
         }
 
-        emit BidPlaced(msg.sender, msg.value, numberOfBids, nextAvailableIpfsIndex);
+        emit BidPlaced(
+            msg.sender,
+            msg.value,
+            numberOfBids,
+            nextAvailableIpfsIndex
+        );
 
         numberOfBids++;
         numberOfActiveBids++;

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "../src/interfaces/IRegistration.sol";
+import "../src/interfaces/INodeOperatorKeyManager.sol";
 
-contract Registration is IRegistration {
+contract NodeOperatorKeyManager is INodeOperatorKeyManager {
     event OperatorRegistered(
         string ipfsHash,
         uint256 totalKeys,
