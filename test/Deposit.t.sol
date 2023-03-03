@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IDeposit.sol";
 import "src/WithdrawSafeManager.sol";
 import "../src/Deposit.sol";
-import "../src/Registration.sol";
+import "../src/NodeOperatorKeyManager.sol";
 import "../src/Auction.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -16,7 +16,7 @@ contract DepositTest is Test {
     IDeposit public depositInterface;
     WithdrawSafe public withdrawSafeInstance;
     WithdrawSafeManager public managerInstance;
-    Registration public registrationInstance;
+    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
     Deposit public depositInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -36,8 +36,8 @@ contract DepositTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        registrationInstance = new Registration();
-        auctionInstance = new Auction(address(registrationInstance));
+        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        auctionInstance = new Auction(address(nodeOperatorKeyManagerInstance));
         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
 

@@ -2,34 +2,34 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/Registration.sol";
+import "../src/NodeOperatorKeyManager.sol";
 import "forge-std/console.sol";
 
-contract RegistrationTest is Test {
+contract NodeOperatorKeyManagerTest is Test {
     event OperatorRegistered(
         string ipfsHash,
         uint256 totalKeys,
         uint256 keysUsed
     );
 
-    Registration registrationInstance;
+    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
 
     address alice = vm.addr(1);
 
     string aliceIPFSHash = "AliceIPFS";
 
     function setUp() public {
-        registrationInstance = new Registration();
+        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
     }
 
     function test_RegisterNodeOperator() public {
         vm.prank(alice);
-        registrationInstance.registerNodeOperator(aliceIPFSHash, 10);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
         (
             string memory aliceHash,
             uint256 totalKeys,
             uint256 keysUsed
-        ) = registrationInstance.addressToOperatorData(alice);
+        ) = nodeOperatorKeyManagerInstance.addressToOperatorData(alice);
 
         assertEq(aliceHash, aliceIPFSHash);
         assertEq(totalKeys, 10);
@@ -40,6 +40,6 @@ contract RegistrationTest is Test {
         vm.expectEmit(false, false, false, true);
         emit OperatorRegistered(aliceIPFSHash, 10, 0);
         vm.prank(alice);
-        registrationInstance.registerNodeOperator(aliceIPFSHash, 10);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
     }
 }
