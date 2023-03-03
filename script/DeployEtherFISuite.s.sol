@@ -63,7 +63,7 @@ contract DeployScript is Script {
 
         addressStruct = addresses({
             treasury: address(treasury),
-            registration: address(registration),
+            nodeOperatorKeyManager: address(nodeOperatorKeyManager),
             auction: address(auction),
             deposit: address(deposit),
             TNFT: TNFTAddress,
@@ -124,8 +124,8 @@ contract DeployScript is Script {
                     Strings.toString(version),
                     "\nTreasury: ",
                     Strings.toHexString(addressStruct.treasury),
-                    "\nRegistration: ",
-                    Strings.toHexString(addressStruct.registration),
+                    "\nNode Operator Key Manager: ",
+                    Strings.toHexString(addressStruct.nodeOperatorKeyManager),
                     "\nAuction: ",
                     Strings.toHexString(addressStruct.auction),
                     "\nDeposit: ",
