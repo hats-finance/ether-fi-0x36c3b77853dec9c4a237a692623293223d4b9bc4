@@ -17,11 +17,11 @@ contract DeployScript is Script {
     struct addresses {
         address treasury;
         address nodeOperatorKeyManager;
-        address auction;
+        address auctionManager;
         address stakingManager;
         address TNFT;
         address BNFT;
-        address nodesManager;
+        address etherFiNodesManager;
     }
 
     addresses addressStruct;
@@ -32,14 +32,14 @@ contract DeployScript is Script {
 
         Treasury treasury = new Treasury();
         NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
-        AuctionManager auction = new AuctionManager(address(nodeOperatorKeyManager));
+        AuctionManager auctionManager = new AuctionManager(address(nodeOperatorKeyManager));
 
-        treasury.setAuctionManagerContractAddress(address(auction));
+        treasury.setAuctionManagerContractAddress(address(auctionManager));
 
         vm.recordLogs();
 
-        StakingManager stakingManager = new StakingManager(address(auction));
-        auction.setStakingManagerContractAddress(address(stakingManager));
+        StakingManager stakingManager = new StakingManager(address(auctionManager));
+        auctionManager.setStakingManagerContractAddress(address(stakingManager));
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
 
@@ -48,27 +48,27 @@ contract DeployScript is Script {
             (address, address)
         );
 
-        EtherFiNodesManager nodesManager = new EtherFiNodesManager(
+        EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
             address(treasury),
-            address(auction),
+            address(auctionManager),
             address(stakingManager),
             TNFTAddress,
             BNFTAddress
         );
 
-        auction.setManagerAddress(address(nodesManager));
-        stakingManager.setManagerAddress(address(nodesManager));
+        auctionManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
+        stakingManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
 
         vm.stopBroadcast();
 
         addressStruct = addresses({
             treasury: address(treasury),
             nodeOperatorKeyManager: address(nodeOperatorKeyManager),
-            auction: address(auction),
+            auctionManager: address(auctionManager),
             stakingManager: address(stakingManager),
             TNFT: TNFTAddress,
             BNFT: BNFTAddress,
-            nodesManager: address(nodesManager)
+            etherFiNodesManager: address(etherFiNodesManager)
         });
 
         writeVersionFile();
@@ -127,7 +127,7 @@ contract DeployScript is Script {
                     "\nNode Operator Key Manager: ",
                     Strings.toHexString(addressStruct.nodeOperatorKeyManager),
                     "\nAuctionManager: ",
-                    Strings.toHexString(addressStruct.auction),
+                    Strings.toHexString(addressStruct.auctionManager),
                     "\nStakingManager: ",
                     Strings.toHexString(addressStruct.stakingManager),
                     "\nTNFT: ",
@@ -135,7 +135,7 @@ contract DeployScript is Script {
                     "\nBNFT: ",
                     Strings.toHexString(addressStruct.BNFT),
                     "\nSafe Manager: ",
-                    Strings.toHexString(addressStruct.nodesManager)
+                    Strings.toHexString(addressStruct.etherFiNodesManager)
                 )
             )
         );

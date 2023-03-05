@@ -297,7 +297,7 @@ contract StakingManager is IStakingManager, Pausable {
         return stakeAmount;
     }
 
-    function setManagerAddress(address _managerAddress) external {
+    function setEtherFiNodesManagerAddress(address _managerAddress) external {
         managerAddress = _managerAddress;
     }
 

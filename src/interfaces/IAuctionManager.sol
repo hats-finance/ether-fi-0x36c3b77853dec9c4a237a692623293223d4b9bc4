@@ -28,6 +28,6 @@ interface IAuctionManager {
         external;
 
     function sendFundsToEtherFiNode(uint256 _validatorId, uint256 _stakeId) external;
-    function setManagerAddress(address _managerAddress) external;
+    function setEtherFiNodesManagerAddress(address _managerAddress) external;
 
 }

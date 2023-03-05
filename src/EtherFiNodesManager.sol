@@ -97,7 +97,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             bnftHolderSplit: 9
         });
 
-        stakingManagerInstance.setManagerAddress(address(this));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(address(this));
     }
 
     //--------------------------------------------------------------------------------------

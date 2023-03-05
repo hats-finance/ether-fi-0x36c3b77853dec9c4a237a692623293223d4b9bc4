@@ -57,8 +57,8 @@ contract EtherFiNodeTest is Test {
             address(TestBNFTInstance)
         );
 
-        auctionInstance.setManagerAddress(address(managerInstance));
-        stakingManagerInstance.setManagerAddress(address(managerInstance));
+        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
         test_data = IStakingManager.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,

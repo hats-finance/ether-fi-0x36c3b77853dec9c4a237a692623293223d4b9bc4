@@ -336,7 +336,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         return bids[_bidId].bidderAddress;
     }
 
-    function setManagerAddress(address _managerAddress) external {
+    function setEtherFiNodesManagerAddress(address _managerAddress) external {
         withdrawSafeManager = _managerAddress;
     }
 
