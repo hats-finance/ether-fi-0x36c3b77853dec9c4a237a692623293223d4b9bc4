@@ -42,7 +42,7 @@ contract StakingManager is IStakingManager, Pausable {
     //--------------------------------------------------------------------------------------
 
     event NFTContractsDeployed(address TNFTInstance, address BNFTInstance);
-    event StakeStakingManager(
+    event Deposit(
         address indexed sender,
         uint256 value,
         uint256 id,
@@ -131,7 +131,7 @@ contract StakingManager is IStakingManager, Pausable {
 
         depositorBalances[msg.sender] += msg.value;
 
-        emit StakeStakingManager(
+        emit Deposit(
             msg.sender,
             msg.value,
             localNumOfStakes,
