@@ -15,7 +15,7 @@ import "../lib/murky/src/Merkle.sol";
 
 contract EtherFiNodeTest is Test {
     IStakingManager public depositInterface;
-    StakingManager public depositInstance;
+    StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
@@ -45,20 +45,20 @@ contract EtherFiNodeTest is Test {
         auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
         treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new StakingManager(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(address(depositInstance));
-        TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
-            address(depositInstance),
+            address(stakingManagerInstance),
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
 
         auctionInstance.setManagerAddress(address(managerInstance));
-        depositInstance.setManagerAddress(address(managerInstance));
+        stakingManagerInstance.setManagerAddress(address(managerInstance));
 
         test_data = IStakingManager.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -84,15 +84,15 @@ contract EtherFiNodeTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        depositInstance.setTreasuryAddress(address(treasuryInstance));
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(0, test_data);
+        stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
+        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.registerValidator(0, test_data);
         vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.acceptValidator(0);
+        stakingManagerInstance.acceptValidator(0);
 
-        (, address withdrawSafe, , , , , ) = depositInstance.stakes(0);
+        (, address withdrawSafe, , , , , ) = stakingManagerInstance.stakes(0);
         safeInstance = EtherFiNode(payable(withdrawSafe));
     }
 
@@ -176,10 +176,10 @@ contract EtherFiNodeTest is Test {
         auctionInstance.bidOnStake{value: 0.3 ether}(proof);
 
         hoax(bob);
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
 
         hoax(dan);
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
 
         (
             address staker_2,
@@ -189,7 +189,7 @@ contract EtherFiNodeTest is Test {
             uint256 winningBidId_2,
             ,
 
-        ) = depositInstance.stakes(1);
+        ) = stakingManagerInstance.stakes(1);
 
         (
             address staker_3,
@@ -199,24 +199,24 @@ contract EtherFiNodeTest is Test {
             uint256 winningBidId_3,
             ,
 
-        ) = depositInstance.stakes(2);
+        ) = stakingManagerInstance.stakes(2);
 
         assertEq(staker_2, bob);
         assertEq(staker_3, dan);
 
         startHoax(bob);
-        depositInstance.registerValidator(1, test_data_2);
+        stakingManagerInstance.registerValidator(1, test_data_2);
         vm.stopPrank();
 
         startHoax(dan);
-        depositInstance.registerValidator(2, test_data_2);
+        stakingManagerInstance.registerValidator(2, test_data_2);
         vm.stopPrank();
 
         hoax(alice);
-        depositInstance.acceptValidator(1);
+        stakingManagerInstance.acceptValidator(1);
 
         hoax(chad);
-        depositInstance.acceptValidator(2);
+        stakingManagerInstance.acceptValidator(2);
 
         assertEq(withdrawSafeAddress_2.balance, 0.4 ether);
         assertEq(withdrawSafeAddress_3.balance, 0.3 ether);

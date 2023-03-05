@@ -11,7 +11,7 @@ import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract TNFTTest is Test {
-    StakingManager public depositInstance;
+    StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
@@ -32,17 +32,17 @@ contract TNFTTest is Test {
         auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
         treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new StakingManager(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(address(depositInstance));
-        TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
         vm.stopPrank();
     }
 
     function test_TNFTContractGetsInstantiatedCorrectly() public {
         assertEq(
             TestTNFTInstance.stakingManagerContractAddress(),
-            address(depositInstance)
+            address(stakingManagerInstance)
         );
         assertEq(TestTNFTInstance.nftValue(), 0.03 ether);
     }

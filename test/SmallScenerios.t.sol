@@ -12,7 +12,7 @@
 // import "../lib/murky/src/Merkle.sol";
 
 // contract SmallScenariosTest is Test {
-//     StakingManager public depositInstance;
+//     StakingManager public stakingManagerInstance;
 //     EtherFiNode public withdrawSafeInstance;
 //     BNFT public TestBNFTInstance;
 //     TNFT public TestTNFTInstance;
@@ -35,17 +35,17 @@
 //         auctionInstance = new AuctionManager(address(treasuryInstance));
 //         treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
 //         auctionInstance.updateMerkleRoot(root);
-//         depositInstance = new StakingManager(
+//         stakingManagerInstance = new StakingManager(
 //             address(auctionInstance),
 //             address(treasuryInstance)
 //         );
-//         auctionInstance.setStakingManagerContractAddress(address(depositInstance));
-//         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-//         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+//         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+//         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+//         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
 //         withdrawSafeInstance = new EtherFiNode(
 //             address(treasuryInstance),
 //             address(auctionInstance),
-//             address(depositInstance),
+//             address(stakingManagerInstance),
 //             address(TestTNFTInstance),
 //             address(TestBNFTInstance)
 //         );
@@ -87,7 +87,7 @@
 //         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
 //         assertEq(address(auctionInstance).balance, 0.3 ether);
-//         assertEq(address(depositInstance).balance, 0);
+//         assertEq(address(stakingManagerInstance).balance, 0);
 
 //         (
 //             uint256 amount,
@@ -106,10 +106,10 @@
 //         vm.stopPrank();
 //         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
 
-//         depositInstance.deposit{value: 0.032 ether}();
-//         // (, address withdrawalSafe, , , , , , ) = depositInstance.stakes(0);
+//         stakingManagerInstance.deposit{value: 0.032 ether}();
+//         // (, address withdrawalSafe, , , , , , ) = stakingManagerInstance.stakes(0);
 
-//         assertEq(address(depositInstance).balance, 0.032 ether);
+//         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
 //         assertEq(address(auctionInstance).balance, 0.3 ether);
 //         // assertEq(withdrawalSafe.balance, 0.3 ether);
 
@@ -219,12 +219,12 @@
 //         assertEq(auctionInstance.currentHighestBidId(), 2);
 
 //         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         depositInstance.deposit{value: 0.032 ether}();
+//         stakingManagerInstance.deposit{value: 0.032 ether}();
 //         assertEq(auctionInstance.currentHighestBidId(), 3);
 //         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-//         depositInstance.deposit{value: 0.032 ether}();
+//         stakingManagerInstance.deposit{value: 0.032 ether}();
 //         assertEq(auctionInstance.currentHighestBidId(), 1);
-//         assertEq(address(depositInstance).balance, 0.064 ether);
+//         assertEq(address(stakingManagerInstance).balance, 0.064 ether);
 //     }
 
 //     /**
@@ -254,7 +254,7 @@
 //             proofForAddress1,
 //             "test_pubKey"
 //         );
-//         assertEq(address(depositInstance).balance, 0 ether);
+//         assertEq(address(stakingManagerInstance).balance, 0 ether);
 //         assertEq(address(auctionInstance).balance, 0.9 ether);
 
 //         //Bid Two
@@ -263,17 +263,17 @@
 //             proofForAddress2,
 //             "test_pubKey"
 //         );
-//         assertEq(address(depositInstance).balance, 0 ether);
+//         assertEq(address(stakingManagerInstance).balance, 0 ether);
 //         assertEq(address(auctionInstance).balance, 1.2 ether);
 
 //         //StakingManager One
 //         startHoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
-//         depositInstance.deposit{value: 0.032 ether}();
-//         assertEq(address(depositInstance).balance, 0.032 ether);
+//         stakingManagerInstance.deposit{value: 0.032 ether}();
+//         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
 //         assertEq(address(auctionInstance).balance, 1.2 ether);
 
 //         //Register validator
-//         depositInstance.registerValidator(
+//         stakingManagerInstance.registerValidator(
 //             0,
 //             "Encrypted_Key",
 //             "encrypted_key_password",
@@ -287,7 +287,7 @@
 //             bytes memory validatorKey,
 //             bytes memory encryptedValidatorKeyPassword,
 
-//         ) = depositInstance.validators(0);
+//         ) = stakingManagerInstance.validators(0);
 //         assertEq(validatorId, 0);
 //         assertEq(bidId, 1);
 //         assertEq(stakeId, 0);
@@ -297,7 +297,7 @@
 //         //Accept validator
 //         vm.stopPrank();
 //         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         depositInstance.acceptValidator(0);
+//         stakingManagerInstance.acceptValidator(0);
 
 //         assertEq(
 //             TestBNFTInstance.ownerOf(0),

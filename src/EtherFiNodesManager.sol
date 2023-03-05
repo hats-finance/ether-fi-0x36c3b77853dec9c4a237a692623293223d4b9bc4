@@ -38,7 +38,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     TNFT public tnftInstance;
     BNFT public bnftInstance;
-    IStakingManager public depositInstance;
+    IStakingManager public stakingManagerInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
     AuctionManagerContractRevenueSplit public auctionContractRevenueSplit;
@@ -78,7 +78,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         auctionContract = _auctionContract;
         depositContract = _depositContract;
 
-        depositInstance = IStakingManager(_depositContract);
+        stakingManagerInstance = IStakingManager(_depositContract);
 
         tnftInstance = TNFT(_tnftContract);
         bnftInstance = BNFT(_bnftContract);
@@ -97,7 +97,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             bnftHolderSplit: 9
         });
 
-        depositInstance.setManagerAddress(address(this));
+        stakingManagerInstance.setManagerAddress(address(this));
     }
 
     //--------------------------------------------------------------------------------------
@@ -144,7 +144,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function withdrawFunds(uint256 _validatorId) external {
         require(
             msg.sender ==
-                depositInstance.getStakerRelatedToValidator(_validatorId),
+                stakingManagerInstance.getStakerRelatedToValidator(_validatorId),
             "Incorrect caller"
         );
         //Will check oracle to make sure validator has exited
@@ -154,7 +154,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         ).balance;
 
         uint256 validatorRewards = contractBalance -
-            depositInstance.getStakeAmount() -
+            stakingManagerInstance.getStakeAmount() -
             fundsReceivedFromAuctionManagers[_validatorId];
 
         withdrawableBalance[_validatorId][

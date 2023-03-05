@@ -13,7 +13,7 @@ import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract AuctionManagerTest is Test {
-    StakingManager public depositInstance;
+    StakingManager public stakingManagerInstance;
     EtherFiNode public withdrawSafeInstance;
     EtherFiNodesManager public managerInstance;
     BNFT public TestBNFTInstance;
@@ -49,20 +49,20 @@ contract AuctionManagerTest is Test {
         auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
         treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new StakingManager(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(address(depositInstance));
-        TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
-            address(depositInstance),
+            address(stakingManagerInstance),
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
 
         auctionInstance.setManagerAddress(address(managerInstance));
-        depositInstance.setManagerAddress(address(managerInstance));
+        stakingManagerInstance.setManagerAddress(address(managerInstance));
 
         test_data = IStakingManager.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
@@ -79,7 +79,7 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.numberOfBids(), 1);
         assertEq(
             auctionInstance.stakingManagerContractAddress(),
-            address(depositInstance)
+            address(stakingManagerInstance)
         );
     }
 
@@ -92,9 +92,9 @@ contract AuctionManagerTest is Test {
         vm.prank(owner);
         auctionInstance.pauseContract();
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.expectRevert("Pausable: paused");
-        depositInstance.cancelStake(0);
+        stakingManagerInstance.cancelStake(0);
     }
 
     function test_ReEnterAuctionManagerFailsIfNotCorrectCaller() public {
@@ -103,7 +103,7 @@ contract AuctionManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
@@ -118,11 +118,11 @@ contract AuctionManagerTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         auctionInstance.bidOnStake{value: 0.05 ether}(proof);
 
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.cancelStake(0);
+        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.cancelStake(0);
         vm.stopPrank();
 
-        vm.prank(address(depositInstance));
+        vm.prank(address(stakingManagerInstance));
         vm.expectRevert("Bid already active");
         auctionInstance.reEnterAuction(2);
     }
@@ -135,14 +135,14 @@ contract AuctionManagerTest is Test {
         auctionInstance.bidOnStake{value: 0.05 ether}(proof);
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         (, , , , bool isBid1Active) = auctionInstance.bids(1);
-        (, , , , uint256 winningBidId, , ) = depositInstance.stakes(0);
+        (, , , , uint256 winningBidId, , ) = stakingManagerInstance.stakes(0);
         assertEq(winningBidId, 1);
         assertEq(isBid1Active, false);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        depositInstance.cancelStake(0);
+        stakingManagerInstance.cancelStake(0);
         (, , , , isBid1Active) = auctionInstance.bids(1);
         (, , , , bool isBid2Active) = auctionInstance.bids(2);
         assertEq(isBid1Active, true);
@@ -157,7 +157,7 @@ contract AuctionManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
@@ -194,7 +194,7 @@ contract AuctionManagerTest is Test {
         auctionInstance.bidOnStake{value: 0.2 ether}(proofForAddress3);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
 
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(address(auctionInstance).balance, 0.6 ether);
@@ -210,7 +210,7 @@ contract AuctionManagerTest is Test {
         assertEq(isActiveBid2, false);
         assertEq(isActiveBid3, true);
 
-        hoax(address(depositInstance));
+        hoax(address(stakingManagerInstance));
         uint256 winner = auctionInstance.calculateWinningBid();
 
         (, , , , isActiveBid1) = auctionInstance.bids(1);
@@ -239,12 +239,12 @@ contract AuctionManagerTest is Test {
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.expectEmit(true, false, false, true);
         emit WinningBidSent(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 1);
-        hoax(address(depositInstance));
+        hoax(address(stakingManagerInstance));
         auctionInstance.calculateWinningBid();
     }
 
