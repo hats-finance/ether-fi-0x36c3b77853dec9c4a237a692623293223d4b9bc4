@@ -24,7 +24,7 @@ contract AuctionManagerTest is Test {
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
-    IStakingManager.StakingManagerData public test_data;
+    IStakingManager.DepositData public test_data;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -64,7 +64,7 @@ contract AuctionManagerTest is Test {
         auctionInstance.setManagerAddress(address(managerInstance));
         depositInstance.setManagerAddress(address(managerInstance));
 
-        test_data = IStakingManager.StakingManagerData({
+        test_data = IStakingManager.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",

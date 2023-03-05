@@ -122,7 +122,7 @@ contract StakingManager is IStakingManager, Pausable {
         stakes[localNumOfStakes] = Stake({
             staker: msg.sender,
             withdrawSafe: withdrawSafe,
-            deposit_data: StakingManagerData(address(0), "", "", "", ""),
+            deposit_data: DepositData(address(0), "", "", "", ""),
             amount: msg.value,
             winningBidId: auctionInterfaceInstance.calculateWinningBid(),
             stakeId: localNumOfStakes,
@@ -148,7 +148,7 @@ contract StakingManager is IStakingManager, Pausable {
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
         uint256 _stakeId,
-        StakingManagerData calldata _depositData
+        DepositData calldata _depositData
     ) public whenNotPaused {
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(
@@ -213,7 +213,7 @@ contract StakingManager is IStakingManager, Pausable {
             localStakeId
         );
 
-        StakingManagerData memory dataInstance = stakes[localStakeId].deposit_data;
+        DepositData memory dataInstance = stakes[localStakeId].deposit_data;
 
         if (test = false) {
             depositContractEth2.deposit{value: stakeAmount}(

@@ -25,7 +25,7 @@ interface IStakingManager {
     struct Stake {
         address staker;
         address withdrawSafe;
-        StakingManagerData deposit_data;
+        DepositData deposit_data;
         uint256 amount;
         uint256 winningBidId;
         uint256 stakeId;
@@ -43,7 +43,7 @@ interface IStakingManager {
         VALIDATOR_PHASE phase;
     }
 
-    struct StakingManagerData {
+    struct DepositData {
         address operator;
         bytes withdrawalCredentials;
         bytes32 depositDataRoot;
@@ -57,7 +57,7 @@ interface IStakingManager {
 
     function registerValidator(
         uint256 _stakeId,
-        StakingManagerData calldata _depositData
+        DepositData calldata _depositData
     ) external;
 
     function acceptValidator(uint256 _validatorId) external;

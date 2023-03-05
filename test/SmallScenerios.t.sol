@@ -22,8 +22,8 @@
 //     bytes32 root;
 //     bytes32[] public whiteListedAddresses;
 
-//     IStakingManager.StakingManagerData public test_data;
-//     IStakingManager.StakingManagerData public test_data_2;
+//     IStakingManager.DepositData public test_data;
+//     IStakingManager.DepositData public test_data_2;
 
 //     address owner = vm.addr(1);
 //     address alice = vm.addr(2);
@@ -50,7 +50,7 @@
 //             address(TestBNFTInstance)
 //         );
 
-//         test_data = IStakingManager.StakingManagerData({
+//         test_data = IStakingManager.DepositData({
 //             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
 //             withdrawalCredentials: "test_credentials",
 //             depositDataRoot: "test_deposit_root",
@@ -58,7 +58,7 @@
 //             signature: "test_signature"
 //         });
 
-//         test_data_2 = IStakingManager.StakingManagerData({
+//         test_data_2 = IStakingManager.DepositData({
 //             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
 //             withdrawalCredentials: "test_credentials_2",
 //             depositDataRoot: "test_deposit_root_2",
