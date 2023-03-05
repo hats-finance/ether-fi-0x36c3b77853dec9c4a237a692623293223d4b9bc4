@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     using Math for uint256;
 
-    struct UserStakingManagerInfo {
+    struct UserDepositInfo {
         uint256 depositTime;
         uint256 etherBalance;
         uint256 totalERC20Balance;
@@ -39,7 +39,7 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
 
     //user address => token address = balance
     mapping(address => mapping(address => uint256)) public userToErc20Balance;
-    mapping(address => UserStakingManagerInfo) public depositInfo;
+    mapping(address => UserDepositInfo) public depositInfo;
 
     IERC20 rETHInstance;
     IERC20 wstETHInstance;
@@ -50,8 +50,8 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event StakingManagerERC20(address indexed sender, uint256 amount);
-    event StakingManagerEth(address indexed sender, uint256 amount);
+    event DepositERC20(address indexed sender, uint256 amount);
+    event DepositEth(address indexed sender, uint256 amount);
     event Withdrawn(address indexed sender);
     event ClaimReceiverContractSet(address indexed receiverAddress);
     event ClaimingOpened(uint256 deadline);
@@ -110,7 +110,7 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     function deposit(address _erc20Contract, uint256 _amount)
         external
         OnlyCorrectAmount(_amount)
-        StakingManageringOpen
+        DepositingOpen
         whenNotPaused
     {
         require(
@@ -126,7 +126,7 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
         userToErc20Balance[msg.sender][_erc20Contract] += _amount;
         require(IERC20(_erc20Contract).transferFrom(msg.sender, address(this), _amount), "Transfer failed");
 
-        emit StakingManagerERC20(msg.sender, _amount);
+        emit DepositERC20(msg.sender, _amount);
         emit ERC20TVLUpdated(
             rETHInstance.balanceOf(address(this)),
             wstETHInstance.balanceOf(address(this)),
@@ -142,13 +142,13 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
         external
         payable
         OnlyCorrectAmount(msg.value)
-        StakingManageringOpen
+        DepositingOpen
         whenNotPaused
     {
         depositInfo[msg.sender].depositTime = block.timestamp;
         depositInfo[msg.sender].etherBalance += msg.value;
 
-        emit StakingManagerEth(msg.sender, msg.value);
+        emit DepositEth(msg.sender, msg.value);
         emit EthTVLUpdated(address(this).balance, getContractTVL());
     }
 
@@ -202,25 +202,25 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     /// @notice Calculates how many points a user currently has owed to them
     /// @return the amount of points a user currently has accumulated
     function calculateUserPoints(address _user) public view returns (uint256) {
-        uint256 lengthOfStakingManager;
+        uint256 lengthOfDeposit;
 
         if (claimingOpen == 0) {
-            lengthOfStakingManager = block.timestamp - depositInfo[_user].depositTime;
+            lengthOfDeposit = block.timestamp - depositInfo[_user].depositTime;
         } else {
-            lengthOfStakingManager = endTime - depositInfo[_user].depositTime;
+            lengthOfDeposit = endTime - depositInfo[_user].depositTime;
         }
 
         //Scaled by 1000, therefore, 1005 would be 1.005
         uint256 userMultiplier = Math.min(
             2000,
-            1000 + ((lengthOfStakingManager * 10) / 2592) / 10
+            1000 + ((lengthOfDeposit * 10) / 2592) / 10
         );
         uint256 totalUserBalance = depositInfo[_user].etherBalance +
             depositInfo[_user].totalERC20Balance;
 
         //Formula for calculating points total
         return
-            ((Math.sqrt(totalUserBalance) * lengthOfStakingManager) *
+            ((Math.sqrt(totalUserBalance) * lengthOfDeposit) *
                 userMultiplier) / 1e14;
     }
 
@@ -314,13 +314,13 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
     modifier OnlyCorrectAmount(uint256 _amount) {
         require(
             _amount >= 0.1 ether && _amount <= 100 ether,
-            "Incorrect StakingManager Amount"
+            "Incorrect Deposit Amount"
         );
         _;
     }
 
-    modifier StakingManageringOpen() {
-        require(claimingOpen == 0, "StakingManagering closed");
+    modifier DepositingOpen() {
+        require(claimingOpen == 0, "Depositing closed");
         _;
     }
 }

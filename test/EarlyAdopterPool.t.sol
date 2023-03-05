@@ -69,7 +69,7 @@ contract EarlyAdopterPoolTest is Test {
         assertEq(sfrxEth.balanceOf(alice), 10e18);
     }
 
-    function test_StakingManagerERC20IntoEarlyAdopterPool() public {
+    function test_DepositERC20IntoEarlyAdopterPool() public {
         vm.startPrank(alice);
         rETH.approve(address(earlyAdopterPoolInstance), 0.1 ether);
         earlyAdopterPoolInstance.deposit(address(rETH), 1e17);
@@ -156,7 +156,7 @@ contract EarlyAdopterPoolTest is Test {
         assertEq(sfrxEth.balanceOf(address(earlyAdopterPoolInstance)), 1e17);
     }
 
-    function test_StakingManagerETHIntoEarlyAdopterPool() public {
+    function test_DepositETHIntoEarlyAdopterPool() public {
         startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
         earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
         vm.stopPrank();
@@ -231,7 +231,7 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.depositEther{value: 0.5 ether}();
     }
 
-    function test_EventTVLUpdatedOnERC20AndEthStakingManager() public {
+    function test_EventTVLUpdatedOnERC20AndEthDeposit() public {
         vm.expectEmit(false, false, false, true);
         emit EthTVLUpdated(0.1 ether, 0.1 ether);
 
@@ -433,14 +433,14 @@ contract EarlyAdopterPoolTest is Test {
         vm.stopPrank();
     }
 
-    function test_RewardsPoolMinStakingManager() public {
-        vm.expectRevert("Incorrect StakingManager Amount");
+    function test_RewardsPoolMinDeposit() public {
+        vm.expectRevert("Incorrect Deposit Amount");
         hoax(alice);
         earlyAdopterPoolInstance.deposit(address(rETH), 0.003 ether);
     }
 
-    function test_RewardsPoolMaxStakingManager() public {
-        vm.expectRevert("Incorrect StakingManager Amount");
+    function test_RewardsPoolMaxDeposit() public {
+        vm.expectRevert("Incorrect Deposit Amount");
         hoax(alice);
         earlyAdopterPoolInstance.deposit(address(rETH), 101 ether);
     }
@@ -610,7 +610,7 @@ contract EarlyAdopterPoolTest is Test {
         earlyAdopterPoolInstance.setClaimReceiverContract(address(0));
     }
 
-    function test_StakingManagerAndClaimWithERC20AndETH() public {
+    function test_DepositAndClaimWithERC20AndETH() public {
         rETH.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
         sfrxEth.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
         wstETH.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
