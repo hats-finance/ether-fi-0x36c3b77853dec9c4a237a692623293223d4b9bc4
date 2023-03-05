@@ -233,7 +233,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             withdrawSafeManager
         );
-        managerInstance.receiveAuctionManagerFunds(_validatorId, amount);
+        managerInstance.receiveAuctionFunds(_validatorId, amount);
 
         (bool sent, ) = payable(withdrawalSafe).call{value: amount}("");
         require(sent, "Failed to send Ether");
@@ -243,7 +243,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    function reEnterAuctionManager(uint256 _bidId)
+    function reEnterAuction(uint256 _bidId)
         external
         onlyStakingManagerContract
         whenNotPaused

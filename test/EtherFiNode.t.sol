@@ -131,7 +131,7 @@ contract EtherFiNodeTest is Test {
 
     function test_ReceiveAuctionManagerFundsFailsIfNotAuctionManagerContractCalling() public {
         vm.expectRevert("Only auction contract function");
-        managerInstance.receiveAuctionManagerFunds(0, 0.1 ether);
+        managerInstance.receiveAuctionFunds(0, 0.1 ether);
     }
 
     function test_WithdrawFundsFailsIfNotCorrectCaller() public {

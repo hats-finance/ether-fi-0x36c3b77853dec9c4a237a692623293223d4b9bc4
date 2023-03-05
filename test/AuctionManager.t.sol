@@ -108,7 +108,7 @@ contract AuctionManagerTest is Test {
 
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
-        auctionInstance.reEnterAuctionManager(1);
+        auctionInstance.reEnterAuction(1);
     }
 
     function test_ReEnterAuctionManagerFailsIfBidAlreadyActive() public {
@@ -124,7 +124,7 @@ contract AuctionManagerTest is Test {
 
         vm.prank(address(depositInstance));
         vm.expectRevert("Bid already active");
-        auctionInstance.reEnterAuctionManager(2);
+        auctionInstance.reEnterAuction(2);
     }
 
     function test_ReEnterAuctionManagerWorks() public {

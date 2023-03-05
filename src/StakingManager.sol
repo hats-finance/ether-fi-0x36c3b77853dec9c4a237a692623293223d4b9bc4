@@ -242,7 +242,7 @@ contract StakingManager is IStakingManager, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuctionManager(stakes[_stakeId].winningBidId);
+        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBidId = 0;

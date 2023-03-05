@@ -22,7 +22,7 @@ interface IAuctionManager {
 
     function getBidOwner(uint256 _bidId) external view returns (address);
 
-    function reEnterAuctionManager(uint256 _bidId) external;
+    function reEnterAuction(uint256 _bidId) external;
 
     function setStakingManagerContractAddress(address _stakingManagerContractAddress)
         external;

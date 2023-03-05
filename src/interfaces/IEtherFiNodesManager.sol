@@ -25,7 +25,7 @@ interface IEtherFiNodesManager {
 
     function createWithdrawalSafe() external returns (address);
 
-    function receiveAuctionManagerFunds(uint256 _validatorId, uint256 _amount)
+    function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
         external;
 
     function setOperatorAddress(uint256 _validatorId, address _operatorAddress)

@@ -112,7 +112,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     /// @notice Updates the total amount of funds receivable for recipients of the specified validator
     /// @dev Takes in a certain value of funds from only the set auction contract
-    function receiveAuctionManagerFunds(uint256 _validatorId, uint256 _amount)
+    function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
         external
     {
         require(

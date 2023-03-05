@@ -18,10 +18,10 @@ contract DeployScript is Script {
         address treasury;
         address nodeOperatorKeyManager;
         address auction;
-        address deposit;
+        address stakingManager;
         address TNFT;
         address BNFT;
-        address safeManager;
+        address nodesManager;
     }
 
     addresses addressStruct;
@@ -38,8 +38,8 @@ contract DeployScript is Script {
 
         vm.recordLogs();
 
-        StakingManager deposit = new StakingManager(address(auction));
-        auction.setStakingManagerContractAddress(address(deposit));
+        StakingManager stakingManager = new StakingManager(address(auction));
+        auction.setStakingManagerContractAddress(address(stakingManager));
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
 
@@ -48,16 +48,16 @@ contract DeployScript is Script {
             (address, address)
         );
 
-        EtherFiNodesManager safeManager = new EtherFiNodesManager(
+        EtherFiNodesManager nodesManager = new EtherFiNodesManager(
             address(treasury),
             address(auction),
-            address(deposit),
+            address(stakingManager),
             TNFTAddress,
             BNFTAddress
         );
 
-        auction.setManagerAddress(address(safeManager));
-        deposit.setManagerAddress(address(safeManager));
+        auction.setManagerAddress(address(nodesManager));
+        stakingManager.setManagerAddress(address(nodesManager));
 
         vm.stopBroadcast();
 
@@ -65,10 +65,10 @@ contract DeployScript is Script {
             treasury: address(treasury),
             nodeOperatorKeyManager: address(nodeOperatorKeyManager),
             auction: address(auction),
-            deposit: address(deposit),
+            stakingManager: address(stakingManager),
             TNFT: TNFTAddress,
             BNFT: BNFTAddress,
-            safeManager: address(safeManager)
+            nodesManager: address(nodesManager)
         });
 
         writeVersionFile();
@@ -129,13 +129,13 @@ contract DeployScript is Script {
                     "\nAuctionManager: ",
                     Strings.toHexString(addressStruct.auction),
                     "\nStakingManager: ",
-                    Strings.toHexString(addressStruct.deposit),
+                    Strings.toHexString(addressStruct.stakingManager),
                     "\nTNFT: ",
                     Strings.toHexString(addressStruct.TNFT),
                     "\nBNFT: ",
                     Strings.toHexString(addressStruct.BNFT),
                     "\nSafe Manager: ",
-                    Strings.toHexString(addressStruct.safeManager)
+                    Strings.toHexString(addressStruct.nodesManager)
                 )
             )
         );
