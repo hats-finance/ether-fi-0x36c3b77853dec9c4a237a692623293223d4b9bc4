@@ -247,7 +247,7 @@ contract StakingManager is IStakingManager, Pausable {
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBidId = 0;
 
-        refundStakingManager(msg.sender, stakeAmountTemp);
+        refundDeposit(msg.sender, stakeAmountTemp);
 
         emit StakeCancelled(_stakeId);
     }
@@ -256,7 +256,7 @@ contract StakingManager is IStakingManager, Pausable {
     /// @dev Gets called internally from cancelStakingManager or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
-    function refundStakingManager(address _depositOwner, uint256 _amount) public {
+    function refundDeposit(address _depositOwner, uint256 _amount) public {
         //Refund the user with their requested amount
         (bool sent, ) = _depositOwner.call{value: _amount}("");
         require(sent, "Failed to send Ether");

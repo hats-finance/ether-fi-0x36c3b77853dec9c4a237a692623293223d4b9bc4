@@ -33,7 +33,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     mapping(uint256 => mapping(ValidatorRecipientType => uint256))
         public withdrawn;
     mapping(uint256 => address) public withdrawSafeAddressesPerValidator;
-    mapping(uint256 => uint256) public fundsReceivedFromAuctionManagers;
+    mapping(uint256 => uint256) public fundsReceivedFromAuction;
     mapping(uint256 => address) public operatorAddresses;
 
     TNFT public tnftInstance;
@@ -49,7 +49,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //--------------------------------------------------------------------------------------
     event Received(address indexed sender, uint256 value);
     event BidRefunded(uint256 indexed _bidId, uint256 indexed _amount);
-    event AuctionManagerFundsReceived(uint256 indexed amount);
+    event AuctionFundsReceived(uint256 indexed amount);
     event FundsDistributed(uint256 indexed totalFundsTransferred);
     event OperatorAddressSet(address indexed operater);
     event FundsWithdrawn(uint256 indexed amount);
@@ -135,8 +135,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             (_amount * auctionContractRevenueSplit.bnftHolderSplit) /
             SCALE;
 
-        fundsReceivedFromAuctionManagers[_validatorId] += _amount;
-        emit AuctionManagerFundsReceived(_amount);
+        fundsReceivedFromAuction[_validatorId] += _amount;
+        emit AuctionFundsReceived(_amount);
     }
 
     /// @notice updates claimable balances based on funds received from validator and distributes the funds
@@ -155,7 +155,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
         uint256 validatorRewards = contractBalance -
             stakingManagerInstance.getStakeAmount() -
-            fundsReceivedFromAuctionManagers[_validatorId];
+            fundsReceivedFromAuction[_validatorId];
 
         withdrawableBalance[_validatorId][
             ValidatorRecipientType.BNFTHOLDER
@@ -218,7 +218,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             ValidatorRecipientType.TNFTHOLDER
         ] += tnftHolderAmount;
 
-        fundsReceivedFromAuctionManagers[_validatorId] = 0;
+        fundsReceivedFromAuction[_validatorId] = 0;
 
         IEtherFiNode safeInstance = IEtherFiNode(
             withdrawSafeAddressesPerValidator[_validatorId]
