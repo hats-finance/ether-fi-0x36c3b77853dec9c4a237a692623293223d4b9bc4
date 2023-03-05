@@ -27,7 +27,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
-    address public depositContractAddress;
+    address public stakingManagerContractAddress;
     address public owner;
     address public withdrawSafeManager;
     address public nodeOperatorKeyManagerContract;
@@ -54,7 +54,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
-    event StakingManagerAddressSet(address indexed depositContractAddress);
+    event StakingManagerAddressSet(address indexed stakingManagerContractAddress);
     event MinBidUpdated(
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
@@ -216,7 +216,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         external
         onlyStakingManagerContract
     {
-        StakingManager depositContractInstance = StakingManager(depositContractAddress);
+        StakingManager depositContractInstance = StakingManager(stakingManagerContractAddress);
         (
             ,
             address withdrawalSafe,
@@ -275,14 +275,14 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @notice Sets the depositContract address in the current contract
     /// @dev Called by depositContract and can only be called once
-    /// @param _depositContractAddress address of the depositContract for authorizations
-    function setStakingManagerContractAddress(address _depositContractAddress)
+    /// @param _stakingManagerContractAddress address of the depositContract for authorizations
+    function setStakingManagerContractAddress(address _stakingManagerContractAddress)
         external
         onlyOwner
     {
-        depositContractAddress = _depositContractAddress;
+        stakingManagerContractAddress = _stakingManagerContractAddress;
 
-        emit StakingManagerAddressSet(_depositContractAddress);
+        emit StakingManagerAddressSet(_stakingManagerContractAddress);
     }
 
     /// @notice Updates the minimum bid price
@@ -346,7 +346,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     modifier onlyStakingManagerContract() {
         require(
-            msg.sender == depositContractAddress,
+            msg.sender == stakingManagerContractAddress,
             "Only deposit contract function"
         );
         _;

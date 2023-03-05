@@ -24,7 +24,7 @@ interface IAuctionManager {
 
     function reEnterAuctionManager(uint256 _bidId) external;
 
-    function setStakingManagerContractAddress(address _depositContractAddress)
+    function setStakingManagerContractAddress(address _stakingManagerContractAddress)
         external;
 
     function sendFundsToEtherFiNode(uint256 _validatorId, uint256 _stakeId) external;

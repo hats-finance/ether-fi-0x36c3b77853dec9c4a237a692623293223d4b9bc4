@@ -10,7 +10,7 @@ contract TNFT is ERC721 {
 
     uint256 private tokenIds;
     uint256 public nftValue;
-    address public depositContractAddress;
+    address public stakingManagerContractAddress;
 
     mapping(uint256 => uint256) public validatorToId;
 
@@ -20,7 +20,7 @@ contract TNFT is ERC721 {
 
     constructor() ERC721("Transferrable NFT", "TNFT") {
         nftValue = 0.03 ether;
-        depositContractAddress = msg.sender;
+        stakingManagerContractAddress = msg.sender;
     }
 
     //--------------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ contract TNFT is ERC721 {
 
     modifier onlyStakingManagerContract() {
         require(
-            msg.sender == depositContractAddress,
+            msg.sender == stakingManagerContractAddress,
             "Only deposit contract function"
         );
         _;

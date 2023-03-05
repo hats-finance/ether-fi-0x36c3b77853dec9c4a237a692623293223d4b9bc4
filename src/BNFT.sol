@@ -10,7 +10,7 @@ contract BNFT is ERC721 {
 
     uint256 private tokenIds;
     uint256 public nftValue = 0.002 ether;
-    address public depositContractAddress;
+    address public stakingManagerContractAddress;
 
     mapping(uint256 => uint256) public validatorToId;
 
@@ -20,7 +20,7 @@ contract BNFT is ERC721 {
     //--------------------------------------------------------------------------------------
 
     constructor() ERC721("Bond NFT", "BNFT") {
-        depositContractAddress = msg.sender;
+        stakingManagerContractAddress = msg.sender;
         nftValue = 0.002 ether;
     }
 
@@ -60,7 +60,7 @@ contract BNFT is ERC721 {
 
     modifier onlyStakingManagerContract() {
         require(
-            msg.sender == depositContractAddress,
+            msg.sender == stakingManagerContractAddress,
             "Only deposit contract function"
         );
         _;

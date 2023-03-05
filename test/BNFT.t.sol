@@ -66,7 +66,7 @@ contract BNFTTest is Test {
 
     function test_BNFTContractGetsInstantiatedCorrectly() public {
         assertEq(
-            TestBNFTInstance.depositContractAddress(),
+            TestBNFTInstance.stakingManagerContractAddress(),
             address(depositInstance)
         );
         assertEq(TestBNFTInstance.nftValue(), 0.002 ether);

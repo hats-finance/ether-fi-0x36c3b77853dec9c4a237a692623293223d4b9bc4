@@ -78,7 +78,7 @@ contract AuctionManagerTest is Test {
     function test_AuctionManagerContractInstantiatedCorrectly() public {
         assertEq(auctionInstance.numberOfBids(), 1);
         assertEq(
-            auctionInstance.depositContractAddress(),
+            auctionInstance.stakingManagerContractAddress(),
             address(depositInstance)
         );
     }

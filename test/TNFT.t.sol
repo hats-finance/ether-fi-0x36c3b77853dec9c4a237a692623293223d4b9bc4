@@ -41,7 +41,7 @@ contract TNFTTest is Test {
 
     function test_TNFTContractGetsInstantiatedCorrectly() public {
         assertEq(
-            TestTNFTInstance.depositContractAddress(),
+            TestTNFTInstance.stakingManagerContractAddress(),
             address(depositInstance)
         );
         assertEq(TestTNFTInstance.nftValue(), 0.03 ether);
