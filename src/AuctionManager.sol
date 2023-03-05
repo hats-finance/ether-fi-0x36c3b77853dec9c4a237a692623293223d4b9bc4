@@ -49,7 +49,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     );
 
     event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
-    event BidReEnteredAuctionManager(uint256 indexed bidId);
+    event BidReEnteredAuction(uint256 indexed bidId);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
@@ -260,7 +260,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         numberOfActiveBids++;
 
-        emit BidReEnteredAuctionManager(_bidId);
+        emit BidReEnteredAuction(_bidId);
     }
 
     /// @notice Updates the merkle root whitelists have been updated
