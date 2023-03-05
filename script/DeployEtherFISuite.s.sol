@@ -5,9 +5,9 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/Treasury.sol";
 import "../src/NodeOperatorKeyManager.sol";
-import "../src/WithdrawSafeManager.sol";
-import "../src/Deposit.sol";
-import "../src/Auction.sol";
+import "../src/EtherFiNodesManager.sol";
+import "../src/StakingManager.sol";
+import "../src/AuctionManager.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -32,14 +32,14 @@ contract DeployScript is Script {
 
         Treasury treasury = new Treasury();
         NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
-        Auction auction = new Auction(address(nodeOperatorKeyManager));
+        AuctionManager auction = new AuctionManager(address(nodeOperatorKeyManager));
 
-        treasury.setAuctionContractAddress(address(auction));
+        treasury.setAuctionManagerContractAddress(address(auction));
 
         vm.recordLogs();
 
-        Deposit deposit = new Deposit(address(auction));
-        auction.setDepositContractAddress(address(deposit));
+        StakingManager deposit = new StakingManager(address(auction));
+        auction.setStakingManagerContractAddress(address(deposit));
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
 
@@ -48,7 +48,7 @@ contract DeployScript is Script {
             (address, address)
         );
 
-        WithdrawSafeManager safeManager = new WithdrawSafeManager(
+        EtherFiNodesManager safeManager = new EtherFiNodesManager(
             address(treasury),
             address(auction),
             address(deposit),
@@ -126,9 +126,9 @@ contract DeployScript is Script {
                     Strings.toHexString(addressStruct.treasury),
                     "\nNode Operator Key Manager: ",
                     Strings.toHexString(addressStruct.nodeOperatorKeyManager),
-                    "\nAuction: ",
+                    "\nAuctionManager: ",
                     Strings.toHexString(addressStruct.auction),
-                    "\nDeposit: ",
+                    "\nStakingManager: ",
                     Strings.toHexString(addressStruct.deposit),
                     "\nTNFT: ",
                     Strings.toHexString(addressStruct.TNFT),

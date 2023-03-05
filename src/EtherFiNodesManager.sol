@@ -3,18 +3,18 @@ pragma solidity 0.8.13;
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
-import "./interfaces/IAuction.sol";
+import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
-import "./interfaces/IWithdrawSafe.sol";
-import "./interfaces/IWithdrawSafeManager.sol";
-import "./interfaces/IDeposit.sol";
+import "./interfaces/IEtherFiNode.sol";
+import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/IStakingManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./WithdrawSafe.sol";
+import "./EtherFiNode.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "lib/forge-std/src/console.sol";
 
-contract WithdrawSafeManager is IWithdrawSafeManager {
+contract EtherFiNodesManager is IEtherFiNodesManager {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -33,15 +33,15 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     mapping(uint256 => mapping(ValidatorRecipientType => uint256))
         public withdrawn;
     mapping(uint256 => address) public withdrawSafeAddressesPerValidator;
-    mapping(uint256 => uint256) public fundsReceivedFromAuctions;
+    mapping(uint256 => uint256) public fundsReceivedFromAuctionManagers;
     mapping(uint256 => address) public operatorAddresses;
 
     TNFT public tnftInstance;
     BNFT public bnftInstance;
-    IDeposit public depositInstance;
+    IStakingManager public depositInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
-    AuctionContractRevenueSplit public auctionContractRevenueSplit;
+    AuctionManagerContractRevenueSplit public auctionContractRevenueSplit;
     ValidatorExitRevenueSplit public validatorExitRevenueSplit;
 
     //--------------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     //--------------------------------------------------------------------------------------
     event Received(address indexed sender, uint256 value);
     event BidRefunded(uint256 indexed _bidId, uint256 indexed _amount);
-    event AuctionFundsReceived(uint256 indexed amount);
+    event AuctionManagerFundsReceived(uint256 indexed amount);
     event FundsDistributed(uint256 indexed totalFundsTransferred);
     event OperatorAddressSet(address indexed operater);
     event FundsWithdrawn(uint256 indexed amount);
@@ -60,7 +60,7 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
 
     /// @notice Constructor to set variables on deployment
     /// @dev Sets the revenue splits on deployment
-    /// @dev Auction, treasury and deposit contracts must be deployed first
+    /// @dev AuctionManager, treasury and deposit contracts must be deployed first
     /// @param _treasuryContract the address of the treasury contract for interaction
     /// @param _auctionContract the address of the auction contract for interaction
     /// @param _depositContract the address of the deposit contract for interaction
@@ -71,19 +71,19 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
         address _tnftContract,
         address _bnftContract
     ) {
-        implementationContract = address(new WithdrawSafe());
+        implementationContract = address(new EtherFiNode());
 
         owner = msg.sender;
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
         depositContract = _depositContract;
 
-        depositInstance = IDeposit(_depositContract);
+        depositInstance = IStakingManager(_depositContract);
 
         tnftInstance = TNFT(_tnftContract);
         bnftInstance = BNFT(_bnftContract);
 
-        auctionContractRevenueSplit = AuctionContractRevenueSplit({
+        auctionContractRevenueSplit = AuctionManagerContractRevenueSplit({
             treasurySplit: 10,
             nodeOperatorSplit: 10,
             tnftHolderSplit: 60,
@@ -106,13 +106,13 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
 
     function createWithdrawalSafe() external returns (address) {
         address clone = Clones.clone(implementationContract);
-        WithdrawSafe(payable(clone)).initialize();
+        EtherFiNode(payable(clone)).initialize();
         return clone;
     }
 
     /// @notice Updates the total amount of funds receivable for recipients of the specified validator
     /// @dev Takes in a certain value of funds from only the set auction contract
-    function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
+    function receiveAuctionManagerFunds(uint256 _validatorId, uint256 _amount)
         external
     {
         require(
@@ -135,8 +135,8 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
             (_amount * auctionContractRevenueSplit.bnftHolderSplit) /
             SCALE;
 
-        fundsReceivedFromAuctions[_validatorId] += _amount;
-        emit AuctionFundsReceived(_amount);
+        fundsReceivedFromAuctionManagers[_validatorId] += _amount;
+        emit AuctionManagerFundsReceived(_amount);
     }
 
     /// @notice updates claimable balances based on funds received from validator and distributes the funds
@@ -155,7 +155,7 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
 
         uint256 validatorRewards = contractBalance -
             depositInstance.getStakeAmount() -
-            fundsReceivedFromAuctions[_validatorId];
+            fundsReceivedFromAuctionManagers[_validatorId];
 
         withdrawableBalance[_validatorId][
             ValidatorRecipientType.BNFTHOLDER
@@ -218,9 +218,9 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
             ValidatorRecipientType.TNFTHOLDER
         ] += tnftHolderAmount;
 
-        fundsReceivedFromAuctions[_validatorId] = 0;
+        fundsReceivedFromAuctionManagers[_validatorId] = 0;
 
-        IWithdrawSafe safeInstance = IWithdrawSafe(
+        IEtherFiNode safeInstance = IEtherFiNode(
             withdrawSafeAddressesPerValidator[_validatorId]
         );
 
@@ -246,7 +246,7 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     /// @param _nodeOperator address of the operator to be set
     function setOperatorAddress(uint256 _validatorId, address _nodeOperator)
         public
-        onlyDepositContract
+        onlyStakingManagerContract
     {
         require(_nodeOperator != address(0), "Cannot be address 0");
         operatorAddresses[_validatorId] = _nodeOperator;
@@ -256,14 +256,14 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
 
     /// @notice Sets the validator ID for the withdraw safe
     /// @param _validatorId id of the validator associated to this withdraw safe
-    function setWithdrawSafeAddress(uint256 _validatorId, address _safeAddress)
+    function setEtherFiNodeAddress(uint256 _validatorId, address _safeAddress)
         public
-        onlyDepositContract
+        onlyStakingManagerContract
     {
         withdrawSafeAddressesPerValidator[_validatorId] = _safeAddress;
     }
 
-    function getWithdrawSafeAddress(uint256 _validatorId)
+    function getEtherFiNodeAddress(uint256 _validatorId)
         public
         returns (address)
     {
@@ -274,7 +274,7 @@ contract WithdrawSafeManager is IWithdrawSafeManager {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyDepositContract() {
+    modifier onlyStakingManagerContract() {
         require(
             msg.sender == depositContract,
             "Only deposit contract function"

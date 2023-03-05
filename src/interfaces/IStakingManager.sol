@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-interface IDeposit {
+interface IStakingManager {
     //The phases of the staking process
     enum STAKE_PHASE {
         DEPOSITED,
@@ -25,7 +25,7 @@ interface IDeposit {
     struct Stake {
         address staker;
         address withdrawSafe;
-        DepositData deposit_data;
+        StakingManagerData deposit_data;
         uint256 amount;
         uint256 winningBidId;
         uint256 stakeId;
@@ -43,7 +43,7 @@ interface IDeposit {
         VALIDATOR_PHASE phase;
     }
 
-    struct DepositData {
+    struct StakingManagerData {
         address operator;
         bytes withdrawalCredentials;
         bytes32 depositDataRoot;
@@ -57,7 +57,7 @@ interface IDeposit {
 
     function registerValidator(
         uint256 _stakeId,
-        DepositData calldata _depositData
+        StakingManagerData calldata _depositData
     ) external;
 
     function acceptValidator(uint256 _validatorId) external;

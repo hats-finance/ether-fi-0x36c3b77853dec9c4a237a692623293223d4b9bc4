@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-interface IWithdrawSafeManager {
+interface IEtherFiNodesManager {
     enum ValidatorRecipientType {
         TNFTHOLDER,
         BNFTHOLDER,
@@ -9,7 +9,7 @@ interface IWithdrawSafeManager {
         OPERATOR
     }
 
-    struct AuctionContractRevenueSplit {
+    struct AuctionManagerContractRevenueSplit {
         uint256 treasurySplit;
         uint256 nodeOperatorSplit;
         uint256 tnftHolderSplit;
@@ -25,7 +25,7 @@ interface IWithdrawSafeManager {
 
     function createWithdrawalSafe() external returns (address);
 
-    function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
+    function receiveAuctionManagerFunds(uint256 _validatorId, uint256 _amount)
         external;
 
     function setOperatorAddress(uint256 _validatorId, address _operatorAddress)
@@ -33,10 +33,10 @@ interface IWithdrawSafeManager {
 
     function withdrawFunds(uint256 _validatorId) external;
 
-    function setWithdrawSafeAddress(uint256 _validatorId, address _safeAddress)
+    function setEtherFiNodeAddress(uint256 _validatorId, address _safeAddress)
         external;
 
-    function getWithdrawSafeAddress(uint256 _validatorId)
+    function getEtherFiNodeAddress(uint256 _validatorId)
         external
         returns (address);
 }

@@ -3,22 +3,22 @@ pragma solidity 0.8.13;
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
-import "./interfaces/IAuction.sol";
-import "./interfaces/IDeposit.sol";
+import "./interfaces/IAuctionManager.sol";
+import "./interfaces/IStakingManager.sol";
 import "./interfaces/IDepositContract.sol";
-import "./interfaces/IWithdrawSafe.sol";
-import "./interfaces/IWithdrawSafeManager.sol";
+import "./interfaces/IEtherFiNode.sol";
+import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract Deposit is IDeposit, Pausable {
+contract StakingManager is IStakingManager, Pausable {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
-    IAuction public auctionInterfaceInstance;
+    IAuctionManager public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
 
     uint256 public stakeAmount;
@@ -42,7 +42,7 @@ contract Deposit is IDeposit, Pausable {
     //--------------------------------------------------------------------------------------
 
     event NFTContractsDeployed(address TNFTInstance, address BNFTInstance);
-    event StakeDeposit(
+    event StakeStakingManager(
         address indexed sender,
         uint256 value,
         uint256 id,
@@ -63,7 +63,7 @@ contract Deposit is IDeposit, Pausable {
 
     /// @notice Constructor to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
-    /// @dev Auction contract must be deployed first
+    /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
     constructor(address _auctionAddress) {
         if (test == true) {
@@ -76,7 +76,7 @@ contract Deposit is IDeposit, Pausable {
         BNFTInstance = new BNFT();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
-        auctionInterfaceInstance = IAuction(_auctionAddress);
+        auctionInterfaceInstance = IAuctionManager(_auctionAddress);
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
@@ -112,7 +112,7 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             managerAddress
         );
 
@@ -122,7 +122,7 @@ contract Deposit is IDeposit, Pausable {
         stakes[localNumOfStakes] = Stake({
             staker: msg.sender,
             withdrawSafe: withdrawSafe,
-            deposit_data: DepositData(address(0), "", "", "", ""),
+            deposit_data: StakingManagerData(address(0), "", "", "", ""),
             amount: msg.value,
             winningBidId: auctionInterfaceInstance.calculateWinningBid(),
             stakeId: localNumOfStakes,
@@ -131,7 +131,7 @@ contract Deposit is IDeposit, Pausable {
 
         depositorBalances[msg.sender] += msg.value;
 
-        emit StakeDeposit(
+        emit StakeStakingManager(
             msg.sender,
             msg.value,
             localNumOfStakes,
@@ -148,7 +148,7 @@ contract Deposit is IDeposit, Pausable {
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
         uint256 _stakeId,
-        DepositData calldata _depositData
+        StakingManagerData calldata _depositData
     ) public whenNotPaused {
         require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
         require(
@@ -197,23 +197,23 @@ contract Deposit is IDeposit, Pausable {
 
         address withdrawalSafeAddress = stakes[localStakeId].withdrawSafe;
 
-        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             managerAddress
         );
         managerInstance.setOperatorAddress(_validatorId, msg.sender);
-        managerInstance.setWithdrawSafeAddress(
+        managerInstance.setEtherFiNodeAddress(
             _validatorId,
             withdrawalSafeAddress
         );
 
         validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
 
-        auctionInterfaceInstance.sendFundsToWithdrawSafe(
+        auctionInterfaceInstance.sendFundsToEtherFiNode(
             _validatorId,
             localStakeId
         );
 
-        DepositData memory dataInstance = stakes[localStakeId].deposit_data;
+        StakingManagerData memory dataInstance = stakes[localStakeId].deposit_data;
 
         if (test = false) {
             depositContractEth2.deposit{value: stakeAmount}(
@@ -242,21 +242,21 @@ contract Deposit is IDeposit, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
+        auctionInterfaceInstance.reEnterAuctionManager(stakes[_stakeId].winningBidId);
 
         stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
         stakes[_stakeId].winningBidId = 0;
 
-        refundDeposit(msg.sender, stakeAmountTemp);
+        refundStakingManager(msg.sender, stakeAmountTemp);
 
         emit StakeCancelled(_stakeId);
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake
-    /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
+    /// @dev Gets called internally from cancelStakingManager or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
-    function refundDeposit(address _depositOwner, uint256 _amount) public {
+    function refundStakingManager(address _depositOwner, uint256 _amount) public {
         //Refund the user with their requested amount
         (bool sent, ) = _depositOwner.call{value: _amount}("");
         require(sent, "Failed to send Ether");

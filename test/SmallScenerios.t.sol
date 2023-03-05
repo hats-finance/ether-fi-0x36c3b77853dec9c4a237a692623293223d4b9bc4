@@ -2,28 +2,28 @@
 // pragma solidity ^0.8.13;
 
 // import "forge-std/Test.sol";
-// import "../src/interfaces/IDeposit.sol";
-// import "../src/Deposit.sol";
-// import "../src/WithdrawSafe.sol";
+// import "../src/interfaces/IStakingManager.sol";
+// import "../src/StakingManager.sol";
+// import "../src/EtherFiNode.sol";
 // import "../src/BNFT.sol";
 // import "../src/TNFT.sol";
-// import "src/Auction.sol";
+// import "src/AuctionManager.sol";
 // import "../src/Treasury.sol";
 // import "../lib/murky/src/Merkle.sol";
 
 // contract SmallScenariosTest is Test {
-//     Deposit public depositInstance;
-//     WithdrawSafe public withdrawSafeInstance;
+//     StakingManager public depositInstance;
+//     EtherFiNode public withdrawSafeInstance;
 //     BNFT public TestBNFTInstance;
 //     TNFT public TestTNFTInstance;
-//     Auction public auctionInstance;
+//     AuctionManager public auctionInstance;
 //     Treasury public treasuryInstance;
 //     Merkle merkle;
 //     bytes32 root;
 //     bytes32[] public whiteListedAddresses;
 
-//     IDeposit.DepositData public test_data;
-//     IDeposit.DepositData public test_data_2;
+//     IStakingManager.StakingManagerData public test_data;
+//     IStakingManager.StakingManagerData public test_data_2;
 
 //     address owner = vm.addr(1);
 //     address alice = vm.addr(2);
@@ -32,17 +32,17 @@
 //         vm.startPrank(owner);
 //         _merkleSetup();
 //         treasuryInstance = new Treasury();
-//         auctionInstance = new Auction(address(treasuryInstance));
-//         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+//         auctionInstance = new AuctionManager(address(treasuryInstance));
+//         treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
 //         auctionInstance.updateMerkleRoot(root);
-//         depositInstance = new Deposit(
+//         depositInstance = new StakingManager(
 //             address(auctionInstance),
 //             address(treasuryInstance)
 //         );
-//         auctionInstance.setDepositContractAddress(address(depositInstance));
+//         auctionInstance.setStakingManagerContractAddress(address(depositInstance));
 //         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
 //         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-//         withdrawSafeInstance = new WithdrawSafe(
+//         withdrawSafeInstance = new EtherFiNode(
 //             address(treasuryInstance),
 //             address(auctionInstance),
 //             address(depositInstance),
@@ -50,7 +50,7 @@
 //             address(TestBNFTInstance)
 //         );
 
-//         test_data = IDeposit.DepositData({
+//         test_data = IStakingManager.StakingManagerData({
 //             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
 //             withdrawalCredentials: "test_credentials",
 //             depositDataRoot: "test_deposit_root",
@@ -58,7 +58,7 @@
 //             signature: "test_signature"
 //         });
 
-//         test_data_2 = IDeposit.DepositData({
+//         test_data_2 = IStakingManager.StakingManagerData({
 //             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
 //             withdrawalCredentials: "test_credentials_2",
 //             depositDataRoot: "test_deposit_root_2",
@@ -181,7 +181,7 @@
 //         // assertEq(auctionInstance.numberOfActiveBids(), 1);
 //     }
 
-//     function test_TwoDepositsAtOnceStillWorks() public {
+//     function test_TwoStakingManagersAtOnceStillWorks() public {
 //         bytes32[] memory proofForAddress1 = merkle.getProof(
 //             whiteListedAddresses,
 //             0
@@ -266,7 +266,7 @@
 //         assertEq(address(depositInstance).balance, 0 ether);
 //         assertEq(address(auctionInstance).balance, 1.2 ether);
 
-//         //Deposit One
+//         //StakingManager One
 //         startHoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
 //         depositInstance.deposit{value: 0.032 ether}();
 //         assertEq(address(depositInstance).balance, 0.032 ether);

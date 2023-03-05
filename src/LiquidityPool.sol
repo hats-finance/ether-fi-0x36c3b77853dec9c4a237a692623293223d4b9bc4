@@ -18,7 +18,7 @@ contract LiquidityPool {
 
     event Received(address indexed sender, uint256 value);
     event TokenAddressChanged(address indexed newAddress);
-    event Deposit(address indexed sender, uint256 amount);
+    event StakingManager(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, uint256 amount);
 
     //--------------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ contract LiquidityPool {
     /// @dev mints the amount of eTH 1:1 with ETH sent
     function deposit() external payable {
         IEETH(eETH).mint(msg.sender, msg.value);
-        emit Deposit(msg.sender, msg.value);
+        emit StakingManager(msg.sender, msg.value);
     }
 
     /// @notice withdraw from pool

@@ -29,7 +29,7 @@ contract TNFT is ERC721 {
 
     //Function only allows the deposit contract to mint to prevent
     //standard eoa minting themselves NFTs
-    function mint(address _reciever, uint256 _validatorId) external onlyDepositContract {
+    function mint(address _reciever, uint256 _validatorId) external onlyStakingManagerContract {
         _safeMint(_reciever, tokenIds);
                 
         validatorToId[_validatorId] = tokenIds;
@@ -48,7 +48,7 @@ contract TNFT is ERC721 {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyDepositContract() {
+    modifier onlyStakingManagerContract() {
         require(
             msg.sender == depositContractAddress,
             "Only deposit contract function"

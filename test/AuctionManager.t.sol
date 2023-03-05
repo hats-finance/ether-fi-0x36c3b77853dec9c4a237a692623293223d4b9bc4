@@ -2,29 +2,29 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/interfaces/IDeposit.sol";
-import "../src/Deposit.sol";
-import "src/WithdrawSafeManager.sol";
+import "../src/interfaces/IStakingManager.sol";
+import "../src/StakingManager.sol";
+import "src/EtherFiNodesManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
-import "../src/Auction.sol";
+import "../src/AuctionManager.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract AuctionTest is Test {
-    Deposit public depositInstance;
-    WithdrawSafe public withdrawSafeInstance;
-    WithdrawSafeManager public managerInstance;
+contract AuctionManagerTest is Test {
+    StakingManager public depositInstance;
+    EtherFiNode public withdrawSafeInstance;
+    EtherFiNodesManager public managerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
-    Auction public auctionInstance;
+    AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
-    IDeposit.DepositData public test_data;
+    IStakingManager.StakingManagerData public test_data;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -46,14 +46,14 @@ contract AuctionTest is Test {
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new Auction(address(nodeOperatorKeyManagerInstance));
-        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
+        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
-        auctionInstance.setDepositContractAddress(address(depositInstance));
+        depositInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(address(depositInstance));
         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        managerInstance = new WithdrawSafeManager(
+        managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(depositInstance),
@@ -64,7 +64,7 @@ contract AuctionTest is Test {
         auctionInstance.setManagerAddress(address(managerInstance));
         depositInstance.setManagerAddress(address(managerInstance));
 
-        test_data = IDeposit.DepositData({
+        test_data = IStakingManager.StakingManagerData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",
@@ -75,7 +75,7 @@ contract AuctionTest is Test {
         vm.stopPrank();
     }
 
-    function test_AuctionContractInstantiatedCorrectly() public {
+    function test_AuctionManagerContractInstantiatedCorrectly() public {
         assertEq(auctionInstance.numberOfBids(), 1);
         assertEq(
             auctionInstance.depositContractAddress(),
@@ -83,7 +83,7 @@ contract AuctionTest is Test {
         );
     }
 
-    function test_ReEnterAuctionFailsIfAuctionPaused() public {
+    function test_ReEnterAuctionManagerFailsIfAuctionManagerPaused() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -97,7 +97,7 @@ contract AuctionTest is Test {
         depositInstance.cancelStake(0);
     }
 
-    function test_ReEnterAuctionFailsIfNotCorrectCaller() public {
+    function test_ReEnterAuctionManagerFailsIfNotCorrectCaller() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -108,10 +108,10 @@ contract AuctionTest is Test {
 
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
-        auctionInstance.reEnterAuction(1);
+        auctionInstance.reEnterAuctionManager(1);
     }
 
-    function test_ReEnterAuctionFailsIfBidAlreadyActive() public {
+    function test_ReEnterAuctionManagerFailsIfBidAlreadyActive() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -124,10 +124,10 @@ contract AuctionTest is Test {
 
         vm.prank(address(depositInstance));
         vm.expectRevert("Bid already active");
-        auctionInstance.reEnterAuction(2);
+        auctionInstance.reEnterAuctionManager(2);
     }
 
-    function test_ReEnterAuctionWorks() public {
+    function test_ReEnterAuctionManagerWorks() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
