@@ -119,11 +119,14 @@ contract Auction is IAuction, Pausable {
         return currentHighestBidIdLocal;
     }
 
-    function createBid(bytes32[] calldata _merkleProof, bool _reserved)
-        public
-        payable
-        whenNotPaused
-    {
+    /// @param _merkleProof the merkleproof for the user calling the function
+    /// @param _reserved whether a bid is reserverd for a specific staker
+    /// @param _stakerAddress the address of the staker the bid is reserverd for
+    function createBid(
+        bytes32[] calldata _merkleProof,
+        bool _reserved,
+        address _stakerAddress
+    ) public payable whenNotPaused {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(

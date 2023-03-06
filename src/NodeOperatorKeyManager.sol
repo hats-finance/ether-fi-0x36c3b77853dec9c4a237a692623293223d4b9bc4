@@ -19,7 +19,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
     mapping(address => OperatorData) public addressToOperatorData;
 
     function increaseKeysIndex(address _user) public {
-        numberOfKeysUsed[_user]++;
+        addressToOperatorData[_user].keysUsed++;
     }
 
     function registerNodeOperator(string memory _ipfsHash, uint256 _totalKeys)

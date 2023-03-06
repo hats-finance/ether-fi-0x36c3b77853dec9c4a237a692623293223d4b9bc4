@@ -85,29 +85,43 @@ contract AuctionTest is Test {
         );
     }
 
-    function test_CreateBid() public {
+    function test_CreateBidUnreserverd() public {
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 6);
+
+        (, , uint256 keysUsed) = nodeOperatorKeyManagerInstance
+            .addressToOperatorData(alice);
+
+        assertEq(keysUsed, 0);
 
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(alice);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, false, address(0));
 
         (
             uint256 amount,
             uint256 bidderPubKeyIndex,
             uint256 timeOfBid,
             bool isActive,
-            ,
+            bool isReserved,
             address bidderAddress,
-
+            address stakerAddress
         ) = auctionInstance.bids(1);
 
         assertEq(amount, 0.1 ether);
         assertEq(bidderPubKeyIndex, 0);
         assertEq(timeOfBid, block.timestamp);
         assertEq(isActive, false);
+        assertEq(isReserved, false);
+        assertEq(bidderAddress, alice);
+        assertEq(stakerAddress, address(0));
+
+        (, , keysUsed) = nodeOperatorKeyManagerInstance.addressToOperatorData(
+            alice
+        );
+
+        assertEq(keysUsed, 1);
     }
 
     function test_ReEnterAuctionFailsIfAuctionPaused() public {
