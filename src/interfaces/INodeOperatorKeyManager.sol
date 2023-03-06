@@ -2,7 +2,7 @@
 pragma solidity 0.8.13;
 
 interface INodeOperatorKeyManager {
-    struct OperatorData {
+    struct KeyData {
         uint128 totalKeys;
         uint128 keysUsed;
         string ipfsHash;
