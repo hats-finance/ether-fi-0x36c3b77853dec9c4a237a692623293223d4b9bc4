@@ -183,7 +183,7 @@ contract Auction is IAuction, Pausable {
 
         uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
             nodeOperatorKeyManagerContract
-        ).numberOfKeysUsed(msg.sender);
+        ).getNumberOfKeysUsed(msg.sender);
         NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
             .increaseKeysIndex(msg.sender);
 
