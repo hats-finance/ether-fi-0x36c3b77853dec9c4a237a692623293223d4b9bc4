@@ -115,6 +115,23 @@ contract Auction is IAuction, Pausable {
         return currentHighestBidIdLocal;
     }
 
+    function createBid() public payable whenNotPaused {
+        uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
+            nodeOperatorKeyManagerContract
+        ).numberOfKeysUsed(msg.sender);
+
+        NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
+            .increaseKeysIndex(msg.sender);
+
+        bids[numberOfBids] = Bid({
+            amount: msg.value,
+            bidderPubKeyIndex: nextAvailableIpfsIndex,
+            timeOfBid: block.timestamp,
+            bidderAddress: msg.sender,
+            isActive: true
+        });
+    }
+
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Used local variables to save on multiple state variable lookups
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner

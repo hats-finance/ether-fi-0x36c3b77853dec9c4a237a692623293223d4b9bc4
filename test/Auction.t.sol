@@ -30,6 +30,8 @@ contract AuctionTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
+    string aliceIPFSHash = "AliceIPFS";
+
     event WinningBidSent(address indexed winner, uint256 indexed winningBidId);
 
     event MinBidUpdated(
@@ -81,6 +83,29 @@ contract AuctionTest is Test {
             auctionInstance.depositContractAddress(),
             address(depositInstance)
         );
+    }
+
+    function test_CreateBid() public {
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 6);
+
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        hoax(alice);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        (
+            uint256 amount,
+            uint256 bidderPubKeyIndex,
+            uint256 timeOfBid,
+            address bidderAddress,
+            bool isActive
+        ) = auctionInstance.bids(1);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(bidderPubKeyIndex, 0);
+        assertEq(timeOfBid, block.timestamp);
+        assertEq(isActive, true);
     }
 
     function test_ReEnterAuctionFailsIfAuctionPaused() public {
