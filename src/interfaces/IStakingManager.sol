@@ -11,23 +11,18 @@ interface IStakingManager {
         EXITED
     }
 
-    /// @notice Structure to hold the information on new Stakes
-    /// @param staker - the address of the user who staked
-    /// @param withdrawCredentials - withdraw credentials of the validator
-    /// @param amount - amount of the stake
-    /// @param phase - the current step of the stake
-    
-
     /// @notice Structure to hold the information on validators
-    /// @param bidId - id of the object holding the operators info.
-    /// @param stakeId - id of the object holding the stakers info.
-    /// @param validatorKey - encrypted validator key for use by the operator and staker
+    /// @param validatorId - id of the object holding the operators info.
+    /// @param selectedBidId - id of the object holding the operators info.
+    /// @param staker - address of the staker who deposited the 32 ETH.
+    /// @param etherFiNode - address of the node handling all funds associated to the validator.
+    /// @param phase - the VALIDATOR_PHASE the validator is currently in.
+    /// @param deposit_data - the validators deposit_data
     struct Validator {
         uint128 validatorId;
-        uint32 selectedBidId;
-        uint32 stakeId;
+        uint128 selectedBidId;
         address staker;
-        address withdrawSafe;
+        address etherFiNode;
         VALIDATOR_PHASE phase;
         DepositData deposit_data;
     }
