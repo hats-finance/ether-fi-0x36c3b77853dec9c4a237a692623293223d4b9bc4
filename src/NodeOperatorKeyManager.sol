@@ -16,7 +16,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
     mapping(address => uint128) public numberOfKeysUsed;
 
     // user address => OperaterData Struct
-    mapping(address => OperatorData) public addressToOperatorData;
+    mapping(address => KeyData) public addressToOperatorData;
 
     function increaseKeysIndex(address _user) public {
         numberOfKeysUsed[_user]++;
@@ -25,7 +25,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
     function registerNodeOperator(string memory _ipfsHash, uint128 _totalKeys)
         public
     {
-        addressToOperatorData[msg.sender] = OperatorData({
+        addressToOperatorData[msg.sender] = KeyData({
             totalKeys: _totalKeys,
             keysUsed: 0,
             ipfsHash: _ipfsHash
