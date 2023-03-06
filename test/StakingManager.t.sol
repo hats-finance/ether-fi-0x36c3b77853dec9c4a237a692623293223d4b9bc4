@@ -298,105 +298,62 @@ contract StakingManagerTest is Test {
         assertEq(stakingManagerInstance.numberOfValidators(), 1);
     }
 
-    function test_AcceptValidatorFailsIfPaused() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(0, test_data);
-        vm.stopPrank();
+    // function test_AcceptValidatorWorksCorrectly() public {
+    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-        vm.prank(owner);
-        stakingManagerInstance.pauseContract();
+    //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+    //     stakingManagerInstance.deposit{value: 0.032 ether}();
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Pausable: paused");
-        stakingManagerInstance.acceptValidator(0);
-    }
+    //     stakingManagerInstance.registerValidator(0, test_data);
 
-    function test_AcceptValidatorFailsIfIncorrectCaller() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+    //     assertEq(address(auctionInstance).balance, 0.1 ether);
+    //     stakingManagerInstance.acceptValidator(0);
 
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(0, test_data);
-        vm.stopPrank();
+    //     (
+    //         ,
+    //         address withdrawSafeAddress,
+    //         ,
+    //         ,
+    //         uint256 winningBidId,
+    //         ,
 
-        vm.prank(owner);
-        vm.expectRevert("Incorrect caller");
-        stakingManagerInstance.acceptValidator(0);
-    }
+    //     ) = stakingManagerInstance.stakes(0);
 
-    function test_AcceptValidatorFailsIfValidatorNotInCorrectPhase() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+    //     assertEq(withdrawSafeAddress.balance, 0.1 ether);
+    //     assertEq(address(managerInstance).balance, 0 ether);
+    //     assertEq(address(auctionInstance).balance, 0);
 
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(0, test_data);
-        stakingManagerInstance.acceptValidator(0);
+    //     address operatorAddress = managerInstance.operatorAddresses(0);
+    //     assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
-        // vm.expectRevert("Validator not in correct phase");
-        // stakingManagerInstance.acceptValidator(0);
-    }
+    //     address safeAddress = managerInstance.withdrawSafeAddressesPerValidator(
+    //         0
+    //     );
+    //     assertEq(safeAddress, withdrawSafeAddress);
 
-    function test_AcceptValidatorWorksCorrectly() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
-
-        stakingManagerInstance.registerValidator(0, test_data);
-
-        assertEq(address(auctionInstance).balance, 0.1 ether);
-        stakingManagerInstance.acceptValidator(0);
-
-        (
-            ,
-            address withdrawSafeAddress,
-            ,
-            ,
-            uint256 winningBidId,
-            ,
-
-        ) = stakingManagerInstance.stakes(0);
-
-        assertEq(withdrawSafeAddress.balance, 0.1 ether);
-        assertEq(address(managerInstance).balance, 0 ether);
-        assertEq(address(auctionInstance).balance, 0);
-
-        address operatorAddress = managerInstance.operatorAddresses(0);
-        assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-
-        address safeAddress = managerInstance.withdrawSafeAddressesPerValidator(
-            0
-        );
-        assertEq(safeAddress, withdrawSafeAddress);
-
-        assertEq(
-            TestBNFTInstance.ownerOf(0),
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
-        assertEq(
-            TestTNFTInstance.ownerOf(0),
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
-        assertEq(
-            TestBNFTInstance.balanceOf(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            1
-        );
-        assertEq(
-            TestTNFTInstance.balanceOf(
-                0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            ),
-            1
-        );
-    }
+    //     assertEq(
+    //         TestBNFTInstance.ownerOf(0),
+    //         0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+    //     );
+    //     assertEq(
+    //         TestTNFTInstance.ownerOf(0),
+    //         0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+    //     );
+    //     assertEq(
+    //         TestBNFTInstance.balanceOf(
+    //             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+    //         ),
+    //         1
+    //     );
+    //     assertEq(
+    //         TestTNFTInstance.balanceOf(
+    //             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+    //         ),
+    //         1
+    //     );
+    // }
 
     function test_CancelStakeFailsIfNotStakeOwner() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
@@ -484,14 +441,12 @@ contract StakingManagerTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         stakingManagerInstance.deposit{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(0, test_data);
-        stakingManagerInstance.acceptValidator(0);
 
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         stakingManagerInstance.deposit{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(1, test_data);
-        stakingManagerInstance.acceptValidator(1);
 
         assertEq(TestBNFTInstance.validatorToId(0), 0);
         assertEq(TestBNFTInstance.validatorToId(1), 1);

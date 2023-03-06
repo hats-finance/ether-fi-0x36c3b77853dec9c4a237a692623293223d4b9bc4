@@ -89,9 +89,6 @@ contract EtherFiNodeTest is Test {
         stakingManagerInstance.registerValidator(0, test_data);
         vm.stopPrank();
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        stakingManagerInstance.acceptValidator(0);
-
         (, address withdrawSafe, , , , , ) = stakingManagerInstance.stakes(0);
         safeInstance = EtherFiNode(payable(withdrawSafe));
     }
@@ -212,12 +209,6 @@ contract EtherFiNodeTest is Test {
         stakingManagerInstance.registerValidator(2, test_data_2);
         vm.stopPrank();
 
-        hoax(alice);
-        stakingManagerInstance.acceptValidator(1);
-
-        hoax(chad);
-        stakingManagerInstance.acceptValidator(2);
-
         assertEq(withdrawSafeAddress_2.balance, 0.4 ether);
         assertEq(withdrawSafeAddress_3.balance, 0.3 ether);
 
@@ -240,8 +231,14 @@ contract EtherFiNodeTest is Test {
         require(sent, "Failed to send Ether");
         vm.stopPrank();
 
+        console.log(alice.balance);
+        console.log(withdrawSafeAddress_2.balance);
+
+
         hoax(bob);
         managerInstance.withdrawFunds(1);
+        console.log("Alice balance after withdrawal");
+        console.log(alice);
 
         hoax(dan);
         managerInstance.withdrawFunds(2);
@@ -262,7 +259,7 @@ contract EtherFiNodeTest is Test {
                 1,
                 IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
             );
-        uint256 treasurySpilt = managerInstance.withdrawn(
+        uint256 treasurySplit = managerInstance.withdrawn(
             1,
             IEtherFiNodesManager.ValidatorRecipientType.TREASURY
         );
@@ -280,10 +277,11 @@ contract EtherFiNodeTest is Test {
                 2,
                 IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
             );
-        treasurySpilt += managerInstance.withdrawn(
+        treasurySplit += managerInstance.withdrawn(
             2,
             IEtherFiNodesManager.ValidatorRecipientType.TREASURY
         );
+
 
         assertEq(alice.balance, aliceBalBefore + aliceSplit);
         assertEq(chad.balance, chadBalBefore + chadSplit);
@@ -293,7 +291,7 @@ contract EtherFiNodeTest is Test {
 
         assertEq(
             address(treasuryInstance).balance,
-            treasuryBalBefore + treasurySpilt
+            treasuryBalBefore + treasurySplit
         );
     }
 

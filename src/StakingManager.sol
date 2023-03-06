@@ -176,7 +176,11 @@ contract StakingManager is IStakingManager, Pausable {
         IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             managerAddress
         );
-        managerInstance.setOperatorAddress(localNumberOfValidators, msg.sender);
+        
+        Stake memory stake = stakes[_stakeId];
+        address operator = auctionInterfaceInstance.getBidOwner(stake.winningBidId);
+
+        managerInstance.setOperatorAddress(localNumberOfValidators, operator);
         managerInstance.setEtherFiNodeAddress(
             localNumberOfValidators,
             etherfiNode
