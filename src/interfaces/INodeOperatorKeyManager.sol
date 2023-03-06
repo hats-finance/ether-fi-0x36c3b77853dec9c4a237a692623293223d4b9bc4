@@ -10,4 +10,9 @@ interface INodeOperatorKeyManager {
 
     function registerNodeOperator(string memory ipfsHash, uint128 totalKeys)
         external;
+
+    function getNumberOfKeysUsed(address _user)
+        external
+        view
+        returns (uint256 keysUsed);
 }
