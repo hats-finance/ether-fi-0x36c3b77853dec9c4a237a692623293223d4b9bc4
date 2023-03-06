@@ -38,7 +38,7 @@ interface IStakingManager {
 
     function deposit() external payable;
 
-    function cancelStake(uint256 _stakeId) external;
+    function cancelDeposit(uint256 _stakeId) external;
 
     function registerValidator(
         uint256 _stakeId,
