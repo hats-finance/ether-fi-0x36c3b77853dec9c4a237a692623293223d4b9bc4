@@ -171,6 +171,10 @@ contract AuctionManager is IAuctionManager, Pausable {
         emit BidCancelled(_bidId);
     }
 
+    /// @dev Merkleroot gets generated in JS offline and sent to the contract
+    /// @param _merkleProof the merkleproof for the user calling the function
+    /// @param _reserved whether the bid is reserved for a certain staker
+    /// @param _staker the address of the staker who the bid is reserved for
     function createBid(
         bytes32[] calldata _merkleProof,
         bool _reserved,
