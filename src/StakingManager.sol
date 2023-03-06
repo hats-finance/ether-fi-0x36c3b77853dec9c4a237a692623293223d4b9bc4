@@ -156,8 +156,10 @@ contract StakingManager is IStakingManager, Pausable {
             "Stake not in correct phase"
         );
 
-        validators[numberOfValidators] = Validator({
-            validatorId: numberOfValidators,
+        uint256 localNumberOfValidators = numberOfValidators;
+
+        validators[localNumberOfValidators] = Validator({
+            validatorId: localNumberOfValidators,
             bidId: stakes[_stakeId].winningBidId,
             stakeId: _stakeId,
             phase: VALIDATOR_PHASE.HANDOVER_READY
@@ -166,24 +168,24 @@ contract StakingManager is IStakingManager, Pausable {
         stakes[_stakeId].deposit_data = _depositData;
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
 
-        TNFTInterfaceInstance.mint(stakes[_stakeId].staker, _validatorId);
-        BNFTInterfaceInstance.mint(stakes[_stakeId].staker, _validatorId);
+        TNFTInterfaceInstance.mint(stakes[_stakeId].staker, localNumberOfValidators);
+        BNFTInterfaceInstance.mint(stakes[_stakeId].staker, localNumberOfValidators);
 
-        address withdrawalSafeAddress = stakes[_stakeId].withdrawSafe;
+        address etherfiNode = stakes[_stakeId].withdrawSafe;
 
         IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             managerAddress
         );
-        managerInstance.setOperatorAddress(_validatorId, msg.sender);
+        managerInstance.setOperatorAddress(localNumberOfValidators, msg.sender);
         managerInstance.setEtherFiNodeAddress(
-            _validatorId,
-            withdrawalSafeAddress
+            localNumberOfValidators,
+            etherfiNode
         );
 
-        validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
+        validators[localNumberOfValidators].phase = VALIDATOR_PHASE.ACCEPTED;
 
         auctionInterfaceInstance.sendFundsToEtherFiNode(
-            _validatorId,
+            localNumberOfValidators,
             _stakeId
         );
 
