@@ -165,37 +165,11 @@ contract StakingManager is IStakingManager, Pausable {
 
         stakes[_stakeId].deposit_data = _depositData;
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
-        numberOfValidators++;
 
-        emit ValidatorRegistered(
-            stakes[_stakeId].winningBidId,
-            _stakeId,
-            numberOfValidators - 1
-        );
-    }
+        TNFTInterfaceInstance.mint(stakes[_stakeId].staker, _validatorId);
+        BNFTInterfaceInstance.mint(stakes[_stakeId].staker, _validatorId);
 
-    /// @notice node operator accepts validator key and data which allows the stake to be deposited into the beacon chain
-    /// @dev future iterations will account for if the operator doesnt accept the validator
-    /// @param _validatorId id of the validator to be accepted
-    function acceptValidator(uint256 _validatorId) public whenNotPaused {
-        require(
-            msg.sender ==
-                auctionInterfaceInstance.getBidOwner(
-                    validators[_validatorId].bidId
-                ),
-            "Incorrect caller"
-        );
-        require(
-            validators[_validatorId].phase == VALIDATOR_PHASE.HANDOVER_READY,
-            "Validator not in correct phase"
-        );
-
-        uint256 localStakeId = validators[_validatorId].stakeId;
-
-        TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-
-        address withdrawalSafeAddress = stakes[localStakeId].withdrawSafe;
+        address withdrawalSafeAddress = stakes[_stakeId].withdrawSafe;
 
         IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             managerAddress
@@ -210,10 +184,10 @@ contract StakingManager is IStakingManager, Pausable {
 
         auctionInterfaceInstance.sendFundsToEtherFiNode(
             _validatorId,
-            localStakeId
+            _stakeId
         );
 
-        DepositData memory dataInstance = stakes[localStakeId].deposit_data;
+        DepositData memory dataInstance = stakes[_stakeId].deposit_data;
 
         if (test = false) {
             depositContractEth2.deposit{value: stakeAmount}(
@@ -224,7 +198,13 @@ contract StakingManager is IStakingManager, Pausable {
             );
         }
 
-        emit ValidatorAccepted(_validatorId);
+        numberOfValidators++;
+
+        emit ValidatorRegistered(
+            stakes[_stakeId].winningBidId,
+            _stakeId,
+            numberOfValidators - 1
+        );
     }
 
     /// @notice Cancels a users stake
