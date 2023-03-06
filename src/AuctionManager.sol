@@ -212,7 +212,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         numberOfActiveBids++;
     }
 
-    function sendFundsToEtherFiNode(uint256 _validatorId, uint256 _stakeId)
+    function sendFundsToEtherFiNode(uint256 _validatorId)
         external
         onlyStakingManagerContract
     {

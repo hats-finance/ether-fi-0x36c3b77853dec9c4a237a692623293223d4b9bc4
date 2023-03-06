@@ -8,7 +8,8 @@ interface IStakingManager {
         STAKE_DEPOSITED,
         REGISTERED,
         LIVE,
-        EXITED
+        EXITED,
+        CANCELLED
     }
 
     /// @notice Structure to hold the information on validators

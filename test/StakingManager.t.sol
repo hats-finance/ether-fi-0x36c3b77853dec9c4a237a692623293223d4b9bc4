@@ -350,7 +350,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
         vm.prank(owner);
-        vm.expectRevert("Not bid owner");
+        vm.expectRevert("Not deposit owner");
         stakingManagerInstance.cancelStake(0);
     }
 
