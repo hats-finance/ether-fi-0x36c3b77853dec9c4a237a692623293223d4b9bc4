@@ -34,6 +34,7 @@ contract Auction is IAuction, Pausable {
     bytes32 public merkleRoot;
 
     IWithdrawSafe public safeInstance;
+    NodeOperatorKeyManager nodeOperatorKeyManagerInstance;
 
     mapping(uint256 => Bid) public bids;
 
@@ -74,6 +75,9 @@ contract Auction is IAuction, Pausable {
     constructor(address _nodeOperatorKeyManagerContract) {
         owner = msg.sender;
         nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
+        nodeOperatorKeyManagerInstance = NodeOperatorKeyManager(
+            _nodeOperatorKeyManagerContract
+        );
     }
 
     //--------------------------------------------------------------------------------------
@@ -116,12 +120,10 @@ contract Auction is IAuction, Pausable {
     }
 
     function createBid() public payable whenNotPaused {
-        uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
-            nodeOperatorKeyManagerContract
-        ).numberOfKeysUsed(msg.sender);
+        uint256 nextAvailableIpfsIndex = nodeOperatorKeyManagerInstance
+            .numberOfKeysUsed(msg.sender);
 
-        NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
-            .increaseKeysIndex(msg.sender);
+        nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
 
         bids[numberOfBids] = Bid({
             amount: msg.value,
