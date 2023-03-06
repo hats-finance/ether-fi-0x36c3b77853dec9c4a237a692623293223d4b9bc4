@@ -42,6 +42,11 @@ contract Auction is IAuction, Pausable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
+    event BidCreated(
+        uint256 indexed bidId,
+        uint256 indexed amount,
+        uint256 timeOfBid
+    );
     event BidPlaced(
         address indexed bidder,
         uint256 amount,
@@ -159,9 +164,13 @@ contract Auction is IAuction, Pausable {
             bidderAddress: msg.sender,
             stakerAddress: _stakerAddress
         });
+
+        emit BidCreated(_bidId, bids[_bidId].amount, bids[_bidId].timeOfBid);
+
+        numberOfBids++;
     }
 
-    function _reserveBid(address _stakerAddress) internal {}
+    function selectBid(uint256 _bidId) public {}
 
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Used local variables to save on multiple state variable lookups
