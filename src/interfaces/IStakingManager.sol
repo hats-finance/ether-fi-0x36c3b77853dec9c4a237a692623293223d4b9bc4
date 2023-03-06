@@ -2,12 +2,6 @@
 pragma solidity 0.8.13;
 
 interface IStakingManager {
-    //The phases of the staking process
-    enum STAKE_PHASE {
-        DEPOSITED,
-        VALIDATOR_REGISTERED,
-        INACTIVE
-    }
 
     //The state of the validator
     enum VALIDATOR_PHASE {
