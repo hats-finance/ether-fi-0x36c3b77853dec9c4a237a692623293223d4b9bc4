@@ -341,63 +341,6 @@ contract StakingManagerTest is Test {
         );
     }
 
-
-    // function test_AcceptValidatorWorksCorrectly() public {
-    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-    //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-    //     auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-    //     stakingManagerInstance.deposit{value: 0.032 ether}();
-
-    //     stakingManagerInstance.registerValidator(0, test_data);
-
-    //     assertEq(address(auctionInstance).balance, 0.1 ether);
-    //     stakingManagerInstance.acceptValidator(0);
-
-    //     (
-    //         ,
-    //         address withdrawSafeAddress,
-    //         ,
-    //         ,
-    //         uint256 winningBidId,
-    //         ,
-
-    //     ) = stakingManagerInstance.stakes(0);
-
-    //     assertEq(withdrawSafeAddress.balance, 0.1 ether);
-    //     assertEq(address(managerInstance).balance, 0 ether);
-    //     assertEq(address(auctionInstance).balance, 0);
-
-    //     address operatorAddress = managerInstance.operatorAddresses(0);
-    //     assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-
-    //     address safeAddress = managerInstance.withdrawSafeAddressesPerValidator(
-    //         0
-    //     );
-    //     assertEq(safeAddress, withdrawSafeAddress);
-
-    //     assertEq(
-    //         TestBNFTInstance.ownerOf(0),
-    //         0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-    //     );
-    //     assertEq(
-    //         TestTNFTInstance.ownerOf(0),
-    //         0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-    //     );
-    //     assertEq(
-    //         TestBNFTInstance.balanceOf(
-    //             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-    //         ),
-    //         1
-    //     );
-    //     assertEq(
-    //         TestTNFTInstance.balanceOf(
-    //             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-    //         ),
-    //         1
-    //     );
-    // }
-
     function test_CancelStakeFailsIfNotStakeOwner() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 

@@ -142,8 +142,7 @@ contract StakingManager is IStakingManager, Pausable {
         numberOfStakes++;
     }
 
-    /// @notice Creates validator object and updates information
-    /// @dev Still looking at solutions to storing key on-chain
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _stakeId id of the stake the validator connects to
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
