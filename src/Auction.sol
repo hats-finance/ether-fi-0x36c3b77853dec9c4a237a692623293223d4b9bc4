@@ -146,15 +146,18 @@ contract Auction is IAuction, Pausable {
 
         nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
 
+        uint256 _bidId = numberOfBids;
+
         // Bid becomes active when placed into auction
-        bids[numberOfBids] = Bid({
+        bids[_bidId] = Bid({
+            bidId: _bidId,
             amount: msg.value,
             bidderPubKeyIndex: nextAvailableIpfsIndex,
             timeOfBid: block.timestamp,
             isActive: false,
             isReserverd: _reserved,
             bidderAddress: msg.sender,
-            stakerAddress: address(0)
+            stakerAddress: _stakerAddress
         });
     }
 
