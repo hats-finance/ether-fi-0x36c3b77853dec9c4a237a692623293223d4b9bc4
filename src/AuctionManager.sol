@@ -219,7 +219,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         StakingManager depositContractInstance = StakingManager(stakingManagerContractAddress);
         (
             ,
-            uint256 selectedBid,
+            uint128 selectedBid,
             ,
             address etherFiNode,
             ,

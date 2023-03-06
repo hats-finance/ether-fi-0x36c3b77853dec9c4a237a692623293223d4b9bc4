@@ -22,7 +22,7 @@ contract StakingManager is IStakingManager, Pausable {
     IDepositContract public depositContractEth2;
 
     uint256 public stakeAmount;
-    uint256 public numberOfValidators = 0;
+    uint256 public numberOfValidators;
     address public owner;
     address private managerAddress;
     address public treasuryAddress;
