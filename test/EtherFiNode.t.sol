@@ -2,34 +2,34 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/interfaces/IDeposit.sol";
-import "../src/interfaces/IWithdrawSafe.sol";
-import "src/WithdrawSafeManager.sol";
-import "../src/Deposit.sol";
-import "../src/Auction.sol";
+import "../src/interfaces/IStakingManager.sol";
+import "../src/interfaces/IEtherFiNode.sol";
+import "src/EtherFiNodesManager.sol";
+import "../src/StakingManager.sol";
+import "../src/AuctionManager.sol";
 import "../src/BNFT.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract WithdrawSafeTest is Test {
-    IDeposit public depositInterface;
-    Deposit public depositInstance;
+contract EtherFiNodeTest is Test {
+    IStakingManager public depositInterface;
+    StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
-    Auction public auctionInstance;
+    AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
-    WithdrawSafe public safeInstance;
-    WithdrawSafeManager public managerInstance;
+    EtherFiNode public safeInstance;
+    EtherFiNodesManager public managerInstance;
 
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
 
-    IDeposit.DepositData public test_data;
-    IDeposit.DepositData public test_data_2;
+    IStakingManager.DepositData public test_data;
+    IStakingManager.DepositData public test_data_2;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -42,25 +42,25 @@ contract WithdrawSafeTest is Test {
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new Auction(address(nodeOperatorKeyManagerInstance));
-        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
+        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
-        auctionInstance.setDepositContractAddress(address(depositInstance));
-        TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        managerInstance = new WithdrawSafeManager(
+        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+        managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
-            address(depositInstance),
+            address(stakingManagerInstance),
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
 
-        auctionInstance.setManagerAddress(address(managerInstance));
-        depositInstance.setManagerAddress(address(managerInstance));
+        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
-        test_data = IDeposit.DepositData({
+        test_data = IStakingManager.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",
@@ -68,7 +68,7 @@ contract WithdrawSafeTest is Test {
             signature: "test_signature"
         });
 
-        test_data_2 = IDeposit.DepositData({
+        test_data_2 = IStakingManager.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials_2",
             depositDataRoot: "test_deposit_root_2",
@@ -84,44 +84,44 @@ contract WithdrawSafeTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        depositInstance.setTreasuryAddress(address(treasuryInstance));
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.registerValidator(0, test_data);
+        stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
+        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.registerValidator(0, test_data);
         vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        depositInstance.acceptValidator(0);
+        stakingManagerInstance.acceptValidator(0);
 
-        (, address withdrawSafe, , , , , ) = depositInstance.stakes(0);
-        safeInstance = WithdrawSafe(payable(withdrawSafe));
+        (, address withdrawSafe, , , , , ) = stakingManagerInstance.stakes(0);
+        safeInstance = EtherFiNode(payable(withdrawSafe));
     }
 
-    function test_ReceiveAuctionFundsWorksCorrectly() public {
+    function test_ReceiveAuctionManagerFundsWorksCorrectly() public {
         assertEq(
             managerInstance.withdrawableBalance(
                 0,
-                IWithdrawSafeManager.ValidatorRecipientType.TREASURY
+                IEtherFiNodesManager.ValidatorRecipientType.TREASURY
             ),
             10000000000000000
         );
         assertEq(
             managerInstance.withdrawableBalance(
                 0,
-                IWithdrawSafeManager.ValidatorRecipientType.OPERATOR
+                IEtherFiNodesManager.ValidatorRecipientType.OPERATOR
             ),
             10000000000000000
         );
         assertEq(
             managerInstance.withdrawableBalance(
                 0,
-                IWithdrawSafeManager.ValidatorRecipientType.BNFTHOLDER
+                IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
             ),
             20000000000000000
         );
         assertEq(
             managerInstance.withdrawableBalance(
                 0,
-                IWithdrawSafeManager.ValidatorRecipientType.TNFTHOLDER
+                IEtherFiNodesManager.ValidatorRecipientType.TNFTHOLDER
             ),
             60000000000000000
         );
@@ -129,7 +129,7 @@ contract WithdrawSafeTest is Test {
         assertEq(address(managerInstance).balance, 0 ether);
     }
 
-    function test_ReceiveAuctionFundsFailsIfNotAuctionContractCalling() public {
+    function test_ReceiveAuctionManagerFundsFailsIfNotAuctionManagerContractCalling() public {
         vm.expectRevert("Only auction contract function");
         managerInstance.receiveAuctionFunds(0, 0.1 ether);
     }
@@ -166,7 +166,7 @@ contract WithdrawSafeTest is Test {
         );
     }
 
-    function test_WithdrawSafeMultipleSafesWorkCorrectly() public {
+    function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(alice);
@@ -176,10 +176,10 @@ contract WithdrawSafeTest is Test {
         auctionInstance.bidOnStake{value: 0.3 ether}(proof);
 
         hoax(bob);
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
 
         hoax(dan);
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
 
         (
             address staker_2,
@@ -189,7 +189,7 @@ contract WithdrawSafeTest is Test {
             uint256 winningBidId_2,
             ,
 
-        ) = depositInstance.stakes(1);
+        ) = stakingManagerInstance.stakes(1);
 
         (
             address staker_3,
@@ -199,24 +199,24 @@ contract WithdrawSafeTest is Test {
             uint256 winningBidId_3,
             ,
 
-        ) = depositInstance.stakes(2);
+        ) = stakingManagerInstance.stakes(2);
 
         assertEq(staker_2, bob);
         assertEq(staker_3, dan);
 
         startHoax(bob);
-        depositInstance.registerValidator(1, test_data_2);
+        stakingManagerInstance.registerValidator(1, test_data_2);
         vm.stopPrank();
 
         startHoax(dan);
-        depositInstance.registerValidator(2, test_data_2);
+        stakingManagerInstance.registerValidator(2, test_data_2);
         vm.stopPrank();
 
         hoax(alice);
-        depositInstance.acceptValidator(1);
+        stakingManagerInstance.acceptValidator(1);
 
         hoax(chad);
-        depositInstance.acceptValidator(2);
+        stakingManagerInstance.acceptValidator(2);
 
         assertEq(withdrawSafeAddress_2.balance, 0.4 ether);
         assertEq(withdrawSafeAddress_3.balance, 0.3 ether);
@@ -252,37 +252,37 @@ contract WithdrawSafeTest is Test {
         // Validator 2 Rewards
         uint256 aliceSplit = managerInstance.withdrawn(
             1,
-            IWithdrawSafeManager.ValidatorRecipientType.OPERATOR
+            IEtherFiNodesManager.ValidatorRecipientType.OPERATOR
         );
         uint256 bobSplit = managerInstance.withdrawn(
             1,
-            IWithdrawSafeManager.ValidatorRecipientType.TNFTHOLDER
+            IEtherFiNodesManager.ValidatorRecipientType.TNFTHOLDER
         ) +
             managerInstance.withdrawn(
                 1,
-                IWithdrawSafeManager.ValidatorRecipientType.BNFTHOLDER
+                IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
             );
         uint256 treasurySpilt = managerInstance.withdrawn(
             1,
-            IWithdrawSafeManager.ValidatorRecipientType.TREASURY
+            IEtherFiNodesManager.ValidatorRecipientType.TREASURY
         );
 
         // Validator 3 rewards
         uint256 chadSplit = managerInstance.withdrawn(
             2,
-            IWithdrawSafeManager.ValidatorRecipientType.OPERATOR
+            IEtherFiNodesManager.ValidatorRecipientType.OPERATOR
         );
         uint256 danSplit = managerInstance.withdrawn(
             2,
-            IWithdrawSafeManager.ValidatorRecipientType.TNFTHOLDER
+            IEtherFiNodesManager.ValidatorRecipientType.TNFTHOLDER
         ) +
             managerInstance.withdrawn(
                 2,
-                IWithdrawSafeManager.ValidatorRecipientType.BNFTHOLDER
+                IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
             );
         treasurySpilt += managerInstance.withdrawn(
             2,
-            IWithdrawSafeManager.ValidatorRecipientType.TREASURY
+            IEtherFiNodesManager.ValidatorRecipientType.TREASURY
         );
 
         assertEq(alice.balance, aliceBalBefore + aliceSplit);

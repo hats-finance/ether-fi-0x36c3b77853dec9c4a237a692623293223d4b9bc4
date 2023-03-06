@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-interface IWithdrawSafe {
+interface IEtherFiNode {
     function withdrawFunds(
         address _treasury,
         uint256 _treasuryAmount,

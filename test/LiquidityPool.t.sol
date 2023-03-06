@@ -21,7 +21,7 @@ contract LiquidityPoolTest is Test {
         vm.stopPrank();
     }
 
-    function test_DepositLiquidityPool() public {
+    function test_StakingManagerLiquidityPool() public {
         vm.startPrank(alice);
         vm.deal(alice, 2 ether);
         liquidityPool.deposit{value: 1 ether}();
@@ -29,7 +29,7 @@ contract LiquidityPoolTest is Test {
         assertEq(alice.balance, 1 ether);
     }
 
-    function test_DepositLiquidityFails() public {
+    function test_StakingManagerLiquidityFails() public {
         vm.startPrank(owner);
         vm.expectRevert();
         liquidityPool.deposit{value: 2 ether}();
@@ -61,7 +61,7 @@ contract LiquidityPoolTest is Test {
         liquidityPool.withdraw(2 ether);
     }
 
-    function test_DepositFailsNotInitializedToken() public {
+    function test_StakingManagerFailsNotInitializedToken() public {
         LiquidityPool liquidityPoolNoToken = new LiquidityPool(owner);
 
         vm.startPrank(alice);

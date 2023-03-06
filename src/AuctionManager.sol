@@ -4,19 +4,19 @@ pragma solidity 0.8.13;
 //Importing all needed contracts and libraries
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
-import "./interfaces/IDeposit.sol";
-import "./interfaces/IAuction.sol";
+import "./interfaces/IStakingManager.sol";
+import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
-import "./interfaces/IWithdrawSafe.sol";
-import "./interfaces/IWithdrawSafeManager.sol";
+import "./interfaces/IEtherFiNode.sol";
+import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./Deposit.sol";
+import "./StakingManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract Auction is IAuction, Pausable {
+contract AuctionManager is IAuctionManager, Pausable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -27,14 +27,13 @@ contract Auction is IAuction, Pausable {
     uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
-    address public depositContractAddress;
+    address public stakingManagerContractAddress;
     address public owner;
     address public withdrawSafeManager;
     address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
 
-    IWithdrawSafe public safeInstance;
-    NodeOperatorKeyManager nodeOperatorKeyManagerInstance;
+    IEtherFiNode public safeInstance;
 
     mapping(uint256 => Bid) public bids;
 
@@ -42,11 +41,6 @@ contract Auction is IAuction, Pausable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event BidCreated(
-        uint256 indexed bidId,
-        uint256 indexed amount,
-        uint256 timeOfBid
-    );
     event BidPlaced(
         address indexed bidder,
         uint256 amount,
@@ -60,7 +54,9 @@ contract Auction is IAuction, Pausable {
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
-    event DepositAddressSet(address indexed depositContractAddress);
+    event StakingManagerAddressSet(
+        address indexed stakingManagerContractAddress
+    );
     event MinBidUpdated(
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
@@ -70,7 +66,7 @@ contract Auction is IAuction, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
-    event FundsSentToWithdrawSafe(uint256 indexed _amount);
+    event FundsSentToEtherFiNode(uint256 indexed _amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -80,9 +76,6 @@ contract Auction is IAuction, Pausable {
     constructor(address _nodeOperatorKeyManagerContract) {
         owner = msg.sender;
         nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
-        nodeOperatorKeyManagerInstance = NodeOperatorKeyManager(
-            _nodeOperatorKeyManagerContract
-        );
     }
 
     //--------------------------------------------------------------------------------------
@@ -95,7 +88,7 @@ contract Auction is IAuction, Pausable {
     /// @return winningOperator the address of the current highest bidder
     function calculateWinningBid()
         external
-        onlyDepositContract
+        onlyStakingManagerContract
         returns (uint256)
     {
         uint256 currentHighestBidIdLocal = currentHighestBidId;
@@ -123,54 +116,6 @@ contract Auction is IAuction, Pausable {
         emit WinningBidSent(winningOperator, currentHighestBidIdLocal);
         return currentHighestBidIdLocal;
     }
-
-    /// @param _merkleProof the merkleproof for the user calling the function
-    /// @param _reserved whether a bid is reserverd for a specific staker
-    /// @param _stakerAddress the address of the staker the bid is reserverd for
-    function createBid(
-        bytes32[] calldata _merkleProof,
-        bool _reserved,
-        address _stakerAddress
-    ) public payable whenNotPaused {
-        // Checks if bidder is on whitelist
-        if (msg.value < minBidAmount) {
-            require(
-                MerkleProof.verify(
-                    _merkleProof,
-                    merkleRoot,
-                    keccak256(abi.encodePacked(msg.sender))
-                ) && msg.value >= whitelistBidAmount,
-                "Invalid bid"
-            );
-        } else {
-            require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
-        }
-
-        uint256 nextAvailableIpfsIndex = nodeOperatorKeyManagerInstance
-            .numberOfKeysUsed(msg.sender);
-
-        nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
-
-        uint256 _bidId = numberOfBids;
-
-        // Bid becomes active when placed into auction
-        bids[_bidId] = Bid({
-            bidId: _bidId,
-            amount: msg.value,
-            bidderPubKeyIndex: nextAvailableIpfsIndex,
-            timeOfBid: block.timestamp,
-            isActive: false,
-            isReserverd: _reserved,
-            bidderAddress: msg.sender,
-            stakerAddress: _stakerAddress
-        });
-
-        emit BidCreated(_bidId, bids[_bidId].amount, bids[_bidId].timeOfBid);
-
-        numberOfBids++;
-    }
-
-    function selectBid(uint256 _bidId) public {}
 
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Used local variables to save on multiple state variable lookups
@@ -224,56 +169,58 @@ contract Auction is IAuction, Pausable {
         payable
         whenNotPaused
     {
-        // // Checks if bidder is on whitelist
-        // if (msg.value < minBidAmount) {
-        //     require(
-        //         MerkleProof.verify(
-        //             _merkleProof,
-        //             merkleRoot,
-        //             keccak256(abi.encodePacked(msg.sender))
-        //         ) && msg.value >= whitelistBidAmount,
-        //         "Invalid bid"
-        //     );
-        // } else {
-        //     require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
-        // }
+        // Checks if bidder is on whitelist
+        if (msg.value < minBidAmount) {
+            require(
+                MerkleProof.verify(
+                    _merkleProof,
+                    merkleRoot,
+                    keccak256(abi.encodePacked(msg.sender))
+                ) && msg.value >= whitelistBidAmount,
+                "Invalid bid"
+            );
+        } else {
+            require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
+        }
 
-        // uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
-        //     nodeOperatorKeyManagerContract
-        // ).numberOfKeysUsed(msg.sender);
-        // NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
-        //     .increaseKeysIndex(msg.sender);
+        uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
+            nodeOperatorKeyManagerContract
+        ).numberOfKeysUsed(msg.sender);
+        NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
+            .increaseKeysIndex(msg.sender);
 
         //Creates a bid object for storage and lookup in future
-        // bids[numberOfBids] = Bid({
-        //     amount: msg.value,
-        //     bidderPubKeyIndex: nextAvailableIpfsIndex,
-        //     timeOfBid: block.timestamp,
-        //     bidderAddress: msg.sender,
-        //     isActive: true
-        // });
+        bids[numberOfBids] = Bid({
+            amount: msg.value,
+            bidderPubKeyIndex: nextAvailableIpfsIndex,
+            timeOfBid: block.timestamp,
+            bidderAddress: msg.sender,
+            isActive: true
+        });
 
         //Checks if the bid is now the highest bid
         if (msg.value > bids[currentHighestBidId].amount) {
             currentHighestBidId = numberOfBids;
         }
 
-        // emit BidPlaced(
-        //     msg.sender,
-        //     msg.value,
-        //     numberOfBids,
-        //     nextAvailableIpfsIndex
-        // );
+        emit BidPlaced(
+            msg.sender,
+            msg.value,
+            numberOfBids,
+            nextAvailableIpfsIndex
+        );
 
         numberOfBids++;
         numberOfActiveBids++;
     }
 
-    function sendFundsToWithdrawSafe(uint256 _validatorId, uint256 _stakeId)
+    function sendFundsToEtherFiNode(uint256 _validatorId, uint256 _stakeId)
         external
-        onlyDepositContract
+        onlyStakingManagerContract
     {
-        Deposit depositContractInstance = Deposit(depositContractAddress);
+        StakingManager depositContractInstance = StakingManager(
+            stakingManagerContractAddress
+        );
         (
             ,
             address withdrawalSafe,
@@ -286,8 +233,8 @@ contract Auction is IAuction, Pausable {
 
         uint256 amount = bids[winningBidId].amount;
 
-        safeInstance = IWithdrawSafe(withdrawalSafe);
-        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+        safeInstance = IEtherFiNode(withdrawalSafe);
+        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             withdrawSafeManager
         );
         managerInstance.receiveAuctionFunds(_validatorId, amount);
@@ -295,14 +242,14 @@ contract Auction is IAuction, Pausable {
         (bool sent, ) = payable(withdrawalSafe).call{value: amount}("");
         require(sent, "Failed to send Ether");
 
-        emit FundsSentToWithdrawSafe(amount);
+        emit FundsSentToEtherFiNode(amount);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
     function reEnterAuction(uint256 _bidId)
         external
-        onlyDepositContract
+        onlyStakingManagerContract
         whenNotPaused
     {
         require(bids[_bidId].isActive == false, "Bid already active");
@@ -332,14 +279,13 @@ contract Auction is IAuction, Pausable {
 
     /// @notice Sets the depositContract address in the current contract
     /// @dev Called by depositContract and can only be called once
-    /// @param _depositContractAddress address of the depositContract for authorizations
-    function setDepositContractAddress(address _depositContractAddress)
-        external
-        onlyOwner
-    {
-        depositContractAddress = _depositContractAddress;
+    /// @param _stakingManagerContractAddress address of the depositContract for authorizations
+    function setStakingManagerContractAddress(
+        address _stakingManagerContractAddress
+    ) external onlyOwner {
+        stakingManagerContractAddress = _stakingManagerContractAddress;
 
-        emit DepositAddressSet(_depositContractAddress);
+        emit StakingManagerAddressSet(_stakingManagerContractAddress);
     }
 
     /// @notice Updates the minimum bid price
@@ -393,7 +339,7 @@ contract Auction is IAuction, Pausable {
         return bids[_bidId].bidderAddress;
     }
 
-    function setManagerAddress(address _managerAddress) external {
+    function setEtherFiNodesManagerAddress(address _managerAddress) external {
         withdrawSafeManager = _managerAddress;
     }
 
@@ -401,9 +347,9 @@ contract Auction is IAuction, Pausable {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyDepositContract() {
+    modifier onlyStakingManagerContract() {
         require(
-            msg.sender == depositContractAddress,
+            msg.sender == stakingManagerContractAddress,
             "Only deposit contract function"
         );
         _;

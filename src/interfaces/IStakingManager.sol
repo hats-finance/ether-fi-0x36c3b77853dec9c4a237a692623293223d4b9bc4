@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-interface IDeposit {
+interface IStakingManager {
     //The phases of the staking process
     enum STAKE_PHASE {
         DEPOSITED,
@@ -70,5 +70,5 @@ interface IDeposit {
 
     function getStakeAmount() external returns (uint256);
 
-    function setManagerAddress(address _managerAddress) external;
+    function setEtherFiNodesManagerAddress(address _managerAddress) external;
 }
