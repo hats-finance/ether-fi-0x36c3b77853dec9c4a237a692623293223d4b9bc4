@@ -42,10 +42,14 @@ contract EtherFiNode is IEtherFiNode {
         address _bnftHolder,
         uint256 _bnftAmount
     ) external {
+        console.log("Here now");
         (bool sent, ) = _treasury.call{value: _treasuryAmount}("");
         require(sent, "Failed to send Ether");
+        console.log("Here is the amount");
+        console.log(_operatorAmount);
         (sent, ) = payable(_operator).call{value: _operatorAmount}("");
         require(sent, "Failed to send Ether");
+        console.log(address(this).balance);
         (sent, ) = payable(_tnftHolder).call{value: _tnftAmount}("");
         require(sent, "Failed to send Ether");
         (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");

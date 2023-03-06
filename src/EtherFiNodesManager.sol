@@ -224,6 +224,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             withdrawSafeAddressesPerValidator[_validatorId]
         );
 
+        console.log("Got here");
+        console.log(operatorAddresses[_validatorId]);
+
         safeInstance.withdrawFunds(
             treasuryContract,
             treasuryAmount,
