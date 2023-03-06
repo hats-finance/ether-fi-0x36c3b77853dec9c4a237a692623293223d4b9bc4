@@ -31,4 +31,13 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
             addressToOperatorData[msg.sender].ipfsHash
         );
     }
+
+    //------- VIEW FUNCTIONS ------//
+    function getNumberOfKeysUsed(address _user)
+        public
+        view
+        returns (uint256 keysUsed)
+    {
+        keysUsed = addressToOperatorData[_user].keysUsed;
+    }
 }
