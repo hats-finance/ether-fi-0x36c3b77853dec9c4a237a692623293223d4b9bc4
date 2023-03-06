@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
-import "./interfaces/IAuction.sol";
+import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
@@ -56,7 +56,7 @@ contract Treasury is ITreasury {
     /// @notice Sets the auctionContract address in the current contract
     /// @dev Called when auction contract is deployed
     /// @param _auctionContractAddress address of the auctionContract for authorizations
-    function setAuctionContractAddress(address _auctionContractAddress)
+    function setAuctionManagerContractAddress(address _auctionContractAddress)
         public
         onlyOwner
     {
@@ -72,7 +72,7 @@ contract Treasury is ITreasury {
         _;
     }
 
-    modifier onlyAuctionContract() {
+    modifier onlyAuctionManagerContract() {
         require(
             msg.sender == auctionContractAddress,
             "Only auction contract function"

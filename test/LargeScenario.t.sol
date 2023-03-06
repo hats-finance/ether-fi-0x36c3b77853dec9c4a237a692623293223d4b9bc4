@@ -2,26 +2,26 @@
 // pragma solidity ^0.8.13;
 
 // import "forge-std/Test.sol";
-// import "../src/Deposit.sol";
-// import "../src/WithdrawSafe.sol";
+// import "../src/StakingManager.sol";
+// import "../src/EtherFiNode.sol";
 // import "../src/BNFT.sol";
 // import "../src/TNFT.sol";
-// import "src/Auction.sol";
+// import "src/AuctionManager.sol";
 // import "../src/Treasury.sol";
-// import "../src/interfaces/IDeposit.sol";
+// import "../src/interfaces/IStakingManager.sol";
 // import "../lib/murky/src/Merkle.sol";
 
 // contract LargeScenariosTest is Test {
-//     Deposit public depositInstance;
-//     WithdrawSafe public withdrawSafeInstance;
+//     StakingManager public stakingManagerInstance;
+//     EtherFiNode public withdrawSafeInstance;
 //     BNFT public TestBNFTInstance;
 //     TNFT public TestTNFTInstance;
-//     Auction public auctionInstance;
+//     AuctionManager public auctionInstance;
 //     Treasury public treasuryInstance;
 //     Merkle merkle;
 //     bytes32 root;
 //     bytes32[] public whiteListedAddresses;
-//     IDeposit.DepositData public test_data;
+//     IStakingManager.DepositData public test_data;
 
 //     address owner = vm.addr(1);
 //     address alice = vm.addr(2);
@@ -30,25 +30,25 @@
 //         vm.startPrank(owner);
 //         _merkleSetup();
 //         treasuryInstance = new Treasury();
-//         auctionInstance = new Auction(address(treasuryInstance));
-//         treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+//         auctionInstance = new AuctionManager(address(treasuryInstance));
+//         treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
 //         auctionInstance.updateMerkleRoot(root);
-//         depositInstance = new Deposit(
+//         stakingManagerInstance = new StakingManager(
 //             address(auctionInstance),
 //             address(treasuryInstance)
 //         );
-//         auctionInstance.setDepositContractAddress(address(depositInstance));
-//         TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-//         TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-//         withdrawSafeInstance = new WithdrawSafe(
+//         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+//         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+//         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+//         withdrawSafeInstance = new EtherFiNode(
 //             address(treasuryInstance),
 //             address(auctionInstance),
-//             address(depositInstance),
+//             address(stakingManagerInstance),
 //             address(TestTNFTInstance),
 //             address(TestBNFTInstance)
 //         );
 
-//         test_data = IDeposit.DepositData({
+//         test_data = IStakingManager.DepositData({
 //             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
 //             withdrawalCredentials: "test_credentials",
 //             depositDataRoot: "test_deposit_root",
@@ -194,13 +194,13 @@
 //         (, , , bool isActiveAfterCancel, ) = auctionInstance.bids(2);
 //         assertEq(isActiveAfterCancel, false);
 
-//         //Deposit One
-//         depositInstance.deposit{value: 0.032 ether}();
+//         //StakingManager One
+//         stakingManagerInstance.deposit{value: 0.032 ether}();
 
 //         assertEq(auctionInstance.currentHighestBidId(), 1);
 //         assertEq(auctionInstance.numberOfActiveBids(), 1);
 //         assertEq(address(auctionInstance).balance, 0.8 ether);
-//         assertEq(address(depositInstance).balance, 0.032 ether);
+//         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
 //         vm.stopPrank();
 
 //         //Bid Four
@@ -232,30 +232,30 @@
 //         );
 //         assertEq(isActiveBid4, true);
 
-//         //Deposit Two
+//         //StakingManager Two
 //         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-//         depositInstance.deposit{value: 0.032 ether}();
+//         stakingManagerInstance.deposit{value: 0.032 ether}();
 
 //         assertEq(auctionInstance.currentHighestBidId(), 1);
 //         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
 //         assertEq(address(auctionInstance).balance, 1.2 ether);
-//         assertEq(address(depositInstance).balance, 0.064 ether);
+//         assertEq(address(stakingManagerInstance).balance, 0.064 ether);
 
-//         //Deposit One cancelled
+//         //StakingManager One cancelled
 //         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-//         depositInstance.cancelStake(0);
+//         stakingManagerInstance.cancelStake(0);
 
 //         assertEq(auctionInstance.currentHighestBidId(), 3);
 //         assertEq(auctionInstance.numberOfBids() - 1, 4);
 //         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
 //         assertEq(address(auctionInstance).balance, 1.2 ether);
-//         assertEq(address(depositInstance).balance, 0.032 ether);
+//         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
 
-//         //Deposit Two register validator
+//         //StakingManager Two register validator
 //         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-//         depositInstance.registerValidator(
+//         stakingManagerInstance.registerValidator(
 //             1,
 //             "Encrypted_Key",
 //             "encrypted_key_password",
@@ -270,7 +270,7 @@
 //             bytes memory validatorKey,
 //             bytes memory encryptedValidatorKeyPassword,
 
-//         ) = depositInstance.validators(0);
+//         ) = stakingManagerInstance.validators(0);
 //         assertEq(validatorId, 0);
 //         assertEq(bidId, 4);
 //         assertEq(stakeId, 1);
@@ -280,17 +280,17 @@
 //         //Attempt deposit two cancel
 //         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
 //         vm.expectRevert("Cancelling availability closed");
-//         depositInstance.cancelStake(1);
+//         stakingManagerInstance.cancelStake(1);
 
-//         //Deposit two operator accepting validator
+//         //StakingManager two operator accepting validator
 //         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
 //         vm.expectRevert("Incorrect caller");
-//         depositInstance.acceptValidator(0);
+//         stakingManagerInstance.acceptValidator(0);
 
 //         uint256 auctionBalanceBeforeTransfer = address(auctionInstance).balance;
 
 //         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-//         depositInstance.acceptValidator(0);
+//         stakingManagerInstance.acceptValidator(0);
 
 //         (
 //             ,
@@ -301,7 +301,7 @@
 //             uint256 winningBidId,
 //             ,
 
-//         ) = depositInstance.stakes(1);
+//         ) = stakingManagerInstance.stakes(1);
 
 //         (uint256 amount, , , , ) = auctionInstance.bids(winningBidId);
 
@@ -325,7 +325,7 @@
 //             ),
 //             1
 //         );
-//         withdrawSafeInstance = WithdrawSafe(payable(withdrawSafeAddress));
+//         withdrawSafeInstance = EtherFiNode(payable(withdrawSafeAddress));
 
 //         assertEq(address(withdrawSafeInstance).balance, amount);
 //         assertEq(

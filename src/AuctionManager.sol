@@ -4,19 +4,19 @@ pragma solidity 0.8.13;
 //Importing all needed contracts and libraries
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
-import "./interfaces/IDeposit.sol";
-import "./interfaces/IAuction.sol";
+import "./interfaces/IStakingManager.sol";
+import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
-import "./interfaces/IWithdrawSafe.sol";
-import "./interfaces/IWithdrawSafeManager.sol";
+import "./interfaces/IEtherFiNode.sol";
+import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./Deposit.sol";
-import "./Registration.sol";
+import "./StakingManager.sol";
+import "../src/NodeOperatorKeyManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract Auction is IAuction, Pausable {
+contract AuctionManager is IAuctionManager, Pausable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -27,13 +27,13 @@ contract Auction is IAuction, Pausable {
     uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
-    address public depositContractAddress;
+    address public stakingManagerContractAddress;
     address public owner;
     address public withdrawSafeManager;
-    address public registrationContract;
+    address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
 
-    IWithdrawSafe public safeInstance;
+    IEtherFiNode public safeInstance;
 
     mapping(uint256 => Bid) public bids;
 
@@ -54,7 +54,7 @@ contract Auction is IAuction, Pausable {
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
-    event DepositAddressSet(address indexed depositContractAddress);
+    event StakingManagerAddressSet(address indexed stakingManagerContractAddress);
     event MinBidUpdated(
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
@@ -64,16 +64,16 @@ contract Auction is IAuction, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
-    event FundsSentToWithdrawSafe(uint256 indexed _amount);
+    event FundsSentToEtherFiNode(uint256 indexed _amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
     /// @notice Constructor to set variables on deployment
-    constructor(address _registrationContract) {
+    constructor(address _nodeOperatorKeyManagerContract) {
         owner = msg.sender;
-        registrationContract = _registrationContract;
+        nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
     }
 
     //--------------------------------------------------------------------------------------
@@ -86,7 +86,7 @@ contract Auction is IAuction, Pausable {
     /// @return winningOperator the address of the current highest bidder
     function calculateWinningBid()
         external
-        onlyDepositContract
+        onlyStakingManagerContract
         returns (uint256)
     {
         uint256 currentHighestBidIdLocal = currentHighestBidId;
@@ -162,9 +162,11 @@ contract Auction is IAuction, Pausable {
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-    function bidOnStake(
-        bytes32[] calldata _merkleProof
-    ) external payable whenNotPaused {
+    function bidOnStake(bytes32[] calldata _merkleProof)
+        external
+        payable
+        whenNotPaused
+    {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
@@ -179,8 +181,11 @@ contract Auction is IAuction, Pausable {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
-        uint256 nextAvailableIpfsIndex = Registration(registrationContract).numberOfKeysUsed(msg.sender);
-        Registration(registrationContract).increaseKeysIndex(msg.sender);
+        uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
+            nodeOperatorKeyManagerContract
+        ).numberOfKeysUsed(msg.sender);
+        NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
+            .increaseKeysIndex(msg.sender);
 
         //Creates a bid object for storage and lookup in future
         bids[numberOfBids] = Bid({
@@ -196,17 +201,22 @@ contract Auction is IAuction, Pausable {
             currentHighestBidId = numberOfBids;
         }
 
-        emit BidPlaced(msg.sender, msg.value, numberOfBids, nextAvailableIpfsIndex);
+        emit BidPlaced(
+            msg.sender,
+            msg.value,
+            numberOfBids,
+            nextAvailableIpfsIndex
+        );
 
         numberOfBids++;
         numberOfActiveBids++;
     }
 
-    function sendFundsToWithdrawSafe(uint256 _validatorId, uint256 _stakeId)
+    function sendFundsToEtherFiNode(uint256 _validatorId, uint256 _stakeId)
         external
-        onlyDepositContract
+        onlyStakingManagerContract
     {
-        Deposit depositContractInstance = Deposit(depositContractAddress);
+        StakingManager depositContractInstance = StakingManager(stakingManagerContractAddress);
         (
             ,
             address withdrawalSafe,
@@ -219,8 +229,8 @@ contract Auction is IAuction, Pausable {
 
         uint256 amount = bids[winningBidId].amount;
 
-        safeInstance = IWithdrawSafe(withdrawalSafe);
-        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+        safeInstance = IEtherFiNode(withdrawalSafe);
+        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             withdrawSafeManager
         );
         managerInstance.receiveAuctionFunds(_validatorId, amount);
@@ -228,14 +238,14 @@ contract Auction is IAuction, Pausable {
         (bool sent, ) = payable(withdrawalSafe).call{value: amount}("");
         require(sent, "Failed to send Ether");
 
-        emit FundsSentToWithdrawSafe(amount);
+        emit FundsSentToEtherFiNode(amount);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
     function reEnterAuction(uint256 _bidId)
         external
-        onlyDepositContract
+        onlyStakingManagerContract
         whenNotPaused
     {
         require(bids[_bidId].isActive == false, "Bid already active");
@@ -265,14 +275,14 @@ contract Auction is IAuction, Pausable {
 
     /// @notice Sets the depositContract address in the current contract
     /// @dev Called by depositContract and can only be called once
-    /// @param _depositContractAddress address of the depositContract for authorizations
-    function setDepositContractAddress(address _depositContractAddress)
+    /// @param _stakingManagerContractAddress address of the depositContract for authorizations
+    function setStakingManagerContractAddress(address _stakingManagerContractAddress)
         external
         onlyOwner
     {
-        depositContractAddress = _depositContractAddress;
+        stakingManagerContractAddress = _stakingManagerContractAddress;
 
-        emit DepositAddressSet(_depositContractAddress);
+        emit StakingManagerAddressSet(_stakingManagerContractAddress);
     }
 
     /// @notice Updates the minimum bid price
@@ -326,7 +336,7 @@ contract Auction is IAuction, Pausable {
         return bids[_bidId].bidderAddress;
     }
 
-    function setManagerAddress(address _managerAddress) external {
+    function setEtherFiNodesManagerAddress(address _managerAddress) external {
         withdrawSafeManager = _managerAddress;
     }
 
@@ -334,9 +344,9 @@ contract Auction is IAuction, Pausable {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyDepositContract() {
+    modifier onlyStakingManagerContract() {
         require(
-            msg.sender == depositContractAddress,
+            msg.sender == stakingManagerContractAddress,
             "Only deposit contract function"
         );
         _;

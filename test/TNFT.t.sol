@@ -2,20 +2,20 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/Deposit.sol";
+import "../src/StakingManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
-import "../src/Auction.sol";
-import "../src/Registration.sol";
+import "../src/AuctionManager.sol";
+import "../src/NodeOperatorKeyManager.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract TNFTTest is Test {
-    Deposit public depositInstance;
+    StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
-    Registration public registrationInstance;
-    Auction public auctionInstance;
+    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
     Merkle merkle;
     bytes32 root;
@@ -28,21 +28,21 @@ contract TNFTTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        registrationInstance = new Registration();
-        auctionInstance = new Auction(address(registrationInstance));
-        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
+        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
-        auctionInstance.setDepositContractAddress(address(depositInstance));
-        TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
+        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
         vm.stopPrank();
     }
 
     function test_TNFTContractGetsInstantiatedCorrectly() public {
         assertEq(
-            TestTNFTInstance.depositContractAddress(),
-            address(depositInstance)
+            TestTNFTInstance.stakingManagerContractAddress(),
+            address(stakingManagerInstance)
         );
         assertEq(TestTNFTInstance.nftValue(), 0.03 ether);
     }

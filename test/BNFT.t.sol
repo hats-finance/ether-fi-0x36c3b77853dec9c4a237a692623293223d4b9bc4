@@ -2,29 +2,29 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/Deposit.sol";
-import "src/WithdrawSafeManager.sol";
+import "../src/StakingManager.sol";
+import "src/EtherFiNodesManager.sol";
 
 import "../src/BNFT.sol";
-import "../src/Registration.sol";
+import "../src/NodeOperatorKeyManager.sol";
 import "../src/TNFT.sol";
-import "../src/Auction.sol";
+import "../src/AuctionManager.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract BNFTTest is Test {
-    Deposit public depositInstance;
-    WithdrawSafe public withdrawSafeInstance;
-    WithdrawSafeManager public managerInstance;
-    Registration public registrationInstance;
+    StakingManager public stakingManagerInstance;
+    EtherFiNode public withdrawSafeInstance;
+    EtherFiNodesManager public managerInstance;
+    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
-    Auction public auctionInstance;
+    AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
-    IDeposit.DepositData public test_data;
+    IStakingManager.DepositData public test_data;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -34,26 +34,26 @@ contract BNFTTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        registrationInstance = new Registration();
-        auctionInstance = new Auction(address(registrationInstance));
-        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
+        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
-        auctionInstance.setDepositContractAddress(address(depositInstance));
-        TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        managerInstance = new WithdrawSafeManager(
+        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+        managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
-            address(depositInstance),
+            address(stakingManagerInstance),
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
 
-        auctionInstance.setManagerAddress(address(managerInstance));
-        depositInstance.setManagerAddress(address(managerInstance));
+        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
-        test_data = IDeposit.DepositData({
+        test_data = IStakingManager.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",
@@ -66,8 +66,8 @@ contract BNFTTest is Test {
 
     function test_BNFTContractGetsInstantiatedCorrectly() public {
         assertEq(
-            TestBNFTInstance.depositContractAddress(),
-            address(depositInstance)
+            TestBNFTInstance.stakingManagerContractAddress(),
+            address(stakingManagerInstance)
         );
         assertEq(TestBNFTInstance.nftValue(), 0.002 ether);
     }
@@ -83,7 +83,7 @@ contract BNFTTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.expectRevert("Err: token is SOUL BOUND");
         TestBNFTInstance.transferFrom(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
