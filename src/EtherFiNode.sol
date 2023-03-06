@@ -3,15 +3,15 @@ pragma solidity 0.8.13;
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
-import "./interfaces/IAuction.sol";
+import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
-import "./interfaces/IWithdrawSafe.sol";
-import "./interfaces/IDeposit.sol";
+import "./interfaces/IEtherFiNode.sol";
+import "./interfaces/IStakingManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
-contract WithdrawSafe is IWithdrawSafe {
+contract EtherFiNode is IEtherFiNode {
     address withdrawSafeAddress;
 
     //--------------------------------------------------------------------------------------

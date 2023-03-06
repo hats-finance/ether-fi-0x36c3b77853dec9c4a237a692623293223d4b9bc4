@@ -4,12 +4,12 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 
 import "../src/Treasury.sol";
-import "../src/Auction.sol";
+import "../src/AuctionManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
 
 contract TreasuryTest is Test {
     Treasury treasuryInstance;
-    Auction auctionInstance;
+    AuctionManager auctionInstance;
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
 
     address owner = vm.addr(1);
@@ -19,7 +19,7 @@ contract TreasuryTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new Auction(address(nodeOperatorKeyManagerInstance));
+        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
         vm.stopPrank();
     }
 
@@ -30,19 +30,19 @@ contract TreasuryTest is Test {
         assertEq(address(treasuryInstance).balance, 0.5 ether);
     }
 
-    function test_SetAuctionAddressWorks() public {
+    function test_SetAuctionManagerAddressWorks() public {
         vm.prank(owner);
-        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         assertEq(
             treasuryInstance.auctionContractAddress(),
             address(auctionInstance)
         );
     }
 
-    function test_SetAuctionAddressFailsIfNotOwner() public {
+    function test_SetAuctionManagerAddressFailsIfNotOwner() public {
         vm.prank(alice);
         vm.expectRevert("Only owner function");
-        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
     }
 
     function test_WithdrawFailsIfNotOwner() public {

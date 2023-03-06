@@ -10,7 +10,7 @@ contract BNFT is ERC721 {
 
     uint256 private tokenIds;
     uint256 public nftValue = 0.002 ether;
-    address public depositContractAddress;
+    address public stakingManagerContractAddress;
 
     mapping(uint256 => uint256) public validatorToId;
 
@@ -20,7 +20,7 @@ contract BNFT is ERC721 {
     //--------------------------------------------------------------------------------------
 
     constructor() ERC721("Bond NFT", "BNFT") {
-        depositContractAddress = msg.sender;
+        stakingManagerContractAddress = msg.sender;
         nftValue = 0.002 ether;
     }
 
@@ -30,7 +30,7 @@ contract BNFT is ERC721 {
 
     //Function only allows the deposit contract to mint to prevent
     //standard eoa minting themselves NFTs
-    function mint(address _reciever, uint256 _validatorId) external onlyDepositContract {
+    function mint(address _reciever, uint256 _validatorId) external onlyStakingManagerContract {
         _safeMint(_reciever, tokenIds);
 
         validatorToId[_validatorId] = tokenIds;
@@ -58,9 +58,9 @@ contract BNFT is ERC721 {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyDepositContract() {
+    modifier onlyStakingManagerContract() {
         require(
-            msg.sender == depositContractAddress,
+            msg.sender == stakingManagerContractAddress,
             "Only deposit contract function"
         );
         _;

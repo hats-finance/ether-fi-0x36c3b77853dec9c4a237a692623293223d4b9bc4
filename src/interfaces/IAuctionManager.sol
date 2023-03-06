@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-interface IAuction {
+interface IAuctionManager {
     struct Bid {
         uint256 amount;
         uint256 bidderPubKeyIndex;
@@ -24,10 +24,10 @@ interface IAuction {
 
     function reEnterAuction(uint256 _bidId) external;
 
-    function setDepositContractAddress(address _depositContractAddress)
+    function setStakingManagerContractAddress(address _stakingManagerContractAddress)
         external;
 
-    function sendFundsToWithdrawSafe(uint256 _validatorId, uint256 _stakeId) external;
-    function setManagerAddress(address _managerAddress) external;
+    function sendFundsToEtherFiNode(uint256 _validatorId, uint256 _stakeId) external;
+    function setEtherFiNodesManagerAddress(address _managerAddress) external;
 
 }
