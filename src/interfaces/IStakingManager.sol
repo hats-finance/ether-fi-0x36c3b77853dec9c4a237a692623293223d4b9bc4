@@ -11,8 +11,8 @@ interface IStakingManager {
 
     //The state of the validator
     enum VALIDATOR_PHASE {
-        HANDOVER_READY,
-        ACCEPTED,
+        STAKE_DEPOSITED,
+        REGISTERED,
         LIVE,
         EXITED
     }
@@ -22,25 +22,20 @@ interface IStakingManager {
     /// @param withdrawCredentials - withdraw credentials of the validator
     /// @param amount - amount of the stake
     /// @param phase - the current step of the stake
-    struct Stake {
-        address staker;
-        address withdrawSafe;
-        DepositData deposit_data;
-        uint256 amount;
-        uint256 winningBidId;
-        uint256 stakeId;
-        STAKE_PHASE phase;
-    }
+    
 
     /// @notice Structure to hold the information on validators
     /// @param bidId - id of the object holding the operators info.
     /// @param stakeId - id of the object holding the stakers info.
     /// @param validatorKey - encrypted validator key for use by the operator and staker
     struct Validator {
-        uint256 validatorId;
-        uint256 bidId;
-        uint256 stakeId;
+        uint128 validatorId;
+        uint32 selectedBidId;
+        uint32 stakeId;
+        address staker;
+        address withdrawSafe;
         VALIDATOR_PHASE phase;
+        DepositData deposit_data;
     }
 
     struct DepositData {
