@@ -30,6 +30,15 @@ contract AuctionManagerTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
+    string aliceIPFSHash = "aliceIPFSHash";
+
+    event BidCreated(
+        uint256 indexed _bidId,
+        uint256 indexed amount,
+        address indexed bidderAddress,
+        uint256 nextAvailableIpfsIndex
+    );
+
     event WinningBidSent(address indexed winner, uint256 indexed winningBidId);
 
     event MinBidUpdated(
@@ -89,6 +98,76 @@ contract AuctionManagerTest is Test {
             auctionInstance.stakingManagerContractAddress(),
             address(stakingManagerInstance)
         );
+    }
+
+    function test_CreateBid() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        (, , uint256 keysUsed) = nodeOperatorKeyManagerInstance
+            .addressToOperatorData(alice);
+
+        assertEq(keysUsed, 0);
+
+        hoax(alice);
+        auctionInstance.createBid{value: 0.1 ether}(proof, false, address(0));
+
+        (
+            uint256 bidId,
+            uint256 amount,
+            uint256 pubKeyIndex,
+            uint256 timeOfBid,
+            bool isActive,
+            bool isReserved,
+            address bidder,
+            address staker
+        ) = auctionInstance.bids(1);
+
+        assertEq(bidId, 1);
+        assertEq(amount, 0.1 ether);
+        assertEq(pubKeyIndex, 0);
+        assertEq(timeOfBid, block.timestamp);
+        assertEq(isActive, false);
+        assertEq(isReserved, false);
+        assertEq(bidder, alice);
+        assertEq(staker, address(0));
+
+        hoax(alice);
+        auctionInstance.createBid{value: 1 ether}(proof, false, address(0));
+
+        (
+            bidId,
+            amount,
+            pubKeyIndex,
+            timeOfBid,
+            isActive,
+            isReserved,
+            bidder,
+            staker
+        ) = auctionInstance.bids(2);
+
+        assertEq(bidId, 2);
+        assertEq(amount, 1 ether);
+        assertEq(pubKeyIndex, 1);
+        assertEq(timeOfBid, block.timestamp);
+        assertEq(isActive, false);
+        assertEq(isReserved, false);
+        assertEq(bidder, alice);
+        assertEq(staker, address(0));
+    }
+
+    function test_EventBidCreated() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        vm.expectEmit(true, true, true, true);
+        emit BidCreated(1, 0.1 ether, alice, 0);
+        hoax(alice);
+        auctionInstance.createBid{value: 0.1 ether}(proof, false, address(0));
     }
 
     function test_ReEnterAuctionManagerFailsIfAuctionManagerPaused() public {
