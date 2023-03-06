@@ -137,7 +137,7 @@ contract AuctionManagerTest is Test {
 
         stakingManagerInstance.deposit{value: 0.032 ether}();
         (, , , , bool isBid1Active) = auctionInstance.bids(1);
-        (, uint128 selectedBidId, , , , ) = stakingManagerInstance.validators(0);
+        (, uint256 selectedBidId, , , , ) = stakingManagerInstance.validators(0);
         assertEq(selectedBidId, 1);
         assertEq(isBid1Active, false);
         assertEq(auctionInstance.currentHighestBidId(), 2);

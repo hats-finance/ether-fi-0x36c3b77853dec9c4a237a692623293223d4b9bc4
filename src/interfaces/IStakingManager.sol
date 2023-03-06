@@ -20,8 +20,8 @@ interface IStakingManager {
     /// @param phase - the VALIDATOR_PHASE the validator is currently in.
     /// @param deposit_data - the validators deposit_data
     struct Validator {
-        uint128 validatorId;
-        uint128 selectedBidId;
+        uint256 validatorId;
+        uint256 selectedBidId;
         address staker;
         address etherFiNode;
         VALIDATOR_PHASE phase;
@@ -38,10 +38,10 @@ interface IStakingManager {
 
     function deposit() external payable;
 
-    function cancelDeposit(uint256 _stakeId) external;
+    function cancelDeposit(uint256 _validatorId) external;
 
     function registerValidator(
-        uint256 _stakeId,
+        uint256 _validatorId,
         DepositData calldata _depositData
     ) external;
 

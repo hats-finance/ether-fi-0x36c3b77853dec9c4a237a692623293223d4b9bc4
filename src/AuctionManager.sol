@@ -64,7 +64,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
-    event FundsSentToEtherFiNode(address indexed etherFiNode, uint256 indexed _amount);
+    event FundsSentToEtherFiNode(address indexed etehrFiNode, uint256 indexed _amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -219,7 +219,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         StakingManager depositContractInstance = StakingManager(stakingManagerContractAddress);
         (
             ,
-            uint128 selectedBid,
+            uint256 selectedBid,
             ,
             address etherFiNode,
             ,

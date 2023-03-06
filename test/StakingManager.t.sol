@@ -120,8 +120,8 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.registerValidator(0, test_data);
         
         (   
-            uint128 validatorId,
-            uint128 winningBid,
+            uint256 validatorId,
+            uint256 winningBid,
             address staker,
             ,
             ,
@@ -254,7 +254,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.registerValidator(0, test_data);
     }
 
-    function test_RegisterValidatorFailsIfStakeNotInCorrectPhase() public {
+    function test_RegisterValidatorFailsIfValidatorNotInCorrectPhase() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -262,7 +262,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}();
         stakingManagerInstance.cancelDeposit(0);
 
-        vm.expectRevert("Stake not in correct phase");
+        vm.expectRevert("Validator not in correct phase");
         stakingManagerInstance.registerValidator(0, test_data);
     }
 
@@ -293,7 +293,7 @@ contract StakingManagerTest is Test {
         
         (   
             ,
-            uint128 selectedBidId,
+            uint256 selectedBidId,
             ,
             address etherFiNode,
             ,
@@ -377,7 +377,7 @@ contract StakingManagerTest is Test {
 
         (   
             ,
-            uint128 selectedBidId,
+            uint256 selectedBidId,
             address staker,
             ,
             ,
@@ -387,7 +387,7 @@ contract StakingManagerTest is Test {
         assertEq(selectedBidId, 2);
 
         (uint256 bidAmount, , , address bidder, bool isActive) = auctionInstance
-            .bids(winningbidID);
+            .bids(selectedBidId);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, false);
@@ -399,7 +399,7 @@ contract StakingManagerTest is Test {
         
         (   
             ,
-            uint128 selectedBidId,
+            selectedBidId,
             ,
             ,
             ,

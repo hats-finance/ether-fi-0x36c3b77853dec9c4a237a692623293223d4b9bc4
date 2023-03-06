@@ -136,7 +136,7 @@ contract StakingManager is IStakingManager, Pausable {
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @param _stakeId id of the stake the validator connects to
+    /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
         uint256 _validatorId,
@@ -182,7 +182,7 @@ contract StakingManager is IStakingManager, Pausable {
             );
         }
         
-        validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
+        validators[_validatorId].phase = VALIDATOR_PHASE.REGISTERED;
 
         emit ValidatorRegistered(
             validators[_validatorId].selectedBidId,
@@ -192,11 +192,11 @@ contract StakingManager is IStakingManager, Pausable {
 
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
-    /// @param _stakeId the ID of the stake to cancel
+    /// @param _validatorId the ID of the validator deposit to cancel
     function cancelDeposit(uint256 _validatorId) public whenNotPaused {
         require(msg.sender == validators[_validatorId].staker, "Not deposit owner");
         require(
-            validators[_validatorId].phase == VALIDATOR_PHASE.REGISTERED,
+            validators[_validatorId].phase == VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Cancelling availability closed"
         );
 
@@ -211,7 +211,7 @@ contract StakingManager is IStakingManager, Pausable {
 
         refundDeposit(msg.sender, stakeAmount);
 
-        emit DepositCancelled(_stakeId);
+        emit DepositCancelled(_validatorId);
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake

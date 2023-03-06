@@ -180,7 +180,7 @@ contract EtherFiNodeTest is Test {
 
         (
             ,
-            uint128 winningBidId_2,
+            uint256 winningBidId_2,
             address staker_2,
             address withdrawSafeAddress_2,
             ,
@@ -188,7 +188,7 @@ contract EtherFiNodeTest is Test {
         
         (   
             ,
-            uint128 winningBidId_3,
+            uint256 winningBidId_3,
             address staker_3,
             address withdrawSafeAddress_3,
             ,
