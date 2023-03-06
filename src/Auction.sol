@@ -119,20 +119,43 @@ contract Auction is IAuction, Pausable {
         return currentHighestBidIdLocal;
     }
 
-    function createBid() public payable whenNotPaused {
+    function createBid(bytes32[] calldata _merkleProof, bool _reserved)
+        public
+        payable
+        whenNotPaused
+    {
+        // Checks if bidder is on whitelist
+        if (msg.value < minBidAmount) {
+            require(
+                MerkleProof.verify(
+                    _merkleProof,
+                    merkleRoot,
+                    keccak256(abi.encodePacked(msg.sender))
+                ) && msg.value >= whitelistBidAmount,
+                "Invalid bid"
+            );
+        } else {
+            require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
+        }
+
         uint256 nextAvailableIpfsIndex = nodeOperatorKeyManagerInstance
             .numberOfKeysUsed(msg.sender);
 
         nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
 
+        // Bid becomes active when placed into auction
         bids[numberOfBids] = Bid({
             amount: msg.value,
             bidderPubKeyIndex: nextAvailableIpfsIndex,
             timeOfBid: block.timestamp,
+            isActive: false,
+            isReserverd: _reserved,
             bidderAddress: msg.sender,
-            isActive: true
+            stakerAddress: address(0)
         });
     }
+
+    function _reserveBid(address _stakerAddress) internal {}
 
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Used local variables to save on multiple state variable lookups
@@ -186,46 +209,46 @@ contract Auction is IAuction, Pausable {
         payable
         whenNotPaused
     {
-        // Checks if bidder is on whitelist
-        if (msg.value < minBidAmount) {
-            require(
-                MerkleProof.verify(
-                    _merkleProof,
-                    merkleRoot,
-                    keccak256(abi.encodePacked(msg.sender))
-                ) && msg.value >= whitelistBidAmount,
-                "Invalid bid"
-            );
-        } else {
-            require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
-        }
+        // // Checks if bidder is on whitelist
+        // if (msg.value < minBidAmount) {
+        //     require(
+        //         MerkleProof.verify(
+        //             _merkleProof,
+        //             merkleRoot,
+        //             keccak256(abi.encodePacked(msg.sender))
+        //         ) && msg.value >= whitelistBidAmount,
+        //         "Invalid bid"
+        //     );
+        // } else {
+        //     require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
+        // }
 
-        uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
-            nodeOperatorKeyManagerContract
-        ).numberOfKeysUsed(msg.sender);
-        NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
-            .increaseKeysIndex(msg.sender);
+        // uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
+        //     nodeOperatorKeyManagerContract
+        // ).numberOfKeysUsed(msg.sender);
+        // NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
+        //     .increaseKeysIndex(msg.sender);
 
         //Creates a bid object for storage and lookup in future
-        bids[numberOfBids] = Bid({
-            amount: msg.value,
-            bidderPubKeyIndex: nextAvailableIpfsIndex,
-            timeOfBid: block.timestamp,
-            bidderAddress: msg.sender,
-            isActive: true
-        });
+        // bids[numberOfBids] = Bid({
+        //     amount: msg.value,
+        //     bidderPubKeyIndex: nextAvailableIpfsIndex,
+        //     timeOfBid: block.timestamp,
+        //     bidderAddress: msg.sender,
+        //     isActive: true
+        // });
 
         //Checks if the bid is now the highest bid
         if (msg.value > bids[currentHighestBidId].amount) {
             currentHighestBidId = numberOfBids;
         }
 
-        emit BidPlaced(
-            msg.sender,
-            msg.value,
-            numberOfBids,
-            nextAvailableIpfsIndex
-        );
+        // emit BidPlaced(
+        //     msg.sender,
+        //     msg.value,
+        //     numberOfBids,
+        //     nextAvailableIpfsIndex
+        // );
 
         numberOfBids++;
         numberOfActiveBids++;

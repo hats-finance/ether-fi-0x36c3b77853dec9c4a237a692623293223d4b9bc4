@@ -98,14 +98,16 @@ contract AuctionTest is Test {
             uint256 amount,
             uint256 bidderPubKeyIndex,
             uint256 timeOfBid,
+            bool isActive,
+            ,
             address bidderAddress,
-            bool isActive
+
         ) = auctionInstance.bids(1);
 
         assertEq(amount, 0.1 ether);
         assertEq(bidderPubKeyIndex, 0);
         assertEq(timeOfBid, block.timestamp);
-        assertEq(isActive, true);
+        assertEq(isActive, false);
     }
 
     function test_ReEnterAuctionFailsIfAuctionPaused() public {
@@ -161,15 +163,16 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
         depositInstance.deposit{value: 0.032 ether}();
-        (, , , , bool isBid1Active) = auctionInstance.bids(1);
+        (, , , bool isBid1Active, , address bidderAddress, ) = auctionInstance
+            .bids(1);
         (, , , , uint256 winningBidId, , ) = depositInstance.stakes(0);
         assertEq(winningBidId, 1);
         assertEq(isBid1Active, false);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
         depositInstance.cancelStake(0);
-        (, , , , isBid1Active) = auctionInstance.bids(1);
-        (, , , , bool isBid2Active) = auctionInstance.bids(2);
+        (, , , isBid1Active, , bidderAddress, ) = auctionInstance.bids(1);
+        (, , , bool isBid2Active, , , ) = auctionInstance.bids(2);
         assertEq(isBid1Active, true);
         assertEq(isBid2Active, true);
         assertEq(address(auctionInstance).balance, 0.15 ether);
@@ -225,26 +228,26 @@ contract AuctionTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
         vm.stopPrank();
 
-        (, , , , bool isActiveBid1) = auctionInstance.bids(1);
-        (, , , , bool isActiveBid2) = auctionInstance.bids(2);
-        (, , , , bool isActiveBid3) = auctionInstance.bids(3);
+        (, , , bool isBid1Active, , , ) = auctionInstance.bids(1);
+        (, , , bool isBid2Active, , , ) = auctionInstance.bids(2);
+        (, , , bool isBid3Active, , , ) = auctionInstance.bids(3);
 
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
-        assertEq(isActiveBid1, true);
-        assertEq(isActiveBid2, false);
-        assertEq(isActiveBid3, true);
+        assertEq(isBid1Active, true);
+        assertEq(isBid2Active, false);
+        assertEq(isBid3Active, true);
 
         hoax(address(depositInstance));
         uint256 winner = auctionInstance.calculateWinningBid();
 
-        (, , , , isActiveBid1) = auctionInstance.bids(1);
-        (, , , , isActiveBid3) = auctionInstance.bids(3);
+        (, , , isBid1Active, , , ) = auctionInstance.bids(1);
+        (, , , isBid3Active, , , ) = auctionInstance.bids(3);
 
         assertEq(auctionInstance.currentHighestBidId(), 1);
         assertEq(auctionInstance.numberOfActiveBids(), 1);
-        assertEq(isActiveBid1, true);
-        assertEq(isActiveBid3, false);
+        assertEq(isBid1Active, true);
+        assertEq(isBid3Active, false);
         assertEq(winner, 3);
     }
 
@@ -286,6 +289,8 @@ contract AuctionTest is Test {
             uint256 amount,
             uint256 ipfsIndex,
             ,
+            ,
+            ,
             address bidderAddress,
 
         ) = auctionInstance.bids(1);
@@ -303,9 +308,8 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.3 ether}(proof);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (uint256 amount2, , , address bidderAddress2, ) = auctionInstance.bids(
-            auctionInstance.currentHighestBidId()
-        );
+        (uint256 amount2, , , , , address bidderAddress2, ) = auctionInstance
+            .bids(auctionInstance.currentHighestBidId());
 
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(amount2, 0.3 ether);
@@ -328,6 +332,8 @@ contract AuctionTest is Test {
         (
             uint256 amount,
             uint256 ipfsIndex,
+            ,
+            ,
             ,
             address bidderAddress,
 
@@ -353,13 +359,13 @@ contract AuctionTest is Test {
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.002 ether}(proof2);
 
-        (, ipfsIndex, , , ) = auctionInstance.bids(1);
+        (, ipfsIndex, , , , , ) = auctionInstance.bids(1);
         assertEq(ipfsIndex, 0);
 
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (amount, , , bidderAddress, ) = auctionInstance.bids(2);
+        (amount, , , , , bidderAddress, ) = auctionInstance.bids(2);
 
         assertEq(amount, 0.002 ether);
         assertEq(bidderAddress, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
@@ -368,7 +374,7 @@ contract AuctionTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.002 ether}(proof);
 
-        (, ipfsIndex, , , ) = auctionInstance.bids(3);
+        (, ipfsIndex, , , , , ) = auctionInstance.bids(3);
         assertEq(ipfsIndex, 1);
     }
 
@@ -474,7 +480,7 @@ contract AuctionTest is Test {
         auctionInstance.cancelBid(3);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, , , , bool isActive) = auctionInstance.bids(3);
+        (, , , bool isActive, , , ) = auctionInstance.bids(3);
 
         assertEq(isActive, false);
         assertEq(address(auctionInstance).balance, 0.4 ether);
@@ -519,7 +525,7 @@ contract AuctionTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, , , , bool isActive) = auctionInstance.bids(2);
+        (, , , bool isActive, , , ) = auctionInstance.bids(2);
 
         assertEq(isActive, false);
         assertEq(address(auctionInstance).balance, 0.3 ether);

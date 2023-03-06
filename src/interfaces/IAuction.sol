@@ -6,13 +6,13 @@ interface IAuction {
         uint256 amount;
         uint256 bidderPubKeyIndex;
         uint256 timeOfBid;
-        address bidderAddress;
         bool isActive;
+        bool isReserverd;
+        address bidderAddress;
+        address stakerAddress;
     }
 
-    function bidOnStake(
-        bytes32[] calldata _merkleProof
-    ) external payable;
+    function bidOnStake(bytes32[] calldata _merkleProof) external payable;
 
     function calculateWinningBid() external returns (uint256);
 
@@ -27,7 +27,8 @@ interface IAuction {
     function setDepositContractAddress(address _depositContractAddress)
         external;
 
-    function sendFundsToWithdrawSafe(uint256 _validatorId, uint256 _stakeId) external;
-    function setManagerAddress(address _managerAddress) external;
+    function sendFundsToWithdrawSafe(uint256 _validatorId, uint256 _stakeId)
+        external;
 
+    function setManagerAddress(address _managerAddress) external;
 }

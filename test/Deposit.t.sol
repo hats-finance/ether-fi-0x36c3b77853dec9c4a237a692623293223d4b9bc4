@@ -450,8 +450,15 @@ contract DepositTest is Test {
         assertEq(amount, 0.032 ether);
         assertEq(winningbidID, 2);
 
-        (uint256 bidAmount, , , address bidder, bool isActive) = auctionInstance
-            .bids(winningbidID);
+        (
+            uint256 bidAmount,
+            ,
+            ,
+            bool isActive,
+            ,
+            address bidder,
+
+        ) = auctionInstance.bids(winningbidID);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, false);
@@ -463,7 +470,7 @@ contract DepositTest is Test {
         (, , , , winningbidID, , ) = depositInstance.stakes(0);
         assertEq(winningbidID, 0);
 
-        (bidAmount, , , bidder, isActive) = auctionInstance.bids(2);
+        (bidAmount, , , isActive, , bidder, ) = auctionInstance.bids(2);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, true);
