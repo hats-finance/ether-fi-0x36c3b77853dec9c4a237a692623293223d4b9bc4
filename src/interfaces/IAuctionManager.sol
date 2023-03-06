@@ -3,12 +3,21 @@ pragma solidity 0.8.13;
 
 interface IAuctionManager {
     struct Bid {
+        uint256 bidId;
         uint256 amount;
         uint256 bidderPubKeyIndex;
         uint256 timeOfBid;
-        address bidderAddress;
         bool isActive;
+        bool isReserved;
+        address bidderAddress;
+        address stakerAddress;
     }
+
+    function createBid(
+        bytes32[] calldata _merkleProof,
+        bool _reserverd,
+        address _stakerAdress
+    ) external payable;
 
     function bidOnStake(bytes32[] calldata _merkleProof) external payable;
 

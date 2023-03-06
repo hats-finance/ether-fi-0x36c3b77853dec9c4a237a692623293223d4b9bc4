@@ -34,6 +34,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     bytes32 public merkleRoot;
 
     IEtherFiNode public safeInstance;
+    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
 
     mapping(uint256 => Bid) public bids;
 
@@ -41,6 +42,12 @@ contract AuctionManager is IAuctionManager, Pausable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
+    event BidCreated(
+        uint256 indexed _bidId,
+        uint256 indexed amount,
+        address indexed bidderAddress,
+        uint256 nextAvailableIpfsIndex
+    );
     event BidPlaced(
         address indexed bidder,
         uint256 amount,
@@ -76,6 +83,9 @@ contract AuctionManager is IAuctionManager, Pausable {
     constructor(address _nodeOperatorKeyManagerContract) {
         owner = msg.sender;
         nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
+        nodeOperatorKeyManagerInstance = NodeOperatorKeyManager(
+            _nodeOperatorKeyManagerContract
+        );
     }
 
     //--------------------------------------------------------------------------------------
@@ -161,14 +171,11 @@ contract AuctionManager is IAuctionManager, Pausable {
         emit BidCancelled(_bidId);
     }
 
-    /// @notice Places a bid in the auction to be the next operator
-    /// @dev Merkleroot gets generated in JS offline and sent to the contract
-    /// @param _merkleProof the merkleproof for the user calling the function
-    function bidOnStake(bytes32[] calldata _merkleProof)
-        external
-        payable
-        whenNotPaused
-    {
+    function createBid(
+        bytes32[] calldata _merkleProof,
+        bool _reserved,
+        address _staker
+    ) public payable {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
@@ -183,32 +190,79 @@ contract AuctionManager is IAuctionManager, Pausable {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
-        uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
-            nodeOperatorKeyManagerContract
-        ).numberOfKeysUsed(msg.sender);
-        NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
-            .increaseKeysIndex(msg.sender);
+        uint256 nextAvailableIpfsIndex = nodeOperatorKeyManagerInstance
+            .numberOfKeysUsed(msg.sender);
+        nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
 
+        uint256 _bidId = numberOfBids;
         //Creates a bid object for storage and lookup in future
-        bids[numberOfBids] = Bid({
+        bids[_bidId] = Bid({
+            bidId: _bidId,
             amount: msg.value,
             bidderPubKeyIndex: nextAvailableIpfsIndex,
             timeOfBid: block.timestamp,
+            isActive: false,
+            isReserved: _reserved,
             bidderAddress: msg.sender,
-            isActive: true
+            stakerAddress: _staker
         });
+
+        emit BidCreated(
+            _bidId,
+            bids[_bidId].amount,
+            bids[_bidId].bidderAddress,
+            nextAvailableIpfsIndex
+        );
+
+        numberOfBids++;
+    }
+
+    /// @notice Places a bid in the auction to be the next operator
+    /// @dev Merkleroot gets generated in JS offline and sent to the contract
+    /// @param _merkleProof the merkleproof for the user calling the function
+    function bidOnStake(bytes32[] calldata _merkleProof)
+        external
+        payable
+        whenNotPaused
+    {
+        // Checks if bidder is on whitelist
+        // if (msg.value < minBidAmount) {
+        //     require(
+        //         MerkleProof.verify(
+        //             _merkleProof,
+        //             merkleRoot,
+        //             keccak256(abi.encodePacked(msg.sender))
+        //         ) && msg.value >= whitelistBidAmount,
+        //         "Invalid bid"
+        //     );
+        // } else {
+        //     require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
+        // }
+
+        // uint256 nextAvailableIpfsIndex = nodeOperatorKeyManagerInstance
+        //     .numberOfKeysUsed(msg.sender);
+        // nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
+
+        //Creates a bid object for storage and lookup in future
+        // bids[numberOfBids] = Bid({
+        //     amount: msg.value,
+        //     bidderPubKeyIndex: nextAvailableIpfsIndex,
+        //     timeOfBid: block.timestamp,
+        //     bidderAddress: msg.sender,
+        //     isActive: true
+        // });
 
         //Checks if the bid is now the highest bid
         if (msg.value > bids[currentHighestBidId].amount) {
             currentHighestBidId = numberOfBids;
         }
 
-        emit BidPlaced(
-            msg.sender,
-            msg.value,
-            numberOfBids,
-            nextAvailableIpfsIndex
-        );
+        // emit BidPlaced(
+        //     msg.sender,
+        //     msg.value,
+        //     numberOfBids,
+        //     nextAvailableIpfsIndex
+        // );
 
         numberOfBids++;
         numberOfActiveBids++;
