@@ -9,17 +9,12 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
         uint128 keysUsed,
         string ipfsHash
     );
-    // user address => IPFS hash
-    mapping(address => string) public addressToIpfsHash;
-
-    // user address => IPFS hash => number of keys
-    mapping(address => uint128) public numberOfKeysUsed;
 
     // user address => OperaterData Struct
     mapping(address => KeyData) public addressToOperatorData;
 
     function increaseKeysIndex(address _user) public {
-        numberOfKeysUsed[_user]++;
+        addressToOperatorData[_user].keysUsed++;
     }
 
     function registerNodeOperator(string memory _ipfsHash, uint128 _totalKeys)
