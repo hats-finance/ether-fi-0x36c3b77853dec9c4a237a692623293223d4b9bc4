@@ -16,7 +16,7 @@ contract NodeOperatorKeyManagerTest is Test {
 
     address alice = vm.addr(1);
 
-    bytes32 aliceIPFSHash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
+    string aliceIPFSHash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
 
     function setUp() public {
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
