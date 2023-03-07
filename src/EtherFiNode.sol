@@ -13,8 +13,10 @@ import "lib/forge-std/src/console.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address owner;
+    uint256 localRevenueIndex;
+    IStakingManager.DepositData depositData;
+    uint64 exitRequestTimestamp;
     VALIDATOR_PHASE phase;
-    IStakingManager.DepositData deposit_data;
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -35,7 +37,7 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     function getDepositData() external view returns (IStakingManager.DepositData memory) {
-        return deposit_data;
+        return depositData;
     }
 
     function getPhase() external view returns (VALIDATOR_PHASE) {
@@ -49,9 +51,9 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     /// @notice Set the deposit data
-    /// @param _deposit_data the deposit data
-    function setDepositData(IStakingManager.DepositData calldata _deposit_data) external onlyOwner {
-        deposit_data = _deposit_data;
+    /// @param _depositData the deposit data
+    function setDepositData(IStakingManager.DepositData calldata _depositData) external onlyOwner {
+        depositData = _depositData;
     }
 
     function withdrawFunds(
