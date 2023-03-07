@@ -47,10 +47,7 @@ contract StakingManager is IStakingManager, Pausable {
         address withdrawSafe
     );
     event DepositCancelled(uint256 id);
-    event ValidatorRegistered(
-        uint256 bidId,
-        uint256 validatorId
-    );
+    event ValidatorRegistered(uint256 bidId, uint256 validatorId);
     event ValidatorAccepted(uint256 validatorId);
 
     //--------------------------------------------------------------------------------------
@@ -99,7 +96,7 @@ contract StakingManager is IStakingManager, Pausable {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    function deposit() public payable whenNotPaused {
+    function deposit(uint256 _bidId) public payable whenNotPaused {
         uint256 localNumberOfValidators = numberOfValidators;
 
         require(msg.value == stakeAmount, "Insufficient staking amount");
@@ -114,14 +111,29 @@ contract StakingManager is IStakingManager, Pausable {
 
         address withdrawSafe = managerInstance.createWithdrawalSafe();
 
-        validators[localNumberOfValidators] = Validator({
-            validatorId: localNumberOfValidators,
-            selectedBidId: auctionInterfaceInstance.calculateWinningBid(),
-            staker: msg.sender,
-            etherFiNode: withdrawSafe,
-            phase: VALIDATOR_PHASE.STAKE_DEPOSITED,
-            deposit_data: DepositData(address(0), "", "", "", "")
-        });
+        if (_bidId != 0) {
+            auctionInterfaceInstance.selectBid(_bidId, msg.sender);
+
+            validators[localNumberOfValidators] = Validator({
+                validatorId: localNumberOfValidators,
+                selectedBidId: _bidId,
+                staker: msg.sender,
+                etherFiNode: withdrawSafe,
+                phase: VALIDATOR_PHASE.STAKE_DEPOSITED,
+                deposit_data: DepositData(address(0), "", "", "", "")
+            });
+        } else {
+            auctionInterfaceInstance.placeBid();
+
+            validators[localNumberOfValidators] = Validator({
+                validatorId: localNumberOfValidators,
+                selectedBidId: auctionInterfaceInstance.calculateWinningBid(),
+                staker: msg.sender,
+                etherFiNode: withdrawSafe,
+                phase: VALIDATOR_PHASE.STAKE_DEPOSITED,
+                deposit_data: DepositData(address(0), "", "", "", "")
+            });
+        }
 
         depositorBalances[msg.sender] += msg.value;
 
@@ -142,7 +154,10 @@ contract StakingManager is IStakingManager, Pausable {
         uint256 _validatorId,
         DepositData calldata _depositData
     ) public whenNotPaused {
-        require(msg.sender == validators[_validatorId].staker, "Incorrect caller");
+        require(
+            msg.sender == validators[_validatorId].staker,
+            "Incorrect caller"
+        );
         require(
             validators[_validatorId].phase == VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Validator not in correct phase"
@@ -151,25 +166,28 @@ contract StakingManager is IStakingManager, Pausable {
         validators[_validatorId].deposit_data = _depositData;
         validators[_validatorId].phase = VALIDATOR_PHASE.REGISTERED;
 
-        TNFTInterfaceInstance.mint(validators[_validatorId].staker, _validatorId);
-        BNFTInterfaceInstance.mint(validators[_validatorId].staker, _validatorId);
+        TNFTInterfaceInstance.mint(
+            validators[_validatorId].staker,
+            _validatorId
+        );
+        BNFTInterfaceInstance.mint(
+            validators[_validatorId].staker,
+            _validatorId
+        );
 
         address etherfiNode = validators[_validatorId].etherFiNode;
 
         IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             managerAddress
         );
-        
-        address operator = auctionInterfaceInstance.getBidOwner(validators[_validatorId].selectedBidId);
+
+        address operator = auctionInterfaceInstance.getBidOwner(
+            validators[_validatorId].selectedBidId
+        );
 
         managerInstance.setOperatorAddress(_validatorId, operator);
-        managerInstance.setEtherFiNodeAddress(
-            _validatorId,
-            etherfiNode
-        );
-        auctionInterfaceInstance.sendFundsToEtherFiNode(
-            _validatorId
-        );
+        managerInstance.setEtherFiNodeAddress(_validatorId, etherfiNode);
+        auctionInterfaceInstance.sendFundsToEtherFiNode(_validatorId);
 
         DepositData memory dataInstance = validators[_validatorId].deposit_data;
 
@@ -181,7 +199,7 @@ contract StakingManager is IStakingManager, Pausable {
                 dataInstance.depositDataRoot
             );
         }
-        
+
         validators[_validatorId].phase = VALIDATOR_PHASE.REGISTERED;
 
         emit ValidatorRegistered(
@@ -194,7 +212,10 @@ contract StakingManager is IStakingManager, Pausable {
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _validatorId the ID of the validator deposit to cancel
     function cancelDeposit(uint256 _validatorId) public whenNotPaused {
-        require(msg.sender == validators[_validatorId].staker, "Not deposit owner");
+        require(
+            msg.sender == validators[_validatorId].staker,
+            "Not deposit owner"
+        );
         require(
             validators[_validatorId].phase == VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Cancelling availability closed"
@@ -204,7 +225,9 @@ contract StakingManager is IStakingManager, Pausable {
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(validators[_validatorId].selectedBidId);
+        auctionInterfaceInstance.reEnterAuction(
+            validators[_validatorId].selectedBidId
+        );
 
         validators[_validatorId].phase = VALIDATOR_PHASE.CANCELLED;
         validators[_validatorId].selectedBidId = 0;

@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 interface IStakingManager {
-
     //The state of the validator
     enum VALIDATOR_PHASE {
         STAKE_DEPOSITED,
@@ -36,7 +35,7 @@ interface IStakingManager {
         bytes signature;
     }
 
-    function deposit() external payable;
+    function deposit(uint256 _bidId) external payable;
 
     function cancelDeposit(uint256 _validatorId) external;
 
