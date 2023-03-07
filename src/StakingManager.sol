@@ -3,22 +3,22 @@ pragma solidity 0.8.13;
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
-import "./interfaces/IAuction.sol";
-import "./interfaces/IDeposit.sol";
+import "./interfaces/IAuctionManager.sol";
+import "./interfaces/IStakingManager.sol";
 import "./interfaces/IDepositContract.sol";
-import "./interfaces/IWithdrawSafe.sol";
-import "./interfaces/IWithdrawSafeManager.sol";
+import "./interfaces/IEtherFiNode.sol";
+import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract Deposit is IDeposit, Pausable {
+contract StakingManager is IStakingManager, Pausable {
     TNFT public TNFTInstance;
     BNFT public BNFTInstance;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
-    IAuction public auctionInterfaceInstance;
+    IAuctionManager public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
 
     uint256 public stakeAmount;
@@ -63,7 +63,7 @@ contract Deposit is IDeposit, Pausable {
 
     /// @notice Constructor to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
-    /// @dev Auction contract must be deployed first
+    /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
     constructor(address _auctionAddress) {
         if (test == true) {
@@ -76,7 +76,7 @@ contract Deposit is IDeposit, Pausable {
         BNFTInstance = new BNFT();
         TNFTInterfaceInstance = ITNFT(address(TNFTInstance));
         BNFTInterfaceInstance = IBNFT(address(BNFTInstance));
-        auctionInterfaceInstance = IAuction(_auctionAddress);
+        auctionInterfaceInstance = IAuctionManager(_auctionAddress);
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
@@ -112,7 +112,7 @@ contract Deposit is IDeposit, Pausable {
             "No bids available at the moment"
         );
 
-        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             managerAddress
         );
 
@@ -142,8 +142,7 @@ contract Deposit is IDeposit, Pausable {
         numberOfStakes++;
     }
 
-    /// @notice Creates validator object and updates information
-    /// @dev Still looking at solutions to storing key on-chain
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _stakeId id of the stake the validator connects to
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
@@ -156,8 +155,10 @@ contract Deposit is IDeposit, Pausable {
             "Stake not in correct phase"
         );
 
-        validators[numberOfValidators] = Validator({
-            validatorId: numberOfValidators,
+        uint256 localNumberOfValidators = numberOfValidators;
+
+        validators[localNumberOfValidators] = Validator({
+            validatorId: localNumberOfValidators,
             bidId: stakes[_stakeId].winningBidId,
             stakeId: _stakeId,
             phase: VALIDATOR_PHASE.HANDOVER_READY
@@ -165,55 +166,33 @@ contract Deposit is IDeposit, Pausable {
 
         stakes[_stakeId].deposit_data = _depositData;
         stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
-        numberOfValidators++;
 
-        emit ValidatorRegistered(
-            stakes[_stakeId].winningBidId,
-            _stakeId,
-            numberOfValidators - 1
-        );
-    }
+        TNFTInterfaceInstance.mint(stakes[_stakeId].staker, localNumberOfValidators);
+        BNFTInterfaceInstance.mint(stakes[_stakeId].staker, localNumberOfValidators);
 
-    /// @notice node operator accepts validator key and data which allows the stake to be deposited into the beacon chain
-    /// @dev future iterations will account for if the operator doesnt accept the validator
-    /// @param _validatorId id of the validator to be accepted
-    function acceptValidator(uint256 _validatorId) public whenNotPaused {
-        require(
-            msg.sender ==
-                auctionInterfaceInstance.getBidOwner(
-                    validators[_validatorId].bidId
-                ),
-            "Incorrect caller"
-        );
-        require(
-            validators[_validatorId].phase == VALIDATOR_PHASE.HANDOVER_READY,
-            "Validator not in correct phase"
-        );
+        address etherfiNode = stakes[_stakeId].withdrawSafe;
 
-        uint256 localStakeId = validators[_validatorId].stakeId;
-
-        TNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-        BNFTInterfaceInstance.mint(stakes[localStakeId].staker, _validatorId);
-
-        address withdrawalSafeAddress = stakes[localStakeId].withdrawSafe;
-
-        IWithdrawSafeManager managerInstance = IWithdrawSafeManager(
+        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             managerAddress
         );
-        managerInstance.setOperatorAddress(_validatorId, msg.sender);
-        managerInstance.setWithdrawSafeAddress(
-            _validatorId,
-            withdrawalSafeAddress
+        
+        Stake memory stake = stakes[_stakeId];
+        address operator = auctionInterfaceInstance.getBidOwner(stake.winningBidId);
+
+        managerInstance.setOperatorAddress(localNumberOfValidators, operator);
+        managerInstance.setEtherFiNodeAddress(
+            localNumberOfValidators,
+            etherfiNode
         );
 
-        validators[_validatorId].phase = VALIDATOR_PHASE.ACCEPTED;
+        validators[localNumberOfValidators].phase = VALIDATOR_PHASE.ACCEPTED;
 
-        auctionInterfaceInstance.sendFundsToWithdrawSafe(
-            _validatorId,
-            localStakeId
+        auctionInterfaceInstance.sendFundsToEtherFiNode(
+            localNumberOfValidators,
+            _stakeId
         );
 
-        DepositData memory dataInstance = stakes[localStakeId].deposit_data;
+        DepositData memory dataInstance = stakes[_stakeId].deposit_data;
 
         if (test = false) {
             depositContractEth2.deposit{value: stakeAmount}(
@@ -224,7 +203,13 @@ contract Deposit is IDeposit, Pausable {
             );
         }
 
-        emit ValidatorAccepted(_validatorId);
+        numberOfValidators++;
+
+        emit ValidatorRegistered(
+            stakes[_stakeId].winningBidId,
+            _stakeId,
+            numberOfValidators - 1
+        );
     }
 
     /// @notice Cancels a users stake
@@ -253,7 +238,7 @@ contract Deposit is IDeposit, Pausable {
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake
-    /// @dev Gets called internally from cancelDeposit or when the time runs out for calling registerValidator
+    /// @dev Gets called internally from cancelStakingManager or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
     function refundDeposit(address _depositOwner, uint256 _amount) public {
@@ -297,7 +282,7 @@ contract Deposit is IDeposit, Pausable {
         return stakeAmount;
     }
 
-    function setManagerAddress(address _managerAddress) external {
+    function setEtherFiNodesManagerAddress(address _managerAddress) external {
         managerAddress = _managerAddress;
     }
 

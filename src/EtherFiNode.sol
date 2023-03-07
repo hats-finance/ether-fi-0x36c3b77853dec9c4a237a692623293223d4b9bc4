@@ -3,15 +3,15 @@ pragma solidity 0.8.13;
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
-import "./interfaces/IAuction.sol";
+import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
-import "./interfaces/IWithdrawSafe.sol";
-import "./interfaces/IDeposit.sol";
+import "./interfaces/IEtherFiNode.sol";
+import "./interfaces/IStakingManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
-contract WithdrawSafe is IWithdrawSafe {
+contract EtherFiNode is IEtherFiNode {
     address withdrawSafeAddress;
 
     //--------------------------------------------------------------------------------------
@@ -42,10 +42,14 @@ contract WithdrawSafe is IWithdrawSafe {
         address _bnftHolder,
         uint256 _bnftAmount
     ) external {
+        console.log("Here now");
         (bool sent, ) = _treasury.call{value: _treasuryAmount}("");
         require(sent, "Failed to send Ether");
+        console.log("Here is the amount");
+        console.log(_operatorAmount);
         (sent, ) = payable(_operator).call{value: _operatorAmount}("");
         require(sent, "Failed to send Ether");
+        console.log(address(this).balance);
         (sent, ) = payable(_tnftHolder).call{value: _tnftAmount}("");
         require(sent, "Failed to send Ether");
         (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");

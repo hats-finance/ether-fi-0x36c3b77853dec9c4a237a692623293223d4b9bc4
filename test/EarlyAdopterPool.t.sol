@@ -788,4 +788,4 @@ contract EarlyAdopterPoolTest is Test {
             256827
         );
     }
-}
+} 

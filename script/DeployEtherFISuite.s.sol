@@ -5,9 +5,9 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/Treasury.sol";
 import "../src/NodeOperatorKeyManager.sol";
-import "../src/WithdrawSafeManager.sol";
-import "../src/Deposit.sol";
-import "../src/Auction.sol";
+import "../src/EtherFiNodesManager.sol";
+import "../src/StakingManager.sol";
+import "../src/AuctionManager.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -17,11 +17,11 @@ contract DeployScript is Script {
     struct addresses {
         address treasury;
         address nodeOperatorKeyManager;
-        address auction;
-        address deposit;
+        address auctionManager;
+        address stakingManager;
         address TNFT;
         address BNFT;
-        address safeManager;
+        address etherFiNodesManager;
     }
 
     addresses addressStruct;
@@ -32,14 +32,14 @@ contract DeployScript is Script {
 
         Treasury treasury = new Treasury();
         NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
-        Auction auction = new Auction(address(nodeOperatorKeyManager));
+        AuctionManager auctionManager = new AuctionManager(address(nodeOperatorKeyManager));
 
-        treasury.setAuctionContractAddress(address(auction));
+        treasury.setAuctionManagerContractAddress(address(auctionManager));
 
         vm.recordLogs();
 
-        Deposit deposit = new Deposit(address(auction));
-        auction.setDepositContractAddress(address(deposit));
+        StakingManager stakingManager = new StakingManager(address(auctionManager));
+        auctionManager.setStakingManagerContractAddress(address(stakingManager));
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
 
@@ -48,27 +48,27 @@ contract DeployScript is Script {
             (address, address)
         );
 
-        WithdrawSafeManager safeManager = new WithdrawSafeManager(
+        EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
             address(treasury),
-            address(auction),
-            address(deposit),
+            address(auctionManager),
+            address(stakingManager),
             TNFTAddress,
             BNFTAddress
         );
 
-        auction.setManagerAddress(address(safeManager));
-        deposit.setManagerAddress(address(safeManager));
+        auctionManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
+        stakingManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
 
         vm.stopBroadcast();
 
         addressStruct = addresses({
             treasury: address(treasury),
             nodeOperatorKeyManager: address(nodeOperatorKeyManager),
-            auction: address(auction),
-            deposit: address(deposit),
+            auctionManager: address(auctionManager),
+            stakingManager: address(stakingManager),
             TNFT: TNFTAddress,
             BNFT: BNFTAddress,
-            safeManager: address(safeManager)
+            etherFiNodesManager: address(etherFiNodesManager)
         });
 
         writeVersionFile();
@@ -126,16 +126,16 @@ contract DeployScript is Script {
                     Strings.toHexString(addressStruct.treasury),
                     "\nNode Operator Key Manager: ",
                     Strings.toHexString(addressStruct.nodeOperatorKeyManager),
-                    "\nAuction: ",
-                    Strings.toHexString(addressStruct.auction),
-                    "\nDeposit: ",
-                    Strings.toHexString(addressStruct.deposit),
+                    "\nAuctionManager: ",
+                    Strings.toHexString(addressStruct.auctionManager),
+                    "\nStakingManager: ",
+                    Strings.toHexString(addressStruct.stakingManager),
                     "\nTNFT: ",
                     Strings.toHexString(addressStruct.TNFT),
                     "\nBNFT: ",
                     Strings.toHexString(addressStruct.BNFT),
                     "\nSafe Manager: ",
-                    Strings.toHexString(addressStruct.safeManager)
+                    Strings.toHexString(addressStruct.etherFiNodesManager)
                 )
             )
         );

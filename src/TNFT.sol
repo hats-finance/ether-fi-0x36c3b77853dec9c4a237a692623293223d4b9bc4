@@ -10,7 +10,7 @@ contract TNFT is ERC721 {
 
     uint256 private tokenIds;
     uint256 public nftValue;
-    address public depositContractAddress;
+    address public stakingManagerContractAddress;
 
     mapping(uint256 => uint256) public validatorToId;
 
@@ -20,7 +20,7 @@ contract TNFT is ERC721 {
 
     constructor() ERC721("Transferrable NFT", "TNFT") {
         nftValue = 0.03 ether;
-        depositContractAddress = msg.sender;
+        stakingManagerContractAddress = msg.sender;
     }
 
     //--------------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ contract TNFT is ERC721 {
 
     //Function only allows the deposit contract to mint to prevent
     //standard eoa minting themselves NFTs
-    function mint(address _reciever, uint256 _validatorId) external onlyDepositContract {
+    function mint(address _reciever, uint256 _validatorId) external onlyStakingManagerContract {
         _safeMint(_reciever, tokenIds);
                 
         validatorToId[_validatorId] = tokenIds;
@@ -48,9 +48,9 @@ contract TNFT is ERC721 {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyDepositContract() {
+    modifier onlyStakingManagerContract() {
         require(
-            msg.sender == depositContractAddress,
+            msg.sender == stakingManagerContractAddress,
             "Only deposit contract function"
         );
         _;

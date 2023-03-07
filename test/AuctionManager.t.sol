@@ -2,29 +2,29 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/interfaces/IDeposit.sol";
-import "../src/Deposit.sol";
-import "src/WithdrawSafeManager.sol";
+import "../src/interfaces/IStakingManager.sol";
+import "../src/StakingManager.sol";
+import "src/EtherFiNodesManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
-import "../src/Auction.sol";
+import "../src/AuctionManager.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract AuctionTest is Test {
-    Deposit public depositInstance;
-    WithdrawSafe public withdrawSafeInstance;
-    WithdrawSafeManager public managerInstance;
+contract AuctionManagerTest is Test {
+    StakingManager public stakingManagerInstance;
+    EtherFiNode public withdrawSafeInstance;
+    EtherFiNodesManager public managerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
-    Auction public auctionInstance;
+    AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
-    IDeposit.DepositData public test_data;
+    IStakingManager.DepositData public test_data;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -46,25 +46,25 @@ contract AuctionTest is Test {
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new Auction(address(nodeOperatorKeyManagerInstance));
-        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
+        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
-        auctionInstance.setDepositContractAddress(address(depositInstance));
-        TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        managerInstance = new WithdrawSafeManager(
+        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+        managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
-            address(depositInstance),
+            address(stakingManagerInstance),
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
 
-        auctionInstance.setManagerAddress(address(managerInstance));
-        depositInstance.setManagerAddress(address(managerInstance));
+        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
-        test_data = IDeposit.DepositData({
+        test_data = IStakingManager.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",
@@ -75,15 +75,15 @@ contract AuctionTest is Test {
         vm.stopPrank();
     }
 
-    function test_AuctionContractInstantiatedCorrectly() public {
+    function test_AuctionManagerContractInstantiatedCorrectly() public {
         assertEq(auctionInstance.numberOfBids(), 1);
         assertEq(
-            auctionInstance.depositContractAddress(),
-            address(depositInstance)
+            auctionInstance.stakingManagerContractAddress(),
+            address(stakingManagerInstance)
         );
     }
 
-    function test_ReEnterAuctionFailsIfAuctionPaused() public {
+    function test_ReEnterAuctionManagerFailsIfAuctionManagerPaused() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -92,18 +92,18 @@ contract AuctionTest is Test {
         vm.prank(owner);
         auctionInstance.pauseContract();
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.expectRevert("Pausable: paused");
-        depositInstance.cancelStake(0);
+        stakingManagerInstance.cancelStake(0);
     }
 
-    function test_ReEnterAuctionFailsIfNotCorrectCaller() public {
+    function test_ReEnterAuctionManagerFailsIfNotCorrectCaller() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
@@ -111,23 +111,23 @@ contract AuctionTest is Test {
         auctionInstance.reEnterAuction(1);
     }
 
-    function test_ReEnterAuctionFailsIfBidAlreadyActive() public {
+    function test_ReEnterAuctionManagerFailsIfBidAlreadyActive() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         auctionInstance.bidOnStake{value: 0.05 ether}(proof);
 
-        depositInstance.deposit{value: 0.032 ether}();
-        depositInstance.cancelStake(0);
+        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.cancelStake(0);
         vm.stopPrank();
 
-        vm.prank(address(depositInstance));
+        vm.prank(address(stakingManagerInstance));
         vm.expectRevert("Bid already active");
         auctionInstance.reEnterAuction(2);
     }
 
-    function test_ReEnterAuctionWorks() public {
+    function test_ReEnterAuctionManagerWorks() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -135,14 +135,14 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.05 ether}(proof);
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         (, , , , bool isBid1Active) = auctionInstance.bids(1);
-        (, , , , uint256 winningBidId, , ) = depositInstance.stakes(0);
+        (, , , , uint256 winningBidId, , ) = stakingManagerInstance.stakes(0);
         assertEq(winningBidId, 1);
         assertEq(isBid1Active, false);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        depositInstance.cancelStake(0);
+        stakingManagerInstance.cancelStake(0);
         (, , , , isBid1Active) = auctionInstance.bids(1);
         (, , , , bool isBid2Active) = auctionInstance.bids(2);
         assertEq(isBid1Active, true);
@@ -157,7 +157,7 @@ contract AuctionTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
@@ -194,7 +194,7 @@ contract AuctionTest is Test {
         auctionInstance.bidOnStake{value: 0.2 ether}(proofForAddress3);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
 
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(address(auctionInstance).balance, 0.6 ether);
@@ -210,7 +210,7 @@ contract AuctionTest is Test {
         assertEq(isActiveBid2, false);
         assertEq(isActiveBid3, true);
 
-        hoax(address(depositInstance));
+        hoax(address(stakingManagerInstance));
         uint256 winner = auctionInstance.calculateWinningBid();
 
         (, , , , isActiveBid1) = auctionInstance.bids(1);
@@ -239,12 +239,12 @@ contract AuctionTest is Test {
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
 
-        depositInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.expectEmit(true, false, false, true);
         emit WinningBidSent(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 1);
-        hoax(address(depositInstance));
+        hoax(address(stakingManagerInstance));
         auctionInstance.calculateWinningBid();
     }
 
