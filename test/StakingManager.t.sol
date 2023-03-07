@@ -344,7 +344,7 @@ contract StakingManagerTest is Test {
 
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0); // bidId2
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
 
