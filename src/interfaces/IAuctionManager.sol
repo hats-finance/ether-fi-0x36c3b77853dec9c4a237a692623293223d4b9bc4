@@ -13,11 +13,7 @@ interface IAuctionManager {
         address stakerAddress;
     }
 
-    function createBid(
-        bytes32[] calldata _merkleProof,
-        bool _reserverd,
-        address _stakerAdress
-    ) external payable;
+    function createBid(bytes32[] calldata _merkleProof) external payable;
 
     function bidOnStake(bytes32[] calldata _merkleProof) external payable;
 

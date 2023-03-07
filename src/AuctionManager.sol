@@ -173,13 +173,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-    /// @param _reserved whether the bid is reserved for a certain staker
-    /// @param _staker the address of the staker who the bid is reserved for
-    function createBid(
-        bytes32[] calldata _merkleProof,
-        bool _reserved,
-        address _staker
-    ) public payable {
+    function createBid(bytes32[] calldata _merkleProof) public payable {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
@@ -206,9 +200,9 @@ contract AuctionManager is IAuctionManager, Pausable {
             bidderPubKeyIndex: pubKeyIndex,
             timeOfBid: block.timestamp,
             isActive: false,
-            isReserved: _reserved,
+            isReserved: false,
             bidderAddress: msg.sender,
-            stakerAddress: _staker
+            stakerAddress: address(0)
         });
 
         emit BidCreated(

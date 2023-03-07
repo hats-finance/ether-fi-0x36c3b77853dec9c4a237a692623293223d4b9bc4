@@ -112,7 +112,7 @@ contract AuctionManagerTest is Test {
         assertEq(keysUsed, 0);
 
         hoax(alice);
-        auctionInstance.createBid{value: 0.1 ether}(proof, false, address(0));
+        auctionInstance.createBid{value: 0.1 ether}(proof);
 
         (
             uint256 bidId,
@@ -135,7 +135,7 @@ contract AuctionManagerTest is Test {
         assertEq(staker, address(0));
 
         hoax(alice);
-        auctionInstance.createBid{value: 1 ether}(proof, false, address(0));
+        auctionInstance.createBid{value: 1 ether}(proof);
 
         (
             bidId,
@@ -167,7 +167,7 @@ contract AuctionManagerTest is Test {
         vm.expectEmit(true, true, true, true);
         emit BidCreated(1, 0.1 ether, alice, 0);
         hoax(alice);
-        auctionInstance.createBid{value: 0.1 ether}(proof, false, address(0));
+        auctionInstance.createBid{value: 0.1 ether}(proof);
     }
 
     function test_ReEnterAuctionManagerFailsIfAuctionManagerPaused() public {
