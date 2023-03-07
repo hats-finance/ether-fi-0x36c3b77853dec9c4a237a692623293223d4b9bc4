@@ -91,7 +91,7 @@ contract EtherFiNodeTest is Test {
         stakingManagerInstance.registerValidator(bidId, test_data);
         vm.stopPrank();
 
-        (, , , address etherFiNode, , ) = stakingManagerInstance.validators(bidId);
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId);
         safeInstance = EtherFiNode(payable(etherFiNode));
     }
 
@@ -181,43 +181,15 @@ contract EtherFiNodeTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}();
 
         {
-             (
-                ,
-                ,
-                address staker_2,
-                ,
-                ,
-            ) = stakingManagerInstance.validators(bidId1);
-            
-            (   
-                ,
-                ,
-                address staker_3,
-                ,
-                ,
-            ) = stakingManagerInstance.validators(bidId2);
-            
+            address staker_2 = stakingManagerInstance.getStakerRelatedToValidator(bidId1);
+            address staker_3 = stakingManagerInstance.getStakerRelatedToValidator(bidId2);            
             assertEq(staker_2, bob);
             assertEq(staker_3, dan);
         }
 
-        (
-            ,
-            ,
-            ,
-            address withdrawSafeAddress_2,
-            ,
-        ) = stakingManagerInstance.validators(bidId1);
+        address withdrawSafeAddress_2 =  managerInstance.getEtherFiNodeAddress(bidId1);
+        address withdrawSafeAddress_3 =  managerInstance.getEtherFiNodeAddress(bidId2);
         
-        (   
-            ,
-            ,
-            ,
-            address withdrawSafeAddress_3,
-            ,
-        ) = stakingManagerInstance.validators(bidId2);
-        
-
         startHoax(bob);
         stakingManagerInstance.registerValidator(bidId1, test_data_2);
         vm.stopPrank();

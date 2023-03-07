@@ -29,7 +29,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     uint256 public numberOfActiveBids;
     address public stakingManagerContractAddress;
     address public owner;
-    address public withdrawSafeManager;
+    address public nodesManager;
     address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
 
@@ -219,21 +219,12 @@ contract AuctionManager is IAuctionManager, Pausable {
         external
         onlyStakingManagerContract
     {
-        StakingManager depositContractInstance = StakingManager(stakingManagerContractAddress);
-        (
-            ,
-            uint256 selectedBid,
-            ,
-            address etherFiNode,
-            ,
-        ) = depositContractInstance.validators(_validatorId);
-
+        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(nodesManager);
+     
+        uint256 selectedBid = _validatorId;
         uint256 amount = bids[selectedBid].amount;
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(_validatorId);
 
-        safeInstance = IEtherFiNode(etherFiNode);
-        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
-            withdrawSafeManager
-        );
         managerInstance.receiveAuctionFunds(_validatorId, amount);
 
         (bool sent, ) = payable(etherFiNode).call{value: amount}("");
@@ -338,7 +329,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     }
 
     function setEtherFiNodesManagerAddress(address _managerAddress) external {
-        withdrawSafeManager = _managerAddress;
+        nodesManager = _managerAddress;
     }
 
     //--------------------------------------------------------------------------------------
