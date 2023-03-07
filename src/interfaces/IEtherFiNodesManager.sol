@@ -27,11 +27,12 @@ interface IEtherFiNodesManager {
     }
 
     function getEtherFiNodeAddress(uint256 _validatorId) external view returns (address);
+    function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory);
 
     function installEtherFiNode(uint256 _validatorId, address _safeAddress) external;
     function uninstallEtherFiNode(uint256 _validatorId) external;
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;
-    function setEtherFiNodeDepositData(uint256 _validatorId, IStakingManager.DepositData calldata _deposit_data) external;
+    function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs) external;
 
     function createEtherfiNode(uint256 _validatorId) external returns (address);
     function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)

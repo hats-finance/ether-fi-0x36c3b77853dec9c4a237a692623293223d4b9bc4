@@ -61,19 +61,17 @@ contract StakingManagerTest is Test {
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
         test_data = IStakingManager.DepositData({
-            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-            withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",
             publicKey: "test_pubkey",
-            signature: "test_signature"
+            signature: "test_signature",
+            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
 
         test_data_2 = IStakingManager.DepositData({
-            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-            withdrawalCredentials: "test_credentials_2",
             depositDataRoot: "test_deposit_root_2",
             publicKey: "test_pubkey_2",
-            signature: "test_signature_2"
+            signature: "test_signature_2",
+            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash2"
         });
 
         vm.stopPrank();
@@ -123,7 +121,6 @@ contract StakingManagerTest is Test {
         uint256 winningBid = bidId;
         address staker = stakingManagerInstance.getStakerRelatedToValidator(validatorId);
         address etherfiNode = managerInstance.getEtherFiNodeAddress(validatorId);
-        IStakingManager.DepositData memory deposit_data = IEtherFiNode(etherfiNode).getDepositData();
 
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(stakingManagerInstance.stakeAmount(), 0.032 ether);
@@ -131,13 +128,9 @@ contract StakingManagerTest is Test {
         assertEq(validatorId, bidId);
 
         assertEq(
-            deposit_data.operator,
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey(),
+            test_data.ipfsHashForEncryptedValidatorKey
         );
-        assertEq(deposit_data.withdrawalCredentials, "test_credentials");
-        assertEq(deposit_data.depositDataRoot, "test_deposit_root");
-        assertEq(deposit_data.publicKey, "test_pubkey");
-        assertEq(deposit_data.signature, "test_signature");
     }
 
     function test_StakingManagerReceivesEther() public {

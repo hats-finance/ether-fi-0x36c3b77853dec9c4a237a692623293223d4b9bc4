@@ -54,11 +54,10 @@ contract BNFTTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
         test_data = IStakingManager.DepositData({
-            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-            withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",
             publicKey: "test_pubkey",
-            signature: "test_signature"
+            signature: "test_signature",
+            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
 
         vm.stopPrank();
