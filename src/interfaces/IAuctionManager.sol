@@ -20,7 +20,7 @@ interface IAuctionManager {
 
     function selectBid(uint256 _bidId, address _staker) external;
 
-    function bidOnStake(bytes32[] calldata _merkleProof) external payable;
+    function placeBid() external;
 
     function calculateWinningBid() external returns (uint256);
 

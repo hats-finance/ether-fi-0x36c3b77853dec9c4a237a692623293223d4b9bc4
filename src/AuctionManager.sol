@@ -52,9 +52,8 @@ contract AuctionManager is IAuctionManager, Pausable {
     event BidSelected(uint256 indexed bidId, address indexed staker);
 
     event BidPlaced(
-        address indexed bidder,
-        uint256 amount,
         uint256 indexed bidId,
+        address indexed bidder,
         uint256 indexed pubKeyIndex
     );
 
@@ -182,6 +181,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     function createBid(bytes32[] calldata _merkleProof)
         public
         payable
+        whenNotPaused
         returns (uint256 _bidId)
     {
         // Checks if bidder is on whitelist
@@ -225,9 +225,14 @@ contract AuctionManager is IAuctionManager, Pausable {
         nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
 
         numberOfBids++;
+        numberOfActiveBids++;
     }
 
-    function selectBid(uint256 _bidId, address _staker) external {
+    function selectBid(uint256 _bidId, address _staker) external whenNotPaused {
+        require(
+            bids[_bidId].stakerAddress == address(0),
+            "Bid Already Selected"
+        );
         require(bids[_bidId].isActive == true, "Bid Already Selected");
         bids[_bidId].isActive = false;
         bids[_bidId].stakerAddress = _staker;
@@ -236,54 +241,25 @@ contract AuctionManager is IAuctionManager, Pausable {
     }
 
     /// @notice Places a bid in the auction to be the next operator
-    /// @dev Merkleroot gets generated in JS offline and sent to the contract
-    /// @param _merkleProof the merkleproof for the user calling the function
-    function bidOnStake(bytes32[] calldata _merkleProof)
-        external
-        payable
-        whenNotPaused
-    {
-        // Checks if bidder is on whitelist
-        // if (msg.value < minBidAmount) {
-        //     require(
-        //         MerkleProof.verify(
-        //             _merkleProof,
-        //             merkleRoot,
-        //             keccak256(abi.encodePacked(msg.sender))
-        //         ) && msg.value >= whitelistBidAmount,
-        //         "Invalid bid"
-        //     );
-        // } else {
-        //     require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
-        // }
+    function placeBid() external whenNotPaused {
+        uint256 bidId = numberOfBids;
+        address bidder = bids[bidId].bidderAddress;
+        uint256 bidAmount = bids[bidId].amount;
 
-        // uint256 nextAvailableIpfsIndex = nodeOperatorKeyManagerInstance
-        //     .numberOfKeysUsed(msg.sender);
-        // nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
-
-        //Creates a bid object for storage and lookup in future
-        // bids[numberOfBids] = Bid({
-        //     amount: msg.value,
-        //     bidderPubKeyIndex: nextAvailableIpfsIndex,
-        //     timeOfBid: block.timestamp,
-        //     bidderAddress: msg.sender,
-        //     isActive: true
-        // });
+        uint256 pubKeyIndex = nodeOperatorKeyManagerInstance.getKeysUsed(
+            bidder
+        );
 
         //Checks if the bid is now the highest bid
-        if (msg.value > bids[currentHighestBidId].amount) {
-            currentHighestBidId = numberOfBids;
+        if (bidAmount > bids[currentHighestBidId].amount) {
+            currentHighestBidId = bidId;
         }
 
-        // emit BidPlaced(
-        //     msg.sender,
-        //     msg.value,
-        //     numberOfBids,
-        //     nextAvailableIpfsIndex
-        // );
+        emit BidPlaced(bidId, bidder, pubKeyIndex);
+
+        nodeOperatorKeyManagerInstance.increaseKeysIndex(bidder);
 
         numberOfBids++;
-        numberOfActiveBids++;
     }
 
     function sendFundsToEtherFiNode(uint256 _validatorId)
