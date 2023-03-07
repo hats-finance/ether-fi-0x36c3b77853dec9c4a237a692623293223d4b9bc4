@@ -112,7 +112,7 @@ contract AuctionManagerTest is Test {
         assertEq(keysUsed, 0);
 
         hoax(alice);
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256 bid1Id = auctionInstance.createBid{value: 0.1 ether}(proof);
 
         (
             uint256 bidId,
@@ -123,9 +123,9 @@ contract AuctionManagerTest is Test {
             bool isReserved,
             address bidder,
             address staker
-        ) = auctionInstance.bids(1);
+        ) = auctionInstance.bids(bid1Id);
 
-        assertEq(bidId, 1);
+        assertEq(bid1Id, bidId);
         assertEq(amount, 0.1 ether);
         assertEq(pubKeyIndex, 0);
         assertEq(timeOfBid, block.timestamp);
@@ -135,27 +135,27 @@ contract AuctionManagerTest is Test {
         assertEq(staker, address(0));
 
         hoax(alice);
-        auctionInstance.createBid{value: 1 ether}(proof);
+        uint256 bid2Id = auctionInstance.createBid{value: 1 ether}(proof);
 
         (
-            bidId,
-            amount,
-            pubKeyIndex,
-            timeOfBid,
-            isActive,
-            isReserved,
-            bidder,
-            staker
-        ) = auctionInstance.bids(2);
+            uint256 bidId2,
+            uint256 amount2,
+            uint256 pubKeyIndex2,
+            uint256 timeOfBid2,
+            bool isActive2,
+            bool isReserved2,
+            address bidderAddress,
+            address stakerAddress
+        ) = auctionInstance.bids(bid2Id);
 
-        assertEq(bidId, 2);
-        assertEq(amount, 1 ether);
-        assertEq(pubKeyIndex, 1);
-        assertEq(timeOfBid, block.timestamp);
-        assertEq(isActive, false);
-        assertEq(isReserved, false);
-        assertEq(bidder, alice);
-        assertEq(staker, address(0));
+        assertEq(bid2Id, bidId2);
+        assertEq(amount2, 1 ether);
+        assertEq(pubKeyIndex2, 1);
+        assertEq(timeOfBid2, block.timestamp);
+        assertEq(isActive2, false);
+        assertEq(isReserved2, false);
+        assertEq(bidderAddress, alice);
+        assertEq(stakerAddress, address(0));
     }
 
     function test_CreateBidNonWhitelist() public {

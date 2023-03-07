@@ -173,7 +173,11 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-    function createBid(bytes32[] calldata _merkleProof) public payable {
+    function createBid(bytes32[] calldata _merkleProof)
+        public
+        payable
+        returns (uint256 _bidId)
+    {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
@@ -192,7 +196,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             msg.sender
         );
 
-        uint256 _bidId = numberOfBids;
+        _bidId = numberOfBids;
         //Creates a bid object for storage and lookup in future
         bids[_bidId] = Bid({
             bidId: _bidId,
@@ -216,6 +220,8 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         numberOfBids++;
     }
+
+    function selectBid(uint256 _bidId) public {}
 
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
