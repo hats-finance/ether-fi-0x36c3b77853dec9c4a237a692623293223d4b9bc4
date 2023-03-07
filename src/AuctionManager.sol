@@ -96,10 +96,11 @@ contract AuctionManager is IAuctionManager, Pausable {
         onlyStakingManagerContract
         returns (uint256)
     {
+        uint256 winningBid = currentHighestBidId;
         updateSelectedBidInformation(currentHighestBidId);
         numberOfActiveBids--;
 
-        return currentHighestBidId;
+        return winningBid;
     }
 
     /// @notice Updates a winning bids details

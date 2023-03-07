@@ -30,7 +30,7 @@ contract AuctionManagerTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
-    event WinningBidSent(address indexed winner, uint256 indexed winningBidId);
+    event SelectedBidUpdated(address indexed winner, uint256 indexed winningBidId);
 
     event MinBidUpdated(
         uint256 indexed oldMinBidAmount,
@@ -151,7 +151,7 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 1);
     }
 
-    function test_CalculateWinningBidFailsIfNotContractCalling() public {
+    function test_FetchWinningBidFailsIfNotContractCalling() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -162,10 +162,10 @@ contract AuctionManagerTest is Test {
 
         vm.prank(owner);
         vm.expectRevert("Only deposit contract function");
-        auctionInstance.calculateWinningBid();
+        auctionInstance.fetchWinningBid();
     }
 
-    function test_CalculateWinningBidWorks() public {
+    function test_FetchWinningBidWorks() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
             0
@@ -211,7 +211,7 @@ contract AuctionManagerTest is Test {
         assertEq(isActiveBid3, true);
 
         hoax(address(stakingManagerInstance));
-        uint256 winner = auctionInstance.calculateWinningBid();
+        uint256 winner = auctionInstance.fetchWinningBid();
 
         (, , , , isActiveBid1) = auctionInstance.bids(1);
         (, , , , isActiveBid3) = auctionInstance.bids(3);
@@ -243,9 +243,9 @@ contract AuctionManagerTest is Test {
         vm.stopPrank();
 
         vm.expectEmit(true, false, false, true);
-        emit WinningBidSent(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 1);
+        emit SelectedBidUpdated(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 1);
         hoax(address(stakingManagerInstance));
-        auctionInstance.calculateWinningBid();
+        auctionInstance.fetchWinningBid();
     }
 
     function test_BidNonWhitelistBiddingWorksCorrectly() public {
