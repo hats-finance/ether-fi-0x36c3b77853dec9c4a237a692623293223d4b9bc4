@@ -73,7 +73,10 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
-    event FundsSentToEtherFiNode(address indexed etehrFiNode, uint256 indexed _amount);
+    event FundsSentToEtherFiNode(
+        address indexed etehrFiNode,
+        uint256 indexed _amount
+    );
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -290,6 +293,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             ,
             address etherFiNode,
             ,
+
         ) = depositContractInstance.validators(_validatorId);
 
         uint256 amount = bids[selectedBid].amount;

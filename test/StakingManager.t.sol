@@ -390,8 +390,16 @@ contract StakingManagerTest is Test {
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(selectedBidId, 2);
 
-        (uint256 bidAmount, , , address bidder, bool isActive) = auctionInstance
-            .bids(selectedBidId);
+        (
+            ,
+            uint256 bidAmount,
+            ,
+            ,
+            bool isActive,
+            ,
+            address bidder,
+
+        ) = auctionInstance.bids(selectedBidId);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, false);
@@ -404,7 +412,7 @@ contract StakingManagerTest is Test {
         (, selectedBidId, , , , ) = stakingManagerInstance.validators(0);
         assertEq(selectedBidId, 0);
 
-        (bidAmount, , , bidder, isActive) = auctionInstance.bids(2);
+        (, bidAmount, , , isActive, , bidder, ) = auctionInstance.bids(2);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, true);

@@ -300,7 +300,16 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
         stakingManagerInstance.deposit{value: 0.032 ether}();
-        (, , , , bool isBid1Active) = auctionInstance.bids(1);
+        (
+            uint256 bidId,
+            uint256 amount,
+            uint256 ipfsIndex,
+            uint256 timeOfBid,
+            bool isBid1Active,
+            bool isReserved,
+            address bidderAddress,
+            address staker
+        ) = auctionInstance.bids(1);
         (, uint256 selectedBidId, , , , ) = stakingManagerInstance.validators(
             0
         );
@@ -309,8 +318,8 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
         stakingManagerInstance.cancelDeposit(0);
-        (, , , , isBid1Active) = auctionInstance.bids(1);
-        (, , , , bool isBid2Active) = auctionInstance.bids(2);
+        (, , , , isBid1Active, , , ) = auctionInstance.bids(1);
+        (, , , , bool isBid2Active, , , ) = auctionInstance.bids(2);
         assertEq(isBid1Active, true);
         assertEq(isBid2Active, true);
         assertEq(address(auctionInstance).balance, 0.15 ether);
