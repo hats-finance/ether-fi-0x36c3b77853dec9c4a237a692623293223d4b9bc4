@@ -99,7 +99,8 @@ contract StakingManager is IStakingManager, Pausable {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    function deposit() public payable whenNotPaused {
+    /// @param _bidId 0 means calculate winning bid from auction, anything above 0 is a bid id the staker has selected
+    function deposit(uint256 _bidId) public payable whenNotPaused {
         uint256 localNumberOfValidators = numberOfValidators;
 
         require(msg.value == stakeAmount, "Insufficient staking amount");
@@ -112,13 +113,18 @@ contract StakingManager is IStakingManager, Pausable {
             managerAddress
         );
 
-        address withdrawSafe = managerInstance.createWithdrawalSafe();
+        address etherFiNode = managerInstance.createWithdrawalSafe();
+        uint256 bidId;
+
+        if(_bidId == 0){
+            _bidId = auctionInterfaceInstance.fetchWinningBid();
+        }
 
         validators[localNumberOfValidators] = Validator({
             validatorId: localNumberOfValidators,
-            selectedBidId: auctionInterfaceInstance.fetchWinningBid(),
+            selectedBidId: _bidId,
             staker: msg.sender,
-            etherFiNode: withdrawSafe,
+            etherFiNode: etherFiNode,
             phase: VALIDATOR_PHASE.STAKE_DEPOSITED,
             deposit_data: DepositData(address(0), "", "", "", "")
         });
@@ -129,7 +135,7 @@ contract StakingManager is IStakingManager, Pausable {
             msg.sender,
             localNumberOfValidators,
             validators[localNumberOfValidators].selectedBidId,
-            withdrawSafe
+            etherFiNode
         );
 
         numberOfValidators++;

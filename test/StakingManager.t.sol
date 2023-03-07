@@ -93,17 +93,17 @@ contract StakingManagerTest is Test {
 
         hoax(alice);
         vm.expectRevert("Insufficient staking amount");
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
 
         stakingManagerInstance.switchMode();
         console.logBool(stakingManagerInstance.test());
 
         hoax(alice);
         vm.expectRevert("Insufficient staking amount");
-        stakingManagerInstance.deposit{value: 32 ether}();
+        stakingManagerInstance.deposit{value: 32 ether}(0);
 
         hoax(alice);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
     }
 
     function test_StakingManagerContractInstantiatedCorrectly() public {
@@ -116,7 +116,7 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         stakingManagerInstance.registerValidator(0, test_data);
         
         (   
@@ -148,7 +148,7 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
     }
 
@@ -157,7 +157,7 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         assertEq(
             stakingManagerInstance.depositorBalances(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
@@ -166,7 +166,7 @@ contract StakingManagerTest is Test {
         );
 
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         assertEq(
             stakingManagerInstance.depositorBalances(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
@@ -178,7 +178,7 @@ contract StakingManagerTest is Test {
     function test_StakingManagerFailsIfIncorrectAmountSent() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Insufficient staking amount");
-        stakingManagerInstance.deposit{value: 0.2 ether}();
+        stakingManagerInstance.deposit{value: 0.2 ether}(0);
     }
 
     function test_StakingManagerFailsBidDoesntExist() public {
@@ -188,7 +188,7 @@ contract StakingManagerTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         auctionInstance.cancelBid(1);
         vm.expectRevert("No bids available at the moment");
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
     }
 
     function test_StakingManagerfailsIfContractPaused() public {
@@ -200,7 +200,7 @@ contract StakingManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         vm.expectRevert("Pausable: paused");
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         assertEq(stakingManagerInstance.paused(), true);
         vm.stopPrank();
 
@@ -208,7 +208,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.unPauseContract();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         assertEq(stakingManagerInstance.paused(), false);
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
     }
@@ -220,7 +220,7 @@ contract StakingManagerTest is Test {
         uint256 walletBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
         assertEq(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
@@ -246,7 +246,7 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -259,7 +259,7 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         stakingManagerInstance.cancelDeposit(0);
 
         vm.expectRevert("Validator not in correct phase");
@@ -271,7 +271,7 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -287,7 +287,7 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
 
         stakingManagerInstance.registerValidator(0, test_data);
         
@@ -341,7 +341,7 @@ contract StakingManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         vm.stopPrank();
         vm.prank(owner);
         vm.expectRevert("Not deposit owner");
@@ -354,7 +354,7 @@ contract StakingManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         stakingManagerInstance.cancelDeposit(0);
 
         vm.expectRevert("Cancelling availability closed");
@@ -371,7 +371,7 @@ contract StakingManagerTest is Test {
 
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
 
@@ -425,13 +425,13 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         stakingManagerInstance.registerValidator(0, test_data);
 
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         stakingManagerInstance.registerValidator(1, test_data);
 
         assertEq(TestBNFTInstance.validatorToId(0), 0);
