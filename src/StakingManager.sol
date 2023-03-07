@@ -100,7 +100,10 @@ contract StakingManager is IStakingManager, Pausable {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    function deposit() public payable whenNotPaused {
+    /// @param _bidId 0 means calculate winning bid from auction, anything above 0 is a bid id the staker has selected
+    function deposit(uint256 _bidId) public payable whenNotPaused {
+        uint256 localNumberOfValidators = numberOfValidators;
+
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,

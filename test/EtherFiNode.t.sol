@@ -173,10 +173,10 @@ contract EtherFiNodeTest is Test {
         uint256 bidId2 = auctionInstance.bidOnStake{value: 0.3 ether}(proof);
 
         hoax(bob);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
 
         hoax(dan);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
 
         {
             address staker_2 = stakingManagerInstance.getStakerRelatedToValidator(bidId1);
