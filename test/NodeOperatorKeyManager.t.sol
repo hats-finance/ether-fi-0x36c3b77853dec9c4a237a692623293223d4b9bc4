@@ -4,12 +4,12 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "forge-std/console.sol";
-import "../src/interfaces/IDeposit.sol";
-import "../src/Deposit.sol";
-import "src/WithdrawSafeManager.sol";
+import "../src/interfaces/IStakingManager.sol";
+import "../src/interfaces/IDepositContract.sol";
+import "src/EtherFiNodesManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
-import "../src/Auction.sol";
+import "../src/AuctionManager.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
@@ -21,17 +21,17 @@ contract NodeOperatorKeyManagerTest is Test {
     );
 
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
-    Deposit public depositInstance;
-    WithdrawSafe public withdrawSafeInstance;
-    WithdrawSafeManager public managerInstance;
+    StakingManager public stakingManagerInstance;
+    EtherFiNode public etherFiNodeInstance;
+    EtherFiNodesManager public managerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
-    Auction public auctionInstance;
+    AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
-    IDeposit.DepositData public test_data;
+    IStakingManager.DepositData public test_data;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -44,25 +44,33 @@ contract NodeOperatorKeyManagerTest is Test {
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new Auction(address(nodeOperatorKeyManagerInstance));
-        treasuryInstance.setAuctionContractAddress(address(auctionInstance));
+        auctionInstance = new AuctionManager(
+            address(nodeOperatorKeyManagerInstance)
+        );
+        treasuryInstance.setAuctionManagerContractAddress(
+            address(auctionInstance)
+        );
         auctionInstance.updateMerkleRoot(root);
-        depositInstance = new Deposit(address(auctionInstance));
-        auctionInstance.setDepositContractAddress(address(depositInstance));
-        TestBNFTInstance = BNFT(address(depositInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(depositInstance.TNFTInstance()));
-        managerInstance = new WithdrawSafeManager(
+        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(
+            address(stakingManagerInstance)
+        );
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+        managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
-            address(depositInstance),
+            address(stakingManagerInstance),
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
 
-        auctionInstance.setManagerAddress(address(managerInstance));
-        depositInstance.setManagerAddress(address(managerInstance));
+        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
 
-        test_data = IDeposit.DepositData({
+        test_data = IStakingManager.DepositData({
             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",
