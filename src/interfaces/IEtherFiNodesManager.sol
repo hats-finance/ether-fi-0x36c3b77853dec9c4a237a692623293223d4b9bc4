@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "./IEtherFiNode.sol";
+import "./IStakingManager.sol";
+
 interface IEtherFiNodesManager {
     enum ValidatorRecipientType {
         TNFTHOLDER,
@@ -23,20 +26,15 @@ interface IEtherFiNodesManager {
         uint256 bnftHolderSplit;
     }
 
-    function createWithdrawalSafe() external returns (address);
+    function getEtherFiNodeAddress(uint256 _validatorId) external view returns (address);
 
+    function installEtherFiNode(uint256 _validatorId, address _safeAddress) external;
+    function uninstallEtherFiNode(uint256 _validatorId) external;
+    function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;
+    function setEtherFiNodeDepositData(uint256 _validatorId, IStakingManager.DepositData calldata _deposit_data) external;
+
+    function createEtherfiNode(uint256 _validatorId) external returns (address);
     function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
         external;
-
-    function setOperatorAddress(uint256 _validatorId, address _operatorAddress)
-        external;
-
     function withdrawFunds(uint256 _validatorId) external;
-
-    function setEtherFiNodeAddress(uint256 _validatorId, address _safeAddress)
-        external;
-
-    function getEtherFiNodeAddress(uint256 _validatorId)
-        external
-        returns (address);
 }

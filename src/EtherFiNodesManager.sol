@@ -22,6 +22,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     address public immutable implementationContract;
 
     uint256 public constant SCALE = 100;
+    uint256 public numberOfValidators;
 
     address public owner;
     address public treasuryContract;
@@ -32,13 +33,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         public withdrawableBalance;
     mapping(uint256 => mapping(ValidatorRecipientType => uint256))
         public withdrawn;
-    mapping(uint256 => address) public withdrawSafeAddressesPerValidator;
+    mapping(uint256 => address) public etherfiNodePerValidator;
     mapping(uint256 => uint256) public fundsReceivedFromAuction;
-    mapping(uint256 => address) public operatorAddresses;
 
     TNFT public tnftInstance;
     BNFT public bnftInstance;
     IStakingManager public stakingManagerInstance;
+    IAuctionManager public auctionInterfaceInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
     AuctionManagerContractRevenueSplit public auctionContractRevenueSplit;
@@ -79,6 +80,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         depositContract = _depositContract;
 
         stakingManagerInstance = IStakingManager(_depositContract);
+        auctionInterfaceInstance = IAuctionManager(_auctionContract);
 
         tnftInstance = TNFT(_tnftContract);
         bnftInstance = BNFT(_bnftContract);
@@ -104,9 +106,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function createWithdrawalSafe() external returns (address) {
+    function createEtherfiNode(uint256 _validatorId) external returns (address) {
         address clone = Clones.clone(implementationContract);
         EtherFiNode(payable(clone)).initialize();
+        installEtherFiNode(_validatorId, clone);
         return clone;
     }
 
@@ -150,7 +153,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         //Will check oracle to make sure validator has exited
 
         uint256 contractBalance = address(
-            withdrawSafeAddressesPerValidator[_validatorId]
+            etherfiNodePerValidator[_validatorId]
         ).balance;
 
         uint256 validatorRewards = contractBalance -
@@ -217,16 +220,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         fundsReceivedFromAuction[_validatorId] = 0;
 
         IEtherFiNode safeInstance = IEtherFiNode(
-            withdrawSafeAddressesPerValidator[_validatorId]
+            etherfiNodePerValidator[_validatorId]
         );
-
-        console.log("Got here");
-        console.log(operatorAddresses[_validatorId]);
 
         safeInstance.withdrawFunds(
             treasuryContract,
             treasuryAmount,
-            operatorAddresses[_validatorId],
+            auctionInterfaceInstance.getBidOwner(_validatorId),
             operatorAmount,
             tnftHolder,
             tnftHolderAmount,
@@ -241,32 +241,55 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //-------------------------------------  SETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Sets the node operator address for the withdraw safe
-    /// @param _nodeOperator address of the operator to be set
-    function setOperatorAddress(uint256 _validatorId, address _nodeOperator)
-        public
-        onlyStakingManagerContract
-    {
-        require(_nodeOperator != address(0), "Cannot be address 0");
-        operatorAddresses[_validatorId] = _nodeOperator;
-
-        emit OperatorAddressSet(_nodeOperator);
-    }
-
     /// @notice Sets the validator ID for the withdraw safe
     /// @param _validatorId id of the validator associated to this withdraw safe
-    function setEtherFiNodeAddress(uint256 _validatorId, address _safeAddress)
+    /// @param _etherfiNode address of the EtherFiNode contract
+    function installEtherFiNode(uint256 _validatorId, address _etherfiNode)
         public
         onlyStakingManagerContract
     {
-        withdrawSafeAddressesPerValidator[_validatorId] = _safeAddress;
+        require(etherfiNodePerValidator[_validatorId] == address(0), "already installed");
+        etherfiNodePerValidator[_validatorId] = _etherfiNode;
+        numberOfValidators++;
+    }
+
+    /// @notice UnSet the validator ID for the withdraw safe
+    /// @param _validatorId id of the validator associated to this withdraw safe
+    function uninstallEtherFiNode(uint256 _validatorId)
+        public
+        onlyStakingManagerContract
+    {
+        require(etherfiNodePerValidator[_validatorId] != address(0), "not installed");
+        etherfiNodePerValidator[_validatorId] = address(0);
+        numberOfValidators--;
+    }
+
+
+    /// @notice Sets the phase of the validator
+    /// @param _validatorId id of the validator associated to this withdraw safe
+    /// @param _phase phase of the validator
+    function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase)
+        public
+    {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        IEtherFiNode(etherfiNode).setPhase(_phase);
+    }
+
+    /// @notice Sets the phase of the validator
+    /// @param _validatorId id of the validator associated to this withdraw safe
+    /// @param _deposit_data deposit data of the validator
+    function setEtherFiNodeDepositData(uint256 _validatorId, IStakingManager.DepositData calldata _deposit_data)
+        public
+    {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        IEtherFiNode(etherfiNode).setDepositData(_deposit_data);
     }
 
     function getEtherFiNodeAddress(uint256 _validatorId)
-        public
+        public view
         returns (address)
     {
-        return withdrawSafeAddressesPerValidator[_validatorId];
+        return etherfiNodePerValidator[_validatorId];
     }
 
     //--------------------------------------------------------------------------------------
