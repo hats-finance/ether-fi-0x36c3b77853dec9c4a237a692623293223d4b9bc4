@@ -75,6 +75,15 @@ contract AuctionManager is IAuctionManager, Pausable {
     );
 
     //--------------------------------------------------------------------------------------
+    //------------------------------------  RECEIVER   -------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    //Allows ether to be sent to this contract
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
+
+    //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
@@ -97,7 +106,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         returns (uint256)
     {
         uint256 winningBid = currentHighestBidId;
-        updateSelectedBidInformation(currentHighestBidId);
+        updateSelectedBidInformation(winningBid);
         numberOfActiveBids--;
 
         return winningBid;
@@ -121,60 +130,6 @@ contract AuctionManager is IAuctionManager, Pausable {
         emit SelectedBidUpdated(winningOperator, _bidId);
     }
 
-    /// @notice Calculates the next highest bid to be ready for a deposit
-    /// @dev Is only called from the updateLocalVariables() function
-    function updateNewWinningBid() internal {
-        uint256 tempWinningBidId;
-        uint256 numberOfBidsLocal = numberOfBids;
-
-        //Loop to calculate the next highest bid for the next stake
-        for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
-            if (
-                (bids[x].isActive == true) &&
-                (bids[x].amount > bids[tempWinningBidId].amount)
-            ) {
-                tempWinningBidId = x;
-            }
-        }
-
-        currentHighestBidId = tempWinningBidId;
-    }
-
-    /// @notice calculates the winning operator bid when a stake is deposited
-    /// @dev Used local variables to prevent multiple calling of state variables to save gas
-    /// @dev Gets called from the deposit contract when a stake is received
-    /// @return winningOperator the address of the current highest bidder
-    // function calculateWinningBid()
-    //     external
-    //     onlyStakingManagerContract
-    //     returns (uint256)
-    // {
-    //     uint256 currentHighestBidIdLocal = currentHighestBidId;
-    //     uint256 numberOfBidsLocal = numberOfBids;
-
-    //     //Set the bid to be de-activated to prevent 1 bid winning twice
-    //     bids[currentHighestBidIdLocal].isActive = false;
-
-    //     address winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
-
-    //     uint256 tempWinningBidId;
-    //     //Loop to calculate the next highest bid for the next stake
-    //     for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
-    //         if (
-    //             (bids[x].isActive == true) &&
-    //             (bids[x].amount > bids[tempWinningBidId].amount)
-    //         ) {
-    //             tempWinningBidId = x;
-    //         }
-    //     }
-    //     currentHighestBidId = tempWinningBidId;
-
-    //     numberOfActiveBids--;
-
-    //     emit WinningBidSent(winningOperator, currentHighestBidIdLocal);
-    //     return currentHighestBidIdLocal;
-    // }
-
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Used local variables to save on multiple state variable lookups
     /// @dev First require checks both if the bid doesnt exist and if its called by incorrect owner
@@ -192,19 +147,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         //Check if the bid being cancelled is the current highest to make sure we
         //Calculate a new highest
         if (currentHighestBidId == _bidId) {
-            uint256 tempWinningBidId;
-
-            //Calculate the new highest bid
-            for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
-                if (
-                    (bids[x].amount > bids[tempWinningBidId].amount) &&
-                    (bids[x].isActive == true)
-                ) {
-                    tempWinningBidId = x;
-                }
-            }
-
-            currentHighestBidId = tempWinningBidId;
+            updateNewWinningBid();
         }
 
         //Get the value of the cancelled bid to refund
@@ -356,7 +299,9 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
-
+    
+    /// @notice Updates the minimum bid price for a whitelisted address
+    /// @param _newAmount the new amount to set the minimum bid price as
     function updateWhitelistMinBidAmount(uint256 _newAmount)
         external
         onlyOwner
@@ -378,9 +323,27 @@ contract AuctionManager is IAuctionManager, Pausable {
         _unpause();
     }
 
-    //Allows ether to be sent to this contract
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
+
+    /// @notice Calculates the next highest bid to be ready for a deposit
+    /// @dev Is only called from the updateLocalVariables() function
+    function updateNewWinningBid() internal {
+        uint256 tempWinningBidId;
+        uint256 numberOfBidsLocal = numberOfBids;
+
+        //Loop to calculate the next highest bid for the next stake
+        for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
+            if (
+                (bids[x].isActive == true) &&
+                (bids[x].amount > bids[tempWinningBidId].amount)
+            ) {
+                tempWinningBidId = x;
+            }
+        }
+
+        currentHighestBidId = tempWinningBidId;
     }
 
     //--------------------------------------------------------------------------------------
@@ -394,10 +357,16 @@ contract AuctionManager is IAuctionManager, Pausable {
         return numberOfActiveBids;
     }
 
+    /// @notice Fetches the address of the user who placed a bid for a specific bid ID
+    /// @dev Needed for registerValidator() function in Staking Contract
+    /// @return the user who placed the bid
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
     }
-
+    
+    /// @notice Sets the address of the EtherFi node manager contract
+    /// @dev Used due to circular dependencies
+    /// @param _managerAddress address being set as the etherfi node manager contract
     function setEtherFiNodesManagerAddress(address _managerAddress) external {
         withdrawSafeManager = _managerAddress;
     }
