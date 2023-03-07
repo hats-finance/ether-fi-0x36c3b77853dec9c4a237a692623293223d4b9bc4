@@ -145,8 +145,6 @@ contract StakingManager is IStakingManager, Pausable {
         uint256 _validatorId,
         DepositData calldata _depositData
     ) public whenNotPaused {
-        console.log(_validatorId);
-        console.log(validators[_validatorId].staker);
         require(msg.sender == validators[_validatorId].staker, "Incorrect caller");
         require(
             validators[_validatorId].phase == VALIDATOR_PHASE.STAKE_DEPOSITED,
