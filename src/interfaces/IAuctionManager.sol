@@ -12,7 +12,7 @@ interface IAuctionManager {
 
     function bidOnStake(
         bytes32[] calldata _merkleProof
-    ) external payable;
+    ) external payable returns (uint256);
 
     function calculateWinningBid() external returns (uint256);
 

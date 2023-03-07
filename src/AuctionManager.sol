@@ -166,7 +166,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         external
         payable
         whenNotPaused
-    {
+    returns (uint256)  {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
@@ -181,6 +181,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
+        uint256 bidId = numberOfBids;
         uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
             nodeOperatorKeyManagerContract
         ).numberOfKeysUsed(msg.sender);
@@ -188,7 +189,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             .increaseKeysIndex(msg.sender);
 
         //Creates a bid object for storage and lookup in future
-        bids[numberOfBids] = Bid({
+        bids[bidId] = Bid({
             amount: msg.value,
             bidderPubKeyIndex: nextAvailableIpfsIndex,
             timeOfBid: block.timestamp,
@@ -198,18 +199,20 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         //Checks if the bid is now the highest bid
         if (msg.value > bids[currentHighestBidId].amount) {
-            currentHighestBidId = numberOfBids;
+            currentHighestBidId = bidId;
         }
 
         emit BidPlaced(
             msg.sender,
             msg.value,
-            numberOfBids,
+            bidId,
             nextAvailableIpfsIndex
         );
 
         numberOfBids++;
         numberOfActiveBids++;
+
+        return bidId;
     }
 
     function sendFundsToEtherFiNode(uint256 _validatorId)
