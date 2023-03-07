@@ -158,6 +158,83 @@ contract AuctionManagerTest is Test {
         assertEq(staker, address(0));
     }
 
+    function test_CreateBidNonWhitelist() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        hoax(alice);
+        auctionInstance.createBid{value: 0.1 ether}(proof);
+
+        (
+            uint256 bidId,
+            uint256 amount,
+            uint256 ipfsIndex,
+            uint256 timeOfBid,
+            bool isActive,
+            bool isReserved,
+            address bidderAddress,
+            address staker
+        ) = auctionInstance.bids(1);
+
+        assertEq(bidId, 1);
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(timeOfBid, block.timestamp);
+        assertFalse(isActive);
+        assertFalse(isReserved);
+        assertEq(bidderAddress, address(alice));
+        assertEq(staker, address(0));
+        assertEq(auctionInstance.numberOfBids(), 2);
+
+        vm.expectRevert("Invalid bid");
+        hoax(alice);
+        auctionInstance.createBid{value: 0.001 ether}(proof);
+    }
+
+    function test_CreateBidWhitelist() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.createBid{value: 0.001 ether}(proof);
+
+        (
+            uint256 bidId,
+            uint256 amount,
+            uint256 ipfsIndex,
+            uint256 timeOfBid,
+            bool isActive,
+            bool isReserved,
+            address bidderAddress,
+            address staker
+        ) = auctionInstance.bids(1);
+
+        assertEq(bidId, 1);
+        assertEq(amount, 0.001 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(timeOfBid, block.timestamp);
+        assertEq(isActive, false);
+        assertEq(isReserved, false);
+        assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(staker, address(0));
+    }
+
+    function test_CreateBidFailsOnInvalidAmount() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.expectRevert("Invalid bid");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.createBid{value: 0}(proof);
+
+        vm.expectRevert("Invalid bid");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.createBid{value: 5.01 ether}(proof);
+    }
+
     function test_EventBidCreated() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
@@ -335,125 +412,125 @@ contract AuctionManagerTest is Test {
         auctionInstance.calculateWinningBid();
     }
 
-    function test_BidNonWhitelistBiddingWorksCorrectly() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+    // function test_BidNonWhitelistBiddingWorksCorrectly() public {
+    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-        hoax(alice);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+    //     hoax(alice);
+    //     auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        assertEq(auctionInstance.currentHighestBidId(), 1);
-        assertEq(auctionInstance.numberOfActiveBids(), 1);
+    //     assertEq(auctionInstance.currentHighestBidId(), 1);
+    //     assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        (
-            ,
-            uint256 amount,
-            uint256 ipfsIndex,
-            ,
-            ,
-            ,
-            address bidderAddress,
+    //     (
+    //         ,
+    //         uint256 amount,
+    //         uint256 ipfsIndex,
+    //         ,
+    //         ,
+    //         ,
+    //         address bidderAddress,
 
-        ) = auctionInstance.bids(1);
+    //     ) = auctionInstance.bids(1);
 
-        assertEq(amount, 0.1 ether);
-        assertEq(bidderAddress, address(alice));
-        assertEq(auctionInstance.numberOfBids(), 2);
-        assertEq(ipfsIndex, 0);
+    //     assertEq(amount, 0.1 ether);
+    //     assertEq(bidderAddress, address(alice));
+    //     assertEq(auctionInstance.numberOfBids(), 2);
+    //     assertEq(ipfsIndex, 0);
 
-        vm.expectRevert("Invalid bid");
-        hoax(bob);
-        auctionInstance.bidOnStake{value: 0.001 ether}(proof);
+    //     vm.expectRevert("Invalid bid");
+    //     hoax(bob);
+    //     auctionInstance.bidOnStake{value: 0.001 ether}(proof);
 
-        hoax(bob);
-        auctionInstance.bidOnStake{value: 0.3 ether}(proof);
-        assertEq(auctionInstance.numberOfActiveBids(), 2);
+    //     hoax(bob);
+    //     auctionInstance.bidOnStake{value: 0.3 ether}(proof);
+    //     assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, uint256 amount2, , , , , address bidderAddress2, ) = auctionInstance
-            .bids(auctionInstance.currentHighestBidId());
+    //     (, uint256 amount2, , , , , address bidderAddress2, ) = auctionInstance
+    //         .bids(auctionInstance.currentHighestBidId());
 
-        assertEq(auctionInstance.currentHighestBidId(), 2);
-        assertEq(amount2, 0.3 ether);
-        assertEq(bidderAddress2, address(bob));
-        assertEq(auctionInstance.numberOfBids(), 3);
+    //     assertEq(auctionInstance.currentHighestBidId(), 2);
+    //     assertEq(amount2, 0.3 ether);
+    //     assertEq(bidderAddress2, address(bob));
+    //     assertEq(auctionInstance.numberOfBids(), 3);
 
-        assertEq(address(auctionInstance).balance, 0.4 ether);
-    }
+    //     assertEq(address(auctionInstance).balance, 0.4 ether);
+    // }
 
-    function test_BidWhitelistBiddingWorksCorrectly() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
+    // function test_BidWhitelistBiddingWorksCorrectly() public {
+    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+    //     bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.001 ether}(proof);
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.001 ether}(proof);
 
-        assertEq(auctionInstance.currentHighestBidId(), 1);
-        assertEq(auctionInstance.numberOfActiveBids(), 1);
+    //     assertEq(auctionInstance.currentHighestBidId(), 1);
+    //     assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        (
-            ,
-            uint256 amount,
-            uint256 ipfsIndex,
-            ,
-            ,
-            ,
-            address bidderAddress,
+    //     (
+    //         ,
+    //         uint256 amount,
+    //         uint256 ipfsIndex,
+    //         ,
+    //         ,
+    //         ,
+    //         address bidderAddress,
 
-        ) = auctionInstance.bids(1);
+    //     ) = auctionInstance.bids(1);
 
-        assertEq(amount, 0.001 ether);
-        assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        assertEq(address(auctionInstance).balance, 0.001 ether);
-        assertEq(ipfsIndex, 0);
+    //     assertEq(amount, 0.001 ether);
+    //     assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     assertEq(address(auctionInstance).balance, 0.001 ether);
+    //     assertEq(ipfsIndex, 0);
 
-        vm.expectRevert("Invalid bid");
-        hoax(alice);
-        auctionInstance.bidOnStake{value: 0.001 ether}(proof);
+    //     vm.expectRevert("Invalid bid");
+    //     hoax(alice);
+    //     auctionInstance.bidOnStake{value: 0.001 ether}(proof);
 
-        vm.expectRevert("Invalid bid");
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.00001 ether}(proof2);
+    //     vm.expectRevert("Invalid bid");
+    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+    //     auctionInstance.bidOnStake{value: 0.00001 ether}(proof2);
 
-        vm.expectRevert("Invalid bid");
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 6 ether}(proof2);
+    //     vm.expectRevert("Invalid bid");
+    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+    //     auctionInstance.bidOnStake{value: 6 ether}(proof2);
 
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.bidOnStake{value: 0.002 ether}(proof2);
+    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+    //     auctionInstance.bidOnStake{value: 0.002 ether}(proof2);
 
-        (, , ipfsIndex, , , , , ) = auctionInstance.bids(1);
-        assertEq(ipfsIndex, 0);
+    //     (, , ipfsIndex, , , , , ) = auctionInstance.bids(1);
+    //     assertEq(ipfsIndex, 0);
 
-        assertEq(auctionInstance.currentHighestBidId(), 2);
-        assertEq(auctionInstance.numberOfActiveBids(), 2);
+    //     assertEq(auctionInstance.currentHighestBidId(), 2);
+    //     assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, amount, , , , , bidderAddress, ) = auctionInstance.bids(2);
+    //     (, amount, , , , , bidderAddress, ) = auctionInstance.bids(2);
 
-        assertEq(amount, 0.002 ether);
-        assertEq(bidderAddress, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        assertEq(address(auctionInstance).balance, 0.003 ether);
+    //     assertEq(amount, 0.002 ether);
+    //     assertEq(bidderAddress, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+    //     assertEq(address(auctionInstance).balance, 0.003 ether);
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.002 ether}(proof);
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0.002 ether}(proof);
 
-        (, , ipfsIndex, , , , , ) = auctionInstance.bids(3);
-        assertEq(ipfsIndex, 1);
-    }
+    //     (, , ipfsIndex, , , , , ) = auctionInstance.bids(3);
+    //     assertEq(ipfsIndex, 1);
+    // }
 
-    function test_BidFailsWhenInvaliAmountSent() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+    // function test_BidFailsWhenInvaliAmountSent() public {
+    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-        vm.expectRevert("Invalid bid");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0}(proof);
+    //     vm.expectRevert("Invalid bid");
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 0}(proof);
 
-        assertEq(auctionInstance.numberOfActiveBids(), 0);
+    //     assertEq(auctionInstance.numberOfActiveBids(), 0);
 
-        vm.expectRevert("Invalid bid");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 5.01 ether}(proof);
+    //     vm.expectRevert("Invalid bid");
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     auctionInstance.bidOnStake{value: 5.01 ether}(proof);
 
-        assertEq(auctionInstance.numberOfActiveBids(), 0);
-    }
+    //     assertEq(auctionInstance.numberOfActiveBids(), 0);
+    // }
 
     function test_PausableBidOnStake() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
