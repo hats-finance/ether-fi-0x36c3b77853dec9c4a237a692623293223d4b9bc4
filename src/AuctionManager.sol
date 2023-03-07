@@ -107,7 +107,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         returns (uint256)
     {
         uint256 currentHighestBidIdLocal = currentHighestBidId;
-        uint256 numberOfBidsLocal = numberOfBids;
+        uint256 numberOfActiveBidsLocal = numberOfActiveBids;
 
         //Set the bid to be de-activated to prevent 1 bid winning twice
         bids[currentHighestBidIdLocal].isActive = false;
@@ -116,7 +116,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         uint256 tempWinningBidId;
         //Loop to calculate the next highest bid for the next stake
-        for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
+        for (uint256 x = 1; x < numberOfActiveBidsLocal; ++x) {
             if (
                 (bids[x].isActive == true) &&
                 (bids[x].amount > bids[tempWinningBidId].amount)
@@ -215,6 +215,10 @@ contract AuctionManager is IAuctionManager, Pausable {
             stakerAddress: address(0)
         });
 
+        if (msg.value > bids[currentHighestBidId].amount) {
+            currentHighestBidId = _bidId;
+        }
+
         emit BidCreated(
             _bidId,
             bids[_bidId].amount,
@@ -236,31 +240,22 @@ contract AuctionManager is IAuctionManager, Pausable {
         require(bids[_bidId].isActive == true, "Bid Already Selected");
         bids[_bidId].isActive = false;
         bids[_bidId].stakerAddress = _staker;
+        numberOfActiveBids--;
 
         emit BidSelected(_bidId, _staker);
     }
 
-    /// @notice Places a bid in the auction to be the next operator
-    function placeBid() external whenNotPaused {
-        uint256 bidId = numberOfBids;
-        address bidder = bids[bidId].bidderAddress;
-        uint256 bidAmount = bids[bidId].amount;
+    // /// @notice Places a bid in the auction to be the next operator
+    // function placeBid(uint256 _bidAmount) external whenNotPaused {
+    //     //Checks if the bid is now the highest bid
+    //     if (_bidAmount > bids[currentHighestBidId].amount) {
+    //         currentHighestBidId = bidId;
+    //     }
 
-        uint256 pubKeyIndex = nodeOperatorKeyManagerInstance.getKeysUsed(
-            bidder
-        );
+    //     emit BidPlaced(bidId, bidder, pubKeyIndex);
 
-        //Checks if the bid is now the highest bid
-        if (bidAmount > bids[currentHighestBidId].amount) {
-            currentHighestBidId = bidId;
-        }
-
-        emit BidPlaced(bidId, bidder, pubKeyIndex);
-
-        nodeOperatorKeyManagerInstance.increaseKeysIndex(bidder);
-
-        numberOfBids++;
-    }
+    //     nodeOperatorKeyManagerInstance.increaseKeysIndex(bidder);
+    // }
 
     function sendFundsToEtherFiNode(uint256 _validatorId)
         external

@@ -123,7 +123,7 @@ contract StakingManager is IStakingManager, Pausable {
                 deposit_data: DepositData(address(0), "", "", "", "")
             });
         } else {
-            auctionInterfaceInstance.placeBid();
+            // auctionInterfaceInstance.placeBid();
 
             validators[localNumberOfValidators] = Validator({
                 validatorId: localNumberOfValidators,

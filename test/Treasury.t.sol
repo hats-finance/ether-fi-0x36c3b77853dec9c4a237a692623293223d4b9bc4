@@ -19,7 +19,9 @@ contract TreasuryTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
+        auctionInstance = new AuctionManager(
+            address(nodeOperatorKeyManagerInstance)
+        );
         vm.stopPrank();
     }
 
@@ -32,7 +34,9 @@ contract TreasuryTest is Test {
 
     function test_SetAuctionManagerAddressWorks() public {
         vm.prank(owner);
-        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
+        treasuryInstance.setAuctionManagerContractAddress(
+            address(auctionInstance)
+        );
         assertEq(
             treasuryInstance.auctionContractAddress(),
             address(auctionInstance)
@@ -42,7 +46,9 @@ contract TreasuryTest is Test {
     function test_SetAuctionManagerAddressFailsIfNotOwner() public {
         vm.prank(alice);
         vm.expectRevert("Only owner function");
-        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
+        treasuryInstance.setAuctionManagerContractAddress(
+            address(auctionInstance)
+        );
     }
 
     function test_WithdrawFailsIfNotOwner() public {
