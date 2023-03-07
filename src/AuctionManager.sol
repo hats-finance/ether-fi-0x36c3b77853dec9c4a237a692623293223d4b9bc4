@@ -48,7 +48,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 indexed pubKeyIndex
     );
 
-    event WinningBidSent(address indexed winner, uint256 indexed highestBidId);
+    event SelectedBidUpdated(address indexed winner, uint256 indexed highestBidId);
     event BidReEnteredAuction(uint256 indexed bidId);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
@@ -80,24 +80,37 @@ contract AuctionManager is IAuctionManager, Pausable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice calculates the winning operator bid when a stake is deposited
-    /// @dev Used local variables to prevent multiple calling of state variables to save gas
-    /// @dev Gets called from the deposit contract when a stake is received
-    /// @return winningOperator the address of the current highest bidder
-    function calculateWinningBid()
-        external
-        onlyStakingManagerContract
-        returns (uint256)
-    {
-        uint256 currentHighestBidIdLocal = currentHighestBidId;
+    /// @notice Returns the current highest bid in ther auction to the staking contract
+    /// @dev Must be called by the staking contract
+    /// @return Returns the bid ID of the current winning bid
+    function fetchWinningBid() external onlyStakingManagerContract returns (uint256) {
+        
+        updateSelectedBidInformation(currentHighestBidId);
+        numberOfActiveBids--;
+
+        return currentHighestBidId;
+    }
+
+    /// @notice Updates a winning bids details
+    /// @dev Called either by the fetchWinningBid() function or from the staking contract
+    /// @param _bidId the ID of the bid being removed from the auction; either due to being selected by a staker or being the current highest bid
+    function updateSelectedBidInformation(uint256 _bidId) public {
+        require(msg.sender == stakingManagerContractAddress || msg.sender == address(this), "Incorrect Caller");
+
+        bids[_bidId].isActive = false;
+        address winningOperator = bids[_bidId].bidderAddress;
+
+        updateNewWinningBid();
+        
+        emit SelectedBidUpdated(winningOperator, _bidId);
+    }
+
+    /// @notice Calculates the next highest bid to be ready for a deposit
+    /// @dev Is only called from the updateLocalVariables() function
+    function updateNewWinningBid() internal {
+        uint256 tempWinningBidId;
         uint256 numberOfBidsLocal = numberOfBids;
 
-        //Set the bid to be de-activated to prevent 1 bid winning twice
-        bids[currentHighestBidIdLocal].isActive = false;
-
-        address winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
-
-        uint256 tempWinningBidId;
         //Loop to calculate the next highest bid for the next stake
         for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
             if (
@@ -107,13 +120,44 @@ contract AuctionManager is IAuctionManager, Pausable {
                 tempWinningBidId = x;
             }
         }
+
         currentHighestBidId = tempWinningBidId;
-
-        numberOfActiveBids--;
-
-        emit WinningBidSent(winningOperator, currentHighestBidIdLocal);
-        return currentHighestBidIdLocal;
     }
+
+    /// @notice calculates the winning operator bid when a stake is deposited
+    /// @dev Used local variables to prevent multiple calling of state variables to save gas
+    /// @dev Gets called from the deposit contract when a stake is received
+    /// @return winningOperator the address of the current highest bidder
+    // function calculateWinningBid()
+    //     external
+    //     onlyStakingManagerContract
+    //     returns (uint256)
+    // {
+    //     uint256 currentHighestBidIdLocal = currentHighestBidId;
+    //     uint256 numberOfBidsLocal = numberOfBids;
+
+    //     //Set the bid to be de-activated to prevent 1 bid winning twice
+    //     bids[currentHighestBidIdLocal].isActive = false;
+
+    //     address winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
+
+    //     uint256 tempWinningBidId;
+    //     //Loop to calculate the next highest bid for the next stake
+    //     for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
+    //         if (
+    //             (bids[x].isActive == true) &&
+    //             (bids[x].amount > bids[tempWinningBidId].amount)
+    //         ) {
+    //             tempWinningBidId = x;
+    //         }
+    //     }
+    //     currentHighestBidId = tempWinningBidId;
+
+    //     numberOfActiveBids--;
+
+    //     emit WinningBidSent(winningOperator, currentHighestBidIdLocal);
+    //     return currentHighestBidIdLocal;
+    // }
 
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Used local variables to save on multiple state variable lookups
