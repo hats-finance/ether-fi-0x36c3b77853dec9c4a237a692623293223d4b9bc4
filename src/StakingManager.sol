@@ -118,6 +118,11 @@ contract StakingManager is IStakingManager, Pausable {
 
         // Take the bid; Set the matched staker for the bid
         bidIdToStaker[selectedBidId] = msg.sender;
+        if(_bidId == 0){
+            _bidId = auctionInterfaceInstance.fetchWinningBid();
+        } else {
+            auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
+        }
 
         // Let validatorId = BidId
         uint256 validatorId = selectedBidId;
