@@ -296,63 +296,6 @@ contract StakingManagerTest is Test {
         assertEq(bidId, 1);
         assertEq(stakeId, 0);
         assertEq(stakingManagerInstance.numberOfValidators(), 1);
-    }
-
-    function test_AcceptValidatorFailsIfPaused() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(0, test_data);
-        vm.stopPrank();
-
-        vm.prank(owner);
-        stakingManagerInstance.pauseContract();
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Pausable: paused");
-        stakingManagerInstance.acceptValidator(0);
-    }
-
-    function test_AcceptValidatorFailsIfIncorrectCaller() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(0, test_data);
-        vm.stopPrank();
-
-        vm.prank(owner);
-        vm.expectRevert("Incorrect caller");
-        stakingManagerInstance.acceptValidator(0);
-    }
-
-    function test_AcceptValidatorFailsIfValidatorNotInCorrectPhase() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(0, test_data);
-        stakingManagerInstance.acceptValidator(0);
-
-        // vm.expectRevert("Validator not in correct phase");
-        // stakingManagerInstance.acceptValidator(0);
-    }
-
-    function test_AcceptValidatorWorksCorrectly() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}();
-
-        stakingManagerInstance.registerValidator(0, test_data);
-
-        assertEq(address(auctionInstance).balance, 0.1 ether);
-        stakingManagerInstance.acceptValidator(0);
 
         (
             ,
@@ -492,14 +435,12 @@ contract StakingManagerTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         stakingManagerInstance.deposit{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(0, test_data);
-        stakingManagerInstance.acceptValidator(0);
 
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         stakingManagerInstance.deposit{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(1, test_data);
-        stakingManagerInstance.acceptValidator(1);
 
         assertEq(TestBNFTInstance.validatorToId(0), 0);
         assertEq(TestBNFTInstance.validatorToId(1), 1);

@@ -60,8 +60,6 @@ interface IStakingManager {
         DepositData calldata _depositData
     ) external;
 
-    function acceptValidator(uint256 _validatorId) external;
-
     function fetchEtherFromContract(address _wallet) external;
 
     function getStakerRelatedToValidator(uint256 _validatorId)
