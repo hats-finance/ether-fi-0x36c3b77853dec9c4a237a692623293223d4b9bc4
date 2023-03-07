@@ -48,13 +48,18 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 indexed pubKeyIndex
     );
 
-    event SelectedBidUpdated(address indexed winner, uint256 indexed highestBidId);
+    event SelectedBidUpdated(
+        address indexed winner,
+        uint256 indexed highestBidId
+    );
     event BidReEnteredAuction(uint256 indexed bidId);
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
-    event StakingManagerAddressSet(address indexed stakingManagerContractAddress);
+    event StakingManagerAddressSet(
+        address indexed stakingManagerContractAddress
+    );
     event MinBidUpdated(
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
@@ -64,7 +69,10 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
-    event FundsSentToEtherFiNode(address indexed etehrFiNode, uint256 indexed _amount);
+    event FundsSentToEtherFiNode(
+        address indexed etehrFiNode,
+        uint256 indexed _amount
+    );
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -83,8 +91,11 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @notice Returns the current highest bid in ther auction to the staking contract
     /// @dev Must be called by the staking contract
     /// @return Returns the bid ID of the current winning bid
-    function fetchWinningBid() external onlyStakingManagerContract returns (uint256) {
-        
+    function fetchWinningBid()
+        external
+        onlyStakingManagerContract
+        returns (uint256)
+    {
         updateSelectedBidInformation(currentHighestBidId);
         numberOfActiveBids--;
 
@@ -95,13 +106,17 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @dev Called either by the fetchWinningBid() function or from the staking contract
     /// @param _bidId the ID of the bid being removed from the auction; either due to being selected by a staker or being the current highest bid
     function updateSelectedBidInformation(uint256 _bidId) public {
-        require(msg.sender == stakingManagerContractAddress || msg.sender == address(this), "Incorrect Caller");
+        require(
+            msg.sender == stakingManagerContractAddress ||
+                msg.sender == address(this),
+            "Incorrect Caller"
+        );
 
         bids[_bidId].isActive = false;
         address winningOperator = bids[_bidId].bidderAddress;
 
         updateNewWinningBid();
-        
+
         emit SelectedBidUpdated(winningOperator, _bidId);
     }
 
@@ -256,17 +271,22 @@ contract AuctionManager is IAuctionManager, Pausable {
         numberOfActiveBids++;
     }
 
+    /// @notice Sends a winning bids funds to the EtherFi Node related to the validator
+    /// @param _validatorId the ID of the validator the bids funds relate to
     function sendFundsToEtherFiNode(uint256 _validatorId)
         external
         onlyStakingManagerContract
     {
-        StakingManager depositContractInstance = StakingManager(stakingManagerContractAddress);
+        StakingManager depositContractInstance = StakingManager(
+            stakingManagerContractAddress
+        );
         (
             ,
             uint256 selectedBid,
             ,
             address etherFiNode,
             ,
+
         ) = depositContractInstance.validators(_validatorId);
 
         uint256 amount = bids[selectedBid].amount;
@@ -318,10 +338,9 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @notice Sets the depositContract address in the current contract
     /// @dev Called by depositContract and can only be called once
     /// @param _stakingManagerContractAddress address of the depositContract for authorizations
-    function setStakingManagerContractAddress(address _stakingManagerContractAddress)
-        external
-        onlyOwner
-    {
+    function setStakingManagerContractAddress(
+        address _stakingManagerContractAddress
+    ) external onlyOwner {
         stakingManagerContractAddress = _stakingManagerContractAddress;
 
         emit StakingManagerAddressSet(_stakingManagerContractAddress);
