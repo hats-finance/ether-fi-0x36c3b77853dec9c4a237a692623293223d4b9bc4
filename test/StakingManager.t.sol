@@ -167,6 +167,39 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}(2);
     }
 
+    // Deposits with bidId of 0 are sent to auction
+    function test_DepositWithZeroBidId() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        vm.prank(bob);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        hoax(alice);
+        uint256 bid1Id = auctionInstance.createBid{value: 0.1 ether}(proof);
+
+        hoax(bob);
+        uint256 bid2Id = auctionInstance.createBid{value: 0.5 ether}(proof);
+
+        uint256 highestBidId = auctionInstance.currentHighestBidId();
+        assertEq(highestBidId, bid2Id);
+
+        hoax(chad);
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+
+        (, , , , bool isActive, , , address staker) = auctionInstance.bids(
+            bid2Id
+        );
+
+        assertFalse(isActive);
+        assertEq(staker, chad);
+
+        highestBidId = auctionInstance.currentHighestBidId();
+        assertEq(highestBidId, bid1Id);
+    }
+
     //     function test_StakingManagerCorrectlyInstantiatesStakeObject() public {
     //         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
