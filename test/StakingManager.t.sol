@@ -261,7 +261,6 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-
         stakingManagerInstance.deposit{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(bidId, test_data);
 
