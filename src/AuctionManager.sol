@@ -177,10 +177,13 @@ contract AuctionManager is IAuctionManager, Pausable {
         emit BidCancelled(_bidId);
     }
 
+    /// @notice Operator creates bid and it is then available for selction or auction.
+    /// @notice CreateBid also sets the bid to be the currentHighestBid if it is
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
 
     /// TODO add require to check that amount of bids is <= operators total keys
+    /// TODO add reserve bid functionality
 
     function createBid(bytes32[] calldata _merkleProof)
         public
@@ -236,6 +239,8 @@ contract AuctionManager is IAuctionManager, Pausable {
         numberOfActiveBids++;
     }
 
+    /// @dev called from the staking manager contract when deposit is called with a bid Id greater than 0
+    /// TODO add onlyStakingManager modifier
     function selectBid(uint256 _bidId, address _staker) external whenNotPaused {
         require(
             bids[_bidId].stakerAddress == address(0),
