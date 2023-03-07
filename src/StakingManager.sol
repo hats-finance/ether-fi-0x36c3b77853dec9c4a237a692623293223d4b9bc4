@@ -22,8 +22,7 @@ contract StakingManager is IStakingManager, Pausable {
     IDepositContract public depositContractEth2;
 
     uint256 public stakeAmount;
-    uint256 public numberOfStakes = 0;
-    uint256 public numberOfValidators = 0;
+    uint256 public numberOfValidators;
     address public owner;
     address private managerAddress;
     address public treasuryAddress;
@@ -35,7 +34,6 @@ contract StakingManager is IStakingManager, Pausable {
 
     mapping(address => uint256) public depositorBalances;
     mapping(uint256 => Validator) public validators;
-    mapping(uint256 => Stake) public stakes;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -44,15 +42,13 @@ contract StakingManager is IStakingManager, Pausable {
     event NFTContractsDeployed(address TNFTInstance, address BNFTInstance);
     event StakeDeposit(
         address indexed sender,
-        uint256 value,
         uint256 id,
         uint256 winningBidId,
         address withdrawSafe
     );
-    event StakeCancelled(uint256 id);
+    event DepositCancelled(uint256 id);
     event ValidatorRegistered(
         uint256 bidId,
-        uint256 stakeId,
         uint256 validatorId
     );
     event ValidatorAccepted(uint256 validatorId);
@@ -104,7 +100,7 @@ contract StakingManager is IStakingManager, Pausable {
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     function deposit() public payable whenNotPaused {
-        uint256 localNumOfStakes = numberOfStakes;
+        uint256 localNumberOfValidators = numberOfValidators;
 
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
@@ -118,81 +114,64 @@ contract StakingManager is IStakingManager, Pausable {
 
         address withdrawSafe = managerInstance.createWithdrawalSafe();
 
-        //Create a stake object and store it in a mapping
-        stakes[localNumOfStakes] = Stake({
+        validators[localNumberOfValidators] = Validator({
+            validatorId: localNumberOfValidators,
+            selectedBidId: auctionInterfaceInstance.calculateWinningBid(),
             staker: msg.sender,
-            withdrawSafe: withdrawSafe,
-            deposit_data: DepositData(address(0), "", "", "", ""),
-            amount: msg.value,
-            winningBidId: auctionInterfaceInstance.calculateWinningBid(),
-            stakeId: localNumOfStakes,
-            phase: STAKE_PHASE.DEPOSITED
+            etherFiNode: withdrawSafe,
+            phase: VALIDATOR_PHASE.STAKE_DEPOSITED,
+            deposit_data: DepositData(address(0), "", "", "", "")
         });
 
         depositorBalances[msg.sender] += msg.value;
 
         emit StakeDeposit(
             msg.sender,
-            msg.value,
-            localNumOfStakes,
-            stakes[numberOfStakes].winningBidId,
-            stakes[numberOfStakes].withdrawSafe
+            localNumberOfValidators,
+            validators[localNumberOfValidators].selectedBidId,
+            withdrawSafe
         );
 
-        numberOfStakes++;
+        numberOfValidators++;
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @param _stakeId id of the stake the validator connects to
+    /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
-        uint256 _stakeId,
+        uint256 _validatorId,
         DepositData calldata _depositData
     ) public whenNotPaused {
-        require(msg.sender == stakes[_stakeId].staker, "Incorrect caller");
+        require(msg.sender == validators[_validatorId].staker, "Incorrect caller");
         require(
-            stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED,
-            "Stake not in correct phase"
+            validators[_validatorId].phase == VALIDATOR_PHASE.STAKE_DEPOSITED,
+            "Validator not in correct phase"
         );
 
-        uint256 localNumberOfValidators = numberOfValidators;
+        validators[_validatorId].deposit_data = _depositData;
+        validators[_validatorId].phase = VALIDATOR_PHASE.REGISTERED;
 
-        validators[localNumberOfValidators] = Validator({
-            validatorId: localNumberOfValidators,
-            bidId: stakes[_stakeId].winningBidId,
-            stakeId: _stakeId,
-            phase: VALIDATOR_PHASE.HANDOVER_READY
-        });
+        TNFTInterfaceInstance.mint(validators[_validatorId].staker, _validatorId);
+        BNFTInterfaceInstance.mint(validators[_validatorId].staker, _validatorId);
 
-        stakes[_stakeId].deposit_data = _depositData;
-        stakes[_stakeId].phase = STAKE_PHASE.VALIDATOR_REGISTERED;
-
-        TNFTInterfaceInstance.mint(stakes[_stakeId].staker, localNumberOfValidators);
-        BNFTInterfaceInstance.mint(stakes[_stakeId].staker, localNumberOfValidators);
-
-        address etherfiNode = stakes[_stakeId].withdrawSafe;
+        address etherfiNode = validators[_validatorId].etherFiNode;
 
         IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             managerAddress
         );
         
-        Stake memory stake = stakes[_stakeId];
-        address operator = auctionInterfaceInstance.getBidOwner(stake.winningBidId);
+        address operator = auctionInterfaceInstance.getBidOwner(validators[_validatorId].selectedBidId);
 
-        managerInstance.setOperatorAddress(localNumberOfValidators, operator);
+        managerInstance.setOperatorAddress(_validatorId, operator);
         managerInstance.setEtherFiNodeAddress(
-            localNumberOfValidators,
+            _validatorId,
             etherfiNode
         );
-
-        validators[localNumberOfValidators].phase = VALIDATOR_PHASE.ACCEPTED;
-
         auctionInterfaceInstance.sendFundsToEtherFiNode(
-            localNumberOfValidators,
-            _stakeId
+            _validatorId
         );
 
-        DepositData memory dataInstance = stakes[_stakeId].deposit_data;
+        DepositData memory dataInstance = validators[_validatorId].deposit_data;
 
         if (test = false) {
             depositContractEth2.deposit{value: stakeAmount}(
@@ -202,39 +181,37 @@ contract StakingManager is IStakingManager, Pausable {
                 dataInstance.depositDataRoot
             );
         }
-
-        numberOfValidators++;
+        
+        validators[_validatorId].phase = VALIDATOR_PHASE.REGISTERED;
 
         emit ValidatorRegistered(
-            stakes[_stakeId].winningBidId,
-            _stakeId,
-            numberOfValidators - 1
+            validators[_validatorId].selectedBidId,
+            _validatorId
         );
     }
 
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
-    /// @param _stakeId the ID of the stake to cancel
-    function cancelStake(uint256 _stakeId) public whenNotPaused {
-        require(msg.sender == stakes[_stakeId].staker, "Not bid owner");
+    /// @param _validatorId the ID of the validator deposit to cancel
+    function cancelDeposit(uint256 _validatorId) public whenNotPaused {
+        require(msg.sender == validators[_validatorId].staker, "Not deposit owner");
         require(
-            stakes[_stakeId].phase == STAKE_PHASE.DEPOSITED,
+            validators[_validatorId].phase == VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Cancelling availability closed"
         );
 
-        uint256 stakeAmountTemp = stakes[_stakeId].amount;
-        depositorBalances[msg.sender] -= stakeAmountTemp;
+        depositorBalances[msg.sender] -= stakeAmount;
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(stakes[_stakeId].winningBidId);
+        auctionInterfaceInstance.reEnterAuction(validators[_validatorId].selectedBidId);
 
-        stakes[_stakeId].phase = STAKE_PHASE.INACTIVE;
-        stakes[_stakeId].winningBidId = 0;
+        validators[_validatorId].phase = VALIDATOR_PHASE.CANCELLED;
+        validators[_validatorId].selectedBidId = 0;
 
-        refundDeposit(msg.sender, stakeAmountTemp);
+        refundDeposit(msg.sender, stakeAmount);
 
-        emit StakeCancelled(_stakeId);
+        emit DepositCancelled(_validatorId);
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake
@@ -275,7 +252,7 @@ contract StakingManager is IStakingManager, Pausable {
         view
         returns (address)
     {
-        return stakes[validators[_validatorId].stakeId].staker;
+        return validators[_validatorId].staker;
     }
 
     function getStakeAmount() external view returns (uint256) {

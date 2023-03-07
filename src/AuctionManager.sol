@@ -73,7 +73,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
-    event FundsSentToEtherFiNode(uint256 indexed _amount);
+    event FundsSentToEtherFiNode(address indexed etehrFiNode, uint256 indexed _amount);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -277,7 +277,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         numberOfActiveBids++;
     }
 
-    function sendFundsToEtherFiNode(uint256 _validatorId, uint256 _stakeId)
+    function sendFundsToEtherFiNode(uint256 _validatorId)
         external
         onlyStakingManagerContract
     {
@@ -286,26 +286,24 @@ contract AuctionManager is IAuctionManager, Pausable {
         );
         (
             ,
-            address withdrawalSafe,
+            uint256 selectedBid,
             ,
+            address etherFiNode,
             ,
-            uint256 winningBidId,
-            ,
+        ) = depositContractInstance.validators(_validatorId);
 
-        ) = depositContractInstance.stakes(_stakeId);
+        uint256 amount = bids[selectedBid].amount;
 
-        uint256 amount = bids[winningBidId].amount;
-
-        safeInstance = IEtherFiNode(withdrawalSafe);
+        safeInstance = IEtherFiNode(etherFiNode);
         IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             withdrawSafeManager
         );
         managerInstance.receiveAuctionFunds(_validatorId, amount);
 
-        (bool sent, ) = payable(withdrawalSafe).call{value: amount}("");
+        (bool sent, ) = payable(etherFiNode).call{value: amount}("");
         require(sent, "Failed to send Ether");
 
-        emit FundsSentToEtherFiNode(amount);
+        emit FundsSentToEtherFiNode(etherFiNode, amount);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
