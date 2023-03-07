@@ -118,6 +118,8 @@ contract StakingManager is IStakingManager, Pausable {
 
         if(_bidId == 0){
             _bidId = auctionInterfaceInstance.fetchWinningBid();
+        }else {
+            auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
         }
 
         validators[localNumberOfValidators] = Validator({
