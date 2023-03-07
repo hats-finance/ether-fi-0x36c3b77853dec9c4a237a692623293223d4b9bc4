@@ -48,6 +48,9 @@ contract AuctionManager is IAuctionManager, Pausable {
         address indexed bidderAddress,
         uint256 nextAvailableIpfsIndex
     );
+
+    event BidSelected(uint256 indexed bidId, address indexed staker);
+
     event BidPlaced(
         address indexed bidder,
         uint256 amount,
@@ -224,10 +227,13 @@ contract AuctionManager is IAuctionManager, Pausable {
         numberOfBids++;
     }
 
-    // function selectBid(uint256 _bidId) external {
-    //     bids[_bidId].isActive = false;
-    //     bids[_bidId].staker = ;
-    // }
+    function selectBid(uint256 _bidId, address _staker) external {
+        require(bids[_bidId].isActive == true, "Bid Already Selected");
+        bids[_bidId].isActive = false;
+        bids[_bidId].stakerAddress = _staker;
+
+        emit BidSelected(_bidId, _staker);
+    }
 
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
