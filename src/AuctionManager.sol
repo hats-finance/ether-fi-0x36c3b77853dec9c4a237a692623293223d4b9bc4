@@ -203,7 +203,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             amount: msg.value,
             bidderPubKeyIndex: pubKeyIndex,
             timeOfBid: block.timestamp,
-            isActive: false,
+            isActive: true,
             isReserved: false,
             bidderAddress: msg.sender,
             stakerAddress: address(0)
@@ -221,7 +221,10 @@ contract AuctionManager is IAuctionManager, Pausable {
         numberOfBids++;
     }
 
-    function selectBid(uint256 _bidId) public {}
+    // function selectBid(uint256 _bidId) external {
+    //     bids[_bidId].isActive = false;
+    //     bids[_bidId].staker = ;
+    // }
 
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract

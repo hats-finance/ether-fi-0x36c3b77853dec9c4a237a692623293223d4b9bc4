@@ -129,7 +129,7 @@ contract AuctionManagerTest is Test {
         assertEq(amount, 0.1 ether);
         assertEq(pubKeyIndex, 0);
         assertEq(timeOfBid, block.timestamp);
-        assertEq(isActive, false);
+        assertEq(isActive, true);
         assertEq(isReserved, false);
         assertEq(bidder, alice);
         assertEq(staker, address(0));
@@ -152,7 +152,7 @@ contract AuctionManagerTest is Test {
         assertEq(amount2, 1 ether);
         assertEq(pubKeyIndex2, 1);
         assertEq(timeOfBid2, block.timestamp);
-        assertEq(isActive2, false);
+        assertEq(isActive2, true);
         assertEq(isReserved2, false);
         assertEq(bidderAddress, alice);
         assertEq(stakerAddress, address(0));
@@ -182,7 +182,7 @@ contract AuctionManagerTest is Test {
         assertEq(amount, 0.1 ether);
         assertEq(ipfsIndex, 0);
         assertEq(timeOfBid, block.timestamp);
-        assertFalse(isActive);
+        assertTrue(isActive);
         assertFalse(isReserved);
         assertEq(bidderAddress, address(alice));
         assertEq(staker, address(0));
@@ -217,8 +217,8 @@ contract AuctionManagerTest is Test {
         assertEq(amount, 0.001 ether);
         assertEq(ipfsIndex, 0);
         assertEq(timeOfBid, block.timestamp);
-        assertEq(isActive, false);
-        assertEq(isReserved, false);
+        assertTrue(isActive);
+        assertFalse(isReserved);
         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(staker, address(0));
     }
