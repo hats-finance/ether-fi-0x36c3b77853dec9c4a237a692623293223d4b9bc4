@@ -89,8 +89,8 @@ contract EtherFiNodeTest is Test {
         stakingManagerInstance.registerValidator(0, test_data);
         vm.stopPrank();
 
-        (, address withdrawSafe, , , , , ) = stakingManagerInstance.stakes(0);
-        safeInstance = EtherFiNode(payable(withdrawSafe));
+        (, , , address etherFiNode, , ) = stakingManagerInstance.validators(0);
+        safeInstance = EtherFiNode(payable(etherFiNode));
     }
 
     function test_ReceiveAuctionManagerFundsWorksCorrectly() public {
@@ -179,25 +179,21 @@ contract EtherFiNodeTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}();
 
         (
+            ,
+            uint256 winningBidId_2,
             address staker_2,
             address withdrawSafeAddress_2,
             ,
+        ) = stakingManagerInstance.validators(1);
+        
+        (   
             ,
-            uint256 winningBidId_2,
-            ,
-
-        ) = stakingManagerInstance.stakes(1);
-
-        (
+            uint256 winningBidId_3,
             address staker_3,
             address withdrawSafeAddress_3,
             ,
-            ,
-            uint256 winningBidId_3,
-            ,
-
-        ) = stakingManagerInstance.stakes(2);
-
+        ) = stakingManagerInstance.validators(2);
+        
         assertEq(staker_2, bob);
         assertEq(staker_3, dan);
 

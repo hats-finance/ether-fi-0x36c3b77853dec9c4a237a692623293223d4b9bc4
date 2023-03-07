@@ -94,7 +94,7 @@ contract AuctionManagerTest is Test {
 
         stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.expectRevert("Pausable: paused");
-        stakingManagerInstance.cancelStake(0);
+        stakingManagerInstance.cancelDeposit(0);
     }
 
     function test_ReEnterAuctionManagerFailsIfNotCorrectCaller() public {
@@ -119,7 +119,7 @@ contract AuctionManagerTest is Test {
         auctionInstance.bidOnStake{value: 0.05 ether}(proof);
 
         stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.cancelStake(0);
+        stakingManagerInstance.cancelDeposit(0);
         vm.stopPrank();
 
         vm.prank(address(stakingManagerInstance));
@@ -137,12 +137,12 @@ contract AuctionManagerTest is Test {
 
         stakingManagerInstance.deposit{value: 0.032 ether}();
         (, , , , bool isBid1Active) = auctionInstance.bids(1);
-        (, , , , uint256 winningBidId, , ) = stakingManagerInstance.stakes(0);
-        assertEq(winningBidId, 1);
+        (, uint256 selectedBidId, , , , ) = stakingManagerInstance.validators(0);
+        assertEq(selectedBidId, 1);
         assertEq(isBid1Active, false);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        stakingManagerInstance.cancelStake(0);
+        stakingManagerInstance.cancelDeposit(0);
         (, , , , isBid1Active) = auctionInstance.bids(1);
         (, , , , bool isBid2Active) = auctionInstance.bids(2);
         assertEq(isBid1Active, true);

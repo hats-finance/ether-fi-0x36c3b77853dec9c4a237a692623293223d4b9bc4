@@ -118,21 +118,20 @@ contract StakingManagerTest is Test {
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         stakingManagerInstance.deposit{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(0, test_data);
-
-        (
+        
+        (   
+            uint256 validatorId,
+            uint256 winningBid,
             address staker,
             ,
-            IStakingManager.DepositData memory deposit_data,
-            uint256 amount,
-            uint256 winningBid,
-            uint256 stakeId,
-
-        ) = stakingManagerInstance.stakes(0);
+            ,
+            IStakingManager.DepositData memory deposit_data
+        ) = stakingManagerInstance.validators(0);
 
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        assertEq(amount, 0.032 ether);
+        assertEq(stakingManagerInstance.stakeAmount(), 0.032 ether);
         assertEq(winningBid, 1);
-        assertEq(stakeId, 0);
+        assertEq(validatorId, 0);
 
         assertEq(
             deposit_data.operator,
@@ -255,15 +254,15 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.registerValidator(0, test_data);
     }
 
-    function test_RegisterValidatorFailsIfStakeNotInCorrectPhase() public {
+    function test_RegisterValidatorFailsIfValidatorNotInCorrectPhase() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.cancelStake(0);
+        stakingManagerInstance.cancelDeposit(0);
 
-        vm.expectRevert("Stake not in correct phase");
+        vm.expectRevert("Validator not in correct phase");
         stakingManagerInstance.registerValidator(0, test_data);
     }
 
@@ -291,23 +290,18 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}();
 
         stakingManagerInstance.registerValidator(0, test_data);
+        
+        (   
+            ,
+            uint256 selectedBidId,
+            ,
+            address etherFiNode,
+            ,
+        ) = stakingManagerInstance.validators(0);
 
-        (, uint256 bidId, uint256 stakeId, ) = stakingManagerInstance.validators(0);
-        assertEq(bidId, 1);
-        assertEq(stakeId, 0);
+        assertEq(etherFiNode.balance, 0.1 ether);
+        assertEq(selectedBidId, 1);
         assertEq(stakingManagerInstance.numberOfValidators(), 1);
-
-        (
-            ,
-            address withdrawSafeAddress,
-            ,
-            ,
-            uint256 winningBidId,
-            ,
-
-        ) = stakingManagerInstance.stakes(0);
-
-        assertEq(withdrawSafeAddress.balance, 0.1 ether);
         assertEq(address(managerInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0);
 
@@ -317,7 +311,7 @@ contract StakingManagerTest is Test {
         address safeAddress = managerInstance.withdrawSafeAddressesPerValidator(
             0
         );
-        assertEq(safeAddress, withdrawSafeAddress);
+        assertEq(safeAddress, etherFiNode);
 
         assertEq(
             TestBNFTInstance.ownerOf(0),
@@ -341,7 +335,7 @@ contract StakingManagerTest is Test {
         );
     }
 
-    function test_CancelStakeFailsIfNotStakeOwner() public {
+    function test_cancelDepositFailsIfNotStakeOwner() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -350,24 +344,24 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.stopPrank();
         vm.prank(owner);
-        vm.expectRevert("Not bid owner");
-        stakingManagerInstance.cancelStake(0);
+        vm.expectRevert("Not deposit owner");
+        stakingManagerInstance.cancelDeposit(0);
     }
 
-    function test_CancelStakeFailsIfCancellingAvailabilityClosed() public {
+    function test_cancelDepositFailsIfCancellingAvailabilityClosed() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.cancelStake(0);
+        stakingManagerInstance.cancelDeposit(0);
 
         vm.expectRevert("Cancelling availability closed");
-        stakingManagerInstance.cancelStake(0);
+        stakingManagerInstance.cancelDeposit(0);
     }
 
-    function test_CancelStakeWorksCorrectly() public {
+    function test_cancelDepositWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -380,21 +374,20 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}();
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
-        (
+
+        (   
+            ,
+            uint256 selectedBidId,
             address staker,
             ,
             ,
-            uint256 amount,
-            uint256 winningbidID,
-            ,
+        ) = stakingManagerInstance.validators(0);
 
-        ) = stakingManagerInstance.stakes(0);
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        assertEq(amount, 0.032 ether);
-        assertEq(winningbidID, 2);
+        assertEq(selectedBidId, 2);
 
         (uint256 bidAmount, , , address bidder, bool isActive) = auctionInstance
-            .bids(winningbidID);
+            .bids(selectedBidId);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, false);
@@ -402,9 +395,16 @@ contract StakingManagerTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
-        stakingManagerInstance.cancelStake(0);
-        (, , , , winningbidID, , ) = stakingManagerInstance.stakes(0);
-        assertEq(winningbidID, 0);
+        stakingManagerInstance.cancelDeposit(0);
+        
+        (   
+            ,
+            selectedBidId,
+            ,
+            ,
+            ,
+        ) = stakingManagerInstance.validators(0);
+        assertEq(selectedBidId, 0);
 
         (bidAmount, , , bidder, isActive) = auctionInstance.bids(2);
         assertEq(bidAmount, 0.3 ether);

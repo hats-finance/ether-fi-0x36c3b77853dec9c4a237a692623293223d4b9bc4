@@ -2,45 +2,30 @@
 pragma solidity 0.8.13;
 
 interface IStakingManager {
-    //The phases of the staking process
-    enum STAKE_PHASE {
-        DEPOSITED,
-        VALIDATOR_REGISTERED,
-        INACTIVE
-    }
 
     //The state of the validator
     enum VALIDATOR_PHASE {
-        HANDOVER_READY,
-        ACCEPTED,
+        STAKE_DEPOSITED,
+        REGISTERED,
         LIVE,
-        EXITED
-    }
-
-    /// @notice Structure to hold the information on new Stakes
-    /// @param staker - the address of the user who staked
-    /// @param withdrawCredentials - withdraw credentials of the validator
-    /// @param amount - amount of the stake
-    /// @param phase - the current step of the stake
-    struct Stake {
-        address staker;
-        address withdrawSafe;
-        DepositData deposit_data;
-        uint256 amount;
-        uint256 winningBidId;
-        uint256 stakeId;
-        STAKE_PHASE phase;
+        EXITED,
+        CANCELLED
     }
 
     /// @notice Structure to hold the information on validators
-    /// @param bidId - id of the object holding the operators info.
-    /// @param stakeId - id of the object holding the stakers info.
-    /// @param validatorKey - encrypted validator key for use by the operator and staker
+    /// @param validatorId - id of the object holding the operators info.
+    /// @param selectedBidId - id of the object holding the operators info.
+    /// @param staker - address of the staker who deposited the 32 ETH.
+    /// @param etherFiNode - address of the node handling all funds associated to the validator.
+    /// @param phase - the VALIDATOR_PHASE the validator is currently in.
+    /// @param deposit_data - the validators deposit_data
     struct Validator {
         uint256 validatorId;
-        uint256 bidId;
-        uint256 stakeId;
+        uint256 selectedBidId;
+        address staker;
+        address etherFiNode;
         VALIDATOR_PHASE phase;
+        DepositData deposit_data;
     }
 
     struct DepositData {
@@ -53,10 +38,10 @@ interface IStakingManager {
 
     function deposit() external payable;
 
-    function cancelStake(uint256 _stakeId) external;
+    function cancelDeposit(uint256 _validatorId) external;
 
     function registerValidator(
-        uint256 _stakeId,
+        uint256 _validatorId,
         DepositData calldata _depositData
     ) external;
 
