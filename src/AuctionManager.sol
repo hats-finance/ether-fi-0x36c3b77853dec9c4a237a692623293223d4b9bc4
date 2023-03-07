@@ -179,6 +179,9 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
+
+    /// TODO add require to check that amount of bids is <= operators total keys
+
     function createBid(bytes32[] calldata _merkleProof)
         public
         payable
@@ -245,18 +248,6 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         emit BidSelected(_bidId, _staker);
     }
-
-    // /// @notice Places a bid in the auction to be the next operator
-    // function placeBid(uint256 _bidAmount) external whenNotPaused {
-    //     //Checks if the bid is now the highest bid
-    //     if (_bidAmount > bids[currentHighestBidId].amount) {
-    //         currentHighestBidId = bidId;
-    //     }
-
-    //     emit BidPlaced(bidId, bidder, pubKeyIndex);
-
-    //     nodeOperatorKeyManagerInstance.increaseKeysIndex(bidder);
-    // }
 
     function sendFundsToEtherFiNode(uint256 _validatorId)
         external
