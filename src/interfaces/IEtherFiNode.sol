@@ -14,10 +14,10 @@ interface IEtherFiNode {
     }
 
     function setPhase(VALIDATOR_PHASE _phase) external;
-    function setDepositData(IStakingManager.DepositData calldata _deposit_data) external;
+    function setIpfsHashForEncryptedValidatorKey(string calldata _ipfs) external;
 
     function getPhase() external view returns (VALIDATOR_PHASE);
-    function getDepositData() external view returns (IStakingManager.DepositData memory);
+    function getIpfsHashForEncryptedValidatorKey() external view returns (string memory);
 
     function withdrawFunds(
         address _treasury,

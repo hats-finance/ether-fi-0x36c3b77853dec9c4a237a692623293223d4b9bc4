@@ -4,11 +4,10 @@ pragma solidity 0.8.13;
 interface IStakingManager {
 
     struct DepositData {
-        address operator;
-        bytes withdrawalCredentials;
-        bytes32 depositDataRoot;
         bytes publicKey;
-        bytes signature;
+        bytes signature; 
+        bytes32 depositDataRoot;
+        string ipfsHashForEncryptedValidatorKey;
     }
 
     function deposit(uint256 _bidId) external payable;
