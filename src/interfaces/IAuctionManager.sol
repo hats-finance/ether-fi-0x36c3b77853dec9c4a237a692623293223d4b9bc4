@@ -22,7 +22,7 @@ interface IAuctionManager {
 
     // function placeBid(uint256 _bidAmount) external;
 
-    function calculateWinningBid() external returns (uint256);
+    function calculateWinningBid(address _staker) external returns (uint256);
 
     function cancelBid(uint256 _bidId) external;
 

@@ -123,11 +123,11 @@ contract StakingManager is IStakingManager, Pausable {
                 deposit_data: DepositData(address(0), "", "", "", "")
             });
         } else {
-            // auctionInterfaceInstance.placeBid();
-
             validators[localNumberOfValidators] = Validator({
                 validatorId: localNumberOfValidators,
-                selectedBidId: auctionInterfaceInstance.calculateWinningBid(),
+                selectedBidId: auctionInterfaceInstance.calculateWinningBid(
+                    msg.sender
+                ),
                 staker: msg.sender,
                 etherFiNode: withdrawSafe,
                 phase: VALIDATOR_PHASE.STAKE_DEPOSITED,

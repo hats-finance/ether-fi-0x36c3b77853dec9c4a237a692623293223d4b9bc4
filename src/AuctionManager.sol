@@ -101,7 +101,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @dev Used local variables to prevent multiple calling of state variables to save gas
     /// @dev Gets called from the deposit contract when a stake is received
     /// @return winningOperator the address of the current highest bidder
-    function calculateWinningBid()
+    function calculateWinningBid(address _staker)
         external
         onlyStakingManagerContract
         returns (uint256)
@@ -111,6 +111,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         //Set the bid to be de-activated to prevent 1 bid winning twice
         bids[currentHighestBidIdLocal].isActive = false;
+        bids[currentHighestBidIdLocal].stakerAddress = _staker;
 
         address winningOperator = bids[currentHighestBidIdLocal].bidderAddress;
 
