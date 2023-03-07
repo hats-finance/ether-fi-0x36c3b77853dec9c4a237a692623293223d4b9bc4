@@ -39,6 +39,8 @@ contract AuctionManagerTest is Test {
         uint256 nextAvailableIpfsIndex
     );
 
+    event BidSelected(uint256 indexed bidId, address indexed staker);
+
     event WinningBidSent(address indexed winner, uint256 indexed winningBidId);
 
     event MinBidUpdated(
@@ -245,6 +247,70 @@ contract AuctionManagerTest is Test {
         emit BidCreated(1, 0.1 ether, alice, 0);
         hoax(alice);
         auctionInstance.createBid{value: 0.1 ether}(proof);
+    }
+
+    function test_SelectBid() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        hoax(alice);
+        uint256 bid1Id = auctionInstance.createBid{value: 0.1 ether}(proof);
+
+        (, , , , bool isActive, , , address staker) = auctionInstance.bids(
+            bid1Id
+        );
+
+        assertTrue(isActive);
+        assertEq(staker, address(0));
+
+        vm.prank(bob);
+        auctionInstance.selectBid(bid1Id, bob);
+
+        (, , , , isActive, , , staker) = auctionInstance.bids(bid1Id);
+
+        assertFalse(isActive);
+        assertEq(staker, bob);
+    }
+
+    function test_SelectBidFailsIfAlreadySelected() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        hoax(alice);
+        uint256 bid1Id = auctionInstance.createBid{value: 0.1 ether}(proof);
+
+        vm.prank(bob);
+        auctionInstance.selectBid(bid1Id, bob);
+
+        (, , , , bool isActive, , , address staker) = auctionInstance.bids(
+            bid1Id
+        );
+
+        assertFalse(isActive);
+        assertEq(staker, bob);
+
+        vm.expectRevert("Bid Already Selected");
+        vm.prank(alice);
+        auctionInstance.selectBid(bid1Id, alice);
+    }
+
+    function test_EventBidSelected() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        hoax(alice);
+        uint256 bid1Id = auctionInstance.createBid{value: 0.1 ether}(proof);
+
+        vm.expectEmit(true, true, false, true);
+        emit BidSelected(bid1Id, bob);
+        vm.prank(bob);
+        auctionInstance.selectBid(bid1Id, bob);
     }
 
     function test_ReEnterAuctionManagerFailsIfAuctionManagerPaused() public {
