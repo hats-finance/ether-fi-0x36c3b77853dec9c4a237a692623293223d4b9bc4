@@ -33,8 +33,6 @@ contract AuctionManager is IAuctionManager, Pausable {
     address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
 
-    IEtherFiNode public safeInstance;
-
     mapping(uint256 => Bid) public bids;
 
     //--------------------------------------------------------------------------------------
@@ -123,11 +121,11 @@ contract AuctionManager is IAuctionManager, Pausable {
         );
 
         bids[_bidId].isActive = false;
-        address winningOperator = bids[_bidId].bidderAddress;
+        address operator = bids[_bidId].bidderAddress;
 
         updateNewWinningBid();
 
-        emit SelectedBidUpdated(winningOperator, _bidId);
+        emit SelectedBidUpdated(operator, _bidId);
     }
 
     /// @notice Cancels a specified bid by de-activating it
@@ -137,9 +135,6 @@ contract AuctionManager is IAuctionManager, Pausable {
     function cancelBid(uint256 _bidId) external whenNotPaused {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
-
-        //Set local variable for read operations to save gas
-        uint256 numberOfBidsLocal = numberOfBids;
 
         //Cancel the bid by de-activating it
         bids[_bidId].isActive = false;
@@ -235,7 +230,6 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         uint256 amount = bids[selectedBid].amount;
 
-        safeInstance = IEtherFiNode(etherFiNode);
         IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
             etherFiNodeManager
         );
@@ -299,7 +293,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
-    
+
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
     function updateWhitelistMinBidAmount(uint256 _newAmount)
@@ -363,7 +357,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
     }
-    
+
     /// @notice Sets the address of the EtherFi node manager contract
     /// @dev Used due to circular dependencies
     /// @param _managerAddress address being set as the etherfi node manager contract
