@@ -116,7 +116,7 @@ contract StakingManager is IStakingManager, Pausable {
 
         validators[localNumberOfValidators] = Validator({
             validatorId: localNumberOfValidators,
-            selectedBidId: auctionInterfaceInstance.calculateWinningBid(),
+            selectedBidId: auctionInterfaceInstance.fetchWinningBid(),
             staker: msg.sender,
             etherFiNode: withdrawSafe,
             phase: VALIDATOR_PHASE.STAKE_DEPOSITED,
