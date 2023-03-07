@@ -29,7 +29,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     uint256 public numberOfActiveBids;
     address public stakingManagerContractAddress;
     address public owner;
-    address public withdrawSafeManager;
+    address public etherFiNodeManager;
     address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
 
@@ -237,7 +237,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         safeInstance = IEtherFiNode(etherFiNode);
         IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
-            withdrawSafeManager
+            etherFiNodeManager
         );
         managerInstance.receiveAuctionFunds(_validatorId, amount);
 
@@ -368,7 +368,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @dev Used due to circular dependencies
     /// @param _managerAddress address being set as the etherfi node manager contract
     function setEtherFiNodesManagerAddress(address _managerAddress) external {
-        withdrawSafeManager = _managerAddress;
+        etherFiNodeManager = _managerAddress;
     }
 
     //--------------------------------------------------------------------------------------
