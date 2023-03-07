@@ -241,8 +241,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //-------------------------------------  SETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Sets the validator ID for the withdraw safe
-    /// @param _validatorId id of the validator associated to this withdraw safe
+    /// @notice Sets the validator ID for the EtherFiNode contract
+    /// @param _validatorId id of the validator associated to the node
     /// @param _etherfiNode address of the EtherFiNode contract
     function installEtherFiNode(uint256 _validatorId, address _etherfiNode)
         public
@@ -253,8 +253,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         numberOfValidators++;
     }
 
-    /// @notice UnSet the validator ID for the withdraw safe
-    /// @param _validatorId id of the validator associated to this withdraw safe
+    /// @notice UnSet the EtherFiNode contract for the validator ID 
+    /// @param _validatorId id of the validator associated
     function uninstallEtherFiNode(uint256 _validatorId)
         public
         onlyStakingManagerContract

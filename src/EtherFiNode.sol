@@ -19,10 +19,6 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
-    
-    /// @notice Constructor to set variables on deployment
-    constructor() {
-    }
 
     function initialize() public {
         require(owner == address(0), "already initialised");
@@ -46,10 +42,14 @@ contract EtherFiNode is IEtherFiNode {
         return phase;
     }
 
+    /// @notice Set the validator phase
+    /// @param _phase the new phase
     function setPhase(VALIDATOR_PHASE _phase) external onlyOwner {
         phase = _phase;
     }
 
+    /// @notice Set the deposit data
+    /// @param _deposit_data the deposit data
     function setDepositData(IStakingManager.DepositData calldata _deposit_data) external onlyOwner {
         deposit_data = _deposit_data;
     }
