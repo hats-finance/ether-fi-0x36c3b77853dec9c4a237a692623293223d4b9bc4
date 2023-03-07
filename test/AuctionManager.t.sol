@@ -91,7 +91,7 @@ contract AuctionManagerTest is Test {
         vm.prank(owner);
         auctionInstance.pauseContract();
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        stakingManagerInstance.deposit{value: 0.032 ether}(bidId);
         vm.expectRevert("Pausable: paused");
         stakingManagerInstance.cancelDeposit(bidId);
     }
@@ -117,7 +117,7 @@ contract AuctionManagerTest is Test {
         uint256 bidId1 = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         uint256 bidId2 = auctionInstance.bidOnStake{value: 0.05 ether}(proof);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(bidId1);
         stakingManagerInstance.cancelDeposit(bidId1);
         vm.stopPrank();
 
@@ -134,10 +134,11 @@ contract AuctionManagerTest is Test {
         uint256 bidId2 = auctionInstance.bidOnStake{value: 0.05 ether}(proof);
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}();
-        (, , , , bool isBid1Active) = auctionInstance.bids(bidId1);
-        
         uint256 selectedBidId = bidId1;
+        stakingManagerInstance.deposit{value: 0.032 ether}(bidId1);
+        (, , , , bool isBid1Active) = auctionInstance.bids(bidId1);
+        (, uint256 selectedBidId, , , , ) = stakingManagerInstance.validators(bidId1);
+        
         assertEq(selectedBidId, 1);
         assertEq(isBid1Active, false);
         assertEq(auctionInstance.currentHighestBidId(), bidId2);

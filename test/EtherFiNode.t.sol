@@ -85,7 +85,7 @@ contract EtherFiNodeTest is Test {
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
-        stakingManagerInstance.deposit{value: 0.032 ether}();
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         stakingManagerInstance.registerValidator(bidId, test_data);
         vm.stopPrank();
 
