@@ -190,12 +190,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             ValidatorRecipientType.BNFTHOLDER
         ];
 
-        address tnftHolder = tnftInstance.ownerOf(
-            tnftInstance.getNftId(_validatorId)
-        );
-        address bnftHolder = tnftInstance.ownerOf(
-            bnftInstance.getNftId(_validatorId)
-        );
+        address tnftHolder = tnftInstance.ownerOf(_validatorId);
+        address bnftHolder = tnftInstance.ownerOf(_validatorId);
 
         withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] = 0;
         withdrawn[_validatorId][

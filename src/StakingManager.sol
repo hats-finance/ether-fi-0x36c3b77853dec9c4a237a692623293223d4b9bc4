@@ -11,6 +11,7 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "lib/forge-std/src/console.sol";
 
 contract StakingManager is IStakingManager, Pausable {
     TNFT public TNFTInstance;
@@ -100,8 +101,6 @@ contract StakingManager is IStakingManager, Pausable {
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     function deposit() public payable whenNotPaused {
-        uint256 localNumberOfValidators = numberOfValidators;
-
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
@@ -113,10 +112,14 @@ contract StakingManager is IStakingManager, Pausable {
         );
 
         address withdrawSafe = managerInstance.createWithdrawalSafe();
+        uint256 selectedBidId = auctionInterfaceInstance.fetchWinningBid();
+        uint256 validatorId = selectedBidId;
 
-        validators[localNumberOfValidators] = Validator({
-            validatorId: localNumberOfValidators,
-            selectedBidId: auctionInterfaceInstance.fetchWinningBid(),
+        require(validators[validatorId].validatorId == 0, "");
+
+        validators[validatorId] = Validator({
+            validatorId: validatorId,
+            selectedBidId: selectedBidId,
             staker: msg.sender,
             etherFiNode: withdrawSafe,
             phase: VALIDATOR_PHASE.STAKE_DEPOSITED,
@@ -127,8 +130,8 @@ contract StakingManager is IStakingManager, Pausable {
 
         emit StakeDeposit(
             msg.sender,
-            localNumberOfValidators,
-            validators[localNumberOfValidators].selectedBidId,
+            validatorId,
+            selectedBidId,
             withdrawSafe
         );
 
@@ -142,11 +145,14 @@ contract StakingManager is IStakingManager, Pausable {
         uint256 _validatorId,
         DepositData calldata _depositData
     ) public whenNotPaused {
+        console.log(_validatorId);
+        console.log(validators[_validatorId].staker);
         require(msg.sender == validators[_validatorId].staker, "Incorrect caller");
         require(
             validators[_validatorId].phase == VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Validator not in correct phase"
         );
+        require(validators[_validatorId].selectedBidId == _validatorId, "bidId must be equal to validatorId");
 
         validators[_validatorId].deposit_data = _depositData;
         validators[_validatorId].phase = VALIDATOR_PHASE.REGISTERED;
@@ -199,6 +205,7 @@ contract StakingManager is IStakingManager, Pausable {
             validators[_validatorId].phase == VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Cancelling availability closed"
         );
+        require(validators[_validatorId].selectedBidId == _validatorId, "bidId must be equal to validatorId");
 
         depositorBalances[msg.sender] -= stakeAmount;
 
