@@ -306,6 +306,11 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         return generateWithdrawalCredentials(etherfiNode);
     }
+    
+    function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
+        address etherFiNode = etherfiNodePerValidator[_validatorId];
+        return abi.encodePacked(bytes1(0x01), bytes11(0x0), address(etherFiNode));
+    }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
