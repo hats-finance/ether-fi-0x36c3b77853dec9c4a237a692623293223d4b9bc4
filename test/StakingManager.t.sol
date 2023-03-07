@@ -137,10 +137,6 @@ contract StakingManagerTest is Test {
         assertEq(validatorId, bidId);
 
         assertEq(
-            IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey(),
-            test_data.ipfsHashForEncryptedValidatorKey
-        );
-        assertEq(
             managerInstance.getEtherFiNodeIpfsHashForEncryptedValidatorKey(validatorId),
             test_data.ipfsHashForEncryptedValidatorKey
         );
