@@ -41,7 +41,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event BidPlaced(
+    event BidCreated(
         address indexed bidder,
         uint256 amount,
         uint256 indexed bidId,
@@ -207,7 +207,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             currentHighestBidId = bidId;
         }
 
-        emit BidPlaced(msg.sender, msg.value, bidId, ipfsIndex);
+        emit BidCreated(msg.sender, msg.value, bidId, ipfsIndex);
 
         numberOfBids++;
         numberOfActiveBids++;
