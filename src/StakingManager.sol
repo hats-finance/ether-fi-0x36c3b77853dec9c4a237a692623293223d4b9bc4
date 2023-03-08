@@ -97,42 +97,22 @@ contract StakingManager is IStakingManager, Pausable {
         }
     }
 
-    /// @notice Allows a user to stake their ETH
-    /// @dev This is phase 1 of the staking process, validation key submition is phase 2
-    /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    /// @param _bidId 0 means calculate winning bid from auction, anything above 0 is a bid id the staker has selected
-    function deposit(uint256 _bidId) public payable whenNotPaused returns (uint256) {
-        require(msg.value == stakeAmount, "Insufficient staking amount");
-        require(
-            auctionInterfaceInstance.getNumberOfActivebids() >= 1,
-            "No bids available at the moment"
-        );
-        require(bidIdToStaker[_bidId] == address(0), "");
+    /// @notice Allows a user to stake their ETH and be paired with a bid from the auction
+    function depositForAuction() external payable whenNotPaused correctStakeAmount bidsCurrentlyActive {
+        uint256 bidId = auctionInterfaceInstance.fetchWinningBid();
+        require(bidIdToStaker[bidId] == address(0), "Bid already selected");
+
+        setDepositVariables(bidId);
+
+    }
+    
+    /// @notice Allows a user to stake their ETH with a specific bid selected
+    /// @param _bidId the bid which the staker selected
+    function depositWithBidId(uint256 _bidId) external payable whenNotPaused correctStakeAmount bidsCurrentlyActive{
+        require(bidIdToStaker[_bidId] == address(0), "Bid already selected");
         
-        if(_bidId == 0){
-            _bidId = auctionInterfaceInstance.fetchWinningBid();
-        }else {
-            auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
-        }
-
-        // Take the bid; Set the matched staker for the bid
-        bidIdToStaker[_bidId] = msg.sender;
-
-        // Let validatorId = BidId
-        uint256 validatorId = _bidId;
-
-        // Create the node contract
-        address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(validatorId);
-        nodesManagerIntefaceInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED);
-
-        emit StakeDeposit(
-            msg.sender,
-            validatorId,
-            _bidId,
-            etherfiNode
-        );
-
-        return validatorId;
+        auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
+        setDepositVariables(_bidId);
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
@@ -217,6 +197,15 @@ contract StakingManager is IStakingManager, Pausable {
         require(sent, "Failed to send Ether");
     }
 
+    function setEtherFiNodesManagerAddress(address _nodesManagerAddress) external {
+        nodesManagerAddress = _nodesManagerAddress;
+        nodesManagerIntefaceInstance = IEtherFiNodesManager(nodesManagerAddress);
+    }
+
+    function setTreasuryAddress(address _treasuryAddress) external {
+        treasuryAddress = _treasuryAddress;
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
@@ -227,10 +216,32 @@ contract StakingManager is IStakingManager, Pausable {
         _unpause();
     }
 
-    // Gets the addresses of the deployed NFT contracts
-    // function getNFTAddresses() public view returns (address, address) {
-    //     return (address(TNFTInstance), address(BNFTInstance));
-    // }
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function setDepositVariables(uint256 _bidId) internal {
+        // Take the bid; Set the matched staker for the bid
+        bidIdToStaker[_bidId] = msg.sender;
+
+        // Let validatorId = BidId
+        uint256 validatorId = _bidId;
+
+        // Create the node contract
+        address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(validatorId);
+        nodesManagerIntefaceInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED);
+
+        emit StakeDeposit(
+            msg.sender,
+            validatorId,
+            _bidId,
+            etherfiNode
+        );
+    }
+
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  GETTER   --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     function getStakerRelatedToValidator(uint256 _validatorId)
         external
@@ -244,21 +255,25 @@ contract StakingManager is IStakingManager, Pausable {
         return stakeAmount;
     }
 
-    function setEtherFiNodesManagerAddress(address _nodesManagerAddress) external {
-        nodesManagerAddress = _nodesManagerAddress;
-        nodesManagerIntefaceInstance = IEtherFiNodesManager(nodesManagerAddress);
-    }
-
-    function setTreasuryAddress(address _treasuryAddress) external {
-        treasuryAddress = _treasuryAddress;
-    }
-
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner function");
+        _;
+    }
+
+    modifier correctStakeAmount() {
+        require(msg.value == stakeAmount, "Insufficient staking amount");
+        _;
+    }
+
+    modifier bidsCurrentlyActive() {
+        require(
+            auctionInterfaceInstance.getNumberOfActivebids() >= 1,
+            "No bids available at the moment"
+        );
         _;
     }
 }
