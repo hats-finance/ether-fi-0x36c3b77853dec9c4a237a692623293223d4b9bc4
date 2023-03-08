@@ -186,17 +186,20 @@ contract AuctionManager is IAuctionManager, Pausable {
         }
 
         uint256 bidId = numberOfBids;
-        uint256 nextAvailableIpfsIndex = nodeOperatorKeyManagerInstance
-            .getNumberOfKeysUsed(msg.sender);
+        uint256 ipfsIndex = nodeOperatorKeyManagerInstance.getNumberOfKeysUsed(
+            msg.sender
+        );
         nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
 
         //Creates a bid object for storage and lookup in future
         bids[bidId] = Bid({
             amount: msg.value,
-            bidderPubKeyIndex: nextAvailableIpfsIndex,
+            bidderPubKeyIndex: ipfsIndex,
             timeOfBid: block.timestamp,
             bidderAddress: msg.sender,
-            isActive: true
+            stakerAddress: address(0),
+            isActive: true,
+            isReserved: false
         });
 
         //Checks if the bid is now the highest bid
@@ -204,7 +207,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             currentHighestBidId = bidId;
         }
 
-        emit BidPlaced(msg.sender, msg.value, bidId, nextAvailableIpfsIndex);
+        emit BidPlaced(msg.sender, msg.value, bidId, ipfsIndex);
 
         numberOfBids++;
         numberOfActiveBids++;
