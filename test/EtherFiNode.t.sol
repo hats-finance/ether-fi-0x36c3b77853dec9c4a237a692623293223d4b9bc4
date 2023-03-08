@@ -39,6 +39,9 @@ contract EtherFiNodeTest is Test {
 
     uint256 bidId;
 
+    string _ipfsHash = "ipfsHash";
+    string aliceIPFSHash = "AliceIpfsHash";
+
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
@@ -89,6 +92,9 @@ contract EtherFiNodeTest is Test {
         vm.stopPrank();
 
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
@@ -177,6 +183,12 @@ contract EtherFiNodeTest is Test {
 
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        vm.prank(chad);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
 
         hoax(alice);
         uint256 bidId1 = auctionInstance.createBid{value: 0.4 ether}(proof);

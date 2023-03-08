@@ -32,6 +32,8 @@ contract StakingManagerTest is Test {
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
+    string _ipfsHash = "IPFSHash";
+
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
@@ -96,6 +98,9 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.switchMode();
         console.logBool(stakingManagerInstance.test());
 
+        vm.prank(owner);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
         hoax(owner);
         auctionInstance.createBid{value: 0.1 ether}(proof);
 
@@ -121,6 +126,9 @@ contract StakingManagerTest is Test {
 
     function test_StakingManagerCorrectlyInstantiatesStakeObject() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
@@ -157,6 +165,9 @@ contract StakingManagerTest is Test {
     function test_StakingManagerReceivesEther() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(proof);
         stakingManagerInstance.deposit{value: 0.032 ether}(0);
@@ -164,6 +175,9 @@ contract StakingManagerTest is Test {
     }
 
     function test_StakingManagerFailsIfIncorrectAmountSent() public {
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Insufficient staking amount");
         stakingManagerInstance.deposit{value: 0.2 ether}(0);
@@ -171,6 +185,9 @@ contract StakingManagerTest is Test {
 
     function test_StakingManagerFailsBidDoesntExist() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(proof);
@@ -181,6 +198,9 @@ contract StakingManagerTest is Test {
 
     function test_StakingManagerfailsIfContractPaused() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         vm.prank(owner);
         stakingManagerInstance.pauseContract();
@@ -203,6 +223,9 @@ contract StakingManagerTest is Test {
 
     function test_EtherFailSafeWorks() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 walletBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
@@ -232,6 +255,9 @@ contract StakingManagerTest is Test {
     function test_RegisterValidatorFailsIfIncorrectCaller() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
         stakingManagerInstance.deposit{value: 0.032 ether}(0);
@@ -245,6 +271,9 @@ contract StakingManagerTest is Test {
     function test_RegisterValidatorFailsIfValidatorNotInCorrectPhase() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
         stakingManagerInstance.deposit{value: 0.032 ether}(0);
@@ -256,6 +285,9 @@ contract StakingManagerTest is Test {
 
     function test_RegisterValidatorFailsIfContractPaused() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(proof);
@@ -272,6 +304,9 @@ contract StakingManagerTest is Test {
 
     function test_RegisterValidatorWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
@@ -318,6 +353,9 @@ contract StakingManagerTest is Test {
     function test_cancelDepositFailsIfNotStakeOwner() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
 
@@ -332,6 +370,9 @@ contract StakingManagerTest is Test {
     function test_cancelDepositFailsIfCancellingAvailabilityClosed() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
 
@@ -344,6 +385,9 @@ contract StakingManagerTest is Test {
 
     function test_cancelDepositWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId1 = auctionInstance.createBid{value: 0.1 ether}(proof);
@@ -413,6 +457,12 @@ contract StakingManagerTest is Test {
 
     function test_CorrectValidatorAttatchedToNft() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
+        vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId1 = auctionInstance.createBid{value: 0.1 ether}(proof);

@@ -30,6 +30,8 @@ contract BNFTTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
+    string _ipfsHash = "ipfs";
+
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
@@ -88,6 +90,9 @@ contract BNFTTest is Test {
 
     function test_BNFTCannotBeTransferred() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(proof);

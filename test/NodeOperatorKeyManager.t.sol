@@ -38,6 +38,7 @@ contract NodeOperatorKeyManagerTest is Test {
     address bob = vm.addr(3);
 
     string aliceIPFSHash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
+    string _ipfsHash = "ipfsHash";
 
     function setUp() public {
         vm.startPrank(owner);
@@ -112,6 +113,9 @@ contract NodeOperatorKeyManagerTest is Test {
             .getNumberOfKeysUsed(alice);
 
         assertEq(aliceKeysUsed, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(alice);
         auctionInstance.createBid{value: 0.1 ether}(proof);
