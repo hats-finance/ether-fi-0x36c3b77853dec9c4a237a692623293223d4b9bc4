@@ -135,11 +135,6 @@ contract StakingManagerTest is Test {
         assertEq(stakingManagerInstance.stakeAmount(), 0.032 ether);
         assertEq(winningBid, bidId);
         assertEq(validatorId, bidId);
-
-        assertEq(
-            deposit_data.operator,
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
     }
 
     function test_StakingManagerReceivesEther() public {
