@@ -42,7 +42,7 @@ contract StakingManager is IStakingManager, Pausable {
 
     event NFTContractsDeployed(address TNFTInstance, address BNFTInstance);
     event StakeDeposit(
-        address indexed sender,
+        address indexed staker,
         uint256 id,
         uint256 winningBidId,
         address withdrawSafe
