@@ -5,7 +5,7 @@ interface INodeOperatorKeyManager {
     struct KeyData {
         uint64 totalKeys;
         uint64 keysUsed;
-        bytes32 ipfsHash;
+        bytes ipfsHash;
     }
 
     function registerNodeOperator(string memory ipfsHash, uint64 totalKeys)

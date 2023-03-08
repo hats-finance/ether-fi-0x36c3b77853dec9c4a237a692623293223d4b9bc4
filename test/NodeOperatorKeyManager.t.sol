@@ -90,10 +90,10 @@ contract NodeOperatorKeyManagerTest is Test {
         (
             uint64 totalKeys,
             uint64 keysUsed,
-            bytes32 aliceHash
+            bytes memory aliceHash
         ) = nodeOperatorKeyManagerInstance.addressToOperatorData(alice);
 
-        assertEq(aliceHash, keccak256(abi.encodePacked(aliceIPFSHash)));
+        assertEq(aliceHash, abi.encodePacked(aliceIPFSHash));
         assertEq(totalKeys, 10);
         assertEq(keysUsed, 0);
     }
