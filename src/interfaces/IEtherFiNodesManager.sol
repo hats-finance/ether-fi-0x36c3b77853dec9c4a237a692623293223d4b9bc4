@@ -26,6 +26,8 @@ interface IEtherFiNodesManager {
         uint256 bnftHolderSplit;
     }
 
+    function generateWithdrawalCredentials(address _address) external view returns (bytes memory);
+
     function getEtherFiNodeAddress(uint256 _validatorId) external view returns (address);
     function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory);
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory);

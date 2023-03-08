@@ -109,6 +109,15 @@ contract StakingManagerTest is Test {
         assertEq(stakingManagerInstance.owner(), owner);
     }
 
+    function test_GenerateWithdrawalCredentialsCorrectly() public {
+        address exampleWithdrawalAddress = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        bytes memory withdrawalCredential = managerInstance.generateWithdrawalCredentials(exampleWithdrawalAddress);
+        // Generated with './deposit new-mnemonic --eth1_withdrawal_address 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931'
+        bytes memory trueOne = hex"010000000000000000000000cd5ebc2dd4cb3dc52ac66ceecc72c838b40a5931";
+        assertEq(withdrawalCredential.length, trueOne.length);
+        assertEq(keccak256(withdrawalCredential), keccak256(trueOne));
+    }
+
     function test_StakingManagerCorrectlyInstantiatesStakeObject() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
