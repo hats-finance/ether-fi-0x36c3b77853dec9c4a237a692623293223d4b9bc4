@@ -145,7 +145,7 @@ contract StakingManager is IStakingManager, Pausable {
         address staker = bidIdToStaker[_validatorId];
 
         // Let valiadatorId = nftTokenId
-        // Min {T, B}-NFTs to the Staker
+        // Mint {T, B}-NFTs to the Staker
         uint256 nftTokenId = _validatorId;
         TNFTInterfaceInstance.mint(staker, nftTokenId);
         BNFTInterfaceInstance.mint(staker, nftTokenId);
