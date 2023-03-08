@@ -202,9 +202,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             bidderPubKeyIndex: ipfsIndex,
             timeOfBid: block.timestamp,
             bidderAddress: msg.sender,
-            stakerAddress: address(0),
-            isActive: true,
-            isReserved: false
+            isActive: true
         });
 
         //Checks if the bid is now the highest bid

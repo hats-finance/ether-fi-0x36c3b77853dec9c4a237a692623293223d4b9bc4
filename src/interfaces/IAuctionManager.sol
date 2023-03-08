@@ -7,9 +7,7 @@ interface IAuctionManager {
         uint256 bidderPubKeyIndex;
         uint256 timeOfBid;
         address bidderAddress;
-        address stakerAddress;
         bool isActive;
-        bool isReserved;
     }
 
     function createBid(bytes32[] calldata _merkleProof)

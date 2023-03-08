@@ -413,15 +413,8 @@ contract StakingManagerTest is Test {
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
-        (
-            uint256 bidAmount,
-            ,
-            ,
-            address bidder,
-            ,
-            bool isActive,
-
-        ) = auctionInstance.bids(selectedBidId);
+        (uint256 bidAmount, , , address bidder, bool isActive) = auctionInstance
+            .bids(selectedBidId);
 
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -441,7 +434,7 @@ contract StakingManagerTest is Test {
                 IEtherFiNode.VALIDATOR_PHASE.CANCELLED
         );
 
-        (bidAmount, , , bidder, , isActive, ) = auctionInstance.bids(bidId2);
+        (bidAmount, , , bidder, isActive) = auctionInstance.bids(bidId2);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, true);
