@@ -35,7 +35,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     mapping(uint256 => Bid) public bids;
 
-    NodeOperatorKeyManager nodeOperatorKeyManagerInstance;
+    INodeOperatorKeyManager nodeOperatorKeyManagerInterface;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -91,7 +91,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     constructor(address _nodeOperatorKeyManagerContract) {
         owner = msg.sender;
         nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
-        nodeOperatorKeyManagerInstance = NodeOperatorKeyManager(
+        nodeOperatorKeyManagerInterface = INodeOperatorKeyManager(
             _nodeOperatorKeyManagerContract
         );
     }
@@ -186,11 +186,12 @@ contract AuctionManager is IAuctionManager, Pausable {
         } else {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
-        uint256 ipfsIndex = nodeOperatorKeyManagerInstance.getNumberOfKeysUsed(
+        uint256 ipfsIndex = nodeOperatorKeyManagerInterface.getNumberOfKeysUsed(
             msg.sender
         );
-        (uint256 totalKeys, , ) = nodeOperatorKeyManagerInstance
-            .addressToOperatorData(msg.sender);
+        uint256 totalKeys = nodeOperatorKeyManagerInterface.getTotalKeys(
+            msg.sender
+        );
 
         require(ipfsIndex < totalKeys, "All public keys used");
 
@@ -212,7 +213,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         emit BidCreated(msg.sender, msg.value, bidId, ipfsIndex);
 
-        nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
+        nodeOperatorKeyManagerInterface.increaseKeysIndex(msg.sender);
         numberOfBids++;
         numberOfActiveBids++;
 

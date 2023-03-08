@@ -40,4 +40,12 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
     {
         keysUsed = addressToOperatorData[_user].keysUsed;
     }
+
+    function getTotalKeys(address _user)
+        public
+        view
+        returns (uint256 totalKeys)
+    {
+        totalKeys = addressToOperatorData[_user].totalKeys;
+    }
 }

@@ -16,5 +16,7 @@ interface INodeOperatorKeyManager {
         view
         returns (uint256 keysUsed);
 
+    function getTotalKeys(address _user) external returns (uint256);
+
     function increaseKeysIndex(address _user) external;
 }
