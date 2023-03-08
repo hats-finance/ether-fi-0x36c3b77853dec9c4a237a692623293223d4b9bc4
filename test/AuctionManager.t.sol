@@ -30,6 +30,13 @@ contract AuctionManagerTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
+    event BidCreated(
+        address indexed bidder,
+        uint256 amount,
+        uint256 indexed bidId,
+        uint256 indexed pubKeyIndex
+    );
+
     event SelectedBidUpdated(
         address indexed winner,
         uint256 indexed winningBidId
@@ -365,6 +372,15 @@ contract AuctionManagerTest is Test {
 
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
+    }
+
+    function test_EventBidPlaced() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.expectEmit(true, true, true, true);
+        emit BidCreated(alice, 0.2 ether, 1, 0);
+        hoax(alice);
+        auctionInstance.createBid{value: 0.2 ether}(proof);
     }
 
     function test_BidFailsWhenInvaliAmountSent() public {
