@@ -29,7 +29,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     uint256 public numberOfActiveBids;
     address public stakingManagerContractAddress;
     address public owner;
-    address public etherFiNodeManager;
+    address public etherFiNodesManager;
     address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
 
@@ -164,7 +164,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         external
         payable
         whenNotPaused
-    {
+    returns (uint256)  {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
@@ -179,14 +179,15 @@ contract AuctionManager is IAuctionManager, Pausable {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
+        uint256 bidId = numberOfBids;
         uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
             nodeOperatorKeyManagerContract
-        ).numberOfKeysUsed(msg.sender);
+        ).getNumberOfKeysUsed(msg.sender);
         NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
             .increaseKeysIndex(msg.sender);
 
         //Creates a bid object for storage and lookup in future
-        bids[numberOfBids] = Bid({
+        bids[bidId] = Bid({
             amount: msg.value,
             bidderPubKeyIndex: nextAvailableIpfsIndex,
             timeOfBid: block.timestamp,
@@ -196,18 +197,20 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         //Checks if the bid is now the highest bid
         if (msg.value > bids[currentHighestBidId].amount) {
-            currentHighestBidId = numberOfBids;
+            currentHighestBidId = bidId;
         }
 
         emit BidPlaced(
             msg.sender,
             msg.value,
-            numberOfBids,
+            bidId,
             nextAvailableIpfsIndex
         );
 
         numberOfBids++;
         numberOfActiveBids++;
+
+        return bidId;
     }
 
     /// @notice Sends a winning bids funds to the EtherFi Node related to the validator
@@ -216,23 +219,12 @@ contract AuctionManager is IAuctionManager, Pausable {
         external
         onlyStakingManagerContract
     {
-        StakingManager depositContractInstance = StakingManager(
-            stakingManagerContractAddress
-        );
-        (
-            ,
-            uint256 selectedBid,
-            ,
-            address etherFiNode,
-            ,
-
-        ) = depositContractInstance.validators(_validatorId);
-
+        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(etherFiNodesManager);
+     
+        uint256 selectedBid = _validatorId;
         uint256 amount = bids[selectedBid].amount;
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(_validatorId);
 
-        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
-            etherFiNodeManager
-        );
         managerInstance.receiveAuctionFunds(_validatorId, amount);
 
         (bool sent, ) = payable(etherFiNode).call{value: amount}("");
@@ -362,7 +354,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @dev Used due to circular dependencies
     /// @param _managerAddress address being set as the etherfi node manager contract
     function setEtherFiNodesManagerAddress(address _managerAddress) external {
-        etherFiNodeManager = _managerAddress;
+        etherFiNodesManager = _managerAddress;
     }
 
     //--------------------------------------------------------------------------------------
