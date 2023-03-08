@@ -188,13 +188,13 @@ contract StakingManagerTest is Test {
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
     }
 
-    function test_StakingManagerFailsIfIncorrectAmountSent() public {
+    function test_DepositFailsIfIncorrectAmountSent() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Insufficient staking amount");
         stakingManagerInstance.deposit{value: 0.2 ether}(0);
     }
 
-    function test_StakingManagerFailsBidDoesntExist() public {
+    function test_DepositFailsBidDoesntExist() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -204,7 +204,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}(0);
     }
 
-    function test_StakingManagerfailsIfContractPaused() public {
+    function test_DepositFailsIfContractPaused() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(owner);
@@ -224,6 +224,17 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.deposit{value: 0.032 ether}(0);
         assertEq(stakingManagerInstance.paused(), false);
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
+    }
+
+    function test_DepositFailsIfBidAlreadySelected() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        vm.expectRevert("Bid already selected");
+        stakingManagerInstance.deposit{value: 0.032 ether}(1);
     }
 
     function test_EtherFailSafeWorks() public {

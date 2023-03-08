@@ -107,7 +107,7 @@ contract StakingManager is IStakingManager, Pausable {
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
             "No bids available at the moment"
         );
-        require(bidIdToStaker[_bidId] == address(0), "");
+        require(bidIdToStaker[_bidId] == address(0), "Bid already selected");
         
         if(_bidId == 0){
             _bidId = auctionInterfaceInstance.fetchWinningBid();
