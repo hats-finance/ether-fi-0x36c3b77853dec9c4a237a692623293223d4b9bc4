@@ -23,7 +23,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
         addressToOperatorData[msg.sender] = KeyData({
             totalKeys: _totalKeys,
             keysUsed: 0,
-            ipfsHash: keccak256(abi.encodePacked(_ipfsHash))
+            ipfsHash: abi.encodePacked(_ipfsHash)
         });
         emit OperatorRegistered(
             addressToOperatorData[msg.sender].totalKeys,
