@@ -140,6 +140,45 @@ contract StakingManagerTest is Test {
         assertEq(deposit_data.signature, "test_signature");
     }
 
+    function test_DepositWithBidIdWorksCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256 bidIdOne = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidIdTwo = auctionInstance.bidOnStake{value: 0.2 ether}(proof);
+        uint256 bidIdThree = auctionInstance.bidOnStake{value: 0.3 ether}(proof);
+        assertEq(bidIdThree, 3);
+
+        stakingManagerInstance.deposit{value: 0.032 ether}(bidIdOne);
+        assertEq(stakingManagerInstance.bidIdToStaker(bidIdOne), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+
+        (,,,, bool isActive) = auctionInstance.bids(bidIdOne);
+        assertEq(isActive, false);
+        (,,,, isActive) = auctionInstance.bids(bidIdTwo);
+        assertEq(isActive, true);
+        assertEq(auctionInstance.currentHighestBidId(), 3);
+
+        stakingManagerInstance.registerValidator(bidIdOne, test_data);
+
+        assertEq(TestBNFTInstance.ownerOf(bidIdOne), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestTNFTInstance.ownerOf(bidIdOne), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+
+        address etherfiNode = managerInstance.getEtherFiNodeAddress(bidIdOne);
+        IStakingManager.DepositData memory deposit_data = IEtherFiNode(etherfiNode).getDepositData();
+
+        assertEq(stakingManagerInstance.stakeAmount(), 0.032 ether);
+        assertEq(etherfiNode.balance, 0.1 ether);
+
+        assertEq(
+            deposit_data.operator,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
+        assertEq(deposit_data.withdrawalCredentials, "test_credentials");
+        assertEq(deposit_data.depositDataRoot, "test_deposit_root");
+        assertEq(deposit_data.publicKey, "test_pubkey");
+        assertEq(deposit_data.signature, "test_signature");
+    }
+
     function test_StakingManagerReceivesEther() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
