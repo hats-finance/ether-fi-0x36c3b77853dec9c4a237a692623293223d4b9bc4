@@ -43,14 +43,12 @@ contract StakingManager is IStakingManager, Pausable {
     event NFTContractsDeployed(address TNFTInstance, address BNFTInstance);
     event StakeDeposit(
         address indexed staker,
-        uint256 id,
-        uint256 winningBidId,
+        uint256 bidId,
         address withdrawSafe
     );
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(
         address indexed operator,
-        uint256 bidId,
         uint256 validatorId,
         string  ipfsHashForEncryptedValidatorKey
     );
@@ -155,7 +153,6 @@ contract StakingManager is IStakingManager, Pausable {
         emit ValidatorRegistered(
             auctionInterfaceInstance.getBidOwner(_validatorId),
             _validatorId,
-            _validatorId,
             _depositData.ipfsHashForEncryptedValidatorKey
         );
     }
@@ -239,7 +236,6 @@ contract StakingManager is IStakingManager, Pausable {
 
         emit StakeDeposit(
             msg.sender,
-            validatorId,
             _bidId,
             etherfiNode
         );
