@@ -104,9 +104,8 @@ contract StakingManager is IStakingManager, Pausable {
         uint256 bidId = auctionInterfaceInstance.fetchWinningBid();
         require(bidIdToStaker[bidId] == address(0), "Bid already selected");
 
-        uint256 validatorId = bidId;
-        processDeposit(validatorId);
-        return validatorId;
+        processDeposit(bidId);
+        return bidId;
     }
     
     /// @notice Allows a user to stake their ETH with a specific bid selected
@@ -116,9 +115,8 @@ contract StakingManager is IStakingManager, Pausable {
         
         auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
 
-        uint256 validatorId = _bidId;
-        processDeposit(validatorId);
-        return validatorId;
+        processDeposit(_bidId);
+        return _bidId;
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
