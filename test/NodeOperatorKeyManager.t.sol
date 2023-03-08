@@ -15,8 +15,8 @@ import "../lib/murky/src/Merkle.sol";
 
 contract NodeOperatorKeyManagerTest is Test {
     event OperatorRegistered(
-        uint128 totalKeys,
-        uint128 keysUsed,
+        uint64 totalKeys,
+        uint64 keysUsed,
         string ipfsHash
     );
 
@@ -85,15 +85,15 @@ contract NodeOperatorKeyManagerTest is Test {
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(
             aliceIPFSHash,
-            uint128(10)
+            uint64(10)
         );
         (
-            uint128 totalKeys,
-            uint128 keysUsed,
-            string memory aliceHash
+            uint64 totalKeys,
+            uint64 keysUsed,
+            bytes32 aliceHash
         ) = nodeOperatorKeyManagerInstance.addressToOperatorData(alice);
 
-        assertEq(aliceHash, aliceIPFSHash);
+        assertEq(aliceHash, keccak256(abi.encodePacked(aliceIPFSHash)));
         assertEq(totalKeys, 10);
         assertEq(keysUsed, 0);
     }

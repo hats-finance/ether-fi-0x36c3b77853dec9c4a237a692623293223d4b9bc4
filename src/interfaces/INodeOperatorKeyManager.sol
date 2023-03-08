@@ -3,12 +3,12 @@ pragma solidity 0.8.13;
 
 interface INodeOperatorKeyManager {
     struct KeyData {
-        uint128 totalKeys;
-        uint128 keysUsed;
-        string ipfsHash;
+        uint64 totalKeys;
+        uint64 keysUsed;
+        bytes32 ipfsHash;
     }
 
-    function registerNodeOperator(string memory ipfsHash, uint128 totalKeys)
+    function registerNodeOperator(string memory ipfsHash, uint64 totalKeys)
         external;
 
     function getNumberOfKeysUsed(address _user)
