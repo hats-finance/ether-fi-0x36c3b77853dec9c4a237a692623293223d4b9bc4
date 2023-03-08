@@ -98,21 +98,25 @@ contract StakingManager is IStakingManager, Pausable {
     }
 
     /// @notice Allows a user to stake their ETH and be paired with a bid from the auction
-    function depositForAuction() external payable whenNotPaused correctStakeAmount bidsCurrentlyActive {
+    function depositForAuction() external payable whenNotPaused correctStakeAmount bidsCurrentlyActive returns (uint256) {
         uint256 bidId = auctionInterfaceInstance.fetchWinningBid();
         require(bidIdToStaker[bidId] == address(0), "Bid already selected");
 
-        setDepositVariables(bidId);
-
+        uint256 validatorId = bidId;
+        setDepositVariables(validatorId);
+        return validatorId;
     }
     
     /// @notice Allows a user to stake their ETH with a specific bid selected
     /// @param _bidId the bid which the staker selected
-    function depositWithBidId(uint256 _bidId) external payable whenNotPaused correctStakeAmount bidsCurrentlyActive{
+    function depositWithBidId(uint256 _bidId) external payable whenNotPaused correctStakeAmount bidsCurrentlyActive returns (uint256) {
         require(bidIdToStaker[_bidId] == address(0), "Bid already selected");
         
         auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
-        setDepositVariables(_bidId);
+
+        uint256 validatorId = _bidId;
+        setDepositVariables(validatorId);
+        return validatorId;
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
