@@ -293,9 +293,15 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return etherfiNodePerValidator[_validatorId];
     }
 
+    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        return IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey();
+    }
+
+
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
-        address etherFiNode = etherfiNodePerValidator[_validatorId];
-        return abi.encodePacked(bytes1(0x01), bytes11(0x0), address(etherFiNode));
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        return abi.encodePacked(bytes1(0x01), bytes11(0x0), address(etherfiNode));
     }
 
     //--------------------------------------------------------------------------------------
