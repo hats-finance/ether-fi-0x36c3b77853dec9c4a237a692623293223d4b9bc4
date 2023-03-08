@@ -12,8 +12,6 @@ contract TNFT is ERC721 {
     uint256 public nftValue;
     address public stakingManagerContractAddress;
 
-    mapping(uint256 => uint256) public validatorToId;
-
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
@@ -30,18 +28,11 @@ contract TNFT is ERC721 {
     //Function only allows the deposit contract to mint to prevent
     //standard eoa minting themselves NFTs
     function mint(address _reciever, uint256 _validatorId) external onlyStakingManagerContract {
-        _safeMint(_reciever, tokenIds);
+        _safeMint(_reciever, _validatorId);
                 
-        validatorToId[_validatorId] = tokenIds;
-
         unchecked {
             tokenIds++;
         }
-
-    }
-
-    function getNftId(uint256 _validatorId) public returns (uint256) {
-        return validatorToId[_validatorId];
     }
 
     //--------------------------------------------------------------------------------------

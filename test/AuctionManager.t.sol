@@ -87,14 +87,14 @@ contract AuctionManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidId = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         vm.prank(owner);
         auctionInstance.pauseContract();
 
         stakingManagerInstance.deposit{value: 0.032 ether}();
         vm.expectRevert("Pausable: paused");
-        stakingManagerInstance.cancelDeposit(0);
+        stakingManagerInstance.cancelDeposit(bidId);
     }
 
     function test_ReEnterAuctionManagerFailsIfNotCorrectCaller() public {
@@ -115,40 +115,41 @@ contract AuctionManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        auctionInstance.bidOnStake{value: 0.05 ether}(proof);
+        uint256 bidId1 = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidId2 = auctionInstance.bidOnStake{value: 0.05 ether}(proof);
 
         stakingManagerInstance.deposit{value: 0.032 ether}();
-        stakingManagerInstance.cancelDeposit(0);
+        stakingManagerInstance.cancelDeposit(bidId1);
         vm.stopPrank();
 
         vm.prank(address(stakingManagerInstance));
         vm.expectRevert("Bid already active");
-        auctionInstance.reEnterAuction(2);
+        auctionInstance.reEnterAuction(bidId1);
     }
 
     function test_ReEnterAuctionManagerWorks() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        auctionInstance.bidOnStake{value: 0.05 ether}(proof);
+        uint256 bidId1 = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidId2 = auctionInstance.bidOnStake{value: 0.05 ether}(proof);
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
         stakingManagerInstance.deposit{value: 0.032 ether}();
-        (, , , , bool isBid1Active) = auctionInstance.bids(1);
-        (, uint256 selectedBidId, , , , ) = stakingManagerInstance.validators(0);
+        (, , , , bool isBid1Active) = auctionInstance.bids(bidId1);
+        
+        uint256 selectedBidId = bidId1;
         assertEq(selectedBidId, 1);
         assertEq(isBid1Active, false);
-        assertEq(auctionInstance.currentHighestBidId(), 2);
+        assertEq(auctionInstance.currentHighestBidId(), bidId2);
 
-        stakingManagerInstance.cancelDeposit(0);
-        (, , , , isBid1Active) = auctionInstance.bids(1);
-        (, , , , bool isBid2Active) = auctionInstance.bids(2);
+        stakingManagerInstance.cancelDeposit(bidId1);
+        (, , , , isBid1Active) = auctionInstance.bids(bidId1);
+        (, , , , bool isBid2Active) = auctionInstance.bids(bidId2);
         assertEq(isBid1Active, true);
         assertEq(isBid2Active, true);
         assertEq(address(auctionInstance).balance, 0.15 ether);
-        assertEq(auctionInstance.currentHighestBidId(), 1);
+        assertEq(auctionInstance.currentHighestBidId(), bidId1);
     }
 
     function test_FetchWinningBidFailsIfNotContractCalling() public {
