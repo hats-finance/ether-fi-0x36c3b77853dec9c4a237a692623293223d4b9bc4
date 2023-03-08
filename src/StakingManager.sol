@@ -42,15 +42,15 @@ contract StakingManager is IStakingManager, Pausable {
 
     event NFTContractsDeployed(address TNFTInstance, address BNFTInstance);
     event StakeDeposit(
-        address indexed sender,
-        uint256 id,
-        uint256 winningBidId,
+        address indexed staker,
+        uint256 bidId,
         address withdrawSafe
     );
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(
-        uint256 bidId,
-        uint256 validatorId
+        address indexed operator,
+        uint256 validatorId,
+        string  ipfsHashForEncryptedValidatorKey
     );
     event ValidatorAccepted(uint256 validatorId);
 
@@ -102,9 +102,8 @@ contract StakingManager is IStakingManager, Pausable {
         uint256 bidId = auctionInterfaceInstance.fetchWinningBid();
         require(bidIdToStaker[bidId] == address(0), "Bid already selected");
 
-        uint256 validatorId = bidId;
-        setDepositVariables(validatorId);
-        return validatorId;
+        processDeposit(bidId);
+        return bidId;
     }
     
     /// @notice Allows a user to stake their ETH with a specific bid selected
@@ -114,9 +113,8 @@ contract StakingManager is IStakingManager, Pausable {
         
         auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
 
-        uint256 validatorId = _bidId;
-        setDepositVariables(validatorId);
-        return validatorId;
+        processDeposit(_bidId);
+        return _bidId;
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
@@ -153,8 +151,9 @@ contract StakingManager is IStakingManager, Pausable {
         nodesManagerIntefaceInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         emit ValidatorRegistered(
+            auctionInterfaceInstance.getBidOwner(_validatorId),
             _validatorId,
-            _validatorId
+            _depositData.ipfsHashForEncryptedValidatorKey
         );
     }
 
@@ -224,7 +223,7 @@ contract StakingManager is IStakingManager, Pausable {
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function setDepositVariables(uint256 _bidId) internal {
+    function processDeposit(uint256 _bidId) internal {
         // Take the bid; Set the matched staker for the bid
         bidIdToStaker[_bidId] = msg.sender;
 
@@ -237,7 +236,6 @@ contract StakingManager is IStakingManager, Pausable {
 
         emit StakeDeposit(
             msg.sender,
-            validatorId,
             _bidId,
             etherfiNode
         );
