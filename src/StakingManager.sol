@@ -100,24 +100,26 @@ contract StakingManager is IStakingManager, Pausable {
     /// @notice Allows a user to stake their ETH
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
-    function deposit() public payable whenNotPaused {
+    /// @param _bidId 0 means calculate winning bid from auction, anything above 0 is a bid id the staker has selected
+    function deposit(uint256 _bidId) public payable whenNotPaused {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
             "No bids available at the moment"
         );
-
-        // Run the auction
-        uint256 selectedBidId = auctionInterfaceInstance.fetchWinningBid();
-
-        // Validate the auction result; Ensure the bid is not taken
-        require(bidIdToStaker[selectedBidId] == address(0), "");
+        require(bidIdToStaker[_bidId] == address(0), "");
+        
+        if(_bidId == 0){
+            _bidId = auctionInterfaceInstance.fetchWinningBid();
+        }else {
+            auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
+        }
 
         // Take the bid; Set the matched staker for the bid
-        bidIdToStaker[selectedBidId] = msg.sender;
+        bidIdToStaker[_bidId] = msg.sender;
 
         // Let validatorId = BidId
-        uint256 validatorId = selectedBidId;
+        uint256 validatorId = _bidId;
 
         // Create the node contract
         address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(validatorId);
@@ -126,7 +128,7 @@ contract StakingManager is IStakingManager, Pausable {
         emit StakeDeposit(
             msg.sender,
             validatorId,
-            selectedBidId,
+            _bidId,
             etherfiNode
         );
     }
@@ -143,7 +145,7 @@ contract StakingManager is IStakingManager, Pausable {
         address staker = bidIdToStaker[_validatorId];
 
         // Let valiadatorId = nftTokenId
-        // Min {T, B}-NFTs to the Staker
+        // Mint {T, B}-NFTs to the Staker
         uint256 nftTokenId = _validatorId;
         TNFTInterfaceInstance.mint(staker, nftTokenId);
         BNFTInterfaceInstance.mint(staker, nftTokenId);
