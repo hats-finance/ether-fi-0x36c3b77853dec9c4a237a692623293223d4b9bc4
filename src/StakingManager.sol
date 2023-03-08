@@ -101,7 +101,7 @@ contract StakingManager is IStakingManager, Pausable {
     /// @dev This is phase 1 of the staking process, validation key submition is phase 2
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     /// @param _bidId 0 means calculate winning bid from auction, anything above 0 is a bid id the staker has selected
-    function deposit(uint256 _bidId) public payable whenNotPaused {
+    function deposit(uint256 _bidId) public payable whenNotPaused returns (uint256) {
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
@@ -131,6 +131,8 @@ contract StakingManager is IStakingManager, Pausable {
             _bidId,
             etherfiNode
         );
+
+        return validatorId;
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
