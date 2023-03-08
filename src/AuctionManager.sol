@@ -184,12 +184,15 @@ contract AuctionManager is IAuctionManager, Pausable {
         } else {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
-
-        uint256 bidId = numberOfBids;
         uint256 ipfsIndex = nodeOperatorKeyManagerInstance.getNumberOfKeysUsed(
             msg.sender
         );
-        nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
+        (uint256 totalKeys, , ) = nodeOperatorKeyManagerInstance
+            .addressToOperatorData(msg.sender);
+
+        require(ipfsIndex < totalKeys, "All public keys used");
+
+        uint256 bidId = numberOfBids;
 
         //Creates a bid object for storage and lookup in future
         bids[bidId] = Bid({
@@ -209,6 +212,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         emit BidCreated(msg.sender, msg.value, bidId, ipfsIndex);
 
+        nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
         numberOfBids++;
         numberOfActiveBids++;
 

@@ -30,6 +30,8 @@ contract AuctionManagerTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
+    string aliceIPFSHash = "AliceIPFS";
+
     event BidCreated(
         address indexed bidder,
         uint256 amount,
@@ -372,6 +374,20 @@ contract AuctionManagerTest is Test {
 
         assertEq(auctionInstance.currentHighestBidId(), 2);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
+    }
+
+    function test_CreateBidFailsIfIPFSIndexMoreThanTotalKeys() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 1);
+
+        hoax(alice);
+        uint256 bid1Id = auctionInstance.createBid{value: 0.1 ether}(proof);
+
+        vm.expectRevert("All public keys used");
+        hoax(alice);
+        auctionInstance.createBid{value: 0.1 ether}(proof);
     }
 
     function test_EventBidPlaced() public {
