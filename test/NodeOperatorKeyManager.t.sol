@@ -114,7 +114,7 @@ contract NodeOperatorKeyManagerTest is Test {
         assertEq(aliceKeysUsed, 0);
 
         hoax(alice);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof);
 
         aliceKeysUsed = nodeOperatorKeyManagerInstance.getNumberOfKeysUsed(
             alice
