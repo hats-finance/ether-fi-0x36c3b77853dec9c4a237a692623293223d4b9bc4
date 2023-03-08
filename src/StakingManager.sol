@@ -49,8 +49,10 @@ contract StakingManager is IStakingManager, Pausable {
     );
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(
+        address indexed operator,
         uint256 bidId,
-        uint256 validatorId
+        uint256 validatorId,
+        string  ipfsHashForEncryptedValidatorKey
     );
     event ValidatorAccepted(uint256 validatorId);
 
@@ -103,7 +105,7 @@ contract StakingManager is IStakingManager, Pausable {
         require(bidIdToStaker[bidId] == address(0), "Bid already selected");
 
         uint256 validatorId = bidId;
-        setDepositVariables(validatorId);
+        processDeposit(validatorId);
         return validatorId;
     }
     
@@ -115,7 +117,7 @@ contract StakingManager is IStakingManager, Pausable {
         auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
 
         uint256 validatorId = _bidId;
-        setDepositVariables(validatorId);
+        processDeposit(validatorId);
         return validatorId;
     }
 
@@ -153,8 +155,10 @@ contract StakingManager is IStakingManager, Pausable {
         nodesManagerIntefaceInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         emit ValidatorRegistered(
+            auctionInterfaceInstance.getBidOwner(_validatorId),
             _validatorId,
-            _validatorId
+            _validatorId,
+            _depositData.ipfsHashForEncryptedValidatorKey
         );
     }
 
@@ -224,7 +228,7 @@ contract StakingManager is IStakingManager, Pausable {
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function setDepositVariables(uint256 _bidId) internal {
+    function processDeposit(uint256 _bidId) internal {
         // Take the bid; Set the matched staker for the bid
         bidIdToStaker[_bidId] = msg.sender;
 
