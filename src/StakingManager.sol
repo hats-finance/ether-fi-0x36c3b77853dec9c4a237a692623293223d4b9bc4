@@ -154,16 +154,17 @@ contract StakingManager is IStakingManager, Pausable {
         auctionInterfaceInstance.sendFundsToEtherFiNode(_validatorId);
 
         if (test = false) {
+            bytes memory withdrawalCredentials = nodesManagerIntefaceInstance.getWithdrawalCredentials(_validatorId);
             depositContractEth2.deposit{value: stakeAmount}(
                 _depositData.publicKey,
-                abi.encodePacked(_depositData.withdrawalCredentials),
+                withdrawalCredentials,
                 _depositData.signature,
                 _depositData.depositDataRoot
             );
         }
         
         nodesManagerIntefaceInstance.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.REGISTERED);
-        nodesManagerIntefaceInstance.setEtherFiNodeDepositData(_validatorId, _depositData);
+        nodesManagerIntefaceInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         emit ValidatorRegistered(
             _validatorId,
