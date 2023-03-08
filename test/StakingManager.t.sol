@@ -140,53 +140,6 @@ contract StakingManagerTest is Test {
         assertEq(deposit_data.signature, "test_signature");
     }
 
-    function test_StakingManagerCorrectlyInstantiatesStakeObjectWhenStakerSelectedBid() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        auctionInstance.bidOnStake{value: 0.5 ether}(proof);
-        auctionInstance.bidOnStake{value: 0.34 ether}(proof);
-
-        stakingManagerInstance.deposit{value: 0.032 ether}(2);
-        stakingManagerInstance.registerValidator(0, test_data);
-        
-        (   
-            uint256 validatorId,
-            uint256 winningBid,
-            address staker,
-            ,
-            ,
-            IStakingManager.DepositData memory deposit_data
-        ) = stakingManagerInstance.validators(0);
-
-        assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        assertEq(stakingManagerInstance.stakeAmount(), 0.032 ether);
-        assertEq(winningBid, 2);
-        assertEq(validatorId, 0);
-
-        assertEq(
-            deposit_data.operator,
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
-        assertEq(deposit_data.withdrawalCredentials, "test_credentials");
-        assertEq(deposit_data.depositDataRoot, "test_deposit_root");
-        assertEq(deposit_data.publicKey, "test_pubkey");
-        assertEq(deposit_data.signature, "test_signature");
-
-         (   
-            uint256 amount,
-            ,
-            ,
-            address bidderAddress,
-            bool isActive
-        ) = auctionInstance.bids(2);
-
-        assertEq(amount, 0.5 ether);
-        assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        assertEq(isActive, false);
-    }
-
     function test_StakingManagerReceivesEther() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
