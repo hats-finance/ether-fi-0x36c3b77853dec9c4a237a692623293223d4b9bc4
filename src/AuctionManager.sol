@@ -35,6 +35,8 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     mapping(uint256 => Bid) public bids;
 
+    NodeOperatorKeyManager nodeOperatorKeyManagerInstance;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -89,6 +91,9 @@ contract AuctionManager is IAuctionManager, Pausable {
     constructor(address _nodeOperatorKeyManagerContract) {
         owner = msg.sender;
         nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
+        nodeOperatorKeyManagerInstance = NodeOperatorKeyManager(
+            _nodeOperatorKeyManagerContract
+        );
     }
 
     //--------------------------------------------------------------------------------------
@@ -160,11 +165,12 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @notice Places a bid in the auction to be the next operator
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-    function bidOnStake(bytes32[] calldata _merkleProof)
+    function createBid(bytes32[] calldata _merkleProof)
         external
         payable
         whenNotPaused
-    returns (uint256)  {
+        returns (uint256)
+    {
         // Checks if bidder is on whitelist
         if (msg.value < minBidAmount) {
             require(
@@ -180,11 +186,9 @@ contract AuctionManager is IAuctionManager, Pausable {
         }
 
         uint256 bidId = numberOfBids;
-        uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
-            nodeOperatorKeyManagerContract
-        ).getNumberOfKeysUsed(msg.sender);
-        NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
-            .increaseKeysIndex(msg.sender);
+        uint256 nextAvailableIpfsIndex = nodeOperatorKeyManagerInstance
+            .getNumberOfKeysUsed(msg.sender);
+        nodeOperatorKeyManagerInstance.increaseKeysIndex(msg.sender);
 
         //Creates a bid object for storage and lookup in future
         bids[bidId] = Bid({
@@ -200,12 +204,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             currentHighestBidId = bidId;
         }
 
-        emit BidPlaced(
-            msg.sender,
-            msg.value,
-            bidId,
-            nextAvailableIpfsIndex
-        );
+        emit BidPlaced(msg.sender, msg.value, bidId, nextAvailableIpfsIndex);
 
         numberOfBids++;
         numberOfActiveBids++;
@@ -219,11 +218,15 @@ contract AuctionManager is IAuctionManager, Pausable {
         external
         onlyStakingManagerContract
     {
-        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(etherFiNodesManager);
-     
+        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
+            etherFiNodesManager
+        );
+
         uint256 selectedBid = _validatorId;
         uint256 amount = bids[selectedBid].amount;
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(_validatorId);
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(
+            _validatorId
+        );
 
         managerInstance.receiveAuctionFunds(_validatorId, amount);
 
