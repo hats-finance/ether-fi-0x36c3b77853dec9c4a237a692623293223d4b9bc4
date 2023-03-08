@@ -91,7 +91,7 @@ contract AuctionManagerTest is Test {
         vm.prank(owner);
         auctionInstance.pauseContract();
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.expectRevert("Pausable: paused");
         stakingManagerInstance.cancelDeposit(bidId);
     }
@@ -102,7 +102,7 @@ contract AuctionManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
@@ -117,7 +117,7 @@ contract AuctionManagerTest is Test {
         uint256 bidId1 = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
         uint256 bidId2 = auctionInstance.bidOnStake{value: 0.05 ether}(proof);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.cancelDeposit(bidId1);
         vm.stopPrank();
 
@@ -134,7 +134,7 @@ contract AuctionManagerTest is Test {
         uint256 bidId2 = auctionInstance.bidOnStake{value: 0.05 ether}(proof);
         assertEq(auctionInstance.currentHighestBidId(), 1);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         (, , , , bool isBid1Active) = auctionInstance.bids(bidId1);
         
         uint256 selectedBidId = bidId1;
@@ -157,7 +157,7 @@ contract AuctionManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
@@ -194,7 +194,7 @@ contract AuctionManagerTest is Test {
         auctionInstance.bidOnStake{value: 0.2 ether}(proofForAddress3);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
 
         assertEq(auctionInstance.currentHighestBidId(), 3);
         assertEq(address(auctionInstance).balance, 0.6 ether);
@@ -239,7 +239,7 @@ contract AuctionManagerTest is Test {
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.bidOnStake{value: 0.3 ether}(proofForAddress2);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.expectEmit(true, false, false, true);
