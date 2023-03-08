@@ -27,6 +27,7 @@ interface IEtherFiNodesManager {
     }
 
     function getEtherFiNodeAddress(uint256 _validatorId) external view returns (address);
+    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory);
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory);
 
     function installEtherFiNode(uint256 _validatorId, address _safeAddress) external;

@@ -131,6 +131,10 @@ contract StakingManagerTest is Test {
             IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey(),
             test_data.ipfsHashForEncryptedValidatorKey
         );
+        assertEq(
+            managerInstance.getEtherFiNodeIpfsHashForEncryptedValidatorKey(validatorId),
+            test_data.ipfsHashForEncryptedValidatorKey
+        );
     }
 
     function test_StakingManagerReceivesEther() public {
