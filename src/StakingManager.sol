@@ -102,30 +102,24 @@ contract StakingManager is IStakingManager, Pausable {
     /// @dev Function disables bidding until it is manually enabled again or validation key is submitted
     /// @param _bidId 0 means calculate winning bid from auction, anything above 0 is a bid id the staker has selected
     function deposit(uint256 _bidId) public payable whenNotPaused {
-        uint256 localNumberOfValidators = numberOfValidators;
-
         require(msg.value == stakeAmount, "Insufficient staking amount");
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >= 1,
             "No bids available at the moment"
         );
+        require(bidIdToStaker[_bidId] == address(0), "");
 
-        // Run the auction
-        uint256 selectedBidId = auctionInterfaceInstance.fetchWinningBid();
-
-        // Validate the auction result; Ensure the bid is not taken
-        require(bidIdToStaker[selectedBidId] == address(0), "");
-
-        // Take the bid; Set the matched staker for the bid
-        bidIdToStaker[selectedBidId] = msg.sender;
         if(_bidId == 0){
             _bidId = auctionInterfaceInstance.fetchWinningBid();
         } else {
             auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
         }
 
+        // Take the bid; Set the matched staker for the bid
+        bidIdToStaker[_bidId] = msg.sender;
+
         // Let validatorId = BidId
-        uint256 validatorId = selectedBidId;
+        uint256 validatorId = _bidId;
 
         // Create the node contract
         address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(validatorId);
@@ -134,7 +128,7 @@ contract StakingManager is IStakingManager, Pausable {
         emit StakeDeposit(
             msg.sender,
             validatorId,
-            selectedBidId,
+            _bidId,
             etherfiNode
         );
     }
