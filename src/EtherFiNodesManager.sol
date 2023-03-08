@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin/contracts/proxy/Clones.sol";
+
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuctionManager.sol";
@@ -11,7 +13,6 @@ import "./interfaces/IStakingManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./EtherFiNode.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNodesManager is IEtherFiNodesManager {
@@ -275,14 +276,14 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         IEtherFiNode(etherfiNode).setPhase(_phase);
     }
 
-    /// @notice Sets the phase of the validator
+    /// @notice Sets the ipfs hash of the validator's encrypted private key
     /// @param _validatorId id of the validator associated to this withdraw safe
-    /// @param _deposit_data deposit data of the validator
-    function setEtherFiNodeDepositData(uint256 _validatorId, IStakingManager.DepositData calldata _deposit_data)
+    /// @param _ipfs ipfs hash
+    function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs)
         public
     {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        IEtherFiNode(etherfiNode).setDepositData(_deposit_data);
+        IEtherFiNode(etherfiNode).setIpfsHashForEncryptedValidatorKey(_ipfs);
     }
 
     function getEtherFiNodeAddress(uint256 _validatorId)
@@ -290,6 +291,20 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         returns (address)
     {
         return etherfiNodePerValidator[_validatorId];
+    }
+
+    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        return IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey();
+    }
+
+    function generateWithdrawalCredentials(address _address) public view returns (bytes memory) {
+        return abi.encodePacked(bytes1(0x01), bytes11(0x0), _address);
+    }
+
+    function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        return generateWithdrawalCredentials(etherfiNode);
     }
 
     //--------------------------------------------------------------------------------------

@@ -74,19 +74,17 @@ contract EtherFiNodeTest is Test {
         );
 
         test_data = IStakingManager.DepositData({
-            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-            withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",
             publicKey: "test_pubkey",
-            signature: "test_signature"
+            signature: "test_signature",
+            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
 
         test_data_2 = IStakingManager.DepositData({
-            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-            withdrawalCredentials: "test_credentials_2",
             depositDataRoot: "test_deposit_root_2",
             publicKey: "test_pubkey_2",
-            signature: "test_signature_2"
+            signature: "test_signature_2",
+            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash_2"
         });
 
         vm.stopPrank();

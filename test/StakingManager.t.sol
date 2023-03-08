@@ -71,19 +71,17 @@ contract StakingManagerTest is Test {
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
         test_data = IStakingManager.DepositData({
-            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-            withdrawalCredentials: "test_credentials",
             depositDataRoot: "test_deposit_root",
             publicKey: "test_pubkey",
-            signature: "test_signature"
+            signature: "test_signature",
+            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
 
         test_data_2 = IStakingManager.DepositData({
-            operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-            withdrawalCredentials: "test_credentials_2",
             depositDataRoot: "test_deposit_root_2",
             publicKey: "test_pubkey_2",
-            signature: "test_signature_2"
+            signature: "test_signature_2",
+            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash2"
         });
 
         vm.stopPrank();
@@ -124,6 +122,17 @@ contract StakingManagerTest is Test {
         assertEq(stakingManagerInstance.owner(), owner);
     }
 
+    function test_GenerateWithdrawalCredentialsCorrectly() public {
+        address exampleWithdrawalAddress = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        bytes memory withdrawalCredential = managerInstance
+            .generateWithdrawalCredentials(exampleWithdrawalAddress);
+        // Generated with './deposit new-mnemonic --eth1_withdrawal_address 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931'
+        bytes
+            memory trueOne = hex"010000000000000000000000cd5ebc2dd4cb3dc52ac66ceecc72c838b40a5931";
+        assertEq(withdrawalCredential.length, trueOne.length);
+        assertEq(keccak256(withdrawalCredential), keccak256(trueOne));
+    }
+
     function test_StakingManagerCorrectlyInstantiatesStakeObject() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
@@ -143,9 +152,6 @@ contract StakingManagerTest is Test {
         address etherfiNode = managerInstance.getEtherFiNodeAddress(
             validatorId
         );
-        IStakingManager.DepositData memory deposit_data = IEtherFiNode(
-            etherfiNode
-        ).getDepositData();
 
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(stakingManagerInstance.stakeAmount(), 0.032 ether);
@@ -153,13 +159,15 @@ contract StakingManagerTest is Test {
         assertEq(validatorId, bidId);
 
         assertEq(
-            deposit_data.operator,
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey(),
+            test_data.ipfsHashForEncryptedValidatorKey
         );
-        assertEq(deposit_data.withdrawalCredentials, "test_credentials");
-        assertEq(deposit_data.depositDataRoot, "test_deposit_root");
-        assertEq(deposit_data.publicKey, "test_pubkey");
-        assertEq(deposit_data.signature, "test_signature");
+        assertEq(
+            managerInstance.getEtherFiNodeIpfsHashForEncryptedValidatorKey(
+                validatorId
+            ),
+            test_data.ipfsHashForEncryptedValidatorKey
+        );
     }
 
     function test_StakingManagerReceivesEther() public {
