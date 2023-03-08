@@ -318,7 +318,7 @@ contract StakingManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(bidId);
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         stakingManagerInstance.cancelDeposit(bidId);
 
         vm.expectRevert("Deposit does not exist");
@@ -335,7 +335,7 @@ contract StakingManagerTest is Test {
 
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
-        stakingManagerInstance.deposit{value: 0.032 ether}(0);
+        stakingManagerInstance.deposit{value: 0.032 ether}(0); // bidId2
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
 
@@ -380,13 +380,13 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 bidId1 = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}(bidId1);
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         stakingManagerInstance.registerValidator(bidId1, test_data);
 
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         uint256 bidId2 = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        stakingManagerInstance.deposit{value: 0.032 ether}(bidId2);
+        stakingManagerInstance.deposit{value: 0.032 ether}(0);
         stakingManagerInstance.registerValidator(bidId2, test_data);
 
         assertEq(
