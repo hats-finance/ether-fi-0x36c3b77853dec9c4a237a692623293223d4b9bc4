@@ -118,6 +118,8 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @notice Updates a winning bids details
     /// @dev Called either by the fetchWinningBid() function or from the staking contract
     /// @param _bidId the ID of the bid being removed from the auction; either due to being selected by a staker or being the current highest bid
+    /// TODO add a staker param and set the stakerAddress in the bid struct
+    /// TODO add require to check if staker address is address(0)
     function updateSelectedBidInformation(uint256 _bidId) public {
         require(
             msg.sender == stakingManagerContractAddress ||
