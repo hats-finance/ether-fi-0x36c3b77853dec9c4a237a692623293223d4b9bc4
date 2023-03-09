@@ -10,7 +10,7 @@ interface IStakingManager {
         string ipfsHashForEncryptedValidatorKey;
     }
 
-    function depositForAuction() external payable returns (uint256) ;
+    function depositForAuction() external payable;
     
     function depositWithBidId(uint256 _bidId) external payable returns (uint256) ;
 

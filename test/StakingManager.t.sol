@@ -156,7 +156,60 @@ contract StakingManagerTest is Test {
         uint256 bidIdFour = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
 
         vm.expectRevert("Insufficient staking amount");
-        stakingManagerInstance.depositForAuction{value: 0.092 ether}();
+        stakingManagerInstance.depositForAuction{value: 0.095 ether}();
+    }
+
+    function test_BatchDepositForAuctionWorks() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256 bidId = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidIdTwo = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidIdThree = auctionInstance.bidOnStake{value: 0.8 ether}(proof);
+        uint256 bidIdFour = auctionInstance.bidOnStake{value: 1.3 ether}(proof);
+        uint256 bidIdFive = auctionInstance.bidOnStake{value: 1.8 ether}(proof);
+        uint256 bidIdSix = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidIdSeven = auctionInstance.bidOnStake{value: 0.2 ether}(proof);
+
+        stakingManagerInstance.depositForAuction{value: 0.192 ether}();
+
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
+
+        (,,,, bool isActive) = auctionInstance.bids(bidId);
+        assertEq(isActive, false);
+        (,,,, isActive) = auctionInstance.bids(bidIdTwo);
+        assertEq(isActive, false);
+        (,,,, isActive) = auctionInstance.bids(bidIdThree);
+        assertEq(isActive, false);
+        (,,,, isActive) = auctionInstance.bids(bidIdFour);
+        assertEq(isActive, false);
+        (,,,, isActive) = auctionInstance.bids(bidIdFive);
+        assertEq(isActive, false);
+        (,,,, isActive) = auctionInstance.bids(bidIdSeven);
+        assertEq(isActive, false);
+        (,,,, isActive) = auctionInstance.bids(bidIdSix);
+        assertEq(isActive, true);
+
+        stakingManagerInstance.registerValidator(bidId, test_data);
+        stakingManagerInstance.registerValidator(bidIdTwo, test_data);
+        stakingManagerInstance.registerValidator(bidIdThree, test_data);
+        stakingManagerInstance.registerValidator(bidIdFour, test_data);
+        stakingManagerInstance.registerValidator(bidIdFive, test_data);
+        stakingManagerInstance.registerValidator(bidIdSeven, test_data);
+
+        address etherfiNodeBidOne = managerInstance.getEtherFiNodeAddress(bidId);
+        assertEq(etherfiNodeBidOne.balance, 0.1 ether);
+        address etherfiNodeBidTwo = managerInstance.getEtherFiNodeAddress(bidIdTwo);
+        assertEq(etherfiNodeBidTwo.balance, 0.1 ether);
+        address etherfiNodeBidThree = managerInstance.getEtherFiNodeAddress(bidIdThree);
+        assertEq(etherfiNodeBidThree.balance, 0.8 ether);
+        address etherfiNodeBidFour = managerInstance.getEtherFiNodeAddress(bidIdFour);
+        assertEq(etherfiNodeBidFour.balance, 1.3 ether);
+        address etherfiNodeBidFive = managerInstance.getEtherFiNodeAddress(bidIdFive);
+        assertEq(etherfiNodeBidFive.balance, 1.8 ether);
+        address etherfiNodeBidSeven = managerInstance.getEtherFiNodeAddress(bidIdSeven);
+        assertEq(etherfiNodeBidSeven.balance, 0.2 ether);
+
     }
 
     function test_DepositWithBidIdWorksCorrectly() public {
