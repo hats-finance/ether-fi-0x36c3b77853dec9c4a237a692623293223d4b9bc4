@@ -110,7 +110,6 @@ contract AuctionManager is IAuctionManager, Pausable {
     {
         uint256 winningBid = currentHighestBidId;
         updateSelectedBidInformation(winningBid);
-        numberOfActiveBids--;
 
         return winningBid;
     }
@@ -131,6 +130,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         address operator = bids[_bidId].bidderAddress;
 
         updateNewWinningBid();
+        numberOfActiveBids--;
 
         emit SelectedBidUpdated(operator, _bidId);
     }
