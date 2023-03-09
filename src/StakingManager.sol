@@ -267,7 +267,7 @@ contract StakingManager is IStakingManager, Pausable {
     }
 
     modifier correctStakeAmount() {
-        require(msg.value == stakeAmount, "Insufficient staking amount");
+        require(msg.value % stakeAmount == 0, "Insufficient staking amount");
         _;
     }
 

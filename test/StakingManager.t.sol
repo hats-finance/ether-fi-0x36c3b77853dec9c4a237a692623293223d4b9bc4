@@ -146,6 +146,19 @@ contract StakingManagerTest is Test {
         );
     }
 
+    function test_BatchDepositForAuctionFailsIFInvalidDepositAmount() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256 bidId = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidIdTwo = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidIdThree = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        uint256 bidIdFour = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+
+        vm.expectRevert("Insufficient staking amount");
+        stakingManagerInstance.depositForAuction{value: 0.092 ether}();
+    }
+
     function test_DepositWithBidIdWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
