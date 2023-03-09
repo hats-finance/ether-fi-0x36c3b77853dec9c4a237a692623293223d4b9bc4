@@ -39,16 +39,25 @@ contract EtherFiNodeTest is Test {
 
     uint256 bidId;
 
+    string _ipfsHash = "ipfsHash";
+    string aliceIPFSHash = "AliceIpfsHash";
+
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
-        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
+        auctionInstance = new AuctionManager(
+            address(nodeOperatorKeyManagerInstance)
+        );
+        treasuryInstance.setAuctionManagerContractAddress(
+            address(auctionInstance)
+        );
         auctionInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        auctionInstance.setStakingManagerContractAddress(
+            address(stakingManagerInstance)
+        );
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
         managerInstance = new EtherFiNodesManager(
@@ -60,7 +69,9 @@ contract EtherFiNodeTest is Test {
         );
 
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
@@ -80,8 +91,11 @@ contract EtherFiNodeTest is Test {
 
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        bidId = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
@@ -126,7 +140,9 @@ contract EtherFiNodeTest is Test {
         assertEq(address(managerInstance).balance, 0 ether);
     }
 
-    function test_ReceiveAuctionManagerFundsFailsIfNotAuctionManagerContractCalling() public {
+    function test_ReceiveAuctionManagerFundsFailsIfNotAuctionManagerContractCalling()
+        public
+    {
         vm.expectRevert("Only auction contract function");
         managerInstance.receiveAuctionFunds(0, 0.1 ether);
     }
@@ -166,11 +182,17 @@ contract EtherFiNodeTest is Test {
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
+        vm.prank(chad);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+
         hoax(alice);
-        uint256 bidId1 = auctionInstance.bidOnStake{value: 0.4 ether}(proof);
+        uint256 bidId1 = auctionInstance.createBid{value: 0.4 ether}(proof);
 
         hoax(chad);
-        uint256 bidId2 = auctionInstance.bidOnStake{value: 0.3 ether}(proof);
+        uint256 bidId2 = auctionInstance.createBid{value: 0.3 ether}(proof);
 
         hoax(bob);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
@@ -179,15 +201,21 @@ contract EtherFiNodeTest is Test {
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
 
         {
-            address staker_2 = stakingManagerInstance.getStakerRelatedToValidator(bidId1);
-            address staker_3 = stakingManagerInstance.getStakerRelatedToValidator(bidId2);            
+            address staker_2 = stakingManagerInstance
+                .getStakerRelatedToValidator(bidId1);
+            address staker_3 = stakingManagerInstance
+                .getStakerRelatedToValidator(bidId2);
             assertEq(staker_2, bob);
             assertEq(staker_3, dan);
         }
 
-        address withdrawSafeAddress_2 =  managerInstance.getEtherFiNodeAddress(bidId1);
-        address withdrawSafeAddress_3 =  managerInstance.getEtherFiNodeAddress(bidId2);
-        
+        address withdrawSafeAddress_2 = managerInstance.getEtherFiNodeAddress(
+            bidId1
+        );
+        address withdrawSafeAddress_3 = managerInstance.getEtherFiNodeAddress(
+            bidId2
+        );
+
         startHoax(bob);
         stakingManagerInstance.registerValidator(bidId1, test_data_2);
         vm.stopPrank();
@@ -213,7 +241,9 @@ contract EtherFiNodeTest is Test {
         // Simulate withdrawal from beacon chain
         {
             startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-            (bool sent, ) = address(withdrawSafeAddress_2).call{value: 1 ether}("");
+            (bool sent, ) = address(withdrawSafeAddress_2).call{value: 1 ether}(
+                ""
+            );
             require(sent, "Failed to send Ether");
             (sent, ) = address(withdrawSafeAddress_3).call{value: 10 ether}("");
             require(sent, "Failed to send Ether");
@@ -222,7 +252,6 @@ contract EtherFiNodeTest is Test {
 
         console.log(alice.balance);
         console.log(withdrawSafeAddress_2.balance);
-
 
         hoax(bob);
         managerInstance.withdrawFunds(bidId1);
@@ -270,7 +299,6 @@ contract EtherFiNodeTest is Test {
             bidId2,
             IEtherFiNodesManager.ValidatorRecipientType.TREASURY
         );
-
 
         assertEq(alice.balance, aliceBalBefore + aliceSplit);
         assertEq(chad.balance, chadBalBefore + chadSplit);
