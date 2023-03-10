@@ -30,4 +30,6 @@ interface IStakingManager {
     function getStakeAmount() external returns (uint256);
 
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
+    
+    function setProtocolRevenueManager(address _protocolRevenueManager) external;
 }

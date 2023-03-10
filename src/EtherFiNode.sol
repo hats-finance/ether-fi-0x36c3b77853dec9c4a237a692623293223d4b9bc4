@@ -44,6 +44,11 @@ contract EtherFiNode is IEtherFiNode {
         return phase;
     }
 
+    function getLocalRevenueIndex() external view returns (uint256) {
+        return localRevenueIndex;
+    }
+
+
     /// @notice Set the validator phase
     /// @param _phase the new phase
     function setPhase(VALIDATOR_PHASE _phase) external onlyOwner {
@@ -55,6 +60,11 @@ contract EtherFiNode is IEtherFiNode {
     function setIpfsHashForEncryptedValidatorKey(string calldata _ipfsHash) external onlyOwner {
         ipfsHashForEncryptedValidatorKey = _ipfsHash;
     }
+
+    function setLocalRevenueIndex(uint256 _localRevenueIndex) external onlyOwner {
+        localRevenueIndex = _localRevenueIndex;
+    }
+
 
     function withdrawFunds(
         address _treasury,
@@ -74,6 +84,11 @@ contract EtherFiNode is IEtherFiNode {
         require(sent, "Failed to send Ether");
         (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");
         require(sent, "Failed to send Ether");
+    }
+
+    function receiveProtocolRevenue(uint256 _amount, uint256 _globalRevenueIndex) payable external onlyOwner {
+        require(msg.value == _amount, "Incorrect amount");
+        localRevenueIndex = _globalRevenueIndex;
     }
 
     //--------------------------------------------------------------------------------------
