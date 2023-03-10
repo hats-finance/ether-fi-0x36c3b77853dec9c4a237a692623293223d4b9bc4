@@ -118,7 +118,7 @@ contract EtherFiNodeTest is Test {
         safeInstance = EtherFiNode(payable(etherFiNode));
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedRewards(bidId), 0.1 ether);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId), 0.1 ether);
         assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 0.1 ether + 1);
     }
 
@@ -168,9 +168,9 @@ contract EtherFiNodeTest is Test {
         vm.stopPrank();
 
         assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 0.3 ether + 1);
-        assertEq(protocolRevenueManagerInstance.getAccruedRewards(1), 0.3 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedRewards(bidId1), 0.2 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedRewards(bidId2), 0);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0.3 ether);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1), 0.2 ether);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2), 0);
         assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether);
 
         startHoax(dan);
@@ -178,9 +178,9 @@ contract EtherFiNodeTest is Test {
         vm.stopPrank();
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.8 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedRewards(1), 0.4 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedRewards(bidId1), 0.3 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedRewards(bidId2), 0.1 ether);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0.4 ether);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1), 0.3 ether);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2), 0.1 ether);
     }
 
     function _merkleSetup() internal {

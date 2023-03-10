@@ -7,6 +7,6 @@ interface IProtocolRevenueManager {
 
     function setEtherFiNodesManagerAddress(address _etherFiNodesManager) external;
 
-    function getAccruedRewards(uint256 _validatorId) external returns (uint256);  
+    function getAccruedAuctionRevenueRewards(uint256 _validatorId) external returns (uint256);  
     function getGlobalRevenueIndex() external returns (uint256);
 }

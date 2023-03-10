@@ -149,7 +149,7 @@ contract ProtocolRevenueManagerTest is Test {
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId);
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedRewards(bidId), 0.1 ether);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId), 0.1 ether);
         assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 0.1 ether + 1);
 
         // 3
