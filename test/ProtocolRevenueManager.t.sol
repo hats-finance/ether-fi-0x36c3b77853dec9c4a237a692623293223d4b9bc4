@@ -44,38 +44,34 @@ contract ProtocolRevenueManagerTest is Test {
         auctionInstance = new AuctionManager(
             address(nodeOperatorKeyManagerInstance)
         );
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         treasuryInstance.setAuctionManagerContractAddress(
             address(auctionInstance)
         );
         auctionInstance.updateMerkleRoot(root);
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
 
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
-
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
         );
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
-
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
-
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
-
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
-            address(TestBNFTInstance),
-            address(TestTNFTInstance)
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
         );
 
+        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
+
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
-        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
@@ -88,12 +84,16 @@ contract ProtocolRevenueManagerTest is Test {
             depositDataRoot: "test_deposit_root_2",
             publicKey: "test_pubkey_2",
             signature: "test_signature_2",
-            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash2"
+            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash_2"
         });
 
         vm.stopPrank();
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        vm.stopPrank();
     }
 
     function _merkleSetup() internal {
@@ -117,4 +117,67 @@ contract ProtocolRevenueManagerTest is Test {
 
         root = merkle.getRoot(whiteListedAddresses);
     }
+
+    function test_AddAuctionRevenueWorksAndFailsCorrectly() public {
+        // 1
+        hoax(address(auctionInstance));
+        vm.expectRevert("Incorrect amount");
+        protocolRevenueManagerInstance.addAuctionRevenue{value: 0}(1, 1 ether);
+
+        // 2
+        hoax(address(auctionInstance));
+        vm.expectRevert("No Active Validator");
+        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(1, 1 ether);
+
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        startHoax(nodeOperator);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        vm.stopPrank();
+
+        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 1);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0);
+
+        startHoax(alice);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+
+        assertEq(address(protocolRevenueManagerInstance).balance, 0);
+
+        stakingManagerInstance.registerValidator(bidId, test_data);
+        vm.stopPrank();
+
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId);
+
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
+        assertEq(protocolRevenueManagerInstance.getAccruedRewards(bidId), 0.1 ether);
+        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 0.1 ether + 1);
+
+        // 3
+        hoax(address(auctionInstance));
+        vm.expectRevert("auctionFeeTransfer is already processed for the validator.");
+        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(bidId, 1 ether);
+
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
+        assertEq(address(etherFiNode).balance, 0);
+        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0);
+        assertEq(address(etherFiNode).balance, 0.1 ether);
+
+        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0);
+        assertEq(address(etherFiNode).balance, 0.1 ether);
+    }
+
+    function test_modifiers() public {
+        hoax(alice);
+        vm.expectRevert("Only auction manager function");
+        protocolRevenueManagerInstance.addAuctionRevenue(0, 0);
+
+        vm.expectRevert("Only owner function");
+        protocolRevenueManagerInstance.setAuctionManagerAddress(alice);
+
+        vm.expectRevert("Only owner function");
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(alice);
+    }
+    
 }

@@ -87,6 +87,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         tnftInstance = TNFT(_tnftContract);
         bnftInstance = BNFT(_bnftContract);
 
+
+
         auctionContractRevenueSplit = AuctionManagerContractRevenueSplit({
             treasurySplit: 10,
             nodeOperatorSplit: 10,
@@ -242,6 +244,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         public
     {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setPhase(_phase);
     }
 
@@ -252,11 +255,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         public
     {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setIpfsHashForEncryptedValidatorKey(_ipfs);
     }
 
     function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) external {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setLocalRevenueIndex(_localRevenueIndex);
     }
 
@@ -282,7 +287,14 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey();
+    }
+
+    function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external returns (uint256) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+        return IEtherFiNode(etherfiNode).getLocalRevenueIndex();
     }
 
     function generateWithdrawalCredentials(address _address) public view returns (bytes memory) {
@@ -291,6 +303,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
         return generateWithdrawalCredentials(etherfiNode);
     }
 

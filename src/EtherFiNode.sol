@@ -12,7 +12,10 @@ import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNode is IEtherFiNode {
-    address owner;
+    // TODO: immutable constants
+    address etherfiNodesManager; // EtherFiNodesManager
+    address protocolRevenueManagerAddress;
+
     uint256 localRevenueIndex;
     string ipfsHashForEncryptedValidatorKey;
     uint64 exitRequestTimestamp;
@@ -23,8 +26,8 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
 
     function initialize() public {
-        require(owner == address(0), "already initialised");
-        owner = msg.sender;
+        require(etherfiNodesManager == address(0), "already initialised");
+        etherfiNodesManager = msg.sender;
     }
 
     //--------------------------------------------------------------------------------------
@@ -86,7 +89,7 @@ contract EtherFiNode is IEtherFiNode {
         require(sent, "Failed to send Ether");
     }
 
-    function receiveProtocolRevenue(uint256 _amount, uint256 _globalRevenueIndex) payable external onlyOwner {
+    function receiveProtocolRevenue(uint256 _amount, uint256 _globalRevenueIndex) payable external onlyProtocolRevenueManagerContract {
         require(msg.value == _amount, "Incorrect amount");
         localRevenueIndex = _globalRevenueIndex;
     }
@@ -97,9 +100,18 @@ contract EtherFiNode is IEtherFiNode {
 
     modifier onlyOwner() {
         require(
-            msg.sender == owner,
+            msg.sender == etherfiNodesManager,
             "Only owner"
         );
+        _;
+    }
+
+    // TODO
+    modifier onlyProtocolRevenueManagerContract() {
+        // require(
+        //     msg.sender == protocolRevenueContract,
+        //     "Only protocol revenue manager contract function"
+        // );
         _;
     }
 }
