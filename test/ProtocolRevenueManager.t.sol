@@ -159,10 +159,13 @@ contract ProtocolRevenueManagerTest is Test {
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
         assertEq(address(etherFiNode).balance, 0);
+
+        hoax(address(managerInstance));
         protocolRevenueManagerInstance.distributeAuctionRevenue(bidId);
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
         assertEq(address(etherFiNode).balance, 0.1 ether);
 
+        hoax(address(managerInstance));
         protocolRevenueManagerInstance.distributeAuctionRevenue(bidId);
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
         assertEq(address(etherFiNode).balance, 0.1 ether);
@@ -172,6 +175,9 @@ contract ProtocolRevenueManagerTest is Test {
         hoax(alice);
         vm.expectRevert("Only auction manager function");
         protocolRevenueManagerInstance.addAuctionRevenue(0, 0);
+
+        vm.expectRevert("Only etherFiNodesManager function");
+        protocolRevenueManagerInstance.distributeAuctionRevenue(0);
 
         vm.expectRevert("Only owner function");
         protocolRevenueManagerInstance.setAuctionManagerAddress(alice);

@@ -69,7 +69,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     // TODO auctionRevenueSplits = {NodeOperator: 50, Treasury: 25, Staker: 25}
     /// @notice Distribute the accrued rewards to the validator
     /// @param _validatorId id of the validator
-    function distributeAuctionRevenue(uint256 _validatorId) external returns (uint256) {
+    function distributeAuctionRevenue(uint256 _validatorId) external onlyEtherFiNodesManager returns (uint256) {
         address etherFiNode = etherFiNodesManager.getEtherFiNodeAddress(_validatorId);
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
         IEtherFiNode(etherFiNode).receiveProtocolRevenue{value: amount}(amount, globalRevenueIndex);
@@ -116,6 +116,11 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner function");
+        _;
+    }
+
+    modifier onlyEtherFiNodesManager() {
+        require(msg.sender == address(etherFiNodesManager), "Only etherFiNodesManager function");
         _;
     }
 
