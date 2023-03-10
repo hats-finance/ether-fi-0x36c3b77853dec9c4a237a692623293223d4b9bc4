@@ -210,7 +210,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         return bidId;
     }
 
-    /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager for sharing
+    /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
     /// @param _bidId the ID of the validator 
     function processAuctionFeeTransfer(
         uint256 _bidId

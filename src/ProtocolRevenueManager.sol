@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/IAuctionManager.sol";
 
 contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     //--------------------------------------------------------------------------------------
@@ -14,6 +15,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     address public owner;
     
     IEtherFiNodesManager etherFiNodesManager;
+    IAuctionManager auctionManager;
   
     uint256 globalRevenueIndex = 1;
 
@@ -51,7 +53,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
         globalRevenueIndex += msg.value / etherFiNodesManager.getNumberOfValidators();
     }
 
-    function addRevenue(uint256 _validatorId, uint256 _amount) external payable {
+    function addRevenue(uint256 _validatorId, uint256 _amount) external payable onlyAuctionManager {
         require(msg.value == _amount, "Incorrect amount");
         require(etherFiNodesManager.getNumberOfValidators() > 0, "No Active Validator");
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
@@ -69,6 +71,10 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
 
     function setEtherFiNodesManagerAddress(address _etherFiNodesManager) external onlyOwner {
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
+    }
+
+    function setAuctionManagerAddress(address _auctionManager) external onlyOwner {
+        auctionManager = IAuctionManager(_auctionManager);
     }
 
     //--------------------------------------------------------------------------------------
@@ -105,4 +111,11 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
         require(msg.sender == owner, "Only owner function");
         _;
     }
+
+    modifier onlyAuctionManager() {
+        require(msg.sender == address(auctionManager));
+        _;
+    }
+
 }
+

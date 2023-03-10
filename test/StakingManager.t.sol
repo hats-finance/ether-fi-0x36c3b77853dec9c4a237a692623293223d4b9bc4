@@ -70,6 +70,7 @@ contract StakingManagerTest is Test {
         );
 
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
