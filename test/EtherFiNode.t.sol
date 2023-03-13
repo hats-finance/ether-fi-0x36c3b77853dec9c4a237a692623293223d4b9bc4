@@ -183,6 +183,19 @@ contract EtherFiNodeTest is Test {
         assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2), 0.1 ether);
     }
 
+    function test_SendExitRequestWorksCorrectly() public {
+        assertEq(managerInstance.isExitRequested(bidId), false);
+
+        hoax(alice);
+        vm.expectRevert("You are not the owner of the T-NFT");
+        managerInstance.sendExitRequest(bidId);
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        managerInstance.sendExitRequest(bidId);
+        
+        assertEq(managerInstance.isExitRequested(bidId), true);
+    }
+
     function _merkleSetup() internal {
         merkle = new Merkle();
 
