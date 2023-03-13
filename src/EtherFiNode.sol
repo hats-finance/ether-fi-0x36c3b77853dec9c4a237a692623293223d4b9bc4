@@ -54,17 +54,17 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
-    function setPhase(VALIDATOR_PHASE _phase) external onlyOwner {
+    function setPhase(VALIDATOR_PHASE _phase) external onlyEtherFiNodeManagerContract {
         phase = _phase;
     }
 
     /// @notice Set the deposit data
     /// @param _ipfsHash the deposit data
-    function setIpfsHashForEncryptedValidatorKey(string calldata _ipfsHash) external onlyOwner {
+    function setIpfsHashForEncryptedValidatorKey(string calldata _ipfsHash) external onlyEtherFiNodeManagerContract {
         ipfsHashForEncryptedValidatorKey = _ipfsHash;
     }
 
-    function setLocalRevenueIndex(uint256 _localRevenueIndex) external onlyOwner {
+    function setLocalRevenueIndex(uint256 _localRevenueIndex) external onlyEtherFiNodeManagerContract {
         localRevenueIndex = _localRevenueIndex;
     }
 
@@ -78,7 +78,7 @@ contract EtherFiNode is IEtherFiNode {
         uint256 _tnftAmount,
         address _bnftHolder,
         uint256 _bnftAmount
-    ) external onlyOwner {
+    ) external onlyEtherFiNodeManagerContract {
         (bool sent, ) = _treasury.call{value: _treasuryAmount}("");
         require(sent, "Failed to send Ether");
         (sent, ) = payable(_operator).call{value: _operatorAmount}("");
@@ -98,7 +98,7 @@ contract EtherFiNode is IEtherFiNode {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyOwner() {
+    modifier onlyEtherFiNodeManagerContract() {
         require(
             msg.sender == etherfiNodesManager,
             "Only owner"
