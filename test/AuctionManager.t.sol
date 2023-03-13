@@ -482,6 +482,106 @@ contract AuctionManagerTest is Test {
         auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
     }
 
+    function test_CreateBidBatch() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
+
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.5 ether}(
+            proof,
+            5,
+            0.1 ether
+        );
+
+        vm.stopPrank();
+
+        (
+            uint256 amount,
+            uint256 ipfsIndex,
+            uint256 timeOfCreation,
+            address bidderAddress,
+            bool isActive
+        ) = auctionInstance.bids(bidIds[0]);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+
+        (
+            amount,
+            ipfsIndex,
+            timeOfCreation,
+            bidderAddress,
+            isActive
+        ) = auctionInstance.bids(bidIds[1]);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 1);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+
+        (
+            amount,
+            ipfsIndex,
+            timeOfCreation,
+            bidderAddress,
+            isActive
+        ) = auctionInstance.bids(bidIds[2]);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 2);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+
+        (
+            amount,
+            ipfsIndex,
+            timeOfCreation,
+            bidderAddress,
+            isActive
+        ) = auctionInstance.bids(bidIds[3]);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 3);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+
+        (
+            amount,
+            ipfsIndex,
+            timeOfCreation,
+            bidderAddress,
+            isActive
+        ) = auctionInstance.bids(bidIds[4]);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 4);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+    }
+
+    function test_CreateBidBatchFailsWithIncorrectValue() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        hoax(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
+
+        vm.expectRevert("Incorrect bid value");
+        hoax(alice);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.4 ether}(
+            proof,
+            5,
+            0.1 ether
+        );
+    }
+
     /// TODO Fix this test!!!
 
     // function test_EventBidPlaced() public {
