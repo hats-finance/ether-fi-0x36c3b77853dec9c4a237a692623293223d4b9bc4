@@ -37,10 +37,10 @@ contract EtherFiNodeTest is Test {
     address chad = vm.addr(4);
     address dan = vm.addr(5);
 
-    uint256 bidId;
-
     string _ipfsHash = "ipfsHash";
     string aliceIPFSHash = "AliceIpfsHash";
+
+    uint256[] bidId;
 
     function setUp() public {
         vm.startPrank(owner);
@@ -95,43 +95,47 @@ contract EtherFiNodeTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        bidId = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(bidId, test_data);
+        stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId);
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
         safeInstance = EtherFiNode(payable(etherFiNode));
     }
 
     function test_ReceiveAuctionManagerFundsWorksCorrectly() public {
         assertEq(
             managerInstance.withdrawableBalance(
-                bidId,
+                bidId[0],
                 IEtherFiNodesManager.ValidatorRecipientType.TREASURY
             ),
             10000000000000000
         );
         assertEq(
             managerInstance.withdrawableBalance(
-                bidId,
+                bidId[0],
                 IEtherFiNodesManager.ValidatorRecipientType.OPERATOR
             ),
             10000000000000000
         );
         assertEq(
             managerInstance.withdrawableBalance(
-                bidId,
+                bidId[0],
                 IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
             ),
             20000000000000000
         );
         assertEq(
             managerInstance.withdrawableBalance(
-                bidId,
+                bidId[0],
                 IEtherFiNodesManager.ValidatorRecipientType.TNFTHOLDER
             ),
             60000000000000000
@@ -170,7 +174,7 @@ contract EtherFiNodeTest is Test {
             .balance;
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        managerInstance.withdrawFunds(bidId);
+        managerInstance.withdrawFunds(bidId[0]);
         assertEq(address(safeInstance).balance, 0 ether);
         assertEq(address(treasuryInstance).balance, 0.01040 ether);
         assertEq(
@@ -189,10 +193,18 @@ contract EtherFiNodeTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
 
         hoax(alice);
-        uint256 bidId1 = auctionInstance.createBid{value: 0.4 ether}(proof);
+        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.4 ether}(
+            proof,
+            1,
+            0.4 ether
+        );
 
         hoax(chad);
-        uint256 bidId2 = auctionInstance.createBid{value: 0.3 ether}(proof);
+        uint256[] memory bidId2 = auctionInstance.createBid{value: 0.3 ether}(
+            proof,
+            1,
+            0.3 ether
+        );
 
         hoax(bob);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
@@ -202,26 +214,26 @@ contract EtherFiNodeTest is Test {
 
         {
             address staker_2 = stakingManagerInstance
-                .getStakerRelatedToValidator(bidId1);
+                .getStakerRelatedToValidator(bidId1[0]);
             address staker_3 = stakingManagerInstance
-                .getStakerRelatedToValidator(bidId2);
+                .getStakerRelatedToValidator(bidId2[0]);
             assertEq(staker_2, bob);
             assertEq(staker_3, dan);
         }
 
         address withdrawSafeAddress_2 = managerInstance.getEtherFiNodeAddress(
-            bidId1
+            bidId1[0]
         );
         address withdrawSafeAddress_3 = managerInstance.getEtherFiNodeAddress(
-            bidId2
+            bidId2[0]
         );
 
         startHoax(bob);
-        stakingManagerInstance.registerValidator(bidId1, test_data_2);
+        stakingManagerInstance.registerValidator(bidId1[0], test_data_2);
         vm.stopPrank();
 
         startHoax(dan);
-        stakingManagerInstance.registerValidator(bidId2, test_data_2);
+        stakingManagerInstance.registerValidator(bidId2[0], test_data_2);
         vm.stopPrank();
 
         assertEq(withdrawSafeAddress_2.balance, 0.4 ether);
@@ -254,49 +266,49 @@ contract EtherFiNodeTest is Test {
         console.log(withdrawSafeAddress_2.balance);
 
         hoax(bob);
-        managerInstance.withdrawFunds(bidId1);
+        managerInstance.withdrawFunds(bidId1[0]);
         console.log("Alice balance after withdrawal");
         console.log(alice);
 
         hoax(dan);
-        managerInstance.withdrawFunds(bidId2);
+        managerInstance.withdrawFunds(bidId2[0]);
 
         assertEq(withdrawSafeAddress_2.balance, 0);
         assertEq(withdrawSafeAddress_3.balance, 0);
 
         // Validator 2 Rewards
         uint256 aliceSplit = managerInstance.withdrawn(
-            bidId1,
+            bidId1[0],
             IEtherFiNodesManager.ValidatorRecipientType.OPERATOR
         );
         uint256 bobSplit = managerInstance.withdrawn(
-            bidId1,
+            bidId1[0],
             IEtherFiNodesManager.ValidatorRecipientType.TNFTHOLDER
         ) +
             managerInstance.withdrawn(
-                bidId1,
+                bidId1[0],
                 IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
             );
         uint256 treasurySplit = managerInstance.withdrawn(
-            bidId1,
+            bidId1[0],
             IEtherFiNodesManager.ValidatorRecipientType.TREASURY
         );
 
         // Validator 3 rewards
         uint256 chadSplit = managerInstance.withdrawn(
-            bidId2,
+            bidId2[0],
             IEtherFiNodesManager.ValidatorRecipientType.OPERATOR
         );
         uint256 danSplit = managerInstance.withdrawn(
-            bidId2,
+            bidId2[0],
             IEtherFiNodesManager.ValidatorRecipientType.TNFTHOLDER
         ) +
             managerInstance.withdrawn(
-                bidId2,
+                bidId2[0],
                 IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
             );
         treasurySplit += managerInstance.withdrawn(
-            bidId2,
+            bidId2[0],
             IEtherFiNodesManager.ValidatorRecipientType.TREASURY
         );
 

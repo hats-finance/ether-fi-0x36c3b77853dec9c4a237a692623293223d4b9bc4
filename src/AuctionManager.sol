@@ -45,7 +45,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         address indexed bidder,
         uint256 amount,
         uint256[] indexed bidIdArray,
-        uint256[] indexed pubKeyIndexArray
+        uint64[] indexed ipfsIndexArray
     );
 
     event SelectedBidUpdated(
@@ -190,10 +190,10 @@ contract AuctionManager is IAuctionManager, Pausable {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
-        uint256[] memory bidIdArray;
-        uint256[] memory ipfsIndexArray;
+        uint256[] memory bidIdArray = new uint256[](_bidSize);
+        uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
-        for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
+        for (uint256 i = 0; i < _bidSize; ++i) {
             uint64 ipfsIndex = nodeOperatorKeyManagerInterface
                 .fetchNextKeyIndex(msg.sender);
 
@@ -341,11 +341,11 @@ contract AuctionManager is IAuctionManager, Pausable {
         currentHighestBidId = tempWinningBidId;
     }
 
-    function uncheckedInc(uint x) private pure returns (uint) {
-        unchecked {
-            return x + 1;
-        }
-    }
+    // function uncheckedInc(uint x) private pure returns (uint) {
+    //     unchecked {
+    //         return x + 1;
+    //     }
+    // }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
