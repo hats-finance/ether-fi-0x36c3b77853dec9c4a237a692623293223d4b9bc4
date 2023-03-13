@@ -9,6 +9,7 @@ import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/BNFT.sol";
 import "../src/NodeOperatorKeyManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
@@ -20,6 +21,7 @@ contract EtherFiNodeTest is Test {
     TNFT public TestTNFTInstance;
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
     AuctionManager public auctionInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     Treasury public treasuryInstance;
     EtherFiNode public safeInstance;
     EtherFiNodesManager public managerInstance;
@@ -54,6 +56,8 @@ contract EtherFiNodeTest is Test {
             address(auctionInstance)
         );
         auctionInstance.updateMerkleRoot(root);
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
@@ -69,6 +73,16 @@ contract EtherFiNodeTest is Test {
         );
 
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        auctionInstance.setProtocolRevenueManager(
+            address(protocolRevenueManagerInstance)
+        );
+
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
+        protocolRevenueManagerInstance.setAuctionManagerAddress(
+            address(auctionInstance)
+        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
@@ -103,52 +117,27 @@ contract EtherFiNodeTest is Test {
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
+
+        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 1);
+
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
         safeInstance = EtherFiNode(payable(etherFiNode));
-    }
 
-    function test_ReceiveAuctionManagerFundsWorksCorrectly() public {
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
         assertEq(
-            managerInstance.withdrawableBalance(
-                bidId[0],
-                IEtherFiNodesManager.ValidatorRecipientType.TREASURY
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId[0]
             ),
-            10000000000000000
+            0.1 ether
         );
         assertEq(
-            managerInstance.withdrawableBalance(
-                bidId[0],
-                IEtherFiNodesManager.ValidatorRecipientType.OPERATOR
-            ),
-            10000000000000000
+            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            0.1 ether + 1
         );
-        assertEq(
-            managerInstance.withdrawableBalance(
-                bidId[0],
-                IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
-            ),
-            20000000000000000
-        );
-        assertEq(
-            managerInstance.withdrawableBalance(
-                bidId[0],
-                IEtherFiNodesManager.ValidatorRecipientType.TNFTHOLDER
-            ),
-            60000000000000000
-        );
-        assertEq(address(safeInstance).balance, 0.1 ether);
-        assertEq(address(managerInstance).balance, 0 ether);
-    }
-
-    function test_ReceiveAuctionManagerFundsFailsIfNotAuctionManagerContractCalling()
-        public
-    {
-        vm.expectRevert("Only auction contract function");
-        managerInstance.receiveAuctionFunds(0, 0.1 ether);
     }
 
     function test_WithdrawFundsFailsIfNotCorrectCaller() public {
@@ -161,29 +150,11 @@ contract EtherFiNodeTest is Test {
         managerInstance.withdrawFunds(0);
     }
 
-    function test_WithdrawFundsWorksCorrectly() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        (bool sent, ) = address(safeInstance).call{value: 0.04 ether}("");
-        require(sent, "Failed to send Ether");
-        assertEq(address(safeInstance).balance, 0.14 ether);
-        assertEq(address(auctionInstance).balance, 0 ether);
-
-        uint256 stakerBalance = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-            .balance;
-        uint256 operatorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            .balance;
-
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        managerInstance.withdrawFunds(bidId[0]);
-        assertEq(address(safeInstance).balance, 0 ether);
-        assertEq(address(treasuryInstance).balance, 0.01040 ether);
-        assertEq(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
-            operatorBalance + 0.0104 ether
-        );
-    }
-
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
+        assertEq(
+            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            0.1 ether + 1
+        );
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(alice);
@@ -221,106 +192,52 @@ contract EtherFiNodeTest is Test {
             assertEq(staker_3, dan);
         }
 
-        address withdrawSafeAddress_2 = managerInstance.getEtherFiNodeAddress(
-            bidId1[0]
-        );
-        address withdrawSafeAddress_3 = managerInstance.getEtherFiNodeAddress(
-            bidId2[0]
-        );
-
         startHoax(bob);
         stakingManagerInstance.registerValidator(bidId1[0], test_data_2);
         vm.stopPrank();
+
+        assertEq(
+            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            0.3 ether + 1
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
+            0.3 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId1[0]
+            ),
+            0.2 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId2[0]
+            ),
+            0
+        );
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether);
 
         startHoax(dan);
         stakingManagerInstance.registerValidator(bidId2[0], test_data_2);
         vm.stopPrank();
 
-        assertEq(withdrawSafeAddress_2.balance, 0.4 ether);
-        assertEq(withdrawSafeAddress_3.balance, 0.3 ether);
-
-        // Node Operators
-        uint256 aliceBalBefore = alice.balance;
-        uint256 chadBalBefore = chad.balance;
-
-        //Stakers
-        uint256 bobBalBefore = bob.balance;
-        uint256 danBalBefore = dan.balance;
-
-        // Treasury
-        uint256 treasuryBalBefore = address(treasuryInstance).balance;
-
-        // Simulate withdrawal from beacon chain
-        {
-            startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-            (bool sent, ) = address(withdrawSafeAddress_2).call{value: 1 ether}(
-                ""
-            );
-            require(sent, "Failed to send Ether");
-            (sent, ) = address(withdrawSafeAddress_3).call{value: 10 ether}("");
-            require(sent, "Failed to send Ether");
-            vm.stopPrank();
-        }
-
-        console.log(alice.balance);
-        console.log(withdrawSafeAddress_2.balance);
-
-        hoax(bob);
-        managerInstance.withdrawFunds(bidId1[0]);
-        console.log("Alice balance after withdrawal");
-        console.log(alice);
-
-        hoax(dan);
-        managerInstance.withdrawFunds(bidId2[0]);
-
-        assertEq(withdrawSafeAddress_2.balance, 0);
-        assertEq(withdrawSafeAddress_3.balance, 0);
-
-        // Validator 2 Rewards
-        uint256 aliceSplit = managerInstance.withdrawn(
-            bidId1[0],
-            IEtherFiNodesManager.ValidatorRecipientType.OPERATOR
-        );
-        uint256 bobSplit = managerInstance.withdrawn(
-            bidId1[0],
-            IEtherFiNodesManager.ValidatorRecipientType.TNFTHOLDER
-        ) +
-            managerInstance.withdrawn(
-                bidId1[0],
-                IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
-            );
-        uint256 treasurySplit = managerInstance.withdrawn(
-            bidId1[0],
-            IEtherFiNodesManager.ValidatorRecipientType.TREASURY
-        );
-
-        // Validator 3 rewards
-        uint256 chadSplit = managerInstance.withdrawn(
-            bidId2[0],
-            IEtherFiNodesManager.ValidatorRecipientType.OPERATOR
-        );
-        uint256 danSplit = managerInstance.withdrawn(
-            bidId2[0],
-            IEtherFiNodesManager.ValidatorRecipientType.TNFTHOLDER
-        ) +
-            managerInstance.withdrawn(
-                bidId2[0],
-                IEtherFiNodesManager.ValidatorRecipientType.BNFTHOLDER
-            );
-        treasurySplit += managerInstance.withdrawn(
-            bidId2[0],
-            IEtherFiNodesManager.ValidatorRecipientType.TREASURY
-        );
-
-        assertEq(alice.balance, aliceBalBefore + aliceSplit);
-        assertEq(chad.balance, chadBalBefore + chadSplit);
-
-        assertEq(bob.balance, bobBalBefore + bobSplit);
-        assertEq(dan.balance, danBalBefore + danSplit);
-
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.8 ether);
         assertEq(
-            address(treasuryInstance).balance,
-            treasuryBalBefore + treasurySplit
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
+            0.4 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId1[0]
+            ),
+            0.3 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId2[0]
+            ),
+            0.1 ether
         );
     }
 
