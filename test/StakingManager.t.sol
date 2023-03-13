@@ -7,6 +7,7 @@ import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "../src/AuctionManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
@@ -21,6 +22,7 @@ contract StakingManagerTest is Test {
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     AuctionManager public auctionInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     Treasury public treasuryInstance;
     Merkle merkle;
     bytes32 root;
@@ -42,6 +44,8 @@ contract StakingManagerTest is Test {
         auctionInstance = new AuctionManager(
             address(nodeOperatorKeyManagerInstance)
         );
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+
         treasuryInstance.setAuctionManagerContractAddress(
             address(auctionInstance)
         );
@@ -65,10 +69,13 @@ contract StakingManagerTest is Test {
             address(TestTNFTInstance)
         );
 
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
@@ -205,10 +212,8 @@ contract StakingManagerTest is Test {
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(bidIdOne);
-
         assertEq(stakingManagerInstance.stakeAmount(), 0.032 ether);
-        assertEq(etherfiNode.balance, 0.1 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
     }
 
     function test_StakingManagerReceivesEther() public {
@@ -376,9 +381,9 @@ contract StakingManagerTest is Test {
         uint256 selectedBidId = bidId;
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId);
 
-        assertEq(etherFiNode.balance, 0.1 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
         assertEq(selectedBidId, 1);
-        assertEq(managerInstance.numberOfValidators(), 1);
+        assertEq(managerInstance.getNumberOfValidators(), 1);
         assertEq(address(managerInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0);
 

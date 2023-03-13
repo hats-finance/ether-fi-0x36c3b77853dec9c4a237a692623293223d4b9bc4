@@ -9,6 +9,7 @@ import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./StakingManager.sol";
@@ -29,13 +30,14 @@ contract AuctionManager is IAuctionManager, Pausable {
     uint256 public numberOfActiveBids;
     address public stakingManagerContractAddress;
     address public owner;
-    address public etherFiNodesManager;
     address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
 
     mapping(uint256 => Bid) public bids;
 
     INodeOperatorKeyManager nodeOperatorKeyManagerInterface;
+    IProtocolRevenueManager protocolRevenueManager;
+    IEtherFiNodesManager etherFiNodesManager;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -69,10 +71,6 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
-    event FundsSentToEtherFiNode(
-        address indexed etehrFiNode,
-        uint256 indexed _amount
-    );
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  RECEIVER   -------------------------------------
@@ -212,26 +210,13 @@ contract AuctionManager is IAuctionManager, Pausable {
         return bidId;
     }
 
-    /// @notice Sends a winning bids funds to the EtherFi Node related to the validator
-    /// @param _validatorId the ID of the validator the bids funds relate to
-    function sendFundsToEtherFiNode(
-        uint256 _validatorId
+    /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
+    /// @param _bidId the ID of the validator 
+    function processAuctionFeeTransfer(
+        uint256 _bidId
     ) external onlyStakingManagerContract {
-        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(
-            etherFiNodesManager
-        );
-
-        uint256 selectedBid = _validatorId;
-        uint256 amount = bids[selectedBid].amount;
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(
-            _validatorId
-        );
-        managerInstance.receiveAuctionFunds(_validatorId, amount);
-
-        (bool sent, ) = payable(etherFiNode).call{value: amount}("");
-        require(sent, "Failed to send Ether");
-
-        emit FundsSentToEtherFiNode(etherFiNode, amount);
+        uint256 amount = bids[_bidId].amount;
+        protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId, amount);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
@@ -352,7 +337,11 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @dev Used due to circular dependencies
     /// @param _managerAddress address being set as the etherfi node manager contract
     function setEtherFiNodesManagerAddress(address _managerAddress) external {
-        etherFiNodesManager = _managerAddress;
+        etherFiNodesManager = IEtherFiNodesManager(_managerAddress);
+    }
+
+    function setProtocolRevenueManager(address _protocolRevenueManager) external {
+        protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManager);
     }
 
     //--------------------------------------------------------------------------------------

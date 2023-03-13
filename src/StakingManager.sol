@@ -8,6 +8,7 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IDepositContract.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -26,6 +27,7 @@ contract StakingManager is IStakingManager, Pausable {
     IAuctionManager public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
     IEtherFiNodesManager public nodesManagerIntefaceInstance;
+    IProtocolRevenueManager protocolRevenueManager;
 
     uint256 public stakeAmount;
 
@@ -128,15 +130,6 @@ contract StakingManager is IStakingManager, Pausable {
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         address staker = bidIdToStaker[_validatorId];
 
-        // Let valiadatorId = nftTokenId
-        // Mint {T, B}-NFTs to the Staker
-        uint256 nftTokenId = _validatorId;
-        TNFTInterfaceInstance.mint(staker, nftTokenId);
-        BNFTInterfaceInstance.mint(staker, nftTokenId);
-        
-        // TODO - Revisit it later since we will have ProtocolRevenueManager to handle it
-        auctionInterfaceInstance.sendFundsToEtherFiNode(_validatorId);
-
         if (test = false) {
             bytes memory withdrawalCredentials = nodesManagerIntefaceInstance.getWithdrawalCredentials(_validatorId);
             depositContractEth2.deposit{value: stakeAmount}(
@@ -147,8 +140,17 @@ contract StakingManager is IStakingManager, Pausable {
             );
         }
         
+        nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
         nodesManagerIntefaceInstance.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.REGISTERED);
         nodesManagerIntefaceInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
+
+        // Let valiadatorId = nftTokenId
+        // Mint {T, B}-NFTs to the Staker
+        uint256 nftTokenId = _validatorId;
+        TNFTInterfaceInstance.mint(staker, nftTokenId);
+        BNFTInterfaceInstance.mint(staker, nftTokenId);
+
+        auctionInterfaceInstance.processAuctionFeeTransfer(_validatorId);
 
         emit ValidatorRegistered(
             auctionInterfaceInstance.getBidOwner(_validatorId),
@@ -207,6 +209,10 @@ contract StakingManager is IStakingManager, Pausable {
 
     function setTreasuryAddress(address _treasuryAddress) external {
         treasuryAddress = _treasuryAddress;
+    }
+
+    function setProtocolRevenueManager(address _protocolRevenueManager) external {
+        protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManager);
     }
 
     //Pauses the contract

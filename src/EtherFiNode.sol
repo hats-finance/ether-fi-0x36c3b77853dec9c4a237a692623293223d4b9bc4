@@ -12,7 +12,10 @@ import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNode is IEtherFiNode {
-    address owner;
+    // TODO: immutable constants
+    address etherfiNodesManager; // EtherFiNodesManager
+    address protocolRevenueManagerAddress;
+
     uint256 localRevenueIndex;
     string ipfsHashForEncryptedValidatorKey;
     uint64 exitRequestTimestamp;
@@ -23,8 +26,8 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
 
     function initialize() public {
-        require(owner == address(0), "already initialised");
-        owner = msg.sender;
+        require(etherfiNodesManager == address(0), "already initialised");
+        etherfiNodesManager = msg.sender;
     }
 
     //--------------------------------------------------------------------------------------
@@ -44,17 +47,27 @@ contract EtherFiNode is IEtherFiNode {
         return phase;
     }
 
+    function getLocalRevenueIndex() external view returns (uint256) {
+        return localRevenueIndex;
+    }
+
+
     /// @notice Set the validator phase
     /// @param _phase the new phase
-    function setPhase(VALIDATOR_PHASE _phase) external onlyOwner {
+    function setPhase(VALIDATOR_PHASE _phase) external onlyEtherFiNodeManagerContract {
         phase = _phase;
     }
 
     /// @notice Set the deposit data
     /// @param _ipfsHash the deposit data
-    function setIpfsHashForEncryptedValidatorKey(string calldata _ipfsHash) external onlyOwner {
+    function setIpfsHashForEncryptedValidatorKey(string calldata _ipfsHash) external onlyEtherFiNodeManagerContract {
         ipfsHashForEncryptedValidatorKey = _ipfsHash;
     }
+
+    function setLocalRevenueIndex(uint256 _localRevenueIndex) external onlyEtherFiNodeManagerContract {
+        localRevenueIndex = _localRevenueIndex;
+    }
+
 
     function withdrawFunds(
         address _treasury,
@@ -65,7 +78,7 @@ contract EtherFiNode is IEtherFiNode {
         uint256 _tnftAmount,
         address _bnftHolder,
         uint256 _bnftAmount
-    ) external onlyOwner {
+    ) external onlyEtherFiNodeManagerContract {
         (bool sent, ) = _treasury.call{value: _treasuryAmount}("");
         require(sent, "Failed to send Ether");
         (sent, ) = payable(_operator).call{value: _operatorAmount}("");
@@ -76,15 +89,29 @@ contract EtherFiNode is IEtherFiNode {
         require(sent, "Failed to send Ether");
     }
 
+    function receiveProtocolRevenue(uint256 _amount, uint256 _globalRevenueIndex) payable external onlyProtocolRevenueManagerContract {
+        require(msg.value == _amount, "Incorrect amount");
+        localRevenueIndex = _globalRevenueIndex;
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyOwner() {
+    modifier onlyEtherFiNodeManagerContract() {
         require(
-            msg.sender == owner,
+            msg.sender == etherfiNodesManager,
             "Only owner"
         );
+        _;
+    }
+
+    // TODO
+    modifier onlyProtocolRevenueManagerContract() {
+        // require(
+        //     msg.sender == protocolRevenueContract,
+        //     "Only protocol revenue manager contract function"
+        // );
         _;
     }
 }
