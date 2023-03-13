@@ -191,9 +191,12 @@ contract EtherFiNodeTest is Test {
         managerInstance.sendExitRequest(bidId);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        managerInstance.sendExitRequest(bidId);
-        
+        managerInstance.sendExitRequest(bidId);        
         assertEq(managerInstance.isExitRequested(bidId), true);
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        vm.expectRevert("Exit request was already sent.");
+        managerInstance.sendExitRequest(bidId);        
     }
 
     function _merkleSetup() internal {
