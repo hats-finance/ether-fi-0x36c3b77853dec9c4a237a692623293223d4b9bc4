@@ -355,32 +355,32 @@ contract AuctionManagerTest is Test {
             0.1 ether
         );
 
-        // assertEq(auctionInstance.currentHighestBidId(), bid1Id[0]);
-        // assertEq(auctionInstance.numberOfActiveBids(), 1);
+        assertEq(auctionInstance.currentHighestBidId(), bid1Id[0]);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        // (
-        //     uint256 amount,
-        //     uint256 ipfsIndex,
-        //     uint256 timeOfCreation,
-        //     address bidderAddress,
-        //     bool isActive
-        // ) = auctionInstance.bids(bid1Id[0]);
+        (
+            uint256 amount,
+            uint256 ipfsIndex,
+            uint256 timeOfCreation,
+            address bidderAddress,
+            bool isActive
+        ) = auctionInstance.bids(bid1Id[0]);
 
-        // assertEq(bid1Id[0], 1);
-        // assertEq(amount, 0.1 ether);
-        // assertEq(ipfsIndex, 0);
-        // assertEq(timeOfCreation, block.timestamp);
-        // assertEq(bidderAddress, alice);
-        // assertTrue(isActive);
-        // assertEq(auctionInstance.numberOfBids(), 2);
+        assertEq(bid1Id[0], 1);
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+        assertEq(auctionInstance.numberOfBids(), 2);
 
-        // vm.expectRevert("Invalid bid");
-        // hoax(bob);
-        // auctionInstance.createBid{value: 0.001 ether}(proof, 1, 0.001 ether);
+        vm.expectRevert("Invalid bid");
+        hoax(bob);
+        auctionInstance.createBid{value: 0.001 ether}(proof, 1, 0.001 ether);
 
-        // hoax(bob);
-        // auctionInstance.createBid{value: 0.3 ether}(proof, 1, 0.3 ether);
-        // assertEq(auctionInstance.numberOfActiveBids(), 2);
+        hoax(bob);
+        auctionInstance.createBid{value: 0.3 ether}(proof, 1, 0.3 ether);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
     }
 
     function test_CreateBidWhitelist() public {
@@ -482,14 +482,19 @@ contract AuctionManagerTest is Test {
         auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
     }
 
+    /// TODO Fix this test!!!
+
     // function test_EventBidPlaced() public {
     //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
     //     vm.prank(alice);
     //     nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
 
+    //     uint256[1] memory bidIdArray = [uint256(1)];
+    //     uint64[1] memory ipfsIndexArray = [uint64(0)];
+
     //     vm.expectEmit(true, true, true, true);
-    //     emit BidCreated(alice, 0.2 ether, [1], [0]);
+    //     emit BidCreated(alice, 0.2 ether, bidIdArray, ipfsIndexArray);
     //     hoax(alice);
     //     auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
     // }
