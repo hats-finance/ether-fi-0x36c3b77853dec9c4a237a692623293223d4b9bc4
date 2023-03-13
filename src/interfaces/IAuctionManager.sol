@@ -10,10 +10,11 @@ interface IAuctionManager {
         bool isActive;
     }
 
-    function createBid(bytes32[] calldata _merkleProof)
-        external
-        payable
-        returns (uint256);
+    function createBid(
+        bytes32[] calldata _merkleProof,
+        uint256 _bidSize,
+        uint256 _bidAmount
+    ) external payable returns (uint256[] memory);
 
     //function calculateWinningBid() external returns (uint256);
     function updateSelectedBidInformation(uint256 _bidId) external;
