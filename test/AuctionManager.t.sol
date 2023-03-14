@@ -567,6 +567,47 @@ contract AuctionManagerTest is Test {
         assertTrue(isActive);
 
         assertEq(bidIds.length, 5);
+
+        startHoax(bob);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
+
+        uint256[] memory bobBidIds = auctionInstance.createBid{value: 1 ether}(
+            proof,
+            10,
+            0.1 ether
+        );
+
+        vm.stopPrank();
+
+        assertEq(bobBidIds.length, 10);
+
+        (
+            amount,
+            ipfsIndex,
+            timeOfCreation,
+            bidderAddress,
+            isActive
+        ) = auctionInstance.bids(bobBidIds[0]);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, bob);
+        assertTrue(isActive);
+
+        (
+            amount,
+            ipfsIndex,
+            timeOfCreation,
+            bidderAddress,
+            isActive
+        ) = auctionInstance.bids(bobBidIds[9]);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 9);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, bob);
+        assertTrue(isActive);
     }
 
     function test_CreateBidBatchFailsWithIncorrectValue() public {
