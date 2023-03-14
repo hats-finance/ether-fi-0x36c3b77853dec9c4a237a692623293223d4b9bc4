@@ -11,7 +11,7 @@ interface IAuctionManager {
         bool isActive;
     }
 
-    function createBid(
+    function createBidWhitelisted(
         bytes32[] calldata _merkleProof,
         uint256 _bidSize,
         uint256 _bidAmount

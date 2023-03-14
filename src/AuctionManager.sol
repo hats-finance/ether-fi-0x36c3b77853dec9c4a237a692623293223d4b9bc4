@@ -169,28 +169,25 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @param _merkleProof the merkleproof for the user calling the function
     /// @param _bidSize the number of bids that the node operator would like to create
     /// @param _bidAmountPerBid the ether value of 1 bid.
-    function createBid(
+    function createBidWhitelisted(
         bytes32[] calldata _merkleProof,
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
+        require(whitelistEnabled, "Whitelist bidding disabled");
         require(
             msg.value == _bidSize * _bidAmountPerBid,
             "Incorrect bid value"
         );
         // Checks if bidder is on whitelist
-        if ((msg.value / _bidSize) < minBidAmount) {
-            require(
-                MerkleProof.verify(
-                    _merkleProof,
-                    merkleRoot,
-                    keccak256(abi.encodePacked(msg.sender))
-                ) && msg.value >= whitelistBidAmount,
-                "Invalid bid"
-            );
-        } else {
-            require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
-        }
+        require(
+            MerkleProof.verify(
+                _merkleProof,
+                merkleRoot,
+                keccak256(abi.encodePacked(msg.sender))
+            ) && _bidAmountPerBid >= whitelistBidAmount,
+            "Invalid bid"
+        );
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
