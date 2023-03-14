@@ -17,7 +17,11 @@ interface IAuctionManager {
         uint256 _bidAmount
     ) external payable returns (uint256[] memory);
 
-    //function calculateWinningBid() external returns (uint256);
+    function createBidPermissionless(
+        uint256 _bidSize,
+        uint256 _bidAmountPerBid
+    ) external payable returns (uint256[] memory);
+
     function updateSelectedBidInformation(uint256 _bidId) external;
 
     function fetchWinningBid() external returns (uint256);
