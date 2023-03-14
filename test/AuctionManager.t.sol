@@ -565,6 +565,8 @@ contract AuctionManagerTest is Test {
         assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
+
+        assertEq(bidIds.length, 5);
     }
 
     function test_CreateBidBatchFailsWithIncorrectValue() public {
