@@ -118,6 +118,7 @@ contract AuctionManager is IAuctionManager, Pausable {
                 msg.sender == address(this),
             "Incorrect Caller"
         );
+        require(bids[_bidId].isActive, "The bid is not active");
 
         bids[_bidId].isActive = false;
         address operator = bids[_bidId].bidderAddress;
@@ -348,6 +349,10 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @return the user who placed the bid
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
+    }
+
+    function isBidActive(uint256 _bidId) external view returns (bool) {
+        return bids[_bidId].isActive;
     }
 
     /// @notice Sets the address of the EtherFi node manager contract

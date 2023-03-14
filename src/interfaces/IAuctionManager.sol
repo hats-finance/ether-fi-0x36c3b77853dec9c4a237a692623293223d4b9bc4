@@ -30,6 +30,8 @@ interface IAuctionManager {
     function setStakingManagerContractAddress(address _stakingManagerContractAddress)
         external;
 
+    function isBidActive(uint256 _bidId) external view returns (bool);
+
     function sendFundsToEtherFiNode(uint256 _validatorId) external;
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
 
