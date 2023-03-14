@@ -652,22 +652,23 @@ contract AuctionManagerTest is Test {
         auctionInstance.createBid{value: 1.1 ether}(proof, 11, 0.1 ether);
     }
 
-    /// TODO Fix this test!!!
+    function test_EventBidPlaced() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-    // function test_EventBidPlaced() public {
-    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
 
-    //     vm.prank(alice);
-    //     nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
+        uint256[] memory bidIdArray = new uint256[](1);
+        uint64[] memory ipfsIndexArray = new uint64[](1);
 
-    //     uint256[1] memory bidIdArray = [uint256(1)];
-    //     uint64[1] memory ipfsIndexArray = [uint64(0)];
+        bidIdArray[0] = 1;
+        ipfsIndexArray[0] = 0;
 
-    //     vm.expectEmit(true, true, true, true);
-    //     emit BidCreated(alice, 0.2 ether, bidIdArray, ipfsIndexArray);
-    //     hoax(alice);
-    //     auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
-    // }
+        vm.expectEmit(true, true, true, true);
+        emit BidCreated(alice, 0.2 ether, bidIdArray, ipfsIndexArray);
+        hoax(alice);
+        auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
+    }
 
     function test_BidFailsWhenInvaliAmountSent() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
