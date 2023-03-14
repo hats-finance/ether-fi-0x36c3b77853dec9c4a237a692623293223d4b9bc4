@@ -242,19 +242,19 @@ contract EtherFiNodeTest is Test {
     }
 
     function test_SendExitRequestWorksCorrectly() public {
-        assertEq(managerInstance.isExitRequested(bidId), false);
+        assertEq(managerInstance.isExitRequested(bidId[0]), false);
 
         hoax(alice);
         vm.expectRevert("You are not the owner of the T-NFT");
-        managerInstance.sendExitRequest(bidId);
+        managerInstance.sendExitRequest(bidId[0]);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        managerInstance.sendExitRequest(bidId);        
-        assertEq(managerInstance.isExitRequested(bidId), true);
+        managerInstance.sendExitRequest(bidId[0]);
+        assertEq(managerInstance.isExitRequested(bidId[0]), true);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         vm.expectRevert("Exit request was already sent.");
-        managerInstance.sendExitRequest(bidId);        
+        managerInstance.sendExitRequest(bidId[0]);
     }
 
     function _merkleSetup() internal {
