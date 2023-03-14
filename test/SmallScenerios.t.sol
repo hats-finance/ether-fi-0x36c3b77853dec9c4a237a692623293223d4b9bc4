@@ -254,6 +254,100 @@ contract AuctionManagerTest is Test {
         assertEq(staker, henry);
         vm.stopPrank();
     }
+
+    /*------ SCENARIO 2 ------*/
+
+    // Chad - Bids first with 5 bids of 0.2 ETH
+    // Dan -  Then stakes once, should be matched with Chad's first bid of 0.2 ETH
+
+    //  Bob - Bids second with 3 bids of 1 ETH after Dan has staked
+    //  Greg - The stakes once, should be matched with Bob's first bid of 1 ETH
+    function test_ScenarioTwo() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+
+        vm.prank(bob);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+
+        vm.prank(chad);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+
+        // Chad Bids
+        hoax(chad);
+        uint256[] memory chadBidIds = auctionInstance.createBid{value: 1 ether}(
+            proof,
+            5,
+            0.2 ether
+        );
+
+        assertEq(auctionInstance.currentHighestBidId(), chadBidIds[0]);
+        assertEq(auctionInstance.getNumberOfActivebids(), 5);
+
+        // Dan stakes
+        startHoax(dan);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+
+        assertEq(auctionInstance.currentHighestBidId(), chadBidIds[1]);
+        assertEq(auctionInstance.getNumberOfActivebids(), 4);
+
+        address staker = stakingManagerInstance.getStakerRelatedToValidator(
+            chadBidIds[0]
+        );
+
+        assertEq(staker, dan);
+
+        vm.stopPrank();
+
+        // Bob Bids
+        hoax(bob);
+        uint256[] memory bobBidIds = auctionInstance.createBid{value: 3 ether}(
+            proof,
+            3,
+            1 ether
+        );
+
+        assertEq(auctionInstance.currentHighestBidId(), bobBidIds[0]);
+        assertEq(auctionInstance.getNumberOfActivebids(), 7);
+
+        // Greg stakes
+        startHoax(greg);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+
+        assertEq(auctionInstance.currentHighestBidId(), bobBidIds[1]);
+        assertEq(auctionInstance.getNumberOfActivebids(), 6);
+
+        staker = stakingManagerInstance.getStakerRelatedToValidator(
+            bobBidIds[0]
+        );
+
+        vm.stopPrank();
+
+        assertEq(staker, greg);
+
+        (, , , , , bool isBobBid1Active) = auctionInstance.bids(bobBidIds[0]);
+        (, , , , , bool isBobBid2Active) = auctionInstance.bids(bobBidIds[1]);
+        (, , , , , bool isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
+
+        (, , , , , bool isChadBid1Active) = auctionInstance.bids(chadBidIds[0]);
+        (, , , , , bool isChadBid2Active) = auctionInstance.bids(chadBidIds[1]);
+        (, , , , , bool isChadBid3Active) = auctionInstance.bids(chadBidIds[2]);
+        (, , , , , bool isChadBid4Active) = auctionInstance.bids(chadBidIds[3]);
+        (, , , , , bool isChadBid5Active) = auctionInstance.bids(chadBidIds[4]);
+
+        // Chad has 4 active bids left
+        assertFalse(isChadBid1Active);
+        assertTrue(isChadBid2Active);
+        assertTrue(isChadBid3Active);
+        assertTrue(isChadBid4Active);
+        assertTrue(isChadBid5Active);
+
+        // Bob has 2 active bids left
+        assertFalse(isBobBid1Active);
+        assertTrue(isBobBid2Active);
+        assertTrue(isBobBid3Active);
+    }
 }
 
 //     /**
