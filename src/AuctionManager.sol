@@ -218,8 +218,9 @@ contract AuctionManager is IAuctionManager, Pausable {
             }
 
             numberOfBids++;
-            numberOfActiveBids++;
         }
+
+        numberOfActiveBids += _bidSize;
         emit BidCreated(msg.sender, msg.value, bidIdArray, ipfsIndexArray);
         return bidIdArray;
     }
