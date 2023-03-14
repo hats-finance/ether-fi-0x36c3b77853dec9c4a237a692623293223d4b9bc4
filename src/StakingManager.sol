@@ -119,36 +119,16 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         }
     }
 
-    /// @notice Allows a user to stake their ETH with a specific bid selected
-    /// @param _bidId the bid which the staker selected
-    function depositWithBidId(uint256 _bidId)
-        public
-        payable
-        whenNotPaused
-        correctStakeAmount
-        bidsCurrentlyActive
-        returns (uint256)
-    {
-        require(bidIdToStaker[_bidId] == address(0), "Bid already selected");
-
-        auctionInterfaceInstance.updateSelectedBidInformation(_bidId);
-        processDeposit(_bidId);
-
-        return _bidId;
-    }
-
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
         external
         payable
         whenNotPaused
         correctStakeAmount
-        bidsCurrentlyActive
         nonReentrant
         returns (uint256[] memory)
     {
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
-
         require(
             auctionInterfaceInstance.getNumberOfActivebids() >=
                 numberOfDeposits,
@@ -158,19 +138,16 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
         uint256 processedBidIdsCount = 0;
 
-        for(uint256 i; i < _candidateBidIds.length && processedBidIdsCount < numberOfDeposits; ++i) {
+        for(uint256 i = 0; i < _candidateBidIds.length && processedBidIdsCount < numberOfDeposits; ++i) {
             uint256 bidId = _candidateBidIds[i];
             address bidStaker = bidIdToStaker[bidId];
             bool isActive = auctionInterfaceInstance.isBidActive(bidId);
-
             if (bidStaker == address(0) && isActive) {
                 auctionInterfaceInstance.updateSelectedBidInformation(bidId);
                 processDeposit(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
             }
-
-            i++;
         }
 
         //resize the processedBidIds array to the actual number of processed bid IDs
@@ -359,7 +336,7 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
     }
 
     modifier correctStakeAmount() {
-        require(msg.value % stakeAmount == 0, "Insufficient staking amount");
+        require(msg.value > 0 && msg.value % stakeAmount == 0, "Insufficient staking amount");
         _;
     }
 

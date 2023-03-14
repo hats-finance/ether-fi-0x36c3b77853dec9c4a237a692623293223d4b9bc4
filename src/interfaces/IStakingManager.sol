@@ -12,8 +12,6 @@ interface IStakingManager {
 
     function depositForAuction() external payable;
     
-    function depositWithBidId(uint256 _bidId) external payable returns (uint256) ;
-
     function cancelDeposit(uint256 _validatorId) external;
 
     function registerValidator(
@@ -30,4 +28,9 @@ interface IStakingManager {
     function getStakeAmount() external returns (uint256);
 
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
+
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
+       external
+       payable
+       returns (uint256[] memory);
 }
