@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 interface IAuctionManager {
     struct Bid {
+        uint256 bidId;
         uint256 amount;
         uint256 bidderPubKeyIndex;
         uint256 timeOfBid;
@@ -36,5 +37,8 @@ interface IAuctionManager {
     function processAuctionFeeTransfer(uint256 _validatorId) external;
 
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
-    function setProtocolRevenueManager(address _protocolRevenueManager) external;
+
+    function setProtocolRevenueManager(
+        address _protocolRevenueManager
+    ) external;
 }

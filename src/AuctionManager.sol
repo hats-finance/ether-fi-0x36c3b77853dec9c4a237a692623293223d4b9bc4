@@ -205,6 +205,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
             //Creates a bid object for storage and lookup in future
             bids[bidId] = Bid({
+                bidId: bidId,
                 amount: _bidAmountPerBid,
                 bidderPubKeyIndex: ipfsIndex,
                 timeOfBid: block.timestamp,
