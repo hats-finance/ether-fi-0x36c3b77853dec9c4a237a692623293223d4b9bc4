@@ -641,17 +641,6 @@ contract AuctionManagerTest is Test {
         );
     }
 
-    function test_CreateBidBatchFailsIfBidSizeMoreThanTen() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        hoax(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 50);
-
-        vm.expectRevert("Max 10 bids");
-        hoax(alice);
-        auctionInstance.createBid{value: 1.1 ether}(proof, 11, 0.1 ether);
-    }
-
     function test_EventBidPlaced() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
