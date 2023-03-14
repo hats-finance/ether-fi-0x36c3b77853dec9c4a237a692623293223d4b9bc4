@@ -167,13 +167,16 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
     /// @param _bidSize the number of bids that the node operator would like to create
-    /// @param _bidAmount the ether value of 1 bid.
+    /// @param _bidAmountPerBid the ether value of 1 bid.
     function createBid(
         bytes32[] calldata _merkleProof,
         uint256 _bidSize,
-        uint256 _bidAmount
+        uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
-        require(msg.value == _bidSize * _bidAmount, "Incorrect bid value");
+        require(
+            msg.value == _bidSize * _bidAmountPerBid,
+            "Incorrect bid value"
+        );
         // Checks if bidder is on whitelist
         if ((msg.value / _bidSize) < minBidAmount) {
             require(
@@ -202,7 +205,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
             //Creates a bid object for storage and lookup in future
             bids[bidId] = Bid({
-                amount: _bidAmount,
+                amount: _bidAmountPerBid,
                 bidderPubKeyIndex: ipfsIndex,
                 timeOfBid: block.timestamp,
                 bidderAddress: msg.sender,
@@ -210,7 +213,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             });
 
             //Checks if the bid is now the highest bid
-            if (_bidAmount > bids[currentHighestBidId].amount) {
+            if (_bidAmountPerBid > bids[currentHighestBidId].amount) {
                 currentHighestBidId = bidId;
             }
 
@@ -222,7 +225,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     }
 
     /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
-    /// @param _bidId the ID of the validator 
+    /// @param _bidId the ID of the validator
     function processAuctionFeeTransfer(
         uint256 _bidId
     ) external onlyStakingManagerContract {
@@ -357,8 +360,12 @@ contract AuctionManager is IAuctionManager, Pausable {
         etherFiNodesManager = IEtherFiNodesManager(_managerAddress);
     }
 
-    function setProtocolRevenueManager(address _protocolRevenueManager) external {
-        protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManager);
+    function setProtocolRevenueManager(
+        address _protocolRevenueManager
+    ) external {
+        protocolRevenueManager = IProtocolRevenueManager(
+            _protocolRevenueManager
+        );
     }
 
     //--------------------------------------------------------------------------------------
