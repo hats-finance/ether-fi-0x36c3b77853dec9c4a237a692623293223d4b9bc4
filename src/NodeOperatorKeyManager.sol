@@ -13,13 +13,10 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
     // user address => OperaterData Struct
     mapping(address => KeyData) public addressToOperatorData;
 
-    function increaseKeysIndex(address _user) public {
-        addressToOperatorData[_user].keysUsed++;
-    }
-
-    function registerNodeOperator(string memory _ipfsHash, uint64 _totalKeys)
-        public
-    {
+    function registerNodeOperator(
+        string memory _ipfsHash,
+        uint64 _totalKeys
+    ) public {
         addressToOperatorData[msg.sender] = KeyData({
             totalKeys: _totalKeys,
             keysUsed: 0,
@@ -32,12 +29,15 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
         );
     }
 
-    //------- VIEW FUNCTIONS ------//
-    function getNumberOfKeysUsed(address _user)
-        public
-        view
-        returns (uint256 keysUsed)
-    {
-        keysUsed = addressToOperatorData[_user].keysUsed;
+    function fetchNextKeyIndex(address _user) external returns (uint64) {
+        uint64 totalKeys = addressToOperatorData[_user].totalKeys;
+        require(
+            addressToOperatorData[_user].keysUsed < totalKeys,
+            "All public keys used"
+        );
+
+        uint64 ipfsIndex = addressToOperatorData[_user].keysUsed;
+        addressToOperatorData[_user].keysUsed++;
+        return ipfsIndex;
     }
 }

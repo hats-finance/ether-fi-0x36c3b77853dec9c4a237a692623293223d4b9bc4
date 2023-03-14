@@ -1,73 +1,354 @@
-// // SPDX-License-Identifier: UNLICENSED
-// pragma solidity ^0.8.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
 
-// import "forge-std/Test.sol";
-// import "../src/interfaces/IStakingManager.sol";
-// import "../src/StakingManager.sol";
-// import "../src/EtherFiNode.sol";
-// import "../src/BNFT.sol";
-// import "../src/TNFT.sol";
-// import "src/AuctionManager.sol";
-// import "../src/Treasury.sol";
-// import "../lib/murky/src/Merkle.sol";
+import "forge-std/Test.sol";
+import "../src/interfaces/IStakingManager.sol";
+import "../src/StakingManager.sol";
+import "src/EtherFiNodesManager.sol";
+import "../src/NodeOperatorKeyManager.sol";
+import "../src/BNFT.sol";
+import "../src/TNFT.sol";
+import "../src/AuctionManager.sol";
+import "../src/Treasury.sol";
+import "../lib/murky/src/Merkle.sol";
 
-// contract SmallScenariosTest is Test {
-//     StakingManager public stakingManagerInstance;
-//     EtherFiNode public withdrawSafeInstance;
-//     BNFT public TestBNFTInstance;
-//     TNFT public TestTNFTInstance;
-//     AuctionManager public auctionInstance;
-//     Treasury public treasuryInstance;
-//     Merkle merkle;
-//     bytes32 root;
-//     bytes32[] public whiteListedAddresses;
+contract AuctionManagerTest is Test {
+    StakingManager public stakingManagerInstance;
+    EtherFiNode public withdrawSafeInstance;
+    EtherFiNodesManager public managerInstance;
+    BNFT public TestBNFTInstance;
+    TNFT public TestTNFTInstance;
+    AuctionManager public auctionInstance;
+    Treasury public treasuryInstance;
+    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    Merkle merkle;
+    bytes32 root;
+    bytes32[] public whiteListedAddresses;
+    IStakingManager.DepositData public test_data;
 
-//     IStakingManager.DepositData public test_data;
-//     IStakingManager.DepositData public test_data_2;
+    address owner = vm.addr(1);
+    address alice = vm.addr(2);
+    address bob = vm.addr(3);
+    address chad = vm.addr(4);
+    address dan = vm.addr(5);
+    address egg = vm.addr(6);
+    address greg = vm.addr(7);
+    address henry = vm.addr(8);
 
-//     address owner = vm.addr(1);
-//     address alice = vm.addr(2);
+    string aliceIPFSHash = "AliceIPFS";
+    string _ipfsHash = "ipfsHash";
 
-//     function setUp() public {
-//         vm.startPrank(owner);
-//         _merkleSetup();
-//         treasuryInstance = new Treasury();
-//         auctionInstance = new AuctionManager(address(treasuryInstance));
-//         treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
-//         auctionInstance.updateMerkleRoot(root);
-//         stakingManagerInstance = new StakingManager(
-//             address(auctionInstance),
-//             address(treasuryInstance)
-//         );
-//         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
-//         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
-//         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
-//         withdrawSafeInstance = new EtherFiNode(
-//             address(treasuryInstance),
-//             address(auctionInstance),
-//             address(stakingManagerInstance),
-//             address(TestTNFTInstance),
-//             address(TestBNFTInstance)
-//         );
+    function setUp() public {
+        vm.startPrank(owner);
 
-//         test_data = IStakingManager.DepositData({
-//             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-//             withdrawalCredentials: "test_credentials",
-//             depositDataRoot: "test_deposit_root",
-//             publicKey: "test_pubkey",
-//             signature: "test_signature"
-//         });
+        treasuryInstance = new Treasury();
+        _merkleSetup();
+        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        auctionInstance = new AuctionManager(
+            address(nodeOperatorKeyManagerInstance)
+        );
+        treasuryInstance.setAuctionManagerContractAddress(
+            address(auctionInstance)
+        );
+        auctionInstance.updateMerkleRoot(root);
+        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(
+            address(stakingManagerInstance)
+        );
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+        managerInstance = new EtherFiNodesManager(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(stakingManagerInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance)
+        );
 
-//         test_data_2 = IStakingManager.DepositData({
-//             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-//             withdrawalCredentials: "test_credentials_2",
-//             depositDataRoot: "test_deposit_root_2",
-//             publicKey: "test_pubkey_2",
-//             signature: "test_signature_2"
-//         });
+        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
 
-//         vm.stopPrank();
-//     }
+        test_data = IStakingManager.DepositData({
+            publicKey: "test_pubkey",
+            signature: "test_signature",
+            depositDataRoot: "test_deposit_root",
+            ipfsHashForEncryptedValidatorKey: "test_ipfsHash"
+        });
+
+        vm.stopPrank();
+    }
+
+    function _merkleSetup() internal {
+        merkle = new Merkle();
+
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
+            )
+        );
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)
+            )
+        );
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)
+            )
+        );
+
+        root = merkle.getRoot(whiteListedAddresses);
+    }
+
+    /*------ SCENARIO 1 ------*/
+    // 3 Bidders:
+    //  Alice - 6 bids of 0.1 ETH
+    //  Bob - 3 bids of 1 ETH
+    //  Chad - 5 bids of 0.2 ETH
+
+    // 4 Stakers
+    //  Dan - Stakes once, should be matched with Bob's first bid of 1 ETH
+    //  Egg - Stakes once, should be matched with Bob's second bid of 1 ETH
+    //  Greg - Stakes once, should be matched with Bob's third bid of 1 ETH
+    //  Henry - Stakes once, should be matched with Chad's first bid of 0.2 ETH
+    function test_ScenarioOne() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+
+        vm.prank(bob);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+
+        vm.prank(chad);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+
+        // Alice Bids
+        hoax(alice);
+        uint256[] memory aliceBidIds = auctionInstance.createBid{
+            value: 0.6 ether
+        }(proof, 6, 0.1 ether);
+
+        // Bob Bids
+        hoax(bob);
+        uint256[] memory bobBidIds = auctionInstance.createBid{value: 3 ether}(
+            proof,
+            3,
+            1 ether
+        );
+
+        // Chad Bids
+        hoax(chad);
+        uint256[] memory chadBidIds = auctionInstance.createBid{value: 1 ether}(
+            proof,
+            5,
+            0.2 ether
+        );
+
+        assertEq(aliceBidIds.length, 6);
+        assertEq(bobBidIds.length, 3);
+        assertEq(chadBidIds.length, 5);
+
+        // Bob has highest bid
+        assertEq(auctionInstance.currentHighestBidId(), bobBidIds[0]);
+        assertEq(auctionInstance.getNumberOfActivebids(), 14);
+
+        // Dan stakes
+        startHoax(dan);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+
+        (, , , , , bool isBobBid1Active) = auctionInstance.bids(bobBidIds[0]);
+        (, , , , , bool isBobBid2Active) = auctionInstance.bids(bobBidIds[1]);
+        (, , , , , bool isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
+
+        // Matches with Bob's first bid
+        address staker = stakingManagerInstance.getStakerRelatedToValidator(
+            bobBidIds[0]
+        );
+
+        assertEq(auctionInstance.getNumberOfActivebids(), 13);
+
+        // Bob's second bid is now highest
+        assertEq(auctionInstance.currentHighestBidId(), bobBidIds[1]);
+
+        assertFalse(isBobBid1Active);
+        assertTrue(isBobBid2Active);
+        assertTrue(isBobBid3Active);
+
+        assertEq(staker, dan);
+        vm.stopPrank();
+
+        // Egg stakes
+        startHoax(egg);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+
+        (, , , , , isBobBid2Active) = auctionInstance.bids(bobBidIds[1]);
+        (, , , , , isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
+
+        // Matches with Bob's second bid
+        staker = stakingManagerInstance.getStakerRelatedToValidator(
+            bobBidIds[1]
+        );
+
+        assertEq(auctionInstance.getNumberOfActivebids(), 12);
+
+        // Bob's thrid bid is now highest
+        assertEq(auctionInstance.currentHighestBidId(), bobBidIds[2]);
+
+        assertFalse(isBobBid1Active);
+        assertFalse(isBobBid2Active);
+        assertTrue(isBobBid3Active);
+
+        assertEq(staker, egg);
+        vm.stopPrank();
+
+        // Greg stakes
+        startHoax(greg);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+
+        (, , , , , isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
+
+        // Matches with Bob's third bid
+        staker = stakingManagerInstance.getStakerRelatedToValidator(
+            bobBidIds[2]
+        );
+
+        assertEq(auctionInstance.getNumberOfActivebids(), 11);
+
+        // Chad's first bid is now highest
+        assertEq(auctionInstance.currentHighestBidId(), chadBidIds[0]);
+
+        assertFalse(isBobBid3Active);
+
+        assertEq(staker, greg);
+        vm.stopPrank();
+
+        // Henry stakes
+        startHoax(henry);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+
+        (, , , , , bool isChadBid1Active) = auctionInstance.bids(chadBidIds[0]);
+        (, , , , , bool isChadBid2Active) = auctionInstance.bids(chadBidIds[1]);
+        (, , , , , bool isChadBid3Active) = auctionInstance.bids(chadBidIds[2]);
+        (, , , , , bool isChadBid4Active) = auctionInstance.bids(chadBidIds[3]);
+        (, , , , , bool isChadBid5Active) = auctionInstance.bids(chadBidIds[4]);
+
+        // Matches with Chad's first bid
+        staker = stakingManagerInstance.getStakerRelatedToValidator(
+            chadBidIds[0]
+        );
+
+        assertEq(auctionInstance.getNumberOfActivebids(), 10);
+
+        // Chad's second bid is now highest
+        assertEq(auctionInstance.currentHighestBidId(), chadBidIds[1]);
+
+        assertFalse(isChadBid1Active);
+        assertTrue(isChadBid2Active);
+        assertTrue(isChadBid3Active);
+        assertTrue(isChadBid4Active);
+        assertTrue(isChadBid5Active);
+
+        assertEq(staker, henry);
+        vm.stopPrank();
+    }
+
+    /*------ SCENARIO 2 ------*/
+
+    // Chad - Bids first with 5 bids of 0.2 ETH
+    // Dan -  Then stakes once, should be matched with Chad's first bid of 0.2 ETH
+
+    //  Bob - Bids second with 3 bids of 1 ETH after Dan has staked
+    //  Greg - The stakes once, should be matched with Bob's first bid of 1 ETH
+    function test_ScenarioTwo() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+
+        vm.prank(bob);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+
+        vm.prank(chad);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+
+        // Chad Bids
+        hoax(chad);
+        uint256[] memory chadBidIds = auctionInstance.createBid{value: 1 ether}(
+            proof,
+            5,
+            0.2 ether
+        );
+
+        assertEq(auctionInstance.currentHighestBidId(), chadBidIds[0]);
+        assertEq(auctionInstance.getNumberOfActivebids(), 5);
+
+        // Dan stakes
+        startHoax(dan);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+
+        assertEq(auctionInstance.currentHighestBidId(), chadBidIds[1]);
+        assertEq(auctionInstance.getNumberOfActivebids(), 4);
+
+        address staker = stakingManagerInstance.getStakerRelatedToValidator(
+            chadBidIds[0]
+        );
+
+        assertEq(staker, dan);
+
+        vm.stopPrank();
+
+        // Bob Bids
+        hoax(bob);
+        uint256[] memory bobBidIds = auctionInstance.createBid{value: 3 ether}(
+            proof,
+            3,
+            1 ether
+        );
+
+        assertEq(auctionInstance.currentHighestBidId(), bobBidIds[0]);
+        assertEq(auctionInstance.getNumberOfActivebids(), 7);
+
+        // Greg stakes
+        startHoax(greg);
+        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+
+        assertEq(auctionInstance.currentHighestBidId(), bobBidIds[1]);
+        assertEq(auctionInstance.getNumberOfActivebids(), 6);
+
+        staker = stakingManagerInstance.getStakerRelatedToValidator(
+            bobBidIds[0]
+        );
+
+        vm.stopPrank();
+
+        assertEq(staker, greg);
+
+        (, , , , , bool isBobBid1Active) = auctionInstance.bids(bobBidIds[0]);
+        (, , , , , bool isBobBid2Active) = auctionInstance.bids(bobBidIds[1]);
+        (, , , , , bool isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
+
+        (, , , , , bool isChadBid1Active) = auctionInstance.bids(chadBidIds[0]);
+        (, , , , , bool isChadBid2Active) = auctionInstance.bids(chadBidIds[1]);
+        (, , , , , bool isChadBid3Active) = auctionInstance.bids(chadBidIds[2]);
+        (, , , , , bool isChadBid4Active) = auctionInstance.bids(chadBidIds[3]);
+        (, , , , , bool isChadBid5Active) = auctionInstance.bids(chadBidIds[4]);
+
+        // Chad has 4 active bids left
+        assertFalse(isChadBid1Active);
+        assertTrue(isChadBid2Active);
+        assertTrue(isChadBid3Active);
+        assertTrue(isChadBid4Active);
+        assertTrue(isChadBid5Active);
+
+        // Bob has 2 active bids left
+        assertFalse(isBobBid1Active);
+        assertTrue(isBobBid2Active);
+        assertTrue(isBobBid3Active);
+    }
+}
 
 //     /**
 //      *  One bid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931

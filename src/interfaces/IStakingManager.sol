@@ -33,4 +33,6 @@ interface IStakingManager {
        external
        payable
        returns (uint256[] memory);
+    
+    function setProtocolRevenueManager(address _protocolRevenueManager) external;
 }

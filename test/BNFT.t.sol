@@ -30,16 +30,24 @@ contract BNFTTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
+    string _ipfsHash = "ipfs";
+
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
-        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
+        auctionInstance = new AuctionManager(
+            address(nodeOperatorKeyManagerInstance)
+        );
+        treasuryInstance.setAuctionManagerContractAddress(
+            address(auctionInstance)
+        );
         auctionInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        auctionInstance.setStakingManagerContractAddress(
+            address(stakingManagerInstance)
+        );
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
         managerInstance = new EtherFiNodesManager(
@@ -51,7 +59,9 @@ contract BNFTTest is Test {
         );
 
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
@@ -80,8 +90,11 @@ contract BNFTTest is Test {
     function test_BNFTCannotBeTransferred() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.expectRevert("Err: token is SOUL BOUND");
         TestBNFTInstance.transferFrom(

@@ -30,15 +30,21 @@ interface IEtherFiNodesManager {
 
     function getEtherFiNodeAddress(uint256 _validatorId) external view returns (address);
     function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory);
+    function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external returns (uint256);
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory);
+    function getNumberOfValidators() external view returns (uint256);
 
+    function incrementNumberOfValidators(uint256 _count) external;
     function installEtherFiNode(uint256 _validatorId, address _safeAddress) external;
     function uninstallEtherFiNode(uint256 _validatorId) external;
+    
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs) external;
+    function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) external;
+    
+    function sendExitRequest(uint256 _validatorId) external;
+    function isExitRequested(uint256 _validatorId) external view returns (bool);
 
     function createEtherfiNode(uint256 _validatorId) external returns (address);
-    function receiveAuctionFunds(uint256 _validatorId, uint256 _amount)
-        external;
     function withdrawFunds(uint256 _validatorId) external;
 }

@@ -38,6 +38,7 @@ contract NodeOperatorKeyManagerTest is Test {
     address bob = vm.addr(3);
 
     string aliceIPFSHash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
+    string _ipfsHash = "ipfsHash";
 
     function setUp() public {
         vm.startPrank(owner);
@@ -104,22 +105,28 @@ contract NodeOperatorKeyManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
     }
 
-    function test_IncreaseKeysIndex() public {
+    function test_FetchNextKeyIndex() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
-        uint256 aliceKeysUsed = nodeOperatorKeyManagerInstance
-            .getNumberOfKeysUsed(alice);
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            aliceIPFSHash,
+            uint64(10)
+        );
 
-        assertEq(aliceKeysUsed, 0);
+        (, uint64 keysUsed, ) = nodeOperatorKeyManagerInstance
+            .addressToOperatorData(alice);
+
+        assertEq(keysUsed, 0);
 
         hoax(alice);
-        auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
 
-        aliceKeysUsed = nodeOperatorKeyManagerInstance.getNumberOfKeysUsed(
+        (, keysUsed, ) = nodeOperatorKeyManagerInstance.addressToOperatorData(
             alice
         );
 
-        assertEq(aliceKeysUsed, 1);
+        assertEq(keysUsed, 1);
     }
 
     function _merkleSetup() internal {

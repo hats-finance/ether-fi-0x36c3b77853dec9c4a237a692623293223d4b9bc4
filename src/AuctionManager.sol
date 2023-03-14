@@ -9,6 +9,7 @@ import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./StakingManager.sol";
@@ -29,21 +30,24 @@ contract AuctionManager is IAuctionManager, Pausable {
     uint256 public numberOfActiveBids;
     address public stakingManagerContractAddress;
     address public owner;
-    address public etherFiNodesManager;
     address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
 
     mapping(uint256 => Bid) public bids;
 
+    INodeOperatorKeyManager nodeOperatorKeyManagerInterface;
+    IProtocolRevenueManager protocolRevenueManager;
+    IEtherFiNodesManager etherFiNodesManager;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event BidPlaced(
+    event BidCreated(
         address indexed bidder,
         uint256 amount,
-        uint256 indexed bidId,
-        uint256 indexed pubKeyIndex
+        uint256[] indexed bidIdArray,
+        uint64[] indexed ipfsIndexArray
     );
 
     event SelectedBidUpdated(
@@ -67,10 +71,6 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 indexed newBidAmount
     );
     event Received(address indexed sender, uint256 value);
-    event FundsSentToEtherFiNode(
-        address indexed etehrFiNode,
-        uint256 indexed _amount
-    );
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  RECEIVER   -------------------------------------
@@ -89,6 +89,9 @@ contract AuctionManager is IAuctionManager, Pausable {
     constructor(address _nodeOperatorKeyManagerContract) {
         owner = msg.sender;
         nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
+        nodeOperatorKeyManagerInterface = INodeOperatorKeyManager(
+            _nodeOperatorKeyManagerContract
+        );
     }
 
     //--------------------------------------------------------------------------------------
@@ -112,6 +115,8 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @notice Updates a winning bids details
     /// @dev Called either by the fetchWinningBid() function or from the staking contract
     /// @param _bidId the ID of the bid being removed from the auction; either due to being selected by a staker or being the current highest bid
+    /// TODO add a staker param and set the stakerAddress in the bid struct
+    /// TODO add require to check if staker address is address(0)
     function updateSelectedBidInformation(uint256 _bidId) public {
         require(
             msg.sender == stakingManagerContractAddress ||
@@ -158,16 +163,23 @@ contract AuctionManager is IAuctionManager, Pausable {
         emit BidCancelled(_bidId);
     }
 
-    /// @notice Places a bid in the auction to be the next operator
+    /// @notice Creates bids that are able to be place in the auction  or be selected  by a staker
+    /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
-    function bidOnStake(bytes32[] calldata _merkleProof)
-        external
-        payable
-        whenNotPaused
-    returns (uint256)  {
+    /// @param _bidSize the number of bids that the node operator would like to create
+    /// @param _bidAmountPerBid the ether value of 1 bid.
+    function createBid(
+        bytes32[] calldata _merkleProof,
+        uint256 _bidSize,
+        uint256 _bidAmountPerBid
+    ) external payable whenNotPaused returns (uint256[] memory) {
+        require(
+            msg.value == _bidSize * _bidAmountPerBid,
+            "Incorrect bid value"
+        );
         // Checks if bidder is on whitelist
-        if (msg.value < minBidAmount) {
+        if ((msg.value / _bidSize) < minBidAmount) {
             require(
                 MerkleProof.verify(
                     _merkleProof,
@@ -180,67 +192,55 @@ contract AuctionManager is IAuctionManager, Pausable {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
-        uint256 bidId = numberOfBids;
-        uint256 nextAvailableIpfsIndex = NodeOperatorKeyManager(
-            nodeOperatorKeyManagerContract
-        ).getNumberOfKeysUsed(msg.sender);
-        NodeOperatorKeyManager(nodeOperatorKeyManagerContract)
-            .increaseKeysIndex(msg.sender);
+        uint256[] memory bidIdArray = new uint256[](_bidSize);
+        uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
-        //Creates a bid object for storage and lookup in future
-        bids[bidId] = Bid({
-            amount: msg.value,
-            bidderPubKeyIndex: nextAvailableIpfsIndex,
-            timeOfBid: block.timestamp,
-            bidderAddress: msg.sender,
-            isActive: true
-        });
+        for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
+            uint64 ipfsIndex = nodeOperatorKeyManagerInterface
+                .fetchNextKeyIndex(msg.sender);
 
-        //Checks if the bid is now the highest bid
-        if (msg.value > bids[currentHighestBidId].amount) {
-            currentHighestBidId = bidId;
+            uint256 bidId = numberOfBids;
+
+            bidIdArray[i] = bidId;
+            ipfsIndexArray[i] = ipfsIndex;
+
+            //Creates a bid object for storage and lookup in future
+            bids[bidId] = Bid({
+                bidId: bidId,
+                amount: _bidAmountPerBid,
+                bidderPubKeyIndex: ipfsIndex,
+                timeOfBid: block.timestamp,
+                bidderAddress: msg.sender,
+                isActive: true
+            });
+
+            //Checks if the bid is now the highest bid
+            if (_bidAmountPerBid > bids[currentHighestBidId].amount) {
+                currentHighestBidId = bidId;
+            }
+
+            numberOfBids++;
         }
 
-        emit BidPlaced(
-            msg.sender,
-            msg.value,
-            bidId,
-            nextAvailableIpfsIndex
-        );
-
-        numberOfBids++;
-        numberOfActiveBids++;
-
-        return bidId;
+        numberOfActiveBids += _bidSize;
+        emit BidCreated(msg.sender, msg.value, bidIdArray, ipfsIndexArray);
+        return bidIdArray;
     }
 
-    /// @notice Sends a winning bids funds to the EtherFi Node related to the validator
-    /// @param _validatorId the ID of the validator the bids funds relate to
-    function sendFundsToEtherFiNode(uint256 _validatorId)
-        external
-        onlyStakingManagerContract
-    {
-        IEtherFiNodesManager managerInstance = IEtherFiNodesManager(etherFiNodesManager);
-     
-        uint256 selectedBid = _validatorId;
-        uint256 amount = bids[selectedBid].amount;
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(_validatorId);
-
-        managerInstance.receiveAuctionFunds(_validatorId, amount);
-
-        (bool sent, ) = payable(etherFiNode).call{value: amount}("");
-        require(sent, "Failed to send Ether");
-
-        emit FundsSentToEtherFiNode(etherFiNode, amount);
+    /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
+    /// @param _bidId the ID of the validator
+    function processAuctionFeeTransfer(
+        uint256 _bidId
+    ) external onlyStakingManagerContract {
+        uint256 amount = bids[_bidId].amount;
+        protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId, amount);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    function reEnterAuction(uint256 _bidId)
-        external
-        onlyStakingManagerContract
-        whenNotPaused
-    {
+    function reEnterAuction(
+        uint256 _bidId
+    ) external onlyStakingManagerContract whenNotPaused {
         require(bids[_bidId].isActive == false, "Bid already active");
 
         //Reactivate the bid
@@ -289,10 +289,9 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
-    function updateWhitelistMinBidAmount(uint256 _newAmount)
-        external
-        onlyOwner
-    {
+    function updateWhitelistMinBidAmount(
+        uint256 _newAmount
+    ) external onlyOwner {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
         uint256 oldBidAmount = whitelistBidAmount;
         whitelistBidAmount = _newAmount;
@@ -333,6 +332,12 @@ contract AuctionManager is IAuctionManager, Pausable {
         currentHighestBidId = tempWinningBidId;
     }
 
+    function uncheckedInc(uint x) private pure returns (uint) {
+        unchecked {
+            return x + 1;
+        }
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -359,7 +364,15 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @dev Used due to circular dependencies
     /// @param _managerAddress address being set as the etherfi node manager contract
     function setEtherFiNodesManagerAddress(address _managerAddress) external {
-        etherFiNodesManager = _managerAddress;
+        etherFiNodesManager = IEtherFiNodesManager(_managerAddress);
+    }
+
+    function setProtocolRevenueManager(
+        address _protocolRevenueManager
+    ) external {
+        protocolRevenueManager = IProtocolRevenueManager(
+            _protocolRevenueManager
+        );
     }
 
     //--------------------------------------------------------------------------------------
