@@ -32,6 +32,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     address public owner;
     address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
+    bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
 
