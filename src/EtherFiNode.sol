@@ -16,10 +16,10 @@ contract EtherFiNode is IEtherFiNode {
     address etherfiNodesManager; // EtherFiNodesManager
     address protocolRevenueManagerAddress;
 
-    uint256 localRevenueIndex;
-    string ipfsHashForEncryptedValidatorKey;
-    uint64 exitRequestTimestamp;
-    VALIDATOR_PHASE phase;
+    uint256 public localRevenueIndex;
+    string public ipfsHashForEncryptedValidatorKey;
+    uint64 public exitRequestTimestamp;
+    VALIDATOR_PHASE public phase;
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -38,24 +38,7 @@ contract EtherFiNode is IEtherFiNode {
     receive() external payable {
         // emit Received(msg.sender, msg.value);
     }
-
-    function getIpfsHashForEncryptedValidatorKey() external view returns (string memory) {
-        return ipfsHashForEncryptedValidatorKey;
-    }
-
-    function getPhase() external view returns (VALIDATOR_PHASE) {
-        return phase;
-    }
-
-    function getLocalRevenueIndex() external view returns (uint256) {
-        return localRevenueIndex;
-    }
-
-    function getExitRequestTimestamp() external view returns (uint64) {
-        return exitRequestTimestamp;
-    }
-
-
+    
     /// @notice Set the validator phase
     /// @param _phase the new phase
     function setPhase(VALIDATOR_PHASE _phase) external onlyEtherFiNodeManagerContract {
@@ -98,8 +81,7 @@ contract EtherFiNode is IEtherFiNode {
         require(sent, "Failed to send Ether");
     }
 
-    function receiveProtocolRevenue(uint256 _amount, uint256 _globalRevenueIndex) payable external onlyProtocolRevenueManagerContract {
-        require(msg.value == _amount, "Incorrect amount");
+    function receiveProtocolRevenue(uint256 _globalRevenueIndex) payable external onlyProtocolRevenueManagerContract {
         localRevenueIndex = _globalRevenueIndex;
     }
 

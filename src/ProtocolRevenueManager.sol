@@ -72,7 +72,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     function distributeAuctionRevenue(uint256 _validatorId) external onlyEtherFiNodesManager returns (uint256) {
         address etherFiNode = etherFiNodesManager.getEtherFiNodeAddress(_validatorId);
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
-        IEtherFiNode(etherFiNode).receiveProtocolRevenue{value: amount}(amount, globalRevenueIndex);
+        IEtherFiNode(etherFiNode).receiveProtocolRevenue{value: amount}(globalRevenueIndex);
         return amount;
     }
 
@@ -98,7 +98,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     /// @param _validatorId id of the validator
     function getAccruedAuctionRevenueRewards(uint256 _validatorId) public view returns (uint256) {        
         address etherFiNode = etherFiNodesManager.getEtherFiNodeAddress(_validatorId);
-        uint256 localRevenueIndex = IEtherFiNode(etherFiNode).getLocalRevenueIndex();
+        uint256 localRevenueIndex = IEtherFiNode(etherFiNode).localRevenueIndex();
         uint256 amount = 0;
         if (localRevenueIndex > 0) {
             amount = globalRevenueIndex - localRevenueIndex;
