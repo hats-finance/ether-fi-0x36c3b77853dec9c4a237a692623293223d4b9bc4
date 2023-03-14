@@ -194,7 +194,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
-        for (uint256 i = 0; i < _bidSize; ++i) {
+        for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
             uint64 ipfsIndex = nodeOperatorKeyManagerInterface
                 .fetchNextKeyIndex(msg.sender);
 
@@ -331,11 +331,11 @@ contract AuctionManager is IAuctionManager, Pausable {
         currentHighestBidId = tempWinningBidId;
     }
 
-    // function uncheckedInc(uint x) private pure returns (uint) {
-    //     unchecked {
-    //         return x + 1;
-    //     }
-    // }
+    function uncheckedInc(uint x) private pure returns (uint) {
+        unchecked {
+            return x + 1;
+        }
+    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
