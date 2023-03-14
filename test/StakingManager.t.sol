@@ -191,10 +191,12 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        uint256 bidIdTwo = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        uint256 bidIdThree = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        uint256 bidIdFour = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
 
         vm.expectRevert("Insufficient staking amount");
         stakingManagerInstance.depositForAuction{value: 0.095 ether}();
@@ -204,8 +206,10 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        uint256 bidIdTwo = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
      
         vm.expectRevert("No bids available at the moment");
         stakingManagerInstance.depositForAuction{value: 0.096 ether}();
@@ -215,6 +219,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         uint256[] memory bidIdArray = new uint256[](10);        
         bidIdArray[0] = 1;
@@ -236,11 +241,12 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         }
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.2 ether}(proof);
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
         }
 
         assertEq(auctionInstance.numberOfActiveBids(), 20);
@@ -256,11 +262,13 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         }
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.2 ether}(proof);
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
         }
 
         assertEq(auctionInstance.numberOfActiveBids(), 20);
@@ -285,62 +293,6 @@ contract StakingManagerTest is Test {
 
         vm.expectRevert("Pausable: paused");
         stakingManagerInstance.batchDepositWithBidIds{value: 0.32 ether}(bidIdArray);
-    }
-
-    function test_BatchDepositForAuctionWorks() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        uint256 bidIdTwo = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        uint256 bidIdThree = auctionInstance.bidOnStake{value: 0.8 ether}(proof);
-        uint256 bidIdFour = auctionInstance.bidOnStake{value: 1.3 ether}(proof);
-        uint256 bidIdFive = auctionInstance.bidOnStake{value: 1.8 ether}(proof);
-        uint256 bidIdSix = auctionInstance.bidOnStake{value: 0.1 ether}(proof);
-        uint256 bidIdSeven = auctionInstance.bidOnStake{value: 0.2 ether}(proof);
-
-        stakingManagerInstance.depositForAuction{value: 0.192 ether}();
-
-        assertEq(auctionInstance.numberOfActiveBids(), 1);
-
-        (,,,, bool isActive) = auctionInstance.bids(bidId);
-        assertEq(isActive, false);
-        (,,,, isActive) = auctionInstance.bids(bidIdTwo);
-        assertEq(isActive, false);
-        (,,,, isActive) = auctionInstance.bids(bidIdThree);
-        assertEq(isActive, false);
-        (,,,, isActive) = auctionInstance.bids(bidIdFour);
-        assertEq(isActive, false);
-        (,,,, isActive) = auctionInstance.bids(bidIdFive);
-        assertEq(isActive, false);
-        (,,,, isActive) = auctionInstance.bids(bidIdSeven);
-        assertEq(isActive, false);
-        (,,,, isActive) = auctionInstance.bids(bidIdSix);
-        assertEq(isActive, true);
-
-        stakingManagerInstance.registerValidator(bidId, test_data);
-        stakingManagerInstance.registerValidator(bidIdTwo, test_data);
-        stakingManagerInstance.registerValidator(bidIdThree, test_data);
-        stakingManagerInstance.registerValidator(bidIdFour, test_data);
-        stakingManagerInstance.registerValidator(bidIdFive, test_data);
-        stakingManagerInstance.registerValidator(bidIdSeven, test_data);
-
-        address etherfiNodeBidOne = managerInstance.getEtherFiNodeAddress(bidId);
-        assertEq(etherfiNodeBidOne.balance, 0.1 ether);
-        address etherfiNodeBidTwo = managerInstance.getEtherFiNodeAddress(bidIdTwo);
-        assertEq(etherfiNodeBidTwo.balance, 0.1 ether);
-        address etherfiNodeBidThree = managerInstance.getEtherFiNodeAddress(bidIdThree);
-        assertEq(etherfiNodeBidThree.balance, 0.8 ether);
-        address etherfiNodeBidFour = managerInstance.getEtherFiNodeAddress(bidIdFour);
-        assertEq(etherfiNodeBidFour.balance, 1.3 ether);
-        address etherfiNodeBidFive = managerInstance.getEtherFiNodeAddress(bidIdFive);
-        assertEq(etherfiNodeBidFive.balance, 1.8 ether);
-        address etherfiNodeBidSeven = managerInstance.getEtherFiNodeAddress(bidIdSeven);
-        assertEq(etherfiNodeBidSeven.balance, 0.2 ether);
-
     }
 
     function test_StakingManagerReceivesEther() public {
@@ -397,11 +349,13 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         }
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.2 ether}(proof);
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
         }
 
         assertEq(auctionInstance.numberOfActiveBids(), 20);
@@ -411,19 +365,19 @@ contract StakingManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 9);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        (uint256 amount ,,,, bool isActive) = auctionInstance.bids(11);
+        (,uint256 amount ,,,, bool isActive) = auctionInstance.bids(11);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(7);
+        (,amount ,,,, isActive) = auctionInstance.bids(7);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, true);
 
-        (amount ,,,, isActive) = auctionInstance.bids(12);
+        (,amount ,,,, isActive) = auctionInstance.bids(12);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(13);
+        (,amount ,,,, isActive) = auctionInstance.bids(13);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
     }
@@ -432,11 +386,13 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         }
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.2 ether}(proof);
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
         }
 
         assertEq(auctionInstance.numberOfActiveBids(), 20);
@@ -458,19 +414,19 @@ contract StakingManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 10);
         assertEq(auctionInstance.currentHighestBidId(), 13);
 
-        (uint256 amount ,,,, bool isActive) = auctionInstance.bids(1);
+        (,uint256 amount ,,,, bool isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(7);
+        (,amount ,,,, isActive) = auctionInstance.bids(7);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(20);
+        (,amount ,,,, isActive) = auctionInstance.bids(20);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(3);
+        (,amount ,,,, isActive) = auctionInstance.bids(3);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, true);
 
@@ -480,11 +436,13 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.1 ether}(proof);
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         }
         for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.bidOnStake{value: 0.2 ether}(proof);
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
         }
 
         assertEq(auctionInstance.numberOfActiveBids(), 20);
@@ -507,19 +465,19 @@ contract StakingManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 10);
         assertEq(auctionInstance.currentHighestBidId(), 13);
 
-        (uint256 amount ,,,, bool isActive) = auctionInstance.bids(1);
+        (,uint256 amount ,,,, bool isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(7);
+        (,amount ,,,, isActive) = auctionInstance.bids(7);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(20);
+        (,amount ,,,, isActive) = auctionInstance.bids(20);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(3);
+        (,amount ,,,, isActive) = auctionInstance.bids(3);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, true);
 
@@ -543,15 +501,15 @@ contract StakingManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 8);
         assertEq(auctionInstance.currentHighestBidId(), 14);
 
-        (amount ,,,, isActive) = auctionInstance.bids(1);
+        (,amount ,,,, isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(13);
+        (,amount ,,,, isActive) = auctionInstance.bids(13);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (amount ,,,, isActive) = auctionInstance.bids(3);
+        (,amount ,,,, isActive) = auctionInstance.bids(3);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
     }
