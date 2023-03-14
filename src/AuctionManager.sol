@@ -173,6 +173,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
+        require(_bidSize <= 10, "Max 10 bids");
         require(
             msg.value == _bidSize * _bidAmountPerBid,
             "Incorrect bid value"
