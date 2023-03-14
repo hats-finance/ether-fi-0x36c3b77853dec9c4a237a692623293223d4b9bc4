@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-// import "@openzeppelin/contracts/utils/structs/ABDKMathQuad.sol";
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
