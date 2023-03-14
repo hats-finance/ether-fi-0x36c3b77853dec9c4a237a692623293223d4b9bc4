@@ -69,13 +69,19 @@ contract StakingManagerTest is Test {
             address(TestTNFTInstance)
         );
 
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
+        protocolRevenueManagerInstance.setAuctionManagerAddress(
+            address(auctionInstance)
+        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
+        auctionInstance.setProtocolRevenueManager(
+            address(protocolRevenueManagerInstance)
+        );
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
@@ -107,7 +113,7 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(owner);
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
 
         hoax(alice);
         vm.expectRevert("Insufficient staking amount");
@@ -147,12 +153,16 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(bidId, test_data);
+        stakingManagerInstance.registerValidator(bidId[0], test_data);
 
-        uint256 validatorId = bidId;
-        uint256 winningBid = bidId;
+        uint256 validatorId = bidId[0];
+        uint256 winningBid = bidId[0];
         address staker = stakingManagerInstance.getStakerRelatedToValidator(
             validatorId
         );
@@ -162,8 +172,8 @@ contract StakingManagerTest is Test {
 
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(stakingManagerInstance.stakeAmount(), 0.032 ether);
-        assertEq(winningBid, bidId);
-        assertEq(validatorId, bidId);
+        assertEq(winningBid, bidId[0]);
+        assertEq(validatorId, bidId[0]);
 
         assertEq(
             IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey(),
@@ -184,31 +194,43 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidIdOne = auctionInstance.createBid{value: 0.1 ether}(proof);
-        uint256 bidIdTwo = auctionInstance.createBid{value: 0.2 ether}(proof);
-        uint256 bidIdThree = auctionInstance.createBid{value: 0.3 ether}(proof);
-        assertEq(bidIdThree, 3);
+        uint256[] memory bidIdOne = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
+        uint256[] memory bidIdTwo = auctionInstance.createBid{value: 0.2 ether}(
+            proof,
+            1,
+            0.2 ether
+        );
+        uint256[] memory bidIdThree = auctionInstance.createBid{
+            value: 0.3 ether
+        }(proof, 1, 0.3 ether);
+        assertEq(bidIdThree[0], 3);
 
-        stakingManagerInstance.depositWithBidId{value: 0.032 ether}(bidIdOne);
+        stakingManagerInstance.depositWithBidId{value: 0.032 ether}(
+            bidIdOne[0]
+        );
         assertEq(
-            stakingManagerInstance.bidIdToStaker(bidIdOne),
+            stakingManagerInstance.bidIdToStaker(bidIdOne[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
-        (, , , , bool isActive) = auctionInstance.bids(bidIdOne);
+        (, , , , , bool isActive) = auctionInstance.bids(bidIdOne[0]);
         assertEq(isActive, false);
-        (, , , , isActive) = auctionInstance.bids(bidIdTwo);
+        (, , , , , isActive) = auctionInstance.bids(bidIdTwo[0]);
         assertEq(isActive, true);
         assertEq(auctionInstance.currentHighestBidId(), 3);
 
-        stakingManagerInstance.registerValidator(bidIdOne, test_data);
+        stakingManagerInstance.registerValidator(bidIdOne[0], test_data);
 
         assertEq(
-            TestBNFTInstance.ownerOf(bidIdOne),
+            TestBNFTInstance.ownerOf(bidIdOne[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidIdOne),
+            TestTNFTInstance.ownerOf(bidIdOne[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
@@ -223,7 +245,7 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
     }
@@ -241,7 +263,7 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         auctionInstance.cancelBid(1);
         vm.expectRevert("No bids available at the moment");
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
@@ -257,7 +279,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.pauseContract();
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         vm.expectRevert("Pausable: paused");
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         assertEq(stakingManagerInstance.paused(), true);
@@ -279,9 +301,9 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         vm.expectRevert("Bid already selected");
         stakingManagerInstance.depositWithBidId{value: 0.032 ether}(1);
     }
@@ -295,7 +317,7 @@ contract StakingManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 walletBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
         assertEq(
@@ -324,13 +346,17 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
         vm.expectRevert("Not deposit owner");
-        stakingManagerInstance.registerValidator(bidId, test_data);
+        stakingManagerInstance.registerValidator(bidId[0], test_data);
     }
 
     function test_RegisterValidatorFailsIfValidatorNotInCorrectPhase() public {
@@ -340,12 +366,16 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        stakingManagerInstance.cancelDeposit(bidId);
+        stakingManagerInstance.cancelDeposit(bidId[0]);
 
         vm.expectRevert("Deposit does not exist");
-        stakingManagerInstance.registerValidator(bidId, test_data);
+        stakingManagerInstance.registerValidator(bidId[0], test_data);
     }
 
     function test_RegisterValidatorFailsIfContractPaused() public {
@@ -355,7 +385,7 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
 
@@ -374,12 +404,16 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(bidId, test_data);
+        stakingManagerInstance.registerValidator(bidId[0], test_data);
 
-        uint256 selectedBidId = bidId;
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId);
+        uint256 selectedBidId = bidId[0];
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
         assertEq(selectedBidId, 1);
@@ -387,18 +421,18 @@ contract StakingManagerTest is Test {
         assertEq(address(managerInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0);
 
-        address operatorAddress = auctionInstance.getBidOwner(bidId);
+        address operatorAddress = auctionInstance.getBidOwner(bidId[0]);
         assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
-        address safeAddress = managerInstance.getEtherFiNodeAddress(bidId);
+        address safeAddress = managerInstance.getEtherFiNodeAddress(bidId[0]);
         assertEq(safeAddress, etherFiNode);
 
         assertEq(
-            TestBNFTInstance.ownerOf(bidId),
+            TestBNFTInstance.ownerOf(bidId[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidId),
+            TestTNFTInstance.ownerOf(bidId[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
@@ -422,14 +456,18 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
 
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
         vm.expectRevert("Not deposit owner");
-        stakingManagerInstance.cancelDeposit(bidId);
+        stakingManagerInstance.cancelDeposit(bidId[0]);
     }
 
     function test_cancelDepositFailsIfCancellingAvailabilityClosed() public {
@@ -439,13 +477,17 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
 
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        stakingManagerInstance.cancelDeposit(bidId);
+        stakingManagerInstance.cancelDeposit(bidId[0]);
 
         vm.expectRevert("Deposit does not exist");
-        stakingManagerInstance.cancelDeposit(bidId);
+        stakingManagerInstance.cancelDeposit(bidId[0]);
     }
 
     function test_cancelDepositWorksCorrectly() public {
@@ -455,9 +497,21 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId1 = auctionInstance.createBid{value: 0.1 ether}(proof);
-        uint256 bidId2 = auctionInstance.createBid{value: 0.3 ether}(proof);
-        uint256 bidId3 = auctionInstance.createBid{value: 0.2 ether}(proof);
+        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
+        uint256[] memory bidId2 = auctionInstance.createBid{value: 0.3 ether}(
+            proof,
+            1,
+            0.3 ether
+        );
+        uint256[] memory bidId3 = auctionInstance.createBid{value: 0.2 ether}(
+            proof,
+            1,
+            0.2 ether
+        );
 
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
@@ -465,33 +519,39 @@ contract StakingManagerTest is Test {
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
 
-        uint256 selectedBidId = bidId2;
+        uint256 selectedBidId = bidId2[0];
         address staker = stakingManagerInstance.getStakerRelatedToValidator(
-            bidId2
+            bidId2[0]
         );
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId2);
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId2[0]);
 
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        assertEq(selectedBidId, bidId2);
+        assertEq(selectedBidId, bidId2[0]);
         assertTrue(
             IEtherFiNode(etherFiNode).getPhase() ==
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
-        (uint256 bidAmount, , , address bidder, bool isActive) = auctionInstance
-            .bids(selectedBidId);
+        (
+            ,
+            uint256 bidAmount,
+            ,
+            ,
+            address bidder,
+            bool isActive
+        ) = auctionInstance.bids(selectedBidId);
 
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, false);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
-        assertEq(auctionInstance.currentHighestBidId(), bidId3);
+        assertEq(auctionInstance.currentHighestBidId(), bidId3[0]);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
-        stakingManagerInstance.cancelDeposit(bidId2);
-        assertEq(managerInstance.getEtherFiNodeAddress(bidId2), address(0));
+        stakingManagerInstance.cancelDeposit(bidId2[0]);
+        assertEq(managerInstance.getEtherFiNodeAddress(bidId2[0]), address(0));
         assertEq(
-            stakingManagerInstance.getStakerRelatedToValidator(bidId2),
+            stakingManagerInstance.getStakerRelatedToValidator(bidId2[0]),
             address(0)
         );
         assertTrue(
@@ -499,12 +559,12 @@ contract StakingManagerTest is Test {
                 IEtherFiNode.VALIDATOR_PHASE.CANCELLED
         );
 
-        (bidAmount, , , bidder, isActive) = auctionInstance.bids(bidId2);
+        (, bidAmount, , , bidder, isActive) = auctionInstance.bids(bidId2[0]);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, true);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
-        assertEq(auctionInstance.currentHighestBidId(), bidId2);
+        assertEq(auctionInstance.currentHighestBidId(), bidId2[0]);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         assertEq(
@@ -523,30 +583,38 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 bidId1 = auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(bidId1, test_data);
+        stakingManagerInstance.registerValidator(bidId1[0], test_data);
 
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        uint256 bidId2 = auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256[] memory bidId2 = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(bidId2, test_data);
+        stakingManagerInstance.registerValidator(bidId2[0], test_data);
 
         assertEq(
-            TestBNFTInstance.ownerOf(bidId1),
+            TestBNFTInstance.ownerOf(bidId1[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidId1),
+            TestTNFTInstance.ownerOf(bidId1[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestBNFTInstance.ownerOf(bidId2),
+            TestBNFTInstance.ownerOf(bidId2[0]),
             0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidId2),
+            TestTNFTInstance.ownerOf(bidId2[0]),
             0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
         );
         assertEq(

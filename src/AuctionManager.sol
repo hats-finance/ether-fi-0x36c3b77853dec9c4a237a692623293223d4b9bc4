@@ -46,8 +46,8 @@ contract AuctionManager is IAuctionManager, Pausable {
     event BidCreated(
         address indexed bidder,
         uint256 amount,
-        uint256 indexed bidId,
-        uint256 indexed pubKeyIndex
+        uint256[] indexed bidIdArray,
+        uint64[] indexed ipfsIndexArray
     );
 
     event SelectedBidUpdated(
@@ -162,14 +162,23 @@ contract AuctionManager is IAuctionManager, Pausable {
         emit BidCancelled(_bidId);
     }
 
-    /// @notice Places a bid in the auction to be the next operator
+    /// @notice Creates bids that are able to be place in the auction  or be selected  by a staker
+    /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
+    /// @param _bidSize the number of bids that the node operator would like to create
+    /// @param _bidAmountPerBid the ether value of 1 bid.
     function createBid(
-        bytes32[] calldata _merkleProof
-    ) external payable whenNotPaused returns (uint256) {
+        bytes32[] calldata _merkleProof,
+        uint256 _bidSize,
+        uint256 _bidAmountPerBid
+    ) external payable whenNotPaused returns (uint256[] memory) {
+        require(
+            msg.value == _bidSize * _bidAmountPerBid,
+            "Incorrect bid value"
+        );
         // Checks if bidder is on whitelist
-        if (msg.value < minBidAmount) {
+        if ((msg.value / _bidSize) < minBidAmount) {
             require(
                 MerkleProof.verify(
                     _merkleProof,
@@ -182,36 +191,43 @@ contract AuctionManager is IAuctionManager, Pausable {
             require(msg.value <= MAX_BID_AMOUNT, "Invalid bid");
         }
 
-        uint64 ipfsIndex = nodeOperatorKeyManagerInterface.fetchNextKeyIndex(
-            msg.sender
-        );
+        uint256[] memory bidIdArray = new uint256[](_bidSize);
+        uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
-        uint256 bidId = numberOfBids;
+        for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
+            uint64 ipfsIndex = nodeOperatorKeyManagerInterface
+                .fetchNextKeyIndex(msg.sender);
 
-        //Creates a bid object for storage and lookup in future
-        bids[bidId] = Bid({
-            amount: msg.value,
-            bidderPubKeyIndex: ipfsIndex,
-            timeOfBid: block.timestamp,
-            bidderAddress: msg.sender,
-            isActive: true
-        });
+            uint256 bidId = numberOfBids;
 
-        //Checks if the bid is now the highest bid
-        if (msg.value > bids[currentHighestBidId].amount) {
-            currentHighestBidId = bidId;
+            bidIdArray[i] = bidId;
+            ipfsIndexArray[i] = ipfsIndex;
+
+            //Creates a bid object for storage and lookup in future
+            bids[bidId] = Bid({
+                bidId: bidId,
+                amount: _bidAmountPerBid,
+                bidderPubKeyIndex: ipfsIndex,
+                timeOfBid: block.timestamp,
+                bidderAddress: msg.sender,
+                isActive: true
+            });
+
+            //Checks if the bid is now the highest bid
+            if (_bidAmountPerBid > bids[currentHighestBidId].amount) {
+                currentHighestBidId = bidId;
+            }
+
+            numberOfBids++;
         }
 
-        emit BidCreated(msg.sender, msg.value, bidId, ipfsIndex);
-
-        numberOfBids++;
-        numberOfActiveBids++;
-
-        return bidId;
+        numberOfActiveBids += _bidSize;
+        emit BidCreated(msg.sender, msg.value, bidIdArray, ipfsIndexArray);
+        return bidIdArray;
     }
 
     /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
-    /// @param _bidId the ID of the validator 
+    /// @param _bidId the ID of the validator
     function processAuctionFeeTransfer(
         uint256 _bidId
     ) external onlyStakingManagerContract {
@@ -315,6 +331,12 @@ contract AuctionManager is IAuctionManager, Pausable {
         currentHighestBidId = tempWinningBidId;
     }
 
+    function uncheckedInc(uint x) private pure returns (uint) {
+        unchecked {
+            return x + 1;
+        }
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -340,8 +362,12 @@ contract AuctionManager is IAuctionManager, Pausable {
         etherFiNodesManager = IEtherFiNodesManager(_managerAddress);
     }
 
-    function setProtocolRevenueManager(address _protocolRevenueManager) external {
-        protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManager);
+    function setProtocolRevenueManager(
+        address _protocolRevenueManager
+    ) external {
+        protocolRevenueManager = IProtocolRevenueManager(
+            _protocolRevenueManager
+        );
     }
 
     //--------------------------------------------------------------------------------------

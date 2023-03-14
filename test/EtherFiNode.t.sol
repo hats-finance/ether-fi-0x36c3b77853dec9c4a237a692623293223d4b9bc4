@@ -39,10 +39,10 @@ contract EtherFiNodeTest is Test {
     address chad = vm.addr(4);
     address dan = vm.addr(5);
 
-    uint256 bidId;
-
     string _ipfsHash = "ipfsHash";
     string aliceIPFSHash = "AliceIpfsHash";
+
+    uint256[] bidId;
 
     function setUp() public {
         vm.startPrank(owner);
@@ -73,10 +73,16 @@ contract EtherFiNodeTest is Test {
         );
 
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
+        auctionInstance.setProtocolRevenueManager(
+            address(protocolRevenueManagerInstance)
+        );
 
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
+        protocolRevenueManagerInstance.setAuctionManagerAddress(
+            address(auctionInstance)
+        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
@@ -103,7 +109,11 @@ contract EtherFiNodeTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        bidId = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
@@ -111,15 +121,23 @@ contract EtherFiNodeTest is Test {
         assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 1);
 
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        stakingManagerInstance.registerValidator(bidId, test_data);
+        stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId);
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
         safeInstance = EtherFiNode(payable(etherFiNode));
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId), 0.1 ether);
-        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 0.1 ether + 1);
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId[0]
+            ),
+            0.1 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            0.1 ether + 1
+        );
     }
 
     function test_WithdrawFundsFailsIfNotCorrectCaller() public {
@@ -133,7 +151,10 @@ contract EtherFiNodeTest is Test {
     }
 
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
-        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 0.1 ether + 1);
+        assertEq(
+            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            0.1 ether + 1
+        );
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(alice);
@@ -143,10 +164,18 @@ contract EtherFiNodeTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
 
         hoax(alice);
-        uint256 bidId1 = auctionInstance.createBid{value: 0.4 ether}(proof);
+        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.4 ether}(
+            proof,
+            1,
+            0.4 ether
+        );
 
         hoax(chad);
-        uint256 bidId2 = auctionInstance.createBid{value: 0.3 ether}(proof);
+        uint256[] memory bidId2 = auctionInstance.createBid{value: 0.3 ether}(
+            proof,
+            1,
+            0.3 ether
+        );
 
         hoax(bob);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
@@ -156,31 +185,60 @@ contract EtherFiNodeTest is Test {
 
         {
             address staker_2 = stakingManagerInstance
-                .getStakerRelatedToValidator(bidId1);
+                .getStakerRelatedToValidator(bidId1[0]);
             address staker_3 = stakingManagerInstance
-                .getStakerRelatedToValidator(bidId2);
+                .getStakerRelatedToValidator(bidId2[0]);
             assertEq(staker_2, bob);
             assertEq(staker_3, dan);
         }
 
         startHoax(bob);
-        stakingManagerInstance.registerValidator(bidId1, test_data_2);
+        stakingManagerInstance.registerValidator(bidId1[0], test_data_2);
         vm.stopPrank();
 
-        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 0.3 ether + 1);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0.3 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1), 0.2 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2), 0);
+        assertEq(
+            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            0.3 ether + 1
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
+            0.3 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId1[0]
+            ),
+            0.2 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId2[0]
+            ),
+            0
+        );
         assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether);
 
         startHoax(dan);
-        stakingManagerInstance.registerValidator(bidId2, test_data_2);
+        stakingManagerInstance.registerValidator(bidId2[0], test_data_2);
         vm.stopPrank();
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.8 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0.4 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1), 0.3 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2), 0.1 ether);
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
+            0.4 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId1[0]
+            ),
+            0.3 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId2[0]
+            ),
+            0.1 ether
+        );
     }
 
     function _merkleSetup() internal {

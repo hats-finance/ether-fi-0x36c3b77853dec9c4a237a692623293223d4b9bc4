@@ -65,10 +65,16 @@ contract ProtocolRevenueManagerTest is Test {
         );
 
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
+        auctionInstance.setProtocolRevenueManager(
+            address(protocolRevenueManagerInstance)
+        );
 
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
+        protocolRevenueManagerInstance.setAuctionManagerAddress(
+            address(auctionInstance)
+        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
@@ -127,12 +133,19 @@ contract ProtocolRevenueManagerTest is Test {
         // 2
         hoax(address(auctionInstance));
         vm.expectRevert("No Active Validator");
-        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(1, 1 ether);
+        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(
+            1,
+            1 ether
+        );
 
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         startHoax(nodeOperator);
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        uint256 bidId = auctionInstance.createBid{value: 0.1 ether}(proof);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         vm.stopPrank();
 
         assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 1);
@@ -143,30 +156,43 @@ contract ProtocolRevenueManagerTest is Test {
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
-        stakingManagerInstance.registerValidator(bidId, test_data);
+        stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId);
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId), 0.1 ether);
-        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 0.1 ether + 1);
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId[0]
+            ),
+            0.1 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            0.1 ether + 1
+        );
 
         // 3
         hoax(address(auctionInstance));
-        vm.expectRevert("auctionFeeTransfer is already processed for the validator.");
-        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(bidId, 1 ether);
+        vm.expectRevert(
+            "auctionFeeTransfer is already processed for the validator."
+        );
+        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(
+            bidId[0],
+            1 ether
+        );
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
         assertEq(address(etherFiNode).balance, 0);
 
         hoax(address(managerInstance));
-        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId);
+        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
         assertEq(address(etherFiNode).balance, 0.1 ether);
 
         hoax(address(managerInstance));
-        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId);
+        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
         assertEq(address(etherFiNode).balance, 0.1 ether);
     }
@@ -185,5 +211,4 @@ contract ProtocolRevenueManagerTest is Test {
         vm.expectRevert("Only owner function");
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(alice);
     }
-    
 }

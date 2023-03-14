@@ -120,7 +120,7 @@ contract NodeOperatorKeyManagerTest is Test {
         assertEq(keysUsed, 0);
 
         hoax(alice);
-        auctionInstance.createBid{value: 0.1 ether}(proof);
+        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
 
         (, keysUsed, ) = nodeOperatorKeyManagerInstance.addressToOperatorData(
             alice
