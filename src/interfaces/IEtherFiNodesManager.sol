@@ -41,6 +41,9 @@ interface IEtherFiNodesManager {
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs) external;
     function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) external;
+    
+    function sendExitRequest(uint256 _validatorId) external;
+    function isExitRequested(uint256 _validatorId) external view returns (bool);
 
     function createEtherfiNode(uint256 _validatorId) external returns (address);
     function withdrawFunds(uint256 _validatorId) external;

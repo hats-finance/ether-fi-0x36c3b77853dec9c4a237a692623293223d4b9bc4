@@ -56,6 +56,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     event FundsDistributed(uint256 indexed totalFundsTransferred);
     event OperatorAddressSet(address indexed operater);
     event FundsWithdrawn(uint256 indexed amount);
+    event NodeExitRequested(uint256 _validatorId);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -269,6 +270,16 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         numberOfValidators += _count;
     }
 
+    /// @notice send the request to exit the validator node
+    function sendExitRequest(uint256 _validatorId) external {
+        require(msg.sender == tnftInstance.ownerOf(_validatorId), "You are not the owner of the T-NFT");
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+        IEtherFiNode(etherfiNode).setExitRequestTimestamp();
+
+        emit NodeExitRequested(_validatorId);
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
@@ -310,6 +321,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function getNumberOfValidators() external view returns (uint256) {
         return numberOfValidators;
     }
+
+    function isExitRequested(uint256 _validatorId) external view returns (bool) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+        return IEtherFiNode(etherfiNode).getExitRequestTimestamp() > 0;
+    }
+
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------

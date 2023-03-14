@@ -16,10 +16,12 @@ interface IEtherFiNode {
     function setPhase(VALIDATOR_PHASE _phase) external;
     function setIpfsHashForEncryptedValidatorKey(string calldata _ipfs) external;
     function setLocalRevenueIndex(uint256 _localRevenueIndex) external;
+    function setExitRequestTimestamp() external;
 
     function getPhase() external view returns (VALIDATOR_PHASE);
     function getIpfsHashForEncryptedValidatorKey() external view returns (string memory);
     function getLocalRevenueIndex() external view returns (uint256);
+    function getExitRequestTimestamp() external view returns (uint64);
 
     function withdrawFunds(
         address _treasury,

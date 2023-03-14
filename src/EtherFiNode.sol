@@ -51,6 +51,10 @@ contract EtherFiNode is IEtherFiNode {
         return localRevenueIndex;
     }
 
+    function getExitRequestTimestamp() external view returns (uint64) {
+        return exitRequestTimestamp;
+    }
+
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
@@ -66,6 +70,11 @@ contract EtherFiNode is IEtherFiNode {
 
     function setLocalRevenueIndex(uint256 _localRevenueIndex) external onlyEtherFiNodeManagerContract {
         localRevenueIndex = _localRevenueIndex;
+    }
+
+    function setExitRequestTimestamp() external {
+        require(exitRequestTimestamp == 0, "Exit request was already sent.");
+        exitRequestTimestamp = uint64(block.timestamp);
     }
 
 
