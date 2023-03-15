@@ -155,11 +155,11 @@ contract ProtocolRevenueManagerTest is Test {
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId[0]
             ),
-            0.1 ether
+            0.05 ether
         );
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.1 ether + 1
+            0.05 ether + 1
         );
 
         // 3
@@ -176,13 +176,13 @@ contract ProtocolRevenueManagerTest is Test {
 
         hoax(address(managerInstance));
         protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
-        assertEq(address(protocolRevenueManagerInstance).balance, 0);
-        assertEq(address(etherFiNode).balance, 0.1 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
+        assertEq(address(etherFiNode).balance, 0.05 ether);
 
         hoax(address(managerInstance));
         protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
-        assertEq(address(protocolRevenueManagerInstance).balance, 0);
-        assertEq(address(etherFiNode).balance, 0.1 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
+        assertEq(address(etherFiNode).balance, 0.05 ether);
     }
 
     function test_modifiers() public {

@@ -17,11 +17,13 @@ interface IEtherFiNode {
     function setIpfsHashForEncryptedValidatorKey(string calldata _ipfs) external;
     function setLocalRevenueIndex(uint256 _localRevenueIndex) external;
     function setExitRequestTimestamp() external;
+    function setVestedRewardsForStakers(uint256 _amount) external;
 
     function phase() external view returns (VALIDATOR_PHASE);
     function ipfsHashForEncryptedValidatorKey() external view returns (string memory);
     function localRevenueIndex() external view returns (uint256);
-    function exitRequestTimestamp() external view returns (uint64);
+    function stakingStartTimestamp() external view returns (uint32);
+    function exitRequestTimestamp() external view returns (uint32);
 
     function withdrawFunds(
         address _treasury,

@@ -129,11 +129,11 @@ contract EtherFiNodeTest is Test {
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId[0]
             ),
-            0.1 ether
+            0.05 ether
         );
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.1 ether + 1
+            0.05 ether + 1
         );
     }
 
@@ -150,7 +150,7 @@ contract EtherFiNodeTest is Test {
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.1 ether + 1
+            0.05 ether + 1
         );
 
         bytes32[] memory proofAlice = merkle.getProof(whiteListedAddresses, 3);
@@ -193,17 +193,17 @@ contract EtherFiNodeTest is Test {
 
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.3 ether + 1
+            0.15 ether + 1
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
-            0.3 ether
+            0.15 ether
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId1[0]
             ),
-            0.2 ether
+            0.1 ether
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
@@ -220,19 +220,19 @@ contract EtherFiNodeTest is Test {
         assertEq(address(protocolRevenueManagerInstance).balance, 0.8 ether);
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
-            0.4 ether
+            0.2 ether
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId1[0]
             ),
-            0.3 ether
+            0.15 ether
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId2[0]
             ),
-            0.1 ether
+            0.05 ether
         );
     }
 

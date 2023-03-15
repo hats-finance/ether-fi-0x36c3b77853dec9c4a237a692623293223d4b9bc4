@@ -18,7 +18,9 @@ contract EtherFiNode is IEtherFiNode {
 
     uint256 public localRevenueIndex;
     string public ipfsHashForEncryptedValidatorKey;
-    uint64 public exitRequestTimestamp;
+    uint32 public stakingStartTimestamp;
+    uint32 public exitRequestTimestamp;
+    uint32 public vestedAuctionFee; // in units of 0.0001 ETH 
     VALIDATOR_PHASE public phase;
 
     //--------------------------------------------------------------------------------------
@@ -28,6 +30,7 @@ contract EtherFiNode is IEtherFiNode {
     function initialize() public {
         require(etherfiNodesManager == address(0), "already initialised");
         etherfiNodesManager = msg.sender;
+        stakingStartTimestamp = uint32(block.timestamp);
     }
 
     //--------------------------------------------------------------------------------------
@@ -36,7 +39,6 @@ contract EtherFiNode is IEtherFiNode {
 
     //Allows ether to be sent to this contract
     receive() external payable {
-        // emit Received(msg.sender, msg.value);
     }
 
     /// @notice Set the validator phase
@@ -63,7 +65,13 @@ contract EtherFiNode is IEtherFiNode {
 
     function setExitRequestTimestamp() external {
         require(exitRequestTimestamp == 0, "Exit request was already sent.");
-        exitRequestTimestamp = uint64(block.timestamp);
+        exitRequestTimestamp = uint32(block.timestamp);
+    }
+
+    function setVestedRewardsForStakers(uint256 _amount) external onlyProtocolRevenueManagerContract {
+        require(_amount % 0.0001 ether == 0, "amount is wrong");
+        require(_amount / (0.0001 ether) < type(uint32).max, "amount is wrong");
+        vestedAuctionFee = uint32(_amount / (0.0001 ether));
     }
 
     function withdrawFunds(
