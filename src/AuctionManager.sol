@@ -98,20 +98,6 @@ contract AuctionManager is IAuctionManager, Pausable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Returns the current highest bid in ther auction to the staking contract
-    /// @dev Must be called by the staking contract
-    /// @return Returns the bid ID of the current winning bid
-    function fetchWinningBid()
-        external
-        onlyStakingManagerContract
-        returns (uint256)
-    {
-        uint256 winningBid = currentHighestBidId;
-        updateSelectedBidInformation(winningBid);
-
-        return winningBid;
-    }
-
     /// @notice Updates a winning bids details
     /// @dev Called either by the fetchWinningBid() function or from the staking contract
     /// @param _bidId the ID of the bid being removed from the auction; either due to being selected by a staker or being the current highest bid
@@ -144,12 +130,6 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         //Cancel the bid by de-activating it
         bids[_bidId].isActive = false;
-
-        //Check if the bid being cancelled is the current highest to make sure we
-        //Calculate a new highest
-        if (currentHighestBidId == _bidId) {
-            updateNewWinningBid();
-        }
 
         //Get the value of the cancelled bid to refund
         uint256 bidValue = bids[_bidId].amount;
@@ -214,11 +194,6 @@ contract AuctionManager is IAuctionManager, Pausable {
                 isActive: true
             });
 
-            //Checks if the bid is now the highest bid
-            if (_bidAmountPerBid > bids[currentHighestBidId].amount) {
-                currentHighestBidId = bidId;
-            }
-
             numberOfBids++;
         }
 
@@ -245,12 +220,6 @@ contract AuctionManager is IAuctionManager, Pausable {
 
         //Reactivate the bid
         bids[_bidId].isActive = true;
-
-        //Checks if the bid is now the highest bid
-        if (bids[_bidId].amount > bids[currentHighestBidId].amount) {
-            currentHighestBidId = _bidId;
-        }
-
         numberOfActiveBids++;
 
         emit BidReEnteredAuction(_bidId);
@@ -312,25 +281,6 @@ contract AuctionManager is IAuctionManager, Pausable {
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
-
-    /// @notice Calculates the next highest bid to be ready for a deposit
-    /// @dev Is only called from the updateLocalVariables() function
-    function updateNewWinningBid() internal {
-        uint256 tempWinningBidId;
-        uint256 numberOfBidsLocal = numberOfBids;
-
-        //Loop to calculate the next highest bid for the next stake
-        for (uint256 x = 1; x < numberOfBidsLocal; ++x) {
-            if (
-                (bids[x].isActive == true) &&
-                (bids[x].amount > bids[tempWinningBidId].amount)
-            ) {
-                tempWinningBidId = x;
-            }
-        }
-
-        currentHighestBidId = tempWinningBidId;
-    }
 
     function uncheckedInc(uint x) private pure returns (uint) {
         unchecked {
