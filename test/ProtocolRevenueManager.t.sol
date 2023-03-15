@@ -132,7 +132,7 @@ contract ProtocolRevenueManagerTest is Test {
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         startHoax(nodeOperator);
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        uint256[] memory bidId = auctionInstance.createBid{
+        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
             value: 0.1 ether
         }(proof, 1, 0.1 ether);
         vm.stopPrank();

@@ -117,7 +117,7 @@ contract NodeOperatorKeyManagerTest is Test {
         assertEq(keysUsed, 0);
 
         hoax(alice);
-        auctionInstance.createBid{value: 0.1 ether}(
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
             aliceProof,
             1,
             0.1 ether

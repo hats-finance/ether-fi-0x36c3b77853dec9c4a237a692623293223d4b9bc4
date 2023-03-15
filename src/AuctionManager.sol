@@ -170,37 +170,77 @@ contract AuctionManager is IAuctionManager, Pausable {
     /// @param _merkleProof the merkleproof for the user calling the function
     /// @param _bidSize the number of bids that the node operator would like to create
     /// @param _bidAmountPerBid the ether value of 1 bid.
-    function createBid(
+    function createBidWhitelisted(
         bytes32[] calldata _merkleProof,
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
-        uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
-            msg.sender
+        require(whitelistEnabled, "Whitelist disabled");
+        // Checks if bidder is on whitelist
+        require(
+            MerkleProof.verify(
+                _merkleProof,
+                merkleRoot,
+                keccak256(abi.encodePacked(msg.sender))
+            ),
+            "Only whitelisted addresses"
         );
-        require(_bidSize <= userTotalKeys, "Not enough public keys");
+        require(
+            msg.value == _bidSize * _bidAmountPerBid &&
+                _bidAmountPerBid >= whitelistBidAmount &&
+                _bidAmountPerBid <= MAX_BID_AMOUNT,
+            "Incorrect bid value"
+        );
 
-        bool isWhitelisted = MerkleProof.verify(
-            _merkleProof,
-            merkleRoot,
-            keccak256(abi.encodePacked(msg.sender))
-        );
-        if (whitelistEnabled || isWhitelisted) {
-            require(isWhitelisted, "Only whitelisted addresses");
-            require(
-                msg.value == _bidSize * _bidAmountPerBid &&
-                    _bidAmountPerBid >= whitelistBidAmount &&
-                    _bidAmountPerBid <= MAX_BID_AMOUNT,
-                "Incorrect bid value"
-            );
-        } else {
-            require(
-                msg.value == _bidSize * _bidAmountPerBid &&
-                    _bidAmountPerBid >= minBidAmount &&
-                    _bidAmountPerBid <= MAX_BID_AMOUNT,
-                "Incorrect bid value"
-            );
+        uint256[] memory bidIdArray = new uint256[](_bidSize);
+        uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
+
+        for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
+            uint64 ipfsIndex = nodeOperatorKeyManagerInterface
+                .fetchNextKeyIndex(msg.sender);
+
+            uint256 bidId = numberOfBids;
+
+            bidIdArray[i] = bidId;
+            ipfsIndexArray[i] = ipfsIndex;
+
+            //Creates a bid object for storage and lookup in future
+            bids[bidId] = Bid({
+                bidId: bidId,
+                amount: _bidAmountPerBid,
+                bidderPubKeyIndex: ipfsIndex,
+                timeOfBid: block.timestamp,
+                bidderAddress: msg.sender,
+                isActive: true
+            });
+
+            //Checks if the bid is now the highest bid
+            if (_bidAmountPerBid > bids[currentHighestBidId].amount) {
+                currentHighestBidId = bidId;
+            }
+
+            numberOfBids++;
         }
+
+        numberOfActiveBids += _bidSize;
+        emit BidCreated(msg.sender, msg.value, bidIdArray, ipfsIndexArray);
+        return bidIdArray;
+    }
+
+    function createBidPermissionless(
+        uint256 _bidSize,
+        uint256 _bidAmountPerBid
+    ) external payable whenNotPaused returns (uint256[] memory) {
+        require(!whitelistEnabled, "Whitelist enabled");
+        require(
+            msg.value == _bidSize * _bidAmountPerBid,
+            "Incorrect bid value"
+        );
+        require(
+            _bidAmountPerBid >= minBidAmount &&
+                _bidAmountPerBid <= MAX_BID_AMOUNT,
+            "Invalid Bid"
+        );
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);

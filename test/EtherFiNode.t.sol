@@ -106,7 +106,7 @@ contract EtherFiNodeTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        bidId = auctionInstance.createBid{value: 0.1 ether}(
+        bidId = auctionInstance.createBidWhitelisted{value: 0.1 ether}(
             proof,
             1,
             0.1 ether
@@ -163,12 +163,12 @@ contract EtherFiNodeTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
 
         hoax(alice);
-        uint256[] memory bidId1 = auctionInstance.createBid{
+        uint256[] memory bidId1 = auctionInstance.createBidWhitelisted{
             value: 0.4 ether
         }(proofAlice, 1, 0.4 ether);
 
         hoax(chad);
-        uint256[] memory bidId2 = auctionInstance.createBid{
+        uint256[] memory bidId2 = auctionInstance.createBidWhitelisted{
             value: 0.3 ether
         }(proofChad, 1, 0.3 ether);
 
