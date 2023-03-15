@@ -372,6 +372,15 @@ contract AuctionManagerTest is Test {
             0.001 ether
         );
 
+        vm.expectRevert("Insufficient public keys");
+        startHoax(alice);
+        bid1Id = auctionInstance.createBidWhitelisted{value: 11 ether}(
+            aliceProof,
+            11,
+            1 ether
+        );
+        vm.stopPrank();
+
         vm.expectRevert("Whitelist enabled");
         hoax(alice);
         auctionInstance.createBidPermissionless{value: 0.001 ether}(
@@ -414,7 +423,11 @@ contract AuctionManagerTest is Test {
 
         vm.expectRevert("All public keys used");
         hoax(alice);
-        auctionInstance.createBidWhitelisted{value: 0.1 ether}(aliceProof, 1, 0.1 ether);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            aliceProof,
+            1,
+            0.1 ether
+        );
     }
 
     function test_createBidWhitelistedBatch() public {
@@ -582,11 +595,10 @@ contract AuctionManagerTest is Test {
         vm.prank(owner);
         auctionInstance.disableWhitelist();
 
-        // alice is still on the whitelist so can bid 0.001
         startHoax(alice);
-        uint256[] memory aliceBidIds = auctionInstance.createBidWhitelisted{
-            value: 0.005 ether
-        }(aliceProof, 5, 0.001 ether);
+        uint256[] memory aliceBidIds = auctionInstance.createBidPermissionless{
+            value: 0.05 ether
+        }(5, 0.01 ether);
         vm.stopPrank();
 
         (
@@ -600,7 +612,7 @@ contract AuctionManagerTest is Test {
 
         assertEq(aliceBidIds.length, 5);
 
-        assertEq(amount, 0.001 ether);
+        assertEq(amount, 0.01 ether);
         assertEq(ipfsIndex, 0);
         assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
@@ -615,7 +627,7 @@ contract AuctionManagerTest is Test {
             isActive
         ) = auctionInstance.bids(aliceBidIds[4]);
 
-        assertEq(amount, 0.001 ether);
+        assertEq(amount, 0.01 ether);
         assertEq(ipfsIndex, 4);
         assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
@@ -623,52 +635,34 @@ contract AuctionManagerTest is Test {
 
         vm.stopPrank();
 
-        // chad is not on the whitelist
-        startHoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBidPermissionless{
-            value: 0.01 ether
-        }(1, 0.01 ether);
-        vm.stopPrank();
-
-        (
-            bidId,
-            amount,
-            ipfsIndex,
-            timeOfCreation,
-            bidderAddress,
-            isActive
-        ) = auctionInstance.bids(chadBidIds[0]);
-
-        assertEq(amount, 0.01 ether);
-        assertEq(ipfsIndex, 0);
-        assertEq(timeOfCreation, block.timestamp);
-        assertEq(bidderAddress, chad);
-        assertTrue(isActive);
-
+        vm.expectRevert("Insufficient public keys");
+        startHoax(alice);
+        aliceBidIds = auctionInstance.createBidPermissionless{value: 11 ether}(
+            11,
+            1 ether
+        );
         vm.stopPrank();
 
         vm.expectRevert("Incorrect bid value");
-        startHoax(chad);
-        chadBidIds = auctionInstance.createBidPermissionless{value: 0.1 ether}(
+        startHoax(alice);
+        aliceBidIds = auctionInstance.createBidPermissionless{value: 0.1 ether}(
             2,
             0.1 ether
         );
         vm.stopPrank();
 
         vm.expectRevert("Incorrect bid value");
-        startHoax(chad);
-        chadBidIds = auctionInstance.createBidPermissionless{value: 0.002 ether}(
-            2,
-            0.001 ether
-        );
+        startHoax(alice);
+        aliceBidIds = auctionInstance.createBidPermissionless{
+            value: 0.002 ether
+        }(2, 0.001 ether);
         vm.stopPrank();
 
         vm.expectRevert("Incorrect bid value");
-        startHoax(chad);
-        chadBidIds = auctionInstance.createBidPermissionless{value: 10.2 ether}(
-            2,
-            5.1 ether
-        );
+        startHoax(alice);
+        aliceBidIds = auctionInstance.createBidPermissionless{
+            value: 10.2 ether
+        }(2, 5.1 ether);
         vm.stopPrank();
     }
 

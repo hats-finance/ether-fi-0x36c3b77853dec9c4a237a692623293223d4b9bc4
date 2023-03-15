@@ -175,7 +175,13 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
+        uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
+            msg.sender
+        );
+
         require(whitelistEnabled, "Whitelist disabled");
+        require(_bidSize <= userTotalKeys, "Insufficient public keys");
+
         // Checks if bidder is on whitelist
         require(
             MerkleProof.verify(
@@ -231,15 +237,17 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
-        require(!whitelistEnabled, "Whitelist enabled");
-        require(
-            msg.value == _bidSize * _bidAmountPerBid,
-            "Incorrect bid value"
+        uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
+            msg.sender
         );
+        require(_bidSize <= userTotalKeys, "Insufficient public keys");
+        require(!whitelistEnabled, "Whitelist enabled");
+
         require(
-            _bidAmountPerBid >= minBidAmount &&
+            msg.value == _bidSize * _bidAmountPerBid &&
+                _bidAmountPerBid >= minBidAmount &&
                 _bidAmountPerBid <= MAX_BID_AMOUNT,
-            "Invalid Bid"
+            "Incorrect bid value"
         );
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
