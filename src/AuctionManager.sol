@@ -22,7 +22,6 @@ contract AuctionManager is IAuctionManager, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint256 public currentHighestBidId;
     uint256 public whitelistBidAmount = 0.001 ether;
     uint256 public minBidAmount = 0.01 ether;
     uint256 public constant MAX_BID_AMOUNT = 5 ether;
