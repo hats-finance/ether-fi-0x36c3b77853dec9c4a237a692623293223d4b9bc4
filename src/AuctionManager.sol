@@ -17,10 +17,7 @@ import "../src/NodeOperatorKeyManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-import "lib/abdk-libraries-solidity/ABDKMathQuad.sol";
-
 contract AuctionManager is IAuctionManager, Pausable {
-    using ABDKMathQuad for uint256;
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------

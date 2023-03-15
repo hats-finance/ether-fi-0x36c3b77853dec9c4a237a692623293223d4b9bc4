@@ -375,6 +375,13 @@ contract AuctionManagerTest is Test {
             0.001 ether
         );
 
+        vm.expectRevert("Whitelist enabled");
+        hoax(alice);
+        auctionInstance.createBidPermissionless{value: 0.001 ether}(
+            1,
+            0.001 ether
+        );
+
         vm.prank(owner);
         auctionInstance.disableWhitelist();
 
@@ -559,6 +566,113 @@ contract AuctionManagerTest is Test {
         uint256[] memory bidIds = auctionInstance.createBidWhitelisted{
             value: 0.4 ether
         }(aliceProof, 5, 0.1 ether);
+    }
+
+    function test_CreateBidPermissionless() public {
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
+
+        vm.prank(bob);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
+
+        vm.expectRevert("Whitelist enabled");
+        startHoax(alice);
+        uint256[] memory aliceBidIds = auctionInstance.createBidPermissionless{
+            value: 0.5 ether
+        }(5, 0.1 ether);
+
+        vm.stopPrank();
+
+        vm.prank(owner);
+        auctionInstance.disableWhitelist();
+
+        startHoax(alice);
+        aliceBidIds = auctionInstance.createBidPermissionless{value: 0.5 ether}(
+            5,
+            0.1 ether
+        );
+        vm.stopPrank();
+
+        (
+            uint256 bidId,
+            uint256 amount,
+            uint256 ipfsIndex,
+            uint256 timeOfCreation,
+            address bidderAddress,
+            bool isActive
+        ) = auctionInstance.bids(aliceBidIds[0]);
+
+        assertEq(aliceBidIds.length, 5);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+
+        (
+            bidId,
+            amount,
+            ipfsIndex,
+            timeOfCreation,
+            bidderAddress,
+            isActive
+        ) = auctionInstance.bids(aliceBidIds[4]);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 4);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+
+        vm.stopPrank();
+
+        startHoax(bob);
+        uint256[] memory bobBidIds = auctionInstance.createBidPermissionless{
+            value: 0.1 ether
+        }(1, 0.1 ether);
+        vm.stopPrank();
+
+        (
+            bidId,
+            amount,
+            ipfsIndex,
+            timeOfCreation,
+            bidderAddress,
+            isActive
+        ) = auctionInstance.bids(bobBidIds[0]);
+
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(timeOfCreation, block.timestamp);
+        assertEq(bidderAddress, bob);
+        assertTrue(isActive);
+
+        vm.stopPrank();
+
+        vm.expectRevert("Incorrect bid value");
+        startHoax(bob);
+        bobBidIds = auctionInstance.createBidPermissionless{value: 0.1 ether}(
+            2,
+            0.1 ether
+        );
+        vm.stopPrank();
+
+        vm.expectRevert("Invalid Bid");
+        startHoax(bob);
+        bobBidIds = auctionInstance.createBidPermissionless{value: 0.002 ether}(
+            2,
+            0.001 ether
+        );
+        vm.stopPrank();
+
+        vm.expectRevert("Invalid Bid");
+        startHoax(bob);
+        bobBidIds = auctionInstance.createBidPermissionless{value: 10.2 ether}(
+            2,
+            5.1 ether
+        );
+        vm.stopPrank();
     }
 
     function test_EventBidPlaced() public {

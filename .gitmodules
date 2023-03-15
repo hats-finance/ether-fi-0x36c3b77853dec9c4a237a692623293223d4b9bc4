@@ -11,6 +11,3 @@
 [submodule "lib/murky"]
 	path = lib/murky
 	url = https://github.com/dmfxyz/murky
-[submodule "lib/abdk-libraries-solidity"]
-	path = lib/abdk-libraries-solidity
-	url = https://github.com/abdk-consulting/abdk-libraries-solidity
