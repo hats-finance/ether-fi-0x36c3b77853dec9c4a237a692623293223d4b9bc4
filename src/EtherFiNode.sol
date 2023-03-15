@@ -18,7 +18,8 @@ contract EtherFiNode is IEtherFiNode {
 
     uint256 public localRevenueIndex;
     string public ipfsHashForEncryptedValidatorKey;
-    uint64 public exitRequestTimestamp;
+    uint32 public exitRequestTimestamp;
+    uint32 public exitTimestamp;
     VALIDATOR_PHASE public phase;
 
     //--------------------------------------------------------------------------------------
@@ -63,7 +64,13 @@ contract EtherFiNode is IEtherFiNode {
 
     function setExitRequestTimestamp() external {
         require(exitRequestTimestamp == 0, "Exit request was already sent.");
-        exitRequestTimestamp = uint64(block.timestamp);
+        exitRequestTimestamp = uint32(block.timestamp);
+    }
+
+    function markExited() external onlyEtherFiNodeManagerContract {
+        require(phase == VALIDATOR_PHASE.LIVE && exitTimestamp == 0, "Already marked as exited");
+        phase = VALIDATOR_PHASE.EXITED;
+        exitTimestamp = uint32(block.timestamp);
     }
 
     function withdrawFunds(

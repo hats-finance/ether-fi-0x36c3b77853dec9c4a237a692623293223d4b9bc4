@@ -286,6 +286,28 @@ contract EtherFiNodeTest is Test {
         vm.warp(1 + 1000 * 86400);
         assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 1 ether);
     }
+    
+    function test_markExitedWorksCorrectly() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        validatorIds[0] = bidId[0];
+        address etherFiNode = managerInstance.getEtherFiNodeAddress(validatorIds[0]);
+
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
+        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
+
+        vm.expectRevert("Only owner");
+        IEtherFiNode(etherFiNode).markExited();
+
+        vm.expectRevert("Only owner function");
+        managerInstance.markExited(validatorIds);
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
+        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
+
+        hoax(owner);
+        managerInstance.markExited(validatorIds);
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
+    }
 
     function _merkleSetup() internal {
         merkle = new Merkle();

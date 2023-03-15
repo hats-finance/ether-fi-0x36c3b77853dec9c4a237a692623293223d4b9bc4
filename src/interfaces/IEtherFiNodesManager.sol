@@ -45,6 +45,7 @@ interface IEtherFiNodesManager {
     
     function sendExitRequest(uint256 _validatorId) external;
     function isExitRequested(uint256 _validatorId) external view returns (bool);
+    function markExited(uint256[] calldata _validatorIds) external;
 
     function createEtherfiNode(uint256 _validatorId) external returns (address);
     function withdrawFunds(uint256 _validatorId) external;
