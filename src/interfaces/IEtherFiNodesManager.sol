@@ -12,11 +12,11 @@ interface IEtherFiNodesManager {
         OPERATOR
     }
 
-    struct AuctionManagerContractRevenueSplit {
-        uint256 treasurySplit;
-        uint256 nodeOperatorSplit;
-        uint256 tnftHolderSplit;
-        uint256 bnftHolderSplit;
+    struct StakingRewardsSplit {
+        uint64 treasury;
+        uint64 nodeOperator;
+        uint64 tnft;
+        uint64 bnft;
     }
 
     struct ValidatorExitRevenueSplit {
@@ -49,4 +49,5 @@ interface IEtherFiNodesManager {
 
     function createEtherfiNode(uint256 _validatorId) external returns (address);
     function withdrawFunds(uint256 _validatorId) external;
+    function partialWithdraw(uint256 _validatorId) external;
 }

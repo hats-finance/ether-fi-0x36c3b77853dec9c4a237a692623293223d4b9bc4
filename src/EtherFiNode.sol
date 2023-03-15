@@ -100,6 +100,10 @@ contract EtherFiNode is IEtherFiNode {
         localRevenueIndex = _globalRevenueIndex;
     }
 
+    function getAccruedStakingRewards() public view returns (uint256) {
+        return address(this).balance - vestedAuctionRewards;
+    }
+
     function _getClaimableVestedRewards() internal returns (uint256) {
         uint256 vestingPeriodInDays = IProtocolRevenueManager(protocolRevenueManagerAddress).auctionFeeVestingPeriodForStakersInDays();
         uint256 timeElapsed = uint32(block.timestamp) - stakingStartTimestamp;
