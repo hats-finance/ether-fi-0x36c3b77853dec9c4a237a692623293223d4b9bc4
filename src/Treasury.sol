@@ -1,82 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./interfaces/ITNFT.sol";
-import "./interfaces/IBNFT.sol";
-import "./interfaces/IAuctionManager.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "./interfaces/ITreasury.sol";
-import "./TNFT.sol";
-import "./BNFT.sol";
 
-contract Treasury is ITreasury {
-    //--------------------------------------------------------------------------------------
-    //---------------------------------  STATE-VARIABLES  ----------------------------------
-    //--------------------------------------------------------------------------------------
-
-    address public owner;
-    address public auctionContractAddress;
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------------  EVENTS  ---------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    event Received(address indexed sender, uint256 value);
-    event BidRefunded(uint256 indexed _bidId, uint256 indexed _amount);
-
-    //--------------------------------------------------------------------------------------
-    //----------------------------------  CONSTRUCTOR   ------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    constructor() {
-        owner = msg.sender;
-    }
+contract Treasury is ITreasury, Ownable {
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
     /// @notice Function allows only the owner to withdraw all the funds in the contract
-    function withdraw() external {
-        require(msg.sender == owner, "Only owner function");
-
-        uint256 balance = address(this).balance;
-        (bool sent, ) = msg.sender.call{value: balance}("");
+    function withdraw(uint256 _amount) external onlyOwner {
+        require(_amount <= address(this).balance, "the balance is lower than the requested amount");
+        (bool sent, ) = msg.sender.call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
 
     //Allows ether to be sent to this contract
     receive() external payable {
-        emit Received(msg.sender, msg.value);
-    }
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------------  SETTER   --------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    /// @notice Sets the auctionContract address in the current contract
-    /// @dev Called when auction contract is deployed
-    /// @param _auctionContractAddress address of the auctionContract for authorizations
-    function setAuctionManagerContractAddress(address _auctionContractAddress)
-        public
-        onlyOwner
-    {
-        auctionContractAddress = _auctionContractAddress;
-    }
-
-    //--------------------------------------------------------------------------------------
-    //-----------------------------------  MODIFIERS  --------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
-    }
-
-    modifier onlyAuctionManagerContract() {
-        require(
-            msg.sender == auctionContractAddress,
-            "Only auction contract function"
-        );
-        _;
     }
 }
