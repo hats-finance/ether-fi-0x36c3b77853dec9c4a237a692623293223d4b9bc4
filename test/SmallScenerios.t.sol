@@ -96,6 +96,11 @@ contract AuctionManagerTest is Test {
             )
         );
 
+        whiteListedAddresses.push(keccak256(abi.encodePacked(alice)));
+        whiteListedAddresses.push(keccak256(abi.encodePacked(bob)));
+        whiteListedAddresses.push(keccak256(abi.encodePacked(chad)));
+        whiteListedAddresses.push(keccak256(abi.encodePacked(dan)));
+
         root = merkle.getRoot(whiteListedAddresses);
     }
 
@@ -111,7 +116,9 @@ contract AuctionManagerTest is Test {
     //  Greg - Stakes once, should be matched with Bob's third bid of 1 ETH
     //  Henry - Stakes once, should be matched with Chad's first bid of 0.2 ETH
     function test_ScenarioOne() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
+        bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
 
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
@@ -124,25 +131,21 @@ contract AuctionManagerTest is Test {
 
         // Alice Bids
         hoax(alice);
-        uint256[] memory aliceBidIds = auctionInstance.createBid{
+        uint256[] memory aliceBidIds = auctionInstance.createBidWhitelisted{
             value: 0.6 ether
-        }(proof, 6, 0.1 ether);
+        }(aliceProof, 6, 0.1 ether);
 
         // Bob Bids
         hoax(bob);
-        uint256[] memory bobBidIds = auctionInstance.createBid{value: 3 ether}(
-            proof,
-            3,
-            1 ether
-        );
+        uint256[] memory bobBidIds = auctionInstance.createBidWhitelisted{
+            value: 3 ether
+        }(bobProof, 3, 1 ether);
 
         // Chad Bids
         hoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBid{value: 1 ether}(
-            proof,
-            5,
-            0.2 ether
-        );
+        uint256[] memory chadBidIds = auctionInstance.createBidWhitelisted{
+            value: 1 ether
+        }(chadProof, 5, 0.2 ether);
 
         assertEq(aliceBidIds.length, 6);
         assertEq(bobBidIds.length, 3);
@@ -260,7 +263,8 @@ contract AuctionManagerTest is Test {
     //  Bob - Bids second with 3 bids of 1 ETH after Dan has staked
     //  Greg - The stakes once, should be matched with Bob's first bid of 1 ETH
     function test_ScenarioTwo() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
+        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
 
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
@@ -273,11 +277,9 @@ contract AuctionManagerTest is Test {
 
         // Chad Bids
         hoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBid{value: 1 ether}(
-            proof,
-            5,
-            0.2 ether
-        );
+        uint256[] memory chadBidIds = auctionInstance.createBidWhitelisted{
+            value: 1 ether
+        }(chadProof, 5, 0.2 ether);
 
         assertEq(auctionInstance.currentHighestBidId(), chadBidIds[0]);
         assertEq(auctionInstance.getNumberOfActivebids(), 5);
@@ -299,11 +301,9 @@ contract AuctionManagerTest is Test {
 
         // Bob Bids
         hoax(bob);
-        uint256[] memory bobBidIds = auctionInstance.createBid{value: 3 ether}(
-            proof,
-            3,
-            1 ether
-        );
+        uint256[] memory bobBidIds = auctionInstance.createBidWhitelisted{
+            value: 3 ether
+        }(bobProof, 3, 1 ether);
 
         assertEq(auctionInstance.currentHighestBidId(), bobBidIds[0]);
         assertEq(auctionInstance.getNumberOfActivebids(), 7);
