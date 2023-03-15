@@ -176,7 +176,7 @@ contract StakingManagerTest is Test {
         assertEq(validatorId, bidId[0]);
 
         assertEq(
-            IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey(),
+            IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey(),
             test_data.ipfsHashForEncryptedValidatorKey
         );
         assertEq(
@@ -734,7 +734,7 @@ contract StakingManagerTest is Test {
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(selectedBidId, bidId2[0]);
         assertTrue(
-            IEtherFiNode(etherFiNode).getPhase() ==
+            IEtherFiNode(etherFiNode).phase() ==
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
@@ -761,7 +761,7 @@ contract StakingManagerTest is Test {
             address(0)
         );
         assertTrue(
-            IEtherFiNode(etherFiNode).getPhase() ==
+            IEtherFiNode(etherFiNode).phase() ==
                 IEtherFiNode.VALIDATOR_PHASE.CANCELLED
         );
 

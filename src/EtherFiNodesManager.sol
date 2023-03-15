@@ -299,13 +299,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
-        return IEtherFiNode(etherfiNode).getIpfsHashForEncryptedValidatorKey();
+        return IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey();
     }
 
     function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
-        return IEtherFiNode(etherfiNode).getLocalRevenueIndex();
+        return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
 
     function generateWithdrawalCredentials(address _address) public view returns (bytes memory) {
@@ -325,7 +325,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function isExitRequested(uint256 _validatorId) external view returns (bool) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
-        return IEtherFiNode(etherfiNode).getExitRequestTimestamp() > 0;
+        return IEtherFiNode(etherfiNode).exitRequestTimestamp() > 0;
     }
 
 
