@@ -35,10 +35,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     address public auctionContract;
     address public depositContract;
 
-    mapping(uint256 => mapping(ValidatorRecipientType => uint256))
-        public withdrawableBalance;
-    mapping(uint256 => mapping(ValidatorRecipientType => uint256))
-        public withdrawn;
     mapping(uint256 => address) public etherfiNodePerValidator;
     mapping(uint256 => uint256) public fundsReceivedFromAuction;
 
@@ -126,96 +122,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     /// @dev Need to think about distribution if there has been slashing
     function withdrawFunds(uint256 _validatorId) external {
         require(
-            msg.sender ==
-                stakingManagerInstance.getStakerRelatedToValidator(
-                    _validatorId
-                ),
+            msg.sender == stakingManagerInstance.bidIdToStaker(_validatorId),
             "Incorrect caller"
         );
-        //Will check oracle to make sure validator has exited
-
-        uint256 contractBalance = address(etherfiNodePerValidator[_validatorId])
-            .balance;
-
-        uint256 validatorRewards = contractBalance -
-            stakingManagerInstance.getStakeAmount() -
-            fundsReceivedFromAuction[_validatorId];
-
-        withdrawableBalance[_validatorId][
-            ValidatorRecipientType.BNFTHOLDER
-        ] += bnftInstance.nftValue();
-        withdrawableBalance[_validatorId][
-            ValidatorRecipientType.TNFTHOLDER
-        ] += tnftInstance.nftValue();
-
-        withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] +=
-            (validatorRewards * validatorExitRevenueSplit.treasurySplit) /
-            SCALE;
-        withdrawableBalance[_validatorId][ValidatorRecipientType.OPERATOR] +=
-            (validatorRewards * validatorExitRevenueSplit.nodeOperatorSplit) /
-            SCALE;
-        withdrawableBalance[_validatorId][ValidatorRecipientType.TNFTHOLDER] +=
-            (validatorRewards * validatorExitRevenueSplit.tnftHolderSplit) /
-            SCALE;
-        withdrawableBalance[_validatorId][ValidatorRecipientType.BNFTHOLDER] +=
-            (validatorRewards * validatorExitRevenueSplit.bnftHolderSplit) /
-            SCALE;
-
-        uint256 treasuryAmount = withdrawableBalance[_validatorId][
-            ValidatorRecipientType.TREASURY
-        ];
-        uint256 operatorAmount = withdrawableBalance[_validatorId][
-            ValidatorRecipientType.OPERATOR
-        ];
-        uint256 tnftHolderAmount = withdrawableBalance[_validatorId][
-            ValidatorRecipientType.TNFTHOLDER
-        ];
-        uint256 bnftHolderAmount = withdrawableBalance[_validatorId][
-            ValidatorRecipientType.BNFTHOLDER
-        ];
-
-        address tnftHolder = tnftInstance.ownerOf(_validatorId);
-        address bnftHolder = tnftInstance.ownerOf(_validatorId);
-
-        withdrawableBalance[_validatorId][ValidatorRecipientType.TREASURY] = 0;
-        withdrawn[_validatorId][
-            ValidatorRecipientType.TREASURY
-        ] += treasuryAmount;
-        withdrawableBalance[_validatorId][ValidatorRecipientType.OPERATOR] = 0;
-        withdrawn[_validatorId][
-            ValidatorRecipientType.OPERATOR
-        ] += operatorAmount;
-        withdrawableBalance[_validatorId][
-            ValidatorRecipientType.BNFTHOLDER
-        ] = 0;
-        withdrawn[_validatorId][
-            ValidatorRecipientType.BNFTHOLDER
-        ] += bnftHolderAmount;
-        withdrawableBalance[_validatorId][
-            ValidatorRecipientType.TNFTHOLDER
-        ] = 0;
-        withdrawn[_validatorId][
-            ValidatorRecipientType.TNFTHOLDER
-        ] += tnftHolderAmount;
-
-        fundsReceivedFromAuction[_validatorId] = 0;
-
-        IEtherFiNode safeInstance = IEtherFiNode(
-            etherfiNodePerValidator[_validatorId]
-        );
-
-        safeInstance.withdrawFunds(
-            treasuryContract,
-            treasuryAmount,
-            auctionInterfaceInstance.getBidOwner(_validatorId),
-            operatorAmount,
-            tnftHolder,
-            tnftHolderAmount,
-            bnftHolder,
-            bnftHolderAmount
-        );
-
-        emit FundsWithdrawn(contractBalance);
     }
 
     //--------------------------------------------------------------------------------------
@@ -324,7 +233,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     function getEtherFiNodeLocalRevenueIndex(
         uint256 _validatorId
-    ) external returns (uint256) {
+    ) external view returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).localRevenueIndex();
@@ -332,7 +241,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     function generateWithdrawalCredentials(
         address _address
-    ) public view returns (bytes memory) {
+    ) public pure returns (bytes memory) {
         return abi.encodePacked(bytes1(0x01), bytes11(0x0), _address);
     }
 
@@ -362,7 +271,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
 
-        uint64 startTimestamp = EtherFiNode(payable(etherfiNode))
+        uint64 startTimestamp = IEtherFiNode(etherfiNode)
             .exitRequestTimestamp();
         uint64 endTimestamp = uint64(block.timestamp);
         uint64 timeElapsed = endTimestamp - startTimestamp;

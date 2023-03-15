@@ -38,20 +38,26 @@ contract EtherFiNode is IEtherFiNode {
     receive() external payable {
         // emit Received(msg.sender, msg.value);
     }
-    
+
     /// @notice Set the validator phase
     /// @param _phase the new phase
-    function setPhase(VALIDATOR_PHASE _phase) external onlyEtherFiNodeManagerContract {
+    function setPhase(
+        VALIDATOR_PHASE _phase
+    ) external onlyEtherFiNodeManagerContract {
         phase = _phase;
     }
 
     /// @notice Set the deposit data
     /// @param _ipfsHash the deposit data
-    function setIpfsHashForEncryptedValidatorKey(string calldata _ipfsHash) external onlyEtherFiNodeManagerContract {
+    function setIpfsHashForEncryptedValidatorKey(
+        string calldata _ipfsHash
+    ) external onlyEtherFiNodeManagerContract {
         ipfsHashForEncryptedValidatorKey = _ipfsHash;
     }
 
-    function setLocalRevenueIndex(uint256 _localRevenueIndex) external onlyEtherFiNodeManagerContract {
+    function setLocalRevenueIndex(
+        uint256 _localRevenueIndex
+    ) external onlyEtherFiNodeManagerContract {
         localRevenueIndex = _localRevenueIndex;
     }
 
@@ -59,7 +65,6 @@ contract EtherFiNode is IEtherFiNode {
         require(exitRequestTimestamp == 0, "Exit request was already sent.");
         exitRequestTimestamp = uint64(block.timestamp);
     }
-
 
     function withdrawFunds(
         address _treasury,
@@ -81,7 +86,9 @@ contract EtherFiNode is IEtherFiNode {
         require(sent, "Failed to send Ether");
     }
 
-    function receiveProtocolRevenue(uint256 _globalRevenueIndex) payable external onlyProtocolRevenueManagerContract {
+    function receiveProtocolRevenue(
+        uint256 _globalRevenueIndex
+    ) external payable onlyProtocolRevenueManagerContract {
         localRevenueIndex = _globalRevenueIndex;
     }
 
@@ -90,10 +97,7 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
 
     modifier onlyEtherFiNodeManagerContract() {
-        require(
-            msg.sender == etherfiNodesManager,
-            "Only owner"
-        );
+        require(msg.sender == etherfiNodesManager, "Only owner");
         _;
     }
 

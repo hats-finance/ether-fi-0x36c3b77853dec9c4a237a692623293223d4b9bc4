@@ -48,9 +48,6 @@ contract NodeOperatorKeyManagerTest is Test {
         auctionInstance = new AuctionManager(
             address(nodeOperatorKeyManagerInstance)
         );
-        treasuryInstance.setAuctionManagerContractAddress(
-            address(auctionInstance)
-        );
         auctionInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         auctionInstance.setStakingManagerContractAddress(
@@ -106,7 +103,7 @@ contract NodeOperatorKeyManagerTest is Test {
     }
 
     function test_FetchNextKeyIndex() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(
@@ -120,7 +117,11 @@ contract NodeOperatorKeyManagerTest is Test {
         assertEq(keysUsed, 0);
 
         hoax(alice);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            aliceProof,
+            1,
+            0.1 ether
+        );
 
         (, keysUsed, ) = nodeOperatorKeyManagerInstance.addressToOperatorData(
             alice
@@ -147,6 +148,7 @@ contract NodeOperatorKeyManagerTest is Test {
                 abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)
             )
         );
+        whiteListedAddresses.push(keccak256(abi.encodePacked(alice)));
 
         root = merkle.getRoot(whiteListedAddresses);
     }

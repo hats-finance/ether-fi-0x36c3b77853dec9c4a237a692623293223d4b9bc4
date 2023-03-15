@@ -30,28 +30,13 @@ contract TreasuryTest is Test {
         assertEq(address(treasuryInstance).balance, 0.5 ether);
     }
 
-    function test_SetAuctionManagerAddressWorks() public {
-        vm.prank(owner);
-        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
-        assertEq(
-            treasuryInstance.auctionContractAddress(),
-            address(auctionInstance)
-        );
-    }
-
-    function test_SetAuctionManagerAddressFailsIfNotOwner() public {
-        vm.prank(alice);
-        vm.expectRevert("Only owner function");
-        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
-    }
-
     function test_WithdrawFailsIfNotOwner() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
 
         vm.prank(alice);
-        vm.expectRevert("Only owner function");
-        treasuryInstance.withdraw();
+        vm.expectRevert("Ownable: caller is not the owner");
+        treasuryInstance.withdraw(0);
     }
 
     function test_WithdrawWorks() public {
@@ -62,7 +47,11 @@ contract TreasuryTest is Test {
         assertEq(address(treasuryInstance).balance, 0.5 ether);
 
         vm.prank(owner);
-        treasuryInstance.withdraw();
+        vm.expectRevert("the balance is lower than the requested amount");
+        treasuryInstance.withdraw(0.5 ether + 1);
+
+        vm.prank(owner);
+        treasuryInstance.withdraw(0.5 ether);
 
         assertEq(address(owner).balance, 0.5 ether);
         assertEq(address(treasuryInstance).balance, 0);
