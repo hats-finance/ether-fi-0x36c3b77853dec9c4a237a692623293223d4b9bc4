@@ -17,7 +17,10 @@ import "../src/NodeOperatorKeyManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
+import "lib/abdk-libraries-solidity/ABDKMathQuad.sol";
+
 contract AuctionManager is IAuctionManager, Pausable {
+    using ABDKMathQuad for uint256;
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -174,19 +177,21 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
-        require(whitelistEnabled, "Whitelist bidding disabled");
-        require(
-            msg.value == _bidSize * _bidAmountPerBid,
-            "Incorrect bid value"
-        );
+        require(whitelistEnabled, "Whitelist disabled");
         // Checks if bidder is on whitelist
         require(
             MerkleProof.verify(
                 _merkleProof,
                 merkleRoot,
                 keccak256(abi.encodePacked(msg.sender))
-            ) && _bidAmountPerBid >= whitelistBidAmount,
-            "Invalid bid"
+            ),
+            "Only whitelisted addresses"
+        );
+        require(
+            msg.value == _bidSize * _bidAmountPerBid &&
+                _bidAmountPerBid >= whitelistBidAmount &&
+                _bidAmountPerBid <= MAX_BID_AMOUNT,
+            "Incorrect bid value"
         );
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
@@ -272,6 +277,10 @@ contract AuctionManager is IAuctionManager, Pausable {
         numberOfActiveBids += _bidSize;
         emit BidCreated(msg.sender, msg.value, bidIdArray, ipfsIndexArray);
         return bidIdArray;
+    }
+
+    function disableWhitelist() public onlyOwner {
+        whitelistEnabled = false;
     }
 
     /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager

@@ -109,11 +109,15 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.switchMode();
         console.logBool(stakingManagerInstance.test());
 
-        vm.prank(owner);
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
-        hoax(owner);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
 
         hoax(alice);
         vm.expectRevert("Insufficient staking amount");
@@ -153,11 +157,9 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
+        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(bidId[0], test_data);
 
@@ -194,17 +196,13 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidIdOne = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
-        uint256[] memory bidIdTwo = auctionInstance.createBid{value: 0.2 ether}(
-            proof,
-            1,
-            0.2 ether
-        );
-        uint256[] memory bidIdThree = auctionInstance.createBid{
+        uint256[] memory bidIdOne = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
+        uint256[] memory bidIdTwo = auctionInstance.createBidWhitelisted{
+            value: 0.2 ether
+        }(proof, 1, 0.2 ether);
+        uint256[] memory bidIdThree = auctionInstance.createBidWhitelisted{
             value: 0.3 ether
         }(proof, 1, 0.3 ether);
         assertEq(bidIdThree[0], 3);
@@ -245,7 +243,11 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
     }
@@ -263,7 +265,11 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         auctionInstance.cancelBid(1);
         vm.expectRevert("No bids available at the moment");
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
@@ -279,7 +285,11 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.pauseContract();
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         vm.expectRevert("Pausable: paused");
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         assertEq(stakingManagerInstance.paused(), true);
@@ -301,9 +311,17 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         vm.expectRevert("Bid already selected");
         stakingManagerInstance.depositWithBidId{value: 0.032 ether}(1);
     }
@@ -317,7 +335,11 @@ contract StakingManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256 walletBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
         assertEq(
@@ -346,11 +368,9 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
+        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
 
@@ -366,11 +386,9 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
+        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.cancelDeposit(bidId[0]);
 
@@ -385,7 +403,11 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+            proof,
+            1,
+            0.1 ether
+        );
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
 
@@ -404,11 +426,9 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
+        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(bidId[0], test_data);
 
@@ -456,11 +476,9 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
+        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
 
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
@@ -477,11 +495,9 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
+        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
 
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.cancelDeposit(bidId[0]);
@@ -497,21 +513,15 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
-        uint256[] memory bidId2 = auctionInstance.createBid{value: 0.3 ether}(
-            proof,
-            1,
-            0.3 ether
-        );
-        uint256[] memory bidId3 = auctionInstance.createBid{value: 0.2 ether}(
-            proof,
-            1,
-            0.2 ether
-        );
+        uint256[] memory bidId1 = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
+        uint256[] memory bidId2 = auctionInstance.createBidWhitelisted{
+            value: 0.3 ether
+        }(proof, 1, 0.3 ether);
+        uint256[] memory bidId3 = auctionInstance.createBidWhitelisted{
+            value: 0.2 ether
+        }(proof, 1, 0.2 ether);
 
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
@@ -575,6 +585,7 @@ contract StakingManagerTest is Test {
 
     function test_CorrectValidatorAttatchedToNft() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
@@ -583,21 +594,17 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
+        uint256[] memory bidId1 = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(bidId1[0], test_data);
 
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        uint256[] memory bidId2 = auctionInstance.createBid{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
+        uint256[] memory bidId2 = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof2, 1, 0.1 ether);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(bidId2[0], test_data);
 

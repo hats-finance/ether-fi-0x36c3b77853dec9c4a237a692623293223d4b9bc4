@@ -109,7 +109,7 @@ contract EtherFiNodeTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        bidId = auctionInstance.createBid{value: 0.1 ether}(
+        bidId = auctionInstance.createBidWhitelisted{value: 0.1 ether}(
             proof,
             1,
             0.1 ether
@@ -155,7 +155,9 @@ contract EtherFiNodeTest is Test {
             protocolRevenueManagerInstance.getGlobalRevenueIndex(),
             0.1 ether + 1
         );
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        bytes32[] memory proofAlice = merkle.getProof(whiteListedAddresses, 3);
+        bytes32[] memory proofChad = merkle.getProof(whiteListedAddresses, 4);
 
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
@@ -164,18 +166,14 @@ contract EtherFiNodeTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
 
         hoax(alice);
-        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.4 ether}(
-            proof,
-            1,
-            0.4 ether
-        );
+        uint256[] memory bidId1 = auctionInstance.createBidWhitelisted{
+            value: 0.4 ether
+        }(proofAlice, 1, 0.4 ether);
 
         hoax(chad);
-        uint256[] memory bidId2 = auctionInstance.createBid{value: 0.3 ether}(
-            proof,
-            1,
-            0.3 ether
-        );
+        uint256[] memory bidId2 = auctionInstance.createBidWhitelisted{
+            value: 0.3 ether
+        }(proofChad, 1, 0.3 ether);
 
         hoax(bob);
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
@@ -275,6 +273,9 @@ contract EtherFiNodeTest is Test {
                 abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)
             )
         );
+
+        whiteListedAddresses.push(keccak256(abi.encodePacked(alice)));
+        whiteListedAddresses.push(keccak256(abi.encodePacked(chad)));
 
         root = merkle.getRoot(whiteListedAddresses);
     }
