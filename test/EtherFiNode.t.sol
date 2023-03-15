@@ -124,7 +124,7 @@ contract EtherFiNodeTest is Test {
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
         safeInstance = EtherFiNode(payable(etherFiNode));
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
+        assertEq(address(etherFiNode).balance, 0.05 ether);
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId[0]
@@ -211,13 +211,13 @@ contract EtherFiNodeTest is Test {
             ),
             0
         );
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether);
+        assertEq(address(managerInstance.getEtherFiNodeAddress(bidId1[0])).balance, 0.2 ether);
 
         startHoax(dan);
         stakingManagerInstance.registerValidator(bidId2[0], test_data_2);
         vm.stopPrank();
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.8 ether);
+        assertEq(address(managerInstance.getEtherFiNodeAddress(bidId2[0])).balance, 0.15 ether);
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
             0.2 ether

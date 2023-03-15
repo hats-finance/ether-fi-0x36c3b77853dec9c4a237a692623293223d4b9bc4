@@ -284,12 +284,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         numberOfValidators += _count;
     }
 
-    function setEtherFiNodeVestedRewardsForStakers(uint256 _validatorId, uint256 _amount) external {
-        address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
-        IEtherFiNode(etherfiNode).setVestedRewardsForStakers(_amount);
-    }
-
     /// @notice send the request to exit the validator node
     function sendExitRequest(uint256 _validatorId) external {
         require(
@@ -332,6 +326,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
+
+    function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+        return IEtherFiNode(etherfiNode).vestedAuctionRewards();
+    }
+
 
     function generateWithdrawalCredentials(
         address _address

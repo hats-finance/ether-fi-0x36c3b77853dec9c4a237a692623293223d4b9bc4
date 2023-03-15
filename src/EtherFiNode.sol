@@ -17,10 +17,10 @@ contract EtherFiNode is IEtherFiNode {
     address protocolRevenueManagerAddress;
 
     uint256 public localRevenueIndex;
+    uint256 public vestedAuctionRewards; 
     string public ipfsHashForEncryptedValidatorKey;
     uint32 public stakingStartTimestamp;
     uint32 public exitRequestTimestamp;
-    uint32 public vestedAuctionFee; // in units of 0.0001 ETH 
     VALIDATOR_PHASE public phase;
 
     //--------------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ contract EtherFiNode is IEtherFiNode {
 
     function setLocalRevenueIndex(
         uint256 _localRevenueIndex
-    ) external onlyEtherFiNodeManagerContract {
+    ) external onlyProtocolRevenueManagerContract {
         localRevenueIndex = _localRevenueIndex;
     }
 
@@ -68,10 +68,8 @@ contract EtherFiNode is IEtherFiNode {
         exitRequestTimestamp = uint32(block.timestamp);
     }
 
-    function setVestedRewardsForStakers(uint256 _amount) external onlyProtocolRevenueManagerContract {
-        require(_amount % 0.0001 ether == 0, "amount is wrong");
-        require(_amount / (0.0001 ether) < type(uint32).max, "amount is wrong");
-        vestedAuctionFee = uint32(_amount / (0.0001 ether));
+    function receiveVestedRewardsForStakers() external payable onlyProtocolRevenueManagerContract {
+        vestedAuctionRewards = msg.value;
     }
 
     function withdrawFunds(

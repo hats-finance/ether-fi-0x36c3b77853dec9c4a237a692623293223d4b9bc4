@@ -63,12 +63,16 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     function addAuctionRevenue(uint256 _validatorId) external payable onlyAuctionManager {
         require(etherFiNodesManager.getNumberOfValidators() > 0, "No Active Validator");
         require(etherFiNodesManager.getEtherFiNodeLocalRevenueIndex(_validatorId) == 0, "auctionFeeTransfer is already processed for the validator.");
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
+        
+        address etherfiNode = etherFiNodesManager.getEtherFiNodeAddress(_validatorId);
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+        
+        IEtherFiNode(etherfiNode).setLocalRevenueIndex(globalRevenueIndex);
         uint256 amount = msg.value;
         uint256 vestingAmountForStakers = (vestedAuctionFeeSplitForStakers * amount) / 100;
         uint256 amountToProtocol = amount - vestingAmountForStakers;
 
-        etherFiNodesManager.setEtherFiNodeVestedRewardsForStakers(_validatorId, vestingAmountForStakers);
+        IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: vestingAmountForStakers}();
         globalRevenueIndex += amountToProtocol / etherFiNodesManager.getNumberOfValidators();
     }
   
