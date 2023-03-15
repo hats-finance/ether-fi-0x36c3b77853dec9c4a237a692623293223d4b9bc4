@@ -577,13 +577,6 @@ contract AuctionManagerTest is Test {
 
         vm.prank(chad);
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
-
-        vm.expectRevert("Whitelist enabled");
-        startHoax(alice);
-        uint256[] memory aliceBidIds = auctionInstance.createBidPermissionless{
-            value: 0.5 ether
-        }(5, 0.1 ether);
-
         vm.stopPrank();
 
         vm.prank(owner);
@@ -591,10 +584,9 @@ contract AuctionManagerTest is Test {
 
         // alice is still on the whitelist so can bid 0.001
         startHoax(alice);
-        aliceBidIds = auctionInstance.createBidPermissionless{value: 0.5 ether}(
-            5,
-            0.1 ether
-        );
+        uint256[] memory aliceBidIds = auctionInstance.createBidWhitelisted{
+            value: 0.005 ether
+        }(aliceProof, 5, 0.001 ether);
         vm.stopPrank();
 
         (
@@ -631,10 +623,11 @@ contract AuctionManagerTest is Test {
 
         vm.stopPrank();
 
-        startHoax(bob);
-        uint256[] memory bobBidIds = auctionInstance.createBidPermissionless{
-            value: 0.1 ether
-        }(1, 0.1 ether);
+        // chad is not on the whitelist
+        startHoax(chad);
+        uint256[] memory chadBidIds = auctionInstance.createBidPermissionless{
+            value: 0.01 ether
+        }(1, 0.01 ether);
         vm.stopPrank();
 
         (
@@ -644,7 +637,7 @@ contract AuctionManagerTest is Test {
             timeOfCreation,
             bidderAddress,
             isActive
-        ) = auctionInstance.bids(bobBidIds[0]);
+        ) = auctionInstance.bids(chadBidIds[0]);
 
         assertEq(amount, 0.01 ether);
         assertEq(ipfsIndex, 0);
@@ -655,24 +648,24 @@ contract AuctionManagerTest is Test {
         vm.stopPrank();
 
         vm.expectRevert("Incorrect bid value");
-        startHoax(bob);
-        bobBidIds = auctionInstance.createBidPermissionless{value: 0.1 ether}(
+        startHoax(chad);
+        chadBidIds = auctionInstance.createBidPermissionless{value: 0.1 ether}(
             2,
             0.1 ether
         );
         vm.stopPrank();
 
-        vm.expectRevert("Invalid Bid");
-        startHoax(bob);
-        bobBidIds = auctionInstance.createBidPermissionless{value: 0.002 ether}(
+        vm.expectRevert("Incorrect bid value");
+        startHoax(chad);
+        chadBidIds = auctionInstance.createBidPermissionless{value: 0.002 ether}(
             2,
             0.001 ether
         );
         vm.stopPrank();
 
-        vm.expectRevert("Invalid Bid");
-        startHoax(bob);
-        bobBidIds = auctionInstance.createBidPermissionless{value: 10.2 ether}(
+        vm.expectRevert("Incorrect bid value");
+        startHoax(chad);
+        chadBidIds = auctionInstance.createBidPermissionless{value: 10.2 ether}(
             2,
             5.1 ether
         );
