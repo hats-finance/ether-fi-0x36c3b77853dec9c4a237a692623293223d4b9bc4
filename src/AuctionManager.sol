@@ -176,10 +176,10 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
         bool isWhitelisted = MerkleProof.verify(
-                _merkleProof,
-                merkleRoot,
-                keccak256(abi.encodePacked(msg.sender))
-            );
+            _merkleProof,
+            merkleRoot,
+            keccak256(abi.encodePacked(msg.sender))
+        );
         if (whitelistEnabled || isWhitelisted) {
             require(isWhitelisted, "Only whitelisted addresses");
             require(
@@ -190,13 +190,10 @@ contract AuctionManager is IAuctionManager, Pausable {
             );
         } else {
             require(
-                msg.value == _bidSize * _bidAmountPerBid,
-                "Incorrect bid value"
-            );
-            require(
-                _bidAmountPerBid >= minBidAmount &&
+                msg.value == _bidSize * _bidAmountPerBid &&
+                    _bidAmountPerBid >= minBidAmount &&
                     _bidAmountPerBid <= MAX_BID_AMOUNT,
-                "Invalid Bid"
+                "Incorrect bid value"
             );
         }
 
