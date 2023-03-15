@@ -20,7 +20,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     IEtherFiNodesManager etherFiNodesManager;
     IAuctionManager auctionManager;
   
-    uint256 public globalRevenueIndex = 1 ether;
+    uint256 public globalRevenueIndex = 1;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -63,11 +63,6 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
         require(etherFiNodesManager.getEtherFiNodeLocalRevenueIndex(_validatorId) == 0, "auctionFeeTransfer is already processed for the validator.");
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
         globalRevenueIndex += msg.value / etherFiNodesManager.getNumberOfValidators();
-        console.log("Value");
-        console.log(msg.value);
-        console.log("Global revenue index");
-        console.log(globalRevenueIndex);
-
     }
   
     // TODO auctionRevenueSplits = {NodeOperator: 50, Treasury: 25, Staker: 25}
