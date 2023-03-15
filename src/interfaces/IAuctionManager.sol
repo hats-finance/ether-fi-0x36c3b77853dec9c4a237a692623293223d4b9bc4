@@ -40,6 +40,8 @@ interface IAuctionManager {
 
     function processAuctionFeeTransfer(uint256 _validatorId) external;
 
+    function isBidActive(uint256 _bidId) external view returns (bool);
+
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
 
     function setProtocolRevenueManager(
