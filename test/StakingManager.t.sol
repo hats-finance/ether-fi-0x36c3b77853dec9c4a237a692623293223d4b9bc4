@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
+import "../src/interfaces/IEtherFiNode.sol";
 import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
@@ -710,8 +711,10 @@ contract StakingManagerTest is Test {
 
         assertEq(managerInstance.getNumberOfValidators(), 10);
 
-        address safeAddress = managerInstance.getEtherFiNodeAddress(bidId[7]);
+        address safeAddress = managerInstance.getEtherFiNodeAddress(bidIdArray[1]);
+        IEtherFiNode etherFiNode = IEtherFiNode(safeAddress);
 
+        assertEq(etherFiNode.localRevenueIndex(), 1.1 ether);
         
 
     }

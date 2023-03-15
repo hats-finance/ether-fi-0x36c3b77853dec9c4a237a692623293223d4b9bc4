@@ -53,6 +53,8 @@ contract EtherFiNode is IEtherFiNode {
 
     function setLocalRevenueIndex(uint256 _localRevenueIndex) external onlyEtherFiNodeManagerContract {
         localRevenueIndex = _localRevenueIndex;
+        console.log("Local revenue index");
+        console.log(localRevenueIndex);
     }
 
     function setExitRequestTimestamp() external {

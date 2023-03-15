@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IAuctionManager.sol";
+import "lib/forge-std/src/console.sol";
 
 
 contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
@@ -19,7 +20,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     IEtherFiNodesManager etherFiNodesManager;
     IAuctionManager auctionManager;
   
-    uint256 public globalRevenueIndex = 1;
+    uint256 public globalRevenueIndex = 1 ether;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -62,6 +63,11 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
         require(etherFiNodesManager.getEtherFiNodeLocalRevenueIndex(_validatorId) == 0, "auctionFeeTransfer is already processed for the validator.");
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
         globalRevenueIndex += msg.value / etherFiNodesManager.getNumberOfValidators();
+        console.log("Value");
+        console.log(msg.value);
+        console.log("Global revenue index");
+        console.log(globalRevenueIndex);
+
     }
   
     // TODO auctionRevenueSplits = {NodeOperator: 50, Treasury: 25, Staker: 25}
