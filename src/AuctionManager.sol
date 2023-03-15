@@ -236,6 +236,10 @@ contract AuctionManager is IAuctionManager, Pausable {
         whitelistEnabled = false;
     }
 
+    function enableWhitelist() public onlyOwner {
+        whitelistEnabled = true;
+    }
+
     /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
     /// @param _bidId the ID of the validator
     function processAuctionFeeTransfer(
