@@ -118,7 +118,7 @@ contract EtherFiNodeTest is Test {
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
 
-        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 1);
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(bidId[0], test_data);
@@ -135,7 +135,7 @@ contract EtherFiNodeTest is Test {
             0.1 ether
         );
         assertEq(
-            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            protocolRevenueManagerInstance.globalRevenueIndex(),
             0.1 ether + 1
         );
     }
@@ -152,7 +152,7 @@ contract EtherFiNodeTest is Test {
 
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         assertEq(
-            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            protocolRevenueManagerInstance.globalRevenueIndex(),
             0.1 ether + 1
         );
 
@@ -195,7 +195,7 @@ contract EtherFiNodeTest is Test {
         vm.stopPrank();
 
         assertEq(
-            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            protocolRevenueManagerInstance.globalRevenueIndex(),
             0.3 ether + 1
         );
         assertEq(
@@ -253,8 +253,41 @@ contract EtherFiNodeTest is Test {
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         vm.expectRevert("Exit request was already sent.");
+        managerInstance.sendExitRequest(bidId[0]);      
 
-        managerInstance.sendExitRequest(bidId[0]);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0);  
+
+        // 1 day passed
+        vm.warp(1 + 86400);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0.03 ether);  
+
+        vm.warp(1 + 86400 + 3600);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0.03 ether);  
+
+        vm.warp(1 + 2 * 86400);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0.0591 ether);  
+
+        // 10 days passed
+        vm.warp(1 + 10 * 86400);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0.262575873105071740 ether);  
+
+        // 28 days passed
+        vm.warp(1 + 28 * 86400);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0.573804794831376551 ether);  
+
+        // 365 days passed
+        vm.warp(1 + 365 * 86400);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0.999985151485507863 ether);
+
+        // more than 1 year passed
+        vm.warp(1 + 366 * 86400);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 1 ether);
+
+        vm.warp(1 + 400 * 86400);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 1 ether);
+
+        vm.warp(1 + 1000 * 86400);
+        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 1 ether);
     }
 
     function _merkleSetup() internal {

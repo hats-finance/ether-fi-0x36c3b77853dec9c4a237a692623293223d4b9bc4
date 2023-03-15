@@ -287,7 +287,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 _bidId
     ) external onlyStakingManagerContract {
         uint256 amount = bids[_bidId].amount;
-        protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId, amount);
+        protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
