@@ -52,9 +52,6 @@ contract EtherFiNodeTest is Test {
         auctionInstance = new AuctionManager(
             address(nodeOperatorKeyManagerInstance)
         );
-        treasuryInstance.setAuctionManagerContractAddress(
-            address(auctionInstance)
-        );
         auctionInstance.updateMerkleRoot(root);
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
 
