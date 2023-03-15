@@ -761,6 +761,65 @@ function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
         stakingManagerInstance.batchRegisterValidators(bidIdArray, depositDataArray);
     }
 
+    function test_BatchRegisterValidatorFailsIfMoreThan16Registers() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        }
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
+        }
+
+        uint256[] memory bidIdArray = new uint256[](17);        
+        bidIdArray[0] = 1;
+        bidIdArray[1] = 2;
+        bidIdArray[2] = 3;
+        bidIdArray[3] = 4;
+        bidIdArray[4] = 5;
+        bidIdArray[5] = 6;
+        bidIdArray[6] = 7;
+        bidIdArray[7] = 8;
+        bidIdArray[8] = 9;
+        bidIdArray[9] = 10;
+        bidIdArray[10] = 11;
+        bidIdArray[11] = 12;
+        bidIdArray[12] = 13;
+        bidIdArray[13] = 14;
+        bidIdArray[14] = 15;
+        bidIdArray[15] = 16;
+        bidIdArray[16] = 17;
+
+        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](17);
+        depositDataArray[0] = test_data;
+        depositDataArray[1] = test_data_2;
+        depositDataArray[2] = test_data;
+        depositDataArray[3] = test_data_2;
+        depositDataArray[4] = test_data;
+        depositDataArray[5] = test_data_2;
+        depositDataArray[6] = test_data;
+        depositDataArray[7] = test_data_2;
+        depositDataArray[8] = test_data;
+        depositDataArray[9] = test_data;
+        depositDataArray[10] = test_data;
+        depositDataArray[11] = test_data;
+        depositDataArray[12] = test_data;
+        depositDataArray[13] = test_data;
+        depositDataArray[14] = test_data;
+        depositDataArray[15] = test_data;
+        depositDataArray[16] = test_data;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.32 ether}(bidIdArray);
+
+        assertEq(address(auctionInstance).balance, 3 ether);
+
+        vm.expectRevert("Too many validators");
+        stakingManagerInstance.batchRegisterValidators(bidIdArray, depositDataArray);
+    }
+
     function test_cancelDepositFailsIfNotStakeOwner() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
