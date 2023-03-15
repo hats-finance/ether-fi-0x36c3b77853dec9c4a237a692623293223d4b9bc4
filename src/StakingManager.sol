@@ -321,6 +321,12 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
+    function uncheckedInc(uint x) private pure returns (uint) {
+        unchecked {
+            return x + 1;
+        }
+    }
+
     function processDeposit(uint256 _bidId) internal {
         // Take the bid; Set the matched staker for the bid
         bidIdToStaker[_bidId] = msg.sender;
