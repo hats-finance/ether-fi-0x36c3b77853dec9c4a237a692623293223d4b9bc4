@@ -40,4 +40,10 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager {
         addressToOperatorData[_user].keysUsed++;
         return ipfsIndex;
     }
+
+    function getUserTotalKeys(
+        address _user
+    ) external view returns (uint64 totalKeys) {
+        totalKeys = addressToOperatorData[_user].totalKeys;
+    }
 }

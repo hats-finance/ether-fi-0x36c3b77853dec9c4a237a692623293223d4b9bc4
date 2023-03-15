@@ -14,4 +14,8 @@ interface INodeOperatorKeyManager {
     ) external;
 
     function fetchNextKeyIndex(address _user) external returns (uint64);
+
+    function getUserTotalKeys(
+        address _user
+    ) external view returns (uint64 totalKeys);
 }
