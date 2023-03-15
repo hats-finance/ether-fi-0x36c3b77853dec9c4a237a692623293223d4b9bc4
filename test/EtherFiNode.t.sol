@@ -118,7 +118,7 @@ contract EtherFiNodeTest is Test {
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
 
-        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 1);
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
         stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         stakingManagerInstance.registerValidator(bidId[0], test_data);
@@ -135,7 +135,7 @@ contract EtherFiNodeTest is Test {
             0.1 ether
         );
         assertEq(
-            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            protocolRevenueManagerInstance.globalRevenueIndex(),
             0.1 ether + 1
         );
     }
@@ -152,7 +152,7 @@ contract EtherFiNodeTest is Test {
 
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         assertEq(
-            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            protocolRevenueManagerInstance.globalRevenueIndex(),
             0.1 ether + 1
         );
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
@@ -197,7 +197,7 @@ contract EtherFiNodeTest is Test {
         vm.stopPrank();
 
         assertEq(
-            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            protocolRevenueManagerInstance.globalRevenueIndex(),
             0.3 ether + 1
         );
         assertEq(
