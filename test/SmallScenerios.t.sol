@@ -134,19 +134,19 @@ contract AuctionManagerTest is Test {
 
         // Alice Bids
         hoax(alice);
-        uint256[] memory aliceBidIds = auctionInstance.createBidWhitelisted{
+        uint256[] memory aliceBidIds = auctionInstance.createBid{
             value: 0.6 ether
         }(aliceProof, 6, 0.1 ether);
 
         // Bob Bids
         hoax(bob);
-        uint256[] memory bobBidIds = auctionInstance.createBidWhitelisted{
+        uint256[] memory bobBidIds = auctionInstance.createBid{
             value: 3 ether
         }(bobProof, 3, 1 ether);
 
         // Chad Bids
         hoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBidWhitelisted{
+        uint256[] memory chadBidIds = auctionInstance.createBid{
             value: 1 ether
         }(chadProof, 5, 0.2 ether);
 
@@ -280,7 +280,7 @@ contract AuctionManagerTest is Test {
 
         // Chad Bids
         hoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBidWhitelisted{
+        uint256[] memory chadBidIds = auctionInstance.createBid{
             value: 1 ether
         }(chadProof, 5, 0.2 ether);
 
@@ -304,7 +304,7 @@ contract AuctionManagerTest is Test {
 
         // Bob Bids
         hoax(bob);
-        uint256[] memory bobBidIds = auctionInstance.createBidWhitelisted{
+        uint256[] memory bobBidIds = auctionInstance.createBid{
             value: 3 ether
         }(bobProof, 3, 1 ether);
 

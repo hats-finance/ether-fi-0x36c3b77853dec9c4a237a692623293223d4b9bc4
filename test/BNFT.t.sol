@@ -94,7 +94,7 @@ contract BNFTTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+        auctionInstance.createBid{value: 0.1 ether}(
             proof,
             1,
             0.1 ether
