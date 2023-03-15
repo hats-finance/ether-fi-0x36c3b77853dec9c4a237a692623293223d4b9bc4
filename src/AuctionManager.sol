@@ -330,7 +330,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     modifier onlyStakingManagerContract() {
         require(
             msg.sender == stakingManagerContractAddress,
-            "Only deposit contract function"
+            "Only staking manager contract function"
         );
         _;
     }

@@ -115,17 +115,20 @@ contract StakingManagerTest is Test {
 
         hoax(alice);
         vm.expectRevert("Insufficient staking amount");
-        stakingManagerInstance.depositForAuction{value: 0.033 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = 1;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.033 ether}(bidIdArray);
 
         stakingManagerInstance.switchMode();
         console.logBool(stakingManagerInstance.test());
 
         hoax(alice);
         vm.expectRevert("Insufficient staking amount");
-        stakingManagerInstance.depositForAuction{value: 33 ether}();
+        stakingManagerInstance.batchDepositWithBidIds{value: 33 ether}(bidIdArray);
 
         hoax(alice);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
     }
 
     function test_StakingManagerContractInstantiatedCorrectly() public {
@@ -156,7 +159,10 @@ contract StakingManagerTest is Test {
             1,
             0.1 ether
         );
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         stakingManagerInstance.registerValidator(bidId[0], test_data);
 
         uint256 validatorId = bidId[0];
@@ -185,33 +191,6 @@ contract StakingManagerTest is Test {
         );
     }
 
-    function test_BatchDepositForAuctionFailsIFInvalidDepositAmount() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
-
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-
-        vm.expectRevert("Insufficient staking amount");
-        stakingManagerInstance.depositForAuction{value: 0.095 ether}();
-    }
-
-    function test_BatchDepositForAuctionFailsIfNoMoreActiveBids() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
-
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-        auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-     
-        vm.expectRevert("No bids available at the moment");
-        stakingManagerInstance.depositForAuction{value: 0.096 ether}();
-    }
 
     function test_BatchDepositWithBidIdsFailsIfNotEnoughActiveBids() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
@@ -248,7 +227,6 @@ contract StakingManagerTest is Test {
         }
 
         assertEq(auctionInstance.numberOfActiveBids(), 20);
-        assertEq(auctionInstance.currentHighestBidId(), 11);
 
         uint256[] memory bidIdArray = new uint256[](0);        
 
@@ -270,7 +248,6 @@ contract StakingManagerTest is Test {
         }
 
         assertEq(auctionInstance.numberOfActiveBids(), 20);
-        assertEq(auctionInstance.currentHighestBidId(), 11);
 
         uint256[] memory bidIdArray = new uint256[](10);        
         bidIdArray[0] = 1;
@@ -301,7 +278,11 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = 1;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
     }
 
@@ -315,7 +296,10 @@ contract StakingManagerTest is Test {
         auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         auctionInstance.cancelBid(1);
         vm.expectRevert("No bids available at the moment");
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = 1;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
     }
 
     function test_DepositFailsIfContractPaused() public {
@@ -330,7 +314,10 @@ contract StakingManagerTest is Test {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
         vm.expectRevert("Pausable: paused");
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = 1;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         assertEq(stakingManagerInstance.paused(), true);
         vm.stopPrank();
 
@@ -338,46 +325,9 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.unPauseContract();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         assertEq(stakingManagerInstance.paused(), false);
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
-    }
-
-    function test_BatchDepositForAuctionSimpleWorksCorrectly() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
-
-        for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-        }
-        for(uint256 x = 0; x < 10; x++) {
-            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
-        }
-
-        assertEq(auctionInstance.numberOfActiveBids(), 20);
-        assertEq(auctionInstance.currentHighestBidId(), 11);
-
-        stakingManagerInstance.depositForAuction{value: 0.352 ether}();
-        assertEq(auctionInstance.numberOfActiveBids(), 9);
-        assertEq(auctionInstance.currentHighestBidId(), 2);
-
-        (,uint256 amount ,,,, bool isActive) = auctionInstance.bids(11);
-        assertEq(amount, 0.2 ether);
-        assertEq(isActive, false);
-
-        (,amount ,,,, isActive) = auctionInstance.bids(7);
-        assertEq(amount, 0.1 ether);
-        assertEq(isActive, true);
-
-        (,amount ,,,, isActive) = auctionInstance.bids(12);
-        assertEq(amount, 0.2 ether);
-        assertEq(isActive, false);
-
-        (,amount ,,,, isActive) = auctionInstance.bids(13);
-        assertEq(amount, 0.2 ether);
-        assertEq(isActive, false);
     }
 
     function test_BatchDepositWithIdsSimpleWorksCorrectly() public {
@@ -394,7 +344,6 @@ contract StakingManagerTest is Test {
         }
 
         assertEq(auctionInstance.numberOfActiveBids(), 20);
-        assertEq(auctionInstance.currentHighestBidId(), 11);
 
         uint256[] memory bidIdArray = new uint256[](10);        
         bidIdArray[0] = 1;
@@ -410,7 +359,6 @@ contract StakingManagerTest is Test {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 0.32 ether}(bidIdArray);
         assertEq(auctionInstance.numberOfActiveBids(), 10);
-        assertEq(auctionInstance.currentHighestBidId(), 13);
 
         (,uint256 amount ,,,, bool isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
@@ -444,7 +392,6 @@ contract StakingManagerTest is Test {
         }
 
         assertEq(auctionInstance.numberOfActiveBids(), 20);
-        assertEq(auctionInstance.currentHighestBidId(), 11);
         assertEq(address(auctionInstance).balance, 3 ether);
 
         uint256[] memory bidIdArray = new uint256[](10);        
@@ -461,7 +408,6 @@ contract StakingManagerTest is Test {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 0.32 ether}(bidIdArray);
         assertEq(auctionInstance.numberOfActiveBids(), 10);
-        assertEq(auctionInstance.currentHighestBidId(), 13);
 
         (,uint256 amount ,,,, bool isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
@@ -497,7 +443,6 @@ contract StakingManagerTest is Test {
 
         assertEq(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance, userBalanceBefore - 0.064 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 8);
-        assertEq(auctionInstance.currentHighestBidId(), 14);
 
         (,amount ,,,, isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
@@ -522,7 +467,11 @@ contract StakingManagerTest is Test {
         uint256 walletBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
         auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = 1;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
         assertEq(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
@@ -555,7 +504,10 @@ contract StakingManagerTest is Test {
             1,
             0.1 ether
         );
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -575,7 +527,10 @@ contract StakingManagerTest is Test {
             1,
             0.1 ether
         );
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         stakingManagerInstance.cancelDeposit(bidId[0]);
 
         vm.expectRevert("Deposit does not exist");
@@ -590,7 +545,10 @@ contract StakingManagerTest is Test {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = 1;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -613,7 +571,10 @@ contract StakingManagerTest is Test {
             1,
             0.1 ether
         );
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = 1;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         stakingManagerInstance.registerValidator(bidId[0], test_data);
 
         uint256 selectedBidId = bidId[0];
@@ -830,7 +791,10 @@ function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
             0.1 ether
         );
 
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -851,7 +815,10 @@ function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
             0.1 ether
         );
 
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         stakingManagerInstance.cancelDeposit(bidId[0]);
 
         vm.expectRevert("Deposit does not exist");
@@ -883,7 +850,10 @@ function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
 
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}(); // bidId2
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId2[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
 
@@ -913,7 +883,6 @@ function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, false);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
-        assertEq(auctionInstance.currentHighestBidId(), bidId3[0]);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         stakingManagerInstance.cancelDeposit(bidId2[0]);
@@ -932,7 +901,6 @@ function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, true);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
-        assertEq(auctionInstance.currentHighestBidId(), bidId2[0]);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         assertEq(
@@ -956,7 +924,10 @@ function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
             1,
             0.1 ether
         );
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId1[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         stakingManagerInstance.registerValidator(bidId1[0], test_data);
 
         vm.stopPrank();
@@ -966,7 +937,10 @@ function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
             1,
             0.1 ether
         );
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray2 = new uint256[](1);  
+        bidIdArray2[0] = bidId2[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray2);
         stakingManagerInstance.registerValidator(bidId2[0], test_data);
 
         assertEq(

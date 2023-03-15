@@ -143,8 +143,10 @@ contract ProtocolRevenueManagerTest is Test {
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
         startHoax(alice);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId[0];
 
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
         stakingManagerInstance.registerValidator(bidId[0], test_data);
