@@ -133,7 +133,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         ).balance;
 
         uint256 validatorRewards = contractBalance -
-            stakingManagerInstance.getStakeAmount() -
+            stakingManagerInstance.stakeAmount() -
             fundsReceivedFromAuction[_validatorId];
 
         withdrawableBalance[_validatorId][

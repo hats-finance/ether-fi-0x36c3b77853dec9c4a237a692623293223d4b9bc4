@@ -25,7 +25,7 @@ interface IStakingManager {
         external
         returns (address);
 
-    function getStakeAmount() external returns (uint256);
+    function stakeAmount() external view returns(uint256);
 
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
 
