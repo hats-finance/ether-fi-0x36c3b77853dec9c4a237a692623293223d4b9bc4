@@ -19,7 +19,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     IEtherFiNodesManager etherFiNodesManager;
     IAuctionManager auctionManager;
   
-    uint256 globalRevenueIndex = 1;
+    uint256 public globalRevenueIndex = 1;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -57,9 +57,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
 
     /// @notice add the revenue from the auction fee paid by the node operator for the corresponding validator
     /// @param _validatorId the validator ID
-    /// @param _amount the amount of the auction fee
-    function addAuctionRevenue(uint256 _validatorId, uint256 _amount) external payable onlyAuctionManager {
-        require(msg.value == _amount, "Incorrect amount");
+    function addAuctionRevenue(uint256 _validatorId) external payable onlyAuctionManager {
         require(etherFiNodesManager.getNumberOfValidators() > 0, "No Active Validator");
         require(etherFiNodesManager.getEtherFiNodeLocalRevenueIndex(_validatorId) == 0, "auctionFeeTransfer is already processed for the validator.");
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
@@ -72,7 +70,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     function distributeAuctionRevenue(uint256 _validatorId) external onlyEtherFiNodesManager returns (uint256) {
         address etherFiNode = etherFiNodesManager.getEtherFiNodeAddress(_validatorId);
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
-        IEtherFiNode(etherFiNode).receiveProtocolRevenue{value: amount}(amount, globalRevenueIndex);
+        IEtherFiNode(etherFiNode).receiveProtocolRevenue{value: amount}(globalRevenueIndex);
         return amount;
     }
 
@@ -98,16 +96,12 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     /// @param _validatorId id of the validator
     function getAccruedAuctionRevenueRewards(uint256 _validatorId) public view returns (uint256) {        
         address etherFiNode = etherFiNodesManager.getEtherFiNodeAddress(_validatorId);
-        uint256 localRevenueIndex = IEtherFiNode(etherFiNode).getLocalRevenueIndex();
+        uint256 localRevenueIndex = IEtherFiNode(etherFiNode).localRevenueIndex();
         uint256 amount = 0;
         if (localRevenueIndex > 0) {
             amount = globalRevenueIndex - localRevenueIndex;
         }
         return amount;
-    }
-
-    function getGlobalRevenueIndex() public view returns (uint256) {
-        return globalRevenueIndex;
     }
 
     //--------------------------------------------------------------------------------------

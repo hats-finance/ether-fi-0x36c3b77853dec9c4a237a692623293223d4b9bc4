@@ -127,15 +127,9 @@ contract ProtocolRevenueManagerTest is Test {
     function test_AddAuctionRevenueWorksAndFailsCorrectly() public {
         // 1
         hoax(address(auctionInstance));
-        vm.expectRevert("Incorrect amount");
-        protocolRevenueManagerInstance.addAuctionRevenue{value: 0}(1, 1 ether);
-
-        // 2
-        hoax(address(auctionInstance));
         vm.expectRevert("No Active Validator");
         protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(
-            1,
-            1 ether
+            1
         );
 
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
@@ -148,7 +142,7 @@ contract ProtocolRevenueManagerTest is Test {
         );
         vm.stopPrank();
 
-        assertEq(protocolRevenueManagerInstance.getGlobalRevenueIndex(), 1);
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
         startHoax(alice);
@@ -169,7 +163,7 @@ contract ProtocolRevenueManagerTest is Test {
             0.1 ether
         );
         assertEq(
-            protocolRevenueManagerInstance.getGlobalRevenueIndex(),
+            protocolRevenueManagerInstance.globalRevenueIndex(),
             0.1 ether + 1
         );
 
@@ -179,8 +173,7 @@ contract ProtocolRevenueManagerTest is Test {
             "auctionFeeTransfer is already processed for the validator."
         );
         protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(
-            bidId[0],
-            1 ether
+            bidId[0]
         );
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
@@ -200,7 +193,7 @@ contract ProtocolRevenueManagerTest is Test {
     function test_modifiers() public {
         hoax(alice);
         vm.expectRevert("Only auction manager function");
-        protocolRevenueManagerInstance.addAuctionRevenue(0, 0);
+        protocolRevenueManagerInstance.addAuctionRevenue(0);
 
         vm.expectRevert("Only etherFiNodesManager function");
         protocolRevenueManagerInstance.distributeAuctionRevenue(0);
