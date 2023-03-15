@@ -31,7 +31,6 @@
 //         _merkleSetup();
 //         treasuryInstance = new Treasury();
 //         auctionInstance = new AuctionManager(address(treasuryInstance));
-//         treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
 //         auctionInstance.updateMerkleRoot(root);
 //         stakingManagerInstance = new StakingManager(
 //             address(auctionInstance),

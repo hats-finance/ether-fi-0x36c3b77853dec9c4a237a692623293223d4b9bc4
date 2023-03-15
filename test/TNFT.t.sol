@@ -30,7 +30,6 @@ contract TNFTTest is Test {
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
         auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
-        treasuryInstance.setAuctionManagerContractAddress(address(auctionInstance));
         auctionInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));

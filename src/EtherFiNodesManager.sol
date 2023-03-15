@@ -338,7 +338,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
 
-        uint64 startTimestamp = IEtherFiNode(etherfiNode).getExitRequestTimestamp();
+        uint64 startTimestamp = IEtherFiNode(etherfiNode).exitRequestTimestamp();
         uint64 endTimestamp = uint64(block.timestamp);
         uint64 timeElapsed = endTimestamp - startTimestamp;
         uint64 daysElapsed = uint64(timeElapsed / SECONDS_PER_DAY);
