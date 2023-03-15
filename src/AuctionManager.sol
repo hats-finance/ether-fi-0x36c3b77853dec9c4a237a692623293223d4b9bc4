@@ -16,6 +16,7 @@ import "./StakingManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "lib/forge-std/src/console.sol";
 
 contract AuctionManager is IAuctionManager, Pausable {
     //--------------------------------------------------------------------------------------
@@ -156,7 +157,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
             msg.sender
         );
-
+        
         require(whitelistEnabled, "Whitelist disabled");
         require(_bidSize <= userTotalKeys, "Insufficient public keys");
 
@@ -169,6 +170,7 @@ contract AuctionManager is IAuctionManager, Pausable {
             ),
             "Only whitelisted addresses"
         );
+
         require(
             msg.value == _bidSize * _bidAmountPerBid &&
                 _bidAmountPerBid >= whitelistBidAmount &&
@@ -213,6 +215,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
             msg.sender
         );
+
         require(_bidSize <= userTotalKeys, "Insufficient public keys");
         require(!whitelistEnabled, "Whitelist enabled");
 
@@ -229,7 +232,6 @@ contract AuctionManager is IAuctionManager, Pausable {
         for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
             uint64 ipfsIndex = nodeOperatorKeyManagerInterface
                 .fetchNextKeyIndex(msg.sender);
-
             uint256 bidId = numberOfBids;
 
             bidIdArray[i] = bidId;
@@ -244,11 +246,6 @@ contract AuctionManager is IAuctionManager, Pausable {
                 bidderAddress: msg.sender,
                 isActive: true
             });
-
-            //Checks if the bid is now the highest bid
-            if (_bidAmountPerBid > bids[currentHighestBidId].amount) {
-                currentHighestBidId = bidId;
-            }
 
             numberOfBids++;
         }

@@ -219,11 +219,11 @@ contract StakingManagerTest is Test {
             0.1 ether
         );
 
-        vm.expectRevert("Insufficient staking amount");
         uint256[] memory bidIdArray = new uint256[](1);  
         bidIdArray[0] = 1;
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray); 
+        vm.expectRevert("Insufficient staking amount");
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.033 ether}(bidIdArray); 
     }
 
     function test_BatchDepositWithBidIdsFailsIfNotEnoughActiveBids() public {
@@ -571,8 +571,6 @@ contract StakingManagerTest is Test {
         bidIdArray[0] = 1;
 
         stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
-        
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
         assertEq(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
@@ -608,7 +606,6 @@ contract StakingManagerTest is Test {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
         vm.stopPrank();
 
         vm.prank(owner);
@@ -1082,7 +1079,7 @@ contract StakingManagerTest is Test {
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         uint256[] memory bidId2 = auctionInstance.createBidWhitelisted{value: 0.1 ether}(
-            proof,
+            proof2,
             1,
             0.1 ether
         );

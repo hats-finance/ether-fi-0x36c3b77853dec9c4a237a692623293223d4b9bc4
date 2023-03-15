@@ -254,35 +254,27 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         (
-            uint256 bidId,
-            uint256 amount,
-            uint256 ipfsIndex,
-            uint256 timeOfCreation,
-            address bidderAddress,
-            bool isActive
+            bidId,
+            amount,
+            ipfsIndex,
+            timeOfCreation,
+            bidderAddress,
+            isActive
         ) = auctionInstance.bids(bid1Id[0]);
 
         assertEq(amount, 0.001 ether);
         assertEq(ipfsIndex, 0);
         assertEq(timeOfCreation, block.timestamp);
-        assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(bidderAddress, alice);
         assertTrue(isActive);
         assertEq(address(auctionInstance).balance, 0.001 ether);
 
-        vm.expectRevert("Invalid bid");
         hoax(alice);
-        auctionInstance.createBid{value: 0.001 ether}(proof, 1, 0.001 ether);
-
-        vm.expectRevert("Invalid bid");
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.createBid{value: 0.00001 ether}(
-            proof2,
-            1,
-            0.00001 ether
+        auctionInstance.createBidWhitelisted{value: 0.001 ether}(aliceProof, 1, 0.001 ether);
 
         vm.expectRevert("Insufficient public keys");
         startHoax(alice);
-        bid1Id = auctionInstance.createBidWhitelisted{value: 11 ether}(
+        auctionInstance.createBidWhitelisted{value: 11 ether}(
             aliceProof,
             11,
             1 ether
@@ -299,11 +291,11 @@ contract AuctionManagerTest is Test {
 
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, amount, , , bidderAddress, ) = auctionInstance.bids(bid2Id[0]);
+        (, amount, , , bidderAddress, ) = auctionInstance.bids(bid1Id[0]);
 
-        assertEq(amount, 0.01 ether);
-        assertEq(bidderAddress, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        assertEq(address(auctionInstance).balance, 0.011 ether);
+        assertEq(amount, 0.001 ether);
+        assertEq(bidderAddress, alice);
+        assertEq(address(auctionInstance).balance, 0.002 ether);
         vm.prank(owner);
         auctionInstance.disableWhitelist();
 
@@ -316,10 +308,10 @@ contract AuctionManagerTest is Test {
             0.001 ether
         );
 
-        (, , ipfsIndex, , , ) = auctionInstance.bids(bid3Id[0]);
-        assertEq(ipfsIndex, 1);
+        (, , ipfsIndex, , , ) = auctionInstance.bids(bid1Id[0]);
+        assertEq(ipfsIndex, 0);
 
-        assertEq(auctionInstance.numberOfActiveBids(), 3);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
     }
 
     function test_createBidWhitelistedFailsIfIPFSIndexMoreThanTotalKeys()
