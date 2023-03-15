@@ -123,7 +123,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function withdrawFunds(uint256 _validatorId) external {
         require(
             msg.sender ==
-                stakingManagerInstance.getStakerRelatedToValidator(_validatorId),
+                stakingManagerInstance.bidIdToStaker(_validatorId),
             "Incorrect caller"
         );
         //Will check oracle to make sure validator has exited

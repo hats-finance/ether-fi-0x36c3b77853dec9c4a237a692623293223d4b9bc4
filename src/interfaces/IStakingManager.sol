@@ -21,9 +21,7 @@ interface IStakingManager {
 
     function fetchEtherFromContract(address _wallet) external;
 
-    function getStakerRelatedToValidator(uint256 _validatorId)
-        external
-        returns (address);
+    function bidIdToStaker(uint256 id) external view returns (address);
 
     function stakeAmount() external view returns(uint256);
 
