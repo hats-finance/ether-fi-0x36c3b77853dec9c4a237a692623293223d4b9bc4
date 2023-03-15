@@ -655,6 +655,67 @@ contract StakingManagerTest is Test {
         );
     }
 
+    function test_BatchRegisterValidatorWorksCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        }
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
+        }
+
+        uint256[] memory bidIdArray = new uint256[](10);        
+        bidIdArray[0] = 1;
+        bidIdArray[1] = 2;
+        bidIdArray[2] = 6;
+        bidIdArray[3] = 7;
+        bidIdArray[4] = 8;
+        bidIdArray[5] = 9;
+        bidIdArray[6] = 11;
+        bidIdArray[7] = 12;
+        bidIdArray[8] = 19;
+        bidIdArray[9] = 20;
+
+        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](10);
+        depositDataArray[0] = test_data;
+        depositDataArray[1] = test_data_2;
+        depositDataArray[2] = test_data;
+        depositDataArray[3] = test_data_2;
+        depositDataArray[4] = test_data;
+        depositDataArray[5] = test_data_2;
+        depositDataArray[6] = test_data;
+        depositDataArray[7] = test_data_2;
+        depositDataArray[8] = test_data;
+        depositDataArray[9] = test_data_2;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.32 ether}(bidIdArray);
+
+        assertEq(address(auctionInstance).balance, 3 ether);
+
+        stakingManagerInstance.batchRegisterValidators(bidIdArray, depositDataArray);
+
+        assertEq(address(protocolRevenueManagerInstance).balance, 1.4 ether);
+        assertEq(address(auctionInstance).balance, 1.6 ether);
+
+        assertEq(TestBNFTInstance.ownerOf(bidIdArray[0]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestBNFTInstance.ownerOf(bidIdArray[4]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestBNFTInstance.ownerOf(bidIdArray[6]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestTNFTInstance.ownerOf(bidIdArray[1]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestTNFTInstance.ownerOf(bidIdArray[2]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestTNFTInstance.ownerOf(bidIdArray[9]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+
+        assertEq(managerInstance.getNumberOfValidators(), 10);
+
+        address safeAddress = managerInstance.getEtherFiNodeAddress(bidId[7]);
+
+        
+
+    }
+
     function test_cancelDepositFailsIfNotStakeOwner() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
