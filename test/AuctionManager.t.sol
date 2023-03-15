@@ -348,7 +348,7 @@ contract AuctionManagerTest is Test {
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
-        vm.prank(bob);
+        vm.prank(chad);
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(alice);

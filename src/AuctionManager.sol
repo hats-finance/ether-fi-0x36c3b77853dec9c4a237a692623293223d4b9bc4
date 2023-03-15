@@ -175,6 +175,11 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
+        uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
+            msg.sender
+        );
+        require(_bidSize <= userTotalKeys, "Not enough public keys");
+
         bool isWhitelisted = MerkleProof.verify(
             _merkleProof,
             merkleRoot,
