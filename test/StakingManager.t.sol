@@ -238,8 +238,6 @@ contract StakingManagerTest is Test {
     }
 
     function test_BatchDepositWithBidIdsFailsIfNotEnoughActiveBids() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
@@ -429,19 +427,19 @@ contract StakingManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 9);
         assertEq(auctionInstance.currentHighestBidId(), 2);
 
-        (, uint256 amount, , , , bool isActive) = auctionInstance.bids(11);
+        (uint256 amount, , , bool isActive) = auctionInstance.bids(11);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(7);
+        (amount, , , isActive) = auctionInstance.bids(7);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, true);
 
-        (, amount, , , , isActive) = auctionInstance.bids(12);
+        (amount, , , isActive) = auctionInstance.bids(12);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(13);
+        (amount, , , isActive) = auctionInstance.bids(13);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
     }
@@ -488,19 +486,19 @@ contract StakingManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 10);
         assertEq(auctionInstance.currentHighestBidId(), 13);
 
-        (, uint256 amount, , , , bool isActive) = auctionInstance.bids(1);
+        (uint256 amount, , , bool isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(7);
+        (amount, , , isActive) = auctionInstance.bids(7);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(20);
+        (amount, , , isActive) = auctionInstance.bids(20);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(3);
+        (amount, , , isActive) = auctionInstance.bids(3);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, true);
     }
@@ -548,19 +546,19 @@ contract StakingManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 10);
         assertEq(auctionInstance.currentHighestBidId(), 13);
 
-        (, uint256 amount, , , , bool isActive) = auctionInstance.bids(1);
+        (uint256 amount, , , bool isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(7);
+        (amount, , , isActive) = auctionInstance.bids(7);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(20);
+        (amount, , , isActive) = auctionInstance.bids(20);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(3);
+        (amount, , , isActive) = auctionInstance.bids(3);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, true);
 
@@ -590,15 +588,15 @@ contract StakingManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 8);
         assertEq(auctionInstance.currentHighestBidId(), 14);
 
-        (, amount, , , , isActive) = auctionInstance.bids(1);
+        (amount, , , isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(13);
+        (amount, , , isActive) = auctionInstance.bids(13);
         assertEq(amount, 0.2 ether);
         assertEq(isActive, false);
 
-        (, amount, , , , isActive) = auctionInstance.bids(3);
+        (amount, , , isActive) = auctionInstance.bids(3);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, false);
     }
@@ -626,8 +624,7 @@ contract StakingManagerTest is Test {
         vm.stopPrank();
 
         vm.prank(owner);
-        uint256 walletBalance2 = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            .balance;
+
         stakingManagerInstance.fetchEtherFromContract(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
@@ -1041,14 +1038,8 @@ contract StakingManagerTest is Test {
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
-        (
-            ,
-            uint256 bidAmount,
-            ,
-            ,
-            address bidder,
-            bool isActive
-        ) = auctionInstance.bids(selectedBidId);
+        (uint256 bidAmount, , address bidder, bool isActive) = auctionInstance
+            .bids(selectedBidId);
 
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -1065,7 +1056,7 @@ contract StakingManagerTest is Test {
                 IEtherFiNode.VALIDATOR_PHASE.CANCELLED
         );
 
-        (, bidAmount, , , bidder, isActive) = auctionInstance.bids(bidId2[0]);
+        (bidAmount, , bidder, isActive) = auctionInstance.bids(bidId2[0]);
         assertEq(bidAmount, 0.3 ether);
         assertEq(bidder, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(isActive, true);

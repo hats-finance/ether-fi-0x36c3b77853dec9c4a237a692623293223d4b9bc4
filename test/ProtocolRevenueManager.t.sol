@@ -92,8 +92,6 @@ contract ProtocolRevenueManagerTest is Test {
 
         vm.stopPrank();
 
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
         vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
         vm.stopPrank();
@@ -125,9 +123,7 @@ contract ProtocolRevenueManagerTest is Test {
         // 1
         hoax(address(auctionInstance));
         vm.expectRevert("No Active Validator");
-        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(
-            1
-        );
+        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(1);
 
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         startHoax(nodeOperator);
