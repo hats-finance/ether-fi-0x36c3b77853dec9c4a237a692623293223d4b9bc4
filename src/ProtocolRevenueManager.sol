@@ -21,8 +21,8 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
   
     uint256 public globalRevenueIndex = 1;
 
-    uint64 private constant vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
-    uint64 private constant auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 28;  
+    uint256 public constant vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
+    uint256 public constant auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 28;  
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------

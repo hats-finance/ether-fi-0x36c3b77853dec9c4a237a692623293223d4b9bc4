@@ -7,9 +7,11 @@ import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IStakingManager.sol";
+import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
+
 
 contract EtherFiNode is IEtherFiNode {
     // TODO: immutable constants
@@ -96,6 +98,20 @@ contract EtherFiNode is IEtherFiNode {
         uint256 _globalRevenueIndex
     ) external payable onlyProtocolRevenueManagerContract {
         localRevenueIndex = _globalRevenueIndex;
+    }
+
+    function _getClaimableVestedRewards() internal returns (uint256) {
+        uint256 vestingPeriodInDays = IProtocolRevenueManager(protocolRevenueManagerAddress).auctionFeeVestingPeriodForStakersInDays();
+        uint256 timeElapsed = uint32(block.timestamp) - stakingStartTimestamp;
+        uint256 SECONDS_PER_DAY = 24 * 3600;
+        uint256 daysElapsed = vestingPeriodInDays * SECONDS_PER_DAY;
+        if (timeElapsed >= vestingPeriodInDays * SECONDS_PER_DAY) {
+            uint256 _vestedAuctionRewards = vestedAuctionRewards;
+            // vestedAuctionRewards = 0;
+            return _vestedAuctionRewards;
+        } else {
+            return 0;
+        }
     }
 
     //--------------------------------------------------------------------------------------
