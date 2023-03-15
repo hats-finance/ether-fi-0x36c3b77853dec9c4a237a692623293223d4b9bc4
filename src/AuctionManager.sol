@@ -28,6 +28,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
+    uint256 public currentHighestBidId;
     address public stakingManagerContractAddress;
     address public owner;
     address public nodeOperatorKeyManagerContract;
@@ -192,10 +193,8 @@ contract AuctionManager is IAuctionManager, Pausable {
 
             //Creates a bid object for storage and lookup in future
             bids[bidId] = Bid({
-                bidId: bidId,
                 amount: _bidAmountPerBid,
                 bidderPubKeyIndex: ipfsIndex,
-                timeOfBid: block.timestamp,
                 bidderAddress: msg.sender,
                 isActive: true
             });
@@ -239,10 +238,8 @@ contract AuctionManager is IAuctionManager, Pausable {
 
             //Creates a bid object for storage and lookup in future
             bids[bidId] = Bid({
-                bidId: bidId,
                 amount: _bidAmountPerBid,
                 bidderPubKeyIndex: ipfsIndex,
-                timeOfBid: block.timestamp,
                 bidderAddress: msg.sender,
                 isActive: true
             });
@@ -251,7 +248,12 @@ contract AuctionManager is IAuctionManager, Pausable {
         }
 
         numberOfActiveBids += _bidSize;
-        emit BidCreated(msg.sender, msg.value, bidIdArray, ipfsIndexArray);
+        emit BidCreated(
+            msg.sender,
+            uint64(msg.value),
+            bidIdArray,
+            ipfsIndexArray
+        );
         return bidIdArray;
     }
 

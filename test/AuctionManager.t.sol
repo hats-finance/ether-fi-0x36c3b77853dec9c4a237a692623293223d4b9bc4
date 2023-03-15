@@ -197,13 +197,14 @@ contract AuctionManagerTest is Test {
         stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
         (, , , , , bool isBid1Active) = auctionInstance.bids(bidId1[0]);
 
+
         uint256 selectedBidId = bidId1[0];
         assertEq(selectedBidId, 1);
         assertEq(isBid1Active, false);
 
         stakingManagerInstance.cancelDeposit(bidId1[0]);
-        (, , , , , isBid1Active) = auctionInstance.bids(bidId1[0]);
-        (, , , , , bool isBid2Active) = auctionInstance.bids(bidId2[0]);
+        (, , , isBid1Active) = auctionInstance.bids(bidId1[0]);
+        (, , , bool isBid2Active) = auctionInstance.bids(bidId2[0]);
         assertEq(isBid1Active, true);
         assertEq(isBid2Active, true);
         assertEq(address(auctionInstance).balance, 0.15 ether);
@@ -227,18 +228,14 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         (
-            uint256 bidId,
             uint256 amount,
-            uint256 ipfsIndex,
-            uint256 timeOfCreation,
+            uint64 ipfsIndex,
             address bidderAddress,
             bool isActive
         ) = auctionInstance.bids(bid1Id[0]);
 
-        assertEq(bid1Id[0], 1);
         assertEq(amount, 0.001 ether);
         assertEq(ipfsIndex, 0);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
         assertEq(auctionInstance.numberOfBids(), 2);
@@ -358,82 +355,50 @@ contract AuctionManagerTest is Test {
         vm.stopPrank();
 
         (
-            uint256 bidId,
             uint256 amount,
-            uint256 ipfsIndex,
-            uint256 timeOfCreation,
+            uint64 ipfsIndex,
             address bidderAddress,
             bool isActive
         ) = auctionInstance.bids(bidIds[0]);
 
-        assertEq(bidId, 1);
         assertEq(amount, 0.1 ether);
         assertEq(ipfsIndex, 0);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
 
-        (
-            bidId,
-            amount,
-            ipfsIndex,
-            timeOfCreation,
-            bidderAddress,
-            isActive
-        ) = auctionInstance.bids(bidIds[1]);
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            bidIds[1]
+        );
 
-        assertEq(bidId, 2);
         assertEq(amount, 0.1 ether);
         assertEq(ipfsIndex, 1);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
 
-        (
-            bidId,
-            amount,
-            ipfsIndex,
-            timeOfCreation,
-            bidderAddress,
-            isActive
-        ) = auctionInstance.bids(bidIds[2]);
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            bidIds[2]
+        );
 
-        assertEq(bidId, 3);
         assertEq(amount, 0.1 ether);
         assertEq(ipfsIndex, 2);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
 
-        (
-            bidId,
-            amount,
-            ipfsIndex,
-            timeOfCreation,
-            bidderAddress,
-            isActive
-        ) = auctionInstance.bids(bidIds[3]);
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            bidIds[3]
+        );
 
-        assertEq(bidId, 4);
         assertEq(amount, 0.1 ether);
         assertEq(ipfsIndex, 3);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
 
-        (
-            bidId,
-            amount,
-            ipfsIndex,
-            timeOfCreation,
-            bidderAddress,
-            isActive
-        ) = auctionInstance.bids(bidIds[4]);
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            bidIds[4]
+        );
 
-        assertEq(bidId, 5);
         assertEq(amount, 0.1 ether);
         assertEq(ipfsIndex, 4);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
 
@@ -450,35 +415,21 @@ contract AuctionManagerTest is Test {
 
         assertEq(bobBidIds.length, 10);
 
-        (
-            bidId,
-            amount,
-            ipfsIndex,
-            timeOfCreation,
-            bidderAddress,
-            isActive
-        ) = auctionInstance.bids(bobBidIds[0]);
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            bobBidIds[0]
+        );
 
-        assertEq(bidId, 6);
         assertEq(amount, 0.1 ether);
         assertEq(ipfsIndex, 0);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, bob);
         assertTrue(isActive);
 
-        (
-            bidId,
-            amount,
-            ipfsIndex,
-            timeOfCreation,
-            bidderAddress,
-            isActive
-        ) = auctionInstance.bids(bobBidIds[9]);
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            bobBidIds[9]
+        );
 
-        assertEq(bidId, 15);
         assertEq(amount, 0.1 ether);
         assertEq(ipfsIndex, 9);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, bob);
         assertTrue(isActive);
     }
@@ -516,10 +467,8 @@ contract AuctionManagerTest is Test {
         vm.stopPrank();
 
         (
-            uint256 bidId,
             uint256 amount,
             uint256 ipfsIndex,
-            uint256 timeOfCreation,
             address bidderAddress,
             bool isActive
         ) = auctionInstance.bids(aliceBidIds[0]);
@@ -528,39 +477,28 @@ contract AuctionManagerTest is Test {
 
         assertEq(amount, 0.01 ether);
         assertEq(ipfsIndex, 0);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
+    }
 
-        (
-            bidId,
-            amount,
-            ipfsIndex,
-            timeOfCreation,
-            bidderAddress,
-            isActive
-        ) = auctionInstance.bids(aliceBidIds[4]);
+    function test_CreateBidPermissionlessBatchFailsWithIncorrectValue() public {
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
 
-        assertEq(amount, 0.01 ether);
-        assertEq(ipfsIndex, 4);
-        assertEq(timeOfCreation, block.timestamp);
-        assertEq(bidderAddress, alice);
-        assertTrue(isActive);
-
-        vm.stopPrank();
+        vm.prank(owner);
+        auctionInstance.disableWhitelist();
 
         vm.expectRevert("Insufficient public keys");
         startHoax(alice);
-        aliceBidIds = auctionInstance.createBidPermissionless{value: 11 ether}(
-            11,
-            1 ether
-        );
+        uint256[] memory aliceBidIds = auctionInstance.createBidPermissionless{
+            value: 11 ether
+        }(11, 1 ether);
         vm.stopPrank();
 
         vm.expectRevert("Incorrect bid value");
-        startHoax(alice);
-        aliceBidIds = auctionInstance.createBidPermissionless{value: 0.1 ether}(
-            2,
+        hoax(alice);
+        aliceBidIds = auctionInstance.createBidPermissionless{value: 0.4 ether}(
+            5,
             0.1 ether
         );
         vm.stopPrank();
@@ -749,7 +687,7 @@ contract AuctionManagerTest is Test {
         auctionInstance.cancelBid(bid3Id[0]);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, , , , , bool isActive) = auctionInstance.bids(bid3Id[0]);
+        (, , , bool isActive) = auctionInstance.bids(bid3Id[0]);
 
         assertEq(isActive, false);
         assertEq(address(auctionInstance).balance, 0.4 ether);
@@ -807,7 +745,7 @@ contract AuctionManagerTest is Test {
         auctionInstance.cancelBid(bid2Id[0]);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, , , , , bool isActive) = auctionInstance.bids(bid2Id[0]);
+        (, , , bool isActive) = auctionInstance.bids(bid2Id[0]);
 
         assertEq(isActive, false);
         assertEq(address(auctionInstance).balance, 0.3 ether);
@@ -848,11 +786,6 @@ contract AuctionManagerTest is Test {
         }(proofForAddress2, 1, 0.3 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        hoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
-        uint256[] memory bid3Id = auctionInstance.createBidWhitelisted{
-            value: 0.2 ether
-        }(proofForAddress3, 1, 0.2 ether);
-
         vm.prank(owner);
         auctionInstance.pauseContract();
 
@@ -863,12 +796,12 @@ contract AuctionManagerTest is Test {
         vm.prank(owner);
         auctionInstance.unPauseContract();
 
-        assertEq(auctionInstance.numberOfActiveBids(), 3);
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.cancelBid(bid2Id[0]);
 
-        assertEq(auctionInstance.numberOfActiveBids(), 2);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
 
     function test_UpdatingMerkleFailsIfNotOwner() public {
@@ -887,11 +820,6 @@ contract AuctionManagerTest is Test {
     }
 
     function test_UpdatingMerkle() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-
         assertEq(auctionInstance.merkleRoot(), root);
 
         whiteListedAddresses.push(
