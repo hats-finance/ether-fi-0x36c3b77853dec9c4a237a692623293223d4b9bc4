@@ -22,9 +22,9 @@ contract AuctionManager is IAuctionManager, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint64 public whitelistBidAmount = 1000000 gwei; //0.001 ether
-    uint64 public minBidAmount = 10000000 gwei; // 0.01 ether
-    uint64 public constant MAX_BID_AMOUNT = 5000000000 gwei; // 5 ether
+    uint256 public whitelistBidAmount = 0.001 ether;
+    uint256 public minBidAmount = 0.01 ether;
+    uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
     uint256 public currentHighestBidId;
@@ -346,9 +346,9 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @notice Updates the minimum bid price
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
-    function setMinBidPrice(uint64 _newMinBidAmount) external onlyOwner {
+    function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
         require(_newMinBidAmount < MAX_BID_AMOUNT, "Min bid exceeds max bid");
-        uint64 oldMinBidAmount = minBidAmount;
+        uint256 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
@@ -356,9 +356,11 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
-    function updateWhitelistMinBidAmount(uint64 _newAmount) external onlyOwner {
+    function updateWhitelistMinBidAmount(
+        uint256 _newAmount
+    ) external onlyOwner {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
-        uint64 oldBidAmount = whitelistBidAmount;
+        uint256 oldBidAmount = whitelistBidAmount;
         whitelistBidAmount = _newAmount;
 
         emit WhitelistBidUpdated(oldBidAmount, _newAmount);
