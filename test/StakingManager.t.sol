@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
+import "../src/interfaces/IEtherFiNode.sol";
 import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
@@ -160,7 +161,7 @@ contract StakingManagerTest is Test {
 
         uint256 validatorId = bidId[0];
         uint256 winningBid = bidId[0];
-        address staker = stakingManagerInstance.getStakerRelatedToValidator(
+        address staker = stakingManagerInstance.bidIdToStaker(
             validatorId
         );
         address etherfiNode = managerInstance.getEtherFiNodeAddress(
@@ -652,6 +653,170 @@ contract StakingManagerTest is Test {
         );
     }
 
+    function test_BatchRegisterValidatorWorksCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        }
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
+        }
+
+        uint256[] memory bidIdArray = new uint256[](10);        
+        bidIdArray[0] = 1;
+        bidIdArray[1] = 2;
+        bidIdArray[2] = 6;
+        bidIdArray[3] = 7;
+        bidIdArray[4] = 8;
+        bidIdArray[5] = 9;
+        bidIdArray[6] = 11;
+        bidIdArray[7] = 12;
+        bidIdArray[8] = 19;
+        bidIdArray[9] = 20;
+
+        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](10);
+        depositDataArray[0] = test_data;
+        depositDataArray[1] = test_data_2;
+        depositDataArray[2] = test_data;
+        depositDataArray[3] = test_data_2;
+        depositDataArray[4] = test_data;
+        depositDataArray[5] = test_data_2;
+        depositDataArray[6] = test_data;
+        depositDataArray[7] = test_data_2;
+        depositDataArray[8] = test_data;
+        depositDataArray[9] = test_data_2;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.32 ether}(bidIdArray);
+
+        assertEq(address(auctionInstance).balance, 3 ether);
+
+        stakingManagerInstance.batchRegisterValidators(bidIdArray, depositDataArray);
+
+        assertEq(address(protocolRevenueManagerInstance).balance, 1.4 ether);
+        assertEq(address(auctionInstance).balance, 1.6 ether);
+
+        assertEq(TestBNFTInstance.ownerOf(bidIdArray[0]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestBNFTInstance.ownerOf(bidIdArray[4]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestBNFTInstance.ownerOf(bidIdArray[6]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestTNFTInstance.ownerOf(bidIdArray[1]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestTNFTInstance.ownerOf(bidIdArray[2]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        assertEq(TestTNFTInstance.ownerOf(bidIdArray[9]), 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+
+        assertEq(managerInstance.getNumberOfValidators(), 10);
+
+        //address safeAddress = managerInstance.getEtherFiNodeAddress(bidIdArray[1]);
+        //IEtherFiNode etherFiNode = IEtherFiNode(safeAddress);
+
+        //assertEq(etherFiNode.localRevenueIndex(), 1.1 ether);
+    }
+
+function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        }
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
+        }
+
+        uint256[] memory bidIdArray = new uint256[](10);        
+        bidIdArray[0] = 1;
+        bidIdArray[1] = 2;
+        bidIdArray[2] = 6;
+        bidIdArray[3] = 7;
+        bidIdArray[4] = 8;
+        bidIdArray[5] = 9;
+        bidIdArray[6] = 11;
+        bidIdArray[7] = 12;
+        bidIdArray[8] = 19;
+        bidIdArray[9] = 20;
+
+        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](9);
+        depositDataArray[0] = test_data;
+        depositDataArray[1] = test_data_2;
+        depositDataArray[2] = test_data;
+        depositDataArray[3] = test_data_2;
+        depositDataArray[4] = test_data;
+        depositDataArray[5] = test_data_2;
+        depositDataArray[6] = test_data;
+        depositDataArray[7] = test_data_2;
+        depositDataArray[8] = test_data;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.32 ether}(bidIdArray);
+
+        assertEq(address(auctionInstance).balance, 3 ether);
+
+        vm.expectRevert("Array lengths must match");
+        stakingManagerInstance.batchRegisterValidators(bidIdArray, depositDataArray);
+    }
+
+    function test_BatchRegisterValidatorFailsIfMoreThan16Registers() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+        }
+        for(uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
+        }
+
+        uint256[] memory bidIdArray = new uint256[](17);        
+        bidIdArray[0] = 1;
+        bidIdArray[1] = 2;
+        bidIdArray[2] = 3;
+        bidIdArray[3] = 4;
+        bidIdArray[4] = 5;
+        bidIdArray[5] = 6;
+        bidIdArray[6] = 7;
+        bidIdArray[7] = 8;
+        bidIdArray[8] = 9;
+        bidIdArray[9] = 10;
+        bidIdArray[10] = 11;
+        bidIdArray[11] = 12;
+        bidIdArray[12] = 13;
+        bidIdArray[13] = 14;
+        bidIdArray[14] = 15;
+        bidIdArray[15] = 16;
+        bidIdArray[16] = 17;
+
+        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](17);
+        depositDataArray[0] = test_data;
+        depositDataArray[1] = test_data_2;
+        depositDataArray[2] = test_data;
+        depositDataArray[3] = test_data_2;
+        depositDataArray[4] = test_data;
+        depositDataArray[5] = test_data_2;
+        depositDataArray[6] = test_data;
+        depositDataArray[7] = test_data_2;
+        depositDataArray[8] = test_data;
+        depositDataArray[9] = test_data;
+        depositDataArray[10] = test_data;
+        depositDataArray[11] = test_data;
+        depositDataArray[12] = test_data;
+        depositDataArray[13] = test_data;
+        depositDataArray[14] = test_data;
+        depositDataArray[15] = test_data;
+        depositDataArray[16] = test_data;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.32 ether}(bidIdArray);
+
+        assertEq(address(auctionInstance).balance, 3 ether);
+
+        vm.expectRevert("Too many validators");
+        stakingManagerInstance.batchRegisterValidators(bidIdArray, depositDataArray);
+    }
+
     function test_cancelDepositFailsIfNotStakeOwner() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
@@ -723,7 +888,7 @@ contract StakingManagerTest is Test {
             .balance;
 
         uint256 selectedBidId = bidId2[0];
-        address staker = stakingManagerInstance.getStakerRelatedToValidator(
+        address staker = stakingManagerInstance.bidIdToStaker(
             bidId2[0]
         );
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId2[0]);
@@ -754,7 +919,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.cancelDeposit(bidId2[0]);
         assertEq(managerInstance.getEtherFiNodeAddress(bidId2[0]), address(0));
         assertEq(
-            stakingManagerInstance.getStakerRelatedToValidator(bidId2[0]),
+            stakingManagerInstance.bidIdToStaker(bidId2[0]),
             address(0)
         );
         assertTrue(

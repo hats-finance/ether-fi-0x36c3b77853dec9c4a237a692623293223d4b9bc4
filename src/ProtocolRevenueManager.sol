@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "lib/forge-std/src/console.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IAuctionManager.sol";
+import "lib/forge-std/src/console.sol";
 
 
 contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {

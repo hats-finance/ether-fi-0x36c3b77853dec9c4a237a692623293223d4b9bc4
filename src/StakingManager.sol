@@ -210,6 +210,59 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         );
     }
 
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
+    /// @param _validatorId id of the validator to register
+    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    function batchRegisterValidators(
+        uint256[] calldata _validatorId,
+        DepositData[] calldata _depositData
+    ) public whenNotPaused {
+        require(_validatorId.length == _depositData.length, "Array lengths must match");
+        require(_validatorId.length <= 16, "Too many validators");
+
+        for(uint256 x; x < _validatorId.length; ++x) {
+            uint256 validatorId = _validatorId[x];
+            DepositData calldata depositData = _depositData[x];
+
+            require(
+                bidIdToStaker[validatorId] != address(0),
+                "Deposit does not exist"
+            );
+            require(bidIdToStaker[validatorId] == msg.sender, "Not deposit owner");
+
+            address staker = bidIdToStaker[validatorId];
+
+            if (test == false) {
+                bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
+                    .getWithdrawalCredentials(validatorId);
+                depositContractEth2.deposit{value: stakeAmount}(
+                    depositData.publicKey,
+                    withdrawalCredentials,
+                    depositData.signature,
+                    depositData.depositDataRoot
+                );
+            }
+            
+            nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
+            nodesManagerIntefaceInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.REGISTERED);
+            nodesManagerIntefaceInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(validatorId, depositData.ipfsHashForEncryptedValidatorKey);
+
+            // Let validatorId = nftTokenId
+            // Mint {T, B}-NFTs to the Staker
+            uint256 nftTokenId = validatorId;
+            TNFTInterfaceInstance.mint(staker, nftTokenId);
+            BNFTInterfaceInstance.mint(staker, nftTokenId);
+
+            auctionInterfaceInstance.processAuctionFeeTransfer(validatorId);
+
+            emit ValidatorRegistered(
+                auctionInterfaceInstance.getBidOwner(validatorId),
+                validatorId,
+                depositData.ipfsHashForEncryptedValidatorKey
+            );
+        }
+    }
+
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _validatorId the ID of the validator deposit to cancel
@@ -307,22 +360,6 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         );
 
         emit StakeDeposit(msg.sender, _bidId, etherfiNode);
-    }
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------------  GETTER   --------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    function getStakerRelatedToValidator(uint256 _validatorId)
-        external
-        view
-        returns (address)
-    {
-        return bidIdToStaker[_validatorId];
-    }
-
-    function getStakeAmount() external view returns (uint256) {
-        return stakeAmount;
     }
 
     //--------------------------------------------------------------------------------------

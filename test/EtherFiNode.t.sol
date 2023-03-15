@@ -182,9 +182,9 @@ contract EtherFiNodeTest is Test {
 
         {
             address staker_2 = stakingManagerInstance
-                .getStakerRelatedToValidator(bidId1[0]);
+                .bidIdToStaker(bidId1[0]);
             address staker_3 = stakingManagerInstance
-                .getStakerRelatedToValidator(bidId2[0]);
+                .bidIdToStaker(bidId2[0]);
             assertEq(staker_2, bob);
             assertEq(staker_3, dan);
         }
