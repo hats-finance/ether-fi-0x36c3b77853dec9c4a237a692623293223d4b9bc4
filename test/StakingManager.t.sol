@@ -846,10 +846,18 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         for (uint256 x = 0; x < 10; x++) {
-            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+            auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+                proof,
+                1,
+                0.1 ether
+            );
         }
         for (uint256 x = 0; x < 10; x++) {
-            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
+            auctionInstance.createBidWhitelisted{value: 0.2 ether}(
+                proof,
+                1,
+                0.2 ether
+            );
         }
 
         uint256[] memory bidIdArray = new uint256[](10);
@@ -896,10 +904,18 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         for (uint256 x = 0; x < 10; x++) {
-            auctionInstance.createBid{value: 0.1 ether}(proof, 1, 0.1 ether);
+            auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+                proof,
+                1,
+                0.1 ether
+            );
         }
         for (uint256 x = 0; x < 10; x++) {
-            auctionInstance.createBid{value: 0.2 ether}(proof, 1, 0.2 ether);
+            auctionInstance.createBidWhitelisted{value: 0.2 ether}(
+                proof,
+                1,
+                0.2 ether
+            );
         }
 
         uint256[] memory bidIdArray = new uint256[](17);
