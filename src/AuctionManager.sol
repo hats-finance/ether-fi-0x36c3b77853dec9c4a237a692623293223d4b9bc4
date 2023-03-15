@@ -22,12 +22,12 @@ contract AuctionManager is IAuctionManager, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint256 public currentHighestBidId;
-    uint256 public whitelistBidAmount = 0.001 ether;
-    uint256 public minBidAmount = 0.01 ether;
-    uint256 public constant MAX_BID_AMOUNT = 5 ether;
+    uint64 public whitelistBidAmount = 1000000 gwei; //0.001 ether
+    uint64 public minBidAmount = 10000000 gwei; // 0.01 ether
+    uint64 public constant MAX_BID_AMOUNT = 5000000000 gwei; // 5 ether
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
+    uint256 public currentHighestBidId;
     address public stakingManagerContractAddress;
     address public owner;
     address public nodeOperatorKeyManagerContract;
@@ -45,7 +45,7 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     event BidCreated(
         address indexed bidder,
-        uint256 amount,
+        uint64 amount,
         uint256[] indexed bidIdArray,
         uint64[] indexed ipfsIndexArray
     );
@@ -172,7 +172,7 @@ contract AuctionManager is IAuctionManager, Pausable {
     function createBid(
         bytes32[] calldata _merkleProof,
         uint256 _bidSize,
-        uint256 _bidAmountPerBid
+        uint64 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
         require(
             msg.value == _bidSize * _bidAmountPerBid,
@@ -206,10 +206,8 @@ contract AuctionManager is IAuctionManager, Pausable {
 
             //Creates a bid object for storage and lookup in future
             bids[bidId] = Bid({
-                bidId: bidId,
                 amount: _bidAmountPerBid,
                 bidderPubKeyIndex: ipfsIndex,
-                timeOfBid: block.timestamp,
                 bidderAddress: msg.sender,
                 isActive: true
             });
@@ -223,7 +221,12 @@ contract AuctionManager is IAuctionManager, Pausable {
         }
 
         numberOfActiveBids += _bidSize;
-        emit BidCreated(msg.sender, msg.value, bidIdArray, ipfsIndexArray);
+        emit BidCreated(
+            msg.sender,
+            uint64(msg.value),
+            bidIdArray,
+            ipfsIndexArray
+        );
         return bidIdArray;
     }
 
@@ -279,9 +282,9 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @notice Updates the minimum bid price
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
-    function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
+    function setMinBidPrice(uint64 _newMinBidAmount) external onlyOwner {
         require(_newMinBidAmount < MAX_BID_AMOUNT, "Min bid exceeds max bid");
-        uint256 oldMinBidAmount = minBidAmount;
+        uint64 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
@@ -289,11 +292,9 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
-    function updateWhitelistMinBidAmount(
-        uint256 _newAmount
-    ) external onlyOwner {
+    function updateWhitelistMinBidAmount(uint64 _newAmount) external onlyOwner {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
-        uint256 oldBidAmount = whitelistBidAmount;
+        uint64 oldBidAmount = whitelistBidAmount;
         whitelistBidAmount = _newAmount;
 
         emit WhitelistBidUpdated(oldBidAmount, _newAmount);

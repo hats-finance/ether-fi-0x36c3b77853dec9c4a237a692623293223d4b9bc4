@@ -3,10 +3,8 @@ pragma solidity 0.8.13;
 
 interface IAuctionManager {
     struct Bid {
-        uint256 bidId;
-        uint256 amount;
-        uint256 bidderPubKeyIndex;
-        uint256 timeOfBid;
+        uint64 amount;
+        uint64 bidderPubKeyIndex;
         address bidderAddress;
         bool isActive;
     }
@@ -14,7 +12,7 @@ interface IAuctionManager {
     function createBid(
         bytes32[] calldata _merkleProof,
         uint256 _bidSize,
-        uint256 _bidAmount
+        uint64 _bidAmount
     ) external payable returns (uint256[] memory);
 
     //function calculateWinningBid() external returns (uint256);
