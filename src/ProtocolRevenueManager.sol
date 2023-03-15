@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "lib/forge-std/src/console.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "./interfaces/IProtocolRevenueManager.sol";
