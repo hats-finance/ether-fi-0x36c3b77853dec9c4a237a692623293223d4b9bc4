@@ -126,10 +126,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     /// @dev Need to think about distribution if there has been slashing
     function withdrawFunds(uint256 _validatorId) external {
         require(
-            msg.sender ==
-                stakingManagerInstance.getStakerRelatedToValidator(
-                    _validatorId
-                ),
+            msg.sender == stakingManagerInstance.bidIdToStaker(_validatorId),
             "Incorrect caller"
         );
         //Will check oracle to make sure validator has exited
@@ -138,7 +135,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             .balance;
 
         uint256 validatorRewards = contractBalance -
-            stakingManagerInstance.getStakeAmount() -
+            stakingManagerInstance.stakeAmount() -
             fundsReceivedFromAuction[_validatorId];
 
         withdrawableBalance[_validatorId][

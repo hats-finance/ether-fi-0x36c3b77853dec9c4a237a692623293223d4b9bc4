@@ -164,7 +164,7 @@ contract AuctionManagerTest is Test {
         (, , , , , bool isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
 
         // Matches with Bob's first bid
-        address staker = stakingManagerInstance.getStakerRelatedToValidator(
+        address staker = stakingManagerInstance.bidIdToStaker(
             bobBidIds[0]
         );
 
@@ -188,7 +188,7 @@ contract AuctionManagerTest is Test {
         (, , , , , isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
 
         // Matches with Bob's second bid
-        staker = stakingManagerInstance.getStakerRelatedToValidator(
+        staker = stakingManagerInstance.bidIdToStaker(
             bobBidIds[1]
         );
 
@@ -211,7 +211,7 @@ contract AuctionManagerTest is Test {
         (, , , , , isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
 
         // Matches with Bob's third bid
-        staker = stakingManagerInstance.getStakerRelatedToValidator(
+        staker = stakingManagerInstance.bidIdToStaker(
             bobBidIds[2]
         );
 
@@ -236,7 +236,7 @@ contract AuctionManagerTest is Test {
         (, , , , , bool isChadBid5Active) = auctionInstance.bids(chadBidIds[4]);
 
         // Matches with Chad's first bid
-        staker = stakingManagerInstance.getStakerRelatedToValidator(
+        staker = stakingManagerInstance.bidIdToStaker(
             chadBidIds[0]
         );
 
@@ -291,7 +291,7 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), chadBidIds[1]);
         assertEq(auctionInstance.getNumberOfActivebids(), 4);
 
-        address staker = stakingManagerInstance.getStakerRelatedToValidator(
+        address staker = stakingManagerInstance.bidIdToStaker(
             chadBidIds[0]
         );
 
@@ -315,7 +315,7 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.currentHighestBidId(), bobBidIds[1]);
         assertEq(auctionInstance.getNumberOfActivebids(), 6);
 
-        staker = stakingManagerInstance.getStakerRelatedToValidator(
+        staker = stakingManagerInstance.bidIdToStaker(
             bobBidIds[0]
         );
 
