@@ -34,8 +34,6 @@ contract DeployScript is Script {
         NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
         AuctionManager auctionManager = new AuctionManager(address(nodeOperatorKeyManager));
 
-        treasury.setAuctionManagerContractAddress(address(auctionManager));
-
         vm.recordLogs();
 
         StakingManager stakingManager = new StakingManager(address(auctionManager));

@@ -47,9 +47,6 @@ contract StakingManagerTest is Test {
         );
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
 
-        treasuryInstance.setAuctionManagerContractAddress(
-            address(auctionInstance)
-        );
         auctionInstance.updateMerkleRoot(root);
 
         stakingManagerInstance = new StakingManager(address(auctionInstance));
