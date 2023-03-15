@@ -16,9 +16,15 @@ import "./EtherFiNode.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNodesManager is IEtherFiNodesManager {
+
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
+    uint256 constant private NON_EXIT_PENALTY_PRINCIPAL = 1 ether;
+    uint256 constant private NON_EXIT_PENALTY_RATE_DAILY = 3; // 3% per day
+    uint256 constant private SECONDS_PER_DAY = 86400;
+    uint256 constant private DAYS_PER_WEEK = 7;
+
 
     address public immutable implementationContract;
 
@@ -328,6 +334,35 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return IEtherFiNode(etherfiNode).exitRequestTimestamp() > 0;
     }
 
+    function getNonExitPenaltyAmount(uint256 _validatorId) external view returns (uint256) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+
+        uint64 startTimestamp = IEtherFiNode(etherfiNode).getExitRequestTimestamp();
+        uint64 endTimestamp = uint64(block.timestamp);
+        uint64 timeElapsed = endTimestamp - startTimestamp;
+        uint64 daysElapsed = uint64(timeElapsed / SECONDS_PER_DAY);
+        uint64 weeksElapsed = uint64(daysElapsed / DAYS_PER_WEEK);
+
+        uint256 remainingAmount = NON_EXIT_PENALTY_PRINCIPAL;
+        if (daysElapsed > 365) {
+            remainingAmount = 0;
+        } else {
+            for (uint64 i = 0; i < weeksElapsed; i++) {
+                remainingAmount = (remainingAmount * (100 - NON_EXIT_PENALTY_RATE_DAILY) ** DAYS_PER_WEEK) / (100 ** DAYS_PER_WEEK);
+            }
+
+            daysElapsed -= weeksElapsed * 7;
+            for (uint64 i = 0; i < daysElapsed; i++) {
+                remainingAmount = (remainingAmount * (100 - NON_EXIT_PENALTY_RATE_DAILY)) / 100;
+            }
+        }
+
+        uint256 penaltyAmount = NON_EXIT_PENALTY_PRINCIPAL - remainingAmount;
+        require(penaltyAmount <= NON_EXIT_PENALTY_PRINCIPAL && penaltyAmount >= 0, "Incorrect penalty amount");
+
+        return penaltyAmount;
+    }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
