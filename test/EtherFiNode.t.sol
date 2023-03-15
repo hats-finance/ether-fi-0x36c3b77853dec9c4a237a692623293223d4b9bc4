@@ -126,6 +126,12 @@ contract EtherFiNodeTest is Test {
 
         assertEq(address(etherFiNode).balance, 0.05 ether);
         assertEq(
+            managerInstance.getEtherFiNodeVestedAuctionRewards(
+                bidId[0]
+            ),
+            0.05 ether
+        );
+        assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId[0]
             ),
