@@ -20,8 +20,6 @@ interface IAuctionManager {
     //function calculateWinningBid() external returns (uint256);
     function updateSelectedBidInformation(uint256 _bidId) external;
 
-    function fetchWinningBid() external returns (uint256);
-
     function cancelBid(uint256 _bidId) external;
 
     function getNumberOfActivebids() external view returns (uint256);

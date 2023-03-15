@@ -113,7 +113,6 @@ contract AuctionManager is IAuctionManager, Pausable {
         bids[_bidId].isActive = false;
         address operator = bids[_bidId].bidderAddress;
 
-        updateNewWinningBid();
         numberOfActiveBids--;
 
         emit SelectedBidUpdated(operator, _bidId);
