@@ -16,15 +16,13 @@ import "./EtherFiNode.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNodesManager is IEtherFiNodesManager {
-
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-    uint256 constant private NON_EXIT_PENALTY_PRINCIPAL = 1 ether;
-    uint256 constant private NON_EXIT_PENALTY_RATE_DAILY = 3; // 3% per day
-    uint256 constant private SECONDS_PER_DAY = 86400;
-    uint256 constant private DAYS_PER_WEEK = 7;
-
+    uint256 private constant NON_EXIT_PENALTY_PRINCIPAL = 1 ether;
+    uint256 private constant NON_EXIT_PENALTY_RATE_DAILY = 3; // 3% per day
+    uint256 private constant SECONDS_PER_DAY = 86400;
+    uint256 private constant DAYS_PER_WEEK = 7;
 
     address public immutable implementationContract;
 
@@ -94,8 +92,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         tnftInstance = TNFT(_tnftContract);
         bnftInstance = BNFT(_bnftContract);
 
-
-
         auctionContractRevenueSplit = AuctionManagerContractRevenueSplit({
             treasurySplit: 10,
             nodeOperatorSplit: 10,
@@ -117,7 +113,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function createEtherfiNode(uint256 _validatorId) external returns (address) {
+    function createEtherfiNode(
+        uint256 _validatorId
+    ) external returns (address) {
         address clone = Clones.clone(implementationContract);
         EtherFiNode(payable(clone)).initialize();
         installEtherFiNode(_validatorId, clone);
@@ -129,14 +127,15 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function withdrawFunds(uint256 _validatorId) external {
         require(
             msg.sender ==
-                stakingManagerInstance.getStakerRelatedToValidator(_validatorId),
+                stakingManagerInstance.getStakerRelatedToValidator(
+                    _validatorId
+                ),
             "Incorrect caller"
         );
         //Will check oracle to make sure validator has exited
 
-        uint256 contractBalance = address(
-            etherfiNodePerValidator[_validatorId]
-        ).balance;
+        uint256 contractBalance = address(etherfiNodePerValidator[_validatorId])
+            .balance;
 
         uint256 validatorRewards = contractBalance -
             stakingManagerInstance.getStakeAmount() -
@@ -226,30 +225,36 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     /// @notice Sets the validator ID for the EtherFiNode contract
     /// @param _validatorId id of the validator associated to the node
     /// @param _etherfiNode address of the EtherFiNode contract
-    function installEtherFiNode(uint256 _validatorId, address _etherfiNode)
-        public
-        onlyStakingManagerContract
-    {
-        require(etherfiNodePerValidator[_validatorId] == address(0), "already installed");
+    function installEtherFiNode(
+        uint256 _validatorId,
+        address _etherfiNode
+    ) public onlyStakingManagerContract {
+        require(
+            etherfiNodePerValidator[_validatorId] == address(0),
+            "already installed"
+        );
         etherfiNodePerValidator[_validatorId] = _etherfiNode;
     }
 
-    /// @notice UnSet the EtherFiNode contract for the validator ID 
+    /// @notice UnSet the EtherFiNode contract for the validator ID
     /// @param _validatorId id of the validator associated
-    function uninstallEtherFiNode(uint256 _validatorId)
-        public
-        onlyStakingManagerContract
-    {
-        require(etherfiNodePerValidator[_validatorId] != address(0), "not installed");
+    function uninstallEtherFiNode(
+        uint256 _validatorId
+    ) public onlyStakingManagerContract {
+        require(
+            etherfiNodePerValidator[_validatorId] != address(0),
+            "not installed"
+        );
         etherfiNodePerValidator[_validatorId] = address(0);
     }
 
     /// @notice Sets the phase of the validator
     /// @param _validatorId id of the validator associated to this withdraw safe
     /// @param _phase phase of the validator
-    function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase)
-        public
-    {
+    function setEtherFiNodePhase(
+        uint256 _validatorId,
+        IEtherFiNode.VALIDATOR_PHASE _phase
+    ) public {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setPhase(_phase);
@@ -258,27 +263,36 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     /// @notice Sets the ipfs hash of the validator's encrypted private key
     /// @param _validatorId id of the validator associated to this withdraw safe
     /// @param _ipfs ipfs hash
-    function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs)
-        public
-    {
+    function setEtherFiNodeIpfsHashForEncryptedValidatorKey(
+        uint256 _validatorId,
+        string calldata _ipfs
+    ) public {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setIpfsHashForEncryptedValidatorKey(_ipfs);
     }
 
-    function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) external {
+    function setEtherFiNodeLocalRevenueIndex(
+        uint256 _validatorId,
+        uint256 _localRevenueIndex
+    ) external {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setLocalRevenueIndex(_localRevenueIndex);
     }
 
-    function incrementNumberOfValidators(uint256 _count) external onlyStakingManagerContract {
+    function incrementNumberOfValidators(
+        uint256 _count
+    ) external onlyStakingManagerContract {
         numberOfValidators += _count;
     }
 
     /// @notice send the request to exit the validator node
     function sendExitRequest(uint256 _validatorId) external {
-        require(msg.sender == tnftInstance.ownerOf(_validatorId), "You are not the owner of the T-NFT");
+        require(
+            msg.sender == tnftInstance.ownerOf(_validatorId),
+            "You are not the owner of the T-NFT"
+        );
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setExitRequestTimestamp();
@@ -290,35 +304,41 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function getEtherFiNodeAddress(uint256 _validatorId)
-        public view
-        returns (address)
-    {
+    function getEtherFiNodeAddress(
+        uint256 _validatorId
+    ) public view returns (address) {
         return etherfiNodePerValidator[_validatorId];
     }
 
-    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
+    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(
+        uint256 _validatorId
+    ) external view returns (string memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey();
     }
 
-    function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external returns (uint256) {
+    function getEtherFiNodeLocalRevenueIndex(
+        uint256 _validatorId
+    ) external view returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
 
-    function generateWithdrawalCredentials(address _address) public view returns (bytes memory) {
+    function generateWithdrawalCredentials(
+        address _address
+    ) public pure returns (bytes memory) {
         return abi.encodePacked(bytes1(0x01), bytes11(0x0), _address);
     }
 
-    function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
+    function getWithdrawalCredentials(
+        uint256 _validatorId
+    ) external view returns (bytes memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return generateWithdrawalCredentials(etherfiNode);
@@ -328,17 +348,22 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return numberOfValidators;
     }
 
-    function isExitRequested(uint256 _validatorId) external view returns (bool) {
+    function isExitRequested(
+        uint256 _validatorId
+    ) external view returns (bool) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).exitRequestTimestamp() > 0;
     }
 
-    function getNonExitPenaltyAmount(uint256 _validatorId) external view returns (uint256) {
+    function getNonExitPenaltyAmount(
+        uint256 _validatorId
+    ) external view returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
 
-        uint64 startTimestamp = IEtherFiNode(etherfiNode).getExitRequestTimestamp();
+        uint64 startTimestamp = EtherFiNode(payable(etherfiNode))
+            .exitRequestTimestamp();
         uint64 endTimestamp = uint64(block.timestamp);
         uint64 timeElapsed = endTimestamp - startTimestamp;
         uint64 daysElapsed = uint64(timeElapsed / SECONDS_PER_DAY);
@@ -349,17 +374,25 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             remainingAmount = 0;
         } else {
             for (uint64 i = 0; i < weeksElapsed; i++) {
-                remainingAmount = (remainingAmount * (100 - NON_EXIT_PENALTY_RATE_DAILY) ** DAYS_PER_WEEK) / (100 ** DAYS_PER_WEEK);
+                remainingAmount =
+                    (remainingAmount *
+                        (100 - NON_EXIT_PENALTY_RATE_DAILY) ** DAYS_PER_WEEK) /
+                    (100 ** DAYS_PER_WEEK);
             }
 
             daysElapsed -= weeksElapsed * 7;
             for (uint64 i = 0; i < daysElapsed; i++) {
-                remainingAmount = (remainingAmount * (100 - NON_EXIT_PENALTY_RATE_DAILY)) / 100;
+                remainingAmount =
+                    (remainingAmount * (100 - NON_EXIT_PENALTY_RATE_DAILY)) /
+                    100;
             }
         }
 
         uint256 penaltyAmount = NON_EXIT_PENALTY_PRINCIPAL - remainingAmount;
-        require(penaltyAmount <= NON_EXIT_PENALTY_PRINCIPAL && penaltyAmount >= 0, "Incorrect penalty amount");
+        require(
+            penaltyAmount <= NON_EXIT_PENALTY_PRINCIPAL && penaltyAmount >= 0,
+            "Incorrect penalty amount"
+        );
 
         return penaltyAmount;
     }
