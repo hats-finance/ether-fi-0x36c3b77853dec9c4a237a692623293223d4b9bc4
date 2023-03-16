@@ -41,7 +41,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event NFTContractsDeployed(address TNFTInstance, address BNFTInstance);
     event StakeDeposit(
         address indexed staker,
         uint256 bidId,
@@ -53,7 +52,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         uint256 validatorId,
         string ipfsHashForEncryptedValidatorKey
     );
-    event ValidatorAccepted(uint256 validatorId);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -79,8 +77,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
         auctionAddress = _auctionAddress;
-
-        emit NFTContractsDeployed(address(TNFTInstance), address(BNFTInstance));
     }
 
     //--------------------------------------------------------------------------------------
