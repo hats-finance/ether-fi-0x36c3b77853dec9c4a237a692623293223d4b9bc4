@@ -12,14 +12,16 @@ contract TreasuryTest is Test {
     AuctionManager auctionInstance;
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
 
-    address owner = vm.addr(1);
+    address owner = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
     address alice = vm.addr(2);
 
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
+        auctionInstance = new AuctionManager(
+            address(nodeOperatorKeyManagerInstance)
+        );
         vm.stopPrank();
     }
 

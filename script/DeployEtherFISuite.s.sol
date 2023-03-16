@@ -32,19 +32,19 @@ contract DeployScript is Script {
 
         Treasury treasury = new Treasury();
         NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
-        AuctionManager auctionManager = new AuctionManager(address(nodeOperatorKeyManager));
-
-        vm.recordLogs();
-
-        StakingManager stakingManager = new StakingManager(address(auctionManager));
-        auctionManager.setStakingManagerContractAddress(address(stakingManager));
-
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-
-        (address TNFTAddress, address BNFTAddress) = abi.decode(
-            entries[0].data,
-            (address, address)
+        AuctionManager auctionManager = new AuctionManager(
+            address(nodeOperatorKeyManager)
         );
+
+        StakingManager stakingManager = new StakingManager(
+            address(auctionManager)
+        );
+        auctionManager.setStakingManagerContractAddress(
+            address(stakingManager)
+        );
+
+        address TNFTAddress = stakingManager.tnftContractAddress();
+        address BNFTAddress = stakingManager.bnftContractAddress();
 
         EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
             address(treasury),
@@ -54,8 +54,12 @@ contract DeployScript is Script {
             BNFTAddress
         );
 
-        auctionManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
-        stakingManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
+        auctionManager.setEtherFiNodesManagerAddress(
+            address(etherFiNodesManager)
+        );
+        stakingManager.setEtherFiNodesManagerAddress(
+            address(etherFiNodesManager)
+        );
 
         vm.stopBroadcast();
 
@@ -75,11 +79,9 @@ contract DeployScript is Script {
         /// @dev Initial version.txt and X.release files should be created manually
     }
 
-    function _stringToUint(string memory numString)
-        internal
-        pure
-        returns (uint256)
-    {
+    function _stringToUint(
+        string memory numString
+    ) internal pure returns (uint256) {
         uint256 val = 0;
         bytes memory stringBytes = bytes(numString);
         for (uint256 i = 0; i < stringBytes.length; i++) {
@@ -88,7 +90,7 @@ contract DeployScript is Script {
             uint8 uval = uint8(ival);
             uint256 jval = uval - uint256(0x30);
 
-            val += (uint256(jval) * (10**(exp - 1)));
+            val += (uint256(jval) * (10 ** (exp - 1)));
         }
         return val;
     }

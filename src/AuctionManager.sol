@@ -16,9 +16,10 @@ import "./StakingManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "lib/forge-std/src/console.sol";
 
-contract AuctionManager is IAuctionManager, Pausable {
+contract AuctionManager is IAuctionManager, Pausable, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -30,7 +31,6 @@ contract AuctionManager is IAuctionManager, Pausable {
     uint256 public numberOfActiveBids;
     uint256 public currentHighestBidId;
     address public stakingManagerContractAddress;
-    address public owner;
     address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
     bool public whitelistEnabled = true;
@@ -89,7 +89,6 @@ contract AuctionManager is IAuctionManager, Pausable {
 
     /// @notice Constructor to set variables on deployment
     constructor(address _nodeOperatorKeyManagerContract) {
-        owner = msg.sender;
         nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
         nodeOperatorKeyManagerInterface = INodeOperatorKeyManager(
             _nodeOperatorKeyManagerContract
@@ -158,7 +157,7 @@ contract AuctionManager is IAuctionManager, Pausable {
         uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
             msg.sender
         );
-        
+
         require(whitelistEnabled, "Whitelist disabled");
         require(_bidSize <= userTotalKeys, "Insufficient public keys");
 
@@ -397,11 +396,6 @@ contract AuctionManager is IAuctionManager, Pausable {
             msg.sender == stakingManagerContractAddress,
             "Only staking manager contract function"
         );
-        _;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
         _;
     }
 }

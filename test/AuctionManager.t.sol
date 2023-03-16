@@ -68,8 +68,8 @@ contract AuctionManagerTest is Test {
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
         );
-        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+        TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
+        TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
@@ -77,7 +77,9 @@ contract AuctionManagerTest is Test {
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
+        vm.stopPrank();
 
+        vm.startPrank(owner);
         auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
@@ -817,7 +819,7 @@ contract AuctionManagerTest is Test {
 
         bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
         vm.prank(alice);
-        vm.expectRevert("Only owner function");
+        vm.expectRevert("Ownable: caller is not the owner");
         auctionInstance.updateMerkleRoot(newRoot);
     }
 
