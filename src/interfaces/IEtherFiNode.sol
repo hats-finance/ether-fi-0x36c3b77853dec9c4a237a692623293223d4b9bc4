@@ -7,7 +7,6 @@ interface IEtherFiNode {
     //The state of the validator
     enum VALIDATOR_PHASE {
         STAKE_DEPOSITED,
-        REGISTERED,
         LIVE,
         EXITED,
         CANCELLED
@@ -17,6 +16,7 @@ interface IEtherFiNode {
     function setIpfsHashForEncryptedValidatorKey(string calldata _ipfs) external;
     function setLocalRevenueIndex(uint256 _localRevenueIndex) external;
     function setExitRequestTimestamp() external;
+    function markExited() external;
     function receiveVestedRewardsForStakers() external payable;
 
     function phase() external view returns (VALIDATOR_PHASE);
@@ -24,6 +24,7 @@ interface IEtherFiNode {
     function localRevenueIndex() external view returns (uint256);
     function stakingStartTimestamp() external view returns (uint32);
     function exitRequestTimestamp() external view returns (uint32);
+    function exitTimestamp() external view returns (uint32);
     function vestedAuctionRewards() external view returns (uint256);
     function getAccruedStakingRewards() external view returns (uint256);
 

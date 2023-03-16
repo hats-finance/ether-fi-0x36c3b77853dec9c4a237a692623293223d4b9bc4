@@ -21,8 +21,9 @@ contract EtherFiNode is IEtherFiNode {
     uint256 public localRevenueIndex;
     uint256 public vestedAuctionRewards; 
     string public ipfsHashForEncryptedValidatorKey;
-    uint32 public stakingStartTimestamp;
     uint32 public exitRequestTimestamp;
+    uint32 public exitTimestamp;
+    uint32 public stakingStartTimestamp;
     VALIDATOR_PHASE public phase;
 
     //--------------------------------------------------------------------------------------
@@ -70,6 +71,12 @@ contract EtherFiNode is IEtherFiNode {
         exitRequestTimestamp = uint32(block.timestamp);
     }
 
+    function markExited() external onlyEtherFiNodeManagerContract {
+        require(phase == VALIDATOR_PHASE.LIVE && exitTimestamp == 0, "Already marked as exited");
+        phase = VALIDATOR_PHASE.EXITED;
+        exitTimestamp = uint32(block.timestamp);
+    }
+    
     function receiveVestedRewardsForStakers() external payable onlyProtocolRevenueManagerContract {
         vestedAuctionRewards = msg.value;
     }

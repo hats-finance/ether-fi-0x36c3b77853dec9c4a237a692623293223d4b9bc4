@@ -239,6 +239,15 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         emit NodeExitRequested(_validatorId);
     }
 
+    function markExited(uint256[] calldata _validatorIds) external onlyOwner {
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            address etherfiNode = etherfiNodePerValidator[_validatorIds[i]];
+            require(etherfiNode != address(0), "The validator Id is invalid.");
+            IEtherFiNode(etherfiNode).markExited();
+        }
+    }
+
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
@@ -346,6 +355,11 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
+        _;
+    }
 
     modifier onlyStakingManagerContract() {
         require(

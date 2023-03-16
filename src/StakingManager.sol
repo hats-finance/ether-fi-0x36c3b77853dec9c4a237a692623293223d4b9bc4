@@ -170,7 +170,7 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         }
         
         nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
-        nodesManagerIntefaceInstance.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.REGISTERED);
+        nodesManagerIntefaceInstance.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
         nodesManagerIntefaceInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         // Let valiadatorId = nftTokenId
