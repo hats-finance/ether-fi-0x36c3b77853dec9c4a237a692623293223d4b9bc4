@@ -2,18 +2,9 @@
 pragma solidity 0.8.13;
 
 //Importing all needed contracts and libraries
-import "./interfaces/ITNFT.sol";
-import "./interfaces/IBNFT.sol";
-import "./interfaces/IStakingManager.sol";
 import "./interfaces/IAuctionManager.sol";
-import "./interfaces/ITreasury.sol";
-import "./interfaces/IEtherFiNode.sol";
-import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/INodeOperatorKeyManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
-import "./TNFT.sol";
-import "./BNFT.sol";
-import "./StakingManager.sol";
-import "../src/NodeOperatorKeyManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -31,7 +22,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     uint256 public numberOfActiveBids;
     uint256 public currentHighestBidId;
     address public stakingManagerContractAddress;
-    address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
     bool public whitelistEnabled = true;
 
@@ -39,7 +29,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     INodeOperatorKeyManager nodeOperatorKeyManagerInterface;
     IProtocolRevenueManager protocolRevenueManager;
-    IEtherFiNodesManager etherFiNodesManager;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -89,7 +78,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     /// @notice Constructor to set variables on deployment
     constructor(address _nodeOperatorKeyManagerContract) {
-        nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
         nodeOperatorKeyManagerInterface = INodeOperatorKeyManager(
             _nodeOperatorKeyManagerContract
         );
@@ -370,13 +358,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     function isBidActive(uint256 _bidId) external view returns (bool) {
         return bids[_bidId].isActive;
-    }
-
-    /// @notice Sets the address of the EtherFi node manager contract
-    /// @dev Used due to circular dependencies
-    /// @param _managerAddress address being set as the etherfi node manager contract
-    function setEtherFiNodesManagerAddress(address _managerAddress) external {
-        etherFiNodesManager = IEtherFiNodesManager(_managerAddress);
     }
 
     function setProtocolRevenueManager(

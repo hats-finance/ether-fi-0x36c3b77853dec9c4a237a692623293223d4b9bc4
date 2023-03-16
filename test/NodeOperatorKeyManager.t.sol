@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/NodeOperatorKeyManager.sol";
+import "../src/StakingManager.sol";
 import "forge-std/console.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IDepositContract.sol";
@@ -63,7 +64,6 @@ contract NodeOperatorKeyManagerTest is Test {
             address(TestBNFTInstance)
         );
 
-        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );

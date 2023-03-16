@@ -78,7 +78,6 @@ contract AuctionManagerTest is Test {
             address(TestBNFTInstance)
         );
 
-        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );

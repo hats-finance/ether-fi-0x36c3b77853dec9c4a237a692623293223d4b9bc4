@@ -61,7 +61,6 @@ contract ProtocolRevenueManagerTest is Test {
             address(TestBNFTInstance)
         );
 
-        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         auctionInstance.setProtocolRevenueManager(
             address(protocolRevenueManagerInstance)
         );

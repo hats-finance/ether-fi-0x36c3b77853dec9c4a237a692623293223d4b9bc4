@@ -38,8 +38,6 @@ interface IAuctionManager {
 
     function isBidActive(uint256 _bidId) external view returns (bool);
 
-    function setEtherFiNodesManagerAddress(address _managerAddress) external;
-
     function setProtocolRevenueManager(
         address _protocolRevenueManager
     ) external;
