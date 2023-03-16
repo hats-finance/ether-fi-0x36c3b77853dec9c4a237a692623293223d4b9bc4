@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "lib/forge-std/src/console.sol";
 
 contract AuctionManager is IAuctionManager, Pausable, Ownable {
+    
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -130,7 +131,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         emit BidCancelled(_bidId);
     }
 
-    /// @notice Creates bids that are able to be place in the auction  or be selected  by a staker
+    /// @notice Allows whitelisted address to create bids that are able to be place in the auction or be selected  by a staker
     /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
@@ -193,6 +194,10 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         return bidIdArray;
     }
 
+    /// @notice Allows anyone to create bids that are able to be place in the auction  or be selected  by a staker
+    /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
+    /// @param _bidSize the number of bids that the node operator would like to create
+    /// @param _bidAmountPerBid the ether value of 1 bid.
     function createBidPermissionless(
         uint256 _bidSize,
         uint256 _bidAmountPerBid
@@ -243,10 +248,14 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         return bidIdArray;
     }
 
+    /// @notice Disables whitelisting phase
+    /// @dev Users who are on a whitelist can still bid, this just allows regular users to place bids as well
     function disableWhitelist() public onlyOwner {
         whitelistEnabled = false;
     }
-
+    
+    /// @notice Enables whitelisting phase
+    /// @dev Only users who are on a whitelist can bid
     function enableWhitelist() public onlyOwner {
         whitelistEnabled = true;
     }
@@ -338,15 +347,8 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     }
 
     //--------------------------------------------------------------------------------------
-    //-------------------------------------  GETTER   --------------------------------------
+    //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
-
-    /// @notice Fetches how many active bids there are and sends it to the caller
-    /// @dev Needed for deposit to check if there are any active bids
-    /// @return numberOfActiveBids the number of current active bids
-    function getNumberOfActivebids() external view returns (uint256) {
-        return numberOfActiveBids;
-    }
 
     /// @notice Fetches the address of the user who placed a bid for a specific bid ID
     /// @dev Needed for registerValidator() function in Staking Contract
@@ -355,10 +357,21 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         return bids[_bidId].bidderAddress;
     }
 
+    /// @notice Fetches if a selected bid is currently active
+    /// @dev Needed for batchDepositWithBidIds() function in Staking Contract
+    /// @return the boolean value of the active flag in bids
     function isBidActive(uint256 _bidId) external view returns (bool) {
         return bids[_bidId].isActive;
     }
 
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  SETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+    
+    /// @notice Sets an instance of the protocol revenue manager
+    /// @dev Needed to process an auction fee
+    /// @param _protocolRevenueManager the addres of the protocol manager
+    /// @notice Performed this way due to circular dependencies
     function setProtocolRevenueManager(
         address _protocolRevenueManager
     ) external {

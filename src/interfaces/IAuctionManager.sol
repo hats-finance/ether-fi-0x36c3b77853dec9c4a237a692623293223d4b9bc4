@@ -24,8 +24,6 @@ interface IAuctionManager {
 
     function cancelBid(uint256 _bidId) external;
 
-    function getNumberOfActivebids() external view returns (uint256);
-
     function getBidOwner(uint256 _bidId) external view returns (address);
 
     function reEnterAuction(uint256 _bidId) external;
@@ -37,6 +35,8 @@ interface IAuctionManager {
     function processAuctionFeeTransfer(uint256 _validatorId) external;
 
     function isBidActive(uint256 _bidId) external view returns (bool);
+
+    function numberOfActiveBids() external view returns (uint256);
 
     function setProtocolRevenueManager(
         address _protocolRevenueManager
