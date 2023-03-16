@@ -26,8 +26,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     address public immutable implementationContract;
 
-    uint256 public constant SCALE = 100;
-
     uint256 public numberOfValidators;
 
     address public owner;
@@ -44,7 +42,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     IAuctionManager public auctionInterfaceInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
-    AuctionManagerContractRevenueSplit public auctionContractRevenueSplit;
+    uint256 public constant SCALE = 1000000;
+    StakingRewardsSplit public stakingRewardsSplit;
     ValidatorExitRevenueSplit public validatorExitRevenueSplit;
 
     //--------------------------------------------------------------------------------------
@@ -88,12 +87,14 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         tnftInstance = TNFT(_tnftContract);
         bnftInstance = BNFT(_bnftContract);
 
-        auctionContractRevenueSplit = AuctionManagerContractRevenueSplit({
-            treasurySplit: 10,
-            nodeOperatorSplit: 10,
-            tnftHolderSplit: 60,
-            bnftHolderSplit: 20
+        // in basis points for higher resolution
+        stakingRewardsSplit = StakingRewardsSplit({
+            treasury: 50000,
+            nodeOperator: 50000,
+            tnft: 815625, // 90 * 29 / 32
+            bnft: 84375 // 90 * 3 / 32
         });
+        require((stakingRewardsSplit.treasury + stakingRewardsSplit.nodeOperator + stakingRewardsSplit.tnft + stakingRewardsSplit.bnft) == SCALE, "");
 
         validatorExitRevenueSplit = ValidatorExitRevenueSplit({
             treasurySplit: 5,
@@ -101,8 +102,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             tnftHolderSplit: 81,
             bnftHolderSplit: 9
         });
-
-        stakingManagerInstance.setEtherFiNodesManagerAddress(address(this));
     }
 
     //--------------------------------------------------------------------------------------
@@ -124,6 +123,35 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         require(
             msg.sender == stakingManagerInstance.bidIdToStaker(_validatorId),
             "Incorrect caller"
+        );
+    }
+
+    function partialWithdraw(uint256 _validatorId) external {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+
+        uint256 stakingRewards = IEtherFiNode(etherfiNode).getAccruedStakingRewards();
+        console.log(stakingRewards);
+        require(stakingRewards < 8 ether, "The accrued staking rewards are above 8 ETH. You should exit the node.");
+
+        uint256 operatorAmount = (stakingRewards * stakingRewardsSplit.treasury) / SCALE;
+        uint256 tnftHolderAmount = (stakingRewards * stakingRewardsSplit.tnft) / SCALE;
+        uint256 bnftHolderAmount = (stakingRewards * stakingRewardsSplit.bnft) / SCALE;
+        uint256 treasuryAmount = stakingRewards - (bnftHolderAmount + tnftHolderAmount + operatorAmount);
+
+        address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
+        address tnftHolder = tnftInstance.ownerOf(_validatorId);
+        address bnftHolder = bnftInstance.ownerOf(_validatorId);
+
+        IEtherFiNode(etherfiNode).withdrawFunds(
+            treasuryContract,
+            treasuryAmount,
+            operator,
+            operatorAmount,
+            tnftHolder,
+            tnftHolderAmount,
+            bnftHolder,
+            bnftHolderAmount
         );
     }
 
@@ -209,6 +237,15 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         emit NodeExitRequested(_validatorId);
     }
 
+    function markExited(uint256[] calldata _validatorIds) external onlyOwner {
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            address etherfiNode = etherfiNodePerValidator[_validatorIds[i]];
+            require(etherfiNode != address(0), "The validator Id is invalid.");
+            IEtherFiNode(etherfiNode).markExited();
+        }
+    }
+
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
@@ -238,6 +275,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
+
+    function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+        return IEtherFiNode(etherfiNode).vestedAuctionRewards();
+    }
+
 
     function generateWithdrawalCredentials(
         address _address
@@ -309,6 +353,11 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
+        _;
+    }
 
     modifier onlyStakingManagerContract() {
         require(

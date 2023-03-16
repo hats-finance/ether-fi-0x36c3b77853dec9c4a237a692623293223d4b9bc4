@@ -51,8 +51,8 @@ contract ProtocolRevenueManagerTest is Test {
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
         );
-        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+        TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
+        TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
@@ -136,27 +136,32 @@ contract ProtocolRevenueManagerTest is Test {
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
         startHoax(alice);
-        uint256[] memory bidIdArray = new uint256[](1);  
+        uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
         stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
+        // 0.1 ether 
+        //  -> 0.05 ether to its etherfi Node contract
+        //  -> 0.05 ether to the protocol revenue manager contract
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
-
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
+        assertEq(address(etherFiNode).balance, 0.05 ether);
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId[0]
             ),
-            0.1 ether
+            0.05 ether
         );
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.1 ether + 1
+            0.05 ether + 1
         );
 
         // 3
@@ -168,17 +173,14 @@ contract ProtocolRevenueManagerTest is Test {
             bidId[0]
         );
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
-        assertEq(address(etherFiNode).balance, 0);
-
         hoax(address(managerInstance));
         protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
-        assertEq(address(protocolRevenueManagerInstance).balance, 0);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
 
         hoax(address(managerInstance));
         protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
-        assertEq(address(protocolRevenueManagerInstance).balance, 0);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
     }
 

@@ -21,7 +21,7 @@ contract TNFTTest is Test {
     bytes32 root;
     bytes32[] public whiteListedAddresses;
 
-    address owner = vm.addr(1);
+    address owner = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
     address alice = vm.addr(2);
 
     function setUp() public {
@@ -29,12 +29,16 @@ contract TNFTTest is Test {
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
-        auctionInstance = new AuctionManager(address(nodeOperatorKeyManagerInstance));
+        auctionInstance = new AuctionManager(
+            address(nodeOperatorKeyManagerInstance)
+        );
         auctionInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
-        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+        auctionInstance.setStakingManagerContractAddress(
+            address(stakingManagerInstance)
+        );
+        TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
+        TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
         vm.stopPrank();
     }
 

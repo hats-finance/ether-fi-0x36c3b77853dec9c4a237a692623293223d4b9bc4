@@ -52,8 +52,8 @@ contract AuctionManagerTest is Test {
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
         );
-        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
-        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
+        TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
+        TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
@@ -155,10 +155,12 @@ contract AuctionManagerTest is Test {
 
         // Dan stakes
         startHoax(dan);
-        uint256[] memory bidIdArray = new uint256[](1);  
+        uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bobBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
 
         (, , , bool isBobBid1Active) = auctionInstance.bids(bobBidIds[0]);
         (, , , bool isBobBid2Active) = auctionInstance.bids(bobBidIds[1]);
@@ -180,10 +182,12 @@ contract AuctionManagerTest is Test {
 
         // Egg stakes
         startHoax(egg);
-        uint256[] memory bidIdArray1 = new uint256[](1);  
+        uint256[] memory bidIdArray1 = new uint256[](1);
         bidIdArray1[0] = bobBidIds[1];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray1);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray1
+        );
 
         (, , , isBobBid2Active) = auctionInstance.bids(bobBidIds[1]);
         (, , , isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
@@ -202,10 +206,12 @@ contract AuctionManagerTest is Test {
 
         // Greg stakes
         startHoax(greg);
-        uint256[] memory bidIdArray2 = new uint256[](1);  
+        uint256[] memory bidIdArray2 = new uint256[](1);
         bidIdArray2[0] = bobBidIds[2];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray2);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray2
+        );
 
         (, , , isBobBid3Active) = auctionInstance.bids(bobBidIds[2]);
 
@@ -223,10 +229,12 @@ contract AuctionManagerTest is Test {
 
         // Henry stakes
         startHoax(henry);
-        uint256[] memory bidIdArray3 = new uint256[](1);  
+        uint256[] memory bidIdArray3 = new uint256[](1);
         bidIdArray3[0] = chadBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray3);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray3
+        );
 
         (, , , bool isChadBid1Active) = auctionInstance.bids(chadBidIds[0]);
         (, , , bool isChadBid2Active) = auctionInstance.bids(chadBidIds[1]);
@@ -279,10 +287,12 @@ contract AuctionManagerTest is Test {
 
         // Dan stakes
         startHoax(dan);
-        uint256[] memory bidIdArray = new uint256[](1);  
+        uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = chadBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
 
         assertEq(auctionInstance.numberOfActiveBids(), 4);
 
@@ -302,10 +312,12 @@ contract AuctionManagerTest is Test {
 
         // Greg stakes
         startHoax(greg);
-        uint256[] memory bidIdArray2 = new uint256[](1);  
+        uint256[] memory bidIdArray2 = new uint256[](1);
         bidIdArray2[0] = bobBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray2);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray2
+        );
 
         assertEq(auctionInstance.numberOfActiveBids(), 6);
 
