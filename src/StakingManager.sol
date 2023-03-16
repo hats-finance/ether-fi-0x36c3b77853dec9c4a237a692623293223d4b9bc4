@@ -183,7 +183,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
             _validatorId,
-            IEtherFiNode.VALIDATOR_PHASE.REGISTERED
+            IEtherFiNode.VALIDATOR_PHASE.LIVE
         );
         nodesManagerIntefaceInstance
             .setEtherFiNodeIpfsHashForEncryptedValidatorKey(

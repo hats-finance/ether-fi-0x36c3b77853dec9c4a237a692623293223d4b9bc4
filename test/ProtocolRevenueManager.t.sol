@@ -148,18 +148,21 @@ contract ProtocolRevenueManagerTest is Test {
         stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
+        // 0.1 ether 
+        //  -> 0.05 ether to its etherfi Node contract
+        //  -> 0.05 ether to the protocol revenue manager contract
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
-
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
+        assertEq(address(etherFiNode).balance, 0.05 ether);
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId[0]
             ),
-            0.1 ether
+            0.05 ether
         );
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.1 ether + 1
+            0.05 ether + 1
         );
 
         // 3
@@ -171,17 +174,14 @@ contract ProtocolRevenueManagerTest is Test {
             bidId[0]
         );
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
-        assertEq(address(etherFiNode).balance, 0);
-
         hoax(address(managerInstance));
         protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
-        assertEq(address(protocolRevenueManagerInstance).balance, 0);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
 
         hoax(address(managerInstance));
         protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
-        assertEq(address(protocolRevenueManagerInstance).balance, 0);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
     }
 
