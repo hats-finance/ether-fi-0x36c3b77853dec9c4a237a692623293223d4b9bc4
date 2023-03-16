@@ -20,9 +20,8 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
-    uint256 public currentHighestBidId;
-    address public stakingManagerContractAddress;
     bytes32 public merkleRoot;
+    address public stakingManagerContractAddress;
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
