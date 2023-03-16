@@ -115,9 +115,11 @@ contract AuctionManagerTest is Test {
         vm.prank(owner);
         auctionInstance.pauseContract();
 
-        uint256[] memory bidIdArray = new uint256[](1);  
+        uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
 
         vm.prank(address(stakingManagerInstance));
         vm.expectRevert("Pausable: paused");
@@ -137,10 +139,12 @@ contract AuctionManagerTest is Test {
             0.1 ether
         );
 
-        uint256[] memory bidIdArray = new uint256[](1);  
+        uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = 1;
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
         vm.stopPrank();
 
         vm.prank(owner);
@@ -162,12 +166,14 @@ contract AuctionManagerTest is Test {
             value: 0.05 ether
         }(proof, 1, 0.05 ether);
 
-        uint256[] memory bidIdArray = new uint256[](1);  
+        uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId1[0];
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
 
         vm.stopPrank();
-        
+
         vm.prank(address(stakingManagerInstance));
         auctionInstance.reEnterAuction(bidId1[0]);
 
@@ -191,12 +197,13 @@ contract AuctionManagerTest is Test {
             value: 0.05 ether
         }(proof, 1, 0.05 ether);
 
-        uint256[] memory bidIdArray = new uint256[](1);  
+        uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId1[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
-        (, , , , , bool isBid1Active) = auctionInstance.bids(bidId1[0]);
-
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
+        (, , , bool isBid1Active) = auctionInstance.bids(bidId1[0]);
 
         uint256 selectedBidId = bidId1[0];
         assertEq(selectedBidId, 1);
@@ -250,24 +257,22 @@ contract AuctionManagerTest is Test {
 
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
-        (
-            bidId,
-            amount,
-            ipfsIndex,
-            timeOfCreation,
-            bidderAddress,
-            isActive
-        ) = auctionInstance.bids(bid1Id[0]);
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            bid1Id[0]
+        );
 
         assertEq(amount, 0.001 ether);
         assertEq(ipfsIndex, 0);
-        assertEq(timeOfCreation, block.timestamp);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
         assertEq(address(auctionInstance).balance, 0.001 ether);
 
         hoax(alice);
-        auctionInstance.createBidWhitelisted{value: 0.001 ether}(aliceProof, 1, 0.001 ether);
+        auctionInstance.createBidWhitelisted{value: 0.001 ether}(
+            aliceProof,
+            1,
+            0.001 ether
+        );
 
         vm.expectRevert("Insufficient public keys");
         startHoax(alice);
@@ -275,7 +280,6 @@ contract AuctionManagerTest is Test {
             aliceProof,
             11,
             1 ether
-
         );
         vm.stopPrank();
 
@@ -288,14 +292,13 @@ contract AuctionManagerTest is Test {
 
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        (, amount, , , bidderAddress, ) = auctionInstance.bids(bid1Id[0]);
+        (amount, , bidderAddress, ) = auctionInstance.bids(bid1Id[0]);
 
         assertEq(amount, 0.001 ether);
         assertEq(bidderAddress, alice);
         assertEq(address(auctionInstance).balance, 0.002 ether);
         vm.prank(owner);
         auctionInstance.disableWhitelist();
-
 
         vm.expectRevert("Whitelist disabled");
         hoax(bob);
@@ -305,7 +308,7 @@ contract AuctionManagerTest is Test {
             0.001 ether
         );
 
-        (, , ipfsIndex, , , ) = auctionInstance.bids(bid1Id[0]);
+        (, ipfsIndex, , ) = auctionInstance.bids(bid1Id[0]);
         assertEq(ipfsIndex, 0);
 
         assertEq(auctionInstance.numberOfActiveBids(), 2);
@@ -738,7 +741,6 @@ contract AuctionManagerTest is Test {
         }(proofForAddress3, 1, 0.2 ether);
         assertEq(address(auctionInstance).balance, 0.6 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 3);
-
 
         vm.stopPrank();
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
