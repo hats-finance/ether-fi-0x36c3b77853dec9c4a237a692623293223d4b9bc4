@@ -337,12 +337,4 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         );
         _;
     }
-
-    modifier bidsCurrentlyActive() {
-        require(
-            auctionInterfaceInstance.getNumberOfActivebids() >= 1,
-            "No bids available at the moment"
-        );
-        _;
-    }
 }
