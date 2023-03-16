@@ -54,10 +54,6 @@ contract DeployScript is Script {
             BNFTAddress
         );
 
-
-        auctionManager.setEtherFiNodesManagerAddress(
-            address(etherFiNodesManager)
-        );
         stakingManager.setEtherFiNodesManagerAddress(
             address(etherFiNodesManager)
         );
