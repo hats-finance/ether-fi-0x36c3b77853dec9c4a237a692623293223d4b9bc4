@@ -20,9 +20,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
     bool public test = true;
 
-    TNFT public TNFTInstance;
-    BNFT public BNFTInstance;
-
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuctionManager public auctionInterfaceInstance;
@@ -34,6 +31,9 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     address public treasuryAddress;
     address public auctionAddress;
     address public nodesManagerAddress;
+
+    address public tnftContractAddress;
+    address public bnftContractAddress;
 
     mapping(uint256 => address) public bidIdToStaker;
 
@@ -92,22 +92,16 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
-    function registerTnftContract()
-        private
-        returns (address tnftContractAddress)
-    {
-        TNFTInstance = new TNFT();
-        tnftContractAddress = address(TNFTInstance);
+    function registerTnftContract() private returns (address) {
+        tnftContractAddress = address(new TNFT());
         TNFTInterfaceInstance = ITNFT(tnftContractAddress);
+        return tnftContractAddress;
     }
 
-    function registerBnftContract()
-        private
-        returns (address bnftContractAddress)
-    {
-        BNFTInstance = new BNFT();
-        bnftContractAddress = address(BNFTInstance);
+    function registerBnftContract() private returns (address) {
+        bnftContractAddress = address(new BNFT());
         BNFTInterfaceInstance = IBNFT(bnftContractAddress);
+        return bnftContractAddress;
     }
 
     function batchDepositWithBidIds(
