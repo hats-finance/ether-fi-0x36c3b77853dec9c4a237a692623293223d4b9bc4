@@ -255,16 +255,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         require(bidIdToStaker[_validatorId] == address(0), "");
     }
 
-    /// @notice Refunds the depositor their staked ether for a specific stake
-    /// @dev Gets called internally from cancelStakingManager or when the time runs out for calling registerValidator
-    /// @param _depositOwner address of the user being refunded
-    /// @param _amount the amount to refund the depositor
-    function _refundDeposit(address _depositOwner, uint256 _amount) internal {
-        //Refund the user with their requested amount
-        (bool sent, ) = _depositOwner.call{value: _amount}("");
-        require(sent, "Failed to send Ether");
-    }
-
     /// @notice Allows withdrawal of funds from contract
     /// @dev Will be removed in final version
     /// @param _wallet the address to send the funds to
@@ -331,6 +321,16 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         );
 
         emit StakeDeposit(msg.sender, _bidId, etherfiNode);
+    }
+
+    /// @notice Refunds the depositor their staked ether for a specific stake
+    /// @dev Gets called internally from cancelStakingManager or when the time runs out for calling registerValidator
+    /// @param _depositOwner address of the user being refunded
+    /// @param _amount the amount to refund the depositor
+    function _refundDeposit(address _depositOwner, uint256 _amount) internal {
+        //Refund the user with their requested amount
+        (bool sent, ) = _depositOwner.call{value: _amount}("");
+        require(sent, "Failed to send Ether");
     }
 
     //--------------------------------------------------------------------------------------
