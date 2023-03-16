@@ -138,7 +138,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
         uint256 unMatchedBidCount = numberOfDeposits - processedBidIdsCount;
         if (unMatchedBidCount > 0) {
-            refundDeposit(msg.sender, stakeAmount * unMatchedBidCount);
+            _refundDeposit(msg.sender, stakeAmount * unMatchedBidCount);
         }
 
         return processedBidIds;
@@ -237,7 +237,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         bidIdToStaker[_validatorId] = address(0);
         nodesManagerIntefaceInstance.uninstallEtherFiNode(_validatorId);
 
-        refundDeposit(msg.sender, stakeAmount);
+        _refundDeposit(msg.sender, stakeAmount);
 
         emit DepositCancelled(_validatorId);
 
@@ -248,7 +248,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev Gets called internally from cancelStakingManager or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
-    function refundDeposit(address _depositOwner, uint256 _amount) public {
+    function _refundDeposit(address _depositOwner, uint256 _amount) internal {
         //Refund the user with their requested amount
         (bool sent, ) = _depositOwner.call{value: _amount}("");
         require(sent, "Failed to send Ether");
