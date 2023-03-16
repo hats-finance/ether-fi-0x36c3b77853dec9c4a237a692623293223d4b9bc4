@@ -11,11 +11,12 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "lib/forge-std/src/console.sol";
 
-contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
+contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
     bool public test = true;
 
@@ -30,8 +31,6 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
     IProtocolRevenueManager protocolRevenueManager;
 
     uint256 public stakeAmount;
-
-    address public owner;
     address public treasuryAddress;
     address public auctionAddress;
     address public nodesManagerAddress;
@@ -79,7 +78,6 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
-        owner = msg.sender;
         auctionAddress = _auctionAddress;
 
         emit NFTContractsDeployed(address(TNFTInstance), address(BNFTInstance));
@@ -99,7 +97,9 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         }
     }
 
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
+    function batchDepositWithBidIds(
+        uint256[] calldata _candidateBidIds
+    )
         external
         payable
         whenNotPaused
@@ -118,7 +118,12 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
         uint256 processedBidIdsCount = 0;
 
-        for(uint256 i = 0; i < _candidateBidIds.length && processedBidIdsCount < numberOfDeposits; ++i) {
+        for (
+            uint256 i = 0;
+            i < _candidateBidIds.length &&
+                processedBidIdsCount < numberOfDeposits;
+            ++i
+        ) {
             uint256 bidId = _candidateBidIds[i];
             address bidStaker = bidIdToStaker[bidId];
             bool isActive = auctionInterfaceInstance.isBidActive(bidId);
@@ -136,13 +141,12 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         }
 
         uint256 unMatchedBidCount = numberOfDeposits - processedBidIdsCount;
-        if(unMatchedBidCount > 0){
+        if (unMatchedBidCount > 0) {
             refundDeposit(msg.sender, stakeAmount * unMatchedBidCount);
         }
 
         return processedBidIds;
     }
-
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
@@ -168,10 +172,17 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
                 _depositData.depositDataRoot
             );
         }
-        
+
         nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
-        nodesManagerIntefaceInstance.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.REGISTERED);
-        nodesManagerIntefaceInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
+        nodesManagerIntefaceInstance.setEtherFiNodePhase(
+            _validatorId,
+            IEtherFiNode.VALIDATOR_PHASE.REGISTERED
+        );
+        nodesManagerIntefaceInstance
+            .setEtherFiNodeIpfsHashForEncryptedValidatorKey(
+                _validatorId,
+                _depositData.ipfsHashForEncryptedValidatorKey
+            );
 
         // Let valiadatorId = nftTokenId
         // Mint {T, B}-NFTs to the Staker
@@ -195,10 +206,13 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         uint256[] calldata _validatorId,
         DepositData[] calldata _depositData
     ) public whenNotPaused {
-        require(_validatorId.length == _depositData.length, "Array lengths must match");
+        require(
+            _validatorId.length == _depositData.length,
+            "Array lengths must match"
+        );
         require(_validatorId.length <= 16, "Too many validators");
 
-        for(uint256 x; x < _validatorId.length; ++x) {
+        for (uint256 x; x < _validatorId.length; ++x) {
             registerValidator(_validatorId[x], _depositData[x]);
         }
     }
@@ -252,21 +266,25 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         require(sent, "Failed to send Ether");
     }
 
-    function setEtherFiNodesManagerAddress(address _nodesManagerAddress)
-        external
-    {
+    function setEtherFiNodesManagerAddress(
+        address _nodesManagerAddress
+    ) public onlyOwner {
         nodesManagerAddress = _nodesManagerAddress;
         nodesManagerIntefaceInstance = IEtherFiNodesManager(
             nodesManagerAddress
         );
     }
 
-    function setTreasuryAddress(address _treasuryAddress) external {
+    function setTreasuryAddress(address _treasuryAddress) public onlyOwner {
         treasuryAddress = _treasuryAddress;
     }
 
-    function setProtocolRevenueManager(address _protocolRevenueManager) external {
-        protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManager);
+    function setProtocolRevenueManager(
+        address _protocolRevenueManager
+    ) public onlyOwner {
+        protocolRevenueManager = IProtocolRevenueManager(
+            _protocolRevenueManager
+        );
     }
 
     //Pauses the contract
@@ -312,13 +330,11 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
-    }
-
     modifier correctStakeAmount() {
-        require(msg.value > 0 && msg.value % stakeAmount == 0, "Insufficient staking amount");
+        require(
+            msg.value > 0 && msg.value % stakeAmount == 0,
+            "Insufficient staking amount"
+        );
         _;
     }
 
