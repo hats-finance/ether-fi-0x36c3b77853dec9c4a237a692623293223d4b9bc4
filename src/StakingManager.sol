@@ -99,28 +99,6 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         }
     }
 
-    /// @notice Allows a user to stake their ETH and be paired with a bid from the auction
-    function depositForAuction()
-        external
-        payable
-        whenNotPaused
-        correctStakeAmount
-    {
-        uint256 numberOfDeposits = msg.value / stakeAmount;
-        require(
-            auctionInterfaceInstance.getNumberOfActivebids() >=
-                numberOfDeposits,
-            "No bids available at the moment"
-        );
-
-        for (uint256 x = 0; x < numberOfDeposits; ++x) {
-            uint256 bidId = auctionInterfaceInstance.fetchWinningBid();
-            require(bidIdToStaker[bidId] == address(0), "Bid already selected");
-
-            processDeposit(bidId);
-        }
-    }
-
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
         external
         payable
@@ -221,45 +199,7 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         require(_validatorId.length <= 16, "Too many validators");
 
         for(uint256 x; x < _validatorId.length; ++x) {
-            uint256 validatorId = _validatorId[x];
-            DepositData calldata depositData = _depositData[x];
-
-            require(
-                bidIdToStaker[validatorId] != address(0),
-                "Deposit does not exist"
-            );
-            require(bidIdToStaker[validatorId] == msg.sender, "Not deposit owner");
-
-            address staker = bidIdToStaker[validatorId];
-
-            if (test == false) {
-                bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
-                    .getWithdrawalCredentials(validatorId);
-                depositContractEth2.deposit{value: stakeAmount}(
-                    depositData.publicKey,
-                    withdrawalCredentials,
-                    depositData.signature,
-                    depositData.depositDataRoot
-                );
-            }
-            
-            nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
-            nodesManagerIntefaceInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.REGISTERED);
-            nodesManagerIntefaceInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(validatorId, depositData.ipfsHashForEncryptedValidatorKey);
-
-            // Let validatorId = nftTokenId
-            // Mint {T, B}-NFTs to the Staker
-            uint256 nftTokenId = validatorId;
-            TNFTInterfaceInstance.mint(staker, nftTokenId);
-            BNFTInterfaceInstance.mint(staker, nftTokenId);
-
-            auctionInterfaceInstance.processAuctionFeeTransfer(validatorId);
-
-            emit ValidatorRegistered(
-                auctionInterfaceInstance.getBidOwner(validatorId),
-                validatorId,
-                depositData.ipfsHashForEncryptedValidatorKey
-            );
+            registerValidator(_validatorId[x], _depositData[x]);
         }
     }
 
@@ -342,6 +282,12 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
+
+    function uncheckedInc(uint x) private pure returns (uint) {
+        unchecked {
+            return x + 1;
+        }
+    }
 
     function processDeposit(uint256 _bidId) internal {
         // Take the bid; Set the matched staker for the bid

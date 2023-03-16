@@ -3,10 +3,8 @@ pragma solidity 0.8.13;
 
 interface IAuctionManager {
     struct Bid {
-        uint256 bidId;
         uint256 amount;
-        uint256 bidderPubKeyIndex;
-        uint256 timeOfBid;
+        uint64 bidderPubKeyIndex;
         address bidderAddress;
         bool isActive;
     }
@@ -23,8 +21,6 @@ interface IAuctionManager {
     ) external payable returns (uint256[] memory);
 
     function updateSelectedBidInformation(uint256 _bidId) external;
-
-    function fetchWinningBid() external returns (uint256);
 
     function cancelBid(uint256 _bidId) external;
 
