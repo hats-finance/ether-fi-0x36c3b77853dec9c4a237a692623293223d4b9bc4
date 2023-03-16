@@ -57,6 +57,7 @@ contract AuctionManagerTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
+
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
@@ -77,11 +78,11 @@ contract AuctionManagerTest is Test {
             address(TestTNFTInstance),
             address(TestBNFTInstance)
         );
-        vm.stopPrank();
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
+        vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
