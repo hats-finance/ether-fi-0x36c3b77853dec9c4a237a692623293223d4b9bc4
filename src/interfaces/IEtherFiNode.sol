@@ -25,6 +25,7 @@ interface IEtherFiNode {
     function stakingStartTimestamp() external view returns (uint32);
     function exitRequestTimestamp() external view returns (uint32);
     function vestedAuctionRewards() external view returns (uint256);
+    function getAccruedStakingRewards() external view returns (uint256);
 
     function withdrawFunds(
         address _treasury,
