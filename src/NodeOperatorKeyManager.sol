@@ -2,6 +2,7 @@
 pragma solidity 0.8.13;
 
 import "../src/interfaces/INodeOperatorKeyManager.sol";
+import "lib/forge-std/src/console.sol";
 
 contract NodeOperatorKeyManager is INodeOperatorKeyManager {
     event OperatorRegistered(

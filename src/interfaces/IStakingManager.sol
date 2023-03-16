@@ -9,8 +9,6 @@ interface IStakingManager {
         bytes32 depositDataRoot;
         string ipfsHashForEncryptedValidatorKey;
     }
-
-    function depositForAuction() external payable;
     
     function cancelDeposit(uint256 _validatorId) external;
 

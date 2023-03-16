@@ -21,6 +21,9 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
   
     uint256 public globalRevenueIndex = 1;
 
+    uint256 public constant vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
+    uint256 public constant auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4;  
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -60,8 +63,17 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     function addAuctionRevenue(uint256 _validatorId) external payable onlyAuctionManager {
         require(etherFiNodesManager.getNumberOfValidators() > 0, "No Active Validator");
         require(etherFiNodesManager.getEtherFiNodeLocalRevenueIndex(_validatorId) == 0, "auctionFeeTransfer is already processed for the validator.");
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
-        globalRevenueIndex += msg.value / etherFiNodesManager.getNumberOfValidators();
+        
+        address etherfiNode = etherFiNodesManager.getEtherFiNodeAddress(_validatorId);
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+        
+        IEtherFiNode(etherfiNode).setLocalRevenueIndex(globalRevenueIndex);
+        uint256 amount = msg.value;
+        uint256 vestingAmountForStakers = (vestedAuctionFeeSplitForStakers * amount) / 100;
+        uint256 amountToProtocol = amount - vestingAmountForStakers;
+
+        IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: vestingAmountForStakers}();
+        globalRevenueIndex += amountToProtocol / etherFiNodesManager.getNumberOfValidators();
     }
   
     // TODO auctionRevenueSplits = {NodeOperator: 50, Treasury: 25, Staker: 25}

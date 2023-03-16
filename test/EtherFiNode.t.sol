@@ -117,23 +117,33 @@ contract EtherFiNodeTest is Test {
 
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);        
+        
         stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
         safeInstance = EtherFiNode(payable(etherFiNode));
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
+        assertEq(address(etherFiNode).balance, 0.05 ether);
+        assertEq(
+            managerInstance.getEtherFiNodeVestedAuctionRewards(
+                bidId[0]
+            ),
+            0.05 ether
+        );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId[0]
             ),
-            0.1 ether
+            0.05 ether
         );
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.1 ether + 1
+            0.05 ether + 1
         );
     }
 
@@ -150,7 +160,7 @@ contract EtherFiNodeTest is Test {
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.1 ether + 1
+            0.05 ether + 1
         );
 
         bytes32[] memory proofAlice = merkle.getProof(whiteListedAddresses, 3);
@@ -173,10 +183,16 @@ contract EtherFiNodeTest is Test {
         }(proofChad, 1, 0.3 ether);
 
         hoax(bob);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId1[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
 
         hoax(dan);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId2[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
 
         {
             address staker_2 = stakingManagerInstance
@@ -193,17 +209,17 @@ contract EtherFiNodeTest is Test {
 
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.3 ether + 1
+            0.15 ether + 1
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
-            0.3 ether
+            0.15 ether
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId1[0]
             ),
-            0.2 ether
+            0.1 ether
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
@@ -211,28 +227,28 @@ contract EtherFiNodeTest is Test {
             ),
             0
         );
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether);
+        assertEq(address(managerInstance.getEtherFiNodeAddress(bidId1[0])).balance, 0.2 ether);
 
         startHoax(dan);
         stakingManagerInstance.registerValidator(bidId2[0], test_data_2);
         vm.stopPrank();
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.8 ether);
+        assertEq(address(managerInstance.getEtherFiNodeAddress(bidId2[0])).balance, 0.15 ether);
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
-            0.4 ether
+            0.2 ether
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId1[0]
             ),
-            0.3 ether
+            0.15 ether
         );
         assertEq(
             protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
                 bidId2[0]
             ),
-            0.1 ether
+            0.05 ether
         );
     }
 
@@ -307,6 +323,43 @@ contract EtherFiNodeTest is Test {
         managerInstance.markExited(validatorIds);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
+    }
+
+    function test_partialWithdraw() public {
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
+        address etherfiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
+       
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
+        assertEq(vestedAuctionFeeRewardsForStakers, address(etherfiNode).balance);
+
+        // Transfer the T-NFT to 'dan'
+        hoax(staker);
+        TestTNFTInstance.transferFrom(
+            staker,
+            dan,
+            bidId[0]
+        );
+
+        uint256 nodeOperatorBalance = address(nodeOperator).balance;
+        uint256 treasuryBalance = address(treasuryInstance).balance;
+        uint256 danBalance = address(dan).balance;
+        uint256 bnftStakerBalance = address(staker).balance;
+
+        // Simulate the rewards distribution from the beacon chain
+        vm.deal(etherfiNode, 1 ether + vestedAuctionFeeRewardsForStakers);
+        assertEq(address(etherfiNode).balance, 1 ether + vestedAuctionFeeRewardsForStakers);
+
+        hoax(owner);
+        managerInstance.partialWithdraw(bidId[0]);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.05 ether);
+        assertEq(address(treasuryInstance).balance, treasuryBalance + 0.05 ether);
+        assertEq(address(dan).balance, danBalance + 0.815625 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.084375 ether);
+
+        vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
+        vm.expectRevert("The accrued staking rewards are above 8 ETH. You should exit the node.");
+        managerInstance.partialWithdraw(bidId[0]);
     }
 
     function _merkleSetup() internal {
