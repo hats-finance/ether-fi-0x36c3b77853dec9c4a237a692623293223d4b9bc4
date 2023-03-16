@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
+
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuctionManager.sol";
@@ -15,8 +17,7 @@ import "lib/forge-std/src/console.sol";
 
 
 contract EtherFiNode is IEtherFiNode {
-    // TODO: immutable constants
-    address etherfiNodesManager; // EtherFiNodesManager
+    address etherfiNodesManager;
     address protocolRevenueManagerAddress;
 
     uint256 public localRevenueIndex;
@@ -108,21 +109,13 @@ contract EtherFiNode is IEtherFiNode {
         localRevenueIndex = _globalRevenueIndex;
     }
 
-    function getStakingRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) external view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
-        uint256 rewards = getAccruedStakingRewards();
+    function getRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+        uint256 rewards = getWithdrawableBalance();
+        return _getRewards(rewards, _splits, _scale);
+    }
 
-        uint256 operator = (rewards * _splits.nodeOperator) / _scale;
-        uint256 tnft = (rewards * _splits.tnft) / _scale;
-        uint256 bnft = (rewards * _splits.bnft) / _scale;
-        uint256 treasury = rewards - (bnft + tnft + operator);
-
-        uint256 daysPassedSinceExitRequest = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
-        if (daysPassedSinceExitRequest >= 14) {
-            treasury += operator;
-            operator = 0;
-        }
-
-        return (operator, tnft, bnft, treasury);
+    function getWithdrawableBalance() public view returns (uint256) {
+        return address(this).balance - vestedAuctionRewards + _getClaimableVestedRewards();
     }
 
     function getNonExitPenaltyAmount(uint256 _principal, uint256 _dailyPenalty) external view onlyEtherFiNodeManagerContract returns (uint256) {
@@ -153,12 +146,51 @@ contract EtherFiNode is IEtherFiNode {
         return penaltyAmount;
     }
 
-    function getAccruedStakingRewards() public view returns (uint256) {
-        return address(this).balance - vestedAuctionRewards;
+    /// @notice Given the current balance of the ether fi node after its EXIT,
+    /// compute the payouts to {node operator, treasury, t-nft holder, b-nft holder}
+    /// https://docs.google.com/spreadsheets/d/1LXOjdRxItjdeZXHQ0C07M7OfddML0x9ER75mB-F1GwQ/edit#gid=1664462266
+    function getFullWithdrawalPayouts(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256) {
+        uint256 balance = address(this).balance - vestedAuctionRewards;
+        require (balance >= 16 ether, "not enough balance for full withdrawal");
+        require (phase == VALIDATOR_PHASE.EXITED, "validator node is not exited");
+
+        uint256 toNodeOperator;
+        uint256 toTreasury;
+        uint256 toTnft;
+        uint256 toBnft;
+        uint256 toBnftPrincipal;
+        uint256 toTnftPrincipal;
+
+        if (balance > 32 ether) {
+            uint256 stakingRewards = balance - 32 ether;
+            (toNodeOperator, toTnft, toBnft, toTreasury) = _getRewards(stakingRewards, _splits, _scale);
+            balance = 32 ether;
+        }
+
+        if (balance > 31.5 ether) {
+            // 31.5 ether < balance <= 32 ether
+            toBnftPrincipal = balance - 30 ether;
+        } else if (balance > 26 ether) {
+            // 26 ether < balance <= 31.5 ether
+            toBnftPrincipal = 1.5 ether;
+        } else if (balance > 25.5 ether) {
+            // 25.5 ether < balance <= 26 ether
+            toBnftPrincipal = 1.5 ether - (26 ether - balance);
+        } else {
+            // balance <= 25.5 ether
+            toBnftPrincipal = 1 ether;
+        }
+        toTnftPrincipal = balance - toBnftPrincipal;
+        
+        toBnft += toBnftPrincipal;
+        toTnft += toTnftPrincipal;
+
+        require(toNodeOperator + toTreasury + toTnft + toBnft == address(this).balance - vestedAuctionRewards, "Incorrect Amount");
+        return (toNodeOperator, toTreasury, toTnft, toBnft);
     }
 
-    function _getClaimableVestedRewards() internal returns (uint256) {
-        uint256 vestingPeriodInDays = IProtocolRevenueManager(protocolRevenueManagerAddress).auctionFeeVestingPeriodForStakersInDays();
+    function _getClaimableVestedRewards() internal view returns (uint256) {
+        uint256 vestingPeriodInDays = 6 * 7 * 4; // ProtocolRevenueManager's 'auctionFeeVestingPeriodForStakersInDays'
         uint256 daysPassed = _getDaysPassedSince(stakingStartTimestamp, uint32(block.timestamp));
         if (daysPassed >= vestingPeriodInDays) {
             uint256 _vestedAuctionRewards = vestedAuctionRewards;
@@ -172,6 +204,23 @@ contract EtherFiNode is IEtherFiNode {
     function _getDaysPassedSince(uint32 _startTimestamp, uint32 _endTimestamp) internal view returns (uint256) {
         uint256 timeElapsed = _endTimestamp - _startTimestamp;
         return uint256(timeElapsed / (24 * 3600));
+    }
+
+    function _getRewards(uint256 _totalAmount, IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+        uint256 rewards = _totalAmount;
+
+        uint256 operator = (rewards * _splits.nodeOperator) / _scale;
+        uint256 tnft = (rewards * _splits.tnft) / _scale;
+        uint256 bnft = (rewards * _splits.bnft) / _scale;
+        uint256 treasury = rewards - (bnft + tnft + operator);
+
+        uint256 daysPassedSinceExitRequest = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
+        if (daysPassedSinceExitRequest >= 14) {
+            treasury += operator;
+            operator = 0;
+        }
+
+        return (operator, tnft, bnft, treasury);
     }
 
     //--------------------------------------------------------------------------------------
