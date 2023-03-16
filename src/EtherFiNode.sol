@@ -108,7 +108,7 @@ contract EtherFiNode is IEtherFiNode {
         localRevenueIndex = _globalRevenueIndex;
     }
 
-    function getStakingRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256) {
+    function getStakingRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) external view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
         uint256 rewards = getAccruedStakingRewards();
 
         uint256 operator = (rewards * _splits.nodeOperator) / _scale;
@@ -121,10 +121,11 @@ contract EtherFiNode is IEtherFiNode {
             treasury += operator;
             operator = 0;
         }
+
         return (operator, tnft, bnft, treasury);
     }
 
-    function getNonExitPenaltyAmount(uint256 _principal, uint256 _dailyPenalty) external view returns (uint256) {
+    function getNonExitPenaltyAmount(uint256 _principal, uint256 _dailyPenalty) external view onlyEtherFiNodeManagerContract returns (uint256) {
         uint256 daysElapsed = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
         uint256 daysPerWeek = 7;
         uint256 weeksElapsed = daysElapsed / daysPerWeek;
