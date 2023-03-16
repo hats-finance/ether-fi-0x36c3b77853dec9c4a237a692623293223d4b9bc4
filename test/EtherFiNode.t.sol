@@ -117,7 +117,11 @@ contract EtherFiNodeTest is Test {
 
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);        
+        
         stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
@@ -173,10 +177,16 @@ contract EtherFiNodeTest is Test {
         }(proofChad, 1, 0.3 ether);
 
         hoax(bob);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        uint256[] memory bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId1[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
 
         hoax(dan);
-        stakingManagerInstance.depositForAuction{value: 0.032 ether}();
+        bidIdArray = new uint256[](1);  
+        bidIdArray[0] = bidId2[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIdArray);
 
         {
             address staker_2 = stakingManagerInstance

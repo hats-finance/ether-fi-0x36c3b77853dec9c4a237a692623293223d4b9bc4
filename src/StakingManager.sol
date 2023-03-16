@@ -99,28 +99,6 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
         }
     }
 
-    /// @notice Allows a user to stake their ETH and be paired with a bid from the auction
-    function depositForAuction()
-        external
-        payable
-        whenNotPaused
-        correctStakeAmount
-    {
-        uint256 numberOfDeposits = msg.value / stakeAmount;
-        require(
-            auctionInterfaceInstance.getNumberOfActivebids() >=
-                numberOfDeposits,
-            "No bids available at the moment"
-        );
-
-        for (uint256 x = 0; x < numberOfDeposits; ++x) {
-            uint256 bidId = auctionInterfaceInstance.fetchWinningBid();
-            require(bidIdToStaker[bidId] == address(0), "Bid already selected");
-
-            processDeposit(bidId);
-        }
-    }
-
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
         external
         payable
@@ -304,6 +282,12 @@ contract StakingManager is IStakingManager, Pausable, ReentrancyGuard {
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
+
+    function uncheckedInc(uint x) private pure returns (uint) {
+        unchecked {
+            return x + 1;
+        }
+    }
 
     function processDeposit(uint256 _bidId) internal {
         // Take the bid; Set the matched staker for the bid
