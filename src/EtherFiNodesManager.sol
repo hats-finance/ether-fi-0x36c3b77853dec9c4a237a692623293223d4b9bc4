@@ -331,9 +331,16 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function getNonExitPenaltyAmount(
         uint256 _validatorId
     ) external view returns (uint256) {
+        return getNonExitPenaltyAmount(_validatorId, uint32(block.timestamp));
+    }
+
+    function getNonExitPenaltyAmount(
+        uint256 _validatorId,
+        uint32 _endTimestamp
+    ) public view returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
-        return IEtherFiNode(etherfiNode).getNonExitPenaltyAmount(nonExitPenaltyPrincipal, nonExitPenaltyDailyRate);
+        return IEtherFiNode(etherfiNode).getNonExitPenaltyAmount(nonExitPenaltyPrincipal, nonExitPenaltyDailyRate, _endTimestamp);
     }
 
     function getRewards(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
@@ -345,7 +352,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function getFullWithdrawalPayouts(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
-        return IEtherFiNode(etherfiNode).getFullWithdrawalPayouts(stakingRewardsSplit, SCALE);
+        return IEtherFiNode(etherfiNode).getFullWithdrawalPayouts(stakingRewardsSplit, SCALE, nonExitPenaltyPrincipal, nonExitPenaltyDailyRate);
     }
 
     //--------------------------------------------------------------------------------------
