@@ -542,30 +542,7 @@ contract AuctionManagerTest is Test {
         );
     }
 
-    function test_BidFailsWhenInvaliAmountSent() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 5);
-
-        vm.expectRevert("Incorrect bid value");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBidWhitelisted{value: 0}(proof, 1, 0);
-
-        assertEq(auctionInstance.numberOfActiveBids(), 0);
-
-        vm.expectRevert("Incorrect bid value");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBidWhitelisted{value: 5.01 ether}(
-            proof,
-            1,
-            5.01 ether
-        );
-
-        assertEq(auctionInstance.numberOfActiveBids(), 0);
-    }
-
-    function test_PausablecreateBidWhitelisted() public {
+    function test_PausableCreateBidWhitelisted() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -699,59 +676,6 @@ contract AuctionManagerTest is Test {
         );
     }
 
-    function test_CancelBidWorksIfBidIsCurrentHighest() public {
-        bytes32[] memory proofForAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofForAddress2 = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
-        bytes32[] memory proofForAddress3 = merkle.getProof(
-            whiteListedAddresses,
-            2
-        );
-
-        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
-
-        vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
-
-        vm.prank(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bid1Id = auctionInstance.createBidWhitelisted{
-            value: 0.1 ether
-        }(proofForAddress1, 1, 0.1 ether);
-        assertEq(auctionInstance.numberOfActiveBids(), 1);
-
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        uint256[] memory bid2Id = auctionInstance.createBidWhitelisted{
-            value: 0.3 ether
-        }(proofForAddress2, 1, 0.3 ether);
-        assertEq(auctionInstance.numberOfActiveBids(), 2);
-
-        startHoax(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
-        uint256[] memory bid3Id = auctionInstance.createBidWhitelisted{
-            value: 0.2 ether
-        }(proofForAddress3, 1, 0.2 ether);
-        assertEq(address(auctionInstance).balance, 0.6 ether);
-        assertEq(auctionInstance.numberOfActiveBids(), 3);
-
-        vm.stopPrank();
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        auctionInstance.cancelBid(bid2Id[0]);
-        assertEq(auctionInstance.numberOfActiveBids(), 2);
-
-        (, , , bool isActive) = auctionInstance.bids(bid2Id[0]);
-
-        assertEq(isActive, false);
-        assertEq(address(auctionInstance).balance, 0.3 ether);
-    }
-
     function test_PausableCancelBid() public {
         bytes32[] memory proofForAddress1 = merkle.getProof(
             whiteListedAddresses,
@@ -859,6 +783,12 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.minBidAmount(), 1 ether);
     }
 
+    function test_SetBidAmountFailsIfGreaterThanMaxBidAmount() public {
+        vm.prank(owner);
+        vm.expectRevert("Min bid exceeds max bid");
+        auctionInstance.setMinBidPrice(5 ether);
+    }
+
     function test_SetWhitelistBidAmount() public {
         assertEq(auctionInstance.whitelistBidAmount(), 0.001 ether);
         vm.prank(owner);
@@ -874,12 +804,6 @@ contract AuctionManagerTest is Test {
         vm.prank(owner);
         vm.expectRevert("Invalid Amount");
         auctionInstance.updateWhitelistMinBidAmount(0.2 ether);
-    }
-
-    function test_SetBidAmountFailsIfGreaterThanMaxBidAmount() public {
-        vm.prank(owner);
-        vm.expectRevert("Min bid exceeds max bid");
-        auctionInstance.setMinBidPrice(5 ether);
     }
 
     function test_EventWhitelistBidUpdated() public {

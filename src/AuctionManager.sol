@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "lib/forge-std/src/console.sol";
 
 contract AuctionManager is IAuctionManager, Pausable, Ownable {
-    
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -145,7 +144,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
             msg.sender
         );
-        
+
         require(whitelistEnabled, "Whitelist disabled");
         require(_bidSize <= userTotalKeys, "Insufficient public keys");
 
@@ -198,10 +197,12 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
     /// @param _bidSize the number of bids that the node operator would like to create
     /// @param _bidAmountPerBid the ether value of 1 bid.
-    function createBidPermissionless(
-        uint256 _bidSize,
-        uint256 _bidAmountPerBid
-    ) external payable whenNotPaused returns (uint256[] memory) {
+    function createBidPermissionless(uint256 _bidSize, uint256 _bidAmountPerBid)
+        external
+        payable
+        whenNotPaused
+        returns (uint256[] memory)
+    {
         uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
             msg.sender
         );
@@ -253,7 +254,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     function disableWhitelist() public onlyOwner {
         whitelistEnabled = false;
     }
-    
+
     /// @notice Enables whitelisting phase
     /// @dev Only users who are on a whitelist can bid
     function enableWhitelist() public onlyOwner {
@@ -262,18 +263,21 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
     /// @param _bidId the ID of the validator
-    function processAuctionFeeTransfer(
-        uint256 _bidId
-    ) external onlyStakingManagerContract {
+    function processAuctionFeeTransfer(uint256 _bidId)
+        external
+        onlyStakingManagerContract
+    {
         uint256 amount = bids[_bidId].amount;
         protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    function reEnterAuction(
-        uint256 _bidId
-    ) external onlyStakingManagerContract whenNotPaused {
+    function reEnterAuction(uint256 _bidId)
+        external
+        onlyStakingManagerContract
+        whenNotPaused
+    {
         require(bids[_bidId].isActive == false, "Bid already active");
 
         //Reactivate the bid
@@ -293,39 +297,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         emit MerkleUpdated(oldMerkle, _newMerkle);
     }
 
-    /// @notice Sets the depositContract address in the current contract
-    /// @dev Called by depositContract and can only be called once
-    /// @param _stakingManagerContractAddress address of the depositContract for authorizations
-    function setStakingManagerContractAddress(
-        address _stakingManagerContractAddress
-    ) external onlyOwner {
-        stakingManagerContractAddress = _stakingManagerContractAddress;
-
-        emit StakingManagerAddressSet(_stakingManagerContractAddress);
-    }
-
-    /// @notice Updates the minimum bid price
-    /// @param _newMinBidAmount the new amount to set the minimum bid price as
-    function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
-        require(_newMinBidAmount < MAX_BID_AMOUNT, "Min bid exceeds max bid");
-        uint256 oldMinBidAmount = minBidAmount;
-        minBidAmount = _newMinBidAmount;
-
-        emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
-    }
-
-    /// @notice Updates the minimum bid price for a whitelisted address
-    /// @param _newAmount the new amount to set the minimum bid price as
-    function updateWhitelistMinBidAmount(
-        uint256 _newAmount
-    ) external onlyOwner {
-        require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
-        uint256 oldBidAmount = whitelistBidAmount;
-        whitelistBidAmount = _newAmount;
-
-        emit WhitelistBidUpdated(oldBidAmount, _newAmount);
-    }
-
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
@@ -340,7 +311,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function uncheckedInc(uint x) private pure returns (uint) {
+    function uncheckedInc(uint256 x) private pure returns (uint256) {
         unchecked {
             return x + 1;
         }
@@ -367,17 +338,51 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     //--------------------------------------------------------------------------------------
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
-    
+
     /// @notice Sets an instance of the protocol revenue manager
     /// @dev Needed to process an auction fee
     /// @param _protocolRevenueManager the addres of the protocol manager
     /// @notice Performed this way due to circular dependencies
-    function setProtocolRevenueManager(
-        address _protocolRevenueManager
-    ) external {
+    function setProtocolRevenueManager(address _protocolRevenueManager)
+        external
+    {
         protocolRevenueManager = IProtocolRevenueManager(
             _protocolRevenueManager
         );
+    }
+
+    /// @notice Sets the depositContract address in the current contract
+    /// @dev Called by depositContract and can only be called once
+    /// @param _stakingManagerContractAddress address of the depositContract for authorizations
+    function setStakingManagerContractAddress(
+        address _stakingManagerContractAddress
+    ) external onlyOwner {
+        stakingManagerContractAddress = _stakingManagerContractAddress;
+
+        emit StakingManagerAddressSet(_stakingManagerContractAddress);
+    }
+
+    /// @notice Updates the minimum bid price
+    /// @param _newMinBidAmount the new amount to set the minimum bid price as
+    function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
+        require(_newMinBidAmount < MAX_BID_AMOUNT, "Min bid exceeds max bid");
+        uint256 oldMinBidAmount = minBidAmount;
+        minBidAmount = _newMinBidAmount;
+
+        emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
+    }
+
+    /// @notice Updates the minimum bid price for a whitelisted address
+    /// @param _newAmount the new amount to set the minimum bid price as
+    function updateWhitelistMinBidAmount(uint256 _newAmount)
+        external
+        onlyOwner
+    {
+        require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
+        uint256 oldBidAmount = whitelistBidAmount;
+        whitelistBidAmount = _newAmount;
+
+        emit WhitelistBidUpdated(oldBidAmount, _newAmount);
     }
 
     //--------------------------------------------------------------------------------------
