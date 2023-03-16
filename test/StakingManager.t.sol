@@ -675,7 +675,7 @@ contract StakingManagerTest is Test {
         uint256 selectedBidId = bidId[0];
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.1 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
         assertEq(selectedBidId, 1);
         assertEq(managerInstance.getNumberOfValidators(), 1);
         assertEq(address(managerInstance).balance, 0 ether);
@@ -766,7 +766,7 @@ contract StakingManagerTest is Test {
             depositDataArray
         );
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 1.4 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.7 ether);
         assertEq(address(auctionInstance).balance, 1.6 ether);
 
         assertEq(

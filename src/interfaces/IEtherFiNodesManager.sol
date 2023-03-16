@@ -12,11 +12,11 @@ interface IEtherFiNodesManager {
         OPERATOR
     }
 
-    struct AuctionManagerContractRevenueSplit {
-        uint256 treasurySplit;
-        uint256 nodeOperatorSplit;
-        uint256 tnftHolderSplit;
-        uint256 bnftHolderSplit;
+    struct StakingRewardsSplit {
+        uint64 treasury;
+        uint64 nodeOperator;
+        uint64 tnft;
+        uint64 bnft;
     }
 
     struct ValidatorExitRevenueSplit {
@@ -31,6 +31,7 @@ interface IEtherFiNodesManager {
     function getEtherFiNodeAddress(uint256 _validatorId) external view returns (address);
     function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory);
     function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external returns (uint256);
+    function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256);
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory);
     function getNumberOfValidators() external view returns (uint256);
     function getNonExitPenaltyAmount(uint256 _validatorId) external view returns (uint256);
@@ -42,10 +43,11 @@ interface IEtherFiNodesManager {
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs) external;
     function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) external;
-    
+
     function sendExitRequest(uint256 _validatorId) external;
     function isExitRequested(uint256 _validatorId) external view returns (bool);
 
     function createEtherfiNode(uint256 _validatorId) external returns (address);
     function withdrawFunds(uint256 _validatorId) external;
+    function partialWithdraw(uint256 _validatorId) external;
 }
