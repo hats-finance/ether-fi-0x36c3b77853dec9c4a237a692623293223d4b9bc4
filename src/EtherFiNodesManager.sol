@@ -40,7 +40,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     IAuctionManager public auctionInterfaceInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
-    uint256 SCALE = 1000000;
+    uint256 public constant SCALE = 1000000;
     StakingRewardsSplit public stakingRewardsSplit;
     ValidatorExitRevenueSplit public validatorExitRevenueSplit;
 
