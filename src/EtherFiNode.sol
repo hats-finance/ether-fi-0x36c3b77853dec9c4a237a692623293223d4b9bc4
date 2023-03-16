@@ -6,6 +6,7 @@ import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
+import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
@@ -107,22 +108,69 @@ contract EtherFiNode is IEtherFiNode {
         localRevenueIndex = _globalRevenueIndex;
     }
 
+    function getStakingRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256) {
+        uint256 rewards = getAccruedStakingRewards();
+
+        uint256 operator = (rewards * _splits.nodeOperator) / _scale;
+        uint256 tnft = (rewards * _splits.tnft) / _scale;
+        uint256 bnft = (rewards * _splits.bnft) / _scale;
+        uint256 treasury = rewards - (bnft + tnft + operator);
+
+        uint256 daysPassedSinceExitRequest = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
+        if (daysPassedSinceExitRequest >= 14) {
+            treasury += operator;
+            operator = 0;
+        }
+        return (operator, tnft, bnft, treasury);
+    }
+
+    function getNonExitPenaltyAmount(uint256 _principal, uint256 _dailyPenalty) external view returns (uint256) {
+        uint256 daysElapsed = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
+        uint256 daysPerWeek = 7;
+        uint256 weeksElapsed = daysElapsed / daysPerWeek;
+
+        uint256 remaining = _principal;
+        if (daysElapsed > 365) {
+            remaining = 0;
+        } else {
+            for (uint64 i = 0; i < weeksElapsed; i++) {
+                remaining = (remaining * (100 - _dailyPenalty) ** daysPerWeek) / (100 ** daysPerWeek);
+            }
+
+            daysElapsed -= weeksElapsed * daysPerWeek;
+            for (uint64 i = 0; i < daysElapsed; i++) {
+                remaining = (remaining * (100 - _dailyPenalty)) / 100;
+            }
+        }
+
+        uint256 penaltyAmount = _principal - remaining;
+        require(
+            penaltyAmount <= _principal && penaltyAmount >= 0,
+            "Incorrect penalty amount"
+        );
+
+        return penaltyAmount;
+    }
+
     function getAccruedStakingRewards() public view returns (uint256) {
         return address(this).balance - vestedAuctionRewards;
     }
 
     function _getClaimableVestedRewards() internal returns (uint256) {
         uint256 vestingPeriodInDays = IProtocolRevenueManager(protocolRevenueManagerAddress).auctionFeeVestingPeriodForStakersInDays();
-        uint256 timeElapsed = uint32(block.timestamp) - stakingStartTimestamp;
-        uint256 SECONDS_PER_DAY = 24 * 3600;
-        uint256 daysElapsed = vestingPeriodInDays * SECONDS_PER_DAY;
-        if (timeElapsed >= vestingPeriodInDays * SECONDS_PER_DAY) {
+        uint256 daysPassed = _getDaysPassedSince(stakingStartTimestamp, uint32(block.timestamp));
+        if (daysPassed >= vestingPeriodInDays) {
             uint256 _vestedAuctionRewards = vestedAuctionRewards;
             // vestedAuctionRewards = 0;
             return _vestedAuctionRewards;
         } else {
             return 0;
         }
+    }
+
+    function _getDaysPassedSince(uint32 _startTimestamp, uint32 _endTimestamp) internal view returns (uint256) {
+        uint256 timeElapsed = _endTimestamp - _startTimestamp;
+        return uint256(timeElapsed / (24 * 3600));
     }
 
     //--------------------------------------------------------------------------------------

@@ -379,6 +379,48 @@ contract EtherFiNodeTest is Test {
         managerInstance.partialWithdraw(bidId[0]);
     }
 
+    function test_partialWithdrawAfterExitRequest() public {
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
+        address etherfiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
+       
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
+        assertEq(vestedAuctionFeeRewardsForStakers, address(etherfiNode).balance);
+
+        // Simulate the rewards distribution from the beacon chain
+        vm.deal(etherfiNode, 1 ether + vestedAuctionFeeRewardsForStakers);
+        assertEq(address(etherfiNode).balance, 1 ether + vestedAuctionFeeRewardsForStakers);
+
+        // Transfer the T-NFT to 'dan'
+        hoax(staker);
+        TestTNFTInstance.transferFrom(
+            staker,
+            dan,
+            bidId[0]
+        );
+        
+        // Send Exit Request and wait for 14 days to pass
+        hoax(dan);
+        managerInstance.sendExitRequest(bidId[0]);
+        vm.warp(1 + 14 * 86400);
+
+        uint256 nodeOperatorBalance = address(nodeOperator).balance;
+        uint256 treasuryBalance = address(treasuryInstance).balance;
+        uint256 danBalance = address(dan).balance;
+        uint256 bnftStakerBalance = address(staker).balance;
+
+        hoax(owner);
+        managerInstance.partialWithdraw(bidId[0]);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
+        assertEq(address(treasuryInstance).balance, treasuryBalance + 0.05 ether + 0.05 ether);
+        assertEq(address(dan).balance, danBalance + 0.815625 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.084375 ether);
+
+        vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
+        vm.expectRevert("The accrued staking rewards are above 8 ETH. You should exit the node.");
+        managerInstance.partialWithdraw(bidId[0]);
+    }
+
     function _merkleSetup() internal {
         merkle = new Merkle();
 

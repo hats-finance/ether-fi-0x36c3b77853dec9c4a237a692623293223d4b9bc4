@@ -19,10 +19,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-    uint256 private constant NON_EXIT_PENALTY_PRINCIPAL = 1 ether;
-    uint256 private constant NON_EXIT_PENALTY_RATE_DAILY = 3; // 3% per day
-    uint256 private constant SECONDS_PER_DAY = 86400;
-    uint256 private constant DAYS_PER_WEEK = 7;
+    uint256 private constant nonExitPenaltyPrincipal = 1 ether;
+    uint256 private constant nonExitPenaltyDailyRate = 3; // 3% per day
 
     address public immutable implementationContract;
 
@@ -42,7 +40,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     IAuctionManager public auctionInterfaceInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
-    uint256 public constant SCALE = 1000000;
+    uint256 SCALE = 1000000;
     StakingRewardsSplit public stakingRewardsSplit;
     ValidatorExitRevenueSplit public validatorExitRevenueSplit;
 
@@ -131,14 +129,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         require(etherfiNode != address(0), "The validator Id is invalid.");
 
         uint256 stakingRewards = IEtherFiNode(etherfiNode).getAccruedStakingRewards();
-        console.log(stakingRewards);
         require(stakingRewards < 8 ether, "The accrued staking rewards are above 8 ETH. You should exit the node.");
 
-        uint256 operatorAmount = (stakingRewards * stakingRewardsSplit.treasury) / SCALE;
-        uint256 tnftHolderAmount = (stakingRewards * stakingRewardsSplit.tnft) / SCALE;
-        uint256 bnftHolderAmount = (stakingRewards * stakingRewardsSplit.bnft) / SCALE;
-        uint256 treasuryAmount = stakingRewards - (bnftHolderAmount + tnftHolderAmount + operatorAmount);
-
+        (uint256 operatorAmount, uint256 tnftHolderAmount, uint256 bnftHolderAmount, uint256 treasuryAmount) = getStakingRewards(_validatorId);
         address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
         address tnftHolder = tnftInstance.ownerOf(_validatorId);
         address bnftHolder = bnftInstance.ownerOf(_validatorId);
@@ -314,40 +307,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     ) external view returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
+        return IEtherFiNode(etherfiNode).getNonExitPenaltyAmount(nonExitPenaltyPrincipal, nonExitPenaltyDailyRate);
+    }
 
-        uint64 startTimestamp = IEtherFiNode(etherfiNode)
-            .exitRequestTimestamp();
-        uint64 endTimestamp = uint64(block.timestamp);
-        uint64 timeElapsed = endTimestamp - startTimestamp;
-        uint64 daysElapsed = uint64(timeElapsed / SECONDS_PER_DAY);
-        uint64 weeksElapsed = uint64(daysElapsed / DAYS_PER_WEEK);
-
-        uint256 remainingAmount = NON_EXIT_PENALTY_PRINCIPAL;
-        if (daysElapsed > 365) {
-            remainingAmount = 0;
-        } else {
-            for (uint64 i = 0; i < weeksElapsed; i++) {
-                remainingAmount =
-                    (remainingAmount *
-                        (100 - NON_EXIT_PENALTY_RATE_DAILY) ** DAYS_PER_WEEK) /
-                    (100 ** DAYS_PER_WEEK);
-            }
-
-            daysElapsed -= weeksElapsed * 7;
-            for (uint64 i = 0; i < daysElapsed; i++) {
-                remainingAmount =
-                    (remainingAmount * (100 - NON_EXIT_PENALTY_RATE_DAILY)) /
-                    100;
-            }
-        }
-
-        uint256 penaltyAmount = NON_EXIT_PENALTY_PRINCIPAL - remainingAmount;
-        require(
-            penaltyAmount <= NON_EXIT_PENALTY_PRINCIPAL && penaltyAmount >= 0,
-            "Incorrect penalty amount"
-        );
-
-        return penaltyAmount;
+    function getStakingRewards(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+        return IEtherFiNode(etherfiNode).getStakingRewards(stakingRewardsSplit, SCALE);
     }
 
     //--------------------------------------------------------------------------------------
