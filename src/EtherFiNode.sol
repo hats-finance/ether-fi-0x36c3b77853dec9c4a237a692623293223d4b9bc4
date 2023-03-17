@@ -12,14 +12,13 @@ import "./TNFT.sol";
 import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
-
 contract EtherFiNode is IEtherFiNode {
     // TODO: immutable constants
     address etherfiNodesManager; // EtherFiNodesManager
     address protocolRevenueManagerAddress;
 
     uint256 public localRevenueIndex;
-    uint256 public vestedAuctionRewards; 
+    uint256 public vestedAuctionRewards;
     string public ipfsHashForEncryptedValidatorKey;
     uint32 public exitRequestTimestamp;
     uint32 public exitTimestamp;
@@ -41,8 +40,7 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
 
     //Allows ether to be sent to this contract
-    receive() external payable {
-    }
+    receive() external payable {}
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
@@ -66,18 +64,25 @@ contract EtherFiNode is IEtherFiNode {
         localRevenueIndex = _localRevenueIndex;
     }
 
-    function setExitRequestTimestamp() external {
+    function setExitRequestTimestamp() external onlyEtherFiNodeManagerContract {
         require(exitRequestTimestamp == 0, "Exit request was already sent.");
         exitRequestTimestamp = uint32(block.timestamp);
     }
 
     function markExited() external onlyEtherFiNodeManagerContract {
-        require(phase == VALIDATOR_PHASE.LIVE && exitTimestamp == 0, "Already marked as exited");
+        require(
+            phase == VALIDATOR_PHASE.LIVE && exitTimestamp == 0,
+            "Already marked as exited"
+        );
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = uint32(block.timestamp);
     }
-    
-    function receiveVestedRewardsForStakers() external payable onlyProtocolRevenueManagerContract {
+
+    function receiveVestedRewardsForStakers()
+        external
+        payable
+        onlyProtocolRevenueManagerContract
+    {
         vestedAuctionRewards = msg.value;
     }
 
@@ -112,7 +117,9 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     function _getClaimableVestedRewards() internal returns (uint256) {
-        uint256 vestingPeriodInDays = IProtocolRevenueManager(protocolRevenueManagerAddress).auctionFeeVestingPeriodForStakersInDays();
+        uint256 vestingPeriodInDays = IProtocolRevenueManager(
+            protocolRevenueManagerAddress
+        ).auctionFeeVestingPeriodForStakersInDays();
         uint256 timeElapsed = uint32(block.timestamp) - stakingStartTimestamp;
         uint256 SECONDS_PER_DAY = 24 * 3600;
         uint256 daysElapsed = vestingPeriodInDays * SECONDS_PER_DAY;
@@ -130,7 +137,10 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
 
     modifier onlyEtherFiNodeManagerContract() {
-        require(msg.sender == etherfiNodesManager, "Only owner");
+        require(
+            msg.sender == etherfiNodesManager,
+            "Only EtherFiNodeManager Contract"
+        );
         _;
     }
 
