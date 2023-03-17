@@ -32,7 +32,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     address public depositContract;
 
     mapping(uint256 => address) public etherfiNodePerValidator;
-    mapping(uint256 => uint256) public fundsReceivedFromAuction;
 
     TNFT public tnftInstance;
     BNFT public bnftInstance;
@@ -121,15 +120,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return clone;
     }
 
-    /// @notice updates claimable balances based on funds received from validator and distributes the funds
-    /// @dev Need to think about distribution if there has been slashing
-    function withdrawFunds(uint256 _validatorId) external {
-        require(
-            msg.sender == stakingManagerInstance.bidIdToStaker(_validatorId),
-            "Incorrect caller"
-        );
-    }
-
+    /// @notice process the rewards skimming
+    /// @param _validatorId the validator Id
     function partialWithdraw(uint256 _validatorId) external {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
@@ -137,23 +129,25 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         uint256 stakingRewards = IEtherFiNode(etherfiNode).getWithdrawableBalance();
         require(stakingRewards < 8 ether, "The accrued staking rewards are above 8 ETH. You should exit the node.");
 
-        (uint256 operatorAmount, uint256 tnftHolderAmount, uint256 bnftHolderAmount, uint256 treasuryAmount) = getRewards(_validatorId);
+        (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = getStakingRewards(_validatorId);
         address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
         address tnftHolder = tnftInstance.ownerOf(_validatorId);
         address bnftHolder = bnftInstance.ownerOf(_validatorId);
 
         IEtherFiNode(etherfiNode).withdrawFunds(
             treasuryContract,
-            treasuryAmount,
+            toTreasury,
             operator,
-            operatorAmount,
+            toOperator,
             tnftHolder,
-            tnftHolderAmount,
+            toTnft,
             bnftHolder,
-            bnftHolderAmount
+            toBnft
         );
     }
 
+    /// @notice process the full withdrawal
+    /// @param _validatorId the validator Id
     function fullWithdraw(uint256 _validatorId) external {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
@@ -163,20 +157,20 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         require (balance >= 16 ether, "not enough balance for full withdrawal");
         require (phase == IEtherFiNode.VALIDATOR_PHASE.EXITED, "validator node is not exited");
 
-        (uint256 operatorAmount, uint256 treasuryAmount, uint256 tnftHolderAmount, uint256 bnftHolderAmount) = getFullWithdrawalPayouts(_validatorId);
+        (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = getFullWithdrawalPayouts(_validatorId);
         address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
         address tnftHolder = tnftInstance.ownerOf(_validatorId);
         address bnftHolder = bnftInstance.ownerOf(_validatorId);
 
         IEtherFiNode(etherfiNode).withdrawFunds(
             treasuryContract,
-            treasuryAmount,
+            toTreasury,
             operator,
-            operatorAmount,
+            toOperator,
             tnftHolder,
-            tnftHolderAmount,
+            toTnft,
             bnftHolder,
-            bnftHolderAmount
+            toBnft
         );
     }
 
@@ -262,11 +256,12 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         emit NodeExitRequested(_validatorId);
     }
 
-    function markExited(uint256[] calldata _validatorIds) external onlyOwner {
+    function markExited(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamps) external onlyOwner {
+        require(_validatorIds.length == _exitTimestamps.length, "_validatorIds.length != _exitTimestamps.length");
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             address etherfiNode = etherfiNodePerValidator[_validatorIds[i]];
             require(etherfiNode != address(0), "The validator Id is invalid.");
-            IEtherFiNode(etherfiNode).markExited();
+            IEtherFiNode(etherfiNode).markExited(_exitTimestamps[i]);
         }
     }
 
@@ -356,10 +351,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return IEtherFiNode(etherfiNode).getNonExitPenaltyAmount(nonExitPenaltyPrincipal, nonExitPenaltyDailyRate, _endTimestamp);
     }
 
-    function getRewards(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
+    function getStakingRewards(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
-        return IEtherFiNode(etherfiNode).getRewards(stakingRewardsSplit, SCALE);
+        return IEtherFiNode(etherfiNode).getStakingRewards(stakingRewardsSplit, SCALE);
     }
 
     function getFullWithdrawalPayouts(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {

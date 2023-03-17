@@ -58,7 +58,7 @@ interface IEtherFiNodesManager {
 
     function getNonExitPenaltyAmount(uint256 _validatorId) external view returns (uint256);
     function getNonExitPenaltyAmount(uint256 _validatorId, uint32 _endTimestamp) external view returns (uint256);
-    function getRewards(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
+    function getStakingRewards(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
     function getFullWithdrawalPayouts(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
 
     function incrementNumberOfValidators(uint256 _count) external;
@@ -88,12 +88,8 @@ interface IEtherFiNodesManager {
     function sendExitRequest(uint256 _validatorId) external;
 
     function isExitRequested(uint256 _validatorId) external view returns (bool);
-
-    function markExited(uint256[] calldata _validatorIds) external;
+    function markExited(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamp) external;
 
     function createEtherfiNode(uint256 _validatorId) external returns (address);
-
-    function withdrawFunds(uint256 _validatorId) external;
-
     function partialWithdraw(uint256 _validatorId) external;
 }
