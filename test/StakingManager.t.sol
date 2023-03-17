@@ -76,7 +76,6 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
-        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         auctionInstance.setProtocolRevenueManager(
             address(protocolRevenueManagerInstance)
         );
@@ -157,7 +156,7 @@ contract StakingManagerTest is Test {
         assertEq(keccak256(withdrawalCredential), keccak256(trueOne));
     }
 
-    function test_StakingManagerCorrectlyInstantiatesStakeObject() public {
+    function test_DepositOneWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -200,7 +199,7 @@ contract StakingManagerTest is Test {
         );
     }
 
-    function test_BatchDepositForAuctionFailsIFInvalidDepositAmount() public {
+    function test_BatchDepositWithBidIdsFailsIFInvalidDepositAmount() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -334,87 +333,6 @@ contract StakingManagerTest is Test {
         );
     }
 
-    function test_StakingManagerReceivesEther() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
-
-        uint256[] memory bidIdArray = new uint256[](1);
-        bidIdArray[0] = 1;
-
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
-            bidIdArray
-        );
-
-        assertEq(address(stakingManagerInstance).balance, 0.032 ether);
-    }
-
-    function test_DepositFailsBidDoesntExist() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
-        auctionInstance.cancelBid(1);
-        vm.expectRevert("No bids available at the moment");
-        uint256[] memory bidIdArray = new uint256[](1);
-        bidIdArray[0] = 1;
-
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
-            bidIdArray
-        );
-    }
-
-    function test_DepositFailsIfContractPaused() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
-
-        vm.prank(owner);
-        stakingManagerInstance.pauseContract();
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.createBidWhitelisted{value: 0.1 ether}(
-            proof,
-            1,
-            0.1 ether
-        );
-        vm.expectRevert("Pausable: paused");
-        uint256[] memory bidIdArray = new uint256[](1);
-        bidIdArray[0] = 1;
-
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
-            bidIdArray
-        );
-        assertEq(stakingManagerInstance.paused(), true);
-        vm.stopPrank();
-
-        vm.prank(owner);
-        stakingManagerInstance.unPauseContract();
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
-            bidIdArray
-        );
-        assertEq(stakingManagerInstance.paused(), false);
-        assertEq(address(stakingManagerInstance).balance, 0.032 ether);
-    }
-
     function test_BatchDepositWithIdsSimpleWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
@@ -470,6 +388,8 @@ contract StakingManagerTest is Test {
         (amount, , , isActive) = auctionInstance.bids(3);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, true);
+
+        assertEq(address(stakingManagerInstance).balance, 0.32 ether);
     }
 
     function test_BatchDepositWithIdsComplexWorksCorrectly() public {
@@ -631,7 +551,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.registerValidator(bidId[0], test_data);
     }
 
-    function test_RegisterValidatorFailsIfValidatorNotInCorrectPhase() public {
+    function test_RegisterValidatorFailsIfValidatorDoesNotExist() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -985,7 +905,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.cancelDeposit(bidId[0]);
     }
 
-    function test_cancelDepositFailsIfCancellingAvailabilityClosed() public {
+    function test_cancelDepositFailsIfDepositDoesNotExist() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);

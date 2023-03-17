@@ -117,7 +117,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
         require(
-            auctionInterfaceInstance.getNumberOfActivebids() >=
+            auctionInterfaceInstance.numberOfActiveBids() >=
                 numberOfDeposits,
             "No bids available at the moment"
         );

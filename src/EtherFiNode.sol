@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
+
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
+import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
@@ -13,8 +16,7 @@ import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNode is IEtherFiNode {
-    // TODO: immutable constants
-    address etherfiNodesManager; // EtherFiNodesManager
+    address etherfiNodesManager;
     address protocolRevenueManagerAddress;
 
     uint256 public localRevenueIndex;
@@ -112,24 +114,129 @@ contract EtherFiNode is IEtherFiNode {
         localRevenueIndex = _globalRevenueIndex;
     }
 
-    function getAccruedStakingRewards() public view returns (uint256) {
-        return address(this).balance - vestedAuctionRewards;
+    function getRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+        uint256 rewards = getWithdrawableBalance();
+        return _getRewards(rewards, _splits, _scale);
     }
 
-    function _getClaimableVestedRewards() internal returns (uint256) {
-        uint256 vestingPeriodInDays = IProtocolRevenueManager(
-            protocolRevenueManagerAddress
-        ).auctionFeeVestingPeriodForStakersInDays();
-        uint256 timeElapsed = uint32(block.timestamp) - stakingStartTimestamp;
-        uint256 SECONDS_PER_DAY = 24 * 3600;
-        uint256 daysElapsed = vestingPeriodInDays * SECONDS_PER_DAY;
-        if (timeElapsed >= vestingPeriodInDays * SECONDS_PER_DAY) {
+    function getWithdrawableBalance() public view returns (uint256) {
+        return address(this).balance - vestedAuctionRewards + _getClaimableVestedRewards();
+    }
+
+    function getNonExitPenaltyAmount(uint256 _principal, uint256 _dailyPenalty, uint32 _endTimestamp) public view onlyEtherFiNodeManagerContract returns (uint256) {
+        uint256 daysElapsed = _getDaysPassedSince(exitRequestTimestamp, _endTimestamp);
+        uint256 daysPerWeek = 7;
+        uint256 weeksElapsed = daysElapsed / daysPerWeek;
+
+        uint256 remaining = _principal;
+        if (daysElapsed > 365) {
+            remaining = 0;
+        } else {
+            for (uint64 i = 0; i < weeksElapsed; i++) {
+                remaining = (remaining * (100 - _dailyPenalty) ** daysPerWeek) / (100 ** daysPerWeek);
+            }
+
+            daysElapsed -= weeksElapsed * daysPerWeek;
+            for (uint64 i = 0; i < daysElapsed; i++) {
+                remaining = (remaining * (100 - _dailyPenalty)) / 100;
+            }
+        }
+
+        uint256 penaltyAmount = _principal - remaining;
+        require(
+            penaltyAmount <= _principal && penaltyAmount >= 0,
+            "Incorrect penalty amount"
+        );
+
+        return penaltyAmount;
+    }
+
+    /// @notice Given the current balance of the ether fi node after its EXIT,
+    /// compute the payouts to {node operator, treasury, t-nft holder, b-nft holder}
+    /// https://docs.google.com/spreadsheets/d/1LXOjdRxItjdeZXHQ0C07M7OfddML0x9ER75mB-F1GwQ/edit#gid=1664462266
+    function getFullWithdrawalPayouts(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale, uint256 _principal, uint256 _dailyPenalty) external view returns (uint256, uint256, uint256, uint256) {
+        uint256 balance = address(this).balance - vestedAuctionRewards;
+        require (balance >= 16 ether, "not enough balance for full withdrawal");
+        require (phase == VALIDATOR_PHASE.EXITED, "validator node is not exited");
+
+        uint256[] memory payouts = new uint256[](4);
+
+        uint256 toBnftPrincipal;
+        uint256 toTnftPrincipal;
+        uint256 bnftNonExitPenalty = getNonExitPenaltyAmount(_principal, _dailyPenalty, exitTimestamp);
+
+        if (balance > 32 ether) {
+            uint256 stakingRewards = balance - 32 ether;
+            // (toNodeOperator, toTnft, toBnft, toTreasury) = ...
+            (payouts[0], payouts[1], payouts[2], payouts[3]) = _getRewards(stakingRewards, _splits, _scale);
+            balance = 32 ether;
+        }
+
+        if (balance > 31.5 ether) {
+            // 31.5 ether < balance <= 32 ether
+            toBnftPrincipal = balance - 30 ether;
+        } else if (balance > 26 ether) {
+            // 26 ether < balance <= 31.5 ether
+            toBnftPrincipal = 1.5 ether;
+        } else if (balance > 25.5 ether) {
+            // 25.5 ether < balance <= 26 ether
+            toBnftPrincipal = 1.5 ether - (26 ether - balance);
+        } else {
+            // balance <= 25.5 ether
+            toBnftPrincipal = 1 ether;
+        }
+        toTnftPrincipal = balance - toBnftPrincipal;
+        
+        payouts[1] += toTnftPrincipal;
+        payouts[2] += toBnftPrincipal;
+
+        payouts[2] -= bnftNonExitPenalty;
+
+        if (bnftNonExitPenalty > 0.5 ether) {
+            payouts[0] += 0.5 ether;
+            payouts[3] += (bnftNonExitPenalty - 0.5 ether);
+        } else {
+            payouts[0] += bnftNonExitPenalty;
+        }
+
+        require(payouts[0] + payouts[1] + payouts[2] + payouts[3] == address(this).balance - vestedAuctionRewards, "Incorrect Amount");
+        
+        // (toNodeOperator, toTreasury, toTnft, toBnft)
+        return (payouts[0], payouts[3], payouts[1], payouts[2]);
+    }
+
+    function _getClaimableVestedRewards() internal view returns (uint256) {
+        uint256 vestingPeriodInDays = 6 * 7 * 4; // ProtocolRevenueManager's 'auctionFeeVestingPeriodForStakersInDays'
+        uint256 daysPassed = _getDaysPassedSince(stakingStartTimestamp, uint32(block.timestamp));
+        if (daysPassed >= vestingPeriodInDays) {
             uint256 _vestedAuctionRewards = vestedAuctionRewards;
             // vestedAuctionRewards = 0;
             return _vestedAuctionRewards;
         } else {
             return 0;
         }
+    }
+
+    function _getDaysPassedSince(uint32 _startTimestamp, uint32 _endTimestamp) internal view returns (uint256) {
+        uint256 timeElapsed = _endTimestamp - _startTimestamp;
+        return uint256(timeElapsed / (24 * 3600));
+    }
+
+    function _getRewards(uint256 _totalAmount, IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+        uint256 rewards = _totalAmount;
+
+        uint256 operator = (rewards * _splits.nodeOperator) / _scale;
+        uint256 tnft = (rewards * _splits.tnft) / _scale;
+        uint256 bnft = (rewards * _splits.bnft) / _scale;
+        uint256 treasury = rewards - (bnft + tnft + operator);
+
+        uint256 daysPassedSinceExitRequest = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
+        if (daysPassedSinceExitRequest >= 14) {
+            treasury += operator;
+            operator = 0;
+        }
+
+        return (operator, tnft, bnft, treasury);
     }
 
     //--------------------------------------------------------------------------------------
