@@ -158,6 +158,12 @@ contract EtherFiNodeTest is Test {
         );
     }
 
+    function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {
+        vm.expectRevert("Only EtherFiNodeManager Contract");
+        vm.prank(alice);
+        safeInstance.setExitRequestTimestamp();
+    }
+
     function test_WithdrawFundsFailsIfNotCorrectCaller() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(safeInstance).call{value: 0.04 ether}("");
@@ -347,7 +353,7 @@ contract EtherFiNodeTest is Test {
         );
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
 
-        vm.expectRevert("Only owner");
+        vm.expectRevert("Only EtherFiNodeManager Contract");
         IEtherFiNode(etherFiNode).markExited();
 
         vm.expectRevert("Only owner function");
