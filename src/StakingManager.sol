@@ -163,6 +163,11 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         DepositData calldata _depositData
     ) public whenNotPaused {
         require(
+            nodesManagerIntefaceInstance.getEtherFiNodePhase(_validatorId) ==
+                IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
+            "Incorrect phase"
+        );
+        require(
             bidIdToStaker[_validatorId] != address(0),
             "Deposit does not exist"
         );
