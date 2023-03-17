@@ -486,17 +486,38 @@ contract AuctionManagerTest is Test {
     }
 
     function test_CreateBidPermissionlessBatchFailsWithIncorrectValue() public {
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
+
+        hoax(alice);
+        uint256[] memory aliceBidIds = auctionInstance.createBidWhitelisted{
+            value: 0.005 ether
+        }(aliceProof, 5, 0.001 ether);
 
         vm.prank(owner);
         auctionInstance.disableWhitelist();
 
         vm.expectRevert("Insufficient public keys");
         startHoax(alice);
-        uint256[] memory aliceBidIds = auctionInstance.createBidPermissionless{
-            value: 11 ether
-        }(11, 1 ether);
+        aliceBidIds = auctionInstance.createBidPermissionless{value: 11 ether}(
+            11,
+            1 ether
+        );
+        vm.stopPrank();
+
+        startHoax(alice);
+        aliceBidIds = auctionInstance.createBidPermissionless{
+            value: 0.002 ether
+        }(2, 0.001 ether);
+        vm.stopPrank();
+
+        vm.expectRevert("Only whitelisted addresses");
+        hoax(chad);
+        uint256[] memory chadBidIds = auctionInstance.createBidPermissionless{
+            value: 0.004 ether
+        }(4, 0.001 ether);
         vm.stopPrank();
 
         vm.expectRevert("Incorrect bid value");
@@ -505,13 +526,6 @@ contract AuctionManagerTest is Test {
             5,
             0.1 ether
         );
-        vm.stopPrank();
-
-        vm.expectRevert("Incorrect bid value");
-        startHoax(alice);
-        aliceBidIds = auctionInstance.createBidPermissionless{
-            value: 0.002 ether
-        }(2, 0.001 ether);
         vm.stopPrank();
 
         vm.expectRevert("Incorrect bid value");

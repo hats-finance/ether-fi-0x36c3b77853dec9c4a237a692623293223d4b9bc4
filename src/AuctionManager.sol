@@ -25,6 +25,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
+    mapping(address => bool) public whitelistedAddresses;
 
     INodeOperatorKeyManager nodeOperatorKeyManagerInterface;
     IProtocolRevenueManager protocolRevenueManager;
@@ -150,11 +151,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
         // Checks if bidder is on whitelist
         require(
-            MerkleProof.verify(
-                _merkleProof,
-                merkleRoot,
-                keccak256(abi.encodePacked(msg.sender))
-            ),
+            _verifyWhitelistedAddress(msg.sender, _merkleProof),
             "Only whitelisted addresses"
         );
 
@@ -197,12 +194,10 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
     /// @param _bidSize the number of bids that the node operator would like to create
     /// @param _bidAmountPerBid the ether value of 1 bid.
-    function createBidPermissionless(uint256 _bidSize, uint256 _bidAmountPerBid)
-        external
-        payable
-        whenNotPaused
-        returns (uint256[] memory)
-    {
+    function createBidPermissionless(
+        uint256 _bidSize,
+        uint256 _bidAmountPerBid
+    ) external payable whenNotPaused returns (uint256[] memory) {
         uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
             msg.sender
         );
@@ -210,12 +205,25 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         require(_bidSize <= userTotalKeys, "Insufficient public keys");
         require(!whitelistEnabled, "Whitelist enabled");
 
-        require(
-            msg.value == _bidSize * _bidAmountPerBid &&
-                _bidAmountPerBid >= minBidAmount &&
-                _bidAmountPerBid <= MAX_BID_AMOUNT,
-            "Incorrect bid value"
-        );
+        if (_bidAmountPerBid < minBidAmount) {
+            require(
+                whitelistedAddresses[msg.sender] == true,
+                "Only whitelisted addresses"
+            );
+            require(
+                msg.value == _bidSize * _bidAmountPerBid &&
+                    _bidAmountPerBid >= whitelistBidAmount &&
+                    _bidAmountPerBid <= MAX_BID_AMOUNT,
+                "Incorrect bid value"
+            );
+        } else {
+            require(
+                msg.value == _bidSize * _bidAmountPerBid &&
+                    _bidAmountPerBid >= minBidAmount &&
+                    _bidAmountPerBid <= MAX_BID_AMOUNT,
+                "Incorrect bid value"
+            );
+        }
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
@@ -263,21 +271,18 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
     /// @param _bidId the ID of the validator
-    function processAuctionFeeTransfer(uint256 _bidId)
-        external
-        onlyStakingManagerContract
-    {
+    function processAuctionFeeTransfer(
+        uint256 _bidId
+    ) external onlyStakingManagerContract {
         uint256 amount = bids[_bidId].amount;
         protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    function reEnterAuction(uint256 _bidId)
-        external
-        onlyStakingManagerContract
-        whenNotPaused
-    {
+    function reEnterAuction(
+        uint256 _bidId
+    ) external onlyStakingManagerContract whenNotPaused {
         require(bids[_bidId].isActive == false, "Bid already active");
 
         //Reactivate the bid
@@ -317,6 +322,20 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         }
     }
 
+    function _verifyWhitelistedAddress(
+        address _user,
+        bytes32[] calldata _merkleProof
+    ) internal returns (bool whitelisted) {
+        whitelisted = MerkleProof.verify(
+            _merkleProof,
+            merkleRoot,
+            keccak256(abi.encodePacked(_user))
+        );
+        if (whitelisted) {
+            whitelistedAddresses[_user] = true;
+        }
+    }
+
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -343,9 +362,9 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @dev Needed to process an auction fee
     /// @param _protocolRevenueManager the addres of the protocol manager
     /// @notice Performed this way due to circular dependencies
-    function setProtocolRevenueManager(address _protocolRevenueManager)
-        external
-    {
+    function setProtocolRevenueManager(
+        address _protocolRevenueManager
+    ) external {
         protocolRevenueManager = IProtocolRevenueManager(
             _protocolRevenueManager
         );
@@ -374,10 +393,9 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
-    function updateWhitelistMinBidAmount(uint256 _newAmount)
-        external
-        onlyOwner
-    {
+    function updateWhitelistMinBidAmount(
+        uint256 _newAmount
+    ) external onlyOwner {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
         uint256 oldBidAmount = whitelistBidAmount;
         whitelistBidAmount = _newAmount;
