@@ -2,6 +2,7 @@
 pragma solidity 0.8.13;
 
 import "./IStakingManager.sol";
+import "./IEtherFiNodesManager.sol";
 
 interface IEtherFiNode {
     //The state of the validator
@@ -27,6 +28,8 @@ interface IEtherFiNode {
     function exitTimestamp() external view returns (uint32);
     function vestedAuctionRewards() external view returns (uint256);
     function getAccruedStakingRewards() external view returns (uint256);
+    function getNonExitPenaltyAmount(uint256 _principal, uint256 _dailyPenalty) external view returns (uint256);
+    function getStakingRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
 
     function withdrawFunds(
         address _treasury,
