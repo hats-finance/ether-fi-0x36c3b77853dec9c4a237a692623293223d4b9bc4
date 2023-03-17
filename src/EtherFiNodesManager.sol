@@ -277,7 +277,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         uint256 _validatorId
     ) public view returns (IEtherFiNode.VALIDATOR_PHASE phase) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         phase = IEtherFiNode(etherfiNode).phase();
     }
 

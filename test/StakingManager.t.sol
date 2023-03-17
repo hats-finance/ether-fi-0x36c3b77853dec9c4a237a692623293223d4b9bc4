@@ -638,19 +638,23 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
+        uint256[] memory bidIds = auctionInstance.createBidWhitelisted{
             value: 0.1 ether
         }(proof, 1, 0.1 ether);
-        uint256[] memory bidIdArray = new uint256[](1);
-        bidIdArray[0] = bidId[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
-            bidIdArray
+            bidIds
         );
-        stakingManagerInstance.cancelDeposit(bidId[0]);
 
-        vm.expectRevert("Deposit does not exist");
-        stakingManagerInstance.registerValidator(bidId[0], test_data);
+        stakingManagerInstance.cancelDeposit(bidIds[0]);
+        vm.stopPrank();
+
+        // vm.expectRevert("The validator Id is invalid.");
+        // stakingManagerInstance.registerValidator(bidIds[0], test_data);
+
+        vm.expectRevert("Incorrect phase");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        stakingManagerInstance.registerValidator(bidIds[0], test_data);
     }
 
     function test_RegisterValidatorFailsIfContractPaused() public {
