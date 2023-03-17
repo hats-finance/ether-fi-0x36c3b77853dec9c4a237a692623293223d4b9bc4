@@ -238,6 +238,11 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             "Deposit does not exist"
         );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
+        require(
+            nodesManagerIntefaceInstance.getEtherFiNodePhase(_validatorId) ==
+                IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
+            "Incorrect phase"
+        );
 
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
