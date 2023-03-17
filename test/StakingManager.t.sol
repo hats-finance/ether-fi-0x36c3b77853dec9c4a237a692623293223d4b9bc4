@@ -646,11 +646,11 @@ contract StakingManagerTest is Test {
             bidIds
         );
 
-        stakingManagerInstance.cancelDeposit(bidIds[0]);
+        stakingManagerInstance.registerValidator(bidIds[0], test_data);
         vm.stopPrank();
 
         // vm.expectRevert("The validator Id is invalid.");
-        // stakingManagerInstance.registerValidator(bidIds[0], test_data);
+        //
 
         vm.expectRevert("Incorrect phase");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
