@@ -56,9 +56,10 @@ interface IEtherFiNodesManager {
 
     function getNumberOfValidators() external view returns (uint256);
 
-    function getNonExitPenaltyAmount(
-        uint256 _validatorId
-    ) external view returns (uint256);
+    function getNonExitPenaltyAmount(uint256 _validatorId) external view returns (uint256);
+    function getNonExitPenaltyAmount(uint256 _validatorId, uint32 _endTimestamp) external view returns (uint256);
+    function getRewards(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
+    function getFullWithdrawalPayouts(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
 
     function incrementNumberOfValidators(uint256 _count) external;
 
