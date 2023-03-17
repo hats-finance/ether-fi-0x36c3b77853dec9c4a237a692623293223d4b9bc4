@@ -558,19 +558,23 @@ contract StakingManagerTest is Test {
         nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
+        uint256[] memory bidIds = auctionInstance.createBidWhitelisted{
             value: 0.1 ether
         }(proof, 1, 0.1 ether);
-        uint256[] memory bidIdArray = new uint256[](1);
-        bidIdArray[0] = bidId[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
-            bidIdArray
+            bidIds
         );
-        stakingManagerInstance.cancelDeposit(bidId[0]);
 
-        vm.expectRevert("Deposit does not exist");
-        stakingManagerInstance.registerValidator(bidId[0], test_data);
+        stakingManagerInstance.registerValidator(bidIds[0], test_data);
+        vm.stopPrank();
+
+        // vm.expectRevert("The validator Id is invalid.");
+        //
+
+        vm.expectRevert("Incorrect phase");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        stakingManagerInstance.registerValidator(bidIds[0], test_data);
     }
 
     function test_RegisterValidatorFailsIfContractPaused() public {
@@ -808,6 +812,66 @@ contract StakingManagerTest is Test {
         );
     }
 
+    function test_BatchRegisterValidatorFailsIfIncorrectPhase() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 100);
+
+        for (uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBidWhitelisted{value: 0.1 ether}(
+                proof,
+                1,
+                0.1 ether
+            );
+        }
+        for (uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBidWhitelisted{value: 0.2 ether}(
+                proof,
+                1,
+                0.2 ether
+            );
+        }
+
+        uint256[] memory bidIdArray = new uint256[](9);
+        bidIdArray[0] = 1;
+        bidIdArray[1] = 2;
+        bidIdArray[2] = 6;
+        bidIdArray[3] = 7;
+        bidIdArray[4] = 8;
+        bidIdArray[5] = 9;
+        bidIdArray[6] = 11;
+        bidIdArray[7] = 12;
+        bidIdArray[8] = 19;
+
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](9);
+        depositDataArray[0] = test_data;
+        depositDataArray[1] = test_data_2;
+        depositDataArray[2] = test_data;
+        depositDataArray[3] = test_data_2;
+        depositDataArray[4] = test_data;
+        depositDataArray[5] = test_data_2;
+        depositDataArray[6] = test_data;
+        depositDataArray[7] = test_data_2;
+        depositDataArray[8] = test_data;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.32 ether}(
+            bidIdArray
+        );
+
+        stakingManagerInstance.batchRegisterValidators(
+            bidIdArray,
+            depositDataArray
+        );
+
+        vm.expectRevert("Incorrect phase");
+        stakingManagerInstance.batchRegisterValidators(
+            bidIdArray,
+            depositDataArray
+        );
+    }
+
     function test_BatchRegisterValidatorFailsIfMoreThan16Registers() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
@@ -925,6 +989,29 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.cancelDeposit(bidId[0]);
 
         vm.expectRevert("Deposit does not exist");
+        stakingManagerInstance.cancelDeposit(bidId[0]);
+    }
+
+    function test_cancelDepositFailsIfIncorrectPhase() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proof, 1, 0.1 ether);
+
+        uint256[] memory bidIdArray = new uint256[](1);
+        bidIdArray[0] = bidId[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
+        stakingManagerInstance.registerValidator(bidId[0], test_data);
+
+        vm.expectRevert("Incorrect phase");
         stakingManagerInstance.cancelDeposit(bidId[0]);
     }
 

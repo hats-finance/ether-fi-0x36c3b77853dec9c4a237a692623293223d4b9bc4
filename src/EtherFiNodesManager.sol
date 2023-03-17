@@ -92,7 +92,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             tnft: 815625, // 90 * 29 / 32
             bnft: 84375 // 90 * 3 / 32
         });
-        require((stakingRewardsSplit.treasury + stakingRewardsSplit.nodeOperator + stakingRewardsSplit.tnft + stakingRewardsSplit.bnft) == SCALE, "");
+        require(
+            (stakingRewardsSplit.treasury +
+                stakingRewardsSplit.nodeOperator +
+                stakingRewardsSplit.tnft +
+                stakingRewardsSplit.bnft) == SCALE,
+            ""
+        );
 
         validatorExitRevenueSplit = ValidatorExitRevenueSplit({
             treasurySplit: 5,
@@ -264,7 +270,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         }
     }
 
-
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
@@ -277,6 +282,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         uint256 _validatorId
     ) public view returns (address) {
         return etherfiNodePerValidator[_validatorId];
+    }
+
+    function getEtherFiNodePhase(
+        uint256 _validatorId
+    ) public view returns (IEtherFiNode.VALIDATOR_PHASE phase) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        phase = IEtherFiNode(etherfiNode).phase();
     }
 
     function getEtherFiNodeIpfsHashForEncryptedValidatorKey(
@@ -295,12 +307,13 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
 
-    function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256) {
+    function getEtherFiNodeVestedAuctionRewards(
+        uint256 _validatorId
+    ) external returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).vestedAuctionRewards();
     }
-
 
     function generateWithdrawalCredentials(
         address _address
