@@ -2,18 +2,9 @@
 pragma solidity 0.8.13;
 
 //Importing all needed contracts and libraries
-import "./interfaces/ITNFT.sol";
-import "./interfaces/IBNFT.sol";
-import "./interfaces/IStakingManager.sol";
 import "./interfaces/IAuctionManager.sol";
-import "./interfaces/ITreasury.sol";
-import "./interfaces/IEtherFiNode.sol";
-import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/INodeOperatorKeyManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
-import "./TNFT.sol";
-import "./BNFT.sol";
-import "./StakingManager.sol";
-import "../src/NodeOperatorKeyManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -29,17 +20,14 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
-    uint256 public currentHighestBidId;
-    address public stakingManagerContractAddress;
-    address public nodeOperatorKeyManagerContract;
     bytes32 public merkleRoot;
+    address public stakingManagerContractAddress;
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
 
     INodeOperatorKeyManager nodeOperatorKeyManagerInterface;
     IProtocolRevenueManager protocolRevenueManager;
-    IEtherFiNodesManager etherFiNodesManager;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -89,7 +77,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     /// @notice Constructor to set variables on deployment
     constructor(address _nodeOperatorKeyManagerContract) {
-        nodeOperatorKeyManagerContract = _nodeOperatorKeyManagerContract;
         nodeOperatorKeyManagerInterface = INodeOperatorKeyManager(
             _nodeOperatorKeyManagerContract
         );
@@ -143,7 +130,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         emit BidCancelled(_bidId);
     }
 
-    /// @notice Creates bids that are able to be place in the auction  or be selected  by a staker
+    /// @notice Allows whitelisted address to create bids that are able to be place in the auction or be selected  by a staker
     /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
     /// @dev Merkleroot gets generated in JS offline and sent to the contract
     /// @param _merkleProof the merkleproof for the user calling the function
@@ -206,10 +193,16 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         return bidIdArray;
     }
 
-    function createBidPermissionless(
-        uint256 _bidSize,
-        uint256 _bidAmountPerBid
-    ) external payable whenNotPaused returns (uint256[] memory) {
+    /// @notice Allows anyone to create bids that are able to be place in the auction  or be selected  by a staker
+    /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
+    /// @param _bidSize the number of bids that the node operator would like to create
+    /// @param _bidAmountPerBid the ether value of 1 bid.
+    function createBidPermissionless(uint256 _bidSize, uint256 _bidAmountPerBid)
+        external
+        payable
+        whenNotPaused
+        returns (uint256[] memory)
+    {
         uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
             msg.sender
         );
@@ -256,28 +249,35 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         return bidIdArray;
     }
 
+    /// @notice Disables whitelisting phase
+    /// @dev Users who are on a whitelist can still bid, this just allows regular users to place bids as well
     function disableWhitelist() public onlyOwner {
         whitelistEnabled = false;
     }
 
+    /// @notice Enables whitelisting phase
+    /// @dev Only users who are on a whitelist can bid
     function enableWhitelist() public onlyOwner {
         whitelistEnabled = true;
     }
 
     /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
     /// @param _bidId the ID of the validator
-    function processAuctionFeeTransfer(
-        uint256 _bidId
-    ) external onlyStakingManagerContract {
+    function processAuctionFeeTransfer(uint256 _bidId)
+        external
+        onlyStakingManagerContract
+    {
         uint256 amount = bids[_bidId].amount;
         protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
     }
 
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    function reEnterAuction(
-        uint256 _bidId
-    ) external onlyStakingManagerContract whenNotPaused {
+    function reEnterAuction(uint256 _bidId)
+        external
+        onlyStakingManagerContract
+        whenNotPaused
+    {
         require(bids[_bidId].isActive == false, "Bid already active");
 
         //Reactivate the bid
@@ -295,6 +295,60 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         merkleRoot = _newMerkle;
 
         emit MerkleUpdated(oldMerkle, _newMerkle);
+    }
+
+    //Pauses the contract
+    function pauseContract() external onlyOwner {
+        _pause();
+    }
+
+    //Unpauses the contract
+    function unPauseContract() external onlyOwner {
+        _unpause();
+    }
+
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function uncheckedInc(uint256 x) private pure returns (uint256) {
+        unchecked {
+            return x + 1;
+        }
+    }
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  GETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    /// @notice Fetches the address of the user who placed a bid for a specific bid ID
+    /// @dev Needed for registerValidator() function in Staking Contract
+    /// @return the user who placed the bid
+    function getBidOwner(uint256 _bidId) external view returns (address) {
+        return bids[_bidId].bidderAddress;
+    }
+
+    /// @notice Fetches if a selected bid is currently active
+    /// @dev Needed for batchDepositWithBidIds() function in Staking Contract
+    /// @return the boolean value of the active flag in bids
+    function isBidActive(uint256 _bidId) external view returns (bool) {
+        return bids[_bidId].isActive;
+    }
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  SETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    /// @notice Sets an instance of the protocol revenue manager
+    /// @dev Needed to process an auction fee
+    /// @param _protocolRevenueManager the addres of the protocol manager
+    /// @notice Performed this way due to circular dependencies
+    function setProtocolRevenueManager(address _protocolRevenueManager)
+        external
+    {
+        protocolRevenueManager = IProtocolRevenueManager(
+            _protocolRevenueManager
+        );
     }
 
     /// @notice Sets the depositContract address in the current contract
@@ -320,71 +374,15 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
-    function updateWhitelistMinBidAmount(
-        uint256 _newAmount
-    ) external onlyOwner {
+    function updateWhitelistMinBidAmount(uint256 _newAmount)
+        external
+        onlyOwner
+    {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
         uint256 oldBidAmount = whitelistBidAmount;
         whitelistBidAmount = _newAmount;
 
         emit WhitelistBidUpdated(oldBidAmount, _newAmount);
-    }
-
-    //Pauses the contract
-    function pauseContract() external onlyOwner {
-        _pause();
-    }
-
-    //Unpauses the contract
-    function unPauseContract() external onlyOwner {
-        _unpause();
-    }
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
-    //--------------------------------------------------------------------------------------
-
-    function uncheckedInc(uint x) private pure returns (uint) {
-        unchecked {
-            return x + 1;
-        }
-    }
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------------  GETTER   --------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    /// @notice Fetches how many active bids there are and sends it to the caller
-    /// @dev Needed for deposit to check if there are any active bids
-    /// @return numberOfActiveBids the number of current active bids
-    function getNumberOfActivebids() external view returns (uint256) {
-        return numberOfActiveBids;
-    }
-
-    /// @notice Fetches the address of the user who placed a bid for a specific bid ID
-    /// @dev Needed for registerValidator() function in Staking Contract
-    /// @return the user who placed the bid
-    function getBidOwner(uint256 _bidId) external view returns (address) {
-        return bids[_bidId].bidderAddress;
-    }
-
-    function isBidActive(uint256 _bidId) external view returns (bool) {
-        return bids[_bidId].isActive;
-    }
-
-    /// @notice Sets the address of the EtherFi node manager contract
-    /// @dev Used due to circular dependencies
-    /// @param _managerAddress address being set as the etherfi node manager contract
-    function setEtherFiNodesManagerAddress(address _managerAddress) external {
-        etherFiNodesManager = IEtherFiNodesManager(_managerAddress);
-    }
-
-    function setProtocolRevenueManager(
-        address _protocolRevenueManager
-    ) external {
-        protocolRevenueManager = IProtocolRevenueManager(
-            _protocolRevenueManager
-        );
     }
 
     //--------------------------------------------------------------------------------------

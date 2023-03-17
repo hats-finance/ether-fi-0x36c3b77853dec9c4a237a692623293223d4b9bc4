@@ -62,7 +62,6 @@ contract AuctionManagerTest is Test {
             address(TestBNFTInstance)
         );
 
-        auctionInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
@@ -152,7 +151,7 @@ contract AuctionManagerTest is Test {
         assertEq(chadBidIds.length, 5);
 
         // Bob has highest bid
-        assertEq(auctionInstance.getNumberOfActivebids(), 14);
+        assertEq(auctionInstance.numberOfActiveBids(), 14);
 
         // Dan stakes
         startHoax(dan);
@@ -170,7 +169,7 @@ contract AuctionManagerTest is Test {
         // Matches with Bob's first bid
         address staker = stakingManagerInstance.bidIdToStaker(bobBidIds[0]);
 
-        assertEq(auctionInstance.getNumberOfActivebids(), 13);
+        assertEq(auctionInstance.numberOfActiveBids(), 13);
 
         // Bob's second bid is now highest
 
@@ -196,7 +195,7 @@ contract AuctionManagerTest is Test {
         // Matches with Bob's second bid
         staker = stakingManagerInstance.bidIdToStaker(bobBidIds[1]);
 
-        assertEq(auctionInstance.getNumberOfActivebids(), 12);
+        assertEq(auctionInstance.numberOfActiveBids(), 12);
 
         assertFalse(isBobBid1Active);
         assertFalse(isBobBid2Active);
@@ -219,7 +218,7 @@ contract AuctionManagerTest is Test {
         // Matches with Bob's third bid
         staker = stakingManagerInstance.bidIdToStaker(bobBidIds[2]);
 
-        assertEq(auctionInstance.getNumberOfActivebids(), 11);
+        assertEq(auctionInstance.numberOfActiveBids(), 11);
 
         // Chad's first bid is now highest
 
@@ -246,7 +245,7 @@ contract AuctionManagerTest is Test {
         // Matches with Chad's first bid
         staker = stakingManagerInstance.bidIdToStaker(chadBidIds[0]);
 
-        assertEq(auctionInstance.getNumberOfActivebids(), 10);
+        assertEq(auctionInstance.numberOfActiveBids(), 10);
 
         assertFalse(isChadBid1Active);
         assertTrue(isChadBid2Active);
@@ -284,7 +283,7 @@ contract AuctionManagerTest is Test {
             value: 1 ether
         }(chadProof, 5, 0.2 ether);
 
-        assertEq(auctionInstance.getNumberOfActivebids(), 5);
+        assertEq(auctionInstance.numberOfActiveBids(), 5);
 
         // Dan stakes
         startHoax(dan);
@@ -295,7 +294,7 @@ contract AuctionManagerTest is Test {
             bidIdArray
         );
 
-        assertEq(auctionInstance.getNumberOfActivebids(), 4);
+        assertEq(auctionInstance.numberOfActiveBids(), 4);
 
         address staker = stakingManagerInstance.bidIdToStaker(chadBidIds[0]);
 
@@ -309,7 +308,7 @@ contract AuctionManagerTest is Test {
             value: 3 ether
         }(bobProof, 3, 1 ether);
 
-        assertEq(auctionInstance.getNumberOfActivebids(), 7);
+        assertEq(auctionInstance.numberOfActiveBids(), 7);
 
         // Greg stakes
         startHoax(greg);
@@ -320,7 +319,7 @@ contract AuctionManagerTest is Test {
             bidIdArray2
         );
 
-        assertEq(auctionInstance.getNumberOfActivebids(), 6);
+        assertEq(auctionInstance.numberOfActiveBids(), 6);
 
         staker = stakingManagerInstance.bidIdToStaker(bobBidIds[0]);
 

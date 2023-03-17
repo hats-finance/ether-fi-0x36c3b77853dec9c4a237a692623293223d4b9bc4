@@ -15,16 +15,14 @@ interface IAuctionManager {
         uint256 _bidAmount
     ) external payable returns (uint256[] memory);
 
-    function createBidPermissionless(
-        uint256 _bidSize,
-        uint256 _bidAmountPerBid
-    ) external payable returns (uint256[] memory);
+    function createBidPermissionless(uint256 _bidSize, uint256 _bidAmountPerBid)
+        external
+        payable
+        returns (uint256[] memory);
 
     function updateSelectedBidInformation(uint256 _bidId) external;
 
     function cancelBid(uint256 _bidId) external;
-
-    function getNumberOfActivebids() external view returns (uint256);
 
     function getBidOwner(uint256 _bidId) external view returns (address);
 
@@ -38,9 +36,8 @@ interface IAuctionManager {
 
     function isBidActive(uint256 _bidId) external view returns (bool);
 
-    function setEtherFiNodesManagerAddress(address _managerAddress) external;
+    function numberOfActiveBids() external view returns (uint256);
 
-    function setProtocolRevenueManager(
-        address _protocolRevenueManager
-    ) external;
+    function setProtocolRevenueManager(address _protocolRevenueManager)
+        external;
 }
