@@ -111,8 +111,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
             keccak256(abi.encodePacked(_user))
         );
         if (whitelisted) {
-            //whitelistedAddresses[_user] = true;
-            auctionMangerInterface.whitelistAddress(msg.sender);
+            auctionMangerInterface.whitelistAddress(_user);
         }
     }
 }

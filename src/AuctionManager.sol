@@ -50,7 +50,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
     event BidUpdated(uint256 indexed bidId, uint256 valueUpdatedBy);
-    event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
+
     event StakingManagerAddressSet(
         address indexed stakingManagerContractAddress
     );
@@ -133,14 +133,10 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         emit BidCancelled(_bidId);
     }
 
-    /// @notice Allows whitelisted address to create bids that are able to be place in the auction or be selected  by a staker
-    /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
-    /// @dev Merkleroot gets generated in JS offline and sent to the contract
-    /// @param _merkleProof the merkleproof for the user calling the function
+    /// @notice All bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
     /// @param _bidSize the number of bids that the node operator would like to create
     /// @param _bidAmountPerBid the ether value of 1 bid.
-    function createBidWhitelisted(
-        bytes32[] calldata _merkleProof,
+    function createBid(
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
@@ -148,21 +144,36 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
             msg.sender
         );
 
-        require(whitelistEnabled, "Whitelist disabled");
         require(_bidSize <= userTotalKeys, "Insufficient public keys");
 
-        // Checks if bidder is on whitelist
-        require(
-            _verifyWhitelistedAddress(msg.sender, _merkleProof),
-            "Only whitelisted addresses"
-        );
-
-        require(
-            msg.value == _bidSize * _bidAmountPerBid &&
-                _bidAmountPerBid >= whitelistBidAmount &&
-                _bidAmountPerBid <= MAX_BID_AMOUNT,
-            "Incorrect bid value"
-        );
+        if (whitelistEnabled) {
+            require(
+                whitelistedAddresses[msg.sender] = true,
+                "Only whitelisted addresses"
+            );
+            require(
+                msg.value == _bidSize * _bidAmountPerBid &&
+                    _bidAmountPerBid >= whitelistBidAmount &&
+                    _bidAmountPerBid <= MAX_BID_AMOUNT,
+                "Incorrect bid value"
+            );
+        } else {
+            if (whitelistedAddresses[msg.sender] = true) {
+                require(
+                    msg.value == _bidSize * _bidAmountPerBid &&
+                        _bidAmountPerBid >= whitelistBidAmount &&
+                        _bidAmountPerBid <= MAX_BID_AMOUNT,
+                    "Incorrect bid value"
+                );
+            } else {
+                require(
+                    msg.value == _bidSize * _bidAmountPerBid &&
+                        _bidAmountPerBid >= minBidAmount &&
+                        _bidAmountPerBid <= MAX_BID_AMOUNT,
+                    "Incorrect bid value"
+                );
+            }
+        }
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
@@ -189,73 +200,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
         numberOfActiveBids += _bidSize;
         emit BidCreated(msg.sender, msg.value, bidIdArray, ipfsIndexArray);
-        return bidIdArray;
-    }
-
-    /// @notice Allows anyone to create bids that are able to be place in the auction  or be selected  by a staker
-    /// @notice all bid amounts are the same. You cannot create one bid of 1 ETH and another of 2 ETH
-    /// @param _bidSize the number of bids that the node operator would like to create
-    /// @param _bidAmountPerBid the ether value of 1 bid.
-    function createBidPermissionless(
-        uint256 _bidSize,
-        uint256 _bidAmountPerBid
-    ) external payable whenNotPaused returns (uint256[] memory) {
-        uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
-            msg.sender
-        );
-
-        require(_bidSize <= userTotalKeys, "Insufficient public keys");
-        require(!whitelistEnabled, "Whitelist enabled");
-
-        if (_bidAmountPerBid < minBidAmount) {
-            require(
-                whitelistedAddresses[msg.sender] == true,
-                "Only whitelisted addresses"
-            );
-            require(
-                msg.value == _bidSize * _bidAmountPerBid &&
-                    _bidAmountPerBid >= whitelistBidAmount &&
-                    _bidAmountPerBid <= MAX_BID_AMOUNT,
-                "Incorrect bid value"
-            );
-        } else {
-            require(
-                msg.value == _bidSize * _bidAmountPerBid &&
-                    _bidAmountPerBid >= minBidAmount &&
-                    _bidAmountPerBid <= MAX_BID_AMOUNT,
-                "Incorrect bid value"
-            );
-        }
-
-        uint256[] memory bidIdArray = new uint256[](_bidSize);
-        uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
-
-        for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
-            uint64 ipfsIndex = nodeOperatorKeyManagerInterface
-                .fetchNextKeyIndex(msg.sender);
-            uint256 bidId = numberOfBids;
-
-            bidIdArray[i] = bidId;
-            ipfsIndexArray[i] = ipfsIndex;
-
-            //Creates a bid object for storage and lookup in future
-            bids[bidId] = Bid({
-                amount: _bidAmountPerBid,
-                bidderPubKeyIndex: ipfsIndex,
-                bidderAddress: msg.sender,
-                isActive: true
-            });
-
-            numberOfBids++;
-        }
-
-        numberOfActiveBids += _bidSize;
-        emit BidCreated(
-            msg.sender,
-            uint64(msg.value),
-            bidIdArray,
-            ipfsIndexArray
-        );
         return bidIdArray;
     }
 
@@ -297,7 +241,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     function whitelistAddress(
         address _user
     ) external onlyNodeOperatorKeyManagerContract {
-        whitelistedAddresses[msg.sender] = true;
+        whitelistedAddresses[_user] = true;
     }
 
     //Pauses the contract
@@ -329,6 +273,12 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @return the user who placed the bid
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
+    }
+
+    function isWhitelisted(
+        address _user
+    ) public view returns (bool whitelisted) {
+        whitelisted = whitelistedAddresses[_user];
     }
 
     /// @notice Fetches if a selected bid is currently active

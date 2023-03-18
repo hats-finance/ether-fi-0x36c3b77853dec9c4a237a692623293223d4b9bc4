@@ -780,38 +780,6 @@ contract AuctionManagerTest is Test {
         auctionInstance.updateMerkleRoot(newRoot);
     }
 
-    function test_UpdatingMerkle() public {
-        assertEq(auctionInstance.merkleRoot(), root);
-
-        whiteListedAddresses.push(
-            keccak256(
-                abi.encodePacked(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098)
-            )
-        );
-
-        bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
-        vm.prank(owner);
-        auctionInstance.updateMerkleRoot(newRoot);
-
-        bytes32[] memory proofForAddress4 = merkle.getProof(
-            whiteListedAddresses,
-            5
-        );
-
-        assertEq(auctionInstance.merkleRoot(), newRoot);
-
-        vm.prank(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
-
-        hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        auctionInstance.createBidWhitelisted{value: 0.01 ether}(
-            proofForAddress4,
-            1,
-            0.01 ether
-        );
-        assertEq(auctionInstance.numberOfActiveBids(), 1);
-    }
-
     function test_SetMinBidAmount() public {
         assertEq(auctionInstance.minBidAmount(), 0.01 ether);
         vm.prank(owner);
