@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "lib/forge-std/src/console.sol";
 
-/// TODO Combine bid functions in auction contract
-/// TODO Tests
+/// TODO Test whitelist bidding in auction
+/// TODO Test permissionless bidding in auction
 
 contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
     //--------------------------------------------------------------------------------------
