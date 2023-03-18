@@ -40,14 +40,16 @@ contract AuctionManagerTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
         auctionInstance = new AuctionManager(
             address(nodeOperatorKeyManagerInstance)
         );
-        auctionInstance.updateMerkleRoot(root);
+        nodeOperatorKeyManagerInstance.setAuctionContractAddress(
+            address(auctionInstance)
+        );
+        nodeOperatorKeyManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
@@ -120,31 +122,45 @@ contract AuctionManagerTest is Test {
         bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
 
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            aliceProof,
+            _ipfsHash,
+            10
+        );
 
         vm.prank(bob);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            bobProof,
+            _ipfsHash,
+            10
+        );
 
         vm.prank(chad);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            chadProof,
+            _ipfsHash,
+            10
+        );
 
         // Alice Bids
         hoax(alice);
-        uint256[] memory aliceBidIds = auctionInstance.createBidWhitelisted{
+        uint256[] memory aliceBidIds = auctionInstance.createBid{
             value: 0.6 ether
-        }(aliceProof, 6, 0.1 ether);
+        }(6, 0.1 ether);
 
         // Bob Bids
         hoax(bob);
-        uint256[] memory bobBidIds = auctionInstance.createBidWhitelisted{
-            value: 3 ether
-        }(bobProof, 3, 1 ether);
+        uint256[] memory bobBidIds = auctionInstance.createBid{value: 3 ether}(
+            3,
+            1 ether
+        );
 
         // Chad Bids
         hoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBidWhitelisted{
-            value: 1 ether
-        }(chadProof, 5, 0.2 ether);
+        uint256[] memory chadBidIds = auctionInstance.createBid{value: 1 ether}(
+            5,
+            0.2 ether
+        );
 
         assertEq(aliceBidIds.length, 6);
         assertEq(bobBidIds.length, 3);
@@ -268,20 +284,26 @@ contract AuctionManagerTest is Test {
         bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
 
-        vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
-
         vm.prank(bob);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            bobProof,
+            _ipfsHash,
+            10
+        );
 
         vm.prank(chad);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            chadProof,
+            _ipfsHash,
+            10
+        );
 
         // Chad Bids
         hoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBidWhitelisted{
-            value: 1 ether
-        }(chadProof, 5, 0.2 ether);
+        uint256[] memory chadBidIds = auctionInstance.createBid{value: 1 ether}(
+            5,
+            0.2 ether
+        );
 
         assertEq(auctionInstance.numberOfActiveBids(), 5);
 
@@ -304,9 +326,10 @@ contract AuctionManagerTest is Test {
 
         // Bob Bids
         hoax(bob);
-        uint256[] memory bobBidIds = auctionInstance.createBidWhitelisted{
-            value: 3 ether
-        }(bobProof, 3, 1 ether);
+        uint256[] memory bobBidIds = auctionInstance.createBid{value: 3 ether}(
+            3,
+            1 ether
+        );
 
         assertEq(auctionInstance.numberOfActiveBids(), 7);
 
