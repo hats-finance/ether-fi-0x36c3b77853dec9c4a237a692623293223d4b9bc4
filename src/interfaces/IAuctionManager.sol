@@ -15,10 +15,10 @@ interface IAuctionManager {
         uint256 _bidAmount
     ) external payable returns (uint256[] memory);
 
-    function createBidPermissionless(uint256 _bidSize, uint256 _bidAmountPerBid)
-        external
-        payable
-        returns (uint256[] memory);
+    function createBidPermissionless(
+        uint256 _bidSize,
+        uint256 _bidAmountPerBid
+    ) external payable returns (uint256[] memory);
 
     function updateSelectedBidInformation(uint256 _bidId) external;
 
@@ -32,12 +32,15 @@ interface IAuctionManager {
         address _stakingManagerContractAddress
     ) external;
 
+    function whitelistAddress(address _user) external;
+
     function processAuctionFeeTransfer(uint256 _validatorId) external;
 
     function isBidActive(uint256 _bidId) external view returns (bool);
 
     function numberOfActiveBids() external view returns (uint256);
 
-    function setProtocolRevenueManager(address _protocolRevenueManager)
-        external;
+    function setProtocolRevenueManager(
+        address _protocolRevenueManager
+    ) external;
 }

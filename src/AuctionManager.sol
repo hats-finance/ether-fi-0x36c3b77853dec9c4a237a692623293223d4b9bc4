@@ -5,7 +5,7 @@ pragma solidity 0.8.13;
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/INodeOperatorKeyManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "lib/forge-std/src/console.sol";
@@ -20,8 +20,9 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     uint256 public constant MAX_BID_AMOUNT = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
-    bytes32 public merkleRoot;
+
     address public stakingManagerContractAddress;
+    address public nodeOperatorKeyManagerContractAddress;
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
@@ -81,6 +82,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         nodeOperatorKeyManagerInterface = INodeOperatorKeyManager(
             _nodeOperatorKeyManagerContract
         );
+        nodeOperatorKeyManagerContractAddress = _nodeOperatorKeyManagerContract;
     }
 
     //--------------------------------------------------------------------------------------
@@ -292,14 +294,10 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         emit BidReEnteredAuction(_bidId);
     }
 
-    /// @notice Updates the merkle root whitelists have been updated
-    /// @dev merkleroot gets generated in JS offline and sent to the contract
-    /// @param _newMerkle new merkle root to be used for bidding
-    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
-        bytes32 oldMerkle = merkleRoot;
-        merkleRoot = _newMerkle;
-
-        emit MerkleUpdated(oldMerkle, _newMerkle);
+    function whitelistAddress(
+        address _user
+    ) external onlyNodeOperatorKeyManagerContract {
+        whitelistedAddresses[msg.sender] = true;
     }
 
     //Pauses the contract
@@ -319,20 +317,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     function uncheckedInc(uint256 x) private pure returns (uint256) {
         unchecked {
             return x + 1;
-        }
-    }
-
-    function _verifyWhitelistedAddress(
-        address _user,
-        bytes32[] calldata _merkleProof
-    ) internal returns (bool whitelisted) {
-        whitelisted = MerkleProof.verify(
-            _merkleProof,
-            merkleRoot,
-            keccak256(abi.encodePacked(_user))
-        );
-        if (whitelisted) {
-            whitelistedAddresses[_user] = true;
         }
     }
 
@@ -411,6 +395,14 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         require(
             msg.sender == stakingManagerContractAddress,
             "Only staking manager contract function"
+        );
+        _;
+    }
+
+    modifier onlyNodeOperatorKeyManagerContract() {
+        require(
+            msg.sender == nodeOperatorKeyManagerContractAddress,
+            "Only node operator key manager contract function"
         );
         _;
     }

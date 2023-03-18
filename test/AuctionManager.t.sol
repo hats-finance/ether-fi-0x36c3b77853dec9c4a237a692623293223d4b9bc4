@@ -466,8 +466,8 @@ contract AuctionManagerTest is Test {
 
         startHoax(alice);
         uint256[] memory aliceBidIds = auctionInstance.createBidPermissionless{
-            value: 0.05 ether
-        }(5, 0.01 ether);
+            value: 0.005 ether
+        }(5, 0.001 ether);
         vm.stopPrank();
 
         (
@@ -476,6 +476,23 @@ contract AuctionManagerTest is Test {
             address bidderAddress,
             bool isActive
         ) = auctionInstance.bids(aliceBidIds[0]);
+
+        assertEq(aliceBidIds.length, 5);
+
+        assertEq(amount, 0.001 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+
+        startHoax(chad);
+        uint256[] memory chadBidIds = auctionInstance.createBidPermissionless{
+            value: 0.05 ether
+        }(5, 0.01 ether);
+        vm.stopPrank();
+
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            chadBidIds[0]
+        );
 
         assertEq(aliceBidIds.length, 5);
 
@@ -489,6 +506,9 @@ contract AuctionManagerTest is Test {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
+
+        vm.prank(chad);
         nodeOperatorKeyManagerInstance.registerNodeOperator(aliceIPFSHash, 10);
 
         hoax(alice);
