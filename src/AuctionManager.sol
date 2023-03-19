@@ -148,7 +148,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
         if (whitelistEnabled) {
             require(
-                whitelistedAddresses[msg.sender] = true,
+                whitelistedAddresses[msg.sender] == true,
                 "Only whitelisted addresses"
             );
             require(
@@ -158,7 +158,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
                 "Incorrect bid value"
             );
         } else {
-            if (whitelistedAddresses[msg.sender] = true) {
+            if (whitelistedAddresses[msg.sender] == true) {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
                         _bidAmountPerBid >= whitelistBidAmount &&

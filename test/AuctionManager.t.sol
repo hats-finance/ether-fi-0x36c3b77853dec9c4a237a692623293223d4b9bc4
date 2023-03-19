@@ -234,7 +234,7 @@ contract AuctionManagerTest is Test {
         assertEq(address(auctionInstance).balance, 0.15 ether);
     }
 
-    function test_createBid() public {
+    function test_createBidWorks() public {
         bytes32[] memory emptyProof = new bytes32[](0);
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
@@ -246,12 +246,22 @@ contract AuctionManagerTest is Test {
             5
         );
 
+        vm.prank(bob);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            bobProof,
+            _ipfsHash,
+            5
+        );
+
         vm.prank(chad);
         nodeOperatorKeyManagerInstance.registerNodeOperator(
             emptyProof,
             _ipfsHash,
             5
         );
+
+        assertFalse(auctionInstance.isWhitelisted(chad));
+        assertTrue(auctionInstance.isWhitelisted(alice));
 
         hoax(alice);
         uint256[] memory bid1Id = auctionInstance.createBid{value: 0.001 ether}(
@@ -272,57 +282,84 @@ contract AuctionManagerTest is Test {
         assertEq(ipfsIndex, 0);
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
-        assertEq(auctionInstance.numberOfBids(), 2);
-
-        vm.expectRevert("Only whitelisted addresses");
-        hoax(chad);
-        auctionInstance.createBid{value: 0.001 ether}(1, 0.001 ether);
-
-        assertEq(auctionInstance.numberOfActiveBids(), 1);
-
-        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
-            bid1Id[0]
-        );
-
-        assertEq(amount, 0.001 ether);
-        assertEq(ipfsIndex, 0);
-        assertEq(bidderAddress, alice);
-        assertTrue(isActive);
-        assertEq(address(auctionInstance).balance, 0.001 ether);
 
         hoax(alice);
-        auctionInstance.createBid{value: 0.001 ether}(1, 0.001 ether);
+        auctionInstance.createBid{value: 0.004 ether}(4, 0.001 ether);
 
         vm.expectRevert("Insufficient public keys");
         startHoax(alice);
         auctionInstance.createBid{value: 1 ether}(1, 1 ether);
         vm.stopPrank();
 
-        // vm.expectRevert("Whitelist enabled");
-        // hoax(alice);
-        // auctionInstance.createBidPermissionless{value: 0.001 ether}(
-        //     1,
-        //     0.001 ether
-        // );
+        assertTrue(auctionInstance.whitelistEnabled());
 
-        assertEq(auctionInstance.numberOfActiveBids(), 2);
+        vm.expectRevert("Only whitelisted addresses");
+        hoax(chad);
+        auctionInstance.createBid{value: 0.01 ether}(1, 0.01 ether);
 
-        (amount, , bidderAddress, ) = auctionInstance.bids(bid1Id[0]);
+        assertEq(auctionInstance.numberOfActiveBids(), 5);
 
-        assertEq(amount, 0.001 ether);
-        assertEq(bidderAddress, alice);
-        assertEq(address(auctionInstance).balance, 0.002 ether);
+        // Owner disables whitelist
         vm.prank(owner);
         auctionInstance.disableWhitelist();
 
-        vm.expectRevert("Whitelist disabled");
+        // Bob can still bid below min bid amount because he was whitlelisted
         hoax(bob);
-        auctionInstance.createBid{value: 0.001 ether}(1, 0.001 ether);
+        uint256[] memory bobBidIds = auctionInstance.createBid{
+            value: 0.001 ether
+        }(1, 0.001 ether);
 
-        (, ipfsIndex, , ) = auctionInstance.bids(bid1Id[0]);
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            bobBidIds[0]
+        );
+        assertEq(amount, 0.001 ether);
         assertEq(ipfsIndex, 0);
+        assertEq(bidderAddress, bob);
+        assertTrue(isActive);
 
-        assertEq(auctionInstance.numberOfActiveBids(), 2);
+        assertEq(auctionInstance.numberOfActiveBids(), 6);
+
+        // Chad cannot bid below the min bid amount because he was not whitelisted
+        vm.expectRevert("Incorrect bid value");
+        hoax(chad);
+        uint256[] memory chadBidIds = auctionInstance.createBid{
+            value: 0.001 ether
+        }(1, 0.001 ether);
+
+        hoax(chad);
+        chadBidIds = auctionInstance.createBid{value: 0.01 ether}(
+            1,
+            0.01 ether
+        );
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            chadBidIds[0]
+        );
+        assertEq(amount, 0.01 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(bidderAddress, chad);
+        assertTrue(isActive);
+
+        // Owner enables whitelist
+        vm.prank(owner);
+        auctionInstance.enableWhitelist();
+
+        vm.expectRevert("Only whitelisted addresses");
+        hoax(chad);
+        auctionInstance.createBid{value: 0.01 ether}(1, 0.01 ether);
+
+        hoax(bob);
+        bobBidIds = auctionInstance.createBid{value: 0.001 ether}(
+            1,
+            0.001 ether
+        );
+
+        (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
+            bobBidIds[0]
+        );
+        assertEq(amount, 0.001 ether);
+        assertEq(ipfsIndex, 1);
+        assertEq(bidderAddress, bob);
+        assertTrue(isActive);
     }
 
     function test_createBidFailsIfIPFSIndexMoreThanTotalKeys() public {

@@ -59,7 +59,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
         uint64 totalKeys = addressToOperatorData[_user].totalKeys;
         require(
             addressToOperatorData[_user].keysUsed < totalKeys,
-            "All public keys used"
+            "Insufficient public keys"
         );
 
         uint64 ipfsIndex = addressToOperatorData[_user].keysUsed;
