@@ -77,9 +77,25 @@ contract DeployScript is Script {
 
         vm.broadcast(deployerPrivateKey);
 
+        nodeOperatorKeyManager.setAuctionContractAddress(
+            address(auctionManager)
+        );
+        auctionManager.setStakingManagerContractAddress(
+            address(stakingManager)
+        );
+        auctionManager.setProtocolRevenueManager(
+            address(protocolRevenueManagerInstance)
+        );
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
+            address(etherFiNodesManager)
+        );
+        protocolRevenueManagerInstance.setAuctionManagerAddress(
+            address(auctionManager)
+        );
         stakingManager.setEtherFiNodesManagerAddress(
             address(etherFiNodesManager)
         );
+        stakingManager.setTreasuryAddress(address(treasury));
 
         vm.broadcast(deployerPrivateKey);
 
