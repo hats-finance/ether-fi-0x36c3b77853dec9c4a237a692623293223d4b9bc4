@@ -64,7 +64,7 @@ contract EtherFiNode is IEtherFiNode {
 
     function setLocalRevenueIndex(
         uint256 _localRevenueIndex
-    ) external onlyProtocolRevenueManagerContract {
+    ) external onlyEtherFiNodeManagerContract {
         localRevenueIndex = _localRevenueIndex;
     }
 
@@ -112,25 +112,102 @@ contract EtherFiNode is IEtherFiNode {
         localRevenueIndex = _globalRevenueIndex;
     }
 
+    function updateAfterPartialWithdrawal(bool _protocolRewards, bool _vestedAuctionFee) external {
+        if (_protocolRewards) {
+            localRevenueIndex = IProtocolRevenueManager(protocolRevenueManagerAddress()).globalRevenueIndex();
+        }
+        if (_vestedAuctionFee && _getClaimableVestedRewards() > 0) {
+            vestedAuctionRewards = 0;
+        }
+    }
+
+    /// @notice compute the payouts for {staking, protocol} rewards and vested auction fee to the individuals
+    /// @param _stakingRewards a flag to be set if the caller wants to compute the payouts for the stkaing rewards
+    /// @param _protocolRewards a flag to be set if the caller wants to compute the payouts for the protocol rewards
+    /// @param _vestedAuctionFee a flag to be set if the caller wants to compute the payouts for the vested auction fee
+    /// @param _SRsplits the splits for the Staking Rewards
+    /// @param _SRscale the scale 
+    /// @param _PRsplits the splits for the Protocol Rewards
+    /// @param _PRscale the scale 
+    function getRewards(bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee, 
+                        IEtherFiNodesManager.RewardsSplit memory _SRsplits, uint256 _SRscale, 
+                        IEtherFiNodesManager.RewardsSplit memory _PRsplits, uint256 _PRscale) 
+        public view onlyEtherFiNodeManagerContract 
+        returns (uint256, uint256, uint256, uint256) {
+        uint256 operator;
+        uint256 tnft;
+        uint256 bnft;
+        uint256 treasury;
+
+        uint256[] memory tmps = new uint256[](4);
+        if (_stakingRewards) {
+            (tmps[0], tmps[1], tmps[2], tmps[3]) = getStakingRewards(_SRsplits, _SRscale);
+            operator += tmps[0];
+            tnft += tmps[1];
+            bnft += tmps[2];
+            treasury += tmps[3];
+        }
+
+        if (_protocolRewards) {
+            (tmps[0], tmps[1], tmps[2], tmps[3]) = getProtocolRewards(_PRsplits, _PRscale);
+            operator += tmps[0];
+            tnft += tmps[1];
+            bnft += tmps[2];
+            treasury += tmps[3];
+        }
+
+        if (_vestedAuctionFee) {
+            uint256 rewards = _getClaimableVestedRewards();
+            uint256 toTnft = (rewards * 29) / 32;
+            tnft += toTnft; // 29 / 32
+            bnft += rewards - toTnft; // 3 / 32
+        }
+
+        return (operator, tnft, bnft, treasury);
+    }
+
     /// @notice get the accrued staking rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
     /// @param _splits the splits for the staking rewards
     /// @param _scale the scale = SUM(_splits)
-    function getStakingRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
-        uint256 rewards = address(this).balance - vestedAuctionRewards;
-        return _getStakingRewards(rewards, _splits, _scale);
+    function getStakingRewards(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+        uint256 balance = address(this).balance;
+        uint256 rewards = (balance > vestedAuctionRewards) ? balance - vestedAuctionRewards : 0;
+        if (rewards >= 32 ether) {
+            rewards -= 32 ether;
+        } else if (rewards >= 8 ether) {
+            // In a case of Slashing, without the Oracle, the exact staking rewards cannot be computed in this case
+            // Assume no staking rewards in this case.
+            rewards = 0;
+        }
+        
+        (uint256 operator, uint256 tnft, uint256 bnft, uint256 treasury) = _getPayoutsBasedOnSplits(rewards, _splits, _scale);
+        uint256 daysPassedSinceExitRequest = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
+        if (daysPassedSinceExitRequest >= 14) {
+            treasury += operator;
+            operator = 0;
+        }
+
+        return (operator, tnft, bnft, treasury);
     }
 
     /// @notice get the accrued protocol rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
     /// @param _splits the splits for the protocol rewards
     /// @param _scale the scale = SUM(_splits)
-    function getProtocolRewards(IEtherFiNodesManager.ProtocolRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
-        uint256 rewards = IProtocolRevenueManager(protocolRevenueManagerAddress()).globalRevenueIndex() - localRevenueIndex;
-        return _getProtocolRewards(rewards, _splits, _scale);
+    function getProtocolRewards(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+        uint256 globalRevenueIndex = IProtocolRevenueManager(protocolRevenueManagerAddress()).globalRevenueIndex();
+        uint256 rewards = globalRevenueIndex - localRevenueIndex;
+        return _getPayoutsBasedOnSplits(rewards, _splits, _scale);
     }
 
     /// @notice get withdrawable balance via either 'partialWithdraw' or 'fullWithdraw'
     function getWithdrawableBalance() public view returns (uint256) {
-        return address(this).balance - vestedAuctionRewards + _getClaimableVestedRewards();
+        uint256 balance = address(this).balance;
+        uint256 claimableVestedRewards = _getClaimableVestedRewards();
+        if (balance + claimableVestedRewards >= vestedAuctionRewards) {
+            return balance + claimableVestedRewards - vestedAuctionRewards;
+        } else {
+            return 0;
+        }
     }
 
     /// @notice compute the non exit penalty for the b-nft holder
@@ -166,13 +243,13 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     /// @notice Given the current balance of the ether fi node after its EXIT,
-    /// compute the payouts to {node operator, t-nft holder, b-nft holder, treasury}
+    ///         Compute the payouts to {node operator, t-nft holder, b-nft holder, treasury}
     /// @param _splits the splits for the staking rewards
     /// @param _scale the scale = SUM(_splits)
     /// @param _principal the principal for the non exit penalty (e.g., 1 ether)
     /// @param _dailyPenalty the dailty penalty for the non exit penalty
     /// returns the payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
-    function getFullWithdrawalPayouts(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale, uint256 _principal, uint256 _dailyPenalty) external view returns (uint256, uint256, uint256, uint256) {
+    function getFullWithdrawalPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale, uint256 _principal, uint256 _dailyPenalty) external view returns (uint256, uint256, uint256, uint256) {
         uint256 balance = address(this).balance - vestedAuctionRewards;
         require (balance >= 16 ether, "not enough balance for full withdrawal");
         require (phase == VALIDATOR_PHASE.EXITED, "validator node is not exited");
@@ -185,8 +262,7 @@ contract EtherFiNode is IEtherFiNode {
         uint256 bnftNonExitPenalty = getNonExitPenaltyAmount(_principal, _dailyPenalty, exitTimestamp);
 
         if (balance > 32 ether) {
-            uint256 stakingRewards = balance - 32 ether;
-            (payouts[0], payouts[1], payouts[2], payouts[3]) = _getStakingRewards(stakingRewards, _splits, _scale);
+            (payouts[0], payouts[1], payouts[2], payouts[3]) = getStakingRewards(_splits, _scale);
             balance = 32 ether;
         }
 
@@ -225,7 +301,7 @@ contract EtherFiNode is IEtherFiNode {
         if (vestedAuctionRewards == 0) {
             return 0;
         }
-        uint256 vestingPeriodInDays = 6 * 7 * 4; // ProtocolRevenueManager's 'auctionFeeVestingPeriodForStakersInDays'
+        uint256 vestingPeriodInDays = IProtocolRevenueManager(protocolRevenueManagerAddress()).auctionFeeVestingPeriodForStakersInDays(); // ProtocolRevenueManager's 'auctionFeeVestingPeriodForStakersInDays'
         uint256 daysPassed = _getDaysPassedSince(stakingStartTimestamp, uint32(block.timestamp));
         if (daysPassed >= vestingPeriodInDays) {
             uint256 _vestedAuctionRewards = vestedAuctionRewards;
@@ -241,34 +317,14 @@ contract EtherFiNode is IEtherFiNode {
         return uint256(timeElapsed / (24 * 3600));
     }
 
-    function _getStakingRewards(uint256 _totalAmount, IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
-        uint256 rewards = _totalAmount;
-
-        uint256 operator = (rewards * _splits.nodeOperator) / _scale;
-        uint256 tnft = (rewards * _splits.tnft) / _scale;
-        uint256 bnft = (rewards * _splits.bnft) / _scale;
-        uint256 treasury = rewards - (bnft + tnft + operator);
-
-        uint256 daysPassedSinceExitRequest = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
-        if (daysPassedSinceExitRequest >= 14) {
-            treasury += operator;
-            operator = 0;
-        }
-
+    function _getPayoutsBasedOnSplits(uint256 _totalAmount, IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) internal view returns (uint256, uint256, uint256, uint256) {
+        require(_splits.nodeOperator + _splits.tnft + _splits.bnft + _splits.treasury == _scale, "Incorrect Splits");
+        uint256 operator = (_totalAmount * _splits.nodeOperator) / _scale;
+        uint256 tnft = (_totalAmount * _splits.tnft) / _scale;
+        uint256 bnft = (_totalAmount * _splits.bnft) / _scale;
+        uint256 treasury = _totalAmount - (bnft + tnft + operator);
         return (operator, tnft, bnft, treasury);
     }
-
-    function _getProtocolRewards(uint256 _totalAmount, IEtherFiNodesManager.ProtocolRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
-        uint256 rewards = _totalAmount;
-
-        uint256 operator = (rewards * _splits.nodeOperator) / _scale;
-        uint256 tnft = (rewards * _splits.tnft) / _scale;
-        uint256 bnft = (rewards * _splits.bnft) / _scale;
-        uint256 treasury = rewards - (bnft + tnft + operator);
-
-        return (operator, tnft, bnft, treasury);
-    }
-
 
     function etherfiNodesManagerAddress() internal view returns (address) {
         // TODO: Replace it with the actual address

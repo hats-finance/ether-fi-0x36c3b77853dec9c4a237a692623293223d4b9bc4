@@ -12,14 +12,7 @@ interface IEtherFiNodesManager {
         OPERATOR
     }
 
-    struct StakingRewardsSplit {
-        uint64 treasury;
-        uint64 nodeOperator;
-        uint64 tnft;
-        uint64 bnft;
-    }
-
-    struct ProtocolRewardsSplit {
+    struct RewardsSplit {
         uint64 treasury;
         uint64 nodeOperator;
         uint64 tnft;
@@ -59,6 +52,7 @@ interface IEtherFiNodesManager {
     function getNonExitPenaltyAmount(uint256 _validatorId) external view returns (uint256);
     function getNonExitPenaltyAmount(uint256 _validatorId, uint32 _endTimestamp) external view returns (uint256);
     function getStakingRewards(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
+    function getRewards(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external view returns (uint256, uint256, uint256, uint256);
     function getFullWithdrawalPayouts(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
 
     function incrementNumberOfValidators(uint256 _count) external;

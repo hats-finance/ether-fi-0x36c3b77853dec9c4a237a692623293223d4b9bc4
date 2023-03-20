@@ -19,6 +19,7 @@ interface IEtherFiNode {
     function setExitRequestTimestamp() external;
     function markExited(uint32 _exitTimestamp) external;
     function receiveVestedRewardsForStakers() external payable;
+    function updateAfterPartialWithdrawal(bool _protocolRewards, bool _vestedAuctionFee) external;
 
     function phase() external view returns (VALIDATOR_PHASE);
     function ipfsHashForEncryptedValidatorKey() external view returns (string memory);
@@ -27,11 +28,17 @@ interface IEtherFiNode {
     function exitRequestTimestamp() external view returns (uint32);
     function exitTimestamp() external view returns (uint32);
     function vestedAuctionRewards() external view returns (uint256);
+
     function getWithdrawableBalance() external view returns (uint256);
     function getNonExitPenaltyAmount(uint256 _principal, uint256 _dailyPenalty, uint32 _endTimestamp) external view returns (uint256);
-    function getStakingRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
-    function getProtocolRewards(IEtherFiNodesManager.ProtocolRewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
-    function getFullWithdrawalPayouts(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale, uint256 _principal, uint256 _dailyPenalty) external view returns (uint256, uint256, uint256, uint256);
+    function getRewards(bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee, 
+                        IEtherFiNodesManager.RewardsSplit memory _SRsplits, uint256 _SRscale, 
+                        IEtherFiNodesManager.RewardsSplit memory _PRsplits, uint256 _PRscale)
+                        external view 
+                        returns (uint256, uint256, uint256, uint256);
+    function getStakingRewards(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
+    function getProtocolRewards(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
+    function getFullWithdrawalPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale, uint256 _principal, uint256 _dailyPenalty) external view returns (uint256, uint256, uint256, uint256);
 
     function withdrawFunds(
         address _treasury,

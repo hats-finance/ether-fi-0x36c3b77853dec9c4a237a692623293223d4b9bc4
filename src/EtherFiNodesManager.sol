@@ -41,8 +41,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     //Holds the data for the revenue splits depending on where the funds are received from
     uint256 public constant SCALE = 1000000;
-    StakingRewardsSplit public stakingRewardsSplit;
-    ProtocolRewardsSplit public protocolRewardsSplit;
+    RewardsSplit public stakingRewardsSplit;
+    RewardsSplit public protocolRewardsSplit;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -88,7 +88,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         bnftInstance = BNFT(_bnftContract);
 
         // in basis points for higher resolution
-        stakingRewardsSplit = StakingRewardsSplit({
+        stakingRewardsSplit = RewardsSplit({
             treasury: 50000,
             nodeOperator: 50000,
             tnft: 815625, // 90 * 29 / 32
@@ -102,7 +102,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             ""
         );
 
-        protocolRewardsSplit = ProtocolRewardsSplit({
+        protocolRewardsSplit = RewardsSplit({
             treasury: 250000,
             nodeOperator: 250000,
             tnft: 453125,
@@ -139,7 +139,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         uint256 stakingRewards = IEtherFiNode(etherfiNode).getWithdrawableBalance();
         require(stakingRewards < 8 ether, "The accrued staking rewards are above 8 ETH. You should exit the node.");
 
-        (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = getStakingRewards(_validatorId);
+        (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = getRewards(_validatorId, true, true, true);
+        IEtherFiNode(etherfiNode).updateAfterPartialWithdrawal(true, true);
+
         address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
         address tnftHolder = tnftInstance.ownerOf(_validatorId);
         address bnftHolder = bnftInstance.ownerOf(_validatorId);
@@ -365,6 +367,12 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).getStakingRewards(stakingRewardsSplit, SCALE);
+    }
+
+    function getRewards(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) public view returns (uint256, uint256, uint256, uint256) {
+        address etherfiNode = etherfiNodePerValidator[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+        return IEtherFiNode(etherfiNode).getRewards(_stakingRewards, _protocolRewards, _vestedAuctionFee, stakingRewardsSplit, SCALE, protocolRewardsSplit, SCALE);
     }
 
     function getFullWithdrawalPayouts(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {

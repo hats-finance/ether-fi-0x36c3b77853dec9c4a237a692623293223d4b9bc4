@@ -81,7 +81,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
         );
         require(etherfiNode != address(0), "The validator Id is invalid.");
 
-        IEtherFiNode(etherfiNode).setLocalRevenueIndex(globalRevenueIndex);
+        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
         uint256 amount = msg.value;
         uint256 vestingAmountForStakers = (vestedAuctionFeeSplitForStakers *
             amount) / 100;

@@ -375,6 +375,9 @@ contract EtherFiNodeTest is Test {
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
         address etherfiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
 
+        uint256 accreudProtocolRewards = protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId[0]
+            );
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
             .vestedAuctionRewards();
         assertEq(
@@ -393,23 +396,19 @@ contract EtherFiNodeTest is Test {
 
         // Simulate the rewards distribution from the beacon chain
         vm.deal(etherfiNode, 1 ether + vestedAuctionFeeRewardsForStakers);
-        assertEq(
-            address(etherfiNode).balance,
-            1 ether + vestedAuctionFeeRewardsForStakers
-        );
 
         hoax(owner);
         managerInstance.partialWithdraw(bidId[0]);
         assertEq(
             address(nodeOperator).balance,
-            nodeOperatorBalance + 0.05 ether
+            nodeOperatorBalance + 0.05 ether + 0.0125 ether
         );
         assertEq(
             address(treasuryInstance).balance,
-            treasuryBalance + 0.05 ether
+            treasuryBalance + 0.05 ether + 0.0125 ether
         );
-        assertEq(address(dan).balance, danBalance + 0.815625 ether);
-        assertEq(address(staker).balance, bnftStakerBalance + 0.084375 ether);
+        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
 
         vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
         vm.expectRevert(
@@ -453,13 +452,24 @@ contract EtherFiNodeTest is Test {
 
         hoax(owner);
         managerInstance.partialWithdraw(bidId[0]);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
         assertEq(
             address(treasuryInstance).balance,
-            treasuryBalance + 0.05 ether + 0.05 ether
+            treasuryBalance + 0.05 ether + 0.05 ether + 0.0125 ether
         );
-        assertEq(address(dan).balance, danBalance + 0.815625 ether);
-        assertEq(address(staker).balance, bnftStakerBalance + 0.084375 ether);
+        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
+
+        // No rewards left after calling the 'partialWithdraw'
+        hoax(owner);
+        managerInstance.partialWithdraw(bidId[0]);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
+        assertEq(
+            address(treasuryInstance).balance,
+            treasuryBalance + 0.05 ether + 0.05 ether + 0.0125 ether
+        );
+        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
 
         vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
         vm.expectRevert(
