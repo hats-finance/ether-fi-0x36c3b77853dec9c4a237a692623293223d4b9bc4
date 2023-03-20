@@ -48,23 +48,17 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
-    function setPhase(
-        VALIDATOR_PHASE _phase
-    ) external onlyEtherFiNodeManagerContract {
+    function setPhase(VALIDATOR_PHASE _phase) external onlyEtherFiNodeManagerContract {
         phase = _phase;
     }
 
     /// @notice Set the deposit data
     /// @param _ipfsHash the deposit data
-    function setIpfsHashForEncryptedValidatorKey(
-        string calldata _ipfsHash
-    ) external onlyEtherFiNodeManagerContract {
+    function setIpfsHashForEncryptedValidatorKey(string calldata _ipfsHash) external onlyEtherFiNodeManagerContract {
         ipfsHashForEncryptedValidatorKey = _ipfsHash;
     }
 
-    function setLocalRevenueIndex(
-        uint256 _localRevenueIndex
-    ) external onlyEtherFiNodeManagerContract {
+    function setLocalRevenueIndex(uint256 _localRevenueIndex) payable external onlyEtherFiNodeManagerContract {
         localRevenueIndex = _localRevenueIndex;
     }
 
@@ -86,6 +80,12 @@ contract EtherFiNode is IEtherFiNode {
         vestedAuctionRewards = msg.value;
     }
 
+    function processVestedAuctionFeeWithdrawal() external {
+        if (_getClaimableVestedRewards() > 0) {
+            vestedAuctionRewards = 0;
+        }
+    }
+
     function withdrawFunds(
         address _treasury,
         uint256 _treasuryAmount,
@@ -104,18 +104,6 @@ contract EtherFiNode is IEtherFiNode {
         require(sent, "Failed to send Ether");
         (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");
         require(sent, "Failed to send Ether");
-    }
-
-    function receiveProtocolRevenue(
-        uint256 _globalRevenueIndex
-    ) external payable onlyProtocolRevenueManagerContract {
-        localRevenueIndex = _globalRevenueIndex;
-    }
-
-    function updateAfterPartialWithdrawal(bool _vestedAuctionFee) external {
-        if (_vestedAuctionFee && _getClaimableVestedRewards() > 0) {
-            vestedAuctionRewards = 0;
-        }
     }
 
     /// @notice compute the payouts for {staking, protocol} rewards and vested auction fee to the individuals
@@ -255,13 +243,14 @@ contract EtherFiNode is IEtherFiNode {
 
         uint256 toBnftPrincipal;
         uint256 toTnftPrincipal;
-        uint256 bnftNonExitPenalty = getNonExitPenaltyAmount(_principal, _dailyPenalty, exitTimestamp);
 
+        // Compute the payouts for the staking rewards (which is exceeding amount above 32 ETH)
         if (balance > 32 ether) {
             (payouts[0], payouts[1], payouts[2], payouts[3]) = getStakingRewards(_splits, _scale);
             balance = 32 ether;
         }
 
+        // Compute the payouts for the principals to {B, T}-NFTs
         if (balance > 31.5 ether) {
             // 31.5 ether < balance <= 32 ether
             toBnftPrincipal = balance - 30 ether;
@@ -272,16 +261,20 @@ contract EtherFiNode is IEtherFiNode {
             // 25.5 ether < balance <= 26 ether
             toBnftPrincipal = 1.5 ether - (26 ether - balance);
         } else {
-            // balance <= 25.5 ether
+            // 16 ether <= balance <= 25.5 ether
             toBnftPrincipal = 1 ether;
         }
         toTnftPrincipal = balance - toBnftPrincipal;
-        
         payouts[1] += toTnftPrincipal;
         payouts[2] += toBnftPrincipal;
 
+        // Deduct the NonExitPenalty from the payout to the B-NFT
+        uint256 bnftNonExitPenalty = getNonExitPenaltyAmount(_principal, _dailyPenalty, exitTimestamp);
         payouts[2] -= bnftNonExitPenalty;
 
+        // While the NonExitPenalty keeps growing till 1 ether,
+        //  the incentive to the node operator stops at 0.5 ether 
+        //  the rest goes to the treasury
         if (bnftNonExitPenalty > 0.5 ether) {
             payouts[0] += 0.5 ether;
             payouts[3] += (bnftNonExitPenalty - 0.5 ether);
@@ -297,12 +290,10 @@ contract EtherFiNode is IEtherFiNode {
         if (vestedAuctionRewards == 0) {
             return 0;
         }
-        uint256 vestingPeriodInDays = IProtocolRevenueManager(protocolRevenueManagerAddress()).auctionFeeVestingPeriodForStakersInDays(); // ProtocolRevenueManager's 'auctionFeeVestingPeriodForStakersInDays'
+        uint256 vestingPeriodInDays = IProtocolRevenueManager(protocolRevenueManagerAddress()).auctionFeeVestingPeriodForStakersInDays();
         uint256 daysPassed = _getDaysPassedSince(stakingStartTimestamp, uint32(block.timestamp));
         if (daysPassed >= vestingPeriodInDays) {
-            uint256 _vestedAuctionRewards = vestedAuctionRewards;
-            // vestedAuctionRewards = 0;
-            return _vestedAuctionRewards;
+            return vestedAuctionRewards;
         } else {
             return 0;
         }

@@ -105,9 +105,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
             _validatorId
         );
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
-        IEtherFiNode(etherFiNode).receiveProtocolRevenue{value: amount}(
-            globalRevenueIndex
-        );
+        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(_validatorId, globalRevenueIndex);
         return amount;
     }
 

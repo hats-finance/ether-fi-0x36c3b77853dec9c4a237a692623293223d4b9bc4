@@ -256,7 +256,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
         // Unset the pointers
         bidIdToStaker[_validatorId] = address(0);
-        nodesManagerIntefaceInstance.uninstallEtherFiNode(_validatorId);
+        nodesManagerIntefaceInstance.unregisterEtherFiNode(_validatorId);
 
         _refundDeposit(msg.sender, stakeAmount);
 

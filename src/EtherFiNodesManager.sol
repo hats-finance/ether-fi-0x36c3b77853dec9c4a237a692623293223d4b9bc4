@@ -126,7 +126,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     ) external returns (address) {
         address clone = Clones.clone(implementationContract);
         EtherFiNode(payable(clone)).initialize(address(protocolRevenueManagerInstance));
-        installEtherFiNode(_validatorId, clone);
+        registerEtherFiNode(_validatorId, clone);
         return clone;
     }
 
@@ -141,7 +141,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = getRewards(_validatorId, true, true, true);
         protocolRevenueManagerInstance.distributeAuctionRevenue(_validatorId);
-        IEtherFiNode(etherfiNode).updateAfterPartialWithdrawal(true);
+        IEtherFiNode(etherfiNode).processVestedAuctionFeeWithdrawal();
 
         address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
         address tnftHolder = tnftInstance.ownerOf(_validatorId);
@@ -193,23 +193,18 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     /// @notice Sets the validator ID for the EtherFiNode contract
     /// @param _validatorId id of the validator associated to the node
-    /// @param _etherfiNode address of the EtherFiNode contract
-    function installEtherFiNode(
-        uint256 _validatorId,
-        address _etherfiNode
-    ) public onlyStakingManagerContract {
+    /// @param _address address of the EtherFiNode contract
+    function registerEtherFiNode(uint256 _validatorId, address _address) public onlyStakingManagerContract {
         require(
             etherfiNodePerValidator[_validatorId] == address(0),
             "already installed"
         );
-        etherfiNodePerValidator[_validatorId] = _etherfiNode;
+        etherfiNodePerValidator[_validatorId] = _address;
     }
 
     /// @notice UnSet the EtherFiNode contract for the validator ID
     /// @param _validatorId id of the validator associated
-    function uninstallEtherFiNode(
-        uint256 _validatorId
-    ) public onlyStakingManagerContract {
+    function unregisterEtherFiNode(uint256 _validatorId) public onlyStakingManagerContract {
         require(
             etherfiNodePerValidator[_validatorId] != address(0),
             "not installed"
@@ -244,10 +239,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function setEtherFiNodeLocalRevenueIndex(
         uint256 _validatorId,
         uint256 _localRevenueIndex
-    ) external {
+    ) payable external {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
-        IEtherFiNode(etherfiNode).setLocalRevenueIndex(_localRevenueIndex);
+        IEtherFiNode(etherfiNode).setLocalRevenueIndex{value: msg.value}(_localRevenueIndex);
     }
 
     function incrementNumberOfValidators(
