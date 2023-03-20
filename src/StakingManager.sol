@@ -19,6 +19,7 @@ import "lib/forge-std/src/console.sol";
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
     bool public test = true;
+    uint128 public maxBatchDepositSize = 16;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
@@ -114,7 +115,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     {
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
-        require(numberOfDeposits <= 16, "Batch too large");
+        require(numberOfDeposits <= maxBatchDepositSize, "Batch too large");
         require(
             auctionInterfaceInstance.numberOfActiveBids() >=
                 numberOfDeposits,
@@ -216,7 +217,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             _validatorId.length == _depositData.length,
             "Array lengths must match"
         );
-        require(_validatorId.length <= 16, "Too many validators");
+        require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
 
         for (uint256 x; x < _validatorId.length; ++x) {
             registerValidator(_validatorId[x], _depositData[x]);
