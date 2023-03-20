@@ -104,9 +104,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         return bnftContractAddress;
     }
 
-    function batchDepositWithBidIds(
-        uint256[] calldata _candidateBidIds
-    )
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
         external
         payable
         whenNotPaused
@@ -121,16 +119,12 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
                 numberOfDeposits,
             "No bids available at the moment"
         );
+        require(numberOfDeposits <= 16, "Batch too large");
 
         uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
         uint256 processedBidIdsCount = 0;
 
-        for (
-            uint256 i = 0;
-            i < _candidateBidIds.length &&
-                processedBidIdsCount < numberOfDeposits;
-            ++i
-        ) {
+        for (uint256 i = 0; i < _candidateBidIds.length && processedBidIdsCount < numberOfDeposits; ++i) {
             uint256 bidId = _candidateBidIds[i];
             address bidStaker = bidIdToStaker[bidId];
             bool isActive = auctionInterfaceInstance.isBidActive(bidId);
@@ -158,10 +152,10 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
-    function registerValidator(
-        uint256 _validatorId,
-        DepositData calldata _depositData
-    ) public whenNotPaused {
+    function registerValidator(uint256 _validatorId, DepositData calldata _depositData) 
+        public 
+        whenNotPaused
+    {
         require(
             nodesManagerIntefaceInstance.getEtherFiNodePhase(_validatorId) ==
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
@@ -214,10 +208,10 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
-    function batchRegisterValidators(
-        uint256[] calldata _validatorId,
-        DepositData[] calldata _depositData
-    ) public whenNotPaused {
+    function batchRegisterValidators(uint256[] calldata _validatorId,DepositData[] calldata _depositData)
+        public
+        whenNotPaused
+    {
         require(
             _validatorId.length == _depositData.length,
             "Array lengths must match"
@@ -273,9 +267,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         require(sent, "Failed to send Ether");
     }
 
-    function setEtherFiNodesManagerAddress(
-        address _nodesManagerAddress
-    ) public onlyOwner {
+    function setEtherFiNodesManagerAddress(address _nodesManagerAddress) public onlyOwner {
         nodesManagerAddress = _nodesManagerAddress;
         nodesManagerIntefaceInstance = IEtherFiNodesManager(
             nodesManagerAddress
@@ -286,20 +278,18 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         treasuryAddress = _treasuryAddress;
     }
 
-    function setProtocolRevenueManager(
-        address _protocolRevenueManager
-    ) public onlyOwner {
+    function setProtocolRevenueManager(address _protocolRevenueManager) public onlyOwner {
         protocolRevenueManager = IProtocolRevenueManager(
             _protocolRevenueManager
         );
     }
 
-    //Pauses the contract
+    // Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
     }
 
-    //Unpauses the contract
+    // Unpauses the contract
     function unPauseContract() external onlyOwner {
         _unpause();
     }
@@ -314,6 +304,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
+    /// @notice Update the state of the contract now that a deposit has been made
+    /// @param _bidId the bid that won the right to the deposit
     function processDeposit(uint256 _bidId) internal {
         // Take the bid; Set the matched staker for the bid
         bidIdToStaker[_bidId] = msg.sender;
