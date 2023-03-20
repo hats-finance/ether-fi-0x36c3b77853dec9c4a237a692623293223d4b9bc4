@@ -43,11 +43,6 @@ contract AuctionManagerTest is Test {
         uint64[] indexed ipfsIndexArray
     );
 
-    event SelectedBidUpdated(
-        address indexed winner,
-        uint256 indexed winningBidId
-    );
-
     event MinBidUpdated(
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
