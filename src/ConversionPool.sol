@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "./interfaces/ILiquidityPool.sol";
 
 contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     
@@ -27,12 +28,17 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     address private immutable wEth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     ISwapRouter public immutable swapRouter;
+    ILiquidityPool public liquidityPool;
     IERC20 public rETHInstance;
     IERC20 public wstETHInstance;
     IERC20 public sfrxETHInstance;
     IERC20 public cbETHInstance;
 
     mapping(address => mapping(address => uint256)) public finalUserToErc20Balance;
+
+    /// @notice Allows ether to be sent to this contract
+    receive() external payable {
+    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -42,8 +48,9 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    constructor(address _routerAddress) {
+    constructor(address _routerAddress, address _liquidityPool) {
         swapRouter = ISwapRouter(_routerAddress);
+        liquidityPool = ILiquidityPool(_liquidityPool);
         rETHInstance = IERC20(0xae78736Cd615f374D3085123A210448E74Fc6393);
         wstETHInstance = IERC20(0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0);
         sfrxETHInstance = IERC20(0xac3E018457B222d93114458476f3E3416Abbe38F);
@@ -54,29 +61,22 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function withdrawERC20() external {
-        uint256 rETHbal = finalUserToErc20Balance[msg.sender][rETH];
-        uint256 wstETHbal = finalUserToErc20Balance[msg.sender][wstETH];
-        uint256 sfrxEthbal = finalUserToErc20Balance[msg.sender][sfrxETH];
-        uint256 cbEthBal = finalUserToErc20Balance[msg.sender][cbETH];
+    // function withdrawERC20() external {
+    //     uint256 rETHbal = finalUserToErc20Balance[msg.sender][rETH];
+    //     uint256 wstETHbal = finalUserToErc20Balance[msg.sender][wstETH];
+    //     uint256 sfrxEthbal = finalUserToErc20Balance[msg.sender][sfrxETH];
+    //     uint256 cbEthBal = finalUserToErc20Balance[msg.sender][cbETH];
 
-        finalUserToErc20Balance[msg.sender][rETH] = 0;
-        finalUserToErc20Balance[msg.sender][wstETH] = 0;
-        finalUserToErc20Balance[msg.sender][sfrxETH] = 0;
-        finalUserToErc20Balance[msg.sender][cbETH] = 0;
+    //     finalUserToErc20Balance[msg.sender][rETH] = 0;
+    //     finalUserToErc20Balance[msg.sender][wstETH] = 0;
+    //     finalUserToErc20Balance[msg.sender][sfrxETH] = 0;
+    //     finalUserToErc20Balance[msg.sender][cbETH] = 0;
 
-        rETHInstance.safeTransfer(msg.sender, rETHbal);
-        wstETHInstance.safeTransfer(msg.sender, wstETHbal);
-        sfrxETHInstance.safeTransfer(msg.sender, sfrxEthbal);
-        cbETHInstance.safeTransfer(msg.sender, cbEthBal);
-    }
-
-    function sendTokensToLP() external {
-        //Swap ERC20 for eth
-        //Use internal swap function setup
-
-        //Call function in LP and send in user and amount of ether sent
-    }
+    //     rETHInstance.safeTransfer(msg.sender, rETHbal);
+    //     wstETHInstance.safeTransfer(msg.sender, wstETHbal);
+    //     sfrxETHInstance.safeTransfer(msg.sender, sfrxEthbal);
+    //     cbETHInstance.safeTransfer(msg.sender, cbEthBal);
+    // }
 
     //Pauses the contract
     function pauseContract() external onlyOwner {
@@ -113,8 +113,14 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
         amountOut = swapRouter.exactInputSingle(params);
     }
 
+    function _sendTokensToLP() internal {
+        //Call function in LP and send in user and amount of ether sent
+        (bool sent, ) = address(liquidityPool).call{value: address(this).balance}("");
+        require(sent, "Failed to send Ether");
+    }
+
     //--------------------------------------------------------------------------------------
-    //-------------------------------------     GETTERS  -----------------------------------
+    //-------------------------------------   GETTERS  -------------------------------------
     //--------------------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------------------
