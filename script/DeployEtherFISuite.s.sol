@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 import "../src/Treasury.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "../src/EtherFiNodesManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
 import "../lib/murky/src/Merkle.sol";
@@ -45,13 +46,14 @@ contract DeployScript is Script {
 
         address TNFTAddress = stakingManager.tnftContractAddress();
         address BNFTAddress = stakingManager.bnftContractAddress();
-
+        ProtocolRevenueManager protocolRevenueManagerInstance = new ProtocolRevenueManager();
         EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
             address(treasury),
             address(auctionManager),
             address(stakingManager),
             TNFTAddress,
-            BNFTAddress
+            BNFTAddress,
+            address(protocolRevenueManagerInstance)
         );
 
         stakingManager.setEtherFiNodesManagerAddress(

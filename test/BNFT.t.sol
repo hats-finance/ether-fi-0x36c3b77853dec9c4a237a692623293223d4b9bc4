@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/StakingManager.sol";
 import "src/EtherFiNodesManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 
 import "../src/BNFT.sol";
 import "../src/NodeOperatorKeyManager.sol";
@@ -20,6 +21,7 @@ contract BNFTTest is Test {
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     AuctionManager public auctionInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     Treasury public treasuryInstance;
     Merkle merkle;
     bytes32 root;
@@ -50,12 +52,14 @@ contract BNFTTest is Test {
         );
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
         );
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(

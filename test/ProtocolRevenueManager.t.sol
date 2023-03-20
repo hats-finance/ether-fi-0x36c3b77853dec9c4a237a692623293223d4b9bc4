@@ -61,7 +61,8 @@ contract ProtocolRevenueManagerTest is Test {
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
         );
 
         auctionInstance.setProtocolRevenueManager(

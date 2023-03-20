@@ -7,6 +7,7 @@ import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/AuctionManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
@@ -17,6 +18,7 @@ contract TNFTTest is Test {
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
     AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -40,6 +42,7 @@ contract TNFTTest is Test {
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
         );
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
         vm.stopPrank();

@@ -59,8 +59,9 @@ contract StakingManagerTest is Test {
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
+            address(TestBNFTInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(protocolRevenueManagerInstance)
         );
 
         auctionInstance.setStakingManagerContractAddress(

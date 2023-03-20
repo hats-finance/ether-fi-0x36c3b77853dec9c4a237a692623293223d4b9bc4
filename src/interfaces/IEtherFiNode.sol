@@ -17,7 +17,7 @@ interface IEtherFiNode {
     function setIpfsHashForEncryptedValidatorKey(string calldata _ipfs) external;
     function setLocalRevenueIndex(uint256 _localRevenueIndex) external;
     function setExitRequestTimestamp() external;
-    function markExited() external;
+    function markExited(uint32 _exitTimestamp) external;
     function receiveVestedRewardsForStakers() external payable;
 
     function phase() external view returns (VALIDATOR_PHASE);
@@ -29,7 +29,8 @@ interface IEtherFiNode {
     function vestedAuctionRewards() external view returns (uint256);
     function getWithdrawableBalance() external view returns (uint256);
     function getNonExitPenaltyAmount(uint256 _principal, uint256 _dailyPenalty, uint32 _endTimestamp) external view returns (uint256);
-    function getRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
+    function getStakingRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
+    function getProtocolRewards(IEtherFiNodesManager.ProtocolRewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
     function getFullWithdrawalPayouts(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale, uint256 _principal, uint256 _dailyPenalty) external view returns (uint256, uint256, uint256, uint256);
 
     function withdrawFunds(
