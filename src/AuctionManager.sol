@@ -47,7 +47,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         uint256 indexed highestBidId
     );
     event BidReEnteredAuction(uint256 indexed bidId);
-    event BiddingEnabled();
+   
     event BidCancelled(uint256 indexed bidId);
 
     event StakingManagerAddressSet(
