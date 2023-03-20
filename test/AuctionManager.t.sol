@@ -407,6 +407,36 @@ contract AuctionManagerTest is Test {
         auctionInstance.createBid{value: 5.1 ether}(1, 5.1 ether);
     }
 
+    function test_createBidFailsIfBidSizeIsLargerThanKeysRemaining() public {
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceProof,
+            aliceIPFSHash,
+            3
+        );
+
+        hoax(alice);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(
+            2,
+            0.1 ether
+        );
+
+        (uint256 amount, uint64 ipfsIndex, address bidderAddress, bool isActive) = auctionInstance.bids(bidIds[0]);
+        assertEq(amount, 0.1 ether);
+        assertEq(ipfsIndex, 0);
+        assertEq(bidderAddress, alice);
+        assertTrue(isActive);
+
+        vm.expectRevert("Insufficient public keys");
+        hoax(alice);
+        auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
+
+        hoax(alice);
+        auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+    }
+
     function test_createBidFailsIfIPFSIndexMoreThanTotalKeys() public {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
