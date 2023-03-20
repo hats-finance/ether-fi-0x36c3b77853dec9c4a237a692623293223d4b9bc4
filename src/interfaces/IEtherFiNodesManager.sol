@@ -31,7 +31,6 @@ interface IEtherFiNodesManager {
     function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external returns (uint256);
     function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256);
 
-    function getNonExitPenaltyAmount(uint256 _validatorId) external view returns (uint256);
     function getNonExitPenaltyAmount(uint256 _validatorId, uint32 _endTimestamp) external view returns (uint256);
     function getStakingRewards(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
     function getRewards(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external view returns (uint256, uint256, uint256, uint256);

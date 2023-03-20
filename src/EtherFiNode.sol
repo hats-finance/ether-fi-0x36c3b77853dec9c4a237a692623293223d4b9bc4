@@ -273,7 +273,7 @@ contract EtherFiNode is IEtherFiNode {
         payouts[2] -= bnftNonExitPenalty;
 
         // While the NonExitPenalty keeps growing till 1 ether,
-        //  the incentive to the node operator stops at 0.5 ether 
+        //  the incentive to the node operator stops growing at 0.5 ether 
         //  the rest goes to the treasury
         if (bnftNonExitPenalty > 0.5 ether) {
             payouts[0] += 0.5 ether;

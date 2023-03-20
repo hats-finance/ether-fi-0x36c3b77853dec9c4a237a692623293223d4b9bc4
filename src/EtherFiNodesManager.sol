@@ -89,10 +89,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
         // in basis points for higher resolution
         stakingRewardsSplit = RewardsSplit({
-            treasury: 50000,
-            nodeOperator: 50000,
-            tnft: 815625, // 90 * 29 / 32
-            bnft: 84375 // 90 * 3 / 32
+            treasury: 50000, // 5 %
+            nodeOperator: 50000, // 5 %
+            tnft: 815625, // 90 % * 29 / 32
+            bnft: 84375 // 90 % * 3 / 32
         });
         require(
             (stakingRewardsSplit.treasury +
@@ -103,10 +103,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         );
 
         protocolRewardsSplit = RewardsSplit({
-            treasury: 250000,
-            nodeOperator: 250000,
-            tnft: 453125,
-            bnft: 46875
+            treasury: 250000, // 25 %
+            nodeOperator: 250000, // 25 %
+            tnft: 453125, // 50 % * 29 / 32 
+            bnft: 46875 // 50 % * 3 / 32
         });
         require(
             (protocolRewardsSplit.treasury +
@@ -121,9 +121,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function createEtherfiNode(
-        uint256 _validatorId
-    ) external returns (address) {
+    function createEtherfiNode(uint256 _validatorId) external returns (address) {
         address clone = Clones.clone(implementationContract);
         EtherFiNode(payable(clone)).initialize(address(protocolRevenueManagerInstance));
         registerEtherFiNode(_validatorId, clone);
@@ -137,8 +135,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         require(etherfiNode != address(0), "The validator Id is invalid.");
 
         uint256 balance = address(etherfiNode).balance;
-        require(balance < 8 ether, "The accrued staking rewards are above 8 ETH. You should exit the node.");
+        require(balance < 8 ether, "etherfi node contract's balance is above 8 ETH. You should exit the node.");
 
+        // Retrieve all possible rewards: {Staking, Protocol} rewards and the vested auction fee reward
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = getRewards(_validatorId, true, true, true);
         protocolRevenueManagerInstance.distributeAuctionRevenue(_validatorId);
         IEtherFiNode(etherfiNode).processVestedAuctionFeeWithdrawal();
@@ -281,38 +280,28 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function getEtherFiNodeAddress(
-        uint256 _validatorId
-    ) public view returns (address) {
+    function getEtherFiNodeAddress(uint256 _validatorId) public view returns (address) {
         return etherfiNodePerValidator[_validatorId];
     }
 
-    function getEtherFiNodePhase(
-        uint256 _validatorId
-    ) public view returns (IEtherFiNode.VALIDATOR_PHASE phase) {
+    function getEtherFiNodePhase(uint256 _validatorId) public view returns (IEtherFiNode.VALIDATOR_PHASE phase) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         phase = IEtherFiNode(etherfiNode).phase();
     }
 
-    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(
-        uint256 _validatorId
-    ) external view returns (string memory) {
+    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey();
     }
 
-    function getEtherFiNodeLocalRevenueIndex(
-        uint256 _validatorId
-    ) external view returns (uint256) {
+    function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external view returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
 
-    function getEtherFiNodeVestedAuctionRewards(
-        uint256 _validatorId
-    ) external returns (uint256) {
+    function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).vestedAuctionRewards();
@@ -324,9 +313,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return abi.encodePacked(bytes1(0x01), bytes11(0x0), _address);
     }
 
-    function getWithdrawalCredentials(
-        uint256 _validatorId
-    ) external view returns (bytes memory) {
+    function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return generateWithdrawalCredentials(etherfiNode);
@@ -336,18 +323,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return numberOfValidators;
     }
 
-    function isExitRequested(
-        uint256 _validatorId
-    ) external view returns (bool) {
+    function isExitRequested(uint256 _validatorId) external view returns (bool) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).exitRequestTimestamp() > 0;
-    }
-
-    function getNonExitPenaltyAmount(
-        uint256 _validatorId
-    ) external view returns (uint256) {
-        return getNonExitPenaltyAmount(_validatorId, uint32(block.timestamp));
     }
 
     function getNonExitPenaltyAmount(
