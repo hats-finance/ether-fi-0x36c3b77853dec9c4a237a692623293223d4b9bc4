@@ -541,7 +541,7 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.registerValidator(bidId[0], test_data);
     }
 
-    function test_RegisterValidatorFailsIfValidatorDoesNotExist() public {
+    function test_RegisterValidatorFailsIfIncorrectPhase() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -565,9 +565,6 @@ contract StakingManagerTest is Test {
 
         stakingManagerInstance.registerValidator(bidIdArray[0], test_data);
         vm.stopPrank();
-
-        // vm.expectRevert("The validator Id is invalid.");
-        //
 
         vm.expectRevert("Incorrect phase");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -1014,6 +1011,37 @@ contract StakingManagerTest is Test {
 
         vm.expectRevert("Incorrect phase");
         stakingManagerInstance.cancelDeposit(bidId[0]);
+    }
+
+    function cancelDepositFailsIfContractPaused() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+
+        uint256[] memory bidIdArray = new uint256[](1);
+        bidIdArray[0] = bidId[0];
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
+
+        vm.prank(owner);
+        stakingManagerInstance.pauseContract();
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("Pausable: paused");
+        stakingManagerInstance.cancelDeposit(bidIdArray[0]);
     }
 
     function test_cancelDepositWorksCorrectly() public {
