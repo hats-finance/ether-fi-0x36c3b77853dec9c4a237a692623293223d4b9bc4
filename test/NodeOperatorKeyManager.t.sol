@@ -8,6 +8,7 @@ import "forge-std/console.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IDepositContract.sol";
 import "src/EtherFiNodesManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/AuctionManager.sol";
@@ -25,6 +26,7 @@ contract NodeOperatorKeyManagerTest is Test {
     TNFT public TestTNFTInstance;
     AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -55,12 +57,14 @@ contract NodeOperatorKeyManagerTest is Test {
         );
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
         );
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(

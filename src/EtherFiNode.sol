@@ -16,8 +16,9 @@ import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNode is IEtherFiNode {
+    // TODO: Remove these two address variables
     address etherfiNodesManager;
-    address protocolRevenueManagerAddress;
+    address protocolRevenueManager;
 
     uint256 public localRevenueIndex;
     uint256 public vestedAuctionRewards;
@@ -31,9 +32,10 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize() public {
+    function initialize(address _protocolRevenueManager) public {
         require(etherfiNodesManager == address(0), "already initialised");
         etherfiNodesManager = msg.sender;
+        protocolRevenueManager = _protocolRevenueManager;
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
@@ -116,6 +118,14 @@ contract EtherFiNode is IEtherFiNode {
     function getStakingRewards(IEtherFiNodesManager.StakingRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
         uint256 rewards = address(this).balance - vestedAuctionRewards;
         return _getStakingRewards(rewards, _splits, _scale);
+    }
+
+    /// @notice get the accrued protocol rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
+    /// @param _splits the splits for the protocol rewards
+    /// @param _scale the scale = SUM(_splits)
+    function getProtocolRewards(IEtherFiNodesManager.ProtocolRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+        uint256 rewards = IProtocolRevenueManager(protocolRevenueManagerAddress()).globalRevenueIndex() - localRevenueIndex;
+        return _getProtocolRewards(rewards, _splits, _scale);
     }
 
     /// @notice get withdrawable balance via either 'partialWithdraw' or 'fullWithdraw'
@@ -248,6 +258,30 @@ contract EtherFiNode is IEtherFiNode {
         return (operator, tnft, bnft, treasury);
     }
 
+    function _getProtocolRewards(uint256 _totalAmount, IEtherFiNodesManager.ProtocolRewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+        uint256 rewards = _totalAmount;
+
+        uint256 operator = (rewards * _splits.nodeOperator) / _scale;
+        uint256 tnft = (rewards * _splits.tnft) / _scale;
+        uint256 bnft = (rewards * _splits.bnft) / _scale;
+        uint256 treasury = rewards - (bnft + tnft + operator);
+
+        return (operator, tnft, bnft, treasury);
+    }
+
+
+    function etherfiNodesManagerAddress() internal view returns (address) {
+        // TODO: Replace it with the actual address
+        // return 0x...
+        return etherfiNodesManager;
+    }
+
+    function protocolRevenueManagerAddress() internal view returns (address) {
+        // TODO: Replace it with the actual address
+        // return 0x...
+        return protocolRevenueManager;
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -262,10 +296,10 @@ contract EtherFiNode is IEtherFiNode {
 
     // TODO
     modifier onlyProtocolRevenueManagerContract() {
-        // require(
-        //     msg.sender == protocolRevenueContract,
-        //     "Only protocol revenue manager contract function"
-        // );
+        require(
+            msg.sender == protocolRevenueManager,
+            "Only protocol revenue manager contract function"
+        );
         _;
     }
 }

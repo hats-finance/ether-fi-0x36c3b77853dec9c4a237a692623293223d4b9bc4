@@ -6,6 +6,7 @@ import "../src/interfaces/IStakingManager.sol";
 import "../src/StakingManager.sol";
 import "src/EtherFiNodesManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/AuctionManager.sol";
@@ -21,6 +22,7 @@ contract AuctionManagerTest is Test {
     AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -56,12 +58,14 @@ contract AuctionManagerTest is Test {
         );
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
         );
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(

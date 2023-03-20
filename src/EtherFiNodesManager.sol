@@ -37,11 +37,12 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     BNFT public bnftInstance;
     IStakingManager public stakingManagerInstance;
     IAuctionManager public auctionInterfaceInstance;
+    IProtocolRevenueManager public protocolRevenueManagerInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
     uint256 public constant SCALE = 1000000;
     StakingRewardsSplit public stakingRewardsSplit;
-    ValidatorExitRevenueSplit public validatorExitRevenueSplit;
+    ProtocolRewardsSplit public protocolRewardsSplit;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -69,7 +70,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         address _auctionContract,
         address _depositContract,
         address _tnftContract,
-        address _bnftContract
+        address _bnftContract,
+        address _protocolRevenueManagerContract
     ) {
         implementationContract = address(new EtherFiNode());
 
@@ -80,6 +82,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
         stakingManagerInstance = IStakingManager(_depositContract);
         auctionInterfaceInstance = IAuctionManager(_auctionContract);
+        protocolRevenueManagerInstance = IProtocolRevenueManager(_protocolRevenueManagerContract);
 
         tnftInstance = TNFT(_tnftContract);
         bnftInstance = BNFT(_bnftContract);
@@ -99,12 +102,19 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             ""
         );
 
-        validatorExitRevenueSplit = ValidatorExitRevenueSplit({
-            treasurySplit: 5,
-            nodeOperatorSplit: 5,
-            tnftHolderSplit: 81,
-            bnftHolderSplit: 9
+        protocolRewardsSplit = ProtocolRewardsSplit({
+            treasury: 250000,
+            nodeOperator: 250000,
+            tnft: 453125,
+            bnft: 46875
         });
+        require(
+            (protocolRewardsSplit.treasury +
+                protocolRewardsSplit.nodeOperator +
+                protocolRewardsSplit.tnft +
+                protocolRewardsSplit.bnft) == SCALE,
+            ""
+        );
     }
 
     //--------------------------------------------------------------------------------------
@@ -115,7 +125,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         uint256 _validatorId
     ) external returns (address) {
         address clone = Clones.clone(implementationContract);
-        EtherFiNode(payable(clone)).initialize();
+        EtherFiNode(payable(clone)).initialize(address(protocolRevenueManagerInstance));
         installEtherFiNode(_validatorId, clone);
         return clone;
     }

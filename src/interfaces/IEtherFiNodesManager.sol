@@ -19,11 +19,11 @@ interface IEtherFiNodesManager {
         uint64 bnft;
     }
 
-    struct ValidatorExitRevenueSplit {
-        uint256 treasurySplit;
-        uint256 nodeOperatorSplit;
-        uint256 tnftHolderSplit;
-        uint256 bnftHolderSplit;
+    struct ProtocolRewardsSplit {
+        uint64 treasury;
+        uint64 nodeOperator;
+        uint64 tnft;
+        uint64 bnft;
     }
 
     function generateWithdrawalCredentials(

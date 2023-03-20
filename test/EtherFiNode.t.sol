@@ -69,7 +69,8 @@ contract EtherFiNodeTest is Test {
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
         );
 
         auctionInstance.setProtocolRevenueManager(
@@ -505,9 +506,9 @@ contract EtherFiNodeTest is Test {
 
         (
             uint256 toNodeOperator,
-            uint256 toTreasury,
             uint256 toTnft,
-            uint256 toBnft
+            uint256 toBnft,
+            uint256 toTreasury
         ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0.05 ether);
         assertEq(toTreasury, 0.05 ether);
@@ -521,7 +522,7 @@ contract EtherFiNodeTest is Test {
             31.75 ether + vestedAuctionFeeRewardsForStakers
         );
 
-        (toNodeOperator, toTreasury, toTnft, toBnft) = managerInstance
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance
             .getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0);
         assertEq(toTreasury, 0);
@@ -535,7 +536,7 @@ contract EtherFiNodeTest is Test {
             28.5 ether + vestedAuctionFeeRewardsForStakers
         );
 
-        (toNodeOperator, toTreasury, toTnft, toBnft) = managerInstance
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance
             .getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0);
         assertEq(toTreasury, 0);
@@ -548,7 +549,7 @@ contract EtherFiNodeTest is Test {
             address(etherfiNode).balance,
             25.75 ether + vestedAuctionFeeRewardsForStakers
         );
-        (toNodeOperator, toTreasury, toTnft, toBnft) = managerInstance
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance
             .getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0);
         assertEq(toTreasury, 0);
@@ -562,7 +563,7 @@ contract EtherFiNodeTest is Test {
             18.5 ether + vestedAuctionFeeRewardsForStakers
         );
 
-        (toNodeOperator, toTreasury, toTnft, toBnft) = managerInstance
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance
             .getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0);
         assertEq(toTreasury, 0);
@@ -674,9 +675,9 @@ contract EtherFiNodeTest is Test {
 
         (
             uint256 toNodeOperator,
-            uint256 toTreasury,
             uint256 toTnft,
-            uint256 toBnft
+            uint256 toBnft,
+            uint256 toTreasury
         ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0.5 ether);
         assertEq(
