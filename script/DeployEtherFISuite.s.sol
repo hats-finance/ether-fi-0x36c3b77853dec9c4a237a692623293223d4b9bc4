@@ -23,48 +23,31 @@ contract DeployScript is Script {
         address TNFT;
         address BNFT;
         address etherFiNodesManager;
+        address protocolRevenueManager;
     }
 
     addresses addressStruct;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        // vm.broadcast(deployerPrivateKey)
-        // vm.startBroadcast(deployerPrivateKey);
-        
-        vm.broadcast(deployerPrivateKey);
+        vm.startBroadcast(deployerPrivateKey);
 
         Treasury treasury = new Treasury();
-
-        vm.broadcast(deployerPrivateKey);
-
         NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
-        
-        vm.broadcast(deployerPrivateKey);
-
         AuctionManager auctionManager = new AuctionManager(
             address(nodeOperatorKeyManager)
         );
 
-        vm.broadcast(deployerPrivateKey);
-
         StakingManager stakingManager = new StakingManager(
             address(auctionManager)
         );
-
-        vm.broadcast(deployerPrivateKey);
-
         auctionManager.setStakingManagerContractAddress(
             address(stakingManager)
         );
 
-        vm.broadcast(deployerPrivateKey);
-
         address TNFTAddress = stakingManager.tnftContractAddress();
         address BNFTAddress = stakingManager.bnftContractAddress();
-        ProtocolRevenueManager protocolRevenueManagerInstance = new ProtocolRevenueManager();
-
-        vm.broadcast(deployerPrivateKey);
+        ProtocolRevenueManager protocolRevenueManager = new ProtocolRevenueManager();
 
         EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
             address(treasury),
@@ -72,33 +55,21 @@ contract DeployScript is Script {
             address(stakingManager),
             TNFTAddress,
             BNFTAddress,
-            address(protocolRevenueManagerInstance)
+            address(protocolRevenueManager)
         );
 
-        vm.broadcast(deployerPrivateKey);
-
-        nodeOperatorKeyManager.setAuctionContractAddress(
-            address(auctionManager)
-        );
-        auctionManager.setStakingManagerContractAddress(
-            address(stakingManager)
-        );
-        auctionManager.setProtocolRevenueManager(
-            address(protocolRevenueManagerInstance)
-        );
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
-            address(etherFiNodesManager)
-        );
-        protocolRevenueManagerInstance.setAuctionManagerAddress(
-            address(auctionManager)
-        );
         stakingManager.setEtherFiNodesManagerAddress(
             address(etherFiNodesManager)
         );
         stakingManager.setTreasuryAddress(address(treasury));
 
-        vm.broadcast(deployerPrivateKey);
+        stakingManager.setProtocolRevenueManager(
+            address(protocolRevenueManager)
+        );
 
+        stakingManager.setTreasuryAddress(address(treasury));
+
+        vm.stopBroadcast();
 
         addressStruct = addresses({
             treasury: address(treasury),
@@ -107,7 +78,8 @@ contract DeployScript is Script {
             stakingManager: address(stakingManager),
             TNFT: TNFTAddress,
             BNFT: BNFTAddress,
-            etherFiNodesManager: address(etherFiNodesManager)
+            etherFiNodesManager: address(etherFiNodesManager),
+            protocolRevenueManager: address(protocolRevenueManager)
         });
 
         writeVersionFile();
@@ -172,7 +144,9 @@ contract DeployScript is Script {
                     "\nBNFT: ",
                     Strings.toHexString(addressStruct.BNFT),
                     "\nSafe Manager: ",
-                    Strings.toHexString(addressStruct.etherFiNodesManager)
+                    Strings.toHexString(addressStruct.etherFiNodesManager),
+                    "\nProtocol Revenue Manager: ",
+                    Strings.toHexString(addressStruct.protocolRevenueManager)
                 )
             )
         );
