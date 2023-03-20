@@ -50,7 +50,15 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event fundsSentToLP(address _user, uint256 _amount);
+    event fundsSentToLP(address user, uint256 amount);
+    event DataSet(
+        address user, 
+        uint256 etherAmount, 
+        uint256 rEthAMount,
+        uint256 wstEthAmount,
+        uint256 sfrxEthAmount,
+        uint256 cbEthAmount
+    );
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -105,6 +113,8 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
         emit fundsSentToLP(msg.sender, etherBalance[msg.sender]);
     }
 
+    /// @notice Sets the data from the Early Adopter Pool in the Conversion Pool
+    /// @dev Must be called before claim in the Early Adopter Pool
     function setData() external {
         (, uint256 userEtherBalance,) = adopterPool.depositInfo(msg.sender);
         uint256 rEthBal = adopterPool.userToErc20Balance(msg.sender, rETH);
@@ -117,6 +127,8 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
         finalUserToErc20Balance[msg.sender][wstETH] = wstEthBal;
         finalUserToErc20Balance[msg.sender][sfrxETH] = sfrxEthBal;
         finalUserToErc20Balance[msg.sender][cbETH] = cbEth;
+
+        emit DataSet(msg.sender, userEtherBalance, rEthBal, wstEthBal, sfrxEthBal, cbEth);
     }
 
     //Pauses the contract
