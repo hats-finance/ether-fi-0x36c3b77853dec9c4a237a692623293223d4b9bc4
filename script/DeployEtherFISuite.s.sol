@@ -75,6 +75,8 @@ contract DeployScript is Script {
             address(protocolRevenueManagerInstance)
         );
 
+        vm.broadcast(deployerPrivateKey);
+
         nodeOperatorKeyManager.setAuctionContractAddress(
             address(auctionManager)
         );
