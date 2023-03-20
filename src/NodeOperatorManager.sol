@@ -32,7 +32,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-
+    
     function registerNodeOperator(
         bytes32[] calldata _merkleProof,
         bytes memory _ipfsHash,
@@ -78,15 +78,11 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //-----------------------------------  GETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function getUserTotalKeys(
-        address _user
-    ) external view returns (uint64 totalKeys) {
+    function getUserTotalKeys(address _user) external view returns (uint64 totalKeys) {
         totalKeys = addressToOperatorData[_user].totalKeys;
     }
 
-    function isWhitelisted(
-        address _user
-    ) public view returns (bool whitelisted) {
+    function isWhitelisted(address _user) public view returns (bool whitelisted) {
         whitelisted = whitelistedAddresses[_user];
     }
 
@@ -94,9 +90,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //-----------------------------------  SETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function setAuctionContractAddress(
-        address _auctionContractAddress
-    ) public onlyOwner {
+    function setAuctionContractAddress(address _auctionContractAddress) public onlyOwner {
         auctionMangerInterface = IAuctionManager(_auctionContractAddress);
     }
 

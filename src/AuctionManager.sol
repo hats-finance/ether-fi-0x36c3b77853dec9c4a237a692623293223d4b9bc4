@@ -22,7 +22,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     uint256 public numberOfActiveBids;
 
     address public stakingManagerContractAddress;
-    address public nodeOperatorKeyManagerContractAddress;
+    address public nodeOperatorManagerContractAddress;
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
@@ -73,11 +73,11 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     //--------------------------------------------------------------------------------------
 
     /// @notice Constructor to set variables on deployment
-    constructor(address _nodeOperatorKeyManagerContract) {
+    constructor(address _nodeOperatorManagerContract) {
         nodeOperatorManagerInterface = INodeOperatorManager(
-            _nodeOperatorKeyManagerContract
+            _nodeOperatorManagerContract
         );
-        nodeOperatorKeyManagerContractAddress = _nodeOperatorKeyManagerContract;
+        nodeOperatorManagerContractAddress = _nodeOperatorManagerContract;
     }
 
     //--------------------------------------------------------------------------------------
@@ -87,12 +87,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @notice Updates a bid winning bids details
     /// @dev Called by batchDepositWithBidIds() in StakingManager.sol
     /// @param _bidId the ID of the bid being removed from the auction (since it has been selected)
-    function updateSelectedBidInformation(uint256 _bidId) public {
-        require(
-            msg.sender == stakingManagerContractAddress ||
-                msg.sender == address(this),
-            "Incorrect Caller"
-        );
+    function updateSelectedBidInformation(uint256 _bidId) public onlyStakingManagerContract {
         require(bids[_bidId].isActive, "The bid is not active");
 
         bids[_bidId].isActive = false;
@@ -322,9 +317,9 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         _;
     }
 
-    modifier onlyNodeOperatorKeyManagerContract() {
+    modifier onlyNodeOperatorManagerContract() {
         require(
-            msg.sender == nodeOperatorKeyManagerContractAddress,
+            msg.sender == nodeOperatorManagerContractAddress,
             "Only node operator key manager contract function"
         );
         _;
