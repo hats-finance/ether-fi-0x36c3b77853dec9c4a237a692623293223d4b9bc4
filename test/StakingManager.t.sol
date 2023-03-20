@@ -37,6 +37,18 @@ contract StakingManagerTest is Test {
 
     bytes _ipfsHash = "IPFSHash";
 
+    event StakeDeposit(
+        address indexed staker,
+        uint256 bidId,
+        address withdrawSafe
+    );
+    event DepositCancelled(uint256 id);
+    event ValidatorRegistered(
+        address indexed operator,
+        uint256 validatorId,
+        string ipfsHashForEncryptedValidatorKey
+    );
+
     function setUp() public {
         vm.startPrank(owner);
 
@@ -1207,6 +1219,80 @@ contract StakingManagerTest is Test {
             ),
             1
         );
+    }
+
+    // function test_EventStakeDeposit() public {
+    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+    //     vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     nodeOperatorKeyManagerInstance.registerNodeOperator(
+    //         proof,
+    //         _ipfsHash,
+    //         5
+    //     );
+
+    //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
+    //         1,
+    //         0.1 ether
+    //     );
+
+    //     vm.expectEmit(true, false, false, true);
+    //     emit StakeDeposit(
+    //     alice,
+    //     bidId1[0],
+    //     address withdrawSafe
+    // );
+    // }
+
+    function test_EventDepositCancelled() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+
+        hoax(alice);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidId1);
+        
+        vm.expectEmit(true, false, false, true);
+        vm.prank(alice);
+        emit DepositCancelled(bidId1[0]);
+        stakingManagerInstance.cancelDeposit(bidId1[0]);
+
+    }
+
+    function test_EventValidatorRegistered() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+
+        startHoax(alice);
+        uint256[] memory processedIds = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidId1);
+
+        vm.expectEmit(true, false, false, true);
+        emit ValidatorRegistered(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, bidId1[0], "test_ipfs_hash");
+        stakingManagerInstance.registerValidator(bidId1[0], test_data);
     }
 
     function _merkleSetup() internal {
