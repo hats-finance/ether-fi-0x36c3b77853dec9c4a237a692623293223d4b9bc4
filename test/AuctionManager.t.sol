@@ -797,6 +797,21 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.minBidAmount(), 1 ether);
     }
 
+    function test_SetMaxBidAmount() public {
+        vm.prank(owner);
+        vm.expectRevert("Min bid exceeds max bid");
+        auctionInstance.setMaxBidPrice(0.001 ether);
+
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        auctionInstance.setMaxBidPrice(10 ether);
+
+        assertEq(auctionInstance.maxBidAmount(), 5 ether);
+        vm.prank(owner);
+        auctionInstance.setMaxBidPrice(10 ether);
+        assertEq(auctionInstance.maxBidAmount(), 10 ether);
+    }
+
     function test_SetBidAmountFailsIfGreaterThanMaxBidAmount() public {
         vm.prank(owner);
         vm.expectRevert("Min bid exceeds max bid");

@@ -17,7 +17,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     uint256 public whitelistBidAmount = 0.001 ether;
     uint256 public minBidAmount = 0.01 ether;
-    uint256 public constant MAX_BID_AMOUNT = 5 ether;
+    uint256 public maxBidAmount = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
 
@@ -58,6 +58,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         uint256 indexed oldMinBidAmount,
         uint256 indexed newMinBidAmount
     );
+    event MaxBidUpdated(uint256 oldMaxBidAmount, uint256 newMaxBidAmount);
     event WhitelistBidUpdated(
         uint256 indexed oldBidAmount,
         uint256 indexed newBidAmount
@@ -154,7 +155,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
             require(
                 msg.value == _bidSize * _bidAmountPerBid &&
                     _bidAmountPerBid >= whitelistBidAmount &&
-                    _bidAmountPerBid <= MAX_BID_AMOUNT,
+                    _bidAmountPerBid <= maxBidAmount,
                 "Incorrect bid value"
             );
         } else {
@@ -162,14 +163,14 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
                         _bidAmountPerBid >= whitelistBidAmount &&
-                        _bidAmountPerBid <= MAX_BID_AMOUNT,
+                        _bidAmountPerBid <= maxBidAmount,
                     "Incorrect bid value"
                 );
             } else {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
                         _bidAmountPerBid >= minBidAmount &&
-                        _bidAmountPerBid <= MAX_BID_AMOUNT,
+                        _bidAmountPerBid <= maxBidAmount,
                     "Incorrect bid value"
                 );
             }
@@ -318,11 +319,21 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @notice Updates the minimum bid price
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
-        require(_newMinBidAmount < MAX_BID_AMOUNT, "Min bid exceeds max bid");
+        require(_newMinBidAmount < maxBidAmount, "Min bid exceeds max bid");
         uint256 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
 
         emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
+    }
+
+    /// @notice Updates the maximum bid price
+    /// @param _newMaxBidAmount the new amount to set the maximum bid price as
+    function setMaxBidPrice(uint256 _newMaxBidAmount) external onlyOwner {
+        require(_newMaxBidAmount > minBidAmount, "Min bid exceeds max bid");
+        uint256 oldMaxBidAmount = minBidAmount;
+        maxBidAmount = _newMaxBidAmount;
+
+        emit MaxBidUpdated(oldMaxBidAmount, _newMaxBidAmount);
     }
 
     /// @notice Updates the minimum bid price for a whitelisted address
