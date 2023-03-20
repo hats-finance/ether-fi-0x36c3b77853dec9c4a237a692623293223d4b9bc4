@@ -100,6 +100,12 @@ contract AuctionManagerTest is Test {
             auctionInstance.stakingManagerContractAddress(),
             address(stakingManagerInstance)
         );
+        assertEq(auctionInstance.whitelistBidAmount(), 0.001 ether);
+        assertEq(auctionInstance.minBidAmount(), 0.01 ether);
+        assertEq(auctionInstance.whitelistBidAmount(), 0.001 ether);
+        assertEq(auctionInstance.MAX_BID_AMOUNT(), 5 ether);
+        assertEq(auctionInstance.numberOfActiveBids(), 0);
+        assertTrue(auctionInstance.whitelistEnabled());
     }
 
     function test_ReEnterAuctionManagerFailsIfAuctionManagerPaused() public {
@@ -201,21 +207,58 @@ contract AuctionManagerTest is Test {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId1[0];
 
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
+
         stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidIdArray
         );
-        (, , , bool isBid1Active) = auctionInstance.bids(bidId1[0]);
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
 
+        (, , , bool isBid1Active) = auctionInstance.bids(bidId1[0]);
         uint256 selectedBidId = bidId1[0];
         assertEq(selectedBidId, 1);
         assertEq(isBid1Active, false);
 
         stakingManagerInstance.cancelDeposit(bidId1[0]);
+
+        assertEq(auctionInstance.numberOfActiveBids(), 2);
+
         (, , , isBid1Active) = auctionInstance.bids(bidId1[0]);
         (, , , bool isBid2Active) = auctionInstance.bids(bidId2[0]);
         assertEq(isBid1Active, true);
         assertEq(isBid2Active, true);
         assertEq(address(auctionInstance).balance, 0.15 ether);
+    }
+
+    function test_DisableWhitelist() public {
+        assertTrue(auctionInstance.whitelistEnabled());
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        auctionInstance.disableWhitelist();
+
+        vm.prank(owner);
+        auctionInstance.disableWhitelist();
+
+        assertFalse(auctionInstance.whitelistEnabled());
+    }
+
+    function test_EnableWhitelist() public {
+        assertTrue(auctionInstance.whitelistEnabled());
+
+        vm.prank(owner);
+        auctionInstance.disableWhitelist();
+
+        assertFalse(auctionInstance.whitelistEnabled());
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        auctionInstance.enableWhitelist();
+
+        vm.prank(owner);
+        auctionInstance.enableWhitelist();
+
+        assertTrue(auctionInstance.whitelistEnabled());
     }
 
     function test_CreateBidWhitelisted() public {
@@ -731,6 +774,25 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
 
+    function test_ProcessAuctionRevenue() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bid1Id = auctionInstance.createBidWhitelisted{
+            value: 0.1 ether
+        }(proofForAddress1, 1, 0.1 ether);
+
+        vm.expectRevert("Only staking manager contract function");
+        vm.prank(owner);
+        auctionInstance.processAuctionFeeTransfer(bid1Id[0]);
+    }
+
     function test_UpdatingMerkleFailsIfNotOwner() public {
         assertEq(auctionInstance.merkleRoot(), root);
 
@@ -779,26 +841,25 @@ contract AuctionManagerTest is Test {
     }
 
     function test_SetMinBidAmount() public {
+        vm.prank(owner);
+        vm.expectRevert("Min bid exceeds max bid");
+        auctionInstance.setMinBidPrice(5 ether);
+
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        auctionInstance.setMinBidPrice(0.005 ether);
+
         assertEq(auctionInstance.minBidAmount(), 0.01 ether);
         vm.prank(owner);
         auctionInstance.setMinBidPrice(1 ether);
         assertEq(auctionInstance.minBidAmount(), 1 ether);
     }
 
-    function test_SetBidAmountFailsIfGreaterThanMaxBidAmount() public {
-        vm.prank(owner);
-        vm.expectRevert("Min bid exceeds max bid");
-        auctionInstance.setMinBidPrice(5 ether);
-    }
-
     function test_SetWhitelistBidAmount() public {
-        assertEq(auctionInstance.whitelistBidAmount(), 0.001 ether);
-        vm.prank(owner);
-        auctionInstance.updateWhitelistMinBidAmount(0.002 ether);
-        assertEq(auctionInstance.whitelistBidAmount(), 0.002 ether);
-    }
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        auctionInstance.updateWhitelistMinBidAmount(0.005 ether);
 
-    function test_SetWhitelistBidFailsWithIncorrectAmount() public {
         vm.prank(owner);
         vm.expectRevert("Invalid Amount");
         auctionInstance.updateWhitelistMinBidAmount(0);
@@ -806,6 +867,11 @@ contract AuctionManagerTest is Test {
         vm.prank(owner);
         vm.expectRevert("Invalid Amount");
         auctionInstance.updateWhitelistMinBidAmount(0.2 ether);
+
+        assertEq(auctionInstance.whitelistBidAmount(), 0.001 ether);
+        vm.prank(owner);
+        auctionInstance.updateWhitelistMinBidAmount(0.002 ether);
+        assertEq(auctionInstance.whitelistBidAmount(), 0.002 ether);
     }
 
     function test_EventWhitelistBidUpdated() public {
