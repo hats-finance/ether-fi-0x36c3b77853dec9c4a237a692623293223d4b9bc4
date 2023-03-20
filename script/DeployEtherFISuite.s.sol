@@ -29,20 +29,43 @@ contract DeployScript is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        // vm.broadcast(deployerPrivateKey)
+        // vm.startBroadcast(deployerPrivateKey);
+        
+        vm.broadcast(deployerPrivateKey);
 
         Treasury treasury = new Treasury();
+
+        vm.broadcast(deployerPrivateKey);
+
         NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
+        
+        vm.broadcast(deployerPrivateKey);
+
         AuctionManager auctionManager = new AuctionManager(
             address(nodeOperatorKeyManager)
         );
 
+        vm.broadcast(deployerPrivateKey);
+
         StakingManager stakingManager = new StakingManager(
             address(auctionManager)
         );
+
+        vm.broadcast(deployerPrivateKey);
+
+        auctionManager.setStakingManagerContractAddress(
+            address(stakingManager)
+        );
+
+        vm.broadcast(deployerPrivateKey);
+
         address TNFTAddress = stakingManager.tnftContractAddress();
         address BNFTAddress = stakingManager.bnftContractAddress();
         ProtocolRevenueManager protocolRevenueManagerInstance = new ProtocolRevenueManager();
+
+        vm.broadcast(deployerPrivateKey);
+
         EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
             address(treasury),
             address(auctionManager),
@@ -72,7 +95,8 @@ contract DeployScript is Script {
         );
         stakingManager.setTreasuryAddress(address(treasury));
 
-        vm.stopBroadcast();
+        vm.broadcast(deployerPrivateKey);
+
 
         addressStruct = addresses({
             treasury: address(treasury),
