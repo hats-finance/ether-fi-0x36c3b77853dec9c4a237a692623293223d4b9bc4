@@ -9,7 +9,8 @@ interface INodeOperatorKeyManager {
     }
 
     function registerNodeOperator(
-        string memory ipfsHash,
+        bytes32[] calldata _merkleProof,
+        bytes memory ipfsHash,
         uint64 totalKeys
     ) external;
 
