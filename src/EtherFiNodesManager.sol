@@ -136,11 +136,12 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
 
-        uint256 stakingRewards = IEtherFiNode(etherfiNode).getWithdrawableBalance();
-        require(stakingRewards < 8 ether, "The accrued staking rewards are above 8 ETH. You should exit the node.");
+        uint256 balance = address(etherfiNode).balance;
+        require(balance < 8 ether, "The accrued staking rewards are above 8 ETH. You should exit the node.");
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = getRewards(_validatorId, true, true, true);
-        IEtherFiNode(etherfiNode).updateAfterPartialWithdrawal(true, true);
+        protocolRevenueManagerInstance.distributeAuctionRevenue(_validatorId);
+        IEtherFiNode(etherfiNode).updateAfterPartialWithdrawal(true);
 
         address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
         address tnftHolder = tnftInstance.ownerOf(_validatorId);

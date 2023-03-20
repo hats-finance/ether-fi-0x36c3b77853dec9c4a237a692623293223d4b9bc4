@@ -430,11 +430,7 @@ contract EtherFiNodeTest is Test {
         );
 
         // Simulate the rewards distribution from the beacon chain
-        vm.deal(etherfiNode, 1 ether + vestedAuctionFeeRewardsForStakers);
-        assertEq(
-            address(etherfiNode).balance,
-            1 ether + vestedAuctionFeeRewardsForStakers
-        );
+        vm.deal(etherfiNode, address(etherfiNode).balance + 1 ether);
 
         // Transfer the T-NFT to 'dan'
         hoax(staker);
@@ -449,6 +445,7 @@ contract EtherFiNodeTest is Test {
         uint256 treasuryBalance = address(treasuryInstance).balance;
         uint256 danBalance = address(dan).balance;
         uint256 bnftStakerBalance = address(staker).balance;
+        console.log(address(etherfiNode).balance);
 
         hoax(owner);
         managerInstance.partialWithdraw(bidId[0]);
@@ -459,6 +456,7 @@ contract EtherFiNodeTest is Test {
         );
         assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
         assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
+        console.log(address(etherfiNode).balance);
 
         // No rewards left after calling the 'partialWithdraw'
         hoax(owner);
@@ -470,6 +468,18 @@ contract EtherFiNodeTest is Test {
         );
         assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
         assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
+        console.log(address(etherfiNode).balance);
+
+        vm.warp(1 + 6 * 28 * 24 * 3600);
+        hoax(owner);
+        managerInstance.partialWithdraw(bidId[0]);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
+        assertEq(
+            address(treasuryInstance).balance,
+            treasuryBalance + 0.05 ether + 0.05 ether + 0.0125 ether
+        );
+        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether + 0.045312500000000000 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether + 0.004687500000000000 ether);
 
         vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
         vm.expectRevert(

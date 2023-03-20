@@ -19,7 +19,7 @@ interface IEtherFiNode {
     function setExitRequestTimestamp() external;
     function markExited(uint32 _exitTimestamp) external;
     function receiveVestedRewardsForStakers() external payable;
-    function updateAfterPartialWithdrawal(bool _protocolRewards, bool _vestedAuctionFee) external;
+    function updateAfterPartialWithdrawal(bool _vestedAuctionFee) external;
 
     function phase() external view returns (VALIDATOR_PHASE);
     function ipfsHashForEncryptedValidatorKey() external view returns (string memory);
