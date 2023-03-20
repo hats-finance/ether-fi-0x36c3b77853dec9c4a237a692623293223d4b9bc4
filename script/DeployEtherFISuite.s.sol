@@ -48,6 +48,7 @@ contract DeployScript is Script {
         address TNFTAddress = stakingManager.tnftContractAddress();
         address BNFTAddress = stakingManager.bnftContractAddress();
         ProtocolRevenueManager protocolRevenueManager = new ProtocolRevenueManager();
+
         EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
             address(treasury),
             address(auctionManager),
@@ -57,25 +58,10 @@ contract DeployScript is Script {
             address(protocolRevenueManager)
         );
 
-        auctionManager.setStakingManagerContractAddress(
-            address(stakingManager)
-        );
-
-        auctionManager.setProtocolRevenueManager(
-            address(protocolRevenueManager)
-        );
-
-        protocolRevenueManager.setAuctionManagerAddress(
-            address(auctionManager)
-        );
-
-        protocolRevenueManager.setEtherFiNodesManagerAddress(
-            address(etherFiNodesManager)
-        );
-
         stakingManager.setEtherFiNodesManagerAddress(
             address(etherFiNodesManager)
         );
+        stakingManager.setTreasuryAddress(address(treasury));
 
         stakingManager.setProtocolRevenueManager(
             address(protocolRevenueManager)
