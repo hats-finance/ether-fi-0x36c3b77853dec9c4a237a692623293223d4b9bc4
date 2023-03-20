@@ -33,6 +33,8 @@ interface IEtherFiNode {
                         returns (uint256, uint256, uint256, uint256);
     function getFullWithdrawalPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale, uint256 _principal, uint256 _dailyPenalty) external view returns (uint256, uint256, uint256, uint256);
 
+    function calculatePayoutsBasedOnSplits(uint256 _totalAmount, IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
+
     // Setters
     function setPhase(VALIDATOR_PHASE _phase) external;
     function setIpfsHashForEncryptedValidatorKey(string calldata _ipfs) external;

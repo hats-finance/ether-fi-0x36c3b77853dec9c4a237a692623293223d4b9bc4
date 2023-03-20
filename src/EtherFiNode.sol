@@ -164,7 +164,7 @@ contract EtherFiNode is IEtherFiNode {
             // Assume no staking rewards in this case.
             rewards = 0;
         }
-        (uint256 operator, uint256 tnft, uint256 bnft, uint256 treasury) = _getPayoutsBasedOnSplits(rewards, _splits, _scale);
+        (uint256 operator, uint256 tnft, uint256 bnft, uint256 treasury) = calculatePayoutsBasedOnSplits(rewards, _splits, _scale);
         uint256 daysPassedSinceExitRequest = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
         if (daysPassedSinceExitRequest >= 14) {
             treasury += operator;
@@ -178,9 +178,12 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _splits the splits for the protocol rewards
     /// @param _scale the scale = SUM(_splits)
     function getProtocolRewards(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+        if (localRevenueIndex == 0) {
+            return (0, 0, 0, 0);
+        }
         uint256 globalRevenueIndex = IProtocolRevenueManager(protocolRevenueManagerAddress()).globalRevenueIndex();
         uint256 rewards = globalRevenueIndex - localRevenueIndex;
-        return _getPayoutsBasedOnSplits(rewards, _splits, _scale);
+        return calculatePayoutsBasedOnSplits(rewards, _splits, _scale);
     }
 
     /// @notice get withdrawable balance via either 'partialWithdraw' or 'fullWithdraw'
@@ -241,16 +244,15 @@ contract EtherFiNode is IEtherFiNode {
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
 
-        uint256 toBnftPrincipal;
-        uint256 toTnftPrincipal;
-
         // Compute the payouts for the staking rewards (which is exceeding amount above 32 ETH)
         if (balance > 32 ether) {
-            (payouts[0], payouts[1], payouts[2], payouts[3]) = getStakingRewards(_splits, _scale);
+            (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewards(true, false, true, _splits, _scale, _splits, _scale);
             balance = 32 ether;
         }
 
         // Compute the payouts for the principals to {B, T}-NFTs
+        uint256 toBnftPrincipal;
+        uint256 toTnftPrincipal;
         if (balance > 31.5 ether) {
             // 31.5 ether < balance <= 32 ether
             toBnftPrincipal = balance - 30 ether;
@@ -304,7 +306,7 @@ contract EtherFiNode is IEtherFiNode {
         return uint256(timeElapsed / (24 * 3600));
     }
 
-    function _getPayoutsBasedOnSplits(uint256 _totalAmount, IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) internal view returns (uint256, uint256, uint256, uint256) {
+    function calculatePayoutsBasedOnSplits(uint256 _totalAmount, IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) public view returns (uint256, uint256, uint256, uint256) {
         require(_splits.nodeOperator + _splits.tnft + _splits.bnft + _splits.treasury == _scale, "Incorrect Splits");
         uint256 operator = (_totalAmount * _splits.nodeOperator) / _scale;
         uint256 tnft = (_totalAmount * _splits.tnft) / _scale;

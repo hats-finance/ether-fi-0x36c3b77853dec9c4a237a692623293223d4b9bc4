@@ -36,6 +36,7 @@ interface IEtherFiNodesManager {
     function getRewards(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external view returns (uint256, uint256, uint256, uint256);
     function getFullWithdrawalPayouts(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
     function isExitRequested(uint256 _validatorId) external view returns (bool);
+    function isExited(uint256 _validatorId) external view returns (bool);
 
     // Non-VIEW functions
     function createEtherfiNode(uint256 _validatorId) external returns (address);
@@ -48,7 +49,7 @@ interface IEtherFiNodesManager {
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs) external;
     function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) payable external;
     function sendExitRequest(uint256 _validatorId) external;
-    function markExited(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamp) external;
+    function processNodeExit(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamp) external;
 
     function partialWithdraw(uint256 _validatorId) external;
 }

@@ -219,7 +219,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         IEtherFiNode.VALIDATOR_PHASE _phase
     ) public {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setPhase(_phase);
     }
 
@@ -231,7 +230,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         string calldata _ipfs
     ) public {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setIpfsHashForEncryptedValidatorKey(_ipfs);
     }
 
@@ -240,7 +238,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         uint256 _localRevenueIndex
     ) payable external {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setLocalRevenueIndex{value: msg.value}(_localRevenueIndex);
     }
 
@@ -257,18 +254,37 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
             "You are not the owner of the T-NFT"
         );
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         IEtherFiNode(etherfiNode).setExitRequestTimestamp();
 
         emit NodeExitRequested(_validatorId);
     }
 
-    function markExited(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamps) external onlyOwner {
+    function processNodeExit(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamps) external onlyOwner {
         require(_validatorIds.length == _exitTimestamps.length, "_validatorIds.length != _exitTimestamps.length");
         for (uint256 i = 0; i < _validatorIds.length; i++) {
-            address etherfiNode = etherfiNodePerValidator[_validatorIds[i]];
-            require(etherfiNode != address(0), "The validator Id is invalid.");
+            uint256 validatorId = _validatorIds[i];
+            address etherfiNode = etherfiNodePerValidator[validatorId];
             IEtherFiNode(etherfiNode).markExited(_exitTimestamps[i]);
+            uint256 amount = protocolRevenueManagerInstance.distributeAuctionRevenue(validatorId);
+            IEtherFiNode(etherfiNode).setLocalRevenueIndex(0);
+
+            (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
+                = IEtherFiNode(etherfiNode).calculatePayoutsBasedOnSplits(amount, protocolRewardsSplit, SCALE);
+            
+            address operator = auctionInterfaceInstance.getBidOwner(validatorId);
+            address tnftHolder = tnftInstance.ownerOf(validatorId);
+            address bnftHolder = bnftInstance.ownerOf(validatorId);
+
+            IEtherFiNode(etherfiNode).withdrawFunds(
+                treasuryContract,
+                toTreasury,
+                operator,
+                toOperator,
+                tnftHolder,
+                toTnft,
+                bnftHolder,
+                toBnft
+            );
         }
     }
 
@@ -291,19 +307,16 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey();
     }
 
     function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external view returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
 
     function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).vestedAuctionRewards();
     }
 
@@ -315,7 +328,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         return generateWithdrawalCredentials(etherfiNode);
     }
 
@@ -325,7 +337,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     function isExitRequested(uint256 _validatorId) external view returns (bool) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).exitRequestTimestamp() > 0;
     }
 
@@ -334,27 +345,28 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         uint32 _endTimestamp
     ) public view returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).getNonExitPenaltyAmount(nonExitPenaltyPrincipal, nonExitPenaltyDailyRate, _endTimestamp);
     }
 
     function getStakingRewards(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).getStakingRewards(stakingRewardsSplit, SCALE);
     }
 
     function getRewards(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).getRewards(_stakingRewards, _protocolRewards, _vestedAuctionFee, stakingRewardsSplit, SCALE, protocolRewardsSplit, SCALE);
     }
 
     function getFullWithdrawalPayouts(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
         return IEtherFiNode(etherfiNode).getFullWithdrawalPayouts(stakingRewardsSplit, SCALE, nonExitPenaltyPrincipal, nonExitPenaltyDailyRate);
     }
+
+    function isExited(uint256 _validatorId) external view returns (bool) {
+        return getEtherFiNodePhase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
+    }
+
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------

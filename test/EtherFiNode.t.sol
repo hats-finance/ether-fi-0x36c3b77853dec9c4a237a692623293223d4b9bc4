@@ -360,12 +360,12 @@ contract EtherFiNodeTest is Test {
         IEtherFiNode(etherFiNode).markExited(1);
 
         vm.expectRevert("Only owner function");
-        managerInstance.markExited(validatorIds, exitTimestamps);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
 
         hoax(owner);
-        managerInstance.markExited(validatorIds, exitTimestamps);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
     }
@@ -514,7 +514,7 @@ contract EtherFiNodeTest is Test {
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
         hoax(owner);
-        managerInstance.markExited(validatorIds, exitTimestamps);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
 
         // 1. balance > 32 ether
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
@@ -624,7 +624,7 @@ contract EtherFiNodeTest is Test {
         vm.warp(1 + 86400);
         startHoax(owner);
         exitTimestamps[0] = 1 + 86400;
-        managerInstance.markExited(validatorIds, exitTimestamps);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenaltyAmount(bidId[0], uint32(block.timestamp));
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
@@ -652,7 +652,7 @@ contract EtherFiNodeTest is Test {
         vm.warp(1 + 14 * 86400);
         startHoax(owner);
         exitTimestamps[0] = 1 + 14 * 86400;
-        managerInstance.markExited(validatorIds, exitTimestamps);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenaltyAmount(bidId[0], uint32(block.timestamp));
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
@@ -669,7 +669,7 @@ contract EtherFiNodeTest is Test {
         uint32[] memory exitTimestamps = new uint32[](2);
         startHoax(owner);
         vm.expectRevert("_validatorIds.length != _exitTimestamps.length");
-        managerInstance.markExited(validatorIds, exitTimestamps);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly3() public {
@@ -686,7 +686,7 @@ contract EtherFiNodeTest is Test {
         vm.warp(1 + 28 * 86400);
         startHoax(owner);
         exitTimestamps[0] = 1 + 28 * 86400;
-        managerInstance.markExited(validatorIds, exitTimestamps);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenaltyAmount(bidId[0], uint32(block.timestamp));
         assertGe(nonExitPenalty, 0.5 ether);
 
