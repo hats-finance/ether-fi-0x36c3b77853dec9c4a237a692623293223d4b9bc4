@@ -29,42 +29,27 @@ contract DeployScript is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        // vm.broadcast(deployerPrivateKey)
-        // vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast(deployerPrivateKey);
         
-        vm.broadcast(deployerPrivateKey);
-
         Treasury treasury = new Treasury();
 
-        vm.broadcast(deployerPrivateKey);
-
         NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
-        
-        vm.broadcast(deployerPrivateKey);
 
         AuctionManager auctionManager = new AuctionManager(
             address(nodeOperatorKeyManager)
         );
 
-        vm.broadcast(deployerPrivateKey);
-
         StakingManager stakingManager = new StakingManager(
             address(auctionManager)
         );
-
-        vm.broadcast(deployerPrivateKey);
 
         auctionManager.setStakingManagerContractAddress(
             address(stakingManager)
         );
 
-        vm.broadcast(deployerPrivateKey);
-
         address TNFTAddress = stakingManager.tnftContractAddress();
         address BNFTAddress = stakingManager.bnftContractAddress();
         ProtocolRevenueManager protocolRevenueManagerInstance = new ProtocolRevenueManager();
-
-        vm.broadcast(deployerPrivateKey);
 
         EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
             address(treasury),
@@ -74,8 +59,6 @@ contract DeployScript is Script {
             BNFTAddress,
             address(protocolRevenueManagerInstance)
         );
-
-        vm.broadcast(deployerPrivateKey);
 
         nodeOperatorKeyManager.setAuctionContractAddress(
             address(auctionManager)
@@ -97,9 +80,6 @@ contract DeployScript is Script {
         );
         stakingManager.setTreasuryAddress(address(treasury));
 
-        vm.broadcast(deployerPrivateKey);
-
-
         addressStruct = addresses({
             treasury: address(treasury),
             nodeOperatorKeyManager: address(nodeOperatorKeyManager),
@@ -109,6 +89,8 @@ contract DeployScript is Script {
             BNFT: BNFTAddress,
             etherFiNodesManager: address(etherFiNodesManager)
         });
+
+        vm.stopBroadcast();
 
         writeVersionFile();
 

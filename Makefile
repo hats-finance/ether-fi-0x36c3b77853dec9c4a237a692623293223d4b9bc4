@@ -29,7 +29,7 @@ format :; prettier --write src/**/*.sol && prettier --write src/*.sol
 lint :; solhint src/**/*.sol && solhint src/*.sol
 
 # use the "@" to hide the command from your shell 
-deploy-goerli-suite :; @forge script script/DeployEtherFISuite.s.sol:DeployScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv
+deploy-goerli-suite :; @forge script script/DeployEtherFISuite.s.sol:DeployScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow
 
 deploy-goerli-lp :; @forge script script/DeployLiquidityPool.s.sol:DeployLiquidityPoolScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv
 
