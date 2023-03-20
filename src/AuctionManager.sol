@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 //Importing all needed contracts and libraries
 import "./interfaces/IAuctionManager.sol";
-import "./interfaces/INodeOperatorKeyManager.sol";
+import "./interfaces/INodeOperatorManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -26,9 +26,8 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
-    mapping(address => bool) private whitelistedAddresses;
 
-    INodeOperatorKeyManager nodeOperatorKeyManagerInterface;
+    INodeOperatorManager nodeOperatorManagerInterface;
     IProtocolRevenueManager protocolRevenueManager;
 
     //--------------------------------------------------------------------------------------
@@ -79,7 +78,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     /// @notice Constructor to set variables on deployment
     constructor(address _nodeOperatorKeyManagerContract) {
-        nodeOperatorKeyManagerInterface = INodeOperatorKeyManager(
+        nodeOperatorManagerInterface = INodeOperatorManager(
             _nodeOperatorKeyManagerContract
         );
         nodeOperatorKeyManagerContractAddress = _nodeOperatorKeyManagerContract;
@@ -140,7 +139,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
-        uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
+        uint64 userTotalKeys = nodeOperatorManagerInterface.getUserTotalKeys(
             msg.sender
         );
 
@@ -148,7 +147,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
         if (whitelistEnabled) {
             require(
-                whitelistedAddresses[msg.sender] == true,
+                nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true,
                 "Only whitelisted addresses"
             );
             require(
@@ -158,7 +157,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
                 "Incorrect bid value"
             );
         } else {
-            if (whitelistedAddresses[msg.sender] == true) {
+            if (nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true) {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
                         _bidAmountPerBid >= whitelistBidAmount &&
@@ -179,7 +178,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
         for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
-            uint64 ipfsIndex = nodeOperatorKeyManagerInterface
+            uint64 ipfsIndex = nodeOperatorManagerInterface
                 .fetchNextKeyIndex(msg.sender);
 
             uint256 bidId = numberOfBids;
@@ -238,12 +237,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         emit BidReEnteredAuction(_bidId);
     }
 
-    function whitelistAddress(
-        address _user
-    ) external onlyNodeOperatorKeyManagerContract {
-        whitelistedAddresses[_user] = true;
-    }
-
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
@@ -273,12 +266,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @return the user who placed the bid
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
-    }
-
-    function isWhitelisted(
-        address _user
-    ) public view returns (bool whitelisted) {
-        whitelisted = whitelistedAddresses[_user];
     }
 
     /// @notice Fetches if a selected bid is currently active

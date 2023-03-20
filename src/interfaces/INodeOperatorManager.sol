@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-interface INodeOperatorKeyManager {
+interface INodeOperatorManager {
     struct KeyData {
         uint64 totalKeys;
         uint64 keysUsed;
@@ -19,4 +19,8 @@ interface INodeOperatorKeyManager {
     function getUserTotalKeys(
         address _user
     ) external view returns (uint64 totalKeys);
+
+    function isWhitelisted(
+        address _user
+    ) external view returns (bool whitelisted);
 }

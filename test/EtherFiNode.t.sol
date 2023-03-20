@@ -8,7 +8,7 @@ import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/BNFT.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
@@ -19,7 +19,7 @@ contract EtherFiNodeTest is Test {
     StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
-    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    NodeOperatorManager public nodeOperatorManagerInstance;
     AuctionManager public auctionInstance;
     ProtocolRevenueManager public protocolRevenueManagerInstance;
     Treasury public treasuryInstance;
@@ -48,14 +48,14 @@ contract EtherFiNodeTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(
-            address(nodeOperatorKeyManagerInstance)
+            address(nodeOperatorManagerInstance)
         );
-        nodeOperatorKeyManagerInstance.setAuctionContractAddress(
+        nodeOperatorManagerInstance.setAuctionContractAddress(
             address(auctionInstance)
         );
-        nodeOperatorKeyManagerInstance.updateMerkleRoot(root);
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
 
         stakingManagerInstance = new StakingManager(address(auctionInstance));
@@ -105,7 +105,7 @@ contract EtherFiNodeTest is Test {
 
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -177,14 +177,14 @@ contract EtherFiNodeTest is Test {
         bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 4);
 
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
             aliceIPFSHash,
             5
         );
 
         vm.prank(chad);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             chadProof,
             aliceIPFSHash,
             5

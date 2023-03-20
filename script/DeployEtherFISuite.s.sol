@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/Treasury.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
 import "../src/EtherFiNodesManager.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/StakingManager.sol";
@@ -17,7 +17,7 @@ contract DeployScript is Script {
 
     struct addresses {
         address treasury;
-        address nodeOperatorKeyManager;
+        address nodeOperatorManager;
         address auctionManager;
         address stakingManager;
         address TNFT;
@@ -33,9 +33,9 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         Treasury treasury = new Treasury();
-        NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
+        NodeOperatorManager nodeOperatorManager = new NodeOperatorManager();
         AuctionManager auctionManager = new AuctionManager(
-            address(nodeOperatorKeyManager)
+            address(nodeOperatorManager)
         );
 
         StakingManager stakingManager = new StakingManager(
@@ -73,7 +73,7 @@ contract DeployScript is Script {
 
         addressStruct = addresses({
             treasury: address(treasury),
-            nodeOperatorKeyManager: address(nodeOperatorKeyManager),
+            nodeOperatorManager: address(nodeOperatorManager),
             auctionManager: address(auctionManager),
             stakingManager: address(stakingManager),
             TNFT: TNFTAddress,
@@ -134,7 +134,7 @@ contract DeployScript is Script {
                     "\nTreasury: ",
                     Strings.toHexString(addressStruct.treasury),
                     "\nNode Operator Key Manager: ",
-                    Strings.toHexString(addressStruct.nodeOperatorKeyManager),
+                    Strings.toHexString(addressStruct.nodeOperatorManager),
                     "\nAuctionManager: ",
                     Strings.toHexString(addressStruct.auctionManager),
                     "\nStakingManager: ",
