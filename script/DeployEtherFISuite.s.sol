@@ -23,6 +23,7 @@ contract DeployScript is Script {
         address TNFT;
         address BNFT;
         address etherFiNodesManager;
+        address protocolRevenueManager;
     }
 
     addresses addressStruct;
@@ -46,19 +47,41 @@ contract DeployScript is Script {
 
         address TNFTAddress = stakingManager.tnftContractAddress();
         address BNFTAddress = stakingManager.bnftContractAddress();
-        ProtocolRevenueManager protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        ProtocolRevenueManager protocolRevenueManager = new ProtocolRevenueManager();
         EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
             address(treasury),
             address(auctionManager),
             address(stakingManager),
             TNFTAddress,
             BNFTAddress,
-            address(protocolRevenueManagerInstance)
+            address(protocolRevenueManager)
+        );
+
+        auctionManager.setStakingManagerContractAddress(
+            address(stakingManager)
+        );
+
+        auctionManager.setProtocolRevenueManager(
+            address(protocolRevenueManager)
+        );
+
+        protocolRevenueManager.setAuctionManagerAddress(
+            address(auctionManager)
+        );
+
+        protocolRevenueManager.setEtherFiNodesManagerAddress(
+            address(etherFiNodesManager)
         );
 
         stakingManager.setEtherFiNodesManagerAddress(
             address(etherFiNodesManager)
         );
+
+        stakingManager.setProtocolRevenueManager(
+            address(protocolRevenueManager)
+        );
+
+        stakingManager.setTreasuryAddress(address(treasury));
 
         vm.stopBroadcast();
 
@@ -69,7 +92,8 @@ contract DeployScript is Script {
             stakingManager: address(stakingManager),
             TNFT: TNFTAddress,
             BNFT: BNFTAddress,
-            etherFiNodesManager: address(etherFiNodesManager)
+            etherFiNodesManager: address(etherFiNodesManager),
+            protocolRevenueManager: address(protocolRevenueManager)
         });
 
         writeVersionFile();
@@ -134,7 +158,9 @@ contract DeployScript is Script {
                     "\nBNFT: ",
                     Strings.toHexString(addressStruct.BNFT),
                     "\nSafe Manager: ",
-                    Strings.toHexString(addressStruct.etherFiNodesManager)
+                    Strings.toHexString(addressStruct.etherFiNodesManager),
+                    "\nProtocol Revenue Manager: ",
+                    Strings.toHexString(addressStruct.protocolRevenueManager)
                 )
             )
         );
