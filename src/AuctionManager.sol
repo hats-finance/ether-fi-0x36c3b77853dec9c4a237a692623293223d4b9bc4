@@ -26,7 +26,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
-    mapping(address => bool) private whitelistedAddresses;
 
     INodeOperatorManager nodeOperatorManagerInterface;
     IProtocolRevenueManager protocolRevenueManager;
@@ -148,7 +147,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
         if (whitelistEnabled) {
             require(
-                whitelistedAddresses[msg.sender] == true,
+                nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true,
                 "Only whitelisted addresses"
             );
             require(
@@ -158,7 +157,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
                 "Incorrect bid value"
             );
         } else {
-            if (whitelistedAddresses[msg.sender] == true) {
+            if (nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true) {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
                         _bidAmountPerBid >= whitelistBidAmount &&
@@ -238,12 +237,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         emit BidReEnteredAuction(_bidId);
     }
 
-    function whitelistAddress(
-        address _user
-    ) external onlyNodeOperatorKeyManagerContract {
-        whitelistedAddresses[_user] = true;
-    }
-
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
@@ -273,12 +266,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @return the user who placed the bid
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
-    }
-
-    function isWhitelisted(
-        address _user
-    ) public view returns (bool whitelisted) {
-        whitelisted = whitelistedAddresses[_user];
     }
 
     /// @notice Fetches if a selected bid is currently active

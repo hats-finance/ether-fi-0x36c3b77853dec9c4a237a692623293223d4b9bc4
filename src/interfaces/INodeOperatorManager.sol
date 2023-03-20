@@ -19,4 +19,8 @@ interface INodeOperatorManager {
     function getUserTotalKeys(
         address _user
     ) external view returns (uint64 totalKeys);
+
+    function isWhitelisted(
+        address _user
+    ) external view returns (bool whitelisted);
 }

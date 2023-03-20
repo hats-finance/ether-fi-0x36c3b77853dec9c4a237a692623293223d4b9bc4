@@ -27,6 +27,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
 
     // user address => OperaterData Struct
     mapping(address => KeyData) public addressToOperatorData;
+    mapping(address => bool) private whitelistedAddresses;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -83,6 +84,12 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         totalKeys = addressToOperatorData[_user].totalKeys;
     }
 
+    function isWhitelisted(
+        address _user
+    ) public view returns (bool whitelisted) {
+        whitelisted = whitelistedAddresses[_user];
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  SETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -107,7 +114,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
             keccak256(abi.encodePacked(_user))
         );
         if (whitelisted) {
-            auctionMangerInterface.whitelistAddress(_user);
+            whitelistedAddresses[_user] = true;
         }
     }
 }

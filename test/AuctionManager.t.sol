@@ -264,8 +264,8 @@ contract AuctionManagerTest is Test {
             5
         );
 
-        assertFalse(auctionInstance.isWhitelisted(chad));
-        assertTrue(auctionInstance.isWhitelisted(alice));
+        assertFalse(nodeOperatorManagerInstance.isWhitelisted(chad));
+        assertTrue(nodeOperatorManagerInstance.isWhitelisted(alice));
 
         hoax(alice);
         uint256[] memory bid1Id = auctionInstance.createBid{value: 0.001 ether}(
