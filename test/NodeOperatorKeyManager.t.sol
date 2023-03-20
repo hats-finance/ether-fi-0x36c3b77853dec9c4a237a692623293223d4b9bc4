@@ -16,6 +16,7 @@ import "../lib/murky/src/Merkle.sol";
 
 contract NodeOperatorKeyManagerTest is Test {
     event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
+    event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
     StakingManager public stakingManagerInstance;
@@ -110,6 +111,7 @@ contract NodeOperatorKeyManagerTest is Test {
 
     function test_FetchNextKeyIndex() public {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 1);
 
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(
@@ -131,7 +133,24 @@ contract NodeOperatorKeyManagerTest is Test {
         );
 
         assertEq(keysUsed, 1);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            aliceProof,
+            aliceIPFSHash,
+            1
+        );
+        vm.expectRevert("Insufficient public keys");
+        auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
+        vm.stopPrank();
+
+        vm.expectRevert("Only auction contract function");
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.fetchNextKeyIndex(alice);
     }
+
+    
+
 
     function test_UpdatingMerkle() public {
         assertEq(nodeOperatorKeyManagerInstance.merkleRoot(), root);
@@ -143,7 +162,9 @@ contract NodeOperatorKeyManagerTest is Test {
         );
 
         bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
+        vm.expectEmit(false, false, false, true);
         vm.prank(owner);
+        emit MerkleUpdated(root, newRoot);
         nodeOperatorKeyManagerInstance.updateMerkleRoot(newRoot);
 
         bytes32[] memory proofForAddress4 = merkle.getProof(

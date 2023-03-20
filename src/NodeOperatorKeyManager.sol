@@ -23,6 +23,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
     //--------------------------------------------------------------------------------------
 
     IAuctionManager auctionMangerInterface;
+    address auctionContractAddress;
     bytes32 public merkleRoot;
 
     // user address => OperaterData Struct
@@ -52,6 +53,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
     }
 
     function fetchNextKeyIndex(address _user) external returns (uint64) {
+        require(msg.sender == auctionContractAddress, "Only auction contract function");
         uint64 totalKeys = addressToOperatorData[_user].totalKeys;
         require(
             addressToOperatorData[_user].keysUsed < totalKeys,
@@ -91,6 +93,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
         address _auctionContractAddress
     ) public onlyOwner {
         auctionMangerInterface = IAuctionManager(_auctionContractAddress);
+        auctionContractAddress = _auctionContractAddress;
     }
 
     //--------------------------------------------------------------------------------------
