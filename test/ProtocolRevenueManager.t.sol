@@ -34,7 +34,7 @@ contract ProtocolRevenueManagerTest is Test {
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
-    string _ipfsHash = "IPFSHash";
+    bytes _ipfsHash = "IPFSHash";
 
     function setUp() public {
         vm.startPrank(owner);

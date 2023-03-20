@@ -15,11 +15,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event OperatorRegistered(
-        uint64 totalKeys,
-        uint64 keysUsed,
-        string ipfsHash
-    );
+    event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
     //--------------------------------------------------------------------------------------
@@ -38,7 +34,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
 
     function registerNodeOperator(
         bytes32[] calldata _merkleProof,
-        string memory _ipfsHash,
+        bytes memory _ipfsHash,
         uint64 _totalKeys
     ) public {
         addressToOperatorData[msg.sender] = KeyData({

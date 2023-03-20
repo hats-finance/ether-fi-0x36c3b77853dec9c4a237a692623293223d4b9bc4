@@ -35,8 +35,8 @@ contract AuctionManagerTest is Test {
     address greg = vm.addr(7);
     address henry = vm.addr(8);
 
-    string aliceIPFSHash = "AliceIPFS";
-    string _ipfsHash = "ipfsHash";
+    bytes aliceIPFSHash = "AliceIPFS";
+    bytes _ipfsHash = "ipfsHash";
 
     function setUp() public {
         vm.startPrank(owner);

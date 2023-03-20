@@ -15,11 +15,7 @@ import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract NodeOperatorKeyManagerTest is Test {
-    event OperatorRegistered(
-        uint64 totalKeys,
-        uint64 keysUsed,
-        string ipfsHash
-    );
+    event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
 
     NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
     StakingManager public stakingManagerInstance;
@@ -38,8 +34,8 @@ contract NodeOperatorKeyManagerTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
-    string aliceIPFSHash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
-    string _ipfsHash = "ipfsHash";
+    bytes aliceIPFSHash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
+    bytes _ipfsHash = "ipfsHash";
 
     function setUp() public {
         vm.startPrank(owner);
@@ -113,7 +109,7 @@ contract NodeOperatorKeyManagerTest is Test {
     }
 
     function test_FetchNextKeyIndex() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(alice);
         nodeOperatorKeyManagerInstance.registerNodeOperator(
@@ -152,7 +148,7 @@ contract NodeOperatorKeyManagerTest is Test {
 
         bytes32[] memory proofForAddress4 = merkle.getProof(
             whiteListedAddresses,
-            5
+            4
         );
 
         assertEq(nodeOperatorKeyManagerInstance.merkleRoot(), newRoot);

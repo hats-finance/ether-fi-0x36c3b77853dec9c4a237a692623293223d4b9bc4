@@ -30,7 +30,7 @@ contract BNFTTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
-    string _ipfsHash = "ipfs";
+    bytes _ipfsHash = "ipfs";
 
     function setUp() public {
         vm.startPrank(owner);

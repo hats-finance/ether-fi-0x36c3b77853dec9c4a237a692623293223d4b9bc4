@@ -31,8 +31,8 @@ contract AuctionManagerTest is Test {
     address bob = vm.addr(3);
     address chad = vm.addr(4);
 
-    string aliceIPFSHash = "AliceIPFS";
-    string _ipfsHash = "ipfsHash";
+    bytes aliceIPFSHash = "AliceIPFS";
+    bytes _ipfsHash = "ipfsHash";
 
     event BidCreated(
         address indexed bidder,
@@ -424,11 +424,11 @@ contract AuctionManagerTest is Test {
             0.1 ether
         );
 
-        vm.expectRevert("All public keys used");
+        vm.expectRevert("Insufficient public keys");
         hoax(alice);
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        vm.expectRevert("All public keys used");
+        vm.expectRevert("Insufficient public keys");
         hoax(alice);
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
     }

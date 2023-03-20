@@ -39,8 +39,8 @@ contract EtherFiNodeTest is Test {
     address chad = vm.addr(4);
     address dan = vm.addr(5);
 
-    string _ipfsHash = "ipfsHash";
-    string aliceIPFSHash = "AliceIpfsHash";
+    bytes _ipfsHash = "ipfsHash";
+    bytes aliceIPFSHash = "AliceIpfsHash";
 
     uint256[] bidId;
 
