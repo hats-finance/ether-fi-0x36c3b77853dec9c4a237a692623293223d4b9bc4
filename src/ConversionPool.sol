@@ -9,6 +9,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./EarlyAdopterPool.sol";
+
 
 contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     
@@ -33,6 +35,8 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     IERC20 public wstETHInstance;
     IERC20 public sfrxETHInstance;
     IERC20 public cbETHInstance;
+
+    EarlyAdopterPool public adopterPool = EarlyAdopterPool(payable(0x7623e9DC0DA6FF821ddb9EbABA794054E078f8c4));
 
     mapping(address => mapping(address => uint256)) public finalUserToErc20Balance;
 
@@ -78,6 +82,35 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //     cbETHInstance.safeTransfer(msg.sender, cbEthBal);
     // }
 
+    function sendFundsToLP() external {
+        (, uint256 userEtherBalance,) = adopterPool.depositInfo(msg.sender);
+
+        uint256 rEthBal = adopterPool.userToErc20Balance(msg.sender, rETH);
+        uint256 wstEthBal = adopterPool.userToErc20Balance(msg.sender, wstETH);
+        uint256 sfrxEthBal = adopterPool.userToErc20Balance(msg.sender, sfrxETH);
+        uint256 cbEth = adopterPool.userToErc20Balance(msg.sender, cbETH);
+
+        if(rEthBal > 0){
+            userEtherBalance += _swapExactInputSingle(rEthBal, rETH);
+        }
+
+        if(wstEthBal > 0){
+            userEtherBalance += _swapExactInputSingle(wstEthBal, wstETH);
+        }
+
+        if(sfrxEthBal > 0){
+            userEtherBalance += _swapExactInputSingle(sfrxEthBal, sfrxETH);
+        }
+
+        if(cbEth > 0){
+            userEtherBalance += _swapExactInputSingle(cbEth, cbETH);
+        }
+
+        //Call function in LP and send in user and amount of ether sent
+        
+
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
@@ -114,6 +147,7 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     }
 
     function _sendTokensToLP() internal {
+        (, uint256 userEtherBalance,) = adopterPool.depositInfo(msg.sender);
         //Call function in LP and send in user and amount of ether sent
         (bool sent, ) = address(liquidityPool).call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
