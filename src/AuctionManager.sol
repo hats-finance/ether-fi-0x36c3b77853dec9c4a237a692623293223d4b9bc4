@@ -189,7 +189,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     }
 
     /// @notice Disables the bid whitelist
-    /// @dev Allows both regular users an whitelisted users to bid
+    /// @dev Allows both regular users and whitelisted users to bid
     function disableWhitelist() public onlyOwner {
         whitelistEnabled = false;
     }

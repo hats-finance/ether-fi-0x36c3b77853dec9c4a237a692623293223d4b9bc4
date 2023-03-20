@@ -32,7 +32,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-    
+
     function registerNodeOperator(
         bytes32[] calldata _merkleProof,
         bytes memory _ipfsHash,
