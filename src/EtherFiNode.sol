@@ -155,7 +155,6 @@ contract EtherFiNode is IEtherFiNode {
 
         if (_vestedAuctionFee) {
             uint256 rewards = _getClaimableVestedRewards();
-            console.log(rewards, "_getClaimableVestedRewards");
             uint256 toTnft = (rewards * 29) / 32;
             tnft += toTnft; // 29 / 32
             bnft += rewards - toTnft; // 3 / 32
@@ -177,7 +176,6 @@ contract EtherFiNode is IEtherFiNode {
             // Assume no staking rewards in this case.
             rewards = 0;
         }
-        console.log(rewards, "getStakingRewards");
         (uint256 operator, uint256 tnft, uint256 bnft, uint256 treasury) = _getPayoutsBasedOnSplits(rewards, _splits, _scale);
         uint256 daysPassedSinceExitRequest = _getDaysPassedSince(exitRequestTimestamp, uint32(block.timestamp));
         if (daysPassedSinceExitRequest >= 14) {
@@ -194,7 +192,6 @@ contract EtherFiNode is IEtherFiNode {
     function getProtocolRewards(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
         uint256 globalRevenueIndex = IProtocolRevenueManager(protocolRevenueManagerAddress()).globalRevenueIndex();
         uint256 rewards = globalRevenueIndex - localRevenueIndex;
-        console.log(rewards, "getProtocolRewards");
         return _getPayoutsBasedOnSplits(rewards, _splits, _scale);
     }
 
