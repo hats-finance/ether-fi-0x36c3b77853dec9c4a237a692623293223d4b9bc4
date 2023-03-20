@@ -19,7 +19,7 @@ import "lib/forge-std/src/console.sol";
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
     bool public test = true;
-    uint128 public maxBatchDepositSize = 16;
+    uint128 public constant maxBatchDepositSize = 16;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
