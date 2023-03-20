@@ -26,7 +26,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
-    mapping(address => bool) public whitelistedAddresses;
+    mapping(address => bool) private whitelistedAddresses;
 
     INodeOperatorKeyManager nodeOperatorKeyManagerInterface;
     IProtocolRevenueManager protocolRevenueManager;
