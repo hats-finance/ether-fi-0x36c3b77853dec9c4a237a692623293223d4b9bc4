@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/StakingManager.sol";
 import "src/EtherFiNodesManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/NodeOperatorKeyManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -16,6 +17,7 @@ contract AuctionManagerTest is Test {
     StakingManager public stakingManagerInstance;
     EtherFiNode public withdrawSafeInstance;
     EtherFiNodesManager public managerInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
     AuctionManager public auctionInstance;
@@ -69,9 +71,7 @@ contract AuctionManagerTest is Test {
         );
         nodeOperatorKeyManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(
-            address(stakingManagerInstance)
-        );
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
         managerInstance = new EtherFiNodesManager(
@@ -82,8 +82,23 @@ contract AuctionManagerTest is Test {
             address(TestBNFTInstance)
         );
 
+        auctionInstance.setStakingManagerContractAddress(
+            address(stakingManagerInstance)
+        );
+        auctionInstance.setProtocolRevenueManager(
+            address(protocolRevenueManagerInstance)
+        );
+        protocolRevenueManagerInstance.setAuctionManagerAddress(
+            address(auctionInstance)
+        );
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
+        );
+        stakingManagerInstance.setProtocolRevenueManager(
+            address(protocolRevenueManagerInstance)
         );
         vm.stopPrank();
 
@@ -93,8 +108,6 @@ contract AuctionManagerTest is Test {
             signature: "test_signature",
             ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
-
-        vm.stopPrank();
     }
 
     function test_AuctionManagerContractInstantiatedCorrectly() public {
@@ -831,6 +844,30 @@ contract AuctionManagerTest is Test {
         auctionInstance.cancelBid(bid2Id[0]);
 
         assertEq(auctionInstance.numberOfActiveBids(), 1);
+    }
+
+    function test_ProcessAuctionFeeTransfer() public {
+        bytes32[] memory proofAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            proofAddress1,
+            _ipfsHash,
+            5
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bid1Id = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+
+        vm.prank(owner);
+        vm.expectRevert("Only staking manager contract function");
+        auctionInstance.processAuctionFeeTransfer(bid1Id[0]);
     }
 
     function test_SetMaxBidAmount() public {
