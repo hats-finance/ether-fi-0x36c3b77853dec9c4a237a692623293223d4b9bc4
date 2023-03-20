@@ -60,6 +60,9 @@ contract AuctionManagerTest is Test {
     );
     event BidReEnteredAuction(uint256 indexed bidId);
     event Received(address indexed sender, uint256 value);
+    event StakingManagerAddressSet(
+        address indexed stakingManagerContractAddress
+    );
 
     function setUp() public {
         vm.startPrank(owner);
@@ -86,6 +89,8 @@ contract AuctionManagerTest is Test {
             address(TestBNFTInstance)
         );
 
+        vm.expectEmit(true, false, false, true);
+        emit StakingManagerAddressSet(address(stakingManagerInstance));
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
         );
