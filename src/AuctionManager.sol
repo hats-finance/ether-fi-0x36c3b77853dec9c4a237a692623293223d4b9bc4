@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 //Importing all needed contracts and libraries
 import "./interfaces/IAuctionManager.sol";
-import "./interfaces/INodeOperatorKeyManager.sol";
+import "./interfaces/INodeOperatorManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -28,7 +28,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     mapping(uint256 => Bid) public bids;
     mapping(address => bool) private whitelistedAddresses;
 
-    INodeOperatorKeyManager nodeOperatorKeyManagerInterface;
+    INodeOperatorManager nodeOperatorManagerInterface;
     IProtocolRevenueManager protocolRevenueManager;
 
     //--------------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     /// @notice Constructor to set variables on deployment
     constructor(address _nodeOperatorKeyManagerContract) {
-        nodeOperatorKeyManagerInterface = INodeOperatorKeyManager(
+        nodeOperatorManagerInterface = INodeOperatorManager(
             _nodeOperatorKeyManagerContract
         );
         nodeOperatorKeyManagerContractAddress = _nodeOperatorKeyManagerContract;
@@ -140,7 +140,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused returns (uint256[] memory) {
-        uint64 userTotalKeys = nodeOperatorKeyManagerInterface.getUserTotalKeys(
+        uint64 userTotalKeys = nodeOperatorManagerInterface.getUserTotalKeys(
             msg.sender
         );
 
@@ -179,7 +179,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
         for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
-            uint64 ipfsIndex = nodeOperatorKeyManagerInterface
+            uint64 ipfsIndex = nodeOperatorManagerInterface
                 .fetchNextKeyIndex(msg.sender);
 
             uint256 bidId = numberOfBids;

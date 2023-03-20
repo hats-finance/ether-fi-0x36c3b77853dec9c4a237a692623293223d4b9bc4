@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/StakingManager.sol";
 import "src/EtherFiNodesManager.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
@@ -21,7 +21,7 @@ contract AuctionManagerTest is Test {
     TNFT public TestTNFTInstance;
     AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
-    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    NodeOperatorManager public nodeOperatorManagerInstance;
     ProtocolRevenueManager public protocolRevenueManagerInstance;
     Merkle merkle;
     bytes32 root;
@@ -62,14 +62,14 @@ contract AuctionManagerTest is Test {
 
         treasuryInstance = new Treasury();
         _merkleSetup();
-        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(
-            address(nodeOperatorKeyManagerInstance)
+            address(nodeOperatorManagerInstance)
         );
-        nodeOperatorKeyManagerInstance.setAuctionContractAddress(
+        nodeOperatorManagerInstance.setAuctionContractAddress(
             address(auctionInstance)
         );
-        nodeOperatorKeyManagerInstance.updateMerkleRoot(root);
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
@@ -112,7 +112,7 @@ contract AuctionManagerTest is Test {
     function test_ReEnterAuctionManagerFailsIfAuctionManagerPaused() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -141,7 +141,7 @@ contract AuctionManagerTest is Test {
     function test_ReEnterAuctionManagerFailsIfNotCorrectCaller() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -166,7 +166,7 @@ contract AuctionManagerTest is Test {
     function test_ReEnterAuctionManagerFailsIfBidAlreadyActive() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -201,7 +201,7 @@ contract AuctionManagerTest is Test {
     function test_ReEnterAuctionManagerWorks() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -244,21 +244,21 @@ contract AuctionManagerTest is Test {
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
 
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
             _ipfsHash,
             5
         );
 
         vm.prank(bob);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             bobProof,
             _ipfsHash,
             5
         );
 
         vm.prank(chad);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             emptyProof,
             _ipfsHash,
             5
@@ -371,14 +371,14 @@ contract AuctionManagerTest is Test {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
             _ipfsHash,
             5
         );
 
         vm.prank(chad);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             emptyProof,
             _ipfsHash,
             5
@@ -416,7 +416,7 @@ contract AuctionManagerTest is Test {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
             aliceIPFSHash,
             1
@@ -442,7 +442,7 @@ contract AuctionManagerTest is Test {
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
 
         startHoax(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
             aliceIPFSHash,
             10
@@ -506,7 +506,7 @@ contract AuctionManagerTest is Test {
         assertEq(bidIds.length, 5);
 
         startHoax(bob);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             bobProof,
             aliceIPFSHash,
             10
@@ -544,7 +544,7 @@ contract AuctionManagerTest is Test {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         hoax(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
             aliceIPFSHash,
             10
@@ -562,7 +562,7 @@ contract AuctionManagerTest is Test {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
             aliceIPFSHash,
             5
@@ -583,7 +583,7 @@ contract AuctionManagerTest is Test {
     function test_PausablecreateBid() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             aliceIPFSHash,
             5
@@ -612,7 +612,7 @@ contract AuctionManagerTest is Test {
     function test_CancelBidFailsWhenBidAlreadyInactive() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             aliceIPFSHash,
             5
@@ -635,7 +635,7 @@ contract AuctionManagerTest is Test {
     function test_CancelBidFailsWhenNotBidOwnerCalling() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             aliceIPFSHash,
             5
@@ -670,21 +670,21 @@ contract AuctionManagerTest is Test {
         );
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proofAddress1,
             aliceIPFSHash,
             5
         );
 
         vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proofAddress2,
             aliceIPFSHash,
             5
         );
 
         vm.prank(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proofAddress3,
             aliceIPFSHash,
             5
@@ -742,21 +742,21 @@ contract AuctionManagerTest is Test {
         );
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proofAddress1,
             _ipfsHash,
             5
         );
 
         vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proofAddress2,
             _ipfsHash,
             5
         );
 
         vm.prank(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proofAddress3,
             _ipfsHash,
             5
