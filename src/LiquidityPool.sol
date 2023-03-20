@@ -45,9 +45,9 @@ contract LiquidityPool {
 
     /// @notice deposit into pool
     /// @dev mints the amount of eTH 1:1 with ETH sent
-    function deposit() external payable {
-        IEETH(eETH).mint(msg.sender, msg.value);
-        emit Deposit(msg.sender, msg.value);
+    function deposit(address _user) external payable {
+        IEETH(eETH).mint(_user, msg.value);
+        emit Deposit(_user, msg.value);
     }
 
     /// @notice withdraw from pool

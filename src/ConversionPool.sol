@@ -65,23 +65,6 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    // function withdrawERC20() external {
-    //     uint256 rETHbal = finalUserToErc20Balance[msg.sender][rETH];
-    //     uint256 wstETHbal = finalUserToErc20Balance[msg.sender][wstETH];
-    //     uint256 sfrxEthbal = finalUserToErc20Balance[msg.sender][sfrxETH];
-    //     uint256 cbEthBal = finalUserToErc20Balance[msg.sender][cbETH];
-
-    //     finalUserToErc20Balance[msg.sender][rETH] = 0;
-    //     finalUserToErc20Balance[msg.sender][wstETH] = 0;
-    //     finalUserToErc20Balance[msg.sender][sfrxETH] = 0;
-    //     finalUserToErc20Balance[msg.sender][cbETH] = 0;
-
-    //     rETHInstance.safeTransfer(msg.sender, rETHbal);
-    //     wstETHInstance.safeTransfer(msg.sender, wstETHbal);
-    //     sfrxETHInstance.safeTransfer(msg.sender, sfrxEthbal);
-    //     cbETHInstance.safeTransfer(msg.sender, cbEthBal);
-    // }
-
     function sendFundsToLP() external {
         (, uint256 userEtherBalance,) = adopterPool.depositInfo(msg.sender);
 
@@ -106,9 +89,10 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
             userEtherBalance += _swapExactInputSingle(cbEth, cbETH);
         }
 
-        //Call function in LP and send in user and amount of ether sent
+        require(userEtherBalance > 0, "No funds available to transfer");
         
-
+        //Call function in LP and send in user and amount of ether sent
+        liquidityPool.deposit{value: userEtherBalance}(msg.sender);
     }
 
     //Pauses the contract
@@ -144,13 +128,6 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
             });
 
         amountOut = swapRouter.exactInputSingle(params);
-    }
-
-    function _sendTokensToLP() internal {
-        (, uint256 userEtherBalance,) = adopterPool.depositInfo(msg.sender);
-        //Call function in LP and send in user and amount of ether sent
-        (bool sent, ) = address(liquidityPool).call{value: address(this).balance}("");
-        require(sent, "Failed to send Ether");
     }
 
     //--------------------------------------------------------------------------------------
