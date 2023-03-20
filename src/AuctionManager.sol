@@ -118,7 +118,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         emit BidCancelled(_bidId);
     }
 
-    /// @notice Creates bid(s) for the right to stake ETH
+    /// @notice Creates bid(s) for the right to run a validator node when ETH is deposited
     /// @param _bidSize the number of bids that the node operator would like to create
     /// @param _bidAmountPerBid the ether value of each bid that is created
     /// @return bidIdArray array of the bidIDs that were created
@@ -157,8 +157,8 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
             }
         }
 
-        uint64 userTotalKeys = nodeOperatorManagerInterface.getUserTotalKeys(msg.sender);
-        require(_bidSize <= userTotalKeys, "Insufficient public keys");
+        uint64 keysRemaining = nodeOperatorManagerInterface.getNumKeysRemaining(msg.sender);
+        require(_bidSize <= keysRemaining, "Insufficient public keys");
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);

@@ -82,6 +82,10 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         totalKeys = addressToOperatorData[_user].totalKeys;
     }
 
+    function getNumKeysRemaining(address _user) external view returns (uint64 numKeysRemaining) {
+        numKeysRemaining = addressToOperatorData[_user].totalKeys - addressToOperatorData[_user].keysUsed;
+    }
+
     function isWhitelisted(address _user) public view returns (bool whitelisted) {
         whitelisted = whitelistedAddresses[_user];
     }

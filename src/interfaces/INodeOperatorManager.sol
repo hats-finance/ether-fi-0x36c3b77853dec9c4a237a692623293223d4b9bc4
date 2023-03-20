@@ -16,11 +16,9 @@ interface INodeOperatorManager {
 
     function fetchNextKeyIndex(address _user) external returns (uint64);
 
-    function getUserTotalKeys(
-        address _user
-    ) external view returns (uint64 totalKeys);
+    function getUserTotalKeys(address _user) external view returns (uint64 totalKeys);
 
-    function isWhitelisted(
-        address _user
-    ) external view returns (bool whitelisted);
+    function getNumKeysRemaining(address _user) external view returns (uint64 numKeysRemaining);
+
+    function isWhitelisted(address _user) external view returns (bool whitelisted);
 }
