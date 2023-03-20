@@ -362,6 +362,52 @@ contract AuctionManagerTest is Test {
         assertTrue(isActive);
     }
 
+    function test_CreateBidMinMaxAmounts() public {
+        bytes32[] memory emptyProof = new bytes32[](0);
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+
+        vm.prank(alice);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            aliceProof,
+            _ipfsHash,
+            5
+        );
+
+        vm.prank(chad);
+        nodeOperatorKeyManagerInstance.registerNodeOperator(
+            emptyProof,
+            _ipfsHash,
+            5
+        );
+
+        vm.expectRevert("Incorrect bid value");
+        hoax(alice);
+        auctionInstance.createBid{value: 0.00001 ether}(1, 0.00001 ether);
+
+        vm.expectRevert("Incorrect bid value");
+        hoax(alice);
+        auctionInstance.createBid{value: 5.1 ether}(1, 5.1 ether);
+
+        vm.prank(owner);
+        auctionInstance.disableWhitelist();
+
+        vm.expectRevert("Incorrect bid value");
+        hoax(alice);
+        auctionInstance.createBid{value: 5.1 ether}(1, 5.1 ether);
+
+        vm.expectRevert("Incorrect bid value");
+        hoax(alice);
+        auctionInstance.createBid{value: 0.00001 ether}(1, 0.00001 ether);
+
+        vm.expectRevert("Incorrect bid value");
+        hoax(chad);
+        auctionInstance.createBid{value: 0.001 ether}(1, 0.001 ether);
+
+        vm.expectRevert("Incorrect bid value");
+        hoax(chad);
+        auctionInstance.createBid{value: 5.1 ether}(1, 5.1 ether);
+    }
+
     function test_createBidFailsIfIPFSIndexMoreThanTotalKeys() public {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
