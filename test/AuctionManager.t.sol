@@ -860,14 +860,22 @@ contract AuctionManagerTest is Test {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bid1Id = auctionInstance.createBid{value: 0.1 ether}(
+        uint256[] memory bid1Ids = auctionInstance.createBid{value: 1 ether}(
             1,
-            0.1 ether
+            1 ether
         );
 
         vm.prank(owner);
         vm.expectRevert("Only staking manager contract function");
-        auctionInstance.processAuctionFeeTransfer(bid1Id[0]);
+        auctionInstance.processAuctionFeeTransfer(bid1Ids[0]);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory processedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bid1Ids);
+
+        stakingManagerInstance.registerValidator(processedBidIds[0], test_data);
+
+        address safe = managerInstance.getEtherFiNodeAddress(processedBidIds[0]);
+        assertEq(safe.balance, 0.5 ether);
     }
 
     function test_SetMaxBidAmount() public {
