@@ -158,7 +158,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         whenNotPaused 
     {
         require(
-            nodesManagerIntefaceInstance.getEtherFiNodePhase(_validatorId) ==
+            nodesManagerIntefaceInstance.phase(_validatorId) ==
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Incorrect phase"
         );
@@ -234,7 +234,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         require(
-            nodesManagerIntefaceInstance.getEtherFiNodePhase(_validatorId) ==
+            nodesManagerIntefaceInstance.phase(_validatorId) ==
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Incorrect phase"
         );

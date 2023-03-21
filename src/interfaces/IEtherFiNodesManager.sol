@@ -26,10 +26,10 @@ interface IEtherFiNodesManager {
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory);
 
     function getEtherFiNodeAddress(uint256 _validatorId) external view returns (address);
-    function getEtherFiNodePhase(uint256 _validatorId) external view returns (IEtherFiNode.VALIDATOR_PHASE phase);
-    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory);
-    function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external returns (uint256);
-    function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256);
+    function phase(uint256 _validatorId) external view returns (IEtherFiNode.VALIDATOR_PHASE phase);
+    function ipfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory);
+    function localRevenueIndex(uint256 _validatorId) external returns (uint256);
+    function vestedAuctionRewards(uint256 _validatorId) external returns (uint256);
 
     function getNonExitPenaltyAmount(uint256 _validatorId, uint32 _endTimestamp) external view returns (uint256);
     function getStakingRewards(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);

@@ -71,7 +71,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
             "No Active Validator"
         );
         require(
-            etherFiNodesManager.getEtherFiNodeLocalRevenueIndex(_validatorId) ==
+            etherFiNodesManager.localRevenueIndex(_validatorId) ==
                 0,
             "auctionFeeTransfer is already processed for the validator."
         );

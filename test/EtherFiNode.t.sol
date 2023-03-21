@@ -130,7 +130,7 @@ contract EtherFiNodeTest is Test {
         address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
 
         assertTrue(
-            managerInstance.getEtherFiNodePhase(bidId[0]) ==
+            managerInstance.phase(bidId[0]) ==
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
@@ -138,7 +138,7 @@ contract EtherFiNodeTest is Test {
         vm.stopPrank();
 
         assertTrue(
-            managerInstance.getEtherFiNodePhase(bidId[0]) ==
+            managerInstance.phase(bidId[0]) ==
                 IEtherFiNode.VALIDATOR_PHASE.LIVE
         );
 
@@ -146,7 +146,7 @@ contract EtherFiNodeTest is Test {
 
         assertEq(address(etherFiNode).balance, 0.05 ether);
         assertEq(
-            managerInstance.getEtherFiNodeVestedAuctionRewards(bidId[0]),
+            managerInstance.vestedAuctionRewards(bidId[0]),
             0.05 ether
         );
         assertEq(

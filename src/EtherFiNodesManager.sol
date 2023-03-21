@@ -300,22 +300,22 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return etherfiNodePerValidator[_validatorId];
     }
 
-    function getEtherFiNodePhase(uint256 _validatorId) public view returns (IEtherFiNode.VALIDATOR_PHASE phase) {
+    function phase(uint256 _validatorId) public view returns (IEtherFiNode.VALIDATOR_PHASE phase) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         phase = IEtherFiNode(etherfiNode).phase();
     }
 
-    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
+    function ipfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         return IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey();
     }
 
-    function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external view returns (uint256) {
+    function localRevenueIndex(uint256 _validatorId) external view returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
 
-    function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256) {
+    function vestedAuctionRewards(uint256 _validatorId) external returns (uint256) {
         address etherfiNode = etherfiNodePerValidator[_validatorId];
         return IEtherFiNode(etherfiNode).vestedAuctionRewards();
     }
@@ -364,7 +364,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     }
 
     function isExited(uint256 _validatorId) external view returns (bool) {
-        return getEtherFiNodePhase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
+        return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
     }
 
 
