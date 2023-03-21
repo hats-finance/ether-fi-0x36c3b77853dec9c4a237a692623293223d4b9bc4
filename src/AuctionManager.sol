@@ -42,21 +42,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     );
 
     event BidReEnteredAuction(uint256 indexed bidId);
-    event BiddingEnabled();
     event BidCancelled(uint256 indexed bidId);
-
-    event StakingManagerAddressSet(
-        address indexed stakingManagerContractAddress
-    );
-    event MinBidUpdated(
-        uint256 indexed oldMinBidAmount,
-        uint256 indexed newMinBidAmount
-    );
-    event MaxBidUpdated(uint256 oldMaxBidAmount, uint256 newMaxBidAmount);
-    event WhitelistBidUpdated(
-        uint256 indexed oldBidAmount,
-        uint256 indexed newBidAmount
-    );
     event Received(address indexed sender, uint256 value);
 
     //--------------------------------------------------------------------------------------
@@ -271,38 +257,27 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @param _stakingManagerContractAddress new stakingManagerContract address
     function setStakingManagerContractAddress(address _stakingManagerContractAddress) external onlyOwner {
         stakingManagerContractAddress = _stakingManagerContractAddress;
-
-        emit StakingManagerAddressSet(_stakingManagerContractAddress);
     }
 
     /// @notice Updates the minimum bid price
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
         require(_newMinBidAmount < maxBidAmount, "Min bid exceeds max bid");
-        uint256 oldMinBidAmount = minBidAmount;
         minBidAmount = _newMinBidAmount;
-
-        emit MinBidUpdated(oldMinBidAmount, _newMinBidAmount);
     }
 
     /// @notice Updates the maximum bid price
     /// @param _newMaxBidAmount the new amount to set the maximum bid price as
     function setMaxBidPrice(uint256 _newMaxBidAmount) external onlyOwner {
         require(_newMaxBidAmount > minBidAmount, "Min bid exceeds max bid");
-        uint256 oldMaxBidAmount = minBidAmount;
         maxBidAmount = _newMaxBidAmount;
-
-        emit MaxBidUpdated(oldMaxBidAmount, _newMaxBidAmount);
     }
 
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
     function updateWhitelistMinBidAmount(uint256 _newAmount) external onlyOwner {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
-        uint256 oldBidAmount = whitelistBidAmount;
         whitelistBidAmount = _newAmount;
-
-        emit WhitelistBidUpdated(oldBidAmount, _newAmount);
     }
 
     //--------------------------------------------------------------------------------------
