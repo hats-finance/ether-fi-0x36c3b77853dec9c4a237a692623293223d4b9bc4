@@ -12,84 +12,44 @@ interface IEtherFiNodesManager {
         OPERATOR
     }
 
-    struct StakingRewardsSplit {
+    struct RewardsSplit {
         uint64 treasury;
         uint64 nodeOperator;
         uint64 tnft;
         uint64 bnft;
     }
 
-    struct ProtocolRewardsSplit {
-        uint64 treasury;
-        uint64 nodeOperator;
-        uint64 tnft;
-        uint64 bnft;
-    }
-
-    function generateWithdrawalCredentials(
-        address _address
-    ) external view returns (bytes memory);
-
-    function getEtherFiNodeAddress(
-        uint256 _validatorId
-    ) external view returns (address);
-
-    function getEtherFiNodePhase(
-        uint256 _validatorId
-    ) external view returns (IEtherFiNode.VALIDATOR_PHASE phase);
-
-    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(
-        uint256 _validatorId
-    ) external view returns (string memory);
-
-    function getEtherFiNodeLocalRevenueIndex(
-        uint256 _validatorId
-    ) external returns (uint256);
-
-    function getEtherFiNodeVestedAuctionRewards(
-        uint256 _validatorId
-    ) external returns (uint256);
-
-    function getWithdrawalCredentials(
-        uint256 _validatorId
-    ) external view returns (bytes memory);
-
+    // VIEW functions
     function getNumberOfValidators() external view returns (uint256);
 
-    function getNonExitPenaltyAmount(uint256 _validatorId) external view returns (uint256);
+    function generateWithdrawalCredentials(address _address) external view returns (bytes memory);
+    function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory);
+
+    function getEtherFiNodeAddress(uint256 _validatorId) external view returns (address);
+    function getEtherFiNodePhase(uint256 _validatorId) external view returns (IEtherFiNode.VALIDATOR_PHASE phase);
+    function getEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory);
+    function getEtherFiNodeLocalRevenueIndex(uint256 _validatorId) external returns (uint256);
+    function getEtherFiNodeVestedAuctionRewards(uint256 _validatorId) external returns (uint256);
+
     function getNonExitPenaltyAmount(uint256 _validatorId, uint32 _endTimestamp) external view returns (uint256);
     function getStakingRewards(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
+    function getRewards(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external view returns (uint256, uint256, uint256, uint256);
     function getFullWithdrawalPayouts(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
+    function isExitRequested(uint256 _validatorId) external view returns (bool);
+    function isExited(uint256 _validatorId) external view returns (bool);
+
+    // Non-VIEW functions
+    function createEtherfiNode(uint256 _validatorId) external returns (address);
+    function registerEtherFiNode(uint256 _validatorId, address _address) external;
+    function unregisterEtherFiNode(uint256 _validatorId) external;
 
     function incrementNumberOfValidators(uint256 _count) external;
 
-    function installEtherFiNode(
-        uint256 _validatorId,
-        address _safeAddress
-    ) external;
-
-    function uninstallEtherFiNode(uint256 _validatorId) external;
-
-    function setEtherFiNodePhase(
-        uint256 _validatorId,
-        IEtherFiNode.VALIDATOR_PHASE _phase
-    ) external;
-
-    function setEtherFiNodeIpfsHashForEncryptedValidatorKey(
-        uint256 _validatorId,
-        string calldata _ipfs
-    ) external;
-
-    function setEtherFiNodeLocalRevenueIndex(
-        uint256 _validatorId,
-        uint256 _localRevenueIndex
-    ) external;
-
+    function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;
+    function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs) external;
+    function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) payable external;
     function sendExitRequest(uint256 _validatorId) external;
+    function processNodeExit(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamp) external;
 
-    function isExitRequested(uint256 _validatorId) external view returns (bool);
-    function markExited(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamp) external;
-
-    function createEtherfiNode(uint256 _validatorId) external returns (address);
     function partialWithdraw(uint256 _validatorId) external;
 }

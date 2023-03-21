@@ -81,7 +81,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
         );
         require(etherfiNode != address(0), "The validator Id is invalid.");
 
-        IEtherFiNode(etherfiNode).setLocalRevenueIndex(globalRevenueIndex);
+        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
         uint256 amount = msg.value;
         uint256 vestingAmountForStakers = (vestedAuctionFeeSplitForStakers *
             amount) / 100;
@@ -95,19 +95,13 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
             etherFiNodesManager.getNumberOfValidators();
     }
 
-    // TODO auctionRevenueSplits = {NodeOperator: 50, Treasury: 25, Staker: 25}
     /// @notice Distribute the accrued rewards to the validator
     /// @param _validatorId id of the validator
     function distributeAuctionRevenue(
         uint256 _validatorId
     ) external onlyEtherFiNodesManager returns (uint256) {
-        address etherFiNode = etherFiNodesManager.getEtherFiNodeAddress(
-            _validatorId
-        );
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
-        IEtherFiNode(etherFiNode).receiveProtocolRevenue{value: amount}(
-            globalRevenueIndex
-        );
+        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(_validatorId, globalRevenueIndex);
         return amount;
     }
 
@@ -136,11 +130,8 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     function getAccruedAuctionRevenueRewards(
         uint256 _validatorId
     ) public view returns (uint256) {
-        address etherFiNode = etherFiNodesManager.getEtherFiNodeAddress(
-            _validatorId
-        );
-        uint256 localRevenueIndex = IEtherFiNode(etherFiNode)
-            .localRevenueIndex();
+        address etherFiNode = etherFiNodesManager.getEtherFiNodeAddress(_validatorId);
+        uint256 localRevenueIndex = IEtherFiNode(etherFiNode).localRevenueIndex();
         uint256 amount = 0;
         if (localRevenueIndex > 0) {
             amount = globalRevenueIndex - localRevenueIndex;
