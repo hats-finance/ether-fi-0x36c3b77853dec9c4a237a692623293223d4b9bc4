@@ -40,9 +40,8 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         uint256[] indexed bidIdArray,
         uint64[] indexed ipfsIndexArray
     );
-
-    event BidReEnteredAuction(uint256 indexed bidId);
     event BidCancelled(uint256 indexed bidId);
+    event BidReEnteredAuction(uint256 indexed bidId);
     event Received(address indexed sender, uint256 value);
 
     //--------------------------------------------------------------------------------------
