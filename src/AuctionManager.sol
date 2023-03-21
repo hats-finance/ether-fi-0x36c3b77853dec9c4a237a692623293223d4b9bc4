@@ -36,7 +36,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     event BidCreated(
         address indexed bidder,
-        uint256 amount,
+        uint256 amountPerBid,
         uint256[] indexed bidIdArray,
         uint64[] indexed ipfsIndexArray
     );
@@ -169,7 +169,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         }
 
         numberOfActiveBids += _bidSize;
-        emit BidCreated(msg.sender, msg.value, bidIdArray, ipfsIndexArray);
+        emit BidCreated(msg.sender, _bidAmountPerBid, bidIdArray, ipfsIndexArray);
         return bidIdArray;
     }
 
