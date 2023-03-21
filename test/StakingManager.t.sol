@@ -187,7 +187,7 @@ contract StakingManagerTest is Test {
         uint256 validatorId = bidId[0];
         uint256 winningBid = bidId[0];
         address staker = stakingManagerInstance.bidIdToStaker(validatorId);
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(
+        address etherfiNode = managerInstance.etherfiNodeAddress(
             validatorId
         );
 
@@ -628,18 +628,18 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.registerValidator(bidId[0], test_data);
 
         uint256 selectedBidId = bidId[0];
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
         assertEq(selectedBidId, 1);
-        assertEq(managerInstance.getNumberOfValidators(), 1);
+        assertEq(managerInstance.numberOfValidators(), 1);
         assertEq(address(managerInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0);
 
         address operatorAddress = auctionInstance.getBidOwner(bidId[0]);
         assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
-        address safeAddress = managerInstance.getEtherFiNodeAddress(bidId[0]);
+        address safeAddress = managerInstance.etherfiNodeAddress(bidId[0]);
         assertEq(safeAddress, etherFiNode);
 
         assertEq(
@@ -745,9 +745,9 @@ contract StakingManagerTest is Test {
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
-        assertEq(managerInstance.getNumberOfValidators(), 10);
+        assertEq(managerInstance.numberOfValidators(), 10);
 
-        //address safeAddress = managerInstance.getEtherFiNodeAddress(bidIdArray[1]);
+        //address safeAddress = managerInstance.etherfiNodeAddress(bidIdArray[1]);
         //IEtherFiNode etherFiNode = IEtherFiNode(safeAddress);
 
         //assertEq(etherFiNode.localRevenueIndex(), 1.1 ether);
@@ -1054,7 +1054,7 @@ contract StakingManagerTest is Test {
 
         uint256 selectedBidId = bidId2[0];
         address staker = stakingManagerInstance.bidIdToStaker(bidId2[0]);
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId2[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId2[0]);
 
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(selectedBidId, bidId2[0]);
@@ -1073,7 +1073,7 @@ contract StakingManagerTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         stakingManagerInstance.cancelDeposit(bidId2[0]);
-        assertEq(managerInstance.getEtherFiNodeAddress(bidId2[0]), address(0));
+        assertEq(managerInstance.etherfiNodeAddress(bidId2[0]), address(0));
         assertEq(stakingManagerInstance.bidIdToStaker(bidId2[0]), address(0));
         assertTrue(
             IEtherFiNode(etherFiNode).phase() ==
