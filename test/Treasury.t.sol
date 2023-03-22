@@ -58,4 +58,18 @@ contract TreasuryTest is Test {
         assertEq(address(owner).balance, 0.5 ether);
         assertEq(address(treasuryInstance).balance, 0);
     }
+
+    function test_WithdrawPartialWorks() public {
+        assertEq(address(treasuryInstance).balance, 0);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (bool sent, ) = address(treasuryInstance).call{value: 5 ether}("");
+        assertEq(address(treasuryInstance).balance, 5 ether);
+
+        vm.prank(owner);
+        treasuryInstance.withdraw(0.5 ether);
+
+        assertEq(address(owner).balance, 0.5 ether);
+        assertEq(address(treasuryInstance).balance, 4.5 ether);
+    }
 }

@@ -29,7 +29,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     address public owner;
     address public treasuryContract;
     address public auctionContract;
-    address public depositContract;
+    address public stakingManagerContract;
+    address public protocolRevenueManagerContract;
 
     mapping(uint256 => address) public etherfiNodeAddress;
 
@@ -59,11 +60,11 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     /// @dev AuctionManager, treasury and deposit contracts must be deployed first
     /// @param _treasuryContract the address of the treasury contract for interaction
     /// @param _auctionContract the address of the auction contract for interaction
-    /// @param _depositContract the address of the deposit contract for interaction
+    /// @param _stakingManagerContract the address of the deposit contract for interaction
     constructor(
         address _treasuryContract,
         address _auctionContract,
-        address _depositContract,
+        address _stakingManagerContract,
         address _tnftContract,
         address _bnftContract,
         address _protocolRevenueManagerContract
@@ -73,9 +74,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         owner = msg.sender;
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
-        depositContract = _depositContract;
+        stakingManagerContract = _stakingManagerContract;
+        protocolRevenueManagerContract = _protocolRevenueManagerContract;
 
-        stakingManagerInstance = IStakingManager(_depositContract);
+        stakingManagerInstance = IStakingManager(_stakingManagerContract);
         auctionInterfaceInstance = IAuctionManager(_auctionContract);
         protocolRevenueManagerInstance = IProtocolRevenueManager(_protocolRevenueManagerContract);
 
@@ -260,7 +262,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function setEtherFiNodePhase(
         uint256 _validatorId,
         IEtherFiNode.VALIDATOR_PHASE _phase
-    ) public {
+    ) public onlyStakingManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setPhase(_phase);
     }
@@ -271,7 +273,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(
         uint256 _validatorId,
         string calldata _ipfs
-    ) public {
+    ) external onlyStakingManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setIpfsHashForEncryptedValidatorKey(_ipfs);
     }
@@ -279,7 +281,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function setEtherFiNodeLocalRevenueIndex(
         uint256 _validatorId,
         uint256 _localRevenueIndex
-    ) payable external {
+    ) payable external onlyProtocolRevenueManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setLocalRevenueIndex{value: msg.value}(_localRevenueIndex);
     }
@@ -428,8 +430,16 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     modifier onlyStakingManagerContract() {
         require(
-            msg.sender == depositContract,
-            "Only deposit contract function"
+            msg.sender == stakingManagerContract,
+            "Only staking manager contract function"
+        );
+        _;
+    }
+
+    modifier onlyProtocolRevenueManagerContract() {
+        require(
+            msg.sender == protocolRevenueManagerContract,
+            "Only protocol revenue manager contract function"
         );
         _;
     }
