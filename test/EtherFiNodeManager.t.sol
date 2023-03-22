@@ -149,10 +149,16 @@ contract EtherFiNodesManagerTest is Test {
         safeInstance = EtherFiNode(payable(etherFiNode));
     }
 
-    function test_SetEtherFiNodePhase() public {
+    function test_SetEtherFiNodePhaseRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only staking manager contract function");
         vm.prank(owner);
         managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.CANCELLED);
+    }
+
+    function test_setEtherFiNodeIpfsHashForEncryptedValidatorKeyRevertsOnIncorrectCaller() public {
+        vm.expectRevert("Only staking manager contract function");
+        vm.prank(owner);
+        managerInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(bidId[0], "_ipfsHash");
     }
 
     function test_SendExitRequestWorksCorrectly() public {

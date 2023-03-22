@@ -271,7 +271,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(
         uint256 _validatorId,
         string calldata _ipfs
-    ) public {
+    ) external onlyStakingManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setIpfsHashForEncryptedValidatorKey(_ipfs);
     }
