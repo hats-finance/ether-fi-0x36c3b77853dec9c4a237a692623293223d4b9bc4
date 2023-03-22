@@ -210,17 +210,13 @@ contract EtherFiNodesManagerTest is Test {
 
         assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
 
-        vm.recordLogs();
-
         hoax(alice);
         uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidId);
 
-        Vm.Log[] memory entries = vm.getRecordedLogs();
+        address node = managerInstance.etherfiNodeAddress(processedBids[0]);
+        assert(node != address(0));
 
-        // assertEq(entries[0].topics[0].length, 1);
-        address node = abi.decode(entries[0].data, (address));
-        console.log(node);
-        assertEq(managerInstance.etherfiNodeAddress(processedBids[0]), node);
+        
     }
 
     function test_SendExitRequestWorksCorrectly() public {

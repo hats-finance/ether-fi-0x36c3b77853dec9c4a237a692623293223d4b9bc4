@@ -39,7 +39,7 @@ contract AuctionManagerTest is Test {
     event BidCreated(
         address indexed bidder,
         uint256 amountPerBid,
-        uint256[] bidIdArray,
+        uint256[] bidId,
         uint64[] ipfsIndexArray
     );
     event BidCancelled(uint256 indexed bidId);
