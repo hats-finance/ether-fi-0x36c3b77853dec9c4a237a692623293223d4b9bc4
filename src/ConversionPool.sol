@@ -23,6 +23,12 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
 
     uint24 public constant poolFee = 3000;
 
+    //Being initialised to save first user higher gas fee
+    uint256 public rEthBalance = 1;
+    uint256 public wstEthBalance = 1;
+    uint256 public sfrxEthBalance = 1;
+    uint256 public cbEthBalance = 1;
+
     address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
     address private immutable wstETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
     address private immutable sfrxETH = 0xac3E018457B222d93114458476f3E3416Abbe38F;
@@ -44,6 +50,7 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Allows ether to be sent to this contract
     receive() external payable {
+        console.log(0);
     }
 
     //--------------------------------------------------------------------------------------
@@ -115,20 +122,13 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Sets the data from the Early Adopter Pool in the Conversion Pool
     /// @dev Must be called before claim in the Early Adopter Pool
-    function setData() external {
-        (, uint256 userEtherBalance,) = adopterPool.depositInfo(msg.sender);
-        uint256 rEthBal = adopterPool.userToErc20Balance(msg.sender, rETH);
-        uint256 wstEthBal = adopterPool.userToErc20Balance(msg.sender, wstETH);
-        uint256 sfrxEthBal = adopterPool.userToErc20Balance(msg.sender, sfrxETH);
-        uint256 cbEth = adopterPool.userToErc20Balance(msg.sender, cbETH);
-
-        etherBalance[msg.sender] = userEtherBalance;
+    function setData(uint256 _etherBalance, uint256 rEthBal, uint256 wstEthBal, uint256 sfrxBal, uint256 cbEthBal, uint256 totalPoints) external {
+       
+        etherBalance[msg.sender] = _etherBalance;
         finalUserToErc20Balance[msg.sender][rETH] = rEthBal;
         finalUserToErc20Balance[msg.sender][wstETH] = wstEthBal;
-        finalUserToErc20Balance[msg.sender][sfrxETH] = sfrxEthBal;
-        finalUserToErc20Balance[msg.sender][cbETH] = cbEth;
-
-        emit DataSet(msg.sender, userEtherBalance, rEthBal, wstEthBal, sfrxEthBal, cbEth);
+        finalUserToErc20Balance[msg.sender][sfrxETH] = sfrxBal;
+        finalUserToErc20Balance[msg.sender][cbETH] = cbEthBal;
     }
 
     //Pauses the contract

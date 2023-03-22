@@ -53,6 +53,7 @@ contract ConversionPoolTest is Test {
 
         conversionPoolInstance = new ConversionPool(0xE592427A0AEce92De3Edee1F18E0157C05861564, address(liqPool), address(earlyAdopterPoolInstance));
         
+
         vm.stopPrank();
     }
 
@@ -61,6 +62,25 @@ contract ConversionPoolTest is Test {
         (bool sent, ) = address(conversionPoolInstance).call{value: 2 ether}("");
 
         assertEq(address(conversionPoolInstance).balance, 2 ether);
+    }
+
+    function test_ConversionPoolReceivesERC20() public {
+        vm.startPrank(alice);
+        rETH.approve(address(earlyAdopterPoolInstance), 10 ether);
+        earlyAdopterPoolInstance.deposit(address(rETH), 10e18);
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        earlyAdopterPoolInstance.setClaimingOpen(2 days);
+        earlyAdopterPoolInstance.setClaimReceiverContract(address(conversionPoolInstance));
+        liqPool.setTokenAddress(address(eEth));
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        conversionPoolInstance.setData(0, 10e18, 0, 0, 0, 3048);
+        earlyAdopterPoolInstance.claim();
+
+        assertEq(rETH.balanceOf(address(conversionPoolInstance)), 10 ether);
     }
 
     function test_SendEtherToLPFailsIfAlreadyClaimed() public {
@@ -74,7 +94,7 @@ contract ConversionPoolTest is Test {
         vm.stopPrank();
         
         startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        conversionPoolInstance.setData();
+        conversionPoolInstance.setData(2 ether, 0, 0, 0, 0, 398764);
         earlyAdopterPoolInstance.claim();
 
         conversionPoolInstance.sendFundsToLP();
@@ -91,7 +111,7 @@ contract ConversionPoolTest is Test {
         vm.stopPrank();
         
         startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        conversionPoolInstance.setData();
+        conversionPoolInstance.setData(0, 0, 0, 0, 0, 398764);
         
         vm.expectRevert("No funds available to transfer");
         conversionPoolInstance.sendFundsToLP();
@@ -108,12 +128,14 @@ contract ConversionPoolTest is Test {
         vm.stopPrank();
         
         startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        conversionPoolInstance.setData();
+        conversionPoolInstance.setData(2 ether, 0, 0, 0, 0, 398764);
         earlyAdopterPoolInstance.claim();
 
         assertEq(address(conversionPoolInstance).balance, 2 ether);
+    
         conversionPoolInstance.sendFundsToLP();
         assertEq(address(conversionPoolInstance).balance, 0 ether);
         assertEq(address(liqPool).balance, 2 ether);
     }
+
 }
