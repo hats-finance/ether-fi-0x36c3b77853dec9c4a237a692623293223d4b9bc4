@@ -78,6 +78,7 @@ contract EtherFiNode is IEtherFiNode {
         payable
         onlyProtocolRevenueManagerContract
     {
+        require(vestedAuctionRewards == 0, "already received the vested auction fee reward");
         vestedAuctionRewards = msg.value;
     }
 

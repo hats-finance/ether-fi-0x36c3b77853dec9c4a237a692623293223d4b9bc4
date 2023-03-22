@@ -362,6 +362,21 @@ contract EtherFiNodeTest is Test {
         // Simulate the rewards distribution from the beacon chain
         vm.deal(etherfiNode, address(etherfiNode).balance + 1 ether);
 
+        // call 'partialWithdraw' without specifying any rewards to withdraw
+        hoax(owner);
+        managerInstance.partialWithdraw(bidId[0], false, false, false);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
+        assertEq(address(treasuryInstance).balance, treasuryBalance);
+        assertEq(address(dan).balance, danBalance);
+        assertEq(address(staker).balance, bnftStakerBalance);
+
+        hoax(owner);
+        managerInstance.partialWithdraw(bidId[0], false, false, true);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
+        assertEq(address(treasuryInstance).balance, treasuryBalance);
+        assertEq(address(dan).balance, danBalance);
+        assertEq(address(staker).balance, bnftStakerBalance);
+
         // Withdraw the {staking, protocol} rewards
         // - bid amount = 0.1 ether
         //   - 50 % ether is vested for the stakers
