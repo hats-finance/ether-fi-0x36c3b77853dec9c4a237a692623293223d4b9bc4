@@ -167,6 +167,13 @@ contract EtherFiNodeTest is Test {
         safeInstance.setExitRequestTimestamp();
     }
 
+    function test_SetPhaseRevertsOnIcorrectCaller() public {
+        vm.expectRevert("Only EtherFiNodeManager Contract");
+        vm.prank(owner);
+        safeInstance.setPhase(IEtherFiNode.VALIDATOR_PHASE.EXITED);
+
+    }
+
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
