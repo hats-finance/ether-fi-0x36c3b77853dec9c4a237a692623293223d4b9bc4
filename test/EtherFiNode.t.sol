@@ -174,21 +174,21 @@ contract EtherFiNodeTest is Test {
 
     }
 
-    function test_SetIpfsHashForEncryptedValidatorKey() public {
+    function test_SetIpfsHashForEncryptedValidatorKeyRevertsOnIcorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setIpfsHashForEncryptedValidatorKey("_ipfsHash");
 
     }
 
-    function test_SetLocalRevenueIndex() public {
+    function test_SetLocalRevenueIndexRevertsOnIcorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setLocalRevenueIndex(1);
 
     }
 
-    function test_SetExitRequestTimestamp() public {
+    function test_SetExitRequestTimestampRevertsOnIcorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setExitRequestTimestamp();

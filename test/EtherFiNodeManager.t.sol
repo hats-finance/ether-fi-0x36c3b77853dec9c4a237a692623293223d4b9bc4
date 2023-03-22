@@ -39,6 +39,7 @@ contract EtherFiNodesManagerTest is Test {
     address bob = vm.addr(3);
     address chad = vm.addr(4);
     address dan = vm.addr(5);
+    address etherFiNode;
 
     bytes _ipfsHash = "IPFSHash";
 
@@ -131,7 +132,7 @@ contract EtherFiNodesManagerTest is Test {
             bidIdArray
         );
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
+        etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         assertTrue(
             managerInstance.phase(bidId[0]) ==
@@ -165,6 +166,61 @@ contract EtherFiNodesManagerTest is Test {
         vm.expectRevert("Only protocol revenue manager contract function");
         vm.prank(owner);
         managerInstance.setEtherFiNodeLocalRevenueIndex(bidId[0], 1);
+    }
+
+    function test_RegisterEtherFiNodeRevertsOnIncorrectCaller() public {
+        vm.expectRevert("Only staking manager contract function");
+        vm.prank(owner);
+        managerInstance.registerEtherFiNode(bidId[0], etherFiNode);
+    }
+
+    function test_RegisterEtherFiNodeRevertsIfAlreadyRegistered() public {
+        // Node is registered in setup
+        vm.expectRevert("already installed");
+        vm.prank(address(stakingManagerInstance));
+        managerInstance.registerEtherFiNode(bidId[0], etherFiNode);
+    }
+
+    function test_UnregisterEtherFiNodeRevertsOnIncorrectCaller() public {
+        vm.expectRevert("Only staking manager contract function");
+        vm.prank(owner);
+        managerInstance.unregisterEtherFiNode(bidId[0]);
+    }
+
+    function test_UnregisterEtherFiNodeRevertsIfAlreadyUnregistered() public {
+        vm.prank(address(stakingManagerInstance));
+        managerInstance.unregisterEtherFiNode(bidId[0]);
+
+        vm.expectRevert("not installed");
+        vm.prank(address(stakingManagerInstance));
+        managerInstance.unregisterEtherFiNode(bidId[0]);
+    }
+
+    function test_RegisterEtherFiNode() public {
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceProof,
+            _ipfsHash,
+            5
+        );
+
+        hoax(alice);
+        bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+
+        assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
+
+        vm.recordLogs();
+
+        hoax(alice);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidId);
+
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+
+        // assertEq(entries[0].topics[0].length, 1);
+        address node = abi.decode(entries[0].data, (address));
+        console.log(node);
+        assertEq(managerInstance.etherfiNodeAddress(processedBids[0]), node);
     }
 
     function test_SendExitRequestWorksCorrectly() public {
