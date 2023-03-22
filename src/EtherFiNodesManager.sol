@@ -30,6 +30,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     address public treasuryContract;
     address public auctionContract;
     address public stakingManagerContract;
+    address public protocolRevenueManagerContract;
 
     mapping(uint256 => address) public etherfiNodeAddress;
 
@@ -74,6 +75,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
         stakingManagerContract = _stakingManagerContract;
+        protocolRevenueManagerContract = _protocolRevenueManagerContract;
 
         stakingManagerInstance = IStakingManager(_stakingManagerContract);
         auctionInterfaceInstance = IAuctionManager(_auctionContract);
@@ -279,7 +281,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function setEtherFiNodeLocalRevenueIndex(
         uint256 _validatorId,
         uint256 _localRevenueIndex
-    ) payable external {
+    ) payable external onlyProtocolRevenueManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setLocalRevenueIndex{value: msg.value}(_localRevenueIndex);
     }
@@ -430,6 +432,14 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         require(
             msg.sender == stakingManagerContract,
             "Only staking manager contract function"
+        );
+        _;
+    }
+
+    modifier onlyProtocolRevenueManagerContract() {
+        require(
+            msg.sender == protocolRevenueManagerContract,
+            "Only protocol revenue manager contract function"
         );
         _;
     }
