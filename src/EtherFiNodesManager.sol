@@ -260,7 +260,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     function setEtherFiNodePhase(
         uint256 _validatorId,
         IEtherFiNode.VALIDATOR_PHASE _phase
-    ) public {
+    ) public onlyStakingManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setPhase(_phase);
     }
