@@ -160,7 +160,7 @@ contract ProtocolRevenueManagerTest is Test {
         // 0.1 ether
         //  -> 0.05 ether to its etherfi Node contract
         //  -> 0.05 ether to the protocol revenue manager contract
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
         assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
         assertEq(address(etherFiNode).balance, 0.05 ether);
         assertEq(
@@ -177,7 +177,7 @@ contract ProtocolRevenueManagerTest is Test {
         // 3
         hoax(address(auctionInstance));
         vm.expectRevert(
-            "auctionFeeTransfer is already processed for the validator."
+            "addAuctionRevenue is already processed for the validator."
         );
         protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(
             bidId[0]
