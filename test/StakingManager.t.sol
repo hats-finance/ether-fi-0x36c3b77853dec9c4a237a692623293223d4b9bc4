@@ -6,7 +6,7 @@ import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
 import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
@@ -18,7 +18,7 @@ contract StakingManagerTest is Test {
     IStakingManager public depositInterface;
     EtherFiNode public withdrawSafeInstance;
     EtherFiNodesManager public managerInstance;
-    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    NodeOperatorManager public nodeOperatorManagerInstance;
     StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -54,14 +54,14 @@ contract StakingManagerTest is Test {
 
         treasuryInstance = new Treasury();
         _merkleSetup();
-        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(
-            address(nodeOperatorKeyManagerInstance)
+            address(nodeOperatorManagerInstance)
         );
-        nodeOperatorKeyManagerInstance.setAuctionContractAddress(
+        nodeOperatorManagerInstance.setAuctionContractAddress(
             address(auctionInstance)
         );
-        nodeOperatorKeyManagerInstance.updateMerkleRoot(root);
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
 
@@ -71,8 +71,9 @@ contract StakingManagerTest is Test {
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
+            address(TestBNFTInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(protocolRevenueManagerInstance)
         );
 
         auctionInstance.setStakingManagerContractAddress(
@@ -122,7 +123,7 @@ contract StakingManagerTest is Test {
         console.logBool(stakingManagerInstance.test());
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -175,7 +176,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -198,7 +199,7 @@ contract StakingManagerTest is Test {
         uint256 validatorId = bidId[0];
         uint256 winningBid = bidId[0];
         address staker = stakingManagerInstance.bidIdToStaker(validatorId);
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(
+        address etherfiNode = managerInstance.etherfiNodeAddress(
             validatorId
         );
 
@@ -212,7 +213,7 @@ contract StakingManagerTest is Test {
             test_data.ipfsHashForEncryptedValidatorKey
         );
         assertEq(
-            managerInstance.getEtherFiNodeIpfsHashForEncryptedValidatorKey(
+            managerInstance.ipfsHashForEncryptedValidatorKey(
                 validatorId
             ),
             test_data.ipfsHashForEncryptedValidatorKey
@@ -223,7 +224,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -246,7 +247,7 @@ contract StakingManagerTest is Test {
     function test_BatchDepositWithBidIdsFailsIfNotEnoughActiveBids() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -274,7 +275,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -300,7 +301,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -342,7 +343,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -397,7 +398,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -488,7 +489,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -528,7 +529,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -557,7 +558,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -587,7 +588,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -616,7 +617,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -636,18 +637,18 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.registerValidator(bidId[0], test_data);
 
         uint256 selectedBidId = bidId[0];
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
         assertEq(selectedBidId, 1);
-        assertEq(managerInstance.getNumberOfValidators(), 1);
+        assertEq(managerInstance.numberOfValidators(), 1);
         assertEq(address(managerInstance).balance, 0 ether);
         assertEq(address(auctionInstance).balance, 0);
 
         address operatorAddress = auctionInstance.getBidOwner(bidId[0]);
         assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
-        address safeAddress = managerInstance.getEtherFiNodeAddress(bidId[0]);
+        address safeAddress = managerInstance.etherfiNodeAddress(bidId[0]);
         assertEq(safeAddress, etherFiNode);
 
         assertEq(
@@ -676,7 +677,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -753,9 +754,9 @@ contract StakingManagerTest is Test {
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
-        assertEq(managerInstance.getNumberOfValidators(), 10);
+        assertEq(managerInstance.numberOfValidators(), 10);
 
-        //address safeAddress = managerInstance.getEtherFiNodeAddress(bidIdArray[1]);
+        //address safeAddress = managerInstance.etherfiNodeAddress(bidIdArray[1]);
         //IEtherFiNode etherFiNode = IEtherFiNode(safeAddress);
 
         //assertEq(etherFiNode.localRevenueIndex(), 1.1 ether);
@@ -765,7 +766,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -819,7 +820,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -875,7 +876,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             100
@@ -944,7 +945,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -973,7 +974,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -1001,7 +1002,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -1060,7 +1061,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -1093,7 +1094,7 @@ contract StakingManagerTest is Test {
 
         uint256 selectedBidId = bidId2[0];
         address staker = stakingManagerInstance.bidIdToStaker(bidId2[0]);
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId2[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId2[0]);
 
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(selectedBidId, bidId2[0]);
@@ -1112,7 +1113,7 @@ contract StakingManagerTest is Test {
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         stakingManagerInstance.cancelDeposit(bidId2[0]);
-        assertEq(managerInstance.getEtherFiNodeAddress(bidId2[0]), address(0));
+        assertEq(managerInstance.etherfiNodeAddress(bidId2[0]), address(0));
         assertEq(stakingManagerInstance.bidIdToStaker(bidId2[0]), address(0));
         assertTrue(
             IEtherFiNode(etherFiNode).phase() ==
@@ -1137,14 +1138,14 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
         );
 
         vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof2,
             _ipfsHash,
             5

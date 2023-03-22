@@ -26,17 +26,11 @@ interface IAuctionManager {
         address _stakingManagerContractAddress
     ) external;
 
-    function whitelistAddress(address _user) external;
-
     function processAuctionFeeTransfer(uint256 _validatorId) external;
 
     function isBidActive(uint256 _bidId) external view returns (bool);
 
     function numberOfActiveBids() external view returns (uint256);
-
-    function isWhitelisted(
-        address _user
-    ) external view returns (bool whitelisted);
 
     function setProtocolRevenueManager(
         address _protocolRevenueManager

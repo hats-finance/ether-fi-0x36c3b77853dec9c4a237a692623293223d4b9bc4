@@ -8,7 +8,7 @@ import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/BNFT.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
@@ -19,7 +19,7 @@ contract EtherFiNodeTest is Test {
     StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
-    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    NodeOperatorManager public nodeOperatorManagerInstance;
     AuctionManager public auctionInstance;
     ProtocolRevenueManager public protocolRevenueManagerInstance;
     Treasury public treasuryInstance;
@@ -48,14 +48,14 @@ contract EtherFiNodeTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(
-            address(nodeOperatorKeyManagerInstance)
+            address(nodeOperatorManagerInstance)
         );
-        nodeOperatorKeyManagerInstance.setAuctionContractAddress(
+        nodeOperatorManagerInstance.setAuctionContractAddress(
             address(auctionInstance)
         );
-        nodeOperatorKeyManagerInstance.updateMerkleRoot(root);
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
 
         stakingManagerInstance = new StakingManager(address(auctionInstance));
@@ -69,7 +69,8 @@ contract EtherFiNodeTest is Test {
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
         );
 
         auctionInstance.setProtocolRevenueManager(
@@ -104,7 +105,7 @@ contract EtherFiNodeTest is Test {
 
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -126,10 +127,10 @@ contract EtherFiNodeTest is Test {
             bidIdArray
         );
 
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         assertTrue(
-            managerInstance.getEtherFiNodePhase(bidId[0]) ==
+            managerInstance.phase(bidId[0]) ==
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
@@ -137,7 +138,7 @@ contract EtherFiNodeTest is Test {
         vm.stopPrank();
 
         assertTrue(
-            managerInstance.getEtherFiNodePhase(bidId[0]) ==
+            managerInstance.phase(bidId[0]) ==
                 IEtherFiNode.VALIDATOR_PHASE.LIVE
         );
 
@@ -145,7 +146,7 @@ contract EtherFiNodeTest is Test {
 
         assertEq(address(etherFiNode).balance, 0.05 ether);
         assertEq(
-            managerInstance.getEtherFiNodeVestedAuctionRewards(bidId[0]),
+            managerInstance.vestedAuctionRewards(bidId[0]),
             0.05 ether
         );
         assertEq(
@@ -166,16 +167,6 @@ contract EtherFiNodeTest is Test {
         safeInstance.setExitRequestTimestamp();
     }
 
-    function test_WithdrawFundsFailsIfNotCorrectCaller() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        (bool sent, ) = address(safeInstance).call{value: 0.04 ether}("");
-        require(sent, "Failed to send Ether");
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        vm.expectRevert("Incorrect caller");
-        managerInstance.withdrawFunds(0);
-    }
-
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
@@ -186,14 +177,14 @@ contract EtherFiNodeTest is Test {
         bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 4);
 
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
             aliceIPFSHash,
             5
         );
 
         vm.prank(chad);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             chadProof,
             aliceIPFSHash,
             5
@@ -259,7 +250,7 @@ contract EtherFiNodeTest is Test {
             0
         );
         assertEq(
-            address(managerInstance.getEtherFiNodeAddress(bidId1[0])).balance,
+            address(managerInstance.etherfiNodeAddress(bidId1[0])).balance,
             0.2 ether
         );
 
@@ -268,7 +259,7 @@ contract EtherFiNodeTest is Test {
         vm.stopPrank();
 
         assertEq(
-            address(managerInstance.getEtherFiNodeAddress(bidId2[0])).balance,
+            address(managerInstance.etherfiNodeAddress(bidId2[0])).balance,
             0.15 ether
         );
         assertEq(
@@ -305,59 +296,59 @@ contract EtherFiNodeTest is Test {
         vm.expectRevert("Exit request was already sent.");
         managerInstance.sendExitRequest(bidId[0]);
 
-        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0);
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0);
 
         // 1 day passed
         vm.warp(1 + 86400);
-        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0.03 ether);
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0.03 ether);
 
         vm.warp(1 + 86400 + 3600);
-        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 0.03 ether);
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0.03 ether);
 
         vm.warp(1 + 2 * 86400);
         assertEq(
-            managerInstance.getNonExitPenaltyAmount(bidId[0]),
+            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
             0.0591 ether
         );
 
         // 10 days passed
         vm.warp(1 + 10 * 86400);
         assertEq(
-            managerInstance.getNonExitPenaltyAmount(bidId[0]),
+            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
             0.262575873105071740 ether
         );
 
         // 28 days passed
         vm.warp(1 + 28 * 86400);
         assertEq(
-            managerInstance.getNonExitPenaltyAmount(bidId[0]),
+            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
             0.573804794831376551 ether
         );
 
         // 365 days passed
         vm.warp(1 + 365 * 86400);
         assertEq(
-            managerInstance.getNonExitPenaltyAmount(bidId[0]),
+            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
             0.999985151485507863 ether
         );
 
         // more than 1 year passed
         vm.warp(1 + 366 * 86400);
-        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 1 ether);
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
 
         vm.warp(1 + 400 * 86400);
-        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 1 ether);
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
 
         vm.warp(1 + 1000 * 86400);
-        assertEq(managerInstance.getNonExitPenaltyAmount(bidId[0]), 1 ether);
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
     }
 
     function test_markExitedWorksCorrectly() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(
-            validatorIds[0]
-        );
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = 1;
+        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         assertTrue(
             IEtherFiNode(etherFiNode).phase() ==
@@ -366,30 +357,27 @@ contract EtherFiNodeTest is Test {
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
 
         vm.expectRevert("Only EtherFiNodeManager Contract");
-        IEtherFiNode(etherFiNode).markExited();
+        IEtherFiNode(etherFiNode).markExited(1);
 
         vm.expectRevert("Only owner function");
-        managerInstance.markExited(validatorIds);
-        assertTrue(
-            IEtherFiNode(etherFiNode).phase() ==
-                IEtherFiNode.VALIDATOR_PHASE.LIVE
-        );
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
 
         hoax(owner);
-        managerInstance.markExited(validatorIds);
-        assertTrue(
-            IEtherFiNode(etherFiNode).phase() ==
-                IEtherFiNode.VALIDATOR_PHASE.EXITED
-        );
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
     }
 
     function test_partialWithdraw() public {
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
+        uint256 accreudProtocolRewards = protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId[0]
+            );
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
             .vestedAuctionRewards();
         assertEq(
@@ -407,36 +395,38 @@ contract EtherFiNodeTest is Test {
         uint256 bnftStakerBalance = address(staker).balance;
 
         // Simulate the rewards distribution from the beacon chain
-        vm.deal(etherfiNode, 1 ether + vestedAuctionFeeRewardsForStakers);
-        assertEq(
-            address(etherfiNode).balance,
-            1 ether + vestedAuctionFeeRewardsForStakers
-        );
+        vm.deal(etherfiNode, address(etherfiNode).balance + 1 ether);
 
+        // Withdraw the {staking, protocol} rewards
+        // - bid amount = 0.1 ether
+        //   - 50 % ether is vested for the stakers
+        //   - 50 % ether is shared across all validators
+        //     - 25 % to treasury, 25% to node operator, the rest to the stakers
+        // - staking rewards amount = 1 ether
         hoax(owner);
-        managerInstance.partialWithdraw(bidId[0]);
+        managerInstance.partialWithdraw(bidId[0], true, true, true);
         assertEq(
             address(nodeOperator).balance,
-            nodeOperatorBalance + 0.05 ether
+            nodeOperatorBalance + (1 ether * 5) / 100 + (0.1 ether * 50 * 25) / (100 * 100)
         );
         assertEq(
             address(treasuryInstance).balance,
-            treasuryBalance + 0.05 ether
+            treasuryBalance + (1 ether * 5 ) / 100 + (0.1 ether * 50 * 25) / (100 * 100)
         );
-        assertEq(address(dan).balance, danBalance + 0.815625 ether);
-        assertEq(address(staker).balance, bnftStakerBalance + 0.084375 ether);
+        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
 
         vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
         vm.expectRevert(
-            "The accrued staking rewards are above 8 ETH. You should exit the node."
+            "etherfi node contract's balance is above 8 ETH. You should exit the node."
         );
-        managerInstance.partialWithdraw(bidId[0]);
+        managerInstance.partialWithdraw(bidId[0], true, true, true);
     }
 
     function test_partialWithdrawAfterExitRequest() public {
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
             .vestedAuctionRewards();
@@ -446,11 +436,7 @@ contract EtherFiNodeTest is Test {
         );
 
         // Simulate the rewards distribution from the beacon chain
-        vm.deal(etherfiNode, 1 ether + vestedAuctionFeeRewardsForStakers);
-        assertEq(
-            address(etherfiNode).balance,
-            1 ether + vestedAuctionFeeRewardsForStakers
-        );
+        vm.deal(etherfiNode, address(etherfiNode).balance + 1 ether);
 
         // Transfer the T-NFT to 'dan'
         hoax(staker);
@@ -467,26 +453,51 @@ contract EtherFiNodeTest is Test {
         uint256 bnftStakerBalance = address(staker).balance;
 
         hoax(owner);
-        managerInstance.partialWithdraw(bidId[0]);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
+        managerInstance.partialWithdraw(bidId[0], true, true, true);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
         assertEq(
             address(treasuryInstance).balance,
-            treasuryBalance + 0.05 ether + 0.05 ether
+            treasuryBalance + 0.05 ether + 0.05 ether + 0.0125 ether
         );
-        assertEq(address(dan).balance, danBalance + 0.815625 ether);
-        assertEq(address(staker).balance, bnftStakerBalance + 0.084375 ether);
+        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
+
+        // No rewards left after calling the 'partialWithdraw'
+        hoax(owner);
+        managerInstance.partialWithdraw(bidId[0], true, true, true);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
+        assertEq(
+            address(treasuryInstance).balance,
+            treasuryBalance + 0.05 ether + 0.05 ether + 0.0125 ether
+        );
+        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
+        assertEq(address(etherfiNode).balance, vestedAuctionFeeRewardsForStakers);
+
+        // Withdraw the vested auction fee reward
+        vm.warp(1 + 6 * 28 * 24 * 3600);
+        hoax(owner);
+        managerInstance.partialWithdraw(bidId[0], true, true, true);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
+        assertEq(
+            address(treasuryInstance).balance,
+            treasuryBalance + 0.05 ether + 0.05 ether + 0.0125 ether
+        );
+        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether + 0.045312500000000000 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether + 0.004687500000000000 ether);
+        assertEq(address(etherfiNode).balance, 0);
 
         vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
         vm.expectRevert(
-            "The accrued staking rewards are above 8 ETH. You should exit the node."
+            "etherfi node contract's balance is above 8 ETH. You should exit the node."
         );
-        managerInstance.partialWithdraw(bidId[0]);
+        managerInstance.partialWithdraw(bidId[0], true, true, true);
     }
 
     function test_getFullWithdrawalPayoutsFails() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(
+        address etherfiNode = managerInstance.etherfiNodeAddress(
             validatorIds[0]
         );
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
@@ -504,14 +515,16 @@ contract EtherFiNodeTest is Test {
     function test_getFullWithdrawalPayoutsWorksCorrectly() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(
-            validatorIds[0]
-        );
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
-            .vestedAuctionRewards();
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = 1;
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        hoax(owner);
-        managerInstance.markExited(validatorIds);
+        startHoax(owner);
+        assertEq(managerInstance.numberOfValidators(), 1);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        assertEq(managerInstance.numberOfValidators(), 0);
+        vm.stopPrank();
 
         // 1. balance > 32 ether
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
@@ -522,9 +535,9 @@ contract EtherFiNodeTest is Test {
 
         (
             uint256 toNodeOperator,
-            uint256 toTreasury,
             uint256 toTnft,
-            uint256 toBnft
+            uint256 toBnft,
+            uint256 toTreasury
         ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0.05 ether);
         assertEq(toTreasury, 0.05 ether);
@@ -538,7 +551,7 @@ contract EtherFiNodeTest is Test {
             31.75 ether + vestedAuctionFeeRewardsForStakers
         );
 
-        (toNodeOperator, toTreasury, toTnft, toBnft) = managerInstance
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance
             .getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0);
         assertEq(toTreasury, 0);
@@ -552,7 +565,7 @@ contract EtherFiNodeTest is Test {
             28.5 ether + vestedAuctionFeeRewardsForStakers
         );
 
-        (toNodeOperator, toTreasury, toTnft, toBnft) = managerInstance
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance
             .getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0);
         assertEq(toTreasury, 0);
@@ -565,7 +578,7 @@ contract EtherFiNodeTest is Test {
             address(etherfiNode).balance,
             25.75 ether + vestedAuctionFeeRewardsForStakers
         );
-        (toNodeOperator, toTreasury, toTnft, toBnft) = managerInstance
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance
             .getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0);
         assertEq(toTreasury, 0);
@@ -579,7 +592,7 @@ contract EtherFiNodeTest is Test {
             18.5 ether + vestedAuctionFeeRewardsForStakers
         );
 
-        (toNodeOperator, toTreasury, toTnft, toBnft) = managerInstance
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance
             .getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0);
         assertEq(toTreasury, 0);
@@ -610,11 +623,9 @@ contract EtherFiNodeTest is Test {
     {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(
-            validatorIds[0]
-        );
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
-            .vestedAuctionRewards();
+        uint32[] memory exitTimestamps = new uint32[](1);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
         hoax(TestTNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -622,19 +633,13 @@ contract EtherFiNodeTest is Test {
         // 1 day passed
         vm.warp(1 + 86400);
         startHoax(owner);
-        managerInstance.markExited(validatorIds);
-        uint256 nonExitPenalty = managerInstance.getNonExitPenaltyAmount(
-            bidId[0]
-        );
+        exitTimestamps[0] = 1 + 86400;
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
 
-        (
-            uint256 toNodeOperator,
-            uint256 toTreasury,
-            uint256 toTnft,
-            uint256 toBnft
-        ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
+        (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0.05 ether + nonExitPenalty);
         assertEq(toTreasury, 0.05 ether);
         assertEq(toTnft, 30.815625000000000000 ether);
@@ -646,11 +651,9 @@ contract EtherFiNodeTest is Test {
     {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(
-            validatorIds[0]
-        );
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
-            .vestedAuctionRewards();
+        uint32[] memory exitTimestamps = new uint32[](1);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
         hoax(TestTNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -658,35 +661,33 @@ contract EtherFiNodeTest is Test {
         // 14 days passed
         vm.warp(1 + 14 * 86400);
         startHoax(owner);
-        managerInstance.markExited(validatorIds);
-        uint256 nonExitPenalty = managerInstance.getNonExitPenaltyAmount(
-            bidId[0]
-        );
+        exitTimestamps[0] = 1 + 14 * 86400;
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
 
-        (
-            uint256 toNodeOperator,
-            uint256 toTreasury,
-            uint256 toTnft,
-            uint256 toBnft
-        ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
+        (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0.347163722539392386 ether);
         assertEq(toTreasury, 0.05 ether + 0.05 ether);
         assertEq(toTnft, 30.815625000000000000 ether);
         assertEq(toBnft, 2.084375000000000000 ether - nonExitPenalty);
     }
 
-    function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly3()
-        public
-    {
+    function test_markExitedFails() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitTimestamps = new uint32[](2);
+        startHoax(owner);
+        vm.expectRevert("_validatorIds.length != _exitTimestamps.length");
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+    }
+
+    function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly3() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.getEtherFiNodeAddress(
-            validatorIds[0]
-        );
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
-            .vestedAuctionRewards();
+        uint32[] memory exitTimestamps = new uint32[](1);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
         hoax(TestTNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -694,19 +695,18 @@ contract EtherFiNodeTest is Test {
         // 28 days passed
         vm.warp(1 + 28 * 86400);
         startHoax(owner);
-        managerInstance.markExited(validatorIds);
-        uint256 nonExitPenalty = managerInstance.getNonExitPenaltyAmount(
-            bidId[0]
-        );
+        exitTimestamps[0] = 1 + 28 * 86400;
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
         assertGe(nonExitPenalty, 0.5 ether);
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
 
         (
             uint256 toNodeOperator,
-            uint256 toTreasury,
             uint256 toTnft,
-            uint256 toBnft
+            uint256 toBnft,
+            uint256 toTreasury
         ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0.5 ether);
         assertEq(

@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_registrationContract",
+        "name": "_nodeOperatorKeyManagerContract",
         "type": "address"
       }
     ],
@@ -40,18 +40,18 @@
       },
       {
         "indexed": true,
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
+        "internalType": "uint256[]",
+        "name": "bidIdArray",
+        "type": "uint256[]"
       },
       {
         "indexed": true,
-        "internalType": "uint256",
-        "name": "pubKeyIndex",
-        "type": "uint256"
+        "internalType": "uint64[]",
+        "name": "ipfsIndexArray",
+        "type": "uint64[]"
       }
     ],
-    "name": "BidPlaced",
+    "name": "BidCreated",
     "type": "event"
   },
   {
@@ -69,25 +69,6 @@
   },
   {
     "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "valueUpdatedBy",
-        "type": "uint256"
-      }
-    ],
-    "name": "BidUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
     "inputs": [],
     "name": "BiddingEnabled",
     "type": "event"
@@ -96,45 +77,19 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "depositContractAddress",
-        "type": "address"
-      }
-    ],
-    "name": "DepositAddressSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256",
-        "name": "_amount",
+        "name": "oldMaxBidAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newMaxBidAmount",
         "type": "uint256"
       }
     ],
-    "name": "FundsSentToWithdrawSafe",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "oldMerkle",
-        "type": "bytes32"
-      },
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "newMerkle",
-        "type": "bytes32"
-      }
-    ],
-    "name": "MerkleUpdated",
+    "name": "MaxBidUpdated",
     "type": "event"
   },
   {
@@ -154,6 +109,25 @@
       }
     ],
     "name": "MinBidUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
     "type": "event"
   },
   {
@@ -192,6 +166,38 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "winner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "highestBidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "SelectedBidUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "stakingManagerContractAddress",
+        "type": "address"
+      }
+    ],
+    "name": "StakingManagerAddressSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "address",
         "name": "account",
@@ -221,51 +227,6 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "winner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "highestBidId",
-        "type": "uint256"
-      }
-    ],
-    "name": "WinningBidSent",
-    "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "MAX_BID_AMOUNT",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
-      }
-    ],
-    "name": "bidOnStake",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -281,14 +242,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
+        "internalType": "uint64",
         "name": "bidderPubKeyIndex",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "timeOfBid",
-        "type": "uint256"
+        "type": "uint64"
       },
       {
         "internalType": "address",
@@ -305,19 +261,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "calculateWinningBid",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -331,29 +274,41 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "currentHighestBidId",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "_bidSize",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_bidAmountPerBid",
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "name": "createBid",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "payable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "depositContractAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
+    "name": "disableWhitelist",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "enableWhitelist",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -376,13 +331,38 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "getNumberOfActivebids",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "_bidId",
         "type": "uint256"
+      }
+    ],
+    "name": "isBidActive",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "isWhitelisted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "whitelisted",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -390,12 +370,12 @@
   },
   {
     "inputs": [],
-    "name": "merkleRoot",
+    "name": "maxBidAmount",
     "outputs": [
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "",
-        "type": "bytes32"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -409,6 +389,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nodeOperatorKeyManagerContractAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -481,6 +474,19 @@
         "type": "uint256"
       }
     ],
+    "name": "processAuctionFeeTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_bidId",
+        "type": "uint256"
+      }
+    ],
     "name": "reEnterAuction",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -488,44 +494,7 @@
   },
   {
     "inputs": [],
-    "name": "registrationContract",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "safeInstance",
-    "outputs": [
-      {
-        "internalType": "contract IWithdrawSafe",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_stakeId",
-        "type": "uint256"
-      }
-    ],
-    "name": "sendFundsToWithdrawSafe",
+    "name": "renounceOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -533,25 +502,12 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_depositContractAddress",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "_newMaxBidAmount",
+        "type": "uint256"
       }
     ],
-    "name": "setDepositContractAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_managerAddress",
-        "type": "address"
-      }
-    ],
-    "name": "setManagerAddress",
+    "name": "setMaxBidPrice",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -570,6 +526,58 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_protocolRevenueManager",
+        "type": "address"
+      }
+    ],
+    "name": "setProtocolRevenueManager",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_stakingManagerContractAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setStakingManagerContractAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "stakingManagerContractAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "unPauseContract",
     "outputs": [],
@@ -579,12 +587,12 @@
   {
     "inputs": [
       {
-        "internalType": "bytes32",
-        "name": "_newMerkle",
-        "type": "bytes32"
+        "internalType": "uint256",
+        "name": "_bidId",
+        "type": "uint256"
       }
     ],
-    "name": "updateMerkleRoot",
+    "name": "updateSelectedBidInformation",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -598,6 +606,19 @@
       }
     ],
     "name": "updateWhitelistMinBidAmount",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "whitelistAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -617,12 +638,12 @@
   },
   {
     "inputs": [],
-    "name": "withdrawSafeManager",
+    "name": "whitelistEnabled",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "bool",
         "name": "",
-        "type": "address"
+        "type": "bool"
       }
     ],
     "stateMutability": "view",

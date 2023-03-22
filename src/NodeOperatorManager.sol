@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "../src/interfaces/INodeOperatorKeyManager.sol";
+import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -10,7 +10,7 @@ import "lib/forge-std/src/console.sol";
 /// TODO Test whitelist bidding in auction
 /// TODO Test permissionless bidding in auction
 
-contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
+contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -28,6 +28,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
 
     // user address => OperaterData Struct
     mapping(address => KeyData) public addressToOperatorData;
+    mapping(address => bool) private whitelistedAddresses;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -79,19 +80,23 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
     //-----------------------------------  GETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function getUserTotalKeys(
-        address _user
-    ) external view returns (uint64 totalKeys) {
+    function getUserTotalKeys(address _user) external view returns (uint64 totalKeys) {
         totalKeys = addressToOperatorData[_user].totalKeys;
+    }
+
+    function getNumKeysRemaining(address _user) external view returns (uint64 numKeysRemaining) {
+        numKeysRemaining = addressToOperatorData[_user].totalKeys - addressToOperatorData[_user].keysUsed;
+    }
+
+    function isWhitelisted(address _user) public view returns (bool whitelisted) {
+        whitelisted = whitelistedAddresses[_user];
     }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  SETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function setAuctionContractAddress(
-        address _auctionContractAddress
-    ) public onlyOwner {
+    function setAuctionContractAddress(address _auctionContractAddress) public onlyOwner {
         auctionMangerInterface = IAuctionManager(_auctionContractAddress);
         auctionContractAddress = _auctionContractAddress;
     }
@@ -110,7 +115,7 @@ contract NodeOperatorKeyManager is INodeOperatorKeyManager, Ownable {
             keccak256(abi.encodePacked(_user))
         );
         if (whitelisted) {
-            auctionMangerInterface.whitelistAddress(_user);
+            whitelistedAddresses[_user] = true;
         }
     }
 }

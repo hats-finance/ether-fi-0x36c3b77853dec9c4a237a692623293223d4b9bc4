@@ -2,23 +2,24 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
 import "../src/StakingManager.sol";
 import "forge-std/console.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IDepositContract.sol";
 import "src/EtherFiNodesManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/AuctionManager.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract NodeOperatorKeyManagerTest is Test {
+contract NodeOperatorManagerTest is Test {
     event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
-    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    NodeOperatorManager public nodeOperatorManagerInstance;
     StakingManager public stakingManagerInstance;
     EtherFiNode public etherFiNodeInstance;
     EtherFiNodesManager public managerInstance;
@@ -26,6 +27,7 @@ contract NodeOperatorKeyManagerTest is Test {
     TNFT public TestTNFTInstance;
     AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -42,26 +44,28 @@ contract NodeOperatorKeyManagerTest is Test {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(
-            address(nodeOperatorKeyManagerInstance)
+            address(nodeOperatorManagerInstance)
         );
-        nodeOperatorKeyManagerInstance.setAuctionContractAddress(
+        nodeOperatorManagerInstance.setAuctionContractAddress(
             address(auctionInstance)
         );
-        nodeOperatorKeyManagerInstance.updateMerkleRoot(root);
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
         );
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
         );
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(
@@ -81,7 +85,7 @@ contract NodeOperatorKeyManagerTest is Test {
     function test_RegisterNodeOperator() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             aliceIPFSHash,
             uint64(10)
@@ -90,7 +94,7 @@ contract NodeOperatorKeyManagerTest is Test {
             uint64 totalKeys,
             uint64 keysUsed,
             bytes memory aliceHash
-        ) = nodeOperatorKeyManagerInstance.addressToOperatorData(alice);
+        ) = nodeOperatorManagerInstance.addressToOperatorData(alice);
 
         assertEq(aliceHash, abi.encodePacked(aliceIPFSHash));
         assertEq(totalKeys, 10);
@@ -102,7 +106,7 @@ contract NodeOperatorKeyManagerTest is Test {
         vm.expectEmit(false, false, false, true);
         emit OperatorRegistered(10, 0, aliceIPFSHash);
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             aliceIPFSHash,
             10
@@ -114,13 +118,13 @@ contract NodeOperatorKeyManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 1);
 
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
             aliceIPFSHash,
             uint64(10)
         );
 
-        (, uint64 keysUsed, ) = nodeOperatorKeyManagerInstance
+        (, uint64 keysUsed, ) = nodeOperatorManagerInstance
             .addressToOperatorData(alice);
 
         assertEq(keysUsed, 0);
@@ -128,7 +132,7 @@ contract NodeOperatorKeyManagerTest is Test {
         hoax(alice);
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        (, keysUsed, ) = nodeOperatorKeyManagerInstance.addressToOperatorData(
+        (, keysUsed, ) = nodeOperatorManagerInstance.addressToOperatorData(
             alice
         );
 
@@ -153,7 +157,7 @@ contract NodeOperatorKeyManagerTest is Test {
 
 
     function test_UpdatingMerkle() public {
-        assertEq(nodeOperatorKeyManagerInstance.merkleRoot(), root);
+        assertEq(nodeOperatorManagerInstance.merkleRoot(), root);
 
         whiteListedAddresses.push(
             keccak256(
@@ -164,18 +168,17 @@ contract NodeOperatorKeyManagerTest is Test {
         bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
         vm.expectEmit(false, false, false, true);
         vm.prank(owner);
-        emit MerkleUpdated(root, newRoot);
-        nodeOperatorKeyManagerInstance.updateMerkleRoot(newRoot);
+        nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
 
         bytes32[] memory proofForAddress4 = merkle.getProof(
             whiteListedAddresses,
             4
         );
 
-        assertEq(nodeOperatorKeyManagerInstance.merkleRoot(), newRoot);
+        assertEq(nodeOperatorManagerInstance.merkleRoot(), newRoot);
 
         vm.prank(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proofForAddress4,
             _ipfsHash,
             5
@@ -187,7 +190,7 @@ contract NodeOperatorKeyManagerTest is Test {
     }
 
     function test_UpdatingMerkleFailsIfNotOwner() public {
-        assertEq(nodeOperatorKeyManagerInstance.merkleRoot(), root);
+        assertEq(nodeOperatorManagerInstance.merkleRoot(), root);
 
         whiteListedAddresses.push(
             keccak256(
@@ -198,7 +201,7 @@ contract NodeOperatorKeyManagerTest is Test {
         bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
         vm.prank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
-        nodeOperatorKeyManagerInstance.updateMerkleRoot(newRoot);
+        nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
     }
 
     function _merkleSetup() internal {

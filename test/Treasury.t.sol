@@ -5,12 +5,12 @@ import "forge-std/Test.sol";
 
 import "../src/Treasury.sol";
 import "../src/AuctionManager.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
 
 contract TreasuryTest is Test {
     Treasury treasuryInstance;
     AuctionManager auctionInstance;
-    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    NodeOperatorManager public nodeOperatorManagerInstance;
 
     address owner = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
     address alice = vm.addr(2);
@@ -18,9 +18,9 @@ contract TreasuryTest is Test {
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
-        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(
-            address(nodeOperatorKeyManagerInstance)
+            address(nodeOperatorManagerInstance)
         );
         vm.stopPrank();
     }
