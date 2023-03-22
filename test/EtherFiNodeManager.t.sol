@@ -15,7 +15,7 @@ import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract StakingManagerTest is Test {
+contract EtherFiNodesManagerTest is Test {
     IStakingManager public depositInterface;
     EtherFiNode public withdrawSafeInstance;
     EtherFiNodesManager public managerInstance;
@@ -141,7 +141,18 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
+        assertTrue(
+            managerInstance.phase(bidId[0]) ==
+                IEtherFiNode.VALIDATOR_PHASE.LIVE
+        );
+
         safeInstance = EtherFiNode(payable(etherFiNode));
+    }
+
+    function test_SetEtherFiNodePhase() public {
+        vm.expectRevert("Only staking manager contract function");
+        vm.prank(owner);
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.CANCELLED);
     }
 
     function test_SendExitRequestWorksCorrectly() public {
