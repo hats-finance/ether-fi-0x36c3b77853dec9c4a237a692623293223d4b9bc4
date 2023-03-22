@@ -161,6 +161,12 @@ contract EtherFiNodesManagerTest is Test {
         managerInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(bidId[0], "_ipfsHash");
     }
 
+    function test_setEtherFiNodeLocalRevenueIndexRevertsOnIncorrectCaller() public {
+        vm.expectRevert("Only protocol revenue manager contract function");
+        vm.prank(owner);
+        managerInstance.setEtherFiNodeLocalRevenueIndex(bidId[0], 1);
+    }
+
     function test_SendExitRequestWorksCorrectly() public {
         assertEq(managerInstance.isExitRequested(bidId[0]), false);
 
