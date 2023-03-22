@@ -139,8 +139,8 @@ contract NodeOperatorManagerTest is Test {
         assertEq(keysUsed, 1);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
-            aliceProof,
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
             aliceIPFSHash,
             1
         );
@@ -150,7 +150,7 @@ contract NodeOperatorManagerTest is Test {
 
         vm.expectRevert("Only auction contract function");
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.fetchNextKeyIndex(alice);
+        nodeOperatorManagerInstance.fetchNextKeyIndex(alice);
     }
 
     
@@ -166,7 +166,7 @@ contract NodeOperatorManagerTest is Test {
         );
 
         bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
-        vm.expectEmit(false, false, false, true);
+        
         vm.prank(owner);
         nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
 

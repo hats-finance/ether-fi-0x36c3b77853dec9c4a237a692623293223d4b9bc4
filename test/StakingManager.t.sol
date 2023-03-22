@@ -1030,7 +1030,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -1226,7 +1226,7 @@ contract StakingManagerTest is Test {
     //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
     //     vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-    //     nodeOperatorKeyManagerInstance.registerNodeOperator(
+    //     nodeOperatorManagerInstance.registerNodeOperator(
     //         proof,
     //         _ipfsHash,
     //         5
@@ -1250,7 +1250,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
@@ -1276,7 +1276,7 @@ contract StakingManagerTest is Test {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(
+        nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
             5
