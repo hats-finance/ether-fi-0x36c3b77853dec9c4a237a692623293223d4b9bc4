@@ -18,7 +18,6 @@ import "lib/forge-std/src/console.sol";
 contract EtherFiNode is IEtherFiNode {
     // TODO: Remove these two address variables
     address etherfiNodesManager;
-    address protocolRevenueManager;
 
     // TODO: reduce the size of these varaibles
     uint256 public localRevenueIndex;
@@ -33,10 +32,9 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize(address _protocolRevenueManager) public {
+    function initialize() public {
         require(etherfiNodesManager == address(0), "already initialised");
         etherfiNodesManager = msg.sender;
-        protocolRevenueManager = _protocolRevenueManager;
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
@@ -312,10 +310,8 @@ contract EtherFiNode is IEtherFiNode {
         return etherfiNodesManager;
     }
 
-    function protocolRevenueManagerAddress() internal view returns (address) {
-        // TODO: Replace it with the actual address
-        // return 0x...
-        return protocolRevenueManager;
+    function protocolRevenueManagerAddress() public view returns (address) {
+        return IEtherFiNodesManager(etherfiNodesManager).protocolRevenueManagerContract();
     }
 
     //--------------------------------------------------------------------------------------
@@ -333,7 +329,7 @@ contract EtherFiNode is IEtherFiNode {
     // TODO
     modifier onlyProtocolRevenueManagerContract() {
         require(
-            msg.sender == protocolRevenueManager,
+            msg.sender == protocolRevenueManagerAddress(),
             "Only protocol revenue manager contract function"
         );
         _;
