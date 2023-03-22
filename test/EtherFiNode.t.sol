@@ -174,6 +174,13 @@ contract EtherFiNodeTest is Test {
 
     }
 
+    function test_SetIpfsHashForEncryptedValidatorKey() public {
+        vm.expectRevert("Only EtherFiNodeManager Contract");
+        vm.prank(owner);
+        safeInstance.setIpfsHashForEncryptedValidatorKey("_ipfsHash");
+
+    }
+
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
