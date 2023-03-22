@@ -181,6 +181,20 @@ contract EtherFiNodeTest is Test {
 
     }
 
+    function test_SetLocalRevenueIndex() public {
+        vm.expectRevert("Only EtherFiNodeManager Contract");
+        vm.prank(owner);
+        safeInstance.setLocalRevenueIndex(1);
+
+    }
+
+    function test_SetExitRequestTimestamp() public {
+        vm.expectRevert("Only EtherFiNodeManager Contract");
+        vm.prank(owner);
+        safeInstance.setExitRequestTimestamp();
+
+    }
+
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
