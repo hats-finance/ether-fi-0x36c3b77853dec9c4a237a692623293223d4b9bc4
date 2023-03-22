@@ -50,7 +50,22 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Allows ether to be sent to this contract
     receive() external payable {
-        console.log(0);
+        etherBalance[tx.origin] = msg.value;
+
+        uint256 rEthSentIn = rETHInstance.balanceOf(address(this)) - rEthBalance;
+        uint256 wstEthSentIn = wstETHInstance.balanceOf(address(this)) - wstEthBalance;
+        uint256 sfrxEthSentIn = sfrxETHInstance.balanceOf(address(this)) - sfrxEthBalance;
+        uint256 cbEthSentIn = cbETHInstance.balanceOf(address(this)) - cbEthBalance;
+
+        finalUserToErc20Balance[tx.origin][rETH] = rEthSentIn;
+        finalUserToErc20Balance[tx.origin][wstETH] = wstEthSentIn;
+        finalUserToErc20Balance[tx.origin][sfrxETH] = sfrxEthSentIn;
+        finalUserToErc20Balance[tx.origin][cbETH] = cbEthSentIn;
+
+        rEthBalance += rEthSentIn;
+        wstEthBalance += wstEthSentIn;
+        sfrxEthBalance += sfrxEthSentIn;
+        cbEthBalance += cbEthSentIn;
     }
 
     //--------------------------------------------------------------------------------------
