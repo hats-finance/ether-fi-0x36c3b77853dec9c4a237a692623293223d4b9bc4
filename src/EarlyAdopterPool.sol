@@ -124,6 +124,7 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
         depositInfo[msg.sender].depositTime = block.timestamp;
         depositInfo[msg.sender].totalERC20Balance += _amount;
         userToErc20Balance[msg.sender][_erc20Contract] += _amount;
+
         require(IERC20(_erc20Contract).transferFrom(msg.sender, address(this), _amount), "Transfer failed");
 
         emit DepositERC20(msg.sender, _amount);

@@ -7,6 +7,7 @@ import "../src/LiquidityPool.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/EETH.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./TestERC20.sol";
 
 contract ConversionPoolTest is Test {
@@ -19,6 +20,7 @@ contract ConversionPoolTest is Test {
     TestERC20 public wstETH;
     TestERC20 public sfrxEth;
     TestERC20 public cbEth;
+    IERC20 public testDai = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
     EETH public eEth;
 
@@ -58,17 +60,11 @@ contract ConversionPoolTest is Test {
             address(rETH),
             address(wstETH),
             address(sfrxEth),
-            address(cbEth)
+            address(cbEth),
+            address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
         );
 
         vm.stopPrank();
-    }
-
-    function test_ConversionPoolReceivesEther() public {
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        (bool sent, ) = address(conversionPoolInstance).call{value: 2 ether}("");
-
-        assertEq(address(conversionPoolInstance).balance, 2 ether);
     }
 
     function test_ConversionPoolReceivesERC20() public {
@@ -84,66 +80,62 @@ contract ConversionPoolTest is Test {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        conversionPoolInstance.setData(0, 10e18, 0, 0, 0, 3048);
         earlyAdopterPoolInstance.claim();
 
         assertEq(rETH.balanceOf(address(conversionPoolInstance)), 10 ether);
     }
 
-    function test_SendEtherToLPFailsIfAlreadyClaimed() public {
-        hoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        earlyAdopterPoolInstance.depositEther{value: 2 ether}();
+    // function test_SendEtherToLPFailsIfAlreadyClaimed() public {
+    //     hoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+    //     earlyAdopterPoolInstance.depositEther{value: 2 ether}();
         
-        vm.startPrank(owner);
-        earlyAdopterPoolInstance.setClaimingOpen(2 days);
-        earlyAdopterPoolInstance.setClaimReceiverContract(address(conversionPoolInstance));
-        liqPool.setTokenAddress(address(eEth));
-        vm.stopPrank();
+    //     vm.startPrank(owner);
+    //     earlyAdopterPoolInstance.setClaimingOpen(2 days);
+    //     earlyAdopterPoolInstance.setClaimReceiverContract(address(conversionPoolInstance));
+    //     liqPool.setTokenAddress(address(eEth));
+    //     vm.stopPrank();
         
-        startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        conversionPoolInstance.setData(2 ether, 0, 0, 0, 0, 398764);
-        earlyAdopterPoolInstance.claim();
+    //     startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+    //     earlyAdopterPoolInstance.claim();
 
-        conversionPoolInstance.sendFundsToLP();
+    //     conversionPoolInstance.sendFundsToLP();
         
-        vm.expectRevert("Already sent funds for user");
-        conversionPoolInstance.sendFundsToLP();
-    }
+    //     vm.expectRevert("Already sent funds for user");
+    //     conversionPoolInstance.sendFundsToLP();
+    // }
 
-    function test_SendEtherToLPFailsIfNothingToSend() public {    
-        vm.startPrank(owner);
-        earlyAdopterPoolInstance.setClaimingOpen(2 days);
-        earlyAdopterPoolInstance.setClaimReceiverContract(address(conversionPoolInstance));
-        liqPool.setTokenAddress(address(eEth));
-        vm.stopPrank();
+    // function test_SendEtherToLPFailsIfNothingToSend() public {    
+    //     vm.startPrank(owner);
+    //     earlyAdopterPoolInstance.setClaimingOpen(2 days);
+    //     earlyAdopterPoolInstance.setClaimReceiverContract(address(conversionPoolInstance));
+    //     liqPool.setTokenAddress(address(eEth));
+    //     vm.stopPrank();
         
-        startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        conversionPoolInstance.setData(0, 0, 0, 0, 0, 398764);
+    //     startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
         
-        vm.expectRevert("No funds available to transfer");
-        conversionPoolInstance.sendFundsToLP();
-    }
+    //     vm.expectRevert("No funds available to transfer");
+    //     conversionPoolInstance.sendFundsToLP();
+    // }
 
-    function test_SendEtherToLPWorksCorrectly() public {
-        hoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        earlyAdopterPoolInstance.depositEther{value: 2 ether}();
+    // function test_SendEtherToLPWorksCorrectly() public {
+    //     hoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+    //     earlyAdopterPoolInstance.depositEther{value: 2 ether}();
         
-        vm.startPrank(owner);
-        earlyAdopterPoolInstance.setClaimingOpen(2 days);
-        earlyAdopterPoolInstance.setClaimReceiverContract(address(conversionPoolInstance));
-        liqPool.setTokenAddress(address(eEth));
-        vm.stopPrank();
+    //     vm.startPrank(owner);
+    //     earlyAdopterPoolInstance.setClaimingOpen(2 days);
+    //     earlyAdopterPoolInstance.setClaimReceiverContract(address(conversionPoolInstance));
+    //     liqPool.setTokenAddress(address(eEth));
+    //     vm.stopPrank();
         
-        startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        conversionPoolInstance.setData(2 ether, 0, 0, 0, 0, 398764);
-        earlyAdopterPoolInstance.claim();
+    //     startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+    //     earlyAdopterPoolInstance.claim();
 
-        assertEq(address(conversionPoolInstance).balance, 2 ether);
+    //     assertEq(address(conversionPoolInstance).balance, 2 ether);
     
-        conversionPoolInstance.sendFundsToLP();
-        assertEq(address(conversionPoolInstance).balance, 0 ether);
-        assertEq(address(liqPool).balance, 2 ether);
-    }
+    //     conversionPoolInstance.sendFundsToLP();
+    //     assertEq(address(conversionPoolInstance).balance, 0 ether);
+    //     assertEq(address(liqPool).balance, 2 ether);
+    // }
 
     function test_ReceiveFunctionWorksCorrectly() public {
         vm.startPrank(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
@@ -154,8 +146,6 @@ contract ConversionPoolTest is Test {
         cbEth.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
         cbEth.approve(address(earlyAdopterPoolInstance), 10 ether);
         earlyAdopterPoolInstance.deposit(address(cbEth), 1e18);
-
-        earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
         vm.stopPrank();
 
         vm.startPrank(owner);
@@ -171,6 +161,12 @@ contract ConversionPoolTest is Test {
         assertEq(conversionPoolInstance.finalUserToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(cbEth)), 1e18);
         assertEq(conversionPoolInstance.finalUserToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(wstETH)), 0);
         assertEq(conversionPoolInstance.finalUserToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(sfrxEth)), 0);
-        assertEq(conversionPoolInstance.etherBalance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 0.1 ether);
+    }
+
+    function test_Swap() public {
+        startHoax(0x7C5aaA2a20b01df027aD032f7A768aC015E77b86);
+        testDai.transfer(address(conversionPoolInstance), 1);
+
+        conversionPoolInstance._swapExactInputSingle(100, 0x6B175474E89094C44Da98b954EedeAC495271d0F);
     }
 }

@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IWeth.sol";
 import "./EarlyAdopterPool.sol";
 import "lib/forge-std/src/console.sol";
 
@@ -33,7 +34,7 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     // address private immutable wstETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
     // address private immutable sfrxETH = 0xac3E018457B222d93114458476f3E3416Abbe38F;
     // address private immutable cbETH = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
-    address private immutable wEth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address private immutable wEth;
 
     address private immutable rETH;
     address private immutable wstETH;
@@ -42,6 +43,7 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
 
     ISwapRouter public immutable swapRouter;
     ILiquidityPool public liquidityPool;
+    IWETH public wethContract;
     IERC20 public rETHInstance;
     IERC20 public wstETHInstance;
     IERC20 public sfrxETHInstance;
@@ -64,7 +66,10 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
 
         _updateBalances(rEthSentIn, wstEthSentIn, sfrxEthSentIn, cbEthSentIn, tx.origin);
         _updateGlobalVariables(rEthSentIn, wstEthSentIn, sfrxEthSentIn, cbEthSentIn);
-        //_swapForTotalEth(rEthSentIn, wstEthSentIn, sfrxEthSentIn, cbEthSentIn, tx.origin);
+        uint256 wethBal = _swapForTotalWETH(rEthSentIn, wstEthSentIn, sfrxEthSentIn, cbEthSentIn);
+
+        wethContract.withdraw(wethBal);
+        etherBalance[tx.origin] += wethBal;
        
         //Call function in LP and send in user and amount of ether sent
         liquidityPool.deposit{value: etherBalance[tx.origin]}(tx.origin);
@@ -88,9 +93,19 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    constructor(address _routerAddress, address _liquidityPool, address _adopterPool, address _rEth, address _wstEth, address _sfrxEth, address _cbEth) {
+    constructor(
+        address _routerAddress, 
+        address _liquidityPool, 
+        address _adopterPool, 
+        address _rEth, 
+        address _wstEth, 
+        address _sfrxEth, 
+        address _cbEth,
+        address _wEth
+    ) {
         swapRouter = ISwapRouter(_routerAddress);
         liquidityPool = ILiquidityPool(_liquidityPool);
+        wethContract = IWETH(_wEth);
 
         //rETHInstance = IERC20(0xae78736Cd615f374D3085123A210448E74Fc6393);
         //wstETHInstance = IERC20(0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0);
@@ -106,6 +121,7 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
         wstETH = _wstEth;
         sfrxETH = _sfrxEth;
         cbETH = _cbEth;
+        wEth = _wEth;
 
         adopterPool = EarlyAdopterPool(payable(_adopterPool));
     }
@@ -119,45 +135,34 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     function sendFundsToLP() external {
         //require(claimed[msg.sender] == false, "Already sent funds for user");
         
-        uint256 rEthBal = finalUserToErc20Balance[msg.sender][rETH];
-        uint256 wstEthBal = finalUserToErc20Balance[msg.sender][wstETH];
-        uint256 sfrxEthBal = finalUserToErc20Balance[msg.sender][sfrxETH];
-        uint256 cbEthBal = finalUserToErc20Balance[msg.sender][cbETH];
+        // uint256 rEthBal = finalUserToErc20Balance[msg.sender][rETH];
+        // uint256 wstEthBal = finalUserToErc20Balance[msg.sender][wstETH];
+        // uint256 sfrxEthBal = finalUserToErc20Balance[msg.sender][sfrxETH];
+        // uint256 cbEthBal = finalUserToErc20Balance[msg.sender][cbETH];
 
-        if(rEthBal > 0){
-            etherBalance[msg.sender] += _swapExactInputSingle(rEthBal, rETH);
-        }
+        // if(rEthBal > 0){
+        //     etherBalance[msg.sender] += _swapExactInputSingle(rEthBal, rETH);
+        // }
 
-        if(wstEthBal > 0){
-            etherBalance[msg.sender] += _swapExactInputSingle(wstEthBal, wstETH);
-        }
+        // if(wstEthBal > 0){
+        //     etherBalance[msg.sender] += _swapExactInputSingle(wstEthBal, wstETH);
+        // }
 
-        if(sfrxEthBal > 0){
-            etherBalance[msg.sender] += _swapExactInputSingle(sfrxEthBal, sfrxETH);
-        }
+        // if(sfrxEthBal > 0){
+        //     etherBalance[msg.sender] += _swapExactInputSingle(sfrxEthBal, sfrxETH);
+        // }
 
-        if(cbEthBal > 0){
-            etherBalance[msg.sender] += _swapExactInputSingle(cbEthBal, cbETH);
-        }
+        // if(cbEthBal > 0){
+        //     etherBalance[msg.sender] += _swapExactInputSingle(cbEthBal, cbETH);
+        // }
 
-        require(etherBalance[msg.sender] > 0, "No funds available to transfer");
-        //claimed[msg.sender] = true;
+        // require(etherBalance[msg.sender] > 0, "No funds available to transfer");
+        // claimed[msg.sender] = true;
         
-        //Call function in LP and send in user and amount of ether sent
-        liquidityPool.deposit{value: etherBalance[msg.sender]}(msg.sender);
+        // Call function in LP and send in user and amount of ether sent
+        // liquidityPool.deposit{value: etherBalance[msg.sender]}(msg.sender);
 
-        emit fundsSentToLP(msg.sender, etherBalance[msg.sender]);
-    }
-
-    /// @notice Sets the data from the Early Adopter Pool in the Conversion Pool
-    /// @dev Must be called before claim in the Early Adopter Pool
-    function setData(uint256 _etherBalance, uint256 rEthBal, uint256 wstEthBal, uint256 sfrxBal, uint256 cbEthBal, uint256 totalPoints) external {
-       
-        etherBalance[msg.sender] = _etherBalance;
-        finalUserToErc20Balance[msg.sender][rETH] = rEthBal;
-        finalUserToErc20Balance[msg.sender][wstETH] = wstEthBal;
-        finalUserToErc20Balance[msg.sender][sfrxETH] = sfrxBal;
-        finalUserToErc20Balance[msg.sender][cbETH] = cbEthBal;
+        // emit fundsSentToLP(msg.sender, etherBalance[msg.sender]);
     }
 
     //Pauses the contract
@@ -199,34 +204,35 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
         finalUserToErc20Balance[_user][cbETH] = _cbEthSentIn;
     }
 
-    function _swapForTotalEth(
+    function _swapForTotalWETH(
         uint256 _rEthSentIn, 
         uint256 _wstEthSentIn, 
         uint256 _sfrxEthSentIn, 
-        uint256 _cbEthSentIn, 
-        address _user
-    ) internal {
+        uint256 _cbEthSentIn
+    ) internal returns (uint256){
+        uint256 wethBalance;
         if(_rEthSentIn > 0){
-            etherBalance[_user] += _swapExactInputSingle(_rEthSentIn, rETH);
+            console.log("Beginning of swap for rEth");
+            wethBalance += _swapExactInputSingle(_rEthSentIn, rETH);
         }
 
         if(_wstEthSentIn > 0){
-            etherBalance[_user] += _swapExactInputSingle(_wstEthSentIn, wstETH);
+            wethBalance += _swapExactInputSingle(_wstEthSentIn, wstETH);
         }
 
         if(_sfrxEthSentIn > 0){
-            etherBalance[_user] += _swapExactInputSingle(_sfrxEthSentIn, sfrxETH);
+            wethBalance += _swapExactInputSingle(_sfrxEthSentIn, sfrxETH);
         }
 
         if(_cbEthSentIn > 0){
-            etherBalance[_user] += _swapExactInputSingle(_cbEthSentIn, cbETH);
+            wethBalance += _swapExactInputSingle(_cbEthSentIn, cbETH);
         }
 
-        require(etherBalance[tx.origin] > 0, "No funds available to transfer");
+        return wethBalance;
     }
 
     function _swapExactInputSingle(uint256 _amountIn, address _tokenIn)
-        internal
+        public
         returns (uint256 amountOut)
     {
         IERC20(_tokenIn).approve(address(swapRouter), _amountIn);
