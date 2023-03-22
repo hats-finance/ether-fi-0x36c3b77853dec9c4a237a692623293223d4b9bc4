@@ -41,50 +41,11 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "AuctionFundsReceived",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "_bidId",
+        "name": "_validatorId",
         "type": "uint256"
       },
       {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "BidRefunded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "totalFundsTransferred",
-        "type": "uint256"
-      }
-    ],
-    "name": "FundsDistributed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
@@ -104,38 +65,6 @@
       }
     ],
     "name": "NodeExitRequested",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "operater",
-        "type": "address"
-      }
-    ],
-    "name": "OperatorAddressSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "sender",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "Received",
     "type": "event"
   },
   {
@@ -230,7 +159,7 @@
         "type": "uint256"
       }
     ],
-    "name": "etherfiNodePerValidator",
+    "name": "etherfiNodeAddress",
     "outputs": [
       {
         "internalType": "address",
@@ -281,101 +210,6 @@
         "type": "uint256"
       }
     ],
-    "name": "getEtherFiNodeAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getEtherFiNodeIpfsHashForEncryptedValidatorKey",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getEtherFiNodeLocalRevenueIndex",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getEtherFiNodePhase",
-    "outputs": [
-      {
-        "internalType": "enum IEtherFiNode.VALIDATOR_PHASE",
-        "name": "phase",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getEtherFiNodeVestedAuctionRewards",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
     "name": "getFullWithdrawalPayouts",
     "outputs": [
       {
@@ -408,9 +242,14 @@
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_endTimestamp",
+        "type": "uint32"
       }
     ],
-    "name": "getNonExitPenaltyAmount",
+    "name": "getNonExitPenalty",
     "outputs": [
       {
         "internalType": "uint256",
@@ -429,26 +268,38 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint32",
-        "name": "_endTimestamp",
-        "type": "uint32"
+        "internalType": "bool",
+        "name": "_stakingRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_protocolRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_vestedAuctionFee",
+        "type": "bool"
       }
     ],
-    "name": "getNonExitPenaltyAmount",
+    "name": "getRewardsPayouts",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getNumberOfValidators",
-    "outputs": [
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
       {
         "internalType": "uint256",
         "name": "",
@@ -466,7 +317,7 @@
         "type": "uint256"
       }
     ],
-    "name": "getStakingRewards",
+    "name": "getStakingRewardsPayouts",
     "outputs": [
       {
         "internalType": "uint256",
@@ -543,16 +394,17 @@
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_etherfiNode",
-        "type": "address"
       }
     ],
-    "name": "installEtherFiNode",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "ipfsHashForEncryptedValidatorKey",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -577,19 +429,39 @@
   {
     "inputs": [
       {
-        "internalType": "uint256[]",
-        "name": "_validatorIds",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint32[]",
-        "name": "_exitTimestamps",
-        "type": "uint32[]"
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
       }
     ],
-    "name": "markExited",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "isExited",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      }
+    ],
+    "name": "localRevenueIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -621,12 +493,125 @@
   {
     "inputs": [
       {
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "_stakingRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_protocolRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_vestedAuctionFee",
+        "type": "bool"
+      }
+    ],
+    "name": "partialWithdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_stakingRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_protocolRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_vestedAuctionFee",
+        "type": "bool"
+      }
+    ],
+    "name": "partialWithdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_operator",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "_stakingRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_protocolRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_vestedAuctionFee",
+        "type": "bool"
+      }
+    ],
+    "name": "partialWithdrawBatchGroupByOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
       }
     ],
-    "name": "partialWithdraw",
+    "name": "phase",
+    "outputs": [
+      {
+        "internalType": "enum IEtherFiNode.VALIDATOR_PHASE",
+        "name": "phase",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "_exitTimestamps",
+        "type": "uint32[]"
+      }
+    ],
+    "name": "processNodeExit",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -678,6 +663,24 @@
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "registerEtherFiNode",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
       }
     ],
     "name": "sendExitRequest",
@@ -718,7 +721,7 @@
     ],
     "name": "setEtherFiNodeLocalRevenueIndex",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -814,9 +817,32 @@
         "type": "uint256"
       }
     ],
-    "name": "uninstallEtherFiNode",
+    "name": "unregisterEtherFiNode",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      }
+    ],
+    "name": "vestedAuctionRewards",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
   }
 ]

@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_nodeOperatorKeyManagerContract",
+        "name": "_nodeOperatorManagerContract",
         "type": "address"
       }
     ],
@@ -35,17 +35,17 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "amountPerBid",
         "type": "uint256"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256[]",
         "name": "bidIdArray",
         "type": "uint256[]"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint64[]",
         "name": "ipfsIndexArray",
         "type": "uint64[]"
@@ -65,50 +65,6 @@
       }
     ],
     "name": "BidReEnteredAuction",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [],
-    "name": "BiddingEnabled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "oldMaxBidAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "newMaxBidAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "MaxBidUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "oldMinBidAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "newMinBidAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "MinBidUpdated",
     "type": "event"
   },
   {
@@ -166,38 +122,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "winner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "highestBidId",
-        "type": "uint256"
-      }
-    ],
-    "name": "SelectedBidUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "stakingManagerContractAddress",
-        "type": "address"
-      }
-    ],
-    "name": "StakingManagerAddressSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": false,
         "internalType": "address",
         "name": "account",
@@ -205,25 +129,6 @@
       }
     ],
     "name": "Unpaused",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "oldBidAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "newBidAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "WhitelistBidUpdated",
     "type": "event"
   },
   {
@@ -350,25 +255,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
-      }
-    ],
-    "name": "isWhitelisted",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "whitelisted",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "maxBidAmount",
     "outputs": [
@@ -396,7 +282,7 @@
   },
   {
     "inputs": [],
-    "name": "nodeOperatorKeyManagerContractAddress",
+    "name": "nodeOperatorManagerContractAddress",
     "outputs": [
       {
         "internalType": "address",
@@ -606,19 +492,6 @@
       }
     ],
     "name": "updateWhitelistMinBidAmount",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
-      }
-    ],
-    "name": "whitelistAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
