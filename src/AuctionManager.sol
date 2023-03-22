@@ -69,40 +69,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Updates a bid winning bids details
-    /// @dev Called by batchDepositWithBidIds() in StakingManager.sol
-    /// @param _bidId the ID of the bid being removed from the auction (since it has been selected)
-    function updateSelectedBidInformation(uint256 _bidId) public onlyStakingManagerContract {
-        require(bids[_bidId].isActive, "The bid is not active");
-
-        bids[_bidId].isActive = false;
-        address operator = bids[_bidId].bidderAddress;
-
-        numberOfActiveBids--;
-    }
-
-    /// @notice Cancels a specified bid by de-activating it
-    /// @dev Require the bid to exist and be active
-    /// @param _bidId the ID of the bid to cancel
-    function cancelBid(uint256 _bidId) external whenNotPaused {
-        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
-
-        // Cancel the bid by de-activating it
-        bids[_bidId].isActive = false;
-
-        // Get the value of the cancelled bid to refund
-        uint256 bidValue = bids[_bidId].amount;
-
-        // Refund the user with their bid amount
-        (bool sent, ) = msg.sender.call{value: bidValue}("");
-        require(sent, "Failed to send Ether");
-
-        numberOfActiveBids--;
-
-        emit BidCancelled(_bidId);
-    }
-
     /// @notice Creates bid(s) for the right to run a validator node when ETH is deposited
     /// @param _bidSize the number of bids that the node operator would like to create
     /// @param _bidAmountPerBid the ether value of each bid that is created
@@ -173,6 +139,58 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         return bidIdArray;
     }
 
+    /// @notice Cancels a specified bid by de-activating it
+    /// @dev Require the bid to exist and be active
+    /// @param _bidId the ID of the bid to cancel
+    function cancelBid(uint256 _bidId) external whenNotPaused {
+        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
+        require(bids[_bidId].isActive == true, "Bid already cancelled");
+
+        // Cancel the bid by de-activating it
+        bids[_bidId].isActive = false;
+
+        // Get the value of the cancelled bid to refund
+        uint256 bidValue = bids[_bidId].amount;
+
+        // Refund the user with their bid amount
+        (bool sent, ) = msg.sender.call{value: bidValue}("");
+        require(sent, "Failed to send Ether");
+
+        numberOfActiveBids--;
+
+        emit BidCancelled(_bidId);
+    }
+
+    /// @notice Updates a bid winning bids details
+    /// @dev Called by batchDepositWithBidIds() in StakingManager.sol
+    /// @param _bidId the ID of the bid being removed from the auction (since it has been selected)
+    function updateSelectedBidInformation(uint256 _bidId) public onlyStakingManagerContract {
+        require(bids[_bidId].isActive, "The bid is not active");
+
+        bids[_bidId].isActive = false;
+        address operator = bids[_bidId].bidderAddress;
+
+        numberOfActiveBids--;
+    }
+    
+    /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
+    /// @param _bidId the ID of the bid which was matched to the cancelled stake.
+    function reEnterAuction(uint256 _bidId) external onlyStakingManagerContract whenNotPaused {
+        require(bids[_bidId].isActive == false, "Bid already active");
+        //Reactivate the bid
+        bids[_bidId].isActive = true;
+        numberOfActiveBids++;
+        emit BidReEnteredAuction(_bidId);
+    }
+
+    /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
+    /// @dev Called by registerValidator() in StakingManager.sol
+    /// @param _bidId the ID of the validator
+    function processAuctionFeeTransfer(uint256 _bidId) external onlyStakingManagerContract {
+        uint256 amount = bids[_bidId].amount;
+        protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
+    }
+
     /// @notice Disables the bid whitelist
     /// @dev Allows both regular users and whitelisted users to bid
     function disableWhitelist() public onlyOwner {
@@ -183,23 +201,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     /// @dev Only users who are on a whitelist can bid
     function enableWhitelist() public onlyOwner {
         whitelistEnabled = true;
-    }
-
-    /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
-    /// @param _bidId the ID of the validator
-    function processAuctionFeeTransfer(uint256 _bidId) external onlyStakingManagerContract {
-        uint256 amount = bids[_bidId].amount;
-        protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
-    }
-
-    /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
-    /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    function reEnterAuction(uint256 _bidId) external onlyStakingManagerContract whenNotPaused {
-        require(bids[_bidId].isActive == false, "Bid already active");
-        //Reactivate the bid
-        bids[_bidId].isActive = true;
-        numberOfActiveBids++;
-        emit BidReEnteredAuction(_bidId);
     }
 
     //Pauses the contract
