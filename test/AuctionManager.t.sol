@@ -38,9 +38,9 @@ contract AuctionManagerTest is Test {
 
     event BidCreated(
         address indexed bidder,
-        uint256 amount,
-        uint256[] indexed bidId,
-        uint64[] indexed ipfsIndexArray
+        uint256 amountPerBid,
+        uint256[] bidId,
+        uint64[] ipfsIndexArray
     );
 
     function setUp() public {
