@@ -51,8 +51,15 @@ contract ConversionPoolTest is Test {
             address(cbEth)
         );
 
-        conversionPoolInstance = new ConversionPool(0xE592427A0AEce92De3Edee1F18E0157C05861564, address(liqPool), address(earlyAdopterPoolInstance));
-        
+        conversionPoolInstance = new ConversionPool(
+            0xE592427A0AEce92De3Edee1F18E0157C05861564, 
+            address(liqPool), 
+            address(earlyAdopterPoolInstance),
+            address(rETH),
+            address(wstETH),
+            address(sfrxEth),
+            address(cbEth)
+        );
 
         vm.stopPrank();
     }
@@ -138,4 +145,32 @@ contract ConversionPoolTest is Test {
         assertEq(address(liqPool).balance, 2 ether);
     }
 
+    function test_ReceiveFunctionWorksCorrectly() public {
+        vm.startPrank(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+        rETH.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
+        rETH.approve(address(earlyAdopterPoolInstance), 10 ether);
+        earlyAdopterPoolInstance.deposit(address(rETH), 10e18);
+
+        cbEth.mint(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, 10e18);
+        cbEth.approve(address(earlyAdopterPoolInstance), 10 ether);
+        earlyAdopterPoolInstance.deposit(address(cbEth), 1e18);
+
+        earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        earlyAdopterPoolInstance.setClaimingOpen(2 days);
+        earlyAdopterPoolInstance.setClaimReceiverContract(address(conversionPoolInstance));
+        liqPool.setTokenAddress(address(eEth));
+        vm.stopPrank();
+
+        vm.startPrank(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+        earlyAdopterPoolInstance.claim();
+
+        assertEq(conversionPoolInstance.finalUserToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(rETH)), 10e18);
+        assertEq(conversionPoolInstance.finalUserToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(cbEth)), 1e18);
+        assertEq(conversionPoolInstance.finalUserToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(wstETH)), 0);
+        assertEq(conversionPoolInstance.finalUserToErc20Balance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(sfrxEth)), 0);
+        assertEq(conversionPoolInstance.etherBalance(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 0.1 ether);
+    }
 }

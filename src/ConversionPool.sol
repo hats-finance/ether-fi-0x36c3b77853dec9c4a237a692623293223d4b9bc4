@@ -24,16 +24,21 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     uint24 public constant poolFee = 3000;
 
     //Being initialised to save first user higher gas fee
-    uint256 public rEthBalance = 1;
-    uint256 public wstEthBalance = 1;
-    uint256 public sfrxEthBalance = 1;
-    uint256 public cbEthBalance = 1;
+    uint256 public rEthGlobalBalance;
+    uint256 public wstEthGlobalBalance;
+    uint256 public sfrxEthGlobalBalance;
+    uint256 public cbEthGlobalBalance;
 
-    address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
-    address private immutable wstETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
-    address private immutable sfrxETH = 0xac3E018457B222d93114458476f3E3416Abbe38F;
-    address private immutable cbETH = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
+    // address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
+    // address private immutable wstETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
+    // address private immutable sfrxETH = 0xac3E018457B222d93114458476f3E3416Abbe38F;
+    // address private immutable cbETH = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
     address private immutable wEth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+
+    address private immutable rETH;
+    address private immutable wstETH;
+    address private immutable sfrxETH;
+    address private immutable cbETH;
 
     ISwapRouter public immutable swapRouter;
     ILiquidityPool public liquidityPool;
@@ -45,27 +50,24 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     EarlyAdopterPool public adopterPool;
 
     mapping(address => mapping(address => uint256)) public finalUserToErc20Balance;
-    mapping(address => bool) public claimed;
     mapping(address => uint256) public etherBalance;
 
     /// @notice Allows ether to be sent to this contract
     receive() external payable {
+       
         etherBalance[tx.origin] = msg.value;
 
-        uint256 rEthSentIn = rETHInstance.balanceOf(address(this)) - rEthBalance;
-        uint256 wstEthSentIn = wstETHInstance.balanceOf(address(this)) - wstEthBalance;
-        uint256 sfrxEthSentIn = sfrxETHInstance.balanceOf(address(this)) - sfrxEthBalance;
-        uint256 cbEthSentIn = cbETHInstance.balanceOf(address(this)) - cbEthBalance;
+        uint256 rEthSentIn = rETHInstance.balanceOf(address(this)) - rEthGlobalBalance;
+        uint256 wstEthSentIn = wstETHInstance.balanceOf(address(this)) - wstEthGlobalBalance;
+        uint256 sfrxEthSentIn = sfrxETHInstance.balanceOf(address(this)) - sfrxEthGlobalBalance;
+        uint256 cbEthSentIn = cbETHInstance.balanceOf(address(this)) - cbEthGlobalBalance;
 
-        finalUserToErc20Balance[tx.origin][rETH] = rEthSentIn;
-        finalUserToErc20Balance[tx.origin][wstETH] = wstEthSentIn;
-        finalUserToErc20Balance[tx.origin][sfrxETH] = sfrxEthSentIn;
-        finalUserToErc20Balance[tx.origin][cbETH] = cbEthSentIn;
-
-        rEthBalance += rEthSentIn;
-        wstEthBalance += wstEthSentIn;
-        sfrxEthBalance += sfrxEthSentIn;
-        cbEthBalance += cbEthSentIn;
+        _updateBalances(rEthSentIn, wstEthSentIn, sfrxEthSentIn, cbEthSentIn, tx.origin);
+        _updateGlobalVariables(rEthSentIn, wstEthSentIn, sfrxEthSentIn, cbEthSentIn);
+        //_swapForTotalEth(rEthSentIn, wstEthSentIn, sfrxEthSentIn, cbEthSentIn, tx.origin);
+       
+        //Call function in LP and send in user and amount of ether sent
+        liquidityPool.deposit{value: etherBalance[tx.origin]}(tx.origin);
     }
 
     //--------------------------------------------------------------------------------------
@@ -86,13 +88,25 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    constructor(address _routerAddress, address _liquidityPool, address _adopterPool) {
+    constructor(address _routerAddress, address _liquidityPool, address _adopterPool, address _rEth, address _wstEth, address _sfrxEth, address _cbEth) {
         swapRouter = ISwapRouter(_routerAddress);
         liquidityPool = ILiquidityPool(_liquidityPool);
-        rETHInstance = IERC20(0xae78736Cd615f374D3085123A210448E74Fc6393);
-        wstETHInstance = IERC20(0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0);
-        sfrxETHInstance = IERC20(0xac3E018457B222d93114458476f3E3416Abbe38F);
-        cbETHInstance = IERC20(0xBe9895146f7AF43049ca1c1AE358B0541Ea49704);
+
+        //rETHInstance = IERC20(0xae78736Cd615f374D3085123A210448E74Fc6393);
+        //wstETHInstance = IERC20(0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0);
+        //sfrxETHInstance = IERC20(0xac3E018457B222d93114458476f3E3416Abbe38F);
+        //cbETHInstance = IERC20(0xBe9895146f7AF43049ca1c1AE358B0541Ea49704);
+
+        rETHInstance = IERC20(_rEth);
+        wstETHInstance = IERC20(_wstEth);
+        sfrxETHInstance = IERC20(_sfrxEth);
+        cbETHInstance = IERC20(_cbEth);
+
+        rETH = _rEth;
+        wstETH = _wstEth;
+        sfrxETH = _sfrxEth;
+        cbETH = _cbEth;
+
         adopterPool = EarlyAdopterPool(payable(_adopterPool));
     }
 
@@ -103,7 +117,7 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     /// @notice Send funds of a user calling to the LP
     /// @dev How do we know they actually have claimed?
     function sendFundsToLP() external {
-        require(claimed[msg.sender] == false, "Already sent funds for user");
+        //require(claimed[msg.sender] == false, "Already sent funds for user");
         
         uint256 rEthBal = finalUserToErc20Balance[msg.sender][rETH];
         uint256 wstEthBal = finalUserToErc20Balance[msg.sender][wstETH];
@@ -127,7 +141,7 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
         }
 
         require(etherBalance[msg.sender] > 0, "No funds available to transfer");
-        claimed[msg.sender] = true;
+        //claimed[msg.sender] = true;
         
         //Call function in LP and send in user and amount of ether sent
         liquidityPool.deposit{value: etherBalance[msg.sender]}(msg.sender);
@@ -159,6 +173,57 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //--------------------------------------------------------------------------------------
     //--------------------------------  INTERNAL FUNCTIONS  --------------------------------
     //--------------------------------------------------------------------------------------
+
+    function _updateGlobalVariables(
+        uint256 _rEthSentIn, 
+        uint256 _wstEthSentIn, 
+        uint256 _sfrxEthSentIn, 
+        uint256 _cbEthSentIn
+    ) internal {
+        rEthGlobalBalance += _rEthSentIn;
+        wstEthGlobalBalance += _wstEthSentIn;
+        sfrxEthGlobalBalance += _sfrxEthSentIn;
+        cbEthGlobalBalance += _cbEthSentIn;
+    }
+
+    function _updateBalances( 
+        uint256 _rEthSentIn, 
+        uint256 _wstEthSentIn, 
+        uint256 _sfrxEthSentIn, 
+        uint256 _cbEthSentIn,
+        address _user
+    ) internal {
+        finalUserToErc20Balance[_user][rETH] = _rEthSentIn;
+        finalUserToErc20Balance[_user][wstETH] = _wstEthSentIn;
+        finalUserToErc20Balance[_user][sfrxETH] = _sfrxEthSentIn;
+        finalUserToErc20Balance[_user][cbETH] = _cbEthSentIn;
+    }
+
+    function _swapForTotalEth(
+        uint256 _rEthSentIn, 
+        uint256 _wstEthSentIn, 
+        uint256 _sfrxEthSentIn, 
+        uint256 _cbEthSentIn, 
+        address _user
+    ) internal {
+        if(_rEthSentIn > 0){
+            etherBalance[_user] += _swapExactInputSingle(_rEthSentIn, rETH);
+        }
+
+        if(_wstEthSentIn > 0){
+            etherBalance[_user] += _swapExactInputSingle(_wstEthSentIn, wstETH);
+        }
+
+        if(_sfrxEthSentIn > 0){
+            etherBalance[_user] += _swapExactInputSingle(_sfrxEthSentIn, sfrxETH);
+        }
+
+        if(_cbEthSentIn > 0){
+            etherBalance[_user] += _swapExactInputSingle(_cbEthSentIn, cbETH);
+        }
+
+        require(etherBalance[tx.origin] > 0, "No funds available to transfer");
+    }
 
     function _swapExactInputSingle(uint256 _amountIn, address _tokenIn)
         internal
