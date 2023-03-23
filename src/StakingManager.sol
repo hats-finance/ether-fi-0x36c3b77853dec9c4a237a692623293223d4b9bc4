@@ -82,7 +82,9 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-
+    
+    /// @notice Switches the deposit mode of the contract
+    /// @dev Used for testing purposes. WILL BE DELETED BEFORE MAINNET DEPLOYMENT
     function switchMode() public {
         if (test == true) {
             test = false;
