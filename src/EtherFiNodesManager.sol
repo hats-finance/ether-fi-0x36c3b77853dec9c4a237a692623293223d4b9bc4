@@ -116,7 +116,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     receive() external payable {}
 
-    function createEtherfiNode(uint256 _validatorId) external returns (address) {
+    function createEtherfiNode(uint256 _validatorId) external onlyStakingManagerContract returns (address) {
         address clone = Clones.clone(implementationContract);
         EtherFiNode(payable(clone)).initialize(address(protocolRevenueManagerInstance));
         registerEtherFiNode(_validatorId, clone);
