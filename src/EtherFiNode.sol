@@ -78,6 +78,7 @@ contract EtherFiNode is IEtherFiNode {
         payable
         onlyProtocolRevenueManagerContract
     {
+        require(vestedAuctionRewards == 0, "already received the vested auction fee reward");
         vestedAuctionRewards = msg.value;
     }
 
@@ -116,11 +117,16 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _SRscale the scale 
     /// @param _PRsplits the splits for the Protocol Rewards
     /// @param _PRscale the scale 
+    /// 
+    /// @return toNodeOperator  the payout to the Node Operator
+    /// @return toTnft          the payout to the T-NFT holder
+    /// @return toBnft          the payout to the B-NFT holder
+    /// @return toTreasury      the payout to the Treasury
     function getRewardsPayouts(bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee, 
                         IEtherFiNodesManager.RewardsSplit memory _SRsplits, uint256 _SRscale, 
                         IEtherFiNodesManager.RewardsSplit memory _PRsplits, uint256 _PRscale) 
         public view onlyEtherFiNodeManagerContract 
-        returns (uint256, uint256, uint256, uint256) {
+        returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         uint256 operator;
         uint256 tnft;
         uint256 bnft;
@@ -156,7 +162,14 @@ contract EtherFiNode is IEtherFiNode {
     /// @notice get the accrued staking rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
     /// @param _splits the splits for the staking rewards
     /// @param _scale the scale = SUM(_splits)
-    function getStakingRewardsPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+    /// 
+    /// @return toNodeOperator  the payout to the Node Operator
+    /// @return toTnft          the payout to the T-NFT holder
+    /// @return toBnft          the payout to the B-NFT holder
+    /// @return toTreasury      the payout to the Treasury
+    function getStakingRewardsPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) 
+        public view onlyEtherFiNodeManagerContract 
+        returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         uint256 balance = address(this).balance;
         uint256 rewards = (balance > vestedAuctionRewards) ? balance - vestedAuctionRewards : 0;
         if (rewards >= 32 ether) {
@@ -179,7 +192,14 @@ contract EtherFiNode is IEtherFiNode {
     /// @notice get the accrued protocol rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
     /// @param _splits the splits for the protocol rewards
     /// @param _scale the scale = SUM(_splits)
-    function getProtocolRewards(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) public view onlyEtherFiNodeManagerContract returns (uint256, uint256, uint256, uint256) {
+    /// 
+    /// @return toNodeOperator  the payout to the Node Operator
+    /// @return toTnft          the payout to the T-NFT holder
+    /// @return toBnft          the payout to the B-NFT holder
+    /// @return toTreasury      the payout to the Treasury
+    function getProtocolRewards(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) 
+        public view onlyEtherFiNodeManagerContract 
+        returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         if (localRevenueIndex == 0) {
             return (0, 0, 0, 0);
         }
@@ -192,7 +212,9 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _principal the principal for the non exit penalty (e.g., 1 ether)
     /// @param _dailyPenalty the dailty penalty for the non exit penalty
     /// @param _exitTimestamp the exit timestamp for the validator node
-    function getNonExitPenalty(uint256 _principal, uint256 _dailyPenalty, uint32 _exitTimestamp) public view onlyEtherFiNodeManagerContract returns (uint256) {
+    function getNonExitPenalty(uint256 _principal, uint256 _dailyPenalty, uint32 _exitTimestamp) 
+        public view onlyEtherFiNodeManagerContract 
+        returns (uint256) {
         uint256 daysElapsed = _getDaysPassedSince(exitRequestTimestamp, _exitTimestamp);
         uint256 daysPerWeek = 7;
         uint256 weeksElapsed = daysElapsed / daysPerWeek;
@@ -226,8 +248,13 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _scale the scale = SUM(_splits)
     /// @param _principal the principal for the non exit penalty (e.g., 1 ether)
     /// @param _dailyPenalty the dailty penalty for the non exit penalty
-    /// returns the payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
-    function getFullWithdrawalPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale, uint256 _principal, uint256 _dailyPenalty) external view returns (uint256, uint256, uint256, uint256) {
+    /// 
+    /// @return toNodeOperator  the payout to the Node Operator
+    /// @return toTnft          the payout to the T-NFT holder
+    /// @return toBnft          the payout to the B-NFT holder
+    /// @return toTreasury      the payout to the Treasury
+    function getFullWithdrawalPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale, uint256 _principal, uint256 _dailyPenalty) 
+        external view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         require (address(this).balance >= 16 ether, "not enough balance for full withdrawal");
         require (phase == VALIDATOR_PHASE.EXITED, "validator node is not exited");
         uint256 balance = address(this).balance - vestedAuctionRewards;

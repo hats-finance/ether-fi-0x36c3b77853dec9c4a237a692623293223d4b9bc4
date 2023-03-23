@@ -24,6 +24,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
 
     address public auctionManagerContractAddress;
     IAuctionManager auctionMangerInterface;
+    address auctionContractAddress;
     bytes32 public merkleRoot;
 
     // user address => OperaterData Struct
@@ -98,6 +99,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     function setAuctionContractAddress(address _auctionContractAddress) public onlyOwner {
         auctionMangerInterface = IAuctionManager(_auctionContractAddress);
         auctionManagerContractAddress = _auctionContractAddress;
+        auctionContractAddress = _auctionContractAddress;
     }
 
     //--------------------------------------------------------------------------------------
