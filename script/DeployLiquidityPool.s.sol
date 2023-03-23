@@ -21,7 +21,7 @@ contract DeployLiquidityPoolScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        LiquidityPool liquidityPool = new LiquidityPool(msg.sender);
+        LiquidityPool liquidityPool = new LiquidityPool();
         EETH eETH = new EETH(address(liquidityPool));
 
         vm.stopBroadcast();

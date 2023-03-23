@@ -2,6 +2,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IEETH.sol";
 
 contract LiquidityPool is Ownable {
@@ -25,7 +26,6 @@ contract LiquidityPool is Ownable {
     //--------------------------------------------------------------------------------------
 
     /// @notice initializes owner address
-    /// @param _owner address of owner
     constructor() {}
 
     //--------------------------------------------------------------------------------------
@@ -42,9 +42,9 @@ contract LiquidityPool is Ownable {
 
     /// @notice deposit into pool
     /// @dev mints the amount of eTH 1:1 with ETH sent
-    function deposit(address _user) external payable {
-        IEETH(eETH).mint(_user, msg.value);
-        emit Deposit(_user, msg.value);
+    function deposit() external payable {
+        IEETH(eETH).mint(msg.sender, msg.value);
+        emit Deposit(msg.sender, msg.value);
     }
 
     /// @notice withdraw from pool
