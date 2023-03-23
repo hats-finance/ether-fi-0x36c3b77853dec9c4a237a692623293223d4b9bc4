@@ -30,6 +30,8 @@ contract DeployScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
+
+
         Treasury treasury = new Treasury();
         NodeOperatorKeyManager nodeOperatorKeyManager = new NodeOperatorKeyManager();
         AuctionManager auctionManager = new AuctionManager(

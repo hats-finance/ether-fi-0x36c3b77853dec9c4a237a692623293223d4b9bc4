@@ -130,41 +130,6 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Send funds of a user calling to the LP
-    /// @dev How do we know they actually have claimed?
-    function sendFundsToLP() external {
-        //require(claimed[msg.sender] == false, "Already sent funds for user");
-        
-        // uint256 rEthBal = finalUserToErc20Balance[msg.sender][rETH];
-        // uint256 wstEthBal = finalUserToErc20Balance[msg.sender][wstETH];
-        // uint256 sfrxEthBal = finalUserToErc20Balance[msg.sender][sfrxETH];
-        // uint256 cbEthBal = finalUserToErc20Balance[msg.sender][cbETH];
-
-        // if(rEthBal > 0){
-        //     etherBalance[msg.sender] += _swapExactInputSingle(rEthBal, rETH);
-        // }
-
-        // if(wstEthBal > 0){
-        //     etherBalance[msg.sender] += _swapExactInputSingle(wstEthBal, wstETH);
-        // }
-
-        // if(sfrxEthBal > 0){
-        //     etherBalance[msg.sender] += _swapExactInputSingle(sfrxEthBal, sfrxETH);
-        // }
-
-        // if(cbEthBal > 0){
-        //     etherBalance[msg.sender] += _swapExactInputSingle(cbEthBal, cbETH);
-        // }
-
-        // require(etherBalance[msg.sender] > 0, "No funds available to transfer");
-        // claimed[msg.sender] = true;
-        
-        // Call function in LP and send in user and amount of ether sent
-        // liquidityPool.deposit{value: etherBalance[msg.sender]}(msg.sender);
-
-        // emit fundsSentToLP(msg.sender, etherBalance[msg.sender]);
-    }
-
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
