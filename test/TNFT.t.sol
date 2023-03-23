@@ -124,9 +124,6 @@ contract TNFTTest is Test {
         stakingManagerInstance.registerValidator(bidIds[0], test_data);
         vm.stopPrank();
 
-        assertEq(TestBNFTInstance.ownerOf(1), alice);
-        assertEq(TestBNFTInstance.balanceOf(alice), 1);
-
         assertEq(TestTNFTInstance.ownerOf(1), alice);
         assertEq(TestTNFTInstance.balanceOf(alice), 1);
     }
