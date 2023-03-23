@@ -2,16 +2,16 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IEETH.sol";
 import "lib/forge-std/src/console.sol";
 
-contract LiquidityPool {
+contract LiquidityPool is Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
     address public eETH;
-    address public owner;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -28,9 +28,7 @@ contract LiquidityPool {
 
     /// @notice initializes owner address
     /// @param _owner address of owner
-    constructor(address _owner) {
-        owner = _owner;
-    }
+    constructor() {}
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -75,8 +73,4 @@ contract LiquidityPool {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
-    }
 }
