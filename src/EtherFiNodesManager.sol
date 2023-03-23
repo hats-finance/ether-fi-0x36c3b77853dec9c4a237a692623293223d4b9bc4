@@ -50,6 +50,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //--------------------------------------------------------------------------------------
     event FundsWithdrawn(uint256 indexed _validatorId, uint256 amount);
     event NodeExitRequested(uint256 _validatorId);
+    event NodeExitProcessed(uint256 _validatorId);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -200,6 +201,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
                 bnftHolder,
                 toBnft
             );
+
+            emit NodeExitProcessed(validatorId);
         }
     }
 
