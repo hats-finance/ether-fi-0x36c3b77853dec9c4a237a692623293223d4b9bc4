@@ -96,6 +96,7 @@ contract ProtocolRevenueManagerTest is Test {
         vm.stopPrank();
 
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
             proof,
@@ -103,6 +104,60 @@ contract ProtocolRevenueManagerTest is Test {
             5
         );
         vm.stopPrank();
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceProof,
+            _ipfsHash,
+            5
+        );
+    }
+
+    function test_Receive() public {
+        vm.expectRevert("No Active Validator");
+        startHoax(alice);
+        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+
+        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(1, 1 ether);
+
+        vm.expectRevert("No Active Validator");
+        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIds);
+
+        vm.expectRevert("No Active Validator");
+        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
+
+        stakingManagerInstance.registerValidator(bidIds[0], test_data);
+
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 500000000000000001);
+
+        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1500000000000000001);
+        vm.stopPrank();
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidId = auctionInstance.createBid{value: 1 ether}(
+            1,
+            1 ether
+        );
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidId
+        );
+
+        stakingManagerInstance.registerValidator(bidId[0], test_data);
+
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1750000000000000001);
+
+        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+        vm.stopPrank();
+
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 2250000000000000001);
+
     }
 
     function _merkleSetup() internal {
@@ -121,6 +176,11 @@ contract ProtocolRevenueManagerTest is Test {
         whiteListedAddresses.push(
             keccak256(
                 abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)
+            )
+        );
+         whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(alice)
             )
         );
 
