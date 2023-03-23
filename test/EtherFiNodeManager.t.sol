@@ -196,6 +196,31 @@ contract EtherFiNodesManagerTest is Test {
         managerInstance.unregisterEtherFiNode(bidId[0]);
     }
 
+    function test_CreateEtherFiNode() public {
+        vm.expectRevert("Only staking manager contract function");
+        vm.prank(owner);
+        managerInstance.createEtherfiNode(bidId[0]);
+
+         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceProof,
+            _ipfsHash,
+            5
+        );
+
+        hoax(alice);
+        bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+
+        assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
+
+        hoax(alice);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidId);
+
+        address node = managerInstance.etherfiNodeAddress(processedBids[0]);
+        assert(node != address(0));
+    }
+
     function test_RegisterEtherFiNode() public {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.prank(alice);
@@ -217,6 +242,17 @@ contract EtherFiNodesManagerTest is Test {
         assert(node != address(0));
 
         
+    }
+
+    function test_UnregisterEtherFiNode() public {
+        address node = managerInstance.etherfiNodeAddress(bidId[0]);
+        assert(node != address(0));
+
+        vm.prank(address(stakingManagerInstance));
+        managerInstance.unregisterEtherFiNode(bidId[0]);
+
+        node = managerInstance.etherfiNodeAddress(bidId[0]);
+        assertEq(node, address(0));
     }
 
     function test_SendExitRequestWorksCorrectly() public {
