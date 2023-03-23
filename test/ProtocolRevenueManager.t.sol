@@ -266,10 +266,10 @@ contract ProtocolRevenueManagerTest is Test {
         vm.expectRevert("Only etherFiNodesManager function");
         protocolRevenueManagerInstance.distributeAuctionRevenue(0);
 
-        vm.expectRevert("Only owner function");
+        vm.expectRevert("Ownable: caller is not the owner");
         protocolRevenueManagerInstance.setAuctionManagerAddress(alice);
 
-        vm.expectRevert("Only owner function");
+        vm.expectRevert("Ownable: caller is not the owner");
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(alice);
     }
 
