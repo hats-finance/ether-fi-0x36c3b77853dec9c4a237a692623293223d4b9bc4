@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
@@ -17,7 +17,7 @@ contract ProtocolRevenueManagerTest is Test {
     IStakingManager public depositInterface;
     EtherFiNode public withdrawSafeInstance;
     EtherFiNodesManager public managerInstance;
-    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    NodeOperatorManager public nodeOperatorManagerInstance;
     StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -34,17 +34,20 @@ contract ProtocolRevenueManagerTest is Test {
     address owner = vm.addr(1);
     address alice = vm.addr(2);
 
-    string _ipfsHash = "IPFSHash";
+    bytes _ipfsHash = "IPFSHash";
 
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
         _merkleSetup();
-        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(
-            address(nodeOperatorKeyManagerInstance)
+            address(nodeOperatorManagerInstance)
         );
-        auctionInstance.updateMerkleRoot(root);
+        nodeOperatorManagerInstance.setAuctionContractAddress(
+            address(auctionInstance)
+        );
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
 
         stakingManagerInstance = new StakingManager(address(auctionInstance));
@@ -58,7 +61,8 @@ contract ProtocolRevenueManagerTest is Test {
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
         );
 
         auctionInstance.setProtocolRevenueManager(
@@ -91,8 +95,13 @@ contract ProtocolRevenueManagerTest is Test {
 
         vm.stopPrank();
 
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
         vm.stopPrank();
     }
 
@@ -126,10 +135,11 @@ contract ProtocolRevenueManagerTest is Test {
 
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         startHoax(nodeOperator);
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        uint256[] memory bidId = auctionInstance.createBidWhitelisted{
-            value: 0.1 ether
-        }(proof, 1, 0.1 ether);
+
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
         vm.stopPrank();
 
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
@@ -147,10 +157,10 @@ contract ProtocolRevenueManagerTest is Test {
         stakingManagerInstance.registerValidator(bidId[0], test_data);
         vm.stopPrank();
 
-        // 0.1 ether 
+        // 0.1 ether
         //  -> 0.05 ether to its etherfi Node contract
         //  -> 0.05 ether to the protocol revenue manager contract
-        address etherFiNode = managerInstance.getEtherFiNodeAddress(bidId[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
         assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
         assertEq(address(etherFiNode).balance, 0.05 ether);
         assertEq(
@@ -167,7 +177,7 @@ contract ProtocolRevenueManagerTest is Test {
         // 3
         hoax(address(auctionInstance));
         vm.expectRevert(
-            "auctionFeeTransfer is already processed for the validator."
+            "addAuctionRevenue is already processed for the validator."
         );
         protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(
             bidId[0]

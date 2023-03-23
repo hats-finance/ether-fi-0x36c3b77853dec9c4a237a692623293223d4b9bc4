@@ -5,12 +5,12 @@ import "forge-std/Test.sol";
 
 import "../src/Treasury.sol";
 import "../src/AuctionManager.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
 
 contract TreasuryTest is Test {
     Treasury treasuryInstance;
     AuctionManager auctionInstance;
-    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    NodeOperatorManager public nodeOperatorManagerInstance;
 
     address owner = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
     address alice = vm.addr(2);
@@ -18,9 +18,9 @@ contract TreasuryTest is Test {
     function setUp() public {
         vm.startPrank(owner);
         treasuryInstance = new Treasury();
-        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(
-            address(nodeOperatorKeyManagerInstance)
+            address(nodeOperatorManagerInstance)
         );
         vm.stopPrank();
     }
@@ -57,5 +57,19 @@ contract TreasuryTest is Test {
 
         assertEq(address(owner).balance, 0.5 ether);
         assertEq(address(treasuryInstance).balance, 0);
+    }
+
+    function test_WithdrawPartialWorks() public {
+        assertEq(address(treasuryInstance).balance, 0);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        (bool sent, ) = address(treasuryInstance).call{value: 5 ether}("");
+        assertEq(address(treasuryInstance).balance, 5 ether);
+
+        vm.prank(owner);
+        treasuryInstance.withdraw(0.5 ether);
+
+        assertEq(address(owner).balance, 0.5 ether);
+        assertEq(address(treasuryInstance).balance, 4.5 ether);
     }
 }

@@ -15,18 +15,31 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      }
+    ],
+    "name": "DepositCancelled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "address",
-        "name": "TNFTInstance",
+        "name": "previousOwner",
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
-        "name": "BNFTInstance",
+        "name": "newOwner",
         "type": "address"
       }
     ],
-    "name": "NFTContractsDeployed",
+    "name": "OwnershipTransferred",
     "type": "event"
   },
   {
@@ -46,40 +59,15 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      }
-    ],
-    "name": "StakeCancelled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": true,
         "internalType": "address",
-        "name": "sender",
+        "name": "staker",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "winningBidId",
+        "name": "bidId",
         "type": "uint256"
       },
       {
@@ -109,35 +97,22 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "ValidatorAccepted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "stakeId",
-        "type": "uint256"
+        "indexed": true,
+        "internalType": "address",
+        "name": "operator",
+        "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
         "name": "validatorId",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "ipfsHashForEncryptedValidatorKey",
+        "type": "string"
       }
     ],
     "name": "ValidatorRegistered",
@@ -145,36 +120,10 @@
   },
   {
     "inputs": [],
-    "name": "BNFTInstance",
-    "outputs": [
-      {
-        "internalType": "contract BNFT",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "BNFTInterfaceInstance",
     "outputs": [
       {
         "internalType": "contract IBNFT",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "TNFTInstance",
-    "outputs": [
-      {
-        "internalType": "contract TNFT",
         "name": "",
         "type": "address"
       }
@@ -196,19 +145,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "acceptValidator",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "auctionAddress",
     "outputs": [
@@ -226,7 +162,98 @@
     "name": "auctionInterfaceInstance",
     "outputs": [
       {
-        "internalType": "contract IAuction",
+        "internalType": "contract IAuctionManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_candidateBidIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "batchDepositWithBidIds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorId",
+        "type": "uint256[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes",
+            "name": "publicKey",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "depositDataRoot",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string",
+            "name": "ipfsHashForEncryptedValidatorKey",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct IStakingManager.DepositData[]",
+        "name": "_depositData",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "batchRegisterValidators",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "bidIdToStaker",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "bnftContractAddress",
+    "outputs": [
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -238,20 +265,13 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_stakeId",
+        "name": "_validatorId",
         "type": "uint256"
       }
     ],
-    "name": "cancelStake",
+    "name": "cancelDeposit",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "deposit",
-    "outputs": [],
-    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -262,25 +282,6 @@
         "internalType": "contract IDepositContract",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "depositorBalances",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -301,7 +302,7 @@
   },
   {
     "inputs": [],
-    "name": "getStakeAmount",
+    "name": "maxBatchDepositSize",
     "outputs": [
       {
         "internalType": "uint256",
@@ -313,14 +314,8 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getStakerRelatedToValidator",
+    "inputs": [],
+    "name": "nodesManagerAddress",
     "outputs": [
       {
         "internalType": "address",
@@ -333,25 +328,12 @@
   },
   {
     "inputs": [],
-    "name": "numberOfStakes",
+    "name": "nodesManagerIntefaceInstance",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "contract IEtherFiNodesManager",
         "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "numberOfValidators",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -393,45 +375,12 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_depositOwner",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "refundDeposit",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_stakeId",
+        "name": "_validatorId",
         "type": "uint256"
       },
       {
         "components": [
-          {
-            "internalType": "address",
-            "name": "operator",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes",
-            "name": "withdrawalCredentials",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "depositDataRoot",
-            "type": "bytes32"
-          },
           {
             "internalType": "bytes",
             "name": "publicKey",
@@ -441,9 +390,19 @@
             "internalType": "bytes",
             "name": "signature",
             "type": "bytes"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "depositDataRoot",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string",
+            "name": "ipfsHashForEncryptedValidatorKey",
+            "type": "string"
           }
         ],
-        "internalType": "struct IDeposit.DepositData",
+        "internalType": "struct IStakingManager.DepositData",
         "name": "_depositData",
         "type": "tuple"
       }
@@ -454,14 +413,47 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
-        "name": "_managerAddress",
+        "name": "_nodesManagerAddress",
         "type": "address"
       }
     ],
-    "name": "setManagerAddress",
+    "name": "setEtherFiNodesManagerAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_newMaxBatchDepositSize",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxBatchDepositSize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_protocolRevenueManager",
+        "type": "address"
+      }
+    ],
+    "name": "setProtocolRevenueManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -493,82 +485,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "stakes",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "staker",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "withdrawSafe",
-        "type": "address"
-      },
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "operator",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes",
-            "name": "withdrawalCredentials",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "depositDataRoot",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "bytes",
-            "name": "publicKey",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "signature",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct IDeposit.DepositData",
-        "name": "deposit_data",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "winningBidId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "stakeId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "enum IDeposit.STAKE_PHASE",
-        "name": "phase",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "switchMode",
     "outputs": [],
@@ -590,6 +506,32 @@
   },
   {
     "inputs": [],
+    "name": "tnftContractAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "treasuryAddress",
     "outputs": [
       {
@@ -606,53 +548,6 @@
     "name": "unPauseContract",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "validators",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "validatorId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "stakeId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "enum IDeposit.VALIDATOR_PHASE",
-        "name": "phase",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "withdrawSafeFactoryAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]

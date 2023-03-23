@@ -5,7 +5,8 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/StakingManager.sol";
 import "src/EtherFiNodesManager.sol";
-import "../src/NodeOperatorKeyManager.sol";
+import "../src/NodeOperatorManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/AuctionManager.sol";
@@ -20,7 +21,8 @@ contract AuctionManagerTest is Test {
     TNFT public TestTNFTInstance;
     AuctionManager public auctionInstance;
     Treasury public treasuryInstance;
-    NodeOperatorKeyManager public nodeOperatorKeyManagerInstance;
+    NodeOperatorManager public nodeOperatorManagerInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -35,31 +37,35 @@ contract AuctionManagerTest is Test {
     address greg = vm.addr(7);
     address henry = vm.addr(8);
 
-    string aliceIPFSHash = "AliceIPFS";
-    string _ipfsHash = "ipfsHash";
+    bytes aliceIPFSHash = "AliceIPFS";
+    bytes _ipfsHash = "ipfsHash";
 
     function setUp() public {
         vm.startPrank(owner);
-
         treasuryInstance = new Treasury();
         _merkleSetup();
-        nodeOperatorKeyManagerInstance = new NodeOperatorKeyManager();
+        nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(
-            address(nodeOperatorKeyManagerInstance)
+            address(nodeOperatorManagerInstance)
         );
-        auctionInstance.updateMerkleRoot(root);
+        nodeOperatorManagerInstance.setAuctionContractAddress(
+            address(auctionInstance)
+        );
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
         );
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
-            address(TestBNFTInstance)
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
         );
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(
@@ -120,31 +126,45 @@ contract AuctionManagerTest is Test {
         bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
 
         vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceProof,
+            _ipfsHash,
+            10
+        );
 
         vm.prank(bob);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            bobProof,
+            _ipfsHash,
+            10
+        );
 
         vm.prank(chad);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            chadProof,
+            _ipfsHash,
+            10
+        );
 
         // Alice Bids
         hoax(alice);
-        uint256[] memory aliceBidIds = auctionInstance.createBidWhitelisted{
+        uint256[] memory aliceBidIds = auctionInstance.createBid{
             value: 0.6 ether
-        }(aliceProof, 6, 0.1 ether);
+        }(6, 0.1 ether);
 
         // Bob Bids
         hoax(bob);
-        uint256[] memory bobBidIds = auctionInstance.createBidWhitelisted{
-            value: 3 ether
-        }(bobProof, 3, 1 ether);
+        uint256[] memory bobBidIds = auctionInstance.createBid{value: 3 ether}(
+            3,
+            1 ether
+        );
 
         // Chad Bids
         hoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBidWhitelisted{
-            value: 1 ether
-        }(chadProof, 5, 0.2 ether);
+        uint256[] memory chadBidIds = auctionInstance.createBid{value: 1 ether}(
+            5,
+            0.2 ether
+        );
 
         assertEq(aliceBidIds.length, 6);
         assertEq(bobBidIds.length, 3);
@@ -268,20 +288,26 @@ contract AuctionManagerTest is Test {
         bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
 
-        vm.prank(alice);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
-
         vm.prank(bob);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            bobProof,
+            _ipfsHash,
+            10
+        );
 
         vm.prank(chad);
-        nodeOperatorKeyManagerInstance.registerNodeOperator(_ipfsHash, 10);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            chadProof,
+            _ipfsHash,
+            10
+        );
 
         // Chad Bids
         hoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBidWhitelisted{
-            value: 1 ether
-        }(chadProof, 5, 0.2 ether);
+        uint256[] memory chadBidIds = auctionInstance.createBid{value: 1 ether}(
+            5,
+            0.2 ether
+        );
 
         assertEq(auctionInstance.numberOfActiveBids(), 5);
 
@@ -304,9 +330,10 @@ contract AuctionManagerTest is Test {
 
         // Bob Bids
         hoax(bob);
-        uint256[] memory bobBidIds = auctionInstance.createBidWhitelisted{
-            value: 3 ether
-        }(bobProof, 3, 1 ether);
+        uint256[] memory bobBidIds = auctionInstance.createBid{value: 3 ether}(
+            3,
+            1 ether
+        );
 
         assertEq(auctionInstance.numberOfActiveBids(), 7);
 

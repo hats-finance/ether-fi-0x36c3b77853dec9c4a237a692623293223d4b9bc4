@@ -9,16 +9,10 @@ interface IAuctionManager {
         bool isActive;
     }
 
-    function createBidWhitelisted(
-        bytes32[] calldata _merkleProof,
+    function createBid(
         uint256 _bidSize,
         uint256 _bidAmount
     ) external payable returns (uint256[] memory);
-
-    function createBidPermissionless(uint256 _bidSize, uint256 _bidAmountPerBid)
-        external
-        payable
-        returns (uint256[] memory);
 
     function updateSelectedBidInformation(uint256 _bidId) external;
 
@@ -38,6 +32,7 @@ interface IAuctionManager {
 
     function numberOfActiveBids() external view returns (uint256);
 
-    function setProtocolRevenueManager(address _protocolRevenueManager)
-        external;
+    function setProtocolRevenueManager(
+        address _protocolRevenueManager
+    ) external;
 }
