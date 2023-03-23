@@ -9,30 +9,16 @@ interface IAuctionManager {
         bool isActive;
     }
 
-    function createBid(
-        uint256 _bidSize,
-        uint256 _bidAmount
-    ) external payable returns (uint256[] memory);
-
-    function updateSelectedBidInformation(uint256 _bidId) external;
-
-    function cancelBid(uint256 _bidId) external;
-
     function getBidOwner(uint256 _bidId) external view returns (address);
-
-    function reEnterAuction(uint256 _bidId) external;
-
-    function setStakingManagerContractAddress(
-        address _stakingManagerContractAddress
-    ) external;
-
-    function processAuctionFeeTransfer(uint256 _validatorId) external;
-
+    function numberOfActiveBids() external view returns (uint256);
     function isBidActive(uint256 _bidId) external view returns (bool);
 
-    function numberOfActiveBids() external view returns (uint256);
+    function createBid(uint256 _bidSize, uint256 _bidAmount) external payable returns (uint256[] memory);
+    function cancelBid(uint256 _bidId) external;
+    function reEnterAuction(uint256 _bidId) external;
+    function updateSelectedBidInformation(uint256 _bidId) external;
+    function processAuctionFeeTransfer(uint256 _validatorId) external;
 
-    function setProtocolRevenueManager(
-        address _protocolRevenueManager
-    ) external;
+    function setStakingManagerContractAddress(address _stakingManagerContractAddress) external;
+    function setProtocolRevenueManager(address _protocolRevenueManager) external;
 }

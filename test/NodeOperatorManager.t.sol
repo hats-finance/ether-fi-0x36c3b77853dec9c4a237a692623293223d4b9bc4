@@ -148,7 +148,7 @@ contract NodeOperatorManagerTest is Test {
         auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
         vm.stopPrank();
 
-        vm.expectRevert("Only auction contract function");
+        vm.expectRevert("Only auction manager contract function");
         vm.prank(alice);
         nodeOperatorManagerInstance.fetchNextKeyIndex(alice);
     }
