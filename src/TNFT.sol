@@ -42,7 +42,7 @@ contract TNFT is ERC721 {
     modifier onlyStakingManagerContract() {
         require(
             msg.sender == stakingManagerContractAddress,
-            "Only deposit contract function"
+            "Only staking mananger contract function"
         );
         _;
     }
