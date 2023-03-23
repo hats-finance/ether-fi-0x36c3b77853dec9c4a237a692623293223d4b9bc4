@@ -22,6 +22,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
+    address public auctionManagerContractAddress;
     IAuctionManager auctionMangerInterface;
     address auctionContractAddress;
     bytes32 public merkleRoot;
@@ -53,8 +54,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         );
     }
 
-    function fetchNextKeyIndex(address _user) external returns (uint64) {
-        require(msg.sender == auctionContractAddress, "Only auction contract function");
+    function fetchNextKeyIndex(address _user) external onlyAuctionManagerContract returns (uint64)  {
         uint64 totalKeys = addressToOperatorData[_user].totalKeys;
         require(
             addressToOperatorData[_user].keysUsed < totalKeys,
@@ -98,6 +98,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
 
     function setAuctionContractAddress(address _auctionContractAddress) public onlyOwner {
         auctionMangerInterface = IAuctionManager(_auctionContractAddress);
+        auctionManagerContractAddress = _auctionContractAddress;
         auctionContractAddress = _auctionContractAddress;
     }
 
@@ -117,5 +118,17 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         if (whitelisted) {
             whitelistedAddresses[_user] = true;
         }
+    }
+
+    //--------------------------------------------------------------------------------------
+    //-----------------------------------  MODIFIERS  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    modifier onlyAuctionManagerContract() {
+        require(
+            msg.sender == auctionManagerContractAddress,
+            "Only auction manager contract function"
+        );
+        _;
     }
 }
