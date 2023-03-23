@@ -22,7 +22,7 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint24 public constant poolFee = 3000;
+    uint24 public constant poolFee = 500;
 
     //Being initialised to save first user higher gas fee
     uint256 public rEthGlobalBalance;
