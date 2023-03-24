@@ -156,7 +156,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         uint256 _amountIn,
         address _tokenIn
     ) public returns (uint256 amountOut) {
-        IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _amountIn);
         IERC20(_tokenIn).approve(address(router), _amountIn);
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
