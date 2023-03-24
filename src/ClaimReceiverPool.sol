@@ -12,61 +12,56 @@ import "./interfaces/IWeth.sol";
 import "./EarlyAdopterPool.sol";
 import "lib/forge-std/src/console.sol";
 
-contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
-    
+contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
-
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint24 public constant poolFee = 500;
+    uint24 public constant poolFee = 3000;
 
     // address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
     // address private immutable wstETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
     // address private immutable sfrxETH = 0xac3E018457B222d93114458476f3E3416Abbe38F;
     // address private immutable cbETH = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
-    address private immutable wEth;
+    address private immutable wEth = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
     address private immutable rETH;
     address private immutable wstETH;
     address private immutable sfrxETH;
     address private immutable cbETH;
 
-    ISwapRouter public immutable swapRouter;
-    IWETH public wethContract;
+    ISwapRouter constant router =
+        ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    
     EarlyAdopterPool public adopterPool;
 
     mapping(address => mapping(address => uint256)) public userToERC20Deposit;
     mapping(address => uint256) public etherBalance;
+    mapping(address => mapping(address => uint256))
+        public userToERC20DepositEAP;
+    mapping(address => uint256) public etherBalanceEAP;
     mapping(address => uint256) public userPoints;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
     constructor(
-        address _routerAddress, 
-        address _adopterPool, 
-        address _rEth, 
-        address _wstEth, 
-        address _sfrxEth, 
-        address _cbEth,
-        address _wEth
+        address _adopterPool,
+        address _rEth,
+        address _wstEth,
+        address _sfrxEth,
+        address _cbEth
     ) {
-        swapRouter = ISwapRouter(_routerAddress);
-        wethContract = IWETH(_wEth);
-
         rETH = _rEth;
         wstETH = _wstEth;
         sfrxETH = _sfrxEth;
         cbETH = _cbEth;
-        wEth = _wEth;
 
         adopterPool = EarlyAdopterPool(payable(_adopterPool));
     }
@@ -75,35 +70,62 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    function fetchData() external {
+        (, uint256 earlyAdopterPoolBalance, ) = adopterPool.depositInfo(
+            msg.sender
+        );
+        etherBalanceEAP[msg.sender] = earlyAdopterPoolBalance;
+
+        userToERC20DepositEAP[msg.sender][rETH] = adopterPool
+            .userToErc20Balance(msg.sender, rETH);
+        userToERC20DepositEAP[msg.sender][wstETH] = adopterPool
+            .userToErc20Balance(msg.sender, wstETH);
+        userToERC20DepositEAP[msg.sender][sfrxETH] = adopterPool
+            .userToErc20Balance(msg.sender, sfrxETH);
+        userToERC20DepositEAP[msg.sender][cbETH] = adopterPool
+            .userToErc20Balance(msg.sender, cbETH);
+    }
+
     function setPointsData(address _user, uint256 _points) external {
         userPoints[_user] = _points;
     }
 
-    function depositEther() external payable {
-        (, uint256 earlyAdopterPoolBalance, ) = adopterPool.depositInfo(msg.sender);
-        require(earlyAdopterPoolBalance == msg.value, "Incorrect amount");
+    /// @notice Allows user to deposit into the conversion pool
+    /// @dev The deposit amount must be the same as what they deposited into the EAP
+    /// @param _rEthBal balance of the token to be sent in
+    /// @param _wstEthBal balance of the token to be sent in
+    /// @param _sfrxEthBal balance of the token to be sent in
+    /// @param _cbEthBal balance of the token to be sent in
+    function deposit(
+        uint256 _rEthBal,
+        uint256 _wstEthBal,
+        uint256 _sfrxEthBal,
+        uint256 _cbEthBal
+    ) external payable {
+        if (msg.value > 0) {
+            require(
+                msg.value == etherBalanceEAP[msg.sender],
+                "Incorrect amount"
+            );
 
-        etherBalance[msg.sender] += msg.value;
-    }
+            etherBalance[msg.sender] += msg.value;
+        }
 
-    function depositERC20(address _erc20Contract, uint256 _amount) external {
+        if (_rEthBal > 0) {
+            _ERC20Update(rETH, _rEthBal);
+        }
 
-        uint256 earlyAdopterPoolBalance = adopterPool.userToErc20Balance(msg.sender, _erc20Contract);
-        require(earlyAdopterPoolBalance == _amount, "Incorrect amount");
+        if (_wstEthBal > 0) {
+            _ERC20Update(wstETH, _wstEthBal);
+        }
 
-        require(
-            (_erc20Contract == rETH ||
-                _erc20Contract == sfrxETH ||
-                _erc20Contract == wstETH ||
-                _erc20Contract == cbETH),
-            "Unsupported token"
-        );
+        if (_sfrxEthBal > 0) {
+            _ERC20Update(sfrxETH, _sfrxEthBal);
+        }
 
-        userToERC20Deposit[msg.sender][_erc20Contract] = _amount;
-        IERC20(_erc20Contract).safeTransferFrom(msg.sender, address(this), _amount);
-
-        uint256 amountOut = _swapExactInputSingle(_amount, _erc20Contract);
-        wethContract.withdraw(amountOut);
+        if (_cbEthBal > 0) {
+            _ERC20Update(cbETH, _cbEthBal);
+        }
     }
 
     //Pauses the contract
@@ -120,11 +142,22 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //--------------------------------  INTERNAL FUNCTIONS  --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _swapExactInputSingle(uint256 _amountIn, address _tokenIn)
-        internal
-        returns (uint256 amountOut)
-    {
-        IERC20(_tokenIn).approve(address(swapRouter), _amountIn);
+    function _ERC20Update(address _token, uint256 _amount) internal {
+        require(_amount == userToERC20DepositEAP[msg.sender][_token]);
+        userToERC20Deposit[msg.sender][_token] = _amount;
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+
+        uint256 amountOut = _swapExactInputSingle(_amount, _token);
+        //wethContract.withdraw(amountOut);
+        //etherBalance[msg.sender] += amountOut;
+    }
+
+    function _swapExactInputSingle(
+        uint256 _amountIn,
+        address _tokenIn
+    ) public returns (uint256 amountOut) {
+        IERC20(_tokenIn).safeTransferFrom(msg.sender, address(this), _amountIn);
+        IERC20(_tokenIn).approve(address(router), _amountIn);
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
@@ -138,7 +171,7 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
                 sqrtPriceLimitX96: 0
             });
 
-        amountOut = swapRouter.exactInputSingle(params);
+        amountOut = router.exactInputSingle(params);
     }
 
     //--------------------------------------------------------------------------------------
@@ -148,5 +181,4 @@ contract ConversionPool is Ownable, ReentrancyGuard, Pausable {
     //--------------------------------------------------------------------------------------
     //-------------------------------------  MODIFIERS  ------------------------------------
     //--------------------------------------------------------------------------------------
-
 }
