@@ -12,9 +12,9 @@ contract Treasury is ITreasury, Ownable {
     //--------------------------------------------------------------------------------------
 
     /// @notice Function allows only the owner to withdraw all the funds in the contract
-    function withdraw(uint256 _amount) external onlyOwner {
+    function withdraw(uint256 _amount, address _to) external onlyOwner {
         require(_amount <= address(this).balance, "the balance is lower than the requested amount");
-        (bool sent, ) = msg.sender.call{value: _amount}("");
+        (bool sent, ) = payable(_to).call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
 
