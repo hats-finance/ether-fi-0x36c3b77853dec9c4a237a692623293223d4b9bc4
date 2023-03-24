@@ -40,8 +40,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     address public immutable implementationContract;
 
-    bytes32 salt =  0x1234567890123456789012345678901234567890123456789012345678901234;
-
     mapping(uint256 => address) public bidIdToStaker;
 
     //--------------------------------------------------------------------------------------
@@ -74,7 +72,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         } else {
             stakeAmount = 32 ether;
         }
-        implementationContract = address(new EtherFiNode{salt:salt}());
+        implementationContract = address(new EtherFiNode());
 
         registerTnftContract();
         registerBnftContract();
@@ -103,13 +101,13 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     }
 
     function registerTnftContract() private returns (address) {
-        tnftContractAddress = address(new TNFT{salt:salt}());
+        tnftContractAddress = address(new TNFT());
         TNFTInterfaceInstance = ITNFT(tnftContractAddress);
         return tnftContractAddress;
     }
 
     function registerBnftContract() private returns (address) {
-        bnftContractAddress = address(new BNFT{salt:salt}());
+        bnftContractAddress = address(new BNFT());
         BNFTInterfaceInstance = IBNFT(bnftContractAddress);
         return bnftContractAddress;
     }
