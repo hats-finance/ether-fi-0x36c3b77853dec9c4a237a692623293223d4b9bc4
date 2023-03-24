@@ -324,7 +324,7 @@ contract EtherFiNodeTest is Test {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         IEtherFiNode(etherFiNode).markExited(1);
 
-        vm.expectRevert("Only owner function");
+        vm.expectRevert("Ownable: caller is not the owner");
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);

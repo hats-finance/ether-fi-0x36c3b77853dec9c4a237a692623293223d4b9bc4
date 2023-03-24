@@ -2,6 +2,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
@@ -15,7 +16,7 @@ import "./BNFT.sol";
 import "./EtherFiNode.sol";
 import "lib/forge-std/src/console.sol";
 
-contract EtherFiNodesManager is IEtherFiNodesManager {
+contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -26,7 +27,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     uint256 public numberOfValidators;
 
-    address public owner;
     address public treasuryContract;
     address public auctionContract;
     address public stakingManagerContract;
@@ -72,7 +72,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     ) {
         implementationContract = address(new EtherFiNode());
 
-        owner = msg.sender;
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
         stakingManagerContract = _stakingManagerContract;
@@ -429,11 +428,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
-    }
 
     modifier onlyStakingManagerContract() {
         require(
