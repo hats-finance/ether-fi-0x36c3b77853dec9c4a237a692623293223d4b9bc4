@@ -331,6 +331,8 @@ contract EtherFiNode is IEtherFiNode {
         return (operator, tnft, bnft, treasury);
     }
 
+    // GOERLI Address: 0x8a4DEa011d9C0F0aB4535Fce9EbC6eea9002b225
+    // LOCAL TESTNET Address: 0xb2c1ca19c453c22e8A4438C269192E9F57f207B9
     function etherfiNodesManagerAddress() internal view returns (address) {
         /// TODO: Replace it with the actual address
         // This is  the Local testnet address.
@@ -338,6 +340,8 @@ contract EtherFiNode is IEtherFiNode {
         return  0xb2c1ca19c453c22e8A4438C269192E9F57f207B9;
     }
 
+    // GOERLI Address: 0xc8556F65b9a3113A4Ad03bFba219e2FE9261f9fC
+    // LOCAL TESTNET Address: 0x5cc5EF423D89fab901F79621A071bfB342a5FC47
     function protocolRevenueManagerAddress() internal pure returns (address) {
         // TODO: Replace it with the actual address
         // This is  the Local testnet address.

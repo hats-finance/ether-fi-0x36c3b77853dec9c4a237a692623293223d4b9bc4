@@ -12,8 +12,11 @@ import "../src/AuctionManager.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeployScript is Script {
+contract DeploySuiteScript is Script {
     using Strings for string;
+
+    ProtocolRevenueManager protocolRevenueManager;
+    EtherFiNodesManager etherFiNodesManager;
 
     struct addresses {
         address treasury;
@@ -22,8 +25,6 @@ contract DeployScript is Script {
         address stakingManager;
         address TNFT;
         address BNFT;
-        address etherFiNodesManager;
-        address protocolRevenueManager;
     }
 
     addresses addressStruct;
@@ -47,9 +48,18 @@ contract DeployScript is Script {
 
         address TNFTAddress = stakingManager.tnftContractAddress();
         address BNFTAddress = stakingManager.bnftContractAddress();
-        ProtocolRevenueManager protocolRevenueManager = new ProtocolRevenueManager();
 
-        EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager();
+        nodeOperatorManager.setAuctionContractAddress(
+            address(auctionManager)
+        );
+
+         auctionManager.setStakingManagerContractAddress(
+            address(stakingManager)
+        );
+
+        auctionManager.setProtocolRevenueManager(
+            address(protocolRevenueManager)
+        );
 
         stakingManager.setEtherFiNodesManagerAddress(
             address(etherFiNodesManager)
@@ -60,7 +70,6 @@ contract DeployScript is Script {
             address(protocolRevenueManager)
         );
 
-        stakingManager.setTreasuryAddress(address(treasury));
 
         vm.stopBroadcast();
 
@@ -70,9 +79,7 @@ contract DeployScript is Script {
             auctionManager: address(auctionManager),
             stakingManager: address(stakingManager),
             TNFT: TNFTAddress,
-            BNFT: BNFTAddress,
-            etherFiNodesManager: address(etherFiNodesManager),
-            protocolRevenueManager: address(protocolRevenueManager)
+            BNFT: BNFTAddress
         });
 
         writeVersionFile();
@@ -99,7 +106,7 @@ contract DeployScript is Script {
 
     function writeVersionFile() internal {
         // Read Current version
-        string memory versionString = vm.readLine("release/logs/version.txt");
+        string memory versionString = vm.readLine("release/logs/EtherFi_Suite/version.txt");
 
         // Cast string to uint256
         uint256 version = _stringToUint(versionString);
@@ -108,7 +115,7 @@ contract DeployScript is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/version.txt",
+            "release/logs/EtherFi_Suite/version.txt",
             string(abi.encodePacked(Strings.toString(version)))
         );
 
@@ -116,7 +123,7 @@ contract DeployScript is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/",
+                    "release/logs/EtherFi_Suite/",
                     Strings.toString(version),
                     ".release"
                 )
@@ -135,11 +142,7 @@ contract DeployScript is Script {
                     "\nTNFT: ",
                     Strings.toHexString(addressStruct.TNFT),
                     "\nBNFT: ",
-                    Strings.toHexString(addressStruct.BNFT),
-                    "\nSafe Manager: ",
-                    Strings.toHexString(addressStruct.etherFiNodesManager),
-                    "\nProtocol Revenue Manager: ",
-                    Strings.toHexString(addressStruct.protocolRevenueManager)
+                    Strings.toHexString(addressStruct.BNFT)
                 )
             )
         );
