@@ -38,7 +38,7 @@ contract TreasuryTest is Test {
 
         vm.prank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
-        treasuryInstance.withdraw(0);
+        treasuryInstance.withdraw(0, alice);
     }
 
     function test_WithdrawWorks() public {
@@ -50,10 +50,10 @@ contract TreasuryTest is Test {
 
         vm.prank(owner);
         vm.expectRevert("the balance is lower than the requested amount");
-        treasuryInstance.withdraw(0.5 ether + 1);
+        treasuryInstance.withdraw(0.5 ether + 1, owner);
 
         vm.prank(owner);
-        treasuryInstance.withdraw(0.5 ether);
+        treasuryInstance.withdraw(0.5 ether, owner);
 
         assertEq(address(owner).balance, 0.5 ether);
         assertEq(address(treasuryInstance).balance, 0);
@@ -67,7 +67,7 @@ contract TreasuryTest is Test {
         assertEq(address(treasuryInstance).balance, 5 ether);
 
         vm.prank(owner);
-        treasuryInstance.withdraw(0.5 ether);
+        treasuryInstance.withdraw(0.5 ether, owner);
 
         assertEq(address(owner).balance, 0.5 ether);
         assertEq(address(treasuryInstance).balance, 4.5 ether);
