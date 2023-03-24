@@ -16,9 +16,7 @@ import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNode is IEtherFiNode {
-    // TODO: Remove these two address variables
-    address etherfiNodesManager;
-
+    
     // TODO: reduce the size of these varaibles
     uint256 public localRevenueIndex;
     uint256 public vestedAuctionRewards;
@@ -28,13 +26,15 @@ contract EtherFiNode is IEtherFiNode {
     uint32 public stakingStartTimestamp;
     VALIDATOR_PHASE public phase;
 
+    bool private initialized = false;
+
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize(address _etherfiNodesManager) public {
-        require(etherfiNodesManager == address(0), "already initialised");
-        etherfiNodesManager = _etherfiNodesManager;
+    function initialize() public {
+        require(initialized == false, "already initialised");
+        initialized = true;
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
@@ -87,7 +87,7 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     function moveRewardsToManager(uint256 _amount) external onlyEtherFiNodeManagerContract {
-        (bool sent, ) = payable(etherfiNodesManager).call{value: _amount}("");
+        (bool sent, ) = payable(etherfiNodesManagerAddress()).call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -332,9 +332,10 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     function etherfiNodesManagerAddress() internal view returns (address) {
-        // TODO: Replace it with the actual address
-        // return 0x...
-        return etherfiNodesManager;
+        /// TODO: Replace it with the actual address
+        // This is  the Local testnet address.
+        // Replace with mainnet address before deployment 
+        return  0xb2c1ca19c453c22e8A4438C269192E9F57f207B9;
     }
 
     function protocolRevenueManagerAddress() internal pure returns (address) {
@@ -350,7 +351,7 @@ contract EtherFiNode is IEtherFiNode {
 
     modifier onlyEtherFiNodeManagerContract() {
         require(
-            msg.sender == etherfiNodesManager,
+            msg.sender == etherfiNodesManagerAddress(),
             "Only EtherFiNodeManager Contract"
         );
         _;

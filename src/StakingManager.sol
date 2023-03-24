@@ -40,6 +40,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     address public immutable implementationContract;
 
+    bytes32 salt =  0x1234567890123456789012345678901234567890123456789012345678901234;
+
     mapping(uint256 => address) public bidIdToStaker;
 
     //--------------------------------------------------------------------------------------
@@ -72,7 +74,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         } else {
             stakeAmount = 32 ether;
         }
-        implementationContract = address(new EtherFiNode());
+        implementationContract = address(new EtherFiNode{salt:salt}());
 
         registerTnftContract();
         registerBnftContract();
@@ -101,13 +103,13 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     }
 
     function registerTnftContract() private returns (address) {
-        tnftContractAddress = address(new TNFT());
+        tnftContractAddress = address(new TNFT{salt:salt}());
         TNFTInterfaceInstance = ITNFT(tnftContractAddress);
         return tnftContractAddress;
     }
 
     function registerBnftContract() private returns (address) {
-        bnftContractAddress = address(new BNFT());
+        bnftContractAddress = address(new BNFT{salt:salt}());
         BNFTInterfaceInstance = IBNFT(bnftContractAddress);
         return bnftContractAddress;
     }
@@ -335,7 +337,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     function createEtherfiNode(uint256 _validatorId) internal returns (address) {
         address clone = Clones.clone(implementationContract);
-        EtherFiNode(payable(clone)).initialize(nodesManagerAddress);
+        EtherFiNode(payable(clone)).initialize();
         nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
         return clone;
     }

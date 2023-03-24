@@ -49,20 +49,22 @@ contract AuctionManagerTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-
-        treasuryInstance = new Treasury();
+        treasuryInstance = new Treasury{salt:salt}();
         _merkleSetup();
-        nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager(
+        nodeOperatorManagerInstance = new NodeOperatorManager{salt:salt}();
+        auctionInstance = new AuctionManager{salt:salt}(
             address(nodeOperatorManagerInstance)
         );
-        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        stakingManagerInstance = new StakingManager{salt:salt}(address(auctionInstance));
+        managerInstance = new EtherFiNodesManager{salt:salt}();
         protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
-        console.log(address(protocolRevenueManagerInstance));
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
-        managerInstance = new EtherFiNodesManager(
-            address(treasuryInstance),
+        
+        console.log(address(protocolRevenueManagerInstance));
+        console.log(address(managerInstance));
+
+        managerInstance.setupManager(address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),

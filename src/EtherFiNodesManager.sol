@@ -9,10 +9,10 @@ import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./EtherFiNode.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
@@ -53,64 +53,63 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Constructor to set variables on deployment
-    /// @dev Sets the revenue splits on deployment
-    /// @dev AuctionManager, treasury and deposit contracts must be deployed first
-    /// @param _treasuryContract the address of the treasury contract for interaction
-    /// @param _auctionContract the address of the auction contract for interaction
-    /// @param _stakingManagerContract the address of the deposit contract for interaction
-    constructor(
-        address _treasuryContract,
-        address _auctionContract,
-        address _stakingManagerContract,
-        address _tnftContract,
-        address _bnftContract,
-        address _protocolRevenueManagerContract
-    ) {
-
-        treasuryContract = _treasuryContract;
-        auctionContract = _auctionContract;
-        stakingManagerContract = _stakingManagerContract;
-        protocolRevenueManagerContract = _protocolRevenueManagerContract;
-
-        stakingManagerInstance = IStakingManager(_stakingManagerContract);
-        auctionInterfaceInstance = IAuctionManager(_auctionContract);
-        protocolRevenueManagerInstance = IProtocolRevenueManager(_protocolRevenueManagerContract);
-
-        tnftInstance = TNFT(_tnftContract);
-        bnftInstance = BNFT(_bnftContract);
-
-        // in basis points for higher resolution
-        stakingRewardsSplit = RewardsSplit({
-            treasury: 50000, // 5 %
-            nodeOperator: 50000, // 5 %
-            tnft: 815625, // 90 % * 29 / 32
-            bnft: 84375 // 90 % * 3 / 32
-        });
-        require(
-            (stakingRewardsSplit.treasury + stakingRewardsSplit.nodeOperator +
-                stakingRewardsSplit.tnft + stakingRewardsSplit.bnft) == SCALE,
-            ""
-        );
-
-        protocolRewardsSplit = RewardsSplit({
-            treasury: 250000, // 25 %
-            nodeOperator: 250000, // 25 %
-            tnft: 453125, // 50 % * 29 / 32 
-            bnft: 46875 // 50 % * 3 / 32
-        });
-        require(
-            (protocolRewardsSplit.treasury + protocolRewardsSplit.nodeOperator +
-                protocolRewardsSplit.tnft + protocolRewardsSplit.bnft) == SCALE,
-            ""
-        );
-    }
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
     receive() external payable {}
+
+    /// @dev Sets the revenue splits on deployment
+    /// @dev AuctionManager, treasury and deposit contracts must be deployed first
+    /// @param _treasuryContract the address of the treasury contract for interaction
+    /// @param _auctionContract the address of the auction contract for interaction
+    /// @param _stakingManagerContract the address of the deposit contract for interaction
+    function setupManager(
+        address _treasuryContract,
+        address _auctionContract,
+        address _stakingManagerContract,
+        address _tnftContract,
+        address _bnftContract,
+        address _protocolRevenueManagerContract) public onlyOwner {    
+            treasuryContract = _treasuryContract;
+            auctionContract = _auctionContract;
+            stakingManagerContract = _stakingManagerContract;
+            protocolRevenueManagerContract = _protocolRevenueManagerContract;
+
+            stakingManagerInstance = IStakingManager(_stakingManagerContract);
+            auctionInterfaceInstance = IAuctionManager(_auctionContract);
+            protocolRevenueManagerInstance = IProtocolRevenueManager(_protocolRevenueManagerContract);
+
+            tnftInstance = TNFT(_tnftContract);
+            bnftInstance = BNFT(_bnftContract);
+
+            // in basis points for higher resolution
+
+            stakingRewardsSplit = RewardsSplit({
+            treasury: 50000, // 5 %
+            nodeOperator: 50000, // 5 %
+            tnft: 815625, // 90 % * 29 / 32
+            bnft: 84375 // 90 % * 3 / 32
+            });
+            require(
+                (stakingRewardsSplit.treasury + stakingRewardsSplit.nodeOperator +
+                    stakingRewardsSplit.tnft + stakingRewardsSplit.bnft) == SCALE,
+                ""
+            );
+
+            protocolRewardsSplit = RewardsSplit({
+                treasury: 250000, // 25 %
+                nodeOperator: 250000, // 25 %
+                tnft: 453125, // 50 % * 29 / 32 
+                bnft: 46875 // 50 % * 3 / 32
+            });
+            require(
+                (protocolRewardsSplit.treasury + protocolRewardsSplit.nodeOperator +
+                    protocolRewardsSplit.tnft + protocolRewardsSplit.bnft) == SCALE,
+                ""
+            );
+        }
 
     /// @notice Sets the validator ID for the EtherFiNode contract
     /// @param _validatorId id of the validator associated to the node

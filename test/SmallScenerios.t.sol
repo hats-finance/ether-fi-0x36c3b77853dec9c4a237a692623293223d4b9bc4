@@ -60,15 +60,17 @@ contract AuctionManagerTest is Test {
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
         protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
-        managerInstance = new EtherFiNodesManager(
-            address(treasuryInstance),
+        managerInstance = new EtherFiNodesManager{salt:salt}();
+        console.log(address(protocolRevenueManagerInstance));
+        console.log(address(managerInstance));
+
+        managerInstance.setupManager(address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TestTNFTInstance),
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
-
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
