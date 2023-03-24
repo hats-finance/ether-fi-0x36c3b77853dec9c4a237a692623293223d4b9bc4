@@ -35,6 +35,7 @@ contract AuctionManagerTest is Test {
 
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
+    bytes32 salt =  0x1234567890123456789012345678901234567890123456789012345678901234;
 
     event BidCreated(
         address indexed bidder,
@@ -55,15 +56,11 @@ contract AuctionManagerTest is Test {
         auctionInstance = new AuctionManager(
             address(nodeOperatorManagerInstance)
         );
-        nodeOperatorManagerInstance.setAuctionContractAddress(
-            address(auctionInstance)
-        );
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
+        console.log(address(protocolRevenueManagerInstance));
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
@@ -72,6 +69,11 @@ contract AuctionManagerTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+
+        nodeOperatorManagerInstance.setAuctionContractAddress(
+            address(auctionInstance)
+        );
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
 
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)

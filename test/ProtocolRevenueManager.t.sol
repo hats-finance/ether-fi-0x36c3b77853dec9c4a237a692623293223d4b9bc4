@@ -26,6 +26,7 @@ contract ProtocolRevenueManagerTest is Test {
     Treasury public treasuryInstance;
     Merkle merkle;
     bytes32 root;
+    bytes32 salt =  0x1234567890123456789012345678901234567890123456789012345678901234;
     bytes32[] public whiteListedAddresses;
 
     IStakingManager.DepositData public test_data;
@@ -48,7 +49,7 @@ contract ProtocolRevenueManagerTest is Test {
             address(auctionInstance)
         );
         nodeOperatorManagerInstance.updateMerkleRoot(root);
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
 
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         auctionInstance.setStakingManagerContractAddress(

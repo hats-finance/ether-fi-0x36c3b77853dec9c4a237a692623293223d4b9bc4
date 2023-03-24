@@ -30,6 +30,7 @@ contract NodeOperatorManagerTest is Test {
     ProtocolRevenueManager public protocolRevenueManagerInstance;
     Merkle merkle;
     bytes32 root;
+    bytes32 salt =  0x1234567890123456789012345678901234567890123456789012345678901234;
     bytes32[] public whiteListedAddresses;
     IStakingManager.DepositData public test_data;
 
@@ -58,7 +59,7 @@ contract NodeOperatorManagerTest is Test {
         );
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
