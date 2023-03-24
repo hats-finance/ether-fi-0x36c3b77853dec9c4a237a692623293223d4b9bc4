@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/ITNFT.sol";
@@ -22,8 +21,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     uint256 private constant nonExitPenaltyPrincipal = 1 ether;
     uint256 private constant nonExitPenaltyDailyRate = 3; // 3% per day
-
-    address public immutable implementationContract;
 
     uint256 public numberOfValidators;
 
@@ -70,7 +67,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         address _bnftContract,
         address _protocolRevenueManagerContract
     ) {
-        implementationContract = address(new EtherFiNode());
 
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
@@ -115,13 +111,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
 
     receive() external payable {}
-
-    function createEtherfiNode(uint256 _validatorId) external onlyStakingManagerContract returns (address) {
-        address clone = Clones.clone(implementationContract);
-        EtherFiNode(payable(clone)).initialize();
-        registerEtherFiNode(_validatorId, clone);
-        return clone;
-    }
 
     /// @notice Sets the validator ID for the EtherFiNode contract
     /// @param _validatorId id of the validator associated to the node

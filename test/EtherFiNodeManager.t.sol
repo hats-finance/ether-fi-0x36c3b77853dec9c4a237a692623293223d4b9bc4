@@ -198,10 +198,6 @@ contract EtherFiNodesManagerTest is Test {
     }
 
     function test_CreateEtherFiNode() public {
-        vm.expectRevert("Only staking manager contract function");
-        vm.prank(owner);
-        managerInstance.createEtherfiNode(bidId[0]);
-
          bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(

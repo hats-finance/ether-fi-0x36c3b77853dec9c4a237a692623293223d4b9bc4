@@ -11,9 +11,11 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./EtherFiNode.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "lib/forge-std/src/console.sol";
 
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
@@ -35,6 +37,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     address public tnftContractAddress;
     address public bnftContractAddress;
+
+    address public immutable implementationContract;
 
     mapping(uint256 => address) public bidIdToStaker;
 
@@ -68,6 +72,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         } else {
             stakeAmount = 32 ether;
         }
+        implementationContract = address(new EtherFiNode());
 
         registerTnftContract();
         registerBnftContract();
@@ -317,7 +322,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         uint256 validatorId = _bidId;
 
         // Create the node contract
-        address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(
+        address etherfiNode = createEtherfiNode(
             validatorId
         );
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
@@ -326,6 +331,13 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         );
 
         emit StakeDeposit(msg.sender, _bidId, etherfiNode);
+    }
+
+    function createEtherfiNode(uint256 _validatorId) internal returns (address) {
+        address clone = Clones.clone(implementationContract);
+        EtherFiNode(payable(clone)).initialize(nodesManagerAddress);
+        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
+        return clone;
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake

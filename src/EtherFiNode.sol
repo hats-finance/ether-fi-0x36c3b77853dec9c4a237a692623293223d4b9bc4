@@ -32,9 +32,9 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize() public {
+    function initialize(address _etherfiNodesManager) public {
         require(etherfiNodesManager == address(0), "already initialised");
-        etherfiNodesManager = msg.sender;
+        etherfiNodesManager = _etherfiNodesManager;
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
@@ -341,7 +341,7 @@ contract EtherFiNode is IEtherFiNode {
         // TODO: Replace it with the actual address
         // This is  the Local testnet address.
         // Replace with mainnet address before deployment 
-        return 0x7aE7F54C3c45D77A7e7CC9058B9A7BCC31278b98;
+        return 0x5cc5EF423D89fab901F79621A071bfB342a5FC47;
     }
 
     //--------------------------------------------------------------------------------------
