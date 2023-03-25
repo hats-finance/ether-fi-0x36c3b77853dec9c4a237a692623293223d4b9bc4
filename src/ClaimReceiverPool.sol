@@ -117,6 +117,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         userToERC20DepositEAP[_user][cbETH] = _cbEthBal;
     }
 
+    /// @notice Sets data transfer complete and data cannot be changed regarding previous balances
     function completeDataTransfer() external onlyOwner {
         dataTransferCompleted = true;
         emit TransferCompleted();
