@@ -34,6 +34,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     address private immutable sfrxETH;
     address private immutable cbETH;
 
+    bool public dataTransferCompleted = false;
+
     //SwapRouter but Testnet, although address is actually the same
     ISwapRouter constant router =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
@@ -61,6 +63,12 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     mapping(address => uint256) public userPoints;
 
     //--------------------------------------------------------------------------------------
+    //-------------------------------------  EVENTS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    event TransferCompleted();
+
+    //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
@@ -86,30 +94,32 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     /// @notice Allows ether to be sent to this contract
     receive() external payable {}
 
-    /// @notice Fetches the balances of the caller in the EAP and updates the relevant mappings
-    /// @dev Need this to verify the user deposits the correct matching amount into this contract to get their points
-    function fetchData() external {
-        (, uint256 earlyAdopterPoolBalance, ) = adopterPool.depositInfo(
-            msg.sender
-        );
-        etherBalanceEAP[msg.sender] = earlyAdopterPoolBalance;
-
-        userToERC20DepositEAP[msg.sender][rETH] = adopterPool
-            .userToErc20Balance(msg.sender, rETH);
-        userToERC20DepositEAP[msg.sender][wstETH] = adopterPool
-            .userToErc20Balance(msg.sender, wstETH);
-        userToERC20DepositEAP[msg.sender][sfrxETH] = adopterPool
-            .userToErc20Balance(msg.sender, sfrxETH);
-        userToERC20DepositEAP[msg.sender][cbETH] = adopterPool
-            .userToErc20Balance(msg.sender, cbETH);
-    }
-
     /// @notice Sets the number of points a user received
     /// @dev Explain to a developer any extra details
     /// @param _user the address of the user receiving the points
     /// @param _points the number of points the user should receive
-    function setPointsData(address _user, uint256 _points) external onlyOwner {
+    function setEarlyAdopterPoolData(
+        address _user, 
+        uint256 _points, 
+        uint256 _etherBalance, 
+        uint256 _rEthBal,
+        uint256 _wstEthBal,
+        uint256 _sfrxEthBal,
+        uint256 _cbEthBal
+    ) external onlyOwner {
+        require(dataTransferCompleted == false, "Transfer of data has already been complete");
+
         userPoints[_user] = _points;
+        etherBalanceEAP[_user] = _etherBalance;
+        userToERC20DepositEAP[_user][rETH] = _rEthBal;
+        userToERC20DepositEAP[_user][wstETH] = _wstEthBal;
+        userToERC20DepositEAP[_user][sfrxETH] = _sfrxEthBal;
+        userToERC20DepositEAP[_user][cbETH] = _cbEthBal;
+    }
+
+    function completeDataTransfer() external onlyOwner {
+        dataTransferCompleted = true;
+        emit TransferCompleted();
     }
 
     /// @notice Allows user to deposit into the conversion pool

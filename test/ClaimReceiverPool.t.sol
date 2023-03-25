@@ -69,7 +69,7 @@ contract ClaimReceiverPoolTest is Test {
         vm.stopPrank();
     }
 
-    function test_DepositUsingOneFunction() public {
+    function test_SetDataWorksCorrectly() public {
         startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
         adopterPool.depositEther{value: 2 ether}();
 
@@ -80,25 +80,50 @@ contract ClaimReceiverPoolTest is Test {
         assertEq(rETH.balanceOf(address(adopterPool)), 1e18);
         assertEq(address(adopterPool).balance, 2 ether);
 
-        claimReceiverPool.fetchData();
-        adopterPool.withdraw();
+        vm.expectRevert("Ownable: caller is not the owner");
+        claimReceiverPool.setEarlyAdopterPoolData(
+            0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA,
+            1865429,
+            2 ether,
+            1e18,
+            0,
+            0,
+            0
+        );
 
-        rETH.approve(address(claimReceiverPool), 10e18);
-        claimReceiverPool.deposit{value: 2 ether}(1e18, 0, 0, 0);
+        vm.stopPrank();
 
-        assertEq(rETH.balanceOf(address(adopterPool)), 0);
-        assertEq(address(adopterPool).balance, 0);
+        vm.prank(owner);
+        claimReceiverPool.setEarlyAdopterPoolData(
+            0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA,
+            1865429,
+            2 ether,
+            1e18,
+            0,
+            0,
+            0
+        );
 
-        assertEq(rETH.balanceOf(address(claimReceiverPool)), 1e18);
-        assertEq(address(claimReceiverPool).balance, 2 ether);
+        assertEq(claimReceiverPool.etherBalanceEAP(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 2 ether);
+        assertEq(claimReceiverPool.userToERC20DepositEAP(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA, address(rETH)), 1e18);
+        assertEq(claimReceiverPool.userPoints(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA), 1865429);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        claimReceiverPool.completeDataTransfer();
+
+        vm.prank(owner);
+        claimReceiverPool.completeDataTransfer();
+
+        vm.prank(owner);
+        vm.expectRevert("Transfer of data has already been complete");
+        claimReceiverPool.setEarlyAdopterPoolData(
+            0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA,
+            1865429,
+            2 ether,
+            1e18,
+            0,
+            0,
+            0
+        );
     }
-
-    // function test_SwapWorksCorrectly() public {
-    //     startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-    //     dai.approve(address(claimReceiverPool), 349527451588596786087147);
-    //     console.log(dai.balanceOf(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA));
-    //     uint amountOut = claimReceiverPool._swapExactInputSingle(349527451588596786087147, DAI);
-
-    //     console.log("WETH", amountOut);
-    // }
 } 
