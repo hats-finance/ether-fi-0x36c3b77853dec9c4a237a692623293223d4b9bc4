@@ -35,6 +35,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     
     EarlyAdopterPool public adopterPool;
+    IWETH constant wethContract = IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
     mapping(address => mapping(address => uint256)) public userToERC20Deposit;
     mapping(address => uint256) public etherBalance;
@@ -70,6 +71,9 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Allows ether to be sent to this contract
+    receive() external payable {}
+
     function fetchData() external {
         (, uint256 earlyAdopterPoolBalance, ) = adopterPool.depositInfo(
             msg.sender
@@ -103,6 +107,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         uint256 _cbEthBal
     ) external payable {
         if (msg.value > 0) {
+            require(etherBalance[msg.sender] == 0, "Already Deposited");
             require(
                 msg.value == etherBalanceEAP[msg.sender],
                 "Incorrect amount"
@@ -112,18 +117,22 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         }
 
         if (_rEthBal > 0) {
+            require(userToERC20Deposit[msg.sender][rETH] == 0, "Already Deposited");
             _ERC20Update(rETH, _rEthBal);
         }
 
         if (_wstEthBal > 0) {
+            require(userToERC20Deposit[msg.sender][wstETH] == 0, "Already Deposited");
             _ERC20Update(wstETH, _wstEthBal);
         }
 
         if (_sfrxEthBal > 0) {
+            require(userToERC20Deposit[msg.sender][sfrxETH] == 0, "Already Deposited");
             _ERC20Update(sfrxETH, _sfrxEthBal);
         }
 
         if (_cbEthBal > 0) {
+            require(userToERC20Deposit[msg.sender][cbETH] == 0, "Already Deposited");
             _ERC20Update(cbETH, _cbEthBal);
         }
     }
@@ -148,8 +157,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
         uint256 amountOut = _swapExactInputSingle(_amount, _token);
-        //wethContract.withdraw(amountOut);
-        //etherBalance[msg.sender] += amountOut;
+        wethContract.withdraw(amountOut);
+        etherBalance[msg.sender] += amountOut;
     }
 
     function _swapExactInputSingle(

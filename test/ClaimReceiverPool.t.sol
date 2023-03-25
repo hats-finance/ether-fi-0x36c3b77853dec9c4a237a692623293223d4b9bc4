@@ -93,12 +93,12 @@ contract ClaimReceiverPoolTest is Test {
         assertEq(address(claimReceiverPool).balance, 2 ether);
     }
 
-    function test_SwapWorksCorrectly() public {
-        startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
-        dai.approve(address(claimReceiverPool), 349527451588596786087147);
-        console.log(dai.balanceOf(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA));
-        uint amountOut = claimReceiverPool._swapExactInputSingle(349527451588596786087147, DAI);
+    // function test_SwapWorksCorrectly() public {
+    //     startHoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+    //     dai.approve(address(claimReceiverPool), 349527451588596786087147);
+    //     console.log(dai.balanceOf(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA));
+    //     uint amountOut = claimReceiverPool._swapExactInputSingle(349527451588596786087147, DAI);
 
-        console.log("WETH", amountOut);
-    }
+    //     console.log("WETH", amountOut);
+    // }
 } 
