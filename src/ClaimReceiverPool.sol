@@ -21,32 +21,44 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
     uint24 public constant poolFee = 3000;
 
+    // Mainnet Addresses
     // address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
     // address private immutable wstETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
     // address private immutable sfrxETH = 0xac3E018457B222d93114458476f3E3416Abbe38F;
     // address private immutable cbETH = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
+
+    //Testnet addresses
     address private immutable wEth = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
     address private immutable rETH;
     address private immutable wstETH;
     address private immutable sfrxETH;
     address private immutable cbETH;
 
+    //SwapRouter but Testnet, although address is actually the same
     ISwapRouter constant router =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     
     EarlyAdopterPool public adopterPool;
+
+    //Goerli Weth address used for unwrapping ERC20 Weth
     IWETH constant wethContract = IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
+    //Used to track how much was deposited incase we need this information later
+    //NB: This is not a balance, but a variable holding the amount of the deposit
     mapping(address => mapping(address => uint256)) public userToERC20Deposit;
+
+    //Every users ether balance
     mapping(address => uint256) public etherBalance;
+
+    //The mapping to hold how much ERC20 a user deposited in the EAP, for validation
     mapping(address => mapping(address => uint256))
         public userToERC20DepositEAP;
-    mapping(address => uint256) public etherBalanceEAP;
-    mapping(address => uint256) public userPoints;
 
-    //--------------------------------------------------------------------------------------
-    //-------------------------------------  EVENTS  ---------------------------------------
-    //--------------------------------------------------------------------------------------
+    //Mapping to hold how much ether a user deposited in the EAP, for validation
+    mapping(address => uint256) public etherBalanceEAP;
+
+    //Hodling how many points a user has
+    mapping(address => uint256) public userPoints;
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -74,6 +86,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     /// @notice Allows ether to be sent to this contract
     receive() external payable {}
 
+    /// @notice Fetches the balances of the caller in the EAP and updates the relevant mappings
+    /// @dev Need this to verify the user deposits the correct matching amount into this contract to get their points
     function fetchData() external {
         (, uint256 earlyAdopterPoolBalance, ) = adopterPool.depositInfo(
             msg.sender
@@ -90,7 +104,11 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
             .userToErc20Balance(msg.sender, cbETH);
     }
 
-    function setPointsData(address _user, uint256 _points) external {
+    /// @notice Sets the number of points a user received
+    /// @dev Explain to a developer any extra details
+    /// @param _user the address of the user receiving the points
+    /// @param _points the number of points the user should receive
+    function setPointsData(address _user, uint256 _points) external onlyOwner {
         userPoints[_user] = _points;
     }
 
@@ -105,7 +123,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         uint256 _wstEthBal,
         uint256 _sfrxEthBal,
         uint256 _cbEthBal
-    ) external payable {
+    ) external payable whenNotPaused {
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
             require(
@@ -181,12 +199,4 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
         amountOut = router.exactInputSingle(params);
     }
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------------   GETTERS  -------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------------  MODIFIERS  ------------------------------------
-    //--------------------------------------------------------------------------------------
 }
