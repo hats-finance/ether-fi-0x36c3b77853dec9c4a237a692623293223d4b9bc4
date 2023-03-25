@@ -164,7 +164,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     function _swapExactInputSingle(
         uint256 _amountIn,
         address _tokenIn
-    ) public returns (uint256 amountOut) {
+    ) internal returns (uint256 amountOut) {
         IERC20(_tokenIn).approve(address(router), _amountIn);
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
