@@ -15,6 +15,17 @@ import "lib/forge-std/src/console.sol";
 contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
+    struct UserData {
+        uint256 points;
+        uint256 etherBalance;
+        uint256 rEthBalance;
+        uint256 cbEthBalance;
+        uint256 wstEthBalance;
+        uint256 sfrxEthBalance;
+    }
+    
+    mapping(bytes32 => UserData) public users;
+
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -210,4 +221,21 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
         amountOut = router.exactInputSingle(params);
     }
+
+    // Utility functions to convert bytes to different data types
+    // function bytesToBytes32(bytes memory b, uint256 offset) private pure returns (bytes32) {
+    //     bytes32 result;
+    //     assembly {
+    //         result := mload(add(b, add(offset, 32)))
+    //     }
+    //     return result;
+    // }
+
+    // function bytesToUint(bytes memory b, uint256 offset) private pure returns (uint256) {
+    //     uint256 result;
+    //     assembly {
+    //         result := mload(add(b, add(offset, 32)))
+    //     }
+    //     return result;
+    // }
 }

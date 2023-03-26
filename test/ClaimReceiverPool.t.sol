@@ -32,7 +32,6 @@ contract ClaimReceiverPoolTest is Test {
     address alice = vm.addr(2);
     address bob = vm.addr(3);
 
-
     function setUp() public {
         rETH = new TestERC20("Rocket Pool ETH", "rETH");
         rETH.mint(alice, 10e18);
