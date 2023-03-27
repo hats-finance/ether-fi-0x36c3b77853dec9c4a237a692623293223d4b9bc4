@@ -63,10 +63,6 @@ contract DeployScript is Script {
         );
         stakingManager.setTreasuryAddress(address(treasury));
 
-        stakingManager.setProtocolRevenueManager(
-            address(protocolRevenueManager)
-        );
-
         stakingManager.setTreasuryAddress(address(treasury));
 
         vm.stopBroadcast();

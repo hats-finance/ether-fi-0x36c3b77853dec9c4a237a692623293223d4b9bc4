@@ -8,7 +8,6 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IDepositContract.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
-import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -26,7 +25,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     IAuctionManager public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
     IEtherFiNodesManager public nodesManagerIntefaceInstance;
-    IProtocolRevenueManager protocolRevenueManager;
 
     uint256 public stakeAmount;
     address public treasuryAddress;
@@ -277,10 +275,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     function setTreasuryAddress(address _treasuryAddress) public onlyOwner {
         treasuryAddress = _treasuryAddress;
-    }
-
-    function setProtocolRevenueManager(address _protocolRevenueManager) public onlyOwner {
-        protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManager);
     }
 
     function setMaxBatchDepositSize(uint256 _newMaxBatchDepositSize) public onlyOwner {

@@ -88,9 +88,6 @@ contract AuctionManagerTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
-        stakingManagerInstance.setProtocolRevenueManager(
-            address(protocolRevenueManagerInstance)
-        );
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({

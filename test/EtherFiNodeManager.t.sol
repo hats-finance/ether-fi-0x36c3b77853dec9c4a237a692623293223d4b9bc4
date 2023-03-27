@@ -92,10 +92,6 @@ contract EtherFiNodesManagerTest is Test {
             address(managerInstance)
         );
 
-        stakingManagerInstance.setProtocolRevenueManager(
-            address(protocolRevenueManagerInstance)
-        );
-
         stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
         vm.stopPrank();
 
