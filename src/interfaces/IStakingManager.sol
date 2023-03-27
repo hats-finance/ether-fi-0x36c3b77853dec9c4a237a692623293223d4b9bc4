@@ -19,5 +19,4 @@ interface IStakingManager {
     function fetchEtherFromContract(address _wallet) external;
     
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
-    function setProtocolRevenueManager(address _protocolRevenueManager) external;
 }
