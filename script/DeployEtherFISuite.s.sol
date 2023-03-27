@@ -61,9 +61,6 @@ contract DeployScript is Script {
         stakingManager.setEtherFiNodesManagerAddress(
             address(etherFiNodesManager)
         );
-        stakingManager.setTreasuryAddress(address(treasury));
-
-        stakingManager.setTreasuryAddress(address(treasury));
 
         vm.stopBroadcast();
 

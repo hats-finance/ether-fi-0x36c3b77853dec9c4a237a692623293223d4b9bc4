@@ -96,7 +96,6 @@ contract StakingManagerTest is Test {
             address(managerInstance)
         );
 
-        stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({

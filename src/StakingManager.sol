@@ -26,7 +26,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     IEtherFiNodesManager public nodesManagerIntefaceInstance;
 
     uint256 public stakeAmount;
-    address public treasuryAddress;
     address public nodesManagerAddress;
 
     address public tnftContractAddress;
@@ -268,10 +267,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     function setEtherFiNodesManagerAddress(address _nodesManagerAddress) public onlyOwner {
         nodesManagerAddress = _nodesManagerAddress;
         nodesManagerIntefaceInstance = IEtherFiNodesManager(nodesManagerAddress);
-    }
-
-    function setTreasuryAddress(address _treasuryAddress) public onlyOwner {
-        treasuryAddress = _treasuryAddress;
     }
 
     function setMaxBatchDepositSize(uint256 _newMaxBatchDepositSize) public onlyOwner {

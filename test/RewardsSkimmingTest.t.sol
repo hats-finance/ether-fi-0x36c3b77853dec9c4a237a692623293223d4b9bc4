@@ -109,7 +109,6 @@ contract RewardsSkimmingTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
-        stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",

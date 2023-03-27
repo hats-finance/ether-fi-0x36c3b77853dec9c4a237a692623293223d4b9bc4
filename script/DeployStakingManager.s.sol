@@ -21,8 +21,6 @@ contract StakingManagerDeployScript is Script {
             0x1f5dc22Aad6812D7ebCC0A07b0E04C9e5C6C85bb
         );
 
-        stakingManager.setTreasuryAddress(0xc8dAc0d35f26fec2056d3d3Be1686181e650A045);
-
         vm.stopBroadcast();
     }
 }

@@ -114,9 +114,6 @@ contract EtherFiNodeTest is Test {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        vm.prank(owner);
-        stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
-
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
