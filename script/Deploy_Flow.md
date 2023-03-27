@@ -20,7 +20,8 @@ protocolRevenueManagerAddress()
 ```
 These two addresses are predetermined using the Create2 opcode upon deployment.
 
-# Deploy EtherFi Node
+# Step 2
+## Deploy EtherFi Node
 
 Once this is done, deploy the EtherFi Node contract and manually call 
 
