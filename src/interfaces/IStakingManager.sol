@@ -7,7 +7,6 @@ interface IStakingManager {
         bytes publicKey;
         bytes signature; 
         bytes32 depositDataRoot;
-        string ipfsHashForEncryptedValidatorKey;
     }
 
     function stakeAmount() external view returns(uint128);

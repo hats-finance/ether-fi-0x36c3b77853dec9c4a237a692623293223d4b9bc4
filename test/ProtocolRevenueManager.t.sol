@@ -82,15 +82,13 @@ contract ProtocolRevenueManagerTest is Test {
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
             publicKey: "test_pubkey",
-            signature: "test_signature",
-            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
+            signature: "test_signature"
         });
 
         test_data_2 = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root_2",
             publicKey: "test_pubkey_2",
-            signature: "test_signature_2",
-            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash_2"
+            signature: "test_signature_2"
         });
 
         vm.stopPrank();

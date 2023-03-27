@@ -187,11 +187,11 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             _validatorId,
             IEtherFiNode.VALIDATOR_PHASE.LIVE
         );
-        nodesManagerIntefaceInstance
-            .setEtherFiNodeIpfsHashForEncryptedValidatorKey(
-                _validatorId,
-                _depositData.ipfsHashForEncryptedValidatorKey
-            );
+        // nodesManagerIntefaceInstance
+        //     .setEtherFiNodeIpfsHashForEncryptedValidatorKey(
+        //         _validatorId,
+        //         _depositData.ipfsHashForEncryptedValidatorKey
+        //     );
 
         // Let valiadatorId = nftTokenId
         // Mint {T, B}-NFTs to the Staker
@@ -201,11 +201,11 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
         auctionInterfaceInstance.processAuctionFeeTransfer(_validatorId);
 
-        emit ValidatorRegistered(
-            auctionInterfaceInstance.getBidOwner(_validatorId),
-            _validatorId,
-            _depositData.ipfsHashForEncryptedValidatorKey
-        );
+        // emit ValidatorRegistered(
+        //     auctionInterfaceInstance.getBidOwner(_validatorId),
+        //     _validatorId,
+        //     _depositData.ipfsHashForEncryptedValidatorKey
+        // );
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain

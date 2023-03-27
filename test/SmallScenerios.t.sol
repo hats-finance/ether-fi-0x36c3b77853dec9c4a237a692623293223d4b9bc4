@@ -73,10 +73,9 @@ contract AuctionManagerTest is Test {
         );
 
         test_data = IStakingManager.DepositData({
-            publicKey: "test_pubkey",
-            signature: "test_signature",
             depositDataRoot: "test_deposit_root",
-            ipfsHashForEncryptedValidatorKey: "test_ipfsHash"
+            publicKey: "test_pubkey",
+            signature: "test_signature"
         });
 
         vm.stopPrank();

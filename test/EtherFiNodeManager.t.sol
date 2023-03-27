@@ -99,11 +99,10 @@ contract EtherFiNodesManagerTest is Test {
         stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
         vm.stopPrank();
 
-        test_data = IStakingManager.DepositData({
+         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
             publicKey: "test_pubkey",
-            signature: "test_signature",
-            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
+            signature: "test_signature"
         });
 
         vm.stopPrank();
