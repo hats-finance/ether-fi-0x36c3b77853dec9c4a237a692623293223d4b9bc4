@@ -1063,7 +1063,7 @@ contract StakingManagerTest is Test {
         );
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
+        auctionInstance.createBid{value: 0.1 ether}(
             1,
             0.1 ether
         );
@@ -1071,7 +1071,7 @@ contract StakingManagerTest is Test {
             1,
             0.3 ether
         );
-        uint256[] memory bidId3 = auctionInstance.createBid{value: 0.2 ether}(
+        auctionInstance.createBid{value: 0.2 ether}(
             1,
             0.2 ether
         );
@@ -1284,7 +1284,7 @@ contract StakingManagerTest is Test {
         );
 
         startHoax(alice);
-        uint256[] memory processedIds = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidId1);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidId1);
 
         vm.expectEmit(true, false, false, true);
         emit ValidatorRegistered(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, bidId1[0], "test_ipfs_hash");

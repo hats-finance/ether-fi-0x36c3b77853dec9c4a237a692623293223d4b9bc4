@@ -123,7 +123,7 @@ contract ProtocolRevenueManagerTest is Test {
         vm.expectRevert("No Active Validator");
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");
 
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIds);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIds);
 
         vm.expectRevert("No Active Validator");
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");

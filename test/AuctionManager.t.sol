@@ -180,7 +180,7 @@ contract AuctionManagerTest is Test {
             1,
             0.1 ether
         );
-        uint256[] memory bidId2 = auctionInstance.createBid{value: 0.05 ether}(
+        auctionInstance.createBid{value: 0.05 ether}(
             1,
             0.05 ether
         );
@@ -493,7 +493,7 @@ contract AuctionManagerTest is Test {
         );
 
         hoax(alice);
-        uint256[] memory bid1Id = auctionInstance.createBid{value: 0.1 ether}(
+        auctionInstance.createBid{value: 0.1 ether}(
             1,
             0.1 ether
         );
@@ -622,7 +622,7 @@ contract AuctionManagerTest is Test {
 
         vm.expectRevert("Incorrect bid value");
         hoax(alice);
-        uint256[] memory bidIds = auctionInstance.createBid{value: 0.4 ether}(
+        auctionInstance.createBid{value: 0.4 ether}(
             5,
             0.1 ether
         );
@@ -740,14 +740,14 @@ contract AuctionManagerTest is Test {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bid1Id = auctionInstance.createBid{value: 0.1 ether}(
+        auctionInstance.createBid{value: 0.1 ether}(
             1,
             0.1 ether
         );
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        uint256[] memory bid2Id = auctionInstance.createBid{value: 0.3 ether}(
+        auctionInstance.createBid{value: 0.3 ether}(
             1,
             0.3 ether
         );
@@ -812,7 +812,7 @@ contract AuctionManagerTest is Test {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bid1Id = auctionInstance.createBid{value: 0.1 ether}(
+        auctionInstance.createBid{value: 0.1 ether}(
             1,
             0.1 ether
         );

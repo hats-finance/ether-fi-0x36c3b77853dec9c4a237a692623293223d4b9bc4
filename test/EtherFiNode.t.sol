@@ -337,9 +337,6 @@ contract EtherFiNodeTest is Test {
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
         address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
-        uint256 accreudProtocolRewards = protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
-                bidId[0]
-            );
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
             .vestedAuctionRewards();
         assertEq(
