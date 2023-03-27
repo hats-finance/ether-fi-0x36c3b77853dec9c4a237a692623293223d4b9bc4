@@ -67,8 +67,8 @@ contract DeployScript is Script {
         protocolRevenueManager.setAuctionManagerAddress(
             address(auctionManager)
         );
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
-            address(managerInstance)
+        protocolRevenueManager.setEtherFiNodesManagerAddress(
+            address(etherFiNodesManager)
         );
         stakingManager.setEtherFiNodesManagerAddress(
             address(etherFiNodesManager)

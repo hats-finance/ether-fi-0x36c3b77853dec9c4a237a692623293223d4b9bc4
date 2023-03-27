@@ -67,7 +67,7 @@ contract DeployNodeScript is Script {
                 abi.encodePacked(
                     Strings.toString(version),
                     "\nNode Contract: ",
-                    Strings.toHexString(addressStruct.protocolRevenueManager)
+                    Strings.toHexString(address(etherFiNode))
                 )
             )
         );
