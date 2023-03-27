@@ -13,7 +13,6 @@ import "./BNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "lib/forge-std/src/console.sol";
 
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
@@ -28,7 +27,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     uint256 public stakeAmount;
     address public treasuryAddress;
-    address public auctionAddress;
     address public nodesManagerAddress;
 
     address public tnftContractAddress;
@@ -74,7 +72,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
-        auctionAddress = _auctionAddress;
     }
 
     //--------------------------------------------------------------------------------------
