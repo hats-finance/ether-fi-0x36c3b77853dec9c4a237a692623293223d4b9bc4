@@ -50,7 +50,7 @@ interface IEtherFiNodesManager {
     function sendExitRequest(uint256 _validatorId) external;
     function processNodeExit(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamp) external;
     function partialWithdraw(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external;
-    function partialWithdraw(uint256[] calldata _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external;
+    function partialWithdrawBatch(uint256[] calldata _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external;
     function partialWithdrawBatchGroupByOperator(address _operator, uint256[] memory _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external;
     function fullWithdraw(uint256 _validatorId) external;
     function fullWithdrawBatch(uint256[] calldata _validatorIds) external;
