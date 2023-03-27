@@ -1,8 +1,8 @@
 # EtherFi Contract Suite Deploy Instructions
 
-# Deploy EtherFi Suite
-
-## Step1: 
+# Step1:
+## Deploy EtherFi Suite
+ 
 Deploy the EtherFi contract suite.
 
 This consists of the Node Operator Manager, Auction Manager, Staking Manager, EtherFi Nodes Manager, Protocol Revenue Manager and Treasury contracts.
