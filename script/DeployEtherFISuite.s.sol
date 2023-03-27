@@ -12,7 +12,7 @@ import "../src/AuctionManager.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeployScript is Script {
+contract DeployEtherFiSuiteScript is Script {
     using Strings for string;
 
     struct addresses {
