@@ -212,11 +212,6 @@
             "internalType": "bytes32",
             "name": "depositDataRoot",
             "type": "bytes32"
-          },
-          {
-            "internalType": "string",
-            "name": "ipfsHashForEncryptedValidatorKey",
-            "type": "string"
           }
         ],
         "internalType": "struct IStakingManager.DepositData[]",
@@ -395,11 +390,6 @@
             "internalType": "bytes32",
             "name": "depositDataRoot",
             "type": "bytes32"
-          },
-          {
-            "internalType": "string",
-            "name": "ipfsHashForEncryptedValidatorKey",
-            "type": "string"
           }
         ],
         "internalType": "struct IStakingManager.DepositData",

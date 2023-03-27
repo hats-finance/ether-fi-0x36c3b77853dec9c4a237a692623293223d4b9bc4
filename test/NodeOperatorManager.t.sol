@@ -84,7 +84,7 @@ contract NodeOperatorManagerTest is Test {
 
     function test_RegisterNodeOperator() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        vm.prank(alice);
+        vm.startPrank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             aliceIPFSHash,
@@ -99,6 +99,13 @@ contract NodeOperatorManagerTest is Test {
         assertEq(aliceHash, abi.encodePacked(aliceIPFSHash));
         assertEq(totalKeys, 10);
         assertEq(keysUsed, 0);
+
+        vm.expectRevert("Already registered");
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            aliceIPFSHash,
+            uint64(10)
+        );
     }
 
     function test_EventOperatorRegistered() public {
