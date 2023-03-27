@@ -103,13 +103,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         implementationContract = _implementationContract;
     }
 
-    function createEtherfiNode(uint256 _validatorId) internal returns (address) {
-        address clone = Clones.clone(implementationContract);
-        EtherFiNode(payable(clone)).initialize();
-        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
-        return clone;
-    }
-
     function registerTnftContract() private returns (address) {
         tnftContractAddress = address(new TNFT());
         TNFTInterfaceInstance = ITNFT(tnftContractAddress);
@@ -322,6 +315,13 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
+    function createEtherfiNode(uint256 _validatorId) internal returns (address) {
+        address clone = Clones.clone(implementationContract);
+        EtherFiNode(payable(clone)).initialize();
+        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
+        return clone;
+    }
+
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId the bid that won the right to the deposit
     function processDeposit(uint256 _bidId) internal {
@@ -333,7 +333,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
         // Create the node contract
         address etherfiNode = createEtherfiNode(validatorId);
-        
+
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
             validatorId,
             IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
