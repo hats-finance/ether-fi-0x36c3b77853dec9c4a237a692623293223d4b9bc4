@@ -53,7 +53,8 @@ contract DeployScript is Script {
             BNFTAddress,
             address(protocolRevenueManager)
         );
-
+        
+        nodeOperatorManager.setAuctionContractAddress(address(auctionManager));
         auctionManager.setStakingManagerContractAddress(
             address(stakingManager)
         );
