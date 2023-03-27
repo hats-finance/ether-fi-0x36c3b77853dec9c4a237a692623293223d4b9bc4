@@ -90,13 +90,15 @@ contract EtherFiNodeTest is Test {
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
             publicKey: "test_pubkey",
-            signature: "test_signature"
+            signature: "test_signature",
+            ipfsHashForEncryptedValidatorKey: "test_IPFS_hash"
         });
 
         test_data_2 = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root_2",
             publicKey: "test_pubkey_2",
-            signature: "test_signature_2"
+            signature: "test_signature_2",
+            ipfsHashForEncryptedValidatorKey: "test_IPFS_hash_2"
         });
 
         vm.stopPrank();
