@@ -35,6 +35,7 @@ contract ProtocolRevenueManagerTest is Test {
     address alice = vm.addr(2);
 
     bytes _ipfsHash = "IPFSHash";
+    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     function setUp() public {
         vm.startPrank(owner);
@@ -48,7 +49,7 @@ contract ProtocolRevenueManagerTest is Test {
             address(auctionInstance)
         );
         nodeOperatorManagerInstance.updateMerkleRoot(root);
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
 
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         auctionInstance.setStakingManagerContractAddress(

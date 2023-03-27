@@ -33,6 +33,7 @@ contract BNFTTest is Test {
     address bob = vm.addr(3);
 
     bytes _ipfsHash = "ipfs";
+    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     function setUp() public {
         vm.startPrank(owner);
@@ -52,7 +53,7 @@ contract BNFTTest is Test {
         );
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
