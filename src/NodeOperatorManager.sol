@@ -30,6 +30,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     // user address => OperaterData Struct
     mapping(address => KeyData) public addressToOperatorData;
     mapping(address => bool) private whitelistedAddresses;
+    mapping(address => bool) public registered;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -40,6 +41,8 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         bytes memory _ipfsHash,
         uint64 _totalKeys
     ) public {
+        require(registered[msg.sender] == false, "Already registered");
+        
         addressToOperatorData[msg.sender] = KeyData({
             totalKeys: _totalKeys,
             keysUsed: 0,
@@ -47,6 +50,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         });
 
         _verifyWhitelistedAddress(msg.sender, _merkleProof);
+        registered[msg.sender] = true;
         emit OperatorRegistered(
             addressToOperatorData[msg.sender].totalKeys,
             addressToOperatorData[msg.sender].keysUsed,
