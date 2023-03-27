@@ -61,8 +61,8 @@ contract EtherFiNodesManagerTest is Test {
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
 
-        TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
-        TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),

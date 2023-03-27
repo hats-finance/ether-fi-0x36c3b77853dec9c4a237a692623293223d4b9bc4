@@ -45,8 +45,8 @@ contract DeployScript is Script {
             address(stakingManager)
         );
 
-        address TNFTAddress = stakingManager.tnftContractAddress();
-        address BNFTAddress = stakingManager.bnftContractAddress();
+        address TNFTAddress = address(stakingManager.TNFTInterfaceInstance());
+        address BNFTAddress = address(stakingManager.BNFTInterfaceInstance());
         ProtocolRevenueManager protocolRevenueManager = new ProtocolRevenueManager();
 
         EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
