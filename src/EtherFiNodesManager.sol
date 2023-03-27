@@ -365,9 +365,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function phase(uint256 _validatorId) public view returns (IEtherFiNode.VALIDATOR_PHASE phase) {
+    function phase(uint256 _validatorId) public view returns (IEtherFiNode.VALIDATOR_PHASE validatorPhase) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        phase = IEtherFiNode(etherfiNode).phase();
+        validatorPhase = IEtherFiNode(etherfiNode).phase();
     }
 
     function ipfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
