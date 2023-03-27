@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "src/EtherFiNodesManager.sol";
+import "../src/EtherFiNode.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorManager.sol";
 import "../src/AuctionManager.sol";
@@ -15,7 +16,7 @@ import "../lib/murky/src/Merkle.sol";
 
 contract ProtocolRevenueManagerTest is Test {
     IStakingManager public depositInterface;
-    EtherFiNode public withdrawSafeInstance;
+    EtherFiNode public nodeInstance;
     EtherFiNodesManager public managerInstance;
     NodeOperatorManager public nodeOperatorManagerInstance;
     StakingManager public stakingManagerInstance;
@@ -57,7 +58,9 @@ contract ProtocolRevenueManagerTest is Test {
         );
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
-        managerInstance = new EtherFiNodesManager(
+        managerInstance = new EtherFiNodesManager{salt:salt}();
+        
+        managerInstance.setUpManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
@@ -65,6 +68,10 @@ contract ProtocolRevenueManagerTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+
+        nodeInstance = new EtherFiNode();
+
+        stakingManagerInstance.registerImplementaionContract(address(nodeInstance));
 
         auctionInstance.setProtocolRevenueManager(
             address(protocolRevenueManagerInstance)

@@ -16,8 +16,6 @@ import "./BNFT.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNode is IEtherFiNode {
-    // TODO: Remove these two address variables
-    address etherfiNodesManager;
 
     // TODO: reduce the size of these varaibles
     uint256 public localRevenueIndex;
@@ -27,14 +25,15 @@ contract EtherFiNode is IEtherFiNode {
     uint32 public exitTimestamp;
     uint32 public stakingStartTimestamp;
     VALIDATOR_PHASE public phase;
+    bool initialized = false;
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
     function initialize() public {
-        require(etherfiNodesManager == address(0), "already initialised");
-        etherfiNodesManager = msg.sender;
+        require(initialized == false, "already initialised");
+        initialized = true;
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
@@ -87,7 +86,7 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     function moveRewardsToManager(uint256 _amount) external onlyEtherFiNodeManagerContract {
-        (bool sent, ) = payable(etherfiNodesManager).call{value: _amount}("");
+        (bool sent, ) = payable(etherfiNodesManagerAddress()).call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -331,16 +330,16 @@ contract EtherFiNode is IEtherFiNode {
         return (operator, tnft, bnft, treasury);
     }
 
-    function etherfiNodesManagerAddress() internal view returns (address) {
-        // TODO: Replace it with the actual address
-        // return 0x...
-        return etherfiNodesManager;
+    /// @dev LOCAL TESTNET ADDRESS 0x5d3634312d792423Dc4cDBfd67f307eca8fE2a1b
+    function etherfiNodesManagerAddress() internal pure returns (address) {
+        // TODO: Replace it with the MAINNET address
+        return 0x5d3634312d792423Dc4cDBfd67f307eca8fE2a1b;
     }
 
-    // LOCAL TESTNET ADDRESS 0x7aE7F54C3c45D77A7e7CC9058B9A7BCC31278b98
+    /// @dev LOCAL TESTNET ADDRESS 0x5cc5EF423D89fab901F79621A071bfB342a5FC47
     function protocolRevenueManagerAddress() internal pure returns (address) {
         // TODO: Replace it with the MAINNET address
-        return 0x7aE7F54C3c45D77A7e7CC9058B9A7BCC31278b98;
+        return 0x5cc5EF423D89fab901F79621A071bfB342a5FC47;
     }
 
     //--------------------------------------------------------------------------------------
@@ -349,7 +348,7 @@ contract EtherFiNode is IEtherFiNode {
 
     modifier onlyEtherFiNodeManagerContract() {
         require(
-            msg.sender == etherfiNodesManager,
+            msg.sender == etherfiNodesManagerAddress(),
             "Only EtherFiNodeManager Contract"
         );
         _;

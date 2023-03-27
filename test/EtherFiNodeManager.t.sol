@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
 import "src/EtherFiNodesManager.sol";
+import "../src/EtherFiNode.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorManager.sol";
 import "../src/AuctionManager.sol";
@@ -19,6 +20,7 @@ contract EtherFiNodesManagerTest is Test {
     IStakingManager public depositInterface;
     EtherFiNode public withdrawSafeInstance;
     EtherFiNodesManager public managerInstance;
+    EtherFiNode public nodeInstance;
     NodeOperatorManager public nodeOperatorManagerInstance;
     StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
@@ -64,14 +66,20 @@ contract EtherFiNodesManagerTest is Test {
 
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
-        managerInstance = new EtherFiNodesManager(
+        managerInstance = new EtherFiNodesManager{salt:salt}();
+        
+        managerInstance.setUpManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
-            address(TestBNFTInstance),
             address(TestTNFTInstance),
+            address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+
+        nodeInstance = new EtherFiNode();
+
+        stakingManagerInstance.registerImplementaionContract(address(nodeInstance));
 
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
@@ -198,11 +206,8 @@ contract EtherFiNodesManagerTest is Test {
     }
 
     function test_CreateEtherFiNode() public {
-        vm.expectRevert("Only staking manager contract function");
-        vm.prank(owner);
-        managerInstance.createEtherfiNode(bidId[0]);
 
-         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,

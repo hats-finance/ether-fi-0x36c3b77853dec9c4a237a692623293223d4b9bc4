@@ -7,6 +7,7 @@ import "../src/StakingManager.sol";
 import "src/EtherFiNodesManager.sol";
 import "../src/NodeOperatorManager.sol";
 import "../src/ProtocolRevenueManager.sol";
+import "../src/EtherFiNode.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/AuctionManager.sol";
@@ -17,6 +18,7 @@ contract AuctionManagerTest is Test {
     StakingManager public stakingManagerInstance;
     EtherFiNode public withdrawSafeInstance;
     EtherFiNodesManager public managerInstance;
+    EtherFiNode public nodeInstance;
     ProtocolRevenueManager public protocolRevenueManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
@@ -64,8 +66,9 @@ contract AuctionManagerTest is Test {
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
         protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
-        console.log(address(protocolRevenueManagerInstance));
-        managerInstance = new EtherFiNodesManager(
+        managerInstance = new EtherFiNodesManager{salt:salt}();
+        
+        managerInstance.setUpManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
@@ -73,6 +76,13 @@ contract AuctionManagerTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+
+        nodeInstance = new EtherFiNode();
+
+        stakingManagerInstance.registerImplementaionContract(address(nodeInstance));
+
+        console.log(address(protocolRevenueManagerInstance));
+        console.log(address(managerInstance));
 
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)

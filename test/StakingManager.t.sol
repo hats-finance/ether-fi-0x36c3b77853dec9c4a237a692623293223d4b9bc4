@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
 import "src/EtherFiNodesManager.sol";
+import "../src/EtherFiNode.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorManager.sol";
 import "../src/AuctionManager.sol";
@@ -16,7 +17,7 @@ import "../lib/murky/src/Merkle.sol";
 
 contract StakingManagerTest is Test {
     IStakingManager public depositInterface;
-    EtherFiNode public withdrawSafeInstance;
+    EtherFiNode public nodeInstance;
     EtherFiNodesManager public managerInstance;
     NodeOperatorManager public nodeOperatorManagerInstance;
     StakingManager public stakingManagerInstance;
@@ -68,14 +69,20 @@ contract StakingManagerTest is Test {
 
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
-        managerInstance = new EtherFiNodesManager(
+        managerInstance = new EtherFiNodesManager{salt:salt}();
+        
+        managerInstance.setUpManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
-            address(TestBNFTInstance),
             address(TestTNFTInstance),
+            address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+
+        nodeInstance = new EtherFiNode();
+
+        stakingManagerInstance.registerImplementaionContract(address(nodeInstance));
 
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)

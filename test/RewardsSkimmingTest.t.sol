@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
 import "src/EtherFiNodesManager.sol";
+import "../src/EtherFiNode.sol";
 import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/BNFT.sol";
@@ -23,7 +24,7 @@ contract RewardsSkimmingTest is Test {
     AuctionManager public auctionInstance;
     ProtocolRevenueManager public protocolRevenueManagerInstance;
     Treasury public treasuryInstance;
-    EtherFiNode public safeInstance;
+    EtherFiNode public nodeInstance;
     EtherFiNodesManager public managerInstance;
 
     Merkle merkle;
@@ -88,7 +89,9 @@ contract RewardsSkimmingTest is Test {
         );
         TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
         TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
-        managerInstance = new EtherFiNodesManager(
+        managerInstance = new EtherFiNodesManager{salt:salt}();
+        
+        managerInstance.setUpManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
@@ -96,6 +99,10 @@ contract RewardsSkimmingTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+
+        nodeInstance = new EtherFiNode();
+
+        stakingManagerInstance.registerImplementaionContract(address(nodeInstance));
 
         auctionInstance.setProtocolRevenueManager(
             address(protocolRevenueManagerInstance)

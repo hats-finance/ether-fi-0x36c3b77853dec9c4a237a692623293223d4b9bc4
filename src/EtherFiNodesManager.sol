@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/ITNFT.sol";
@@ -10,10 +9,10 @@ import "./interfaces/IAuctionManager.sol";
 import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./EtherFiNode.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
@@ -22,8 +21,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     uint256 private constant nonExitPenaltyPrincipal = 1 ether;
     uint256 private constant nonExitPenaltyDailyRate = 3; // 3% per day
-
-    address public immutable implementationContract;
 
     uint256 public numberOfValidators;
 
@@ -53,24 +50,24 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     event NodeExitProcessed(uint256 _validatorId);
 
     //--------------------------------------------------------------------------------------
-    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Constructor to set variables on deployment
+    receive() external payable {}
+
     /// @dev Sets the revenue splits on deployment
     /// @dev AuctionManager, treasury and deposit contracts must be deployed first
     /// @param _treasuryContract the address of the treasury contract for interaction
     /// @param _auctionContract the address of the auction contract for interaction
     /// @param _stakingManagerContract the address of the deposit contract for interaction
-    constructor(
+    function setUpManager(
         address _treasuryContract,
         address _auctionContract,
         address _stakingManagerContract,
         address _tnftContract,
         address _bnftContract,
         address _protocolRevenueManagerContract
-    ) {
-        implementationContract = address(new EtherFiNode());
+    ) public onlyOwner {
 
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
@@ -108,19 +105,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
                 protocolRewardsSplit.tnft + protocolRewardsSplit.bnft) == SCALE,
             ""
         );
-    }
-
-    //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-    //--------------------------------------------------------------------------------------
-
-    receive() external payable {}
-
-    function createEtherfiNode(uint256 _validatorId) external onlyStakingManagerContract returns (address) {
-        address clone = Clones.clone(implementationContract);
-        EtherFiNode(payable(clone)).initialize();
-        registerEtherFiNode(_validatorId, clone);
-        return clone;
     }
 
     /// @notice Sets the validator ID for the EtherFiNode contract

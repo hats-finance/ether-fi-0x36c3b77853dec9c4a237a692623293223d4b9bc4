@@ -11,9 +11,11 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./EtherFiNode.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "lib/forge-std/src/console.sol";
 
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
@@ -32,6 +34,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     address public treasuryAddress;
     address public auctionAddress;
     address public nodesManagerAddress;
+    address public implementationContract;
 
     address public tnftContractAddress;
     address public bnftContractAddress;
@@ -93,6 +96,18 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             test = true;
             stakeAmount = 0.032 ether;
         }
+    }
+
+    /// @notice Registers the implementation address of the etherFi Node contract for use in createEtherfiNode() 
+    function registerImplementaionContract(address _implementationContract) public onlyOwner {
+        implementationContract = _implementationContract;
+    }
+
+    function createEtherfiNode(uint256 _validatorId) internal returns (address) {
+        address clone = Clones.clone(implementationContract);
+        EtherFiNode(payable(clone)).initialize();
+        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
+        return clone;
     }
 
     function registerTnftContract() private returns (address) {
@@ -317,9 +332,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         uint256 validatorId = _bidId;
 
         // Create the node contract
-        address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(
-            validatorId
-        );
+        address etherfiNode = createEtherfiNode(validatorId);
+        
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
             validatorId,
             IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
