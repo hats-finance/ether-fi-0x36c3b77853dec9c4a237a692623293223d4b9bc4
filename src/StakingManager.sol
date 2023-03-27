@@ -283,7 +283,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManager);
     }
 
-    function setMaxBatchDepositSize(uint256 _newMaxBatchDepositSize) public onlyOwner {
+    function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
         maxBatchDepositSize = _newMaxBatchDepositSize;
     }
 
