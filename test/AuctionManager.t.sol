@@ -61,8 +61,8 @@ contract AuctionManagerTest is Test {
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
-        TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
-        TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
@@ -87,9 +87,6 @@ contract AuctionManagerTest is Test {
         );
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
-        );
-        stakingManagerInstance.setProtocolRevenueManager(
-            address(protocolRevenueManagerInstance)
         );
         vm.stopPrank();
 

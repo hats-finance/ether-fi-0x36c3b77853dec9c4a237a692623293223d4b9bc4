@@ -61,8 +61,8 @@ contract EtherFiNodesManagerTest is Test {
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
 
-        TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
-        TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
@@ -92,11 +92,6 @@ contract EtherFiNodesManagerTest is Test {
             address(managerInstance)
         );
 
-        stakingManagerInstance.setProtocolRevenueManager(
-            address(protocolRevenueManagerInstance)
-        );
-
-        stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
@@ -118,9 +113,6 @@ contract EtherFiNodesManagerTest is Test {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
-
-        vm.prank(owner);
-        stakingManagerInstance.setTreasuryAddress(address(treasuryInstance));
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
