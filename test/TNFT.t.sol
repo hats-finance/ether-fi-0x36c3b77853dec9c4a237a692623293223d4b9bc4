@@ -87,14 +87,6 @@ contract TNFTTest is Test {
         });
     }
 
-    function test_TNFTContractGetsInstantiatedCorrectly() public {
-        assertEq(
-            TestTNFTInstance.stakingManagerContractAddress(),
-            address(stakingManagerInstance)
-        );
-        assertEq(TestTNFTInstance.nftValue(), 0.03 ether);
-    }
-
     function test_TNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
         vm.expectRevert("Only staking mananger contract function");

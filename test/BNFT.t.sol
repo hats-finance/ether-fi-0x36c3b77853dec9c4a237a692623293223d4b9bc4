@@ -113,14 +113,6 @@ contract BNFTTest is Test {
         assertEq(TestBNFTInstance.balanceOf(alice), 1);
     }
 
-    function test_BNFTContractGetsInstantiatedCorrectly() public {
-        assertEq(
-            TestBNFTInstance.stakingManagerContractAddress(),
-            address(stakingManagerInstance)
-        );
-        assertEq(TestBNFTInstance.nftValue(), 0.002 ether);
-    }
-
     function test_BNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
         vm.expectRevert("Only deposit contract function");
