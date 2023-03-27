@@ -8,8 +8,6 @@ contract TNFT is ERC721 {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint256 private tokenIds;
-    uint256 public nftValue;
     address public stakingManagerContractAddress;
 
     //--------------------------------------------------------------------------------------
@@ -17,7 +15,6 @@ contract TNFT is ERC721 {
     //--------------------------------------------------------------------------------------
 
     constructor() ERC721("Transferrable NFT", "TNFT") {
-        nftValue = 0.03 ether;
         stakingManagerContractAddress = msg.sender;
     }
 
@@ -29,10 +26,6 @@ contract TNFT is ERC721 {
     //standard eoa minting themselves NFTs
     function mint(address _reciever, uint256 _validatorId) external onlyStakingManagerContract {
         _safeMint(_reciever, _validatorId);
-                
-        unchecked {
-            tokenIds++;
-        }
     }
 
     //--------------------------------------------------------------------------------------
