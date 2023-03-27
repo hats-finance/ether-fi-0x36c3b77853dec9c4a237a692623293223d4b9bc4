@@ -176,10 +176,7 @@ contract EtherFiNode is IEtherFiNode {
         }
 
         if (_protocolRewards) {
-            (tmps[0], tmps[1], tmps[2], tmps[3]) = getProtocolRewards(
-                _PRsplits,
-                _PRscale
-            );
+            (tmps[0], tmps[1], tmps[2], tmps[3]) = getProtocolRewardsPayouts(_PRsplits, _PRscale);
             operator += tmps[0];
             tnft += tmps[1];
             bnft += tmps[2];
@@ -255,20 +252,9 @@ contract EtherFiNode is IEtherFiNode {
     /// @return toTnft          the payout to the T-NFT holder
     /// @return toBnft          the payout to the B-NFT holder
     /// @return toTreasury      the payout to the Treasury
-    function getProtocolRewards(
-        IEtherFiNodesManager.RewardsSplit memory _splits,
-        uint256 _scale
-    )
-        public
-        view
-        onlyEtherFiNodeManagerContract
-        returns (
-            uint256 toNodeOperator,
-            uint256 toTnft,
-            uint256 toBnft,
-            uint256 toTreasury
-        )
-    {
+    function getProtocolRewardsPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) 
+        public view onlyEtherFiNodeManagerContract 
+        returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         if (localRevenueIndex == 0) {
             return (0, 0, 0, 0);
         }
