@@ -380,7 +380,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
 
-    function vestedAuctionRewards(uint256 _validatorId) external returns (uint256) {
+    function vestedAuctionRewards(uint256 _validatorId) external view returns (uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).vestedAuctionRewards();
     }

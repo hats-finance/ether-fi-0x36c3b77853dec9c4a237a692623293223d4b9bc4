@@ -445,7 +445,7 @@ contract EtherFiNode is IEtherFiNode {
     function _getDaysPassedSince(
         uint32 _startTimestamp,
         uint32 _endTimestamp
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         uint256 timeElapsed = _endTimestamp - _startTimestamp;
         return uint256(timeElapsed / (24 * 3600));
     }
@@ -454,7 +454,7 @@ contract EtherFiNode is IEtherFiNode {
         uint256 _totalAmount,
         IEtherFiNodesManager.RewardsSplit memory _splits,
         uint256 _scale
-    ) public view returns (uint256, uint256, uint256, uint256) {
+    ) public pure returns (uint256, uint256, uint256, uint256) {
         require(
             _splits.nodeOperator +
                 _splits.tnft +
