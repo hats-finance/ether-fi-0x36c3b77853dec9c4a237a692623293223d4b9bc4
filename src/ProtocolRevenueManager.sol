@@ -93,7 +93,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
         return amount;
     }
 
-    /// @notice Creates an instance of the node manager for integration
+    /// @notice Instantiates the interface of the node manager for integration
     /// @dev Set manually due to cirular dependencies
     /// @param _etherFiNodesManager etherfi node manager address to set
     function setEtherFiNodesManagerAddress(
