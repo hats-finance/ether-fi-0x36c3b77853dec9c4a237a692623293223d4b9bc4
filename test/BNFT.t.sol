@@ -83,6 +83,8 @@ contract BNFTTest is Test {
             ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
 
+        assertEq(TestTNFTInstance.stakingManagerContractAddress(), address(stakingManagerInstance));
+
         vm.stopPrank();
     }
 
