@@ -203,10 +203,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _validatorId the ID of the validator deposit to cancel
     function cancelDeposit(uint256 _validatorId) public whenNotPaused {
-        require(
-            bidIdToStaker[_validatorId] != address(0),
-            "Deposit does not exist"
-        );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         require(
             nodesManagerIntefaceInstance.phase(_validatorId) ==
