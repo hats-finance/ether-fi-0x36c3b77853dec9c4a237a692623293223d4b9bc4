@@ -119,6 +119,22 @@ contract ProtocolRevenueManagerTest is Test {
         );
     }
 
+    function test_changeAuctionRewardParams() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        protocolRevenueManagerInstance.setAuctionRewardVestingPeriod(1);
+        vm.expectRevert("Ownable: caller is not the owner");
+        protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(10);
+
+        vm.startPrank(owner);
+        assertEq(protocolRevenueManagerInstance.auctionFeeVestingPeriodForStakersInDays(), 168);
+        protocolRevenueManagerInstance.setAuctionRewardVestingPeriod(1);
+        assertEq(protocolRevenueManagerInstance.auctionFeeVestingPeriodForStakersInDays(), 1);
+
+        assertEq(protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(), 50);
+        protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(10);
+        assertEq(protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(), 10);
+    }
+
     function test_Receive() public {
         vm.expectRevert("No Active Validator");
         startHoax(alice);

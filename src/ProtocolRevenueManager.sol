@@ -18,8 +18,8 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
 
     uint256 public globalRevenueIndex = 1;
 
-    uint128 public constant vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
-    uint128 public constant auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
+    uint128 public vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
+    uint128 public auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -108,6 +108,19 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
     ) external onlyOwner {
         auctionManager = IAuctionManager(_auctionManager);
     }
+
+    /// @notice set the auction reward vesting period 
+    /// @param _periodInDays vesting period in days
+    function setAuctionRewardVestingPeriod(uint128 _periodInDays) external onlyOwner {
+        auctionFeeVestingPeriodForStakersInDays = _periodInDays;
+    }
+
+    /// @notice set the auction reward split for stakers 
+    /// @param _split vesting period in days
+    function setAuctionRewardSplitForStakers(uint128 _split) external onlyOwner {
+        vestedAuctionFeeSplitForStakers = _split;
+    }
+
 
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------

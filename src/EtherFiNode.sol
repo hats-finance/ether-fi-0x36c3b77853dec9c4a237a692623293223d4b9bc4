@@ -232,13 +232,16 @@ contract EtherFiNode is IEtherFiNode {
             uint256 bnft,
             uint256 treasury
         ) = calculatePayouts(rewards, _splits, _scale);
-        uint256 daysPassedSinceExitRequest = _getDaysPassedSince(
-            exitRequestTimestamp,
-            uint32(block.timestamp)
-        );
-        if (daysPassedSinceExitRequest >= 14) {
-            treasury += operator;
-            operator = 0;
+
+        if (exitRequestTimestamp > 0) {
+            uint256 daysPassedSinceExitRequest = _getDaysPassedSince(
+                exitRequestTimestamp,
+                uint32(block.timestamp)
+            );
+            if (daysPassedSinceExitRequest >= 14) {
+                treasury += operator;
+                operator = 0;
+            }
         }
 
         return (operator, tnft, bnft, treasury);
@@ -274,6 +277,9 @@ contract EtherFiNode is IEtherFiNode {
         uint256 _dailyPenalty,
         uint32 _exitTimestamp
     ) public view onlyEtherFiNodeManagerContract returns (uint256) {
+        if (exitRequestTimestamp == 0) {
+            return 0;
+        }
         uint256 daysElapsed = _getDaysPassedSince(
             exitRequestTimestamp,
             _exitTimestamp
@@ -340,12 +346,13 @@ contract EtherFiNode is IEtherFiNode {
             phase == VALIDATOR_PHASE.EXITED,
             "validator node is not exited"
         );
-        uint256 balance = address(this).balance - vestedAuctionRewards;
+        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
 
-        // Compute the payouts for the staking rewards (which is exceeding amount above 32 ETH)
+        // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
+        // the protocol rewards must be paid off already in 'processNodeExit'
         if (balance > 32 ether) {
             (
                 payouts[0],
@@ -404,7 +411,7 @@ contract EtherFiNode is IEtherFiNode {
 
         require(
             payouts[0] + payouts[1] + payouts[2] + payouts[3] ==
-                address(this).balance - vestedAuctionRewards,
+                address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards()),
             "Incorrect Amount"
         );
         return (payouts[0], payouts[1], payouts[2], payouts[3]);

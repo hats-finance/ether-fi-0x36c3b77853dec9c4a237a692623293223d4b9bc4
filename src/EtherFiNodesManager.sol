@@ -260,6 +260,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         require (IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED, "validator node is not exited");
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = getFullWithdrawalPayouts(_validatorId);
+        IEtherFiNode(etherfiNode).processVestedAuctionFeeWithdrawal();
+
         address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
         address tnftHolder = tnftInstance.ownerOf(_validatorId);
         address bnftHolder = bnftInstance.ownerOf(_validatorId);
