@@ -21,13 +21,12 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     uint256 public numberOfActiveBids;
 
     address public stakingManagerContractAddress;
-    address public nodeOperatorManagerContractAddress;
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
 
-    INodeOperatorManager nodeOperatorManagerInterface;
-    IProtocolRevenueManager protocolRevenueManager;
+    INodeOperatorManager public nodeOperatorManagerInterface;
+    IProtocolRevenueManager public protocolRevenueManager;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -61,7 +60,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         nodeOperatorManagerInterface = INodeOperatorManager(
             _nodeOperatorManagerContract
         );
-        nodeOperatorManagerContractAddress = _nodeOperatorManagerContract;
     }
 
     //--------------------------------------------------------------------------------------
@@ -291,7 +289,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     modifier onlyNodeOperatorManagerContract() {
         require(
-            msg.sender == nodeOperatorManagerContractAddress,
+            msg.sender == address(nodeOperatorManagerInterface),
             "Only node operator key manager contract function"
         );
         _;
