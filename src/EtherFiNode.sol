@@ -30,15 +30,13 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     uint32 public exitTimestamp;
     uint32 public stakingStartTimestamp;
     VALIDATOR_PHASE public phase;
-    bool initialized = false;
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
     function initialize() public {
-        require(initialized == false, "already initialised");
-        initialized = true;
+        require(stakingStartTimestamp == 0, "already initialised");
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
