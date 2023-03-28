@@ -2,6 +2,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
@@ -15,7 +16,7 @@ import "./BNFT.sol";
 import "./EtherFiNode.sol";
 import "lib/forge-std/src/console.sol";
 
-contract EtherFiNodesManager is IEtherFiNodesManager {
+contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -26,7 +27,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     uint256 public numberOfValidators;
 
-    address public owner;
     address public treasuryContract;
     address public auctionContract;
     address public stakingManagerContract;
@@ -50,6 +50,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //--------------------------------------------------------------------------------------
     event FundsWithdrawn(uint256 indexed _validatorId, uint256 amount);
     event NodeExitRequested(uint256 _validatorId);
+    event NodeExitProcessed(uint256 _validatorId);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -71,7 +72,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     ) {
         implementationContract = address(new EtherFiNode());
 
-        owner = msg.sender;
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
         stakingManagerContract = _stakingManagerContract;
@@ -116,7 +116,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
 
     receive() external payable {}
 
-    function createEtherfiNode(uint256 _validatorId) external returns (address) {
+    function createEtherfiNode(uint256 _validatorId) external onlyStakingManagerContract returns (address) {
         address clone = Clones.clone(implementationContract);
         EtherFiNode(payable(clone)).initialize(address(protocolRevenueManagerInstance));
         registerEtherFiNode(_validatorId, clone);
@@ -200,6 +200,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
                 bnftHolder,
                 toBnft
             );
+
+            emit NodeExitProcessed(validatorId);
         }
     }
 
@@ -363,9 +365,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function phase(uint256 _validatorId) public view returns (IEtherFiNode.VALIDATOR_PHASE phase) {
+    function phase(uint256 _validatorId) public view returns (IEtherFiNode.VALIDATOR_PHASE validatorPhase) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        phase = IEtherFiNode(etherfiNode).phase();
+        validatorPhase = IEtherFiNode(etherfiNode).phase();
     }
 
     function ipfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
@@ -378,7 +380,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
         return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
 
-    function vestedAuctionRewards(uint256 _validatorId) external returns (uint256) {
+    function vestedAuctionRewards(uint256 _validatorId) external view returns (uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).vestedAuctionRewards();
     }
@@ -426,11 +428,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager {
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
-    }
 
     modifier onlyStakingManagerContract() {
         require(

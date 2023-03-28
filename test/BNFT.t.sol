@@ -50,8 +50,8 @@ contract BNFTTest is Test {
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
         );
-        TestBNFTInstance = BNFT(stakingManagerInstance.bnftContractAddress());
-        TestTNFTInstance = TNFT(stakingManagerInstance.tnftContractAddress());
+        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
+        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
@@ -62,6 +62,16 @@ contract BNFTTest is Test {
             address(protocolRevenueManagerInstance)
         );
 
+        auctionInstance.setProtocolRevenueManager(
+            address(protocolRevenueManagerInstance)
+        );
+
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
+        protocolRevenueManagerInstance.setAuctionManagerAddress(
+            address(auctionInstance)
+        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
@@ -76,12 +86,31 @@ contract BNFTTest is Test {
         vm.stopPrank();
     }
 
-    function test_BNFTContractGetsInstantiatedCorrectly() public {
-        assertEq(
-            TestBNFTInstance.stakingManagerContractAddress(),
-            address(stakingManagerInstance)
+    function test_Mint() public {
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
         );
-        assertEq(TestBNFTInstance.nftValue(), 0.002 ether);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
+            1,
+            1 ether
+        );
+        vm.stopPrank();
+
+        hoax(alice);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIds
+        );
+
+        startHoax(alice);
+        stakingManagerInstance.registerValidator(bidIds[0], test_data);
+        vm.stopPrank();
+
+        assertEq(TestBNFTInstance.ownerOf(1), alice);
+        assertEq(TestBNFTInstance.balanceOf(alice), 1);
     }
 
     function test_BNFTMintsFailsIfNotCorrectCaller() public {

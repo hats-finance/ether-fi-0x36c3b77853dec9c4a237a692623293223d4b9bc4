@@ -8,8 +8,6 @@ contract BNFT is ERC721 {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint256 private tokenIds;
-    uint256 public nftValue = 0.002 ether;
     address public stakingManagerContractAddress;
 
     //--------------------------------------------------------------------------------------
@@ -18,21 +16,16 @@ contract BNFT is ERC721 {
 
     constructor() ERC721("Bond NFT", "BNFT") {
         stakingManagerContractAddress = msg.sender;
-        nftValue = 0.002 ether;
     }
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    //Function only allows the deposit contract to mint to prevent
+    //Function only allows the staking manager contract to mint to prevent
     //standard eoa minting themselves NFTs
     function mint(address _reciever, uint256 _validatorId) external onlyStakingManagerContract {
         _safeMint(_reciever, _validatorId);
-        
-        unchecked {
-            tokenIds++;
-        }
     }
 
     //ERC721 transfer function being overidden to make it soulbound

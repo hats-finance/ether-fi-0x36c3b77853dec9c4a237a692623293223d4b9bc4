@@ -168,8 +168,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         require(bids[_bidId].isActive, "The bid is not active");
 
         bids[_bidId].isActive = false;
-        address operator = bids[_bidId].bidderAddress;
-
         numberOfActiveBids--;
     }
     

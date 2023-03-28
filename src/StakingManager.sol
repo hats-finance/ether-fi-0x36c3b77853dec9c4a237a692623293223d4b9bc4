@@ -8,34 +8,23 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IDepositContract.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
-import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "lib/forge-std/src/console.sol";
 
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
     bool public test = true;
-    uint256 public maxBatchDepositSize = 16;
+    uint128 public maxBatchDepositSize = 16;
+    uint128 public stakeAmount;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuctionManager public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
     IEtherFiNodesManager public nodesManagerIntefaceInstance;
-    IProtocolRevenueManager protocolRevenueManager;
-
-    uint256 public stakeAmount;
-    address public treasuryAddress;
-    address public auctionAddress;
-    address public nodesManagerAddress;
-
-    address public tnftContractAddress;
-    address public bnftContractAddress;
-
     mapping(uint256 => address) public bidIdToStaker;
 
     //--------------------------------------------------------------------------------------
@@ -76,7 +65,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
-        auctionAddress = _auctionAddress;
     }
 
     //--------------------------------------------------------------------------------------
@@ -96,15 +84,13 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     }
 
     function registerTnftContract() private returns (address) {
-        tnftContractAddress = address(new TNFT());
-        TNFTInterfaceInstance = ITNFT(tnftContractAddress);
-        return tnftContractAddress;
+        TNFTInterfaceInstance = ITNFT(address(new TNFT()));
+        return address(TNFTInterfaceInstance);
     }
 
     function registerBnftContract() private returns (address) {
-        bnftContractAddress = address(new BNFT());
-        BNFTInterfaceInstance = IBNFT(bnftContractAddress);
-        return bnftContractAddress;
+        BNFTInterfaceInstance = IBNFT(address(new BNFT()));
+        return address(BNFTInterfaceInstance);
     }
 
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
@@ -271,19 +257,10 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     }
 
     function setEtherFiNodesManagerAddress(address _nodesManagerAddress) public onlyOwner {
-        nodesManagerAddress = _nodesManagerAddress;
-        nodesManagerIntefaceInstance = IEtherFiNodesManager(nodesManagerAddress);
+        nodesManagerIntefaceInstance = IEtherFiNodesManager(_nodesManagerAddress);
     }
 
-    function setTreasuryAddress(address _treasuryAddress) public onlyOwner {
-        treasuryAddress = _treasuryAddress;
-    }
-
-    function setProtocolRevenueManager(address _protocolRevenueManager) public onlyOwner {
-        protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManager);
-    }
-
-    function setMaxBatchDepositSize(uint256 _newMaxBatchDepositSize) public onlyOwner {
+    function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
         maxBatchDepositSize = _newMaxBatchDepositSize;
     }
 

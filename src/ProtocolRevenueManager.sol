@@ -2,18 +2,17 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IAuctionManager.sol";
 import "lib/forge-std/src/console.sol";
 
-contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
+contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-
-    address public owner;
 
     IEtherFiNodesManager etherFiNodesManager;
     IAuctionManager auctionManager;
@@ -33,7 +32,6 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
 
     /// @notice Constructor to set variables on deployment
     constructor() {
-        owner = msg.sender;
     }
 
     //--------------------------------------------------------------------------------------
@@ -132,11 +130,6 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable {
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner function");
-        _;
-    }
 
     modifier onlyEtherFiNodesManager() {
         require(
