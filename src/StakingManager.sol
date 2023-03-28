@@ -239,6 +239,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         require(sent, "Failed to send Ether");
     }
 
+    //Set manually due to circular dependencies
     function setEtherFiNodesManagerAddress(address _nodesManagerAddress) public onlyOwner {
         nodesManagerIntefaceInstance = IEtherFiNodesManager(_nodesManagerAddress);
     }
