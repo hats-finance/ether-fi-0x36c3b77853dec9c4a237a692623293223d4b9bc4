@@ -102,7 +102,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
     }
 
-    /// @notice Creates an instance of the auction manager for integration
+    /// @notice Instantiates the interface of the auction manager for integration
     /// @dev Set manually due to cirular dependencies
     /// @param _auctionManager auction manager address to set
     function setAuctionManagerAddress(
