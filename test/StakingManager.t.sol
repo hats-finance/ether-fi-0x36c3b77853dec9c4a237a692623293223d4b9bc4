@@ -1217,6 +1217,17 @@ contract StakingManagerTest is Test {
         );
     }
 
+    function test_SetMaxDeposit() public {
+        assertEq(stakingManagerInstance.maxBatchDepositSize(), 16);
+        vm.prank(owner);
+        stakingManagerInstance.setMaxBatchDepositSize(12);
+        assertEq(stakingManagerInstance.maxBatchDepositSize(), 12);
+
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        stakingManagerInstance.setMaxBatchDepositSize(12);
+    }
+
     // function test_EventStakeDeposit() public {
     //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
