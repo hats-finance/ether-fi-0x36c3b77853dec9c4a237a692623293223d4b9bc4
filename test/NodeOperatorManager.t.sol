@@ -165,9 +165,6 @@ contract NodeOperatorManagerTest is Test {
         nodeOperatorManagerInstance.fetchNextKeyIndex(alice);
     }
 
-    
-
-
     function test_UpdatingMerkle() public {
         assertEq(nodeOperatorManagerInstance.merkleRoot(), root);
 
