@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 import "../src/Treasury.sol";
 import "../src/NodeOperatorManager.sol";
 import "../src/EtherFiNodesManager.sol";
+import "../src/EtherFiNode.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
@@ -53,6 +54,7 @@ contract DeployScript is Script {
             BNFTAddress,
             address(protocolRevenueManager)
         );
+        EtherFiNode etherFiNode = new EtherFiNode();
         
         nodeOperatorManager.setAuctionContractAddress(address(auctionManager));
         auctionManager.setStakingManagerContractAddress(
@@ -70,6 +72,9 @@ contract DeployScript is Script {
         stakingManager.setEtherFiNodesManagerAddress(
             address(etherFiNodesManager)
         );
+        stakingManager.setProtocolRevenueManagerAddress(address(protocolRevenueManager));
+        stakingManager.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        
 
         vm.stopBroadcast();
 

@@ -30,13 +30,15 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     uint32 public exitTimestamp;
     uint32 public stakingStartTimestamp;
     VALIDATOR_PHASE public phase;
+    bool initialized = false;
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
     function initialize() public {
-        require(etherfiNodesManager == address(0), "already initialised");
+        require(initialized == false, "already initialised");
+        initialized = true;
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
@@ -47,11 +49,11 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     //Allows ether to be sent to this contract
     receive() external payable {}
 
-    function registerEtherFiNodesManager(address _etherfiNodesManager) public onlyOwner {
+    function registerEtherFiNodesManager(address _etherfiNodesManager) public {
         etherfiNodesManager = _etherfiNodesManager;
     }
 
-    function registerProtocolRevenueManager(address _protocolRevenueManager) public onlyOwner {
+    function registerProtocolRevenueManager(address _protocolRevenueManager) public {
         protocolRevenueManager = _protocolRevenueManager;
     }
 

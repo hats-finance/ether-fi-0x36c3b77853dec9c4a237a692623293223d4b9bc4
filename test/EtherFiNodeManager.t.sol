@@ -71,6 +71,7 @@ contract EtherFiNodesManagerTest is Test {
             address(TestTNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+        EtherFiNode node = new EtherFiNode();
 
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
@@ -91,7 +92,8 @@ contract EtherFiNodesManagerTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
-
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
+        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
