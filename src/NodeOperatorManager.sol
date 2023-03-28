@@ -5,7 +5,6 @@ import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "lib/forge-std/src/console.sol";
 
 /// TODO Test whitelist bidding in auction
 /// TODO Test permissionless bidding in auction
@@ -23,8 +22,6 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //--------------------------------------------------------------------------------------
 
     address public auctionManagerContractAddress;
-    IAuctionManager auctionMangerInterface;
-    address auctionContractAddress;
     bytes32 public merkleRoot;
 
     // user address => OperaterData Struct
@@ -101,9 +98,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //--------------------------------------------------------------------------------------
 
     function setAuctionContractAddress(address _auctionContractAddress) public onlyOwner {
-        auctionMangerInterface = IAuctionManager(_auctionContractAddress);
         auctionManagerContractAddress = _auctionContractAddress;
-        auctionContractAddress = _auctionContractAddress;
     }
 
     //--------------------------------------------------------------------------------------
