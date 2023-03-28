@@ -22,8 +22,10 @@ contract TNFT is ERC721 {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    //Function only allows the staking manager contract to mint to prevent
-    //standard eoa minting themselves NFTs
+    /// @notice Mints NFT to required user
+    /// @dev Only through the staking contratc and not by an EOA
+    /// @param _reciever receiver of the NFT
+    /// @param _validatorId the ID of the NFT
     function mint(address _reciever, uint256 _validatorId) external onlyStakingManagerContract {
         _safeMint(_reciever, _validatorId);
     }
