@@ -77,6 +77,8 @@ contract TNFTTest is Test {
             address(managerInstance)
         );
 
+        assertEq(TestTNFTInstance.stakingManagerContractAddress(), address(stakingManagerInstance));
+        
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
