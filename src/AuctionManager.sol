@@ -13,19 +13,19 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint256 public whitelistBidAmount = 0.001 ether;
-    uint256 public minBidAmount = 0.01 ether;
-    uint256 public maxBidAmount = 5 ether;
+    uint120 public whitelistBidAmount = 0.001 ether;
+    uint64 public minBidAmount = 0.01 ether;
+    uint64 public maxBidAmount = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
+
+    INodeOperatorManager public nodeOperatorManagerInterface;
+    IProtocolRevenueManager public protocolRevenueManager;
 
     address public stakingManagerContractAddress;
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
-
-    INodeOperatorManager public nodeOperatorManagerInterface;
-    IProtocolRevenueManager public protocolRevenueManager;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
