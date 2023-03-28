@@ -8,7 +8,6 @@ import "./interfaces/IProtocolRevenueManager.sol";
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "lib/forge-std/src/console.sol";
 
 contract AuctionManager is IAuctionManager, Pausable, Ownable {
     //--------------------------------------------------------------------------------------
