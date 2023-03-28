@@ -173,7 +173,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    function reEnterAuction(uint256 _bidId) external onlyStakingManagerContract whenNotPaused {
+    function reEnterAuction(uint256 _bidId) external onlyStakingManagerContract {
         require(bids[_bidId].isActive == false, "Bid already active");
         //Reactivate the bid
         bids[_bidId].isActive = true;
