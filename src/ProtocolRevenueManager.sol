@@ -73,9 +73,8 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
         );
 
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
-        uint256 amount = msg.value;
-        uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers * amount) / 100;
-        uint256 amountToProtocol = amount - amountVestedForStakers;
+        uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers * msg.value) / 100;
+        uint256 amountToProtocol = msg.value - amountVestedForStakers;
 
         address etherfiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
         IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: amountVestedForStakers}();
