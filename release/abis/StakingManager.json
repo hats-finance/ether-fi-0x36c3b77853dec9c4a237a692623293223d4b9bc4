@@ -279,9 +279,9 @@
     "name": "maxBatchDepositSize",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "",
-        "type": "uint256"
+        "type": "uint128"
       }
     ],
     "stateMutability": "view",
@@ -396,9 +396,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "_newMaxBatchDepositSize",
-        "type": "uint256"
+        "type": "uint128"
       }
     ],
     "name": "setMaxBatchDepositSize",
@@ -411,9 +411,9 @@
     "name": "stakeAmount",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "",
-        "type": "uint256"
+        "type": "uint128"
       }
     ],
     "stateMutability": "view",
