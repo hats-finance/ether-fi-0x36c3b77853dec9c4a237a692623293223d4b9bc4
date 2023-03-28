@@ -11,7 +11,7 @@ interface IProtocolRevenueManager {
     }
 
     function globalRevenueIndex() external view returns (uint256);
-    function auctionFeeVestingPeriodForStakersInDays() external view returns (uint256);
+    function auctionFeeVestingPeriodForStakersInDays() external view returns (uint128);
     function getAccruedAuctionRevenueRewards(uint256 _validatorId) external view returns (uint256);     
 
     function addAuctionRevenue(uint256 _validatorId) external payable;

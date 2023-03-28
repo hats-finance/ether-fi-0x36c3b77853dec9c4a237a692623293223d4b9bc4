@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IAuctionManager.sol";
-import "lib/forge-std/src/console.sol";
 
 contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
     //--------------------------------------------------------------------------------------
@@ -19,8 +18,8 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
 
     uint256 public globalRevenueIndex = 1;
 
-    uint256 public constant vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
-    uint256 public constant auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
+    uint128 public constant vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
+    uint128 public constant auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
