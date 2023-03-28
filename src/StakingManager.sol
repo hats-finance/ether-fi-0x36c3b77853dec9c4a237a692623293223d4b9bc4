@@ -10,15 +10,18 @@ import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./EtherFiNode.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
     bool public test = true;
     uint128 public maxBatchDepositSize = 16;
     uint128 public stakeAmount;
+    address public implementationContract;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
@@ -65,6 +68,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
+
+        implementationContract = address(new EtherFiNode());
     }
 
     //--------------------------------------------------------------------------------------
@@ -293,15 +298,20 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         bidIdToStaker[_bidId] = msg.sender;
 
         uint256 validatorId = _bidId;
-        address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(
-            validatorId
-        );
+        address etherfiNode = createEtherfiNode(validatorId);
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
             validatorId,
             IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
         emit StakeDeposit(msg.sender, _bidId, etherfiNode);
+    }
+
+    function createEtherfiNode(uint256 _validatorId) private returns (address) {
+        address clone = Clones.clone(implementationContract);
+        EtherFiNode(payable(clone)).initialize(address(nodesManagerIntefaceInstance));
+        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
+        return clone;
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake

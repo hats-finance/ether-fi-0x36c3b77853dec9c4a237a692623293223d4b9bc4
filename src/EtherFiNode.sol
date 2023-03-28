@@ -13,12 +13,12 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./EtherFiNodesManager.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNode is IEtherFiNode {
     // TODO: Remove these two address variables
     address etherfiNodesManager;
-    address protocolRevenueManager;
 
     // TODO: reduce the size of these varaibles
     uint256 public localRevenueIndex;
@@ -33,10 +33,9 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize(address _protocolRevenueManager) public {
+    function initialize(address _etherfiNodesManager) public {
         require(etherfiNodesManager == address(0), "already initialised");
-        etherfiNodesManager = msg.sender;
-        protocolRevenueManager = _protocolRevenueManager;
+        etherfiNodesManager = _etherfiNodesManager;
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
@@ -479,7 +478,7 @@ contract EtherFiNode is IEtherFiNode {
     function protocolRevenueManagerAddress() internal view returns (address) {
         // TODO: Replace it with the actual address
         // return 0x...
-        return protocolRevenueManager;
+        return EtherFiNodesManager(payable(etherfiNodesManager)).protocolRevenueManagerContract();
     }
 
     //--------------------------------------------------------------------------------------
@@ -497,7 +496,7 @@ contract EtherFiNode is IEtherFiNode {
     // TODO
     modifier onlyProtocolRevenueManagerContract() {
         require(
-            msg.sender == protocolRevenueManager,
+            msg.sender == protocolRevenueManagerAddress(),
             "Only protocol revenue manager contract function"
         );
         _;
