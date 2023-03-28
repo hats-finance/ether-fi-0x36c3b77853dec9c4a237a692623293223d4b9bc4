@@ -9,12 +9,12 @@ import "../src/ClaimReceiverPool.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeploySwapSuiteScript is Script {
+contract DeployClaimReceiverTestScript is Script {
     using Strings for string;
 
     struct addresses {
         address earlyAdopterPool;
-        address convPool;
+        address receiverPool;
     }
 
     addresses addressStruct;
@@ -35,7 +35,7 @@ contract DeploySwapSuiteScript is Script {
             address(cbETH)
         );
 
-        ClaimReceiverPool convPool = new ClaimReceiverPool(
+        ClaimReceiverPool receiverPool = new ClaimReceiverPool(
             address(earlyAdopterPool),
             address(rETH),
             address(wstETH),
@@ -47,7 +47,7 @@ contract DeploySwapSuiteScript is Script {
 
         addressStruct = addresses({
             earlyAdopterPool: address(earlyAdopterPool),
-            convPool: address(convPool)
+            receiverPool: address(receiverPool)
         });
 
         writeVersionFile();
@@ -102,7 +102,7 @@ contract DeploySwapSuiteScript is Script {
                     "\nEAP: ",
                     Strings.toHexString(addressStruct.earlyAdopterPool),
                     "\nReceiverPool: ",
-                    Strings.toHexString(addressStruct.convPool)
+                    Strings.toHexString(addressStruct.receiverPool)
                 )
             )
         );
