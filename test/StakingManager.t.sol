@@ -989,7 +989,7 @@ contract StakingManagerTest is Test {
         );
         stakingManagerInstance.cancelDeposit(bidId[0]);
 
-        vm.expectRevert("Deposit does not exist");
+        vm.expectRevert("Not deposit owner");
         stakingManagerInstance.cancelDeposit(bidId[0]);
     }
 

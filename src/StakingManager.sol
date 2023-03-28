@@ -58,8 +58,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             stakeAmount = 32 ether;
         }
 
-        registerTnftContract();
-        registerBnftContract();
+        TNFTInterfaceInstance = ITNFT(address(new TNFT()));
+        BNFTInterfaceInstance = IBNFT(address(new BNFT()));
 
         auctionInterfaceInstance = IAuctionManager(_auctionAddress);
         depositContractEth2 = IDepositContract(
@@ -82,6 +82,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             stakeAmount = 0.032 ether;
         }
     }
+
 
     function registerTnftContract() private returns (address) {
         TNFTInterfaceInstance = ITNFT(address(new TNFT()));
@@ -122,7 +123,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             bool isActive = auctionInterfaceInstance.isBidActive(bidId);
             if (bidStaker == address(0) && isActive) {
                 auctionInterfaceInstance.updateSelectedBidInformation(bidId);
-                processDeposit(bidId);
+                _processDeposit(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
             }
@@ -153,13 +154,10 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Incorrect phase"
         );
-        require(
-            bidIdToStaker[_validatorId] != address(0),
-            "Deposit does not exist"
-        );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         address staker = bidIdToStaker[_validatorId];
 
+        //Remove this before deployment, this should always happen
         if (test = false) {
             bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
                 .getWithdrawalCredentials(_validatorId);
@@ -219,10 +217,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _validatorId the ID of the validator deposit to cancel
     function cancelDeposit(uint256 _validatorId) public whenNotPaused {
-        require(
-            bidIdToStaker[_validatorId] != address(0),
-            "Deposit does not exist"
-        );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         require(
             nodesManagerIntefaceInstance.phase(_validatorId) ==
@@ -259,10 +253,15 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         require(sent, "Failed to send Ether");
     }
 
+    /// @notice Sets the EtherFi node manager contract
+    /// @dev Set manually due to circular dependency
+    /// @param _nodesManagerAddress aaddress of the manager contract being set    
     function setEtherFiNodesManagerAddress(address _nodesManagerAddress) public onlyOwner {
         nodesManagerIntefaceInstance = IEtherFiNodesManager(_nodesManagerAddress);
     }
 
+    /// @notice Sets the max number of deposits allowed at a time
+    /// @param _newMaxBatchDepositSize the max number of deposits allowed
     function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
         maxBatchDepositSize = _newMaxBatchDepositSize;
     }
@@ -289,14 +288,11 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId the bid that won the right to the deposit
-    function processDeposit(uint256 _bidId) internal {
-        // Take the bid; Set the matched staker for the bid
+    function _processDeposit(uint256 _bidId) internal {
+        
         bidIdToStaker[_bidId] = msg.sender;
 
-        // Let validatorId = BidId
         uint256 validatorId = _bidId;
-
-        // Create the node contract
         address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(
             validatorId
         );
