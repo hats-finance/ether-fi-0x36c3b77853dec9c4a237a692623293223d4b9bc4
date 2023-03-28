@@ -239,11 +239,15 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         require(sent, "Failed to send Ether");
     }
 
-    //Set manually due to circular dependencies
+    /// @notice Sets the EtherFi node manager contract
+    /// @dev Set manually due to circular dependency
+    /// @param _nodesManagerAddress aaddress of the manager contract being set    
     function setEtherFiNodesManagerAddress(address _nodesManagerAddress) public onlyOwner {
         nodesManagerIntefaceInstance = IEtherFiNodesManager(_nodesManagerAddress);
     }
 
+    /// @notice Sets the max number of deposits allowed at a time
+    /// @param _newMaxBatchDepositSize the max number of deposits allowed
     function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
         maxBatchDepositSize = _newMaxBatchDepositSize;
     }
