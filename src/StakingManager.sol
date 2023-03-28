@@ -143,6 +143,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         address staker = bidIdToStaker[_validatorId];
 
+        //Remove this before deployment, this should always happen
         if (test = false) {
             bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
                 .getWithdrawalCredentials(_validatorId);
