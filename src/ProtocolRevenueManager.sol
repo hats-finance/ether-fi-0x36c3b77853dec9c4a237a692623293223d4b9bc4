@@ -13,8 +13,8 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IEtherFiNodesManager etherFiNodesManager;
-    IAuctionManager auctionManager;
+    IEtherFiNodesManager public etherFiNodesManager;
+    IAuctionManager public auctionManager;
 
     uint256 public globalRevenueIndex = 1;
 

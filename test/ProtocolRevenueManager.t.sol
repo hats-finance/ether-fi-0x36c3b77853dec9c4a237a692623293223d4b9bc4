@@ -93,6 +93,12 @@ contract ProtocolRevenueManagerTest is Test {
             ipfsHashForEncryptedValidatorKey: "test_ipfs_hash_2"
         });
 
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
+        assertEq(protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(), 50);
+        assertEq(protocolRevenueManagerInstance.auctionFeeVestingPeriodForStakersInDays(), 168);
+        assertEq(address(protocolRevenueManagerInstance.etherFiNodesManager()), address(managerInstance));
+        assertEq(address(protocolRevenueManagerInstance.auctionManager()), address(auctionInstance));
+
         vm.stopPrank();
 
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
@@ -192,7 +198,6 @@ contract ProtocolRevenueManagerTest is Test {
     }
 
     function test_AddAuctionRevenueWorksAndFailsCorrectly() public {
-        // 1
         hoax(address(auctionInstance));
         vm.expectRevert("No Active Validator");
         protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(1);
