@@ -58,8 +58,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             stakeAmount = 32 ether;
         }
 
-        registerTnftContract();
-        registerBnftContract();
+        TNFTInterfaceInstance = ITNFT(address(new TNFT()));
+        BNFTInterfaceInstance = IBNFT(address(new BNFT()));
 
         auctionInterfaceInstance = IAuctionManager(_auctionAddress);
         depositContractEth2 = IDepositContract(
@@ -81,16 +81,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             test = true;
             stakeAmount = 0.032 ether;
         }
-    }
-
-    function registerTnftContract() private returns (address) {
-        TNFTInterfaceInstance = ITNFT(address(new TNFT()));
-        return address(TNFTInterfaceInstance);
-    }
-
-    function registerBnftContract() private returns (address) {
-        BNFTInterfaceInstance = IBNFT(address(new BNFT()));
-        return address(BNFTInterfaceInstance);
     }
 
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
