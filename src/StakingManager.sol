@@ -109,7 +109,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             bool isActive = auctionInterfaceInstance.isBidActive(bidId);
             if (bidStaker == address(0) && isActive) {
                 auctionInterfaceInstance.updateSelectedBidInformation(bidId);
-                processDeposit(bidId);
+                _processDeposit(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
             }
@@ -139,10 +139,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             nodesManagerIntefaceInstance.phase(_validatorId) ==
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Incorrect phase"
-        );
-        require(
-            bidIdToStaker[_validatorId] != address(0),
-            "Deposit does not exist"
         );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         address staker = bidIdToStaker[_validatorId];
@@ -276,14 +272,11 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId the bid that won the right to the deposit
-    function processDeposit(uint256 _bidId) internal {
-        // Take the bid; Set the matched staker for the bid
+    function _processDeposit(uint256 _bidId) internal {
+        
         bidIdToStaker[_bidId] = msg.sender;
 
-        // Let validatorId = BidId
         uint256 validatorId = _bidId;
-
-        // Create the node contract
         address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(
             validatorId
         );
