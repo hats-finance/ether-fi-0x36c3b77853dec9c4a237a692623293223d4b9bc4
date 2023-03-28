@@ -14,11 +14,13 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./EtherFiNodesManager.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "lib/forge-std/src/console.sol";
 
-contract EtherFiNode is IEtherFiNode {
+contract EtherFiNode is IEtherFiNode, Ownable {
     // TODO: Remove these two address variables
     address etherfiNodesManager;
+    address protocolRevenueManager;
 
     // TODO: reduce the size of these varaibles
     uint256 public localRevenueIndex;
@@ -33,9 +35,8 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize(address _etherfiNodesManager) public {
+    function initialize() public {
         require(etherfiNodesManager == address(0), "already initialised");
-        etherfiNodesManager = _etherfiNodesManager;
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
@@ -45,6 +46,14 @@ contract EtherFiNode is IEtherFiNode {
 
     //Allows ether to be sent to this contract
     receive() external payable {}
+
+    function registerEtherFiNodesManager(address _etherfiNodesManager) public onlyOwner {
+        etherfiNodesManager = _etherfiNodesManager;
+    }
+
+    function registerProtocolRevenueManager(address _protocolRevenueManager) public onlyOwner {
+        protocolRevenueManager = _protocolRevenueManager;
+    }
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
@@ -478,7 +487,7 @@ contract EtherFiNode is IEtherFiNode {
     function protocolRevenueManagerAddress() internal view returns (address) {
         // TODO: Replace it with the actual address
         // return 0x...
-        return EtherFiNodesManager(payable(etherfiNodesManager)).protocolRevenueManagerContract();
+        return protocolRevenueManager;
     }
 
     //--------------------------------------------------------------------------------------
@@ -496,7 +505,7 @@ contract EtherFiNode is IEtherFiNode {
     // TODO
     modifier onlyProtocolRevenueManagerContract() {
         require(
-            msg.sender == protocolRevenueManagerAddress(),
+            msg.sender == protocolRevenueManager,
             "Only protocol revenue manager contract function"
         );
         _;

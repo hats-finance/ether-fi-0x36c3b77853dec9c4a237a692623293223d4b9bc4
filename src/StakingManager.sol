@@ -69,7 +69,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
 
-        implementationContract = address(new EtherFiNode());
     }
 
     //--------------------------------------------------------------------------------------
@@ -271,6 +270,10 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         maxBatchDepositSize = _newMaxBatchDepositSize;
     }
 
+    function registerEtherFiNodeImplementationContract(address _etherFiNodeImplementationContract) public onlyOwner {
+        implementationContract = _etherFiNodeImplementationContract;
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
@@ -309,7 +312,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
         address clone = Clones.clone(implementationContract);
-        EtherFiNode(payable(clone)).initialize(address(nodesManagerIntefaceInstance));
+        EtherFiNode(payable(clone)).initialize();
         nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
         return clone;
     }
