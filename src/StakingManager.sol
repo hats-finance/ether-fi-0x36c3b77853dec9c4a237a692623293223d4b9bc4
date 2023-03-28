@@ -93,6 +93,9 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         return address(BNFTInterfaceInstance);
     }
 
+    /// @notice Allows depositing multiple stakes at once
+    /// @param _candidateBidIds IDs of the bids to be matched with each stake
+    /// @return Array of the bid IDs that were processed and assigned
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
         external
         payable
