@@ -83,6 +83,20 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
+
+    function registerTnftContract() private returns (address) {
+        TNFTInterfaceInstance = ITNFT(address(new TNFT()));
+        return address(TNFTInterfaceInstance);
+    }
+
+    function registerBnftContract() private returns (address) {
+        BNFTInterfaceInstance = IBNFT(address(new BNFT()));
+        return address(BNFTInterfaceInstance);
+    }
+
+    /// @notice Allows depositing multiple stakes at once
+    /// @param _candidateBidIds IDs of the bids to be matched with each stake
+    /// @return Array of the bid IDs that were processed and assigned
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
         external
         payable
