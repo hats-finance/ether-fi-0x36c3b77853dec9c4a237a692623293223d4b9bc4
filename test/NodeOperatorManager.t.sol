@@ -79,6 +79,8 @@ contract NodeOperatorManagerTest is Test {
             ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
 
+        assertEq(nodeOperatorManagerInstance.auctionManagerContractAddress(), address(auctionInstance));
+    
         vm.stopPrank();
     }
 
