@@ -10,7 +10,7 @@ interface IStakingManager {
         string ipfsHashForEncryptedValidatorKey;
     }
 
-    function stakeAmount() external view returns(uint256);
+    function stakeAmount() external view returns(uint128);
     function bidIdToStaker(uint256 id) external view returns (address);
 
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds) external payable returns (uint256[] memory);

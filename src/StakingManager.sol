@@ -17,16 +17,14 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
     bool public test = true;
-    uint256 public maxBatchDepositSize = 16;
+    uint128 public maxBatchDepositSize = 16;
+    uint128 public stakeAmount;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuctionManager public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
     IEtherFiNodesManager public nodesManagerIntefaceInstance;
-
-    uint256 public stakeAmount;
-
     mapping(uint256 => address) public bidIdToStaker;
 
     //--------------------------------------------------------------------------------------
@@ -262,7 +260,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         nodesManagerIntefaceInstance = IEtherFiNodesManager(_nodesManagerAddress);
     }
 
-    function setMaxBatchDepositSize(uint256 _newMaxBatchDepositSize) public onlyOwner {
+    function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
         maxBatchDepositSize = _newMaxBatchDepositSize;
     }
 
