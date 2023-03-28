@@ -198,7 +198,6 @@ contract ProtocolRevenueManagerTest is Test {
     }
 
     function test_AddAuctionRevenueWorksAndFailsCorrectly() public {
-        // 1
         hoax(address(auctionInstance));
         vm.expectRevert("No Active Validator");
         protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(1);
