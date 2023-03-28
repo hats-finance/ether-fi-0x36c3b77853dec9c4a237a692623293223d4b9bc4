@@ -25,9 +25,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     IAuctionManager public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
     IEtherFiNodesManager public nodesManagerIntefaceInstance;
-
-    uint256 public stakeAmount;
-
     mapping(uint256 => address) public bidIdToStaker;
 
     //--------------------------------------------------------------------------------------
