@@ -91,12 +91,18 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
         return amount;
     }
 
+    /// @notice Instantiates the interface of the node manager for integration
+    /// @dev Set manually due to cirular dependencies
+    /// @param _etherFiNodesManager etherfi node manager address to set
     function setEtherFiNodesManagerAddress(
         address _etherFiNodesManager
     ) external onlyOwner {
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
     }
 
+    /// @notice Instantiates the interface of the auction manager for integration
+    /// @dev Set manually due to cirular dependencies
+    /// @param _auctionManager auction manager address to set
     function setAuctionManagerAddress(
         address _auctionManager
     ) external onlyOwner {
