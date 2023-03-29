@@ -67,9 +67,22 @@
     "name": "auctionFeeVestingPeriodForStakersInDays",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "",
-        "type": "uint256"
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "auctionManager",
+    "outputs": [
+      {
+        "internalType": "contract IAuctionManager",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -92,6 +105,19 @@
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "etherFiNodesManager",
+    "outputs": [
+      {
+        "internalType": "contract IEtherFiNodesManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -182,6 +208,32 @@
   {
     "inputs": [
       {
+        "internalType": "uint128",
+        "name": "_split",
+        "type": "uint128"
+      }
+    ],
+    "name": "setAuctionRewardSplitForStakers",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint128",
+        "name": "_periodInDays",
+        "type": "uint128"
+      }
+    ],
+    "name": "setAuctionRewardVestingPeriod",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_etherFiNodesManager",
         "type": "address"
@@ -217,9 +269,9 @@
     "name": "vestedAuctionFeeSplitForStakers",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "",
-        "type": "uint256"
+        "type": "uint128"
       }
     ],
     "stateMutability": "view",
