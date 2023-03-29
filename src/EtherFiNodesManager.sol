@@ -14,10 +14,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-    uint256 private constant nonExitPenaltyPrincipal = 1 ether;
-    uint256 private constant nonExitPenaltyDailyRate = 3; // 3% per day
-
     uint256 public numberOfValidators;
+    uint128 private constant nonExitPenaltyPrincipal = 1 ether;
+    uint64 private constant nonExitPenaltyDailyRate = 3; // 3% per day
+    uint64 public constant SCALE = 1000000;
 
     address public treasuryContract;
     address public stakingManagerContract;
@@ -31,7 +31,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     IProtocolRevenueManager public protocolRevenueManagerInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
-    uint256 public constant SCALE = 1000000;
     RewardsSplit public stakingRewardsSplit;
     RewardsSplit public protocolRewardsSplit;
 
