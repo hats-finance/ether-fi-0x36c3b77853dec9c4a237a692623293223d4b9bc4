@@ -648,7 +648,7 @@ contract AuctionManagerTest is Test {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        auctionInstance.cancelBid(bid1Id[0]);
+        auctionInstance.cancelBidBatch(bid1Id);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("Bid already cancelled");

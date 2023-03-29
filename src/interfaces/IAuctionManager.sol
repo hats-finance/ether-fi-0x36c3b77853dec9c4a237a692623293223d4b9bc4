@@ -14,6 +14,7 @@ interface IAuctionManager {
     function isBidActive(uint256 _bidId) external view returns (bool);
 
     function createBid(uint256 _bidSize, uint256 _bidAmount) external payable returns (uint256[] memory);
+    function cancelBidBatch(uint256[] calldata _bidIds) external;
     function cancelBid(uint256 _bidId) external;
     function reEnterAuction(uint256 _bidId) external;
     function updateSelectedBidInformation(uint256 _bidId) external;
