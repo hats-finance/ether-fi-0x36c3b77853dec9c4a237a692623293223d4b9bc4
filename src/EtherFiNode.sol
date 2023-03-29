@@ -1,21 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
-
-import "./interfaces/ITNFT.sol";
-import "./interfaces/IBNFT.sol";
-import "./interfaces/IAuctionManager.sol";
-import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
-import "./interfaces/IStakingManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
-import "./TNFT.sol";
-import "./BNFT.sol";
-import "./EtherFiNodesManager.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "lib/forge-std/src/console.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract EtherFiNode is IEtherFiNode, Ownable {
     // TODO: Remove these two address variables
