@@ -56,22 +56,12 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //Goerli Weth address used for unwrapping ERC20 Weth
     IWETH constant wethContract = IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
-    //Used to track how much was deposited incase we need this information later
-    //NB: This is not a balance, but a variable holding the amount of the deposit
-    mapping(address => mapping(address => uint256)) public userToERC20Deposit;
-
-    //Every users ether balance
-    mapping(address => uint256) public etherBalance;
-
     //The mapping to hold how much ERC20 a user deposited in the EAP, for validation
     mapping(address => mapping(address => uint256))
         public userToERC20DepositEAP;
 
     //Mapping to hold how much ether a user deposited in the EAP, for validation
     mapping(address => uint256) public etherBalanceEAP;
-
-    //Hodling how many points a user has
-    mapping(address => uint256) public userPoints;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
