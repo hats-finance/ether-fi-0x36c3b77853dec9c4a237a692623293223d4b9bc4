@@ -144,6 +144,22 @@ contract EtherFiNodesManagerTest is Test {
         safeInstance = EtherFiNode(payable(etherFiNode));
     }
 
+    function test_SetStakingRewardsSplit() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
+
+        vm.expectRevert("Amounts not equal to 1000000");
+        vm.prank(owner);
+        managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 300000);
+
+        (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = managerInstance.stakingRewardsSplit();
+        assertEq(treasury, 50000);
+        assertEq(nodeOperator, 50000);
+        assertEq(tnft, 815625);
+        assertEq(bnft, 84375);
+    }
+
     function test_SetEtherFiNodePhaseRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only staking manager contract function");
         vm.prank(owner);
