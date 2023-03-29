@@ -3,14 +3,9 @@ pragma solidity 0.8.13;
 
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-import "./interfaces/ITNFT.sol";
-import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuctionManager.sol";
-import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
-import "./interfaces/IStakingManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
@@ -33,7 +28,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     TNFT public tnftInstance;
     BNFT public bnftInstance;
-    IStakingManager public stakingManagerInstance;
     IAuctionManager public auctionInterfaceInstance;
     IProtocolRevenueManager public protocolRevenueManagerInstance;
 
@@ -73,7 +67,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         stakingManagerContract = _stakingManagerContract;
         protocolRevenueManagerContract = _protocolRevenueManagerContract;
 
-        stakingManagerInstance = IStakingManager(_stakingManagerContract);
         auctionInterfaceInstance = IAuctionManager(_auctionContract);
         protocolRevenueManagerInstance = IProtocolRevenueManager(_protocolRevenueManagerContract);
 
