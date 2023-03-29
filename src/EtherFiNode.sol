@@ -20,7 +20,6 @@ import "lib/forge-std/src/console.sol";
 contract EtherFiNode is IEtherFiNode, Ownable {
     // TODO: Remove these two address variables
     address etherfiNodesManager;
-    address protocolRevenueManager;
 
     // TODO: reduce the size of these varaibles
     uint256 public localRevenueIndex;
@@ -49,10 +48,6 @@ contract EtherFiNode is IEtherFiNode, Ownable {
 
     function registerEtherFiNodesManager(address _etherfiNodesManager) public {
         etherfiNodesManager = _etherfiNodesManager;
-    }
-
-    function registerProtocolRevenueManager(address _protocolRevenueManager) public {
-        protocolRevenueManager = _protocolRevenueManager;
     }
 
     /// @notice Set the validator phase
@@ -484,10 +479,10 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         return etherfiNodesManager;
     }
 
+    // Local testnet address 0x4F91A7Ff5926223ee62C6F0dcB6c7e8890eA39f7
     function protocolRevenueManagerAddress() internal view returns (address) {
-        // TODO: Replace it with the actual address
-        // return 0x...
-        return protocolRevenueManager;
+        // TODO: Replace it with the mainnet address
+        return 0x4F91A7Ff5926223ee62C6F0dcB6c7e8890eA39f7;
     }
 
     //--------------------------------------------------------------------------------------
@@ -505,7 +500,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     // TODO
     modifier onlyProtocolRevenueManagerContract() {
         require(
-            msg.sender == protocolRevenueManager,
+            msg.sender == protocolRevenueManagerAddress(),
             "Only protocol revenue manager contract function"
         );
         _;

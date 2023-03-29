@@ -39,6 +39,7 @@ contract NodeOperatorManagerTest is Test {
 
     bytes aliceIPFSHash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
     bytes _ipfsHash = "ipfsHash";
+    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     function setUp() public {
         vm.startPrank(owner);
@@ -58,7 +59,7 @@ contract NodeOperatorManagerTest is Test {
         );
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),

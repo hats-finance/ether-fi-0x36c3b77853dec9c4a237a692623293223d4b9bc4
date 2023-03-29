@@ -35,6 +35,7 @@ contract AuctionManagerTest is Test {
 
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
+    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     event BidCreated(
         address indexed bidder,
@@ -60,10 +61,9 @@ contract AuctionManagerTest is Test {
         );
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
@@ -92,6 +92,8 @@ contract AuctionManagerTest is Test {
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
         stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         vm.stopPrank();
+
+        console.log(address(protocolRevenueManagerInstance));
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",

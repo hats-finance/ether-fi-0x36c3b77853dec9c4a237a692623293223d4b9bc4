@@ -28,6 +28,7 @@ contract StakingManagerTest is Test {
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
+    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     IStakingManager.DepositData public test_data;
     IStakingManager.DepositData public test_data_2;
@@ -63,7 +64,7 @@ contract StakingManagerTest is Test {
         );
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
 
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));

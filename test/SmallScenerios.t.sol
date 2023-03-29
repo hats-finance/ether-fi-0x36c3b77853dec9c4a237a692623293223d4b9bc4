@@ -39,6 +39,7 @@ contract AuctionManagerTest is Test {
 
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
+    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     function setUp() public {
         vm.startPrank(owner);
@@ -48,17 +49,11 @@ contract AuctionManagerTest is Test {
         auctionInstance = new AuctionManager(
             address(nodeOperatorManagerInstance)
         );
-        nodeOperatorManagerInstance.setAuctionContractAddress(
-            address(auctionInstance)
-        );
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
+        
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(
-            address(stakingManagerInstance)
-        );
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
@@ -69,11 +64,20 @@ contract AuctionManagerTest is Test {
         );
         EtherFiNode etherFiNode = new EtherFiNode();
 
+        auctionInstance.setStakingManagerContractAddress(
+            address(stakingManagerInstance)
+        );
+        nodeOperatorManagerInstance.setAuctionContractAddress(
+            address(auctionInstance)
+        );
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
+
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
         stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
+        
         test_data = IStakingManager.DepositData({
             publicKey: "test_pubkey",
             signature: "test_signature",

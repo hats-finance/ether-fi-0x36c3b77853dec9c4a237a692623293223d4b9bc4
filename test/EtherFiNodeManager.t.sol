@@ -42,6 +42,7 @@ contract EtherFiNodesManagerTest is Test {
     address etherFiNode;
 
     bytes _ipfsHash = "IPFSHash";
+    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     uint256[] bidId;
 
@@ -59,7 +60,7 @@ contract EtherFiNodesManagerTest is Test {
         );
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
 
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
