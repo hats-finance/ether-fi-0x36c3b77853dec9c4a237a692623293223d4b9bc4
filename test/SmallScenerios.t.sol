@@ -73,7 +73,6 @@ contract AuctionManagerTest is Test {
         );
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
-        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         
         test_data = IStakingManager.DepositData({
             publicKey: "test_pubkey",

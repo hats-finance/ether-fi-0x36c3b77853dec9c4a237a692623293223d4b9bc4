@@ -33,38 +33,23 @@ contract DeployScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
+        // Deploy contracts
         Treasury treasury = new Treasury();
         NodeOperatorManager nodeOperatorManager = new NodeOperatorManager();
-        AuctionManager auctionManager = new AuctionManager(
-            address(nodeOperatorManager)
-        );
-
-        StakingManager stakingManager = new StakingManager(
-            address(auctionManager)
-        );
+        AuctionManager auctionManager = new AuctionManager(address(nodeOperatorManager));
+        StakingManager stakingManager = new StakingManager(address(auctionManager));
         address TNFTAddress = address(stakingManager.TNFTInterfaceInstance());
         address BNFTAddress = address(stakingManager.BNFTInterfaceInstance());
         ProtocolRevenueManager protocolRevenueManager = new ProtocolRevenueManager();
-
         EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager();
         
+        // Setup dependencies
         nodeOperatorManager.setAuctionContractAddress(address(auctionManager));
-        auctionManager.setStakingManagerContractAddress(
-            address(stakingManager)
-        );
-        auctionManager.setProtocolRevenueManager(
-            address(protocolRevenueManager)
-        );
-        protocolRevenueManager.setAuctionManagerAddress(
-            address(auctionManager)
-        );
-        protocolRevenueManager.setEtherFiNodesManagerAddress(
-            address(etherFiNodesManager)
-        );
-        stakingManager.setEtherFiNodesManagerAddress(
-            address(etherFiNodesManager)
-        );
-        stakingManager.setProtocolRevenueManagerAddress(address(protocolRevenueManager));
+        auctionManager.setStakingManagerContractAddress(address(stakingManager));
+        auctionManager.setProtocolRevenueManager(address(protocolRevenueManager));
+        protocolRevenueManager.setAuctionManagerAddress(address(auctionManager));
+        protocolRevenueManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
+        stakingManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
         etherFiNodesManager.setUpManager(
             address(treasury),
             address(auctionManager),
