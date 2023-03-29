@@ -282,6 +282,12 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         stakingRewardsSplit.bnft = _bnft;
     }
 
+    /// @notice Sets the protocol rewards split
+    /// @notice Splits must add up to the SCALE of 1_000_000 
+    /// @param _treasury the split going to the treasury
+    /// @param _nodeOperator the split going to the nodeOperator
+    /// @param _tnft the split going to the tnft holder
+    /// @param _bnft the split going to the bnft holder
     function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) 
         public 
         onlyOwner 
@@ -293,10 +299,14 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         protocolRewardsSplit.bnft = _bnft;
     }
 
+    /// @notice Sets the Non Exit Penalty Principal amount
+    /// @param _nonExitPenaltyPrincipal the new principal amount
     function setNonExitPenaltyPrincipal(uint128 _nonExitPenaltyPrincipal) public onlyOwner {
         nonExitPenaltyPrincipal = _nonExitPenaltyPrincipal;
     }
 
+    /// @notice Sets the Non Exit Penalty Daily Rate amount
+    /// @param _nonExitPenaltyDailyRate the new non exit daily rate
     function setNonExitPenaltyDailyRate(uint256 _nonExitPenaltyDailyRate) public onlyOwner {
         nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
