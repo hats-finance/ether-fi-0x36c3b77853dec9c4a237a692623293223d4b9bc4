@@ -55,13 +55,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //Every users ether balance
     mapping(address => uint256) public etherBalance;
 
-    //The mapping to hold how much ERC20 a user deposited in the EAP, for validation
-    mapping(address => mapping(address => uint256))
-        public userToERC20DepositEAP;
-
-    //Mapping to hold how much ether a user deposited in the EAP, for validation
-    mapping(address => uint256) public etherBalanceEAP;
-
     //Hodling how many points a user has
     mapping(address => uint256) public userPoints;
 
@@ -98,29 +91,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     /// @notice Allows ether to be sent to this contract
     receive() external payable {}
 
-    /// @notice Sets the number of points a user received
-    /// @dev Explain to a developer any extra details
-    /// @param _user the address of the user receiving the points
-    /// @param _points the number of points the user should receive
-    function setEarlyAdopterPoolData(
-        address _user, 
-        uint256 _points, 
-        uint256 _etherBalance, 
-        uint256 _rEthBal,
-        uint256 _wstEthBal,
-        uint256 _sfrxEthBal,
-        uint256 _cbEthBal
-    ) external onlyOwner {
-        require(dataTransferCompleted == false, "Transfer of data has already been complete");
-
-        userPoints[_user] = _points;
-        etherBalanceEAP[_user] = _etherBalance;
-        userToERC20DepositEAP[_user][rETH] = _rEthBal;
-        userToERC20DepositEAP[_user][wstETH] = _wstEthBal;
-        userToERC20DepositEAP[_user][sfrxETH] = _sfrxEthBal;
-        userToERC20DepositEAP[_user][cbETH] = _cbEthBal;
-    }
-
     /// @notice Allows user to deposit into the conversion pool
     /// @dev The deposit amount must be the same as what they deposited into the EAP
     /// @param _rEthBal balance of the token to be sent in
@@ -138,10 +108,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         require(_verifyValues(msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof), "Verfication failed");
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
-            require(
-                msg.value == etherBalanceEAP[msg.sender],
-                "Incorrect amount"
-            );
 
             etherBalance[msg.sender] += msg.value;
         }
@@ -209,7 +175,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     }
 
     function _ERC20Update(address _token, uint256 _amount) internal {
-        require(_amount == userToERC20DepositEAP[msg.sender][_token]);
         userToERC20Deposit[msg.sender][_token] = _amount;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
