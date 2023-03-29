@@ -18,8 +18,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNode is IEtherFiNode, Ownable {
-    // TODO: Remove these two address variables
-    address etherfiNodesManager;
 
     // TODO: reduce the size of these varaibles
     uint256 public localRevenueIndex;
@@ -45,10 +43,6 @@ contract EtherFiNode is IEtherFiNode, Ownable {
 
     //Allows ether to be sent to this contract
     receive() external payable {}
-
-    function registerEtherFiNodesManager(address _etherfiNodesManager) public {
-        etherfiNodesManager = _etherfiNodesManager;
-    }
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
@@ -105,7 +99,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     function moveRewardsToManager(
         uint256 _amount
     ) external onlyEtherFiNodeManagerContract {
-        (bool sent, ) = payable(etherfiNodesManager).call{value: _amount}("");
+        (bool sent, ) = payable(etherfiNodesManagerAddress()).call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -473,14 +467,14 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         return (operator, tnft, bnft, treasury);
     }
 
-    function etherfiNodesManagerAddress() internal view returns (address) {
-        // TODO: Replace it with the actual address
-        // return 0x...
-        return etherfiNodesManager;
+    // Local testnet address 0x2237101b855aDE27176546dC582B8CDB78ae461b
+    function etherfiNodesManagerAddress() internal pure returns (address) {
+        // TODO: Replace it with the mainnet address
+        return 0x2237101b855aDE27176546dC582B8CDB78ae461b;
     }
 
     // Local testnet address 0x4F91A7Ff5926223ee62C6F0dcB6c7e8890eA39f7
-    function protocolRevenueManagerAddress() internal view returns (address) {
+    function protocolRevenueManagerAddress() internal pure returns (address) {
         // TODO: Replace it with the mainnet address
         return 0x4F91A7Ff5926223ee62C6F0dcB6c7e8890eA39f7;
     }
@@ -491,7 +485,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
 
     modifier onlyEtherFiNodeManagerContract() {
         require(
-            msg.sender == etherfiNodesManager,
+            msg.sender == etherfiNodesManagerAddress(),
             "Only EtherFiNodeManager Contract"
         );
         _;

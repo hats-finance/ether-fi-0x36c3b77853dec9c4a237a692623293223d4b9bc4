@@ -84,6 +84,9 @@ contract AuctionManagerTest is Test {
         stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         vm.stopPrank();
 
+        console.log("node manager");
+        console.log(address(managerInstance));
+        console.log("protocol manager");
         console.log(address(protocolRevenueManagerInstance));
 
         test_data = IStakingManager.DepositData({
