@@ -184,10 +184,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         }
 
         if (_protocolRewards) {
-            (tmps[0], tmps[1], tmps[2], tmps[3]) = getProtocolRewards(
-                _PRsplits,
-                _PRscale
-            );
+            (tmps[0], tmps[1], tmps[2], tmps[3]) = getProtocolRewardsPayouts(_PRsplits, _PRscale);
             operator += tmps[0];
             tnft += tmps[1];
             bnft += tmps[2];
@@ -243,13 +240,16 @@ contract EtherFiNode is IEtherFiNode, Ownable {
             uint256 bnft,
             uint256 treasury
         ) = calculatePayouts(rewards, _splits, _scale);
-        uint256 daysPassedSinceExitRequest = _getDaysPassedSince(
-            exitRequestTimestamp,
-            uint32(block.timestamp)
-        );
-        if (daysPassedSinceExitRequest >= 14) {
-            treasury += operator;
-            operator = 0;
+
+        if (exitRequestTimestamp > 0) {
+            uint256 daysPassedSinceExitRequest = _getDaysPassedSince(
+                exitRequestTimestamp,
+                uint32(block.timestamp)
+            );
+            if (daysPassedSinceExitRequest >= 14) {
+                treasury += operator;
+                operator = 0;
+            }
         }
 
         return (operator, tnft, bnft, treasury);
@@ -263,20 +263,9 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     /// @return toTnft          the payout to the T-NFT holder
     /// @return toBnft          the payout to the B-NFT holder
     /// @return toTreasury      the payout to the Treasury
-    function getProtocolRewards(
-        IEtherFiNodesManager.RewardsSplit memory _splits,
-        uint256 _scale
-    )
-        public
-        view
-        onlyEtherFiNodeManagerContract
-        returns (
-            uint256 toNodeOperator,
-            uint256 toTnft,
-            uint256 toBnft,
-            uint256 toTreasury
-        )
-    {
+    function getProtocolRewardsPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) 
+        public view onlyEtherFiNodeManagerContract 
+        returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         if (localRevenueIndex == 0) {
             return (0, 0, 0, 0);
         }
@@ -296,6 +285,9 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         uint256 _dailyPenalty,
         uint32 _exitTimestamp
     ) public view onlyEtherFiNodeManagerContract returns (uint256) {
+        if (exitRequestTimestamp == 0) {
+            return 0;
+        }
         uint256 daysElapsed = _getDaysPassedSince(
             exitRequestTimestamp,
             _exitTimestamp
@@ -362,12 +354,13 @@ contract EtherFiNode is IEtherFiNode, Ownable {
             phase == VALIDATOR_PHASE.EXITED,
             "validator node is not exited"
         );
-        uint256 balance = address(this).balance - vestedAuctionRewards;
+        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
 
-        // Compute the payouts for the staking rewards (which is exceeding amount above 32 ETH)
+        // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
+        // the protocol rewards must be paid off already in 'processNodeExit'
         if (balance > 32 ether) {
             (
                 payouts[0],
@@ -426,7 +419,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
 
         require(
             payouts[0] + payouts[1] + payouts[2] + payouts[3] ==
-                address(this).balance - vestedAuctionRewards,
+                address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards()),
             "Incorrect Amount"
         );
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
