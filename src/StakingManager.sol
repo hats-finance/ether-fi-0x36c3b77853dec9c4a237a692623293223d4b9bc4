@@ -10,15 +10,19 @@ import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./EtherFiNode.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
     bool public test = true;
     uint128 public maxBatchDepositSize = 16;
     uint128 public stakeAmount;
+    address public implementationContract;
+    address public protocolRevenueManagerAddress;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
@@ -65,6 +69,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
+
     }
 
     //--------------------------------------------------------------------------------------
@@ -145,6 +150,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    ///        however, instead of the validator key, it will include the IPFS hash
+    ///        containing the validator key encrypted by the corresponding node operator's public key
     function registerValidator(uint256 _validatorId, DepositData calldata _depositData)
         public
         whenNotPaused 
@@ -260,10 +267,18 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         nodesManagerIntefaceInstance = IEtherFiNodesManager(_nodesManagerAddress);
     }
 
+    function setProtocolRevenueManagerAddress(address _protocolRevenueManagerAddress) public onlyOwner {
+        protocolRevenueManagerAddress = _protocolRevenueManagerAddress;
+    }
+
     /// @notice Sets the max number of deposits allowed at a time
     /// @param _newMaxBatchDepositSize the max number of deposits allowed
     function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
         maxBatchDepositSize = _newMaxBatchDepositSize;
+    }
+
+    function registerEtherFiNodeImplementationContract(address _etherFiNodeImplementationContract) public onlyOwner {
+        implementationContract = _etherFiNodeImplementationContract;
     }
 
     //Pauses the contract
@@ -293,15 +308,24 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         bidIdToStaker[_bidId] = msg.sender;
 
         uint256 validatorId = _bidId;
-        address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(
-            validatorId
-        );
+        address etherfiNode = createEtherfiNode(validatorId);
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
             validatorId,
             IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
         emit StakeDeposit(msg.sender, _bidId, etherfiNode);
+    }
+
+    function createEtherfiNode(uint256 _validatorId) private returns (address) {
+        address clone = Clones.clone(implementationContract);
+        EtherFiNode node = EtherFiNode(payable(clone));
+        node.initialize();
+        node.registerEtherFiNodesManager(address(nodesManagerIntefaceInstance));
+        node.registerProtocolRevenueManager(protocolRevenueManagerAddress);
+        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
+        
+        return clone;
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake
