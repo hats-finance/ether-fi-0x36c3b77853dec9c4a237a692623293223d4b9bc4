@@ -64,6 +64,7 @@ contract ProtocolRevenueManagerTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+        EtherFiNode etherFiNode = new EtherFiNode();
 
         auctionInstance.setProtocolRevenueManager(
             address(protocolRevenueManagerInstance)
@@ -78,6 +79,9 @@ contract ProtocolRevenueManagerTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
+        
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",

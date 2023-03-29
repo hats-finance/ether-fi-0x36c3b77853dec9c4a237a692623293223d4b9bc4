@@ -13,9 +13,11 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./EtherFiNodesManager.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "lib/forge-std/src/console.sol";
 
-contract EtherFiNode is IEtherFiNode {
+contract EtherFiNode is IEtherFiNode, Ownable {
     // TODO: Remove these two address variables
     address etherfiNodesManager;
     address protocolRevenueManager;
@@ -33,10 +35,8 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize(address _protocolRevenueManager) public {
-        require(etherfiNodesManager == address(0), "already initialised");
-        etherfiNodesManager = msg.sender;
-        protocolRevenueManager = _protocolRevenueManager;
+    function initialize() public {
+        require(stakingStartTimestamp == 0, "already initialised");
         stakingStartTimestamp = uint32(block.timestamp);
     }
 
@@ -46,6 +46,14 @@ contract EtherFiNode is IEtherFiNode {
 
     //Allows ether to be sent to this contract
     receive() external payable {}
+
+    function registerEtherFiNodesManager(address _etherfiNodesManager) public {
+        etherfiNodesManager = _etherfiNodesManager;
+    }
+
+    function registerProtocolRevenueManager(address _protocolRevenueManager) public {
+        protocolRevenueManager = _protocolRevenueManager;
+    }
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
