@@ -97,6 +97,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     /// @param _wstEthBal balance of the token to be sent in
     /// @param _sfrxEthBal balance of the token to be sent in
     /// @param _cbEthBal balance of the token to be sent in
+    /// @param _points points of the user
+    /// @param _merkleProof array of hashes forming the merkle proof for the user
     function deposit(
         uint256 _rEthBal,
         uint256 _wstEthBal,
