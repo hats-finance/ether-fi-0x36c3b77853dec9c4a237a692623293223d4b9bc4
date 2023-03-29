@@ -121,12 +121,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         userToERC20DepositEAP[_user][cbETH] = _cbEthBal;
     }
 
-    /// @notice Sets data transfer complete and data cannot be changed regarding previous balances
-    function completeDataTransfer() external onlyOwner {
-        dataTransferCompleted = true;
-        emit TransferCompleted();
-    }
-
     /// @notice Allows user to deposit into the conversion pool
     /// @dev The deposit amount must be the same as what they deposited into the EAP
     /// @param _rEthBal balance of the token to be sent in
@@ -142,7 +136,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         bytes32[] calldata _merkleProof
     ) external payable whenNotPaused {
         require(_verifyValues(msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof), "Verfication failed");
-        require(dataTransferCompleted == true, "Transfer of data has not taken place");
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
             require(
