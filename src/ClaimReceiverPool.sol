@@ -8,23 +8,13 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
 import "./EarlyAdopterPool.sol";
 import "lib/forge-std/src/console.sol";
 
 contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
-
-    struct UserData {
-        uint256 points;
-        uint256 etherBalance;
-        uint256 rEthBalance;
-        uint256 cbEthBalance;
-        uint256 wstEthBalance;
-        uint256 sfrxEthBalance;
-    }
-    
-    mapping(bytes32 => UserData) public users;
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -45,6 +35,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     address private immutable sfrxETH;
     address private immutable cbETH;
 
+    bytes32 public merkleRoot;
+
     bool public dataTransferCompleted = false;
 
     //SwapRouter but Testnet, although address is actually the same
@@ -56,6 +48,13 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //Goerli Weth address used for unwrapping ERC20 Weth
     IWETH constant wethContract = IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
+    //Used to track how much was deposited incase we need this information later
+    //NB: This is not a balance, but a variable holding the amount of the deposit
+    mapping(address => mapping(address => uint256)) public userToERC20Deposit;
+
+    //Every users ether balance
+    mapping(address => uint256) public etherBalance;
+
     //The mapping to hold how much ERC20 a user deposited in the EAP, for validation
     mapping(address => mapping(address => uint256))
         public userToERC20DepositEAP;
@@ -63,11 +62,15 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //Mapping to hold how much ether a user deposited in the EAP, for validation
     mapping(address => uint256) public etherBalanceEAP;
 
+    //Hodling how many points a user has
+    mapping(address => uint256) public userPoints;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
     event TransferCompleted();
+    event MerkleUpdated(bytes32, bytes32);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -94,6 +97,25 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Allows ether to be sent to this contract
     receive() external payable {}
+
+    // function setEarlyAdopterPoolData() external onlyOwner {
+
+    // }
+
+    // function _getDataFromLeafNode(bytes32 _leafNode) internal view returns (address, uint256, uint256, uint256, uint256, uint256, uint256) {
+        
+    //     bytes memory leafNodeData = abi.decode(bytes(_leafNode), (address, uint, uint, uint, uint, uint, uint));
+    
+    //     return (
+    //         address(leafNodeData), 
+    //         uint256(leafNodeData[20]), 
+    //         uint256(leafNodeData[52]), 
+    //         uint256(leafNodeData[84]), 
+    //         uint256(leafNodeData[116]), 
+    //         uint256(leafNodeData[148]), 
+    //         uint256(leafNodeData[180])
+    //     );
+    // }
 
     /// @notice Sets the number of points a user received
     /// @dev Explain to a developer any extra details
@@ -136,6 +158,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         uint256 _sfrxEthBal,
         uint256 _cbEthBal
     ) external payable whenNotPaused {
+        require(dataTransferCompleted == true, "Transfer of data has not taken place");
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
             require(
@@ -175,6 +198,16 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //Unpauses the contract
     function unPauseContract() external onlyOwner {
         _unpause();
+    }
+
+    /// @notice Updates the merkle root 
+    /// @dev merkleroot gets generated in JS offline and sent to the contract
+    /// @param _newMerkle new merkle root to be used for bidding
+    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
+        bytes32 oldMerkle = merkleRoot;
+        merkleRoot = _newMerkle;
+
+        emit MerkleUpdated(oldMerkle, _newMerkle);
     }
 
     //--------------------------------------------------------------------------------------
