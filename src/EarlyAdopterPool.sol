@@ -323,5 +323,4 @@ contract EarlyAdopterPool is Ownable, ReentrancyGuard, Pausable {
         require(claimingOpen == 0, "Depositing closed");
         _;
     }
-    
 }
