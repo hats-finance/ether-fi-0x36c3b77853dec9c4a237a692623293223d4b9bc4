@@ -15,8 +15,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
 
     uint256 public numberOfValidators;
-    uint128 private constant nonExitPenaltyPrincipal = 1 ether;
-    uint64 private constant nonExitPenaltyDailyRate = 3; // 3% per day
+    uint128 public nonExitPenaltyPrincipal = 1 ether;
+    uint64 public nonExitPenaltyDailyRate = 3; // 3% per day
     uint64 public constant SCALE = 1000000;
 
     address public treasuryContract;
@@ -293,6 +293,11 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         protocolRewardsSplit.bnft = _bnft;
     }
 
+    function setNonExitPenaltyPrincipal(uint128 _nonExitPenaltyPrincipal) public onlyOwner {
+        require(_nonExitPenaltyPrincipal != 0, "Cannot set 0 as penalty");
+        nonExitPenaltyPrincipal = _nonExitPenaltyPrincipal;
+    }
+
     /// @notice Sets the phase of the validator
     /// @param _validatorId id of the validator associated to this etherfi node
     /// @param _phase phase of the validator
@@ -474,6 +479,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     function getFullWithdrawalPayouts(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).getFullWithdrawalPayouts(stakingRewardsSplit, SCALE, nonExitPenaltyPrincipal, nonExitPenaltyDailyRate);
+    }
+
+    function getNonExitPenaltyPrincipal() public view returns(uint256){
+        return nonExitPenaltyPrincipal;
     }
 
     /// @notice Fetches if the validator has been exited

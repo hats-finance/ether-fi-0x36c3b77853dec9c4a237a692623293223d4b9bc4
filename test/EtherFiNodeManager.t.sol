@@ -194,6 +194,23 @@ contract EtherFiNodesManagerTest is Test {
         assertEq(bnft, 400000);
     }
 
+    function test_SetNonExitPenaltyPrincipal() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        managerInstance.setNonExitPenaltyPrincipal(2 ether);
+
+        vm.expectRevert("Cannot set 0 as penalty");
+        vm.prank(owner);
+        managerInstance.setNonExitPenaltyPrincipal(0);
+
+        assertEq(managerInstance.getNonExitPenaltyPrincipal(), 1 ether);
+
+        vm.prank(owner);
+        managerInstance.setNonExitPenaltyPrincipal(2 ether);
+
+        assertEq(managerInstance.getNonExitPenaltyPrincipal(), 2 ether);
+    }
+
     function test_SetEtherFiNodePhaseRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only staking manager contract function");
         vm.prank(owner);
