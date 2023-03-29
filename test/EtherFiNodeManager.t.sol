@@ -199,12 +199,12 @@ contract EtherFiNodesManagerTest is Test {
         vm.prank(alice);
         managerInstance.setNonExitPenaltyPrincipal(2 ether);
 
-        assertEq(managerInstance.getNonExitPenaltyPrincipal(), 1 ether);
+        assertEq(managerInstance.nonExitPenaltyPrincipal(), 1 ether);
 
         vm.prank(owner);
         managerInstance.setNonExitPenaltyPrincipal(2 ether);
 
-        assertEq(managerInstance.getNonExitPenaltyPrincipal(), 2 ether);
+        assertEq(managerInstance.nonExitPenaltyPrincipal(), 2 ether);
     }
 
     function test_SetNonExitPenaltyDailyRate() public {
@@ -212,12 +212,12 @@ contract EtherFiNodesManagerTest is Test {
         vm.prank(alice);
         managerInstance.setNonExitPenaltyDailyRate(2 ether);
 
-        assertEq(managerInstance.getNonExitPenaltyDailyRate(), 3);
+        assertEq(managerInstance.nonExitPenaltyDailyRate(), 3);
 
         vm.prank(owner);
         managerInstance.setNonExitPenaltyDailyRate(5);
 
-        assertEq(managerInstance.getNonExitPenaltyDailyRate(), 5);
+        assertEq(managerInstance.nonExitPenaltyDailyRate(), 5);
     }
 
     function test_SetEtherFiNodePhaseRevertsOnIncorrectCaller() public {

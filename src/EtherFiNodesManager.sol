@@ -13,6 +13,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
+    uint256 private nonExitPenaltyPrincipal = 1 ether;
+    uint256 private nonExitPenaltyDailyRate = 3; // 3% per day
 
     uint256 public numberOfValidators;
     uint128 public nonExitPenaltyPrincipal = 1 ether;
@@ -498,9 +500,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         return nonExitPenaltyPrincipal;
     }
 
-    /// @notice Fetches if the validator has been exited
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return bool value based on if the validator has been exited
+    function getNonExitPenaltyDailyRate() public view returns(uint256){
+        return nonExitPenaltyDailyRate;
+    }
+
     function isExited(uint256 _validatorId) external view returns (bool) {
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
     }
