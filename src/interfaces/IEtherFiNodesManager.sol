@@ -42,8 +42,11 @@ interface IEtherFiNodesManager {
     function registerEtherFiNode(uint256 _validatorId, address _address) external;
     function unregisterEtherFiNode(uint256 _validatorId) external;
 
+    function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) external;
     function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) external;
     function setNonExitPenaltyPrincipal(uint128 _nonExitPenaltyPrincipal) external; 
+    function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) external;
+    
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs) external;
     function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) payable external;

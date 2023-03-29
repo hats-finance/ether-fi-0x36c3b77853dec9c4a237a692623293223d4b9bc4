@@ -13,9 +13,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-    uint256 private nonExitPenaltyPrincipal = 1 ether;
-    uint256 private nonExitPenaltyDailyRate = 3; // 3% per day
-
     uint256 public numberOfValidators;
     uint128 public nonExitPenaltyPrincipal = 1 ether;
     uint64 public nonExitPenaltyDailyRate = 3; // 3% per day
@@ -309,7 +306,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Sets the Non Exit Penalty Daily Rate amount
     /// @param _nonExitPenaltyDailyRate the new non exit daily rate
-    function setNonExitPenaltyDailyRate(uint256 _nonExitPenaltyDailyRate) public onlyOwner {
+    function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) public onlyOwner {
         nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
 
