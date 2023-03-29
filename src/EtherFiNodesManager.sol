@@ -294,8 +294,11 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     }
 
     function setNonExitPenaltyPrincipal(uint128 _nonExitPenaltyPrincipal) public onlyOwner {
-        require(_nonExitPenaltyPrincipal != 0, "Cannot set 0 as penalty");
         nonExitPenaltyPrincipal = _nonExitPenaltyPrincipal;
+    }
+
+    function setNonExitPenaltyDailyRate(uint256 _nonExitPenaltyDailyRate) public onlyOwner {
+        nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
 
     /// @notice Sets the phase of the validator
