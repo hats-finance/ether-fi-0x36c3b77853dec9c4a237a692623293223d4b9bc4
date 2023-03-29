@@ -43,13 +43,12 @@ contract AuctionManagerTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
+
+        // Deploy Contracts
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager(
-            address(nodeOperatorManagerInstance)
-        );
-        
+        auctionInstance = new AuctionManager(address(nodeOperatorManagerInstance));
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
@@ -64,17 +63,11 @@ contract AuctionManagerTest is Test {
         );
         EtherFiNode etherFiNode = new EtherFiNode();
 
-        auctionInstance.setStakingManagerContractAddress(
-            address(stakingManagerInstance)
-        );
-        nodeOperatorManagerInstance.setAuctionContractAddress(
-            address(auctionInstance)
-        );
+        // Setup dependencies
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
         nodeOperatorManagerInstance.updateMerkleRoot(root);
-
-        stakingManagerInstance.setEtherFiNodesManagerAddress(
-            address(managerInstance)
-        );
+        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
         stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         
