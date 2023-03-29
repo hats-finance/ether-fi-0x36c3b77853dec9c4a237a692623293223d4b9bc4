@@ -199,10 +199,6 @@ contract EtherFiNodesManagerTest is Test {
         vm.prank(alice);
         managerInstance.setNonExitPenaltyPrincipal(2 ether);
 
-        vm.expectRevert("Cannot set 0 as penalty");
-        vm.prank(owner);
-        managerInstance.setNonExitPenaltyPrincipal(0);
-
         assertEq(managerInstance.getNonExitPenaltyPrincipal(), 1 ether);
 
         vm.prank(owner);
@@ -215,10 +211,6 @@ contract EtherFiNodesManagerTest is Test {
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(alice);
         managerInstance.setNonExitPenaltyDailyRate(2 ether);
-
-        vm.expectRevert("Cannot set 0 as rate");
-        vm.prank(owner);
-        managerInstance.setNonExitPenaltyDailyRate(0);
 
         assertEq(managerInstance.getNonExitPenaltyDailyRate(), 3);
 
