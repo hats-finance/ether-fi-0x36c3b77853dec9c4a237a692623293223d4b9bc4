@@ -13,10 +13,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-
     uint256 public numberOfValidators;
-    uint128 private constant nonExitPenaltyPrincipal = 1 ether;
-    uint64 private constant nonExitPenaltyDailyRate = 3; // 3% per day
+    uint128 public nonExitPenaltyPrincipal = 1 ether;
+    uint64 public nonExitPenaltyDailyRate = 3; // 3% per day
     uint64 public constant SCALE = 1000000;
 
     address public treasuryContract;
@@ -265,6 +264,52 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //-------------------------------------  SETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Sets the staking rewards split
+    /// @notice Splits must add up to the SCALE of 1_000_000 
+    /// @param _treasury the split going to the treasury
+    /// @param _nodeOperator the split going to the nodeOperator
+    /// @param _tnft the split going to the tnft holder
+    /// @param _bnft the split going to the bnft holder
+    function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) 
+        public 
+        onlyOwner 
+        amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft)
+    {
+        stakingRewardsSplit.treasury = _treasury;
+        stakingRewardsSplit.nodeOperator = _nodeOperator;
+        stakingRewardsSplit.tnft = _tnft;
+        stakingRewardsSplit.bnft = _bnft;
+    }
+
+    /// @notice Sets the protocol rewards split
+    /// @notice Splits must add up to the SCALE of 1_000_000 
+    /// @param _treasury the split going to the treasury
+    /// @param _nodeOperator the split going to the nodeOperator
+    /// @param _tnft the split going to the tnft holder
+    /// @param _bnft the split going to the bnft holder
+    function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) 
+        public 
+        onlyOwner 
+        amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft) 
+    {
+        protocolRewardsSplit.treasury = _treasury;
+        protocolRewardsSplit.nodeOperator = _nodeOperator;
+        protocolRewardsSplit.tnft = _tnft;
+        protocolRewardsSplit.bnft = _bnft;
+    }
+
+    /// @notice Sets the Non Exit Penalty Principal amount
+    /// @param _nonExitPenaltyPrincipal the new principal amount
+    function setNonExitPenaltyPrincipal(uint128 _nonExitPenaltyPrincipal) public onlyOwner {
+        nonExitPenaltyPrincipal = _nonExitPenaltyPrincipal;
+    }
+
+    /// @notice Sets the Non Exit Penalty Daily Rate amount
+    /// @param _nonExitPenaltyDailyRate the new non exit daily rate
+    function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) public onlyOwner {
+        nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
+    }
+
     /// @notice Sets the phase of the validator
     /// @param _validatorId id of the validator associated to this etherfi node
     /// @param _phase phase of the validator
@@ -448,9 +493,14 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         return IEtherFiNode(etherfiNode).getFullWithdrawalPayouts(stakingRewardsSplit, SCALE, nonExitPenaltyPrincipal, nonExitPenaltyDailyRate);
     }
 
-    /// @notice Fetches if the validator has been exited
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return bool value based on if the validator has been exited
+    function getNonExitPenaltyPrincipal() public view returns(uint256){
+        return nonExitPenaltyPrincipal;
+    }
+
+    function getNonExitPenaltyDailyRate() public view returns(uint256){
+        return nonExitPenaltyDailyRate;
+    }
+
     function isExited(uint256 _validatorId) external view returns (bool) {
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
     }
@@ -473,6 +523,11 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
             msg.sender == protocolRevenueManagerContract,
             "Only protocol revenue manager contract function"
         );
+        _;
+    }
+
+    modifier amountsEqualScale(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) {
+        require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "Amounts not equal to 1000000");
         _;
     }
 }
