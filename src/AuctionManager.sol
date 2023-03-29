@@ -135,10 +135,17 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         return bidIdArray;
     }
 
+    function cancelBidBatch(uint256[] calldata _bidIds) external whenNotPaused {
+        for (uint256 i = 0; i < _bidIds.length; i++) {
+            cancelBid(_bidIds[i]);
+        }
+    }
+
+
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Require the bid to exist and be active
     /// @param _bidId the ID of the bid to cancel
-    function cancelBid(uint256 _bidId) external whenNotPaused {
+    function cancelBid(uint256 _bidId) public whenNotPaused {
         require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
         require(bids[_bidId].isActive == true, "Bid already cancelled");
 
