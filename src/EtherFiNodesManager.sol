@@ -271,16 +271,22 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     /// @param _nodeOperator the split going to the nodeOperator
     /// @param _tnft the split going to the tnft holder
     /// @param _bnft the split going to the bnft holder
-    function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) public onlyOwner {
-        require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "Amounts not equal to 1000000");
+    function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) 
+        public 
+        onlyOwner 
+        amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft)
+    {
         stakingRewardsSplit.treasury = _treasury;
         stakingRewardsSplit.nodeOperator = _nodeOperator;
         stakingRewardsSplit.tnft = _tnft;
         stakingRewardsSplit.bnft = _bnft;
     }
 
-    function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) public onlyOwner {
-        require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "Amounts not equal to 1000000");
+    function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) 
+        public 
+        onlyOwner 
+        amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft) 
+    {
         protocolRewardsSplit.treasury = _treasury;
         protocolRewardsSplit.nodeOperator = _nodeOperator;
         protocolRewardsSplit.tnft = _tnft;
@@ -495,6 +501,11 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
             msg.sender == protocolRevenueManagerContract,
             "Only protocol revenue manager contract function"
         );
+        _;
+    }
+
+    modifier amountsEqualScale(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) {
+        require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "Amounts not equal to 1000000");
         _;
     }
 }
