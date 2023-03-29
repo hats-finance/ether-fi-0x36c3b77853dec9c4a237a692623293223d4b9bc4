@@ -25,7 +25,7 @@ interface IEtherFiNode {
     function getNonExitPenalty(uint256 _principal, uint256 _dailyPenalty, uint32 _endTimestamp) external view returns (uint256);
     function calculatePayouts(uint256 _totalAmount, IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
     function getStakingRewardsPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
-    function getProtocolRewards(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
+    function getProtocolRewardsPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
     function getRewardsPayouts(bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee, 
                                 IEtherFiNodesManager.RewardsSplit memory _SRsplits, uint256 _SRscale, 
                                 IEtherFiNodesManager.RewardsSplit memory _PRsplits, uint256 _PRscale)

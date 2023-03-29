@@ -67,10 +67,13 @@ contract NodeOperatorManagerTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+        EtherFiNode etherFiNode = new EtherFiNode();
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
@@ -79,12 +82,16 @@ contract NodeOperatorManagerTest is Test {
             ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
 
+
+        assertEq(nodeOperatorManagerInstance.auctionManagerContractAddress(), address(auctionInstance));
+    
         vm.stopPrank();
     }
 
     function test_RegisterNodeOperator() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.startPrank(alice);
+        assertEq(nodeOperatorManagerInstance.registered(alice), false);
         nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             aliceIPFSHash,
@@ -99,6 +106,8 @@ contract NodeOperatorManagerTest is Test {
         assertEq(aliceHash, abi.encodePacked(aliceIPFSHash));
         assertEq(totalKeys, 10);
         assertEq(keysUsed, 0);
+
+        assertEq(nodeOperatorManagerInstance.registered(alice), true);
 
         vm.expectRevert("Already registered");
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -159,9 +168,6 @@ contract NodeOperatorManagerTest is Test {
         vm.prank(alice);
         nodeOperatorManagerInstance.fetchNextKeyIndex(alice);
     }
-
-    
-
 
     function test_UpdatingMerkle() public {
         assertEq(nodeOperatorManagerInstance.merkleRoot(), root);

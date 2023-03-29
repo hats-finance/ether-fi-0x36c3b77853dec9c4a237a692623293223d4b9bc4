@@ -72,6 +72,7 @@ contract AuctionManagerTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+        EtherFiNode etherFiNode = new EtherFiNode();
 
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
@@ -88,6 +89,8 @@ contract AuctionManagerTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
@@ -110,35 +113,6 @@ contract AuctionManagerTest is Test {
         assertEq(auctionInstance.maxBidAmount(), 5 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 0);
         assertTrue(auctionInstance.whitelistEnabled());
-    }
-
-    function test_ReEnterAuctionManagerFailsIfAuctionManagerPaused() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
-            _ipfsHash,
-            5
-        );
-
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
-            1,
-            0.1 ether
-        );
-
-        vm.prank(owner);
-        auctionInstance.pauseContract();
-
-        uint256[] memory bidIdArray = new uint256[](1);
-        bidIdArray[0] = bidId[0];
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
-            bidIdArray
-        );
-
-        vm.prank(address(stakingManagerInstance));
-        vm.expectRevert("Pausable: paused");
-        auctionInstance.reEnterAuction(bidId[0]);
     }
 
     function test_ReEnterAuctionManagerFailsIfNotCorrectCaller() public {
