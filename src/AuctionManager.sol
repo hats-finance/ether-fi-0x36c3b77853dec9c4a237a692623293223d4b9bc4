@@ -1,34 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-//Importing all needed contracts and libraries
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/INodeOperatorManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "lib/forge-std/src/console.sol";
 
 contract AuctionManager is IAuctionManager, Pausable, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint256 public whitelistBidAmount = 0.001 ether;
-    uint256 public minBidAmount = 0.01 ether;
-    uint256 public maxBidAmount = 5 ether;
+    uint128 public whitelistBidAmount = 0.001 ether;
+    uint64 public minBidAmount = 0.01 ether;
+    uint64 public maxBidAmount = 5 ether;
     uint256 public numberOfBids = 1;
     uint256 public numberOfActiveBids;
 
+    INodeOperatorManager public nodeOperatorManagerInterface;
+    IProtocolRevenueManager public protocolRevenueManager;
+
     address public stakingManagerContractAddress;
-    address public nodeOperatorManagerContractAddress;
     bool public whitelistEnabled = true;
 
     mapping(uint256 => Bid) public bids;
-
-    INodeOperatorManager nodeOperatorManagerInterface;
-    IProtocolRevenueManager protocolRevenueManager;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -62,7 +59,6 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         nodeOperatorManagerInterface = INodeOperatorManager(
             _nodeOperatorManagerContract
         );
-        nodeOperatorManagerContractAddress = _nodeOperatorManagerContract;
     }
 
     //--------------------------------------------------------------------------------------
@@ -173,7 +169,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
     
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    function reEnterAuction(uint256 _bidId) external onlyStakingManagerContract whenNotPaused {
+    function reEnterAuction(uint256 _bidId) external onlyStakingManagerContract {
         require(bids[_bidId].isActive == false, "Bid already active");
         //Reactivate the bid
         bids[_bidId].isActive = true;
@@ -259,21 +255,21 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     /// @notice Updates the minimum bid price
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
-    function setMinBidPrice(uint256 _newMinBidAmount) external onlyOwner {
+    function setMinBidPrice(uint64 _newMinBidAmount) external onlyOwner {
         require(_newMinBidAmount < maxBidAmount, "Min bid exceeds max bid");
         minBidAmount = _newMinBidAmount;
     }
 
     /// @notice Updates the maximum bid price
     /// @param _newMaxBidAmount the new amount to set the maximum bid price as
-    function setMaxBidPrice(uint256 _newMaxBidAmount) external onlyOwner {
+    function setMaxBidPrice(uint64 _newMaxBidAmount) external onlyOwner {
         require(_newMaxBidAmount > minBidAmount, "Min bid exceeds max bid");
         maxBidAmount = _newMaxBidAmount;
     }
 
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
-    function updateWhitelistMinBidAmount(uint256 _newAmount) external onlyOwner {
+    function updateWhitelistMinBidAmount(uint128 _newAmount) external onlyOwner {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
         whitelistBidAmount = _newAmount;
     }
@@ -292,7 +288,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
 
     modifier onlyNodeOperatorManagerContract() {
         require(
-            msg.sender == nodeOperatorManagerContractAddress,
+            msg.sender == address(nodeOperatorManagerInterface),
             "Only node operator key manager contract function"
         );
         _;

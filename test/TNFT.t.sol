@@ -2,17 +2,19 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "../src/interfaces/IStakingManager.sol";
+import "../src/interfaces/IEtherFiNode.sol";
+import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
+import "../src/NodeOperatorManager.sol";
+import "../src/AuctionManager.sol";
+import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
-import "../src/AuctionManager.sol";
-import "../src/NodeOperatorManager.sol";
-import "../src/ProtocolRevenueManager.sol";
-import "src/EtherFiNodesManager.sol";
 import "../src/Treasury.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract TNFTTest is Test {
+contract StakingManagerTest is Test {
     IStakingManager public depositInterface;
     EtherFiNode public withdrawSafeInstance;
     EtherFiNodesManager public managerInstance;
@@ -20,22 +22,36 @@ contract TNFTTest is Test {
     StakingManager public stakingManagerInstance;
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
-    ProtocolRevenueManager public protocolRevenueManagerInstance;
     AuctionManager public auctionInstance;
+    ProtocolRevenueManager public protocolRevenueManagerInstance;
     Treasury public treasuryInstance;
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
 
-    address owner = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
+    IStakingManager.DepositData public test_data;
+    IStakingManager.DepositData public test_data_2;
+
+    address owner = vm.addr(1);
     address alice = vm.addr(2);
 
-    bytes _ipfsHash = "_ipfsHash";
-    
-    IStakingManager.DepositData public test_data;
+    bytes _ipfsHash = "IPFSHash";
+
+    event StakeDeposit(
+        address indexed staker,
+        uint256 bidId,
+        address withdrawSafe
+    );
+    event DepositCancelled(uint256 id);
+    event ValidatorRegistered(
+        address indexed operator,
+        uint256 validatorId,
+        string ipfsHashForEncryptedValidatorKey
+    );
 
     function setUp() public {
         vm.startPrank(owner);
+
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorManagerInstance = new NodeOperatorManager();
@@ -47,38 +63,41 @@ contract TNFTTest is Test {
         );
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(
-            address(stakingManagerInstance)
-        );
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
+
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
-            address(TestTNFTInstance),
             address(TestBNFTInstance),
+            address(TestTNFTInstance),
             address(protocolRevenueManagerInstance)
+        );
+        EtherFiNode etherFiNode = new EtherFiNode();
+
+        auctionInstance.setStakingManagerContractAddress(
+            address(stakingManagerInstance)
         );
 
         auctionInstance.setProtocolRevenueManager(
             address(protocolRevenueManagerInstance)
         );
 
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
-            address(managerInstance)
-        );
         protocolRevenueManagerInstance.setAuctionManagerAddress(
             address(auctionInstance)
         );
-        stakingManagerInstance.setEtherFiNodesManagerAddress(
+
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
 
-        assertEq(TestTNFTInstance.stakingManagerContractAddress(), address(stakingManagerInstance));
-        
+        stakingManagerInstance.setEtherFiNodesManagerAddress(
+            address(managerInstance)
+        );
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
@@ -87,6 +106,10 @@ contract TNFTTest is Test {
             signature: "test_signature",
             ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
+
+        assertEq(TestTNFTInstance.stakingManagerContractAddress(), address(stakingManagerInstance));
+
+        vm.stopPrank();
     }
 
     function test_TNFTMintsFailsIfNotCorrectCaller() public {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/ITNFT.sol";
@@ -11,9 +11,9 @@ import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IStakingManager.sol";
+import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "./EtherFiNode.sol";
 import "lib/forge-std/src/console.sol";
 
 contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
@@ -22,8 +22,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     uint256 private constant nonExitPenaltyPrincipal = 1 ether;
     uint256 private constant nonExitPenaltyDailyRate = 3; // 3% per day
-
-    address public immutable implementationContract;
 
     uint256 public numberOfValidators;
 
@@ -70,7 +68,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         address _bnftContract,
         address _protocolRevenueManagerContract
     ) {
-        implementationContract = address(new EtherFiNode());
 
         treasuryContract = _treasuryContract;
         auctionContract = _auctionContract;
@@ -116,13 +113,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     receive() external payable {}
 
-    function createEtherfiNode(uint256 _validatorId) external onlyStakingManagerContract returns (address) {
-        address clone = Clones.clone(implementationContract);
-        EtherFiNode(payable(clone)).initialize(address(protocolRevenueManagerInstance));
-        registerEtherFiNode(_validatorId, clone);
-        return clone;
-    }
-
     /// @notice Sets the validator ID for the EtherFiNode contract
     /// @param _validatorId id of the validator associated to the node
     /// @param _address address of the EtherFiNode contract
@@ -156,11 +146,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         emit NodeExitRequested(_validatorId);
     }
 
-    /// @notice Once the node's exit is observed, the protocol calls this function:
-    ///         For each node,
-    ///          - mark it EXITED
-    ///          - distribute the protocol (auction) revenue
-    ///          - stop sharing the protocol revenue; by setting their local revenue index to '0'
+    /// @notice Once the node's exit is observed, the protocol calls this function to process their exits.
     /// @param _validatorIds the list of validators which exited
     /// @param _exitTimestamps the list of exit timestamps of the validators
     function processNodeExit(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamps) external onlyOwner {
@@ -168,40 +154,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         require(numberOfValidators >= _validatorIds.length, "Not enough validators");
         
         for (uint256 i = 0; i < _validatorIds.length; i++) {
-            uint256 validatorId = _validatorIds[i];
-            address etherfiNode = etherfiNodeAddress[validatorId];
-
-            // Mark EXITED
-            IEtherFiNode(etherfiNode).markExited(_exitTimestamps[i]);
-            
-            // distribute the protocol reward from the ProtocolRevenueMgr contrac to the validator's etherfi node contract
-            uint256 amount = protocolRevenueManagerInstance.distributeAuctionRevenue(validatorId);
-
-            // Reset its local revenue index to 0
-            IEtherFiNode(etherfiNode).setLocalRevenueIndex(0);
-
-            // Process the payouts
-            (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
-                = IEtherFiNode(etherfiNode).calculatePayouts(amount, protocolRewardsSplit, SCALE);
-            
-            address operator = auctionInterfaceInstance.getBidOwner(validatorId);
-            address tnftHolder = tnftInstance.ownerOf(validatorId);
-            address bnftHolder = bnftInstance.ownerOf(validatorId);
-
-            numberOfValidators -= 1;
-
-            IEtherFiNode(etherfiNode).withdrawFunds(
-                treasuryContract,
-                toTreasury,
-                operator,
-                toOperator,
-                tnftHolder,
-                toTnft,
-                bnftHolder,
-                toBnft
-            );
-
-            emit NodeExitProcessed(validatorId);
+            _processNodeExit(_validatorIds[i], _exitTimestamps[i]);
         }
     }
 
@@ -236,7 +189,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice batch-process the rewards skimming
     /// @param _validatorIds a list of the validator Ids
-    function partialWithdraw(uint256[] calldata _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external {
+    function partialWithdrawBatch(uint256[] calldata _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             partialWithdraw(_validatorIds[i], _stakingRewards, _protocolRewards, _vestedAuctionFee);
         }
@@ -297,6 +250,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         require (IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED, "validator node is not exited");
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = getFullWithdrawalPayouts(_validatorId);
+        IEtherFiNode(etherfiNode).processVestedAuctionFeeWithdrawal();
+
         address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
         address tnftHolder = tnftInstance.ownerOf(_validatorId);
         address bnftHolder = bnftInstance.ownerOf(_validatorId);
@@ -360,6 +315,48 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
+
+    /// @notice Once the node's exit is observed, the protocol calls this function:
+    ///         - mark it EXITED
+    ///         - distribute the protocol (auction) revenue
+    ///         - stop sharing the protocol revenue; by setting their local revenue index to '0'
+    /// @param _validatorId the validator ID
+    /// @param _exitTimestamp the exit timestamp
+    function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
+        address etherfiNode = etherfiNodeAddress[_validatorId];
+
+        // Mark EXITED
+        IEtherFiNode(etherfiNode).markExited(_exitTimestamp);
+        
+        // distribute the protocol reward from the ProtocolRevenueMgr contrac to the validator's etherfi node contract
+        uint256 amount = protocolRevenueManagerInstance.distributeAuctionRevenue(_validatorId);
+
+        // Reset its local revenue index to 0, which indicates that no accrued protocol revenue exists
+        IEtherFiNode(etherfiNode).setLocalRevenueIndex(0);
+
+        // Distribute the payouts for the protocol rewards
+        (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
+            = IEtherFiNode(etherfiNode).calculatePayouts(amount, protocolRewardsSplit, SCALE);
+        
+        address operator = auctionInterfaceInstance.getBidOwner(_validatorId);
+        address tnftHolder = tnftInstance.ownerOf(_validatorId);
+        address bnftHolder = bnftInstance.ownerOf(_validatorId);
+
+        numberOfValidators -= 1;
+
+        IEtherFiNode(etherfiNode).withdrawFunds(
+            treasuryContract,
+            toTreasury,
+            operator,
+            toOperator,
+            tnftHolder,
+            toTnft,
+            bnftHolder,
+            toBnft
+        );
+
+        emit NodeExitProcessed(_validatorId);
+    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------

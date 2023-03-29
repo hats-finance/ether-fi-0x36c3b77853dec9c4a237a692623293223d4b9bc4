@@ -18,4 +18,7 @@ interface IProtocolRevenueManager {
     function distributeAuctionRevenue(uint256 _validatorId) external returns (uint256);
 
     function setEtherFiNodesManagerAddress(address _etherFiNodesManager) external;
+    function setAuctionManagerAddress(address _auctionManager) external;
+    function setAuctionRewardVestingPeriod(uint128 _periodInDays) external;
+    function setAuctionRewardSplitForStakers(uint128 _split) external;
 }
