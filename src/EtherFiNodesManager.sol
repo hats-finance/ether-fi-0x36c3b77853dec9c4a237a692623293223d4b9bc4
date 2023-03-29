@@ -1,32 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-import "./interfaces/ITNFT.sol";
-import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuctionManager.sol";
-import "./interfaces/ITreasury.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
-import "./interfaces/IStakingManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
-import "lib/forge-std/src/console.sol";
 
 contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-    uint256 private constant nonExitPenaltyPrincipal = 1 ether;
-    uint256 private constant nonExitPenaltyDailyRate = 3; // 3% per day
 
     uint256 public numberOfValidators;
+    uint128 private constant nonExitPenaltyPrincipal = 1 ether;
+    uint64 private constant nonExitPenaltyDailyRate = 3; // 3% per day
+    uint64 public constant SCALE = 1000000;
 
     address public treasuryContract;
-    address public auctionContract;
     address public stakingManagerContract;
     address public protocolRevenueManagerContract;
 
@@ -34,12 +27,10 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     TNFT public tnftInstance;
     BNFT public bnftInstance;
-    IStakingManager public stakingManagerInstance;
     IAuctionManager public auctionInterfaceInstance;
     IProtocolRevenueManager public protocolRevenueManagerInstance;
 
     //Holds the data for the revenue splits depending on where the funds are received from
-    uint256 public constant SCALE = 1000000;
     RewardsSplit public stakingRewardsSplit;
     RewardsSplit public protocolRewardsSplit;
 
@@ -70,11 +61,9 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     ) {
 
         treasuryContract = _treasuryContract;
-        auctionContract = _auctionContract;
         stakingManagerContract = _stakingManagerContract;
         protocolRevenueManagerContract = _protocolRevenueManagerContract;
 
-        stakingManagerInstance = IStakingManager(_stakingManagerContract);
         auctionInterfaceInstance = IAuctionManager(_auctionContract);
         protocolRevenueManagerInstance = IProtocolRevenueManager(_protocolRevenueManagerContract);
 

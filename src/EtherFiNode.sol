@@ -271,8 +271,8 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     /// @param _dailyPenalty the dailty penalty for the non exit penalty
     /// @param _exitTimestamp the exit timestamp for the validator node
     function getNonExitPenalty(
-        uint256 _principal,
-        uint256 _dailyPenalty,
+        uint128 _principal,
+        uint64 _dailyPenalty,
         uint32 _exitTimestamp
     ) public view onlyEtherFiNodeManagerContract returns (uint256) {
         if (exitRequestTimestamp == 0) {
@@ -324,8 +324,8 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     function getFullWithdrawalPayouts(
         IEtherFiNodesManager.RewardsSplit memory _splits,
         uint256 _scale,
-        uint256 _principal,
-        uint256 _dailyPenalty
+        uint128 _principal,
+        uint64 _dailyPenalty
     )
         external
         view
