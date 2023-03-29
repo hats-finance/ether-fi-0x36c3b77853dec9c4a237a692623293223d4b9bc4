@@ -18,16 +18,20 @@ and
 ```zsh
 protocolRevenueManagerAddress()
 ```
-These two addresses are predetermined using the Create2 opcode upon deployment.
 
 # Step 2
 ## Deploy EtherFi Node
 
-Once this is done, deploy the EtherFi Node contract and manually call 
+Once the above is done, deploy the EtherFi Node contract and manually call 
 
 ``` zsh
 registerImplementaionContract(address _etherFiNode)
 ```
 
  on the staking manager contract with the address of the deployed node contract as a param. This will then allow the staking manager to create new instances of the EtherFi Node as needed.
+
+# Step 3
+## Set Merkle Root
+
+Once all contracts have been deployed and dependencies set up, generate a merkle root and set in using the updateMerkleRoot function on the NodeOperator contract. This will allow for whitelist bidding in the Auction.
 
