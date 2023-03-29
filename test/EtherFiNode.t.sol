@@ -60,14 +60,7 @@ contract EtherFiNodeTest is Test {
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        managerInstance = new EtherFiNodesManager(
-            address(treasuryInstance),
-            address(auctionInstance),
-            address(stakingManagerInstance),
-            address(TestTNFTInstance),
-            address(TestBNFTInstance),
-            address(protocolRevenueManagerInstance)
-        );
+        managerInstance = new EtherFiNodesManager{salt:salt}();
         EtherFiNode node = new EtherFiNode();
 
         // Setup dependencies
@@ -75,8 +68,16 @@ contract EtherFiNodeTest is Test {
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
         auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        managerInstance.setUpManager(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(stakingManagerInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
+        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
         stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));

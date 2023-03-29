@@ -47,7 +47,17 @@ contract BNFTTest is Test {
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
         protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
-        managerInstance = new EtherFiNodesManager(
+        managerInstance = new EtherFiNodesManager{salt:salt}();
+        EtherFiNode etherFiNode = new EtherFiNode();
+
+        // Setup dependencies
+        nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
+        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        managerInstance.setUpManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
@@ -55,15 +65,6 @@ contract BNFTTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
-        EtherFiNode etherFiNode = new EtherFiNode();
-
-        // Setup dependencies
-        nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
-        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
         stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
