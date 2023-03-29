@@ -277,8 +277,16 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         stakingRewardsSplit.nodeOperator = _nodeOperator;
         stakingRewardsSplit.tnft = _tnft;
         stakingRewardsSplit.bnft = _bnft;
-
     }
+
+    function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) public onlyOwner {
+        require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "Amounts not equal to 1000000");
+        protocolRewardsSplit.treasury = _treasury;
+        protocolRewardsSplit.nodeOperator = _nodeOperator;
+        protocolRewardsSplit.tnft = _tnft;
+        protocolRewardsSplit.bnft = _bnft;
+    }
+
     /// @notice Sets the phase of the validator
     /// @param _validatorId id of the validator associated to this etherfi node
     /// @param _phase phase of the validator
