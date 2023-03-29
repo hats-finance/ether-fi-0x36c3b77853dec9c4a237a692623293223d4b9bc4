@@ -369,7 +369,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Fecthes the phase a specific node is in
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @returns the phase the node is in
+    /// @return validatorPhase the phase the node is in
     function phase(uint256 _validatorId) public view returns (IEtherFiNode.VALIDATOR_PHASE validatorPhase) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         validatorPhase = IEtherFiNode(etherfiNode).phase();
@@ -377,7 +377,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Fecthes the ipfs hash for the encrypted key data from a specific node
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @returns the ifs hash associated to the node
+    /// @return the ifs hash associated to the node
     function ipfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey();
@@ -385,7 +385,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Fetches the local revenue index of a specific node
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @returns the local revenue index for the node
+    /// @return the local revenue index for the node
     function localRevenueIndex(uint256 _validatorId) external view returns (uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).localRevenueIndex();
@@ -393,7 +393,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Fetches the vested auction rewards of a specific node
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @returns the vested auction rewards for the node
+    /// @return the vested auction rewards for the node
     function vestedAuctionRewards(uint256 _validatorId) external view returns (uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).vestedAuctionRewards();
@@ -401,14 +401,14 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Generates withdraw credentials for a validator
     /// @param _address associated with the validator for the withdraw credentials
-    /// @returns the generated withdraw key for the node
+    /// @return the generated withdraw key for the node
     function generateWithdrawalCredentials(address _address) public pure returns (bytes memory) {
         return abi.encodePacked(bytes1(0x01), bytes11(0x0), _address);
     }
 
     /// @notice Fetches the withdraw credentials for a specific node
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @returns the generated withdraw key for the node
+    /// @return the generated withdraw key for the node
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
@@ -417,7 +417,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Fetches if the node has an exit request
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @returns bool value based on if an exit request has been sent
+    /// @return bool value based on if an exit request has been sent
     function isExitRequested(uint256 _validatorId) external view returns (bool) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).exitRequestTimestamp() > 0;
@@ -426,7 +426,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     /// @notice Fetches the nodes non exit penalty amount
     /// @param _validatorId id of the validator associated to etherfi node
     /// @param _endTimestamp timestamp for calculation
-    /// @returns the amount of the penalty
+    /// @return the amount of the penalty
     function getNonExitPenalty(uint256 _validatorId, uint32 _endTimestamp) public view returns (uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).getNonExitPenalty(nonExitPenaltyPrincipal, nonExitPenaltyDailyRate, _endTimestamp);
@@ -434,7 +434,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Fetches the staking rewards payout for a node
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @returns the payout for staking rewards
+    /// @return the payout for staking rewards
     function getStakingRewardsPayouts(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).getStakingRewardsPayouts(stakingRewardsSplit, SCALE);
@@ -445,7 +445,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     /// @param _stakingRewards if it should include staking rewards
     /// @param _protocolRewards if it should include protocol rewards
     /// @param _vestedAuctionFee if it should include the vested auction rewards
-    /// @returns the payout for total rewards for the node
+    /// @return the payout for total rewards for the node
     function getRewardsPayouts(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).getRewardsPayouts(_stakingRewards, _protocolRewards, _vestedAuctionFee, stakingRewardsSplit, SCALE, protocolRewardsSplit, SCALE);
@@ -453,7 +453,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Fetches the full withdraw payouts
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @returns the payout for full withdraws
+    /// @return the payout for full withdraws
     function getFullWithdrawalPayouts(uint256 _validatorId) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).getFullWithdrawalPayouts(stakingRewardsSplit, SCALE, nonExitPenaltyPrincipal, nonExitPenaltyDailyRate);
@@ -461,7 +461,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Fetches if the validator has been exited
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @returns bool value based on if the validator has been exited
+    /// @return bool value based on if the validator has been exited
     function isExited(uint256 _validatorId) external view returns (bool) {
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
     }
