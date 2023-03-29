@@ -158,6 +158,15 @@ contract EtherFiNodesManagerTest is Test {
         assertEq(nodeOperator, 50000);
         assertEq(tnft, 815625);
         assertEq(bnft, 84375);
+
+        vm.prank(owner);
+        managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
+
+        (treasury, nodeOperator, tnft, bnft) = managerInstance.stakingRewardsSplit();
+        assertEq(treasury, 100000);
+        assertEq(nodeOperator, 100000);
+        assertEq(tnft, 400000);
+        assertEq(bnft, 400000);
     }
 
     function test_SetEtherFiNodePhaseRevertsOnIncorrectCaller() public {
