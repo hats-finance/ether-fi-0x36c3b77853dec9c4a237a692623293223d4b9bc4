@@ -163,6 +163,28 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         address staker = bidIdToStaker[_validatorId];
+        registerValidator(_validatorId, staker, staker, _depositData); 
+    }
+
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
+    /// @param _validatorId id of the validator to register
+    /// @param _bNftRecipient the address to receive the minted B-NFT
+    /// @param _tNftRecipient the address to receive the minted T-NFT
+    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    ///        however, instead of the validator key, it will include the IPFS hash
+    ///        containing the validator key encrypted by the corresponding node operator's public key
+    function registerValidator(uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData)
+        public
+        whenNotPaused 
+    {
+        require(_bNftRecipient != address(0) && _tNftRecipient != address(0), "Wrong address");
+        require(
+            nodesManagerIntefaceInstance.phase(_validatorId) ==
+                IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
+            "Incorrect phase"
+        );
+        require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
+        address staker = bidIdToStaker[_validatorId];
 
         //Remove this before deployment, this should always happen
         if (test = false) {
@@ -190,8 +212,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         // Let valiadatorId = nftTokenId
         // Mint {T, B}-NFTs to the Staker
         uint256 nftTokenId = _validatorId;
-        TNFTInterfaceInstance.mint(staker, nftTokenId);
-        BNFTInterfaceInstance.mint(staker, nftTokenId);
+        TNFTInterfaceInstance.mint(_tNftRecipient, nftTokenId);
+        BNFTInterfaceInstance.mint(_bNftRecipient, nftTokenId);
 
         auctionInterfaceInstance.processAuctionFeeTransfer(_validatorId);
 
@@ -217,6 +239,26 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
         for (uint256 x; x < _validatorId.length; ++x) {
             registerValidator(_validatorId[x], _depositData[x]);
+        }
+    }
+
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
+    /// @param _validatorId id of the validator to register
+    /// @param _bNftRecipients a list of the addresses to receive the minted B-NFTs
+    /// @param _tNftRecipients a list of the addresses to receive the minted T-NFTs
+    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    function batchRegisterValidators(uint256[] calldata _validatorId, address[] calldata _bNftRecipients, address[] calldata _tNftRecipients, DepositData[] calldata _depositData)
+        public
+        whenNotPaused
+    {
+        require(
+            _validatorId.length == _depositData.length,
+            "Array lengths must match"
+        );
+        require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
+
+        for (uint256 x; x < _validatorId.length; ++x) {
+            registerValidator(_validatorId[x], _bNftRecipients[x], _tNftRecipients[x], _depositData[x]);
         }
     }
 

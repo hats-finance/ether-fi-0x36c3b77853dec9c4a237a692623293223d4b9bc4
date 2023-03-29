@@ -16,7 +16,11 @@ interface IStakingManager {
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds) external payable returns (uint256[] memory);
     function cancelDeposit(uint256 _validatorId) external;
     function registerValidator(uint256 _validatorId, DepositData calldata _depositData) external;
-    function fetchEtherFromContract(address _wallet) external;
+    function registerValidator(uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData) external;
+    function batchRegisterValidators(uint256[] calldata _validatorId, DepositData[] calldata _depositData) external;
+    function batchRegisterValidators(uint256[] calldata _validatorId, address[] calldata _bNftRecipients, address[] calldata _tNftRecipients, DepositData[] calldata _depositData) external;
+
+    function fetchEtherFromContract(address _wallet) external; // TODO: Delete this in Mainnet
     
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
 }

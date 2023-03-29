@@ -610,6 +610,46 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.registerValidator(0, test_data);
     }
 
+    function test_RegisterValidatorToCertainAddressesWorksCorrectly() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+        uint256[] memory bidIdArray = new uint256[](1);
+        bidIdArray[0] = 1;
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+            bidIdArray
+        );
+
+        address[] memory syko = new address[](1);
+        address[] memory nicky = new address[](1);
+        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](1);
+        syko[0] = address(1000);
+        nicky[0] = address(1001);
+        depositDataArray[0] = test_data;
+        
+        stakingManagerInstance.batchRegisterValidators(bidId, syko, nicky, depositDataArray);
+        assertEq(
+            TestBNFTInstance.ownerOf(bidId[0]),
+            syko[0]
+        );
+        assertEq(
+            TestTNFTInstance.ownerOf(bidId[0]),
+            nicky[0]
+        );
+    }
+
     function test_RegisterValidatorWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
