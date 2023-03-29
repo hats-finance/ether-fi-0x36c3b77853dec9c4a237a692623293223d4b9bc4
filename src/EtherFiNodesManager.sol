@@ -20,7 +20,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     uint256 public numberOfValidators;
 
     address public treasuryContract;
-    address public auctionContract;
     address public stakingManagerContract;
     address public protocolRevenueManagerContract;
 
@@ -63,7 +62,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     ) {
 
         treasuryContract = _treasuryContract;
-        auctionContract = _auctionContract;
         stakingManagerContract = _stakingManagerContract;
         protocolRevenueManagerContract = _protocolRevenueManagerContract;
 
