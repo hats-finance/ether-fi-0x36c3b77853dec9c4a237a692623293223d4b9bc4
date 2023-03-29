@@ -98,25 +98,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     /// @notice Allows ether to be sent to this contract
     receive() external payable {}
 
-    // function setEarlyAdopterPoolData() external onlyOwner {
-
-    // }
-
-    // function _getDataFromLeafNode(bytes32 _leafNode) internal view returns (address, uint256, uint256, uint256, uint256, uint256, uint256) {
-        
-    //     bytes memory leafNodeData = abi.decode(bytes(_leafNode), (address, uint, uint, uint, uint, uint, uint));
-    
-    //     return (
-    //         address(leafNodeData), 
-    //         uint256(leafNodeData[20]), 
-    //         uint256(leafNodeData[52]), 
-    //         uint256(leafNodeData[84]), 
-    //         uint256(leafNodeData[116]), 
-    //         uint256(leafNodeData[148]), 
-    //         uint256(leafNodeData[180])
-    //     );
-    // }
-
     /// @notice Sets the number of points a user received
     /// @dev Explain to a developer any extra details
     /// @param _user the address of the user receiving the points
@@ -156,8 +137,11 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         uint256 _rEthBal,
         uint256 _wstEthBal,
         uint256 _sfrxEthBal,
-        uint256 _cbEthBal
+        uint256 _cbEthBal,
+        uint256 _points,
+        bytes32[] calldata _merkleProof
     ) external payable whenNotPaused {
+        require(_verifyValues(msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof), "Verfication failed");
         require(dataTransferCompleted == true, "Transfer of data has not taken place");
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
@@ -214,6 +198,23 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //--------------------------------  INTERNAL FUNCTIONS  --------------------------------
     //--------------------------------------------------------------------------------------
 
+    function _verifyValues(
+        uint256 _etherBalance,
+        uint256 _rEthBal,
+        uint256 _wstEthBal,
+        uint256 _sfrxEthBal,
+        uint256 _cbEthBal,
+        uint256 _points,
+        bytes32[] calldata _merkleProof
+    ) internal view returns (bool){
+        
+        return MerkleProof.verify(
+            _merkleProof,
+            merkleRoot,
+            keccak256(abi.encodePacked(_etherBalance, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points))
+        );
+    }
+
     function _ERC20Update(address _token, uint256 _amount) internal {
         require(_amount == userToERC20DepositEAP[msg.sender][_token]);
         userToERC20Deposit[msg.sender][_token] = _amount;
@@ -244,21 +245,4 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
         amountOut = router.exactInputSingle(params);
     }
-
-    // Utility functions to convert bytes to different data types
-    // function bytesToBytes32(bytes memory b, uint256 offset) private pure returns (bytes32) {
-    //     bytes32 result;
-    //     assembly {
-    //         result := mload(add(b, add(offset, 32)))
-    //     }
-    //     return result;
-    // }
-
-    // function bytesToUint(bytes memory b, uint256 offset) private pure returns (uint256) {
-    //     uint256 result;
-    //     assembly {
-    //         result := mload(add(b, add(offset, 32)))
-    //     }
-    //     return result;
-    // }
 }
