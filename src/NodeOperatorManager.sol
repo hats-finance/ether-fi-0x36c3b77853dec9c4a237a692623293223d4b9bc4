@@ -6,9 +6,6 @@ import "../src/interfaces/IAuctionManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/// TODO Test whitelist bidding in auction
-/// TODO Test permissionless bidding in auction
-
 contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
