@@ -61,6 +61,7 @@ contract BNFTTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+        EtherFiNode etherFiNode = new EtherFiNode();
 
         auctionInstance.setProtocolRevenueManager(
             address(protocolRevenueManagerInstance)
@@ -75,6 +76,8 @@ contract BNFTTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
@@ -82,6 +85,8 @@ contract BNFTTest is Test {
             signature: "test_signature",
             ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
+
+        assertEq(TestTNFTInstance.stakingManagerContractAddress(), address(stakingManagerInstance));
 
         vm.stopPrank();
     }

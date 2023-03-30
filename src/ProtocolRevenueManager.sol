@@ -7,20 +7,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IAuctionManager.sol";
-import "lib/forge-std/src/console.sol";
 
 contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IEtherFiNodesManager etherFiNodesManager;
-    IAuctionManager auctionManager;
+    IEtherFiNodesManager public etherFiNodesManager;
+    IAuctionManager public auctionManager;
 
     uint256 public globalRevenueIndex = 1;
 
-    uint256 public constant vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
-    uint256 public constant auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
+    uint128 public vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
+    uint128 public auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -74,9 +73,8 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
         );
 
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
-        uint256 amount = msg.value;
-        uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers * amount) / 100;
-        uint256 amountToProtocol = amount - amountVestedForStakers;
+        uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers * msg.value) / 100;
+        uint256 amountToProtocol = msg.value - amountVestedForStakers;
 
         address etherfiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
         IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: amountVestedForStakers}();
@@ -93,17 +91,36 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
         return amount;
     }
 
+    /// @notice Instantiates the interface of the node manager for integration
+    /// @dev Set manually due to cirular dependencies
+    /// @param _etherFiNodesManager etherfi node manager address to set
     function setEtherFiNodesManagerAddress(
         address _etherFiNodesManager
     ) external onlyOwner {
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
     }
 
+    /// @notice Instantiates the interface of the auction manager for integration
+    /// @dev Set manually due to cirular dependencies
+    /// @param _auctionManager auction manager address to set
     function setAuctionManagerAddress(
         address _auctionManager
     ) external onlyOwner {
         auctionManager = IAuctionManager(_auctionManager);
     }
+
+    /// @notice set the auction reward vesting period 
+    /// @param _periodInDays vesting period in days
+    function setAuctionRewardVestingPeriod(uint128 _periodInDays) external onlyOwner {
+        auctionFeeVestingPeriodForStakersInDays = _periodInDays;
+    }
+
+    /// @notice set the auction reward split for stakers 
+    /// @param _split vesting period in days
+    function setAuctionRewardSplitForStakers(uint128 _split) external onlyOwner {
+        vestedAuctionFeeSplitForStakers = _split;
+    }
+
 
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------

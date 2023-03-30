@@ -64,6 +64,7 @@ contract ProtocolRevenueManagerTest is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+        EtherFiNode etherFiNode = new EtherFiNode();
 
         auctionInstance.setProtocolRevenueManager(
             address(protocolRevenueManagerInstance)
@@ -78,6 +79,9 @@ contract ProtocolRevenueManagerTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
+        
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",
@@ -92,6 +96,12 @@ contract ProtocolRevenueManagerTest is Test {
             signature: "test_signature_2",
             ipfsHashForEncryptedValidatorKey: "test_ipfs_hash_2"
         });
+
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
+        assertEq(protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(), 50);
+        assertEq(protocolRevenueManagerInstance.auctionFeeVestingPeriodForStakersInDays(), 168);
+        assertEq(address(protocolRevenueManagerInstance.etherFiNodesManager()), address(managerInstance));
+        assertEq(address(protocolRevenueManagerInstance.auctionManager()), address(auctionInstance));
 
         vm.stopPrank();
 
@@ -111,6 +121,22 @@ contract ProtocolRevenueManagerTest is Test {
             _ipfsHash,
             5
         );
+    }
+
+    function test_changeAuctionRewardParams() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        protocolRevenueManagerInstance.setAuctionRewardVestingPeriod(1);
+        vm.expectRevert("Ownable: caller is not the owner");
+        protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(10);
+
+        vm.startPrank(owner);
+        assertEq(protocolRevenueManagerInstance.auctionFeeVestingPeriodForStakersInDays(), 168);
+        protocolRevenueManagerInstance.setAuctionRewardVestingPeriod(1);
+        assertEq(protocolRevenueManagerInstance.auctionFeeVestingPeriodForStakersInDays(), 1);
+
+        assertEq(protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(), 50);
+        protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(10);
+        assertEq(protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(), 10);
     }
 
     function test_Receive() public {
@@ -192,7 +218,6 @@ contract ProtocolRevenueManagerTest is Test {
     }
 
     function test_AddAuctionRevenueWorksAndFailsCorrectly() public {
-        // 1
         hoax(address(auctionInstance));
         vm.expectRevert("No Active Validator");
         protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(1);

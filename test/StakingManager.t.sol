@@ -75,6 +75,7 @@ contract StakingManagerTest is Test {
             address(TestTNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+        EtherFiNode etherFiNode = new EtherFiNode();
 
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
@@ -95,7 +96,8 @@ contract StakingManagerTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
-
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
@@ -989,7 +991,7 @@ contract StakingManagerTest is Test {
         );
         stakingManagerInstance.cancelDeposit(bidId[0]);
 
-        vm.expectRevert("Deposit does not exist");
+        vm.expectRevert("Not deposit owner");
         stakingManagerInstance.cancelDeposit(bidId[0]);
     }
 
@@ -1215,6 +1217,17 @@ contract StakingManagerTest is Test {
             ),
             1
         );
+    }
+
+    function test_SetMaxDeposit() public {
+        assertEq(stakingManagerInstance.maxBatchDepositSize(), 16);
+        vm.prank(owner);
+        stakingManagerInstance.setMaxBatchDepositSize(12);
+        assertEq(stakingManagerInstance.maxBatchDepositSize(), 12);
+
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        stakingManagerInstance.setMaxBatchDepositSize(12);
     }
 
     // function test_EventStakeDeposit() public {

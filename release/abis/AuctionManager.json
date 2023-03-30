@@ -259,9 +259,9 @@
     "name": "maxBidAmount",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint64",
         "name": "",
-        "type": "uint256"
+        "type": "uint64"
       }
     ],
     "stateMutability": "view",
@@ -272,9 +272,9 @@
     "name": "minBidAmount",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint64",
         "name": "",
-        "type": "uint256"
+        "type": "uint64"
       }
     ],
     "stateMutability": "view",
@@ -282,10 +282,10 @@
   },
   {
     "inputs": [],
-    "name": "nodeOperatorManagerContractAddress",
+    "name": "nodeOperatorManagerInterface",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "contract INodeOperatorManager",
         "name": "",
         "type": "address"
       }
@@ -366,6 +366,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "protocolRevenueManager",
+    "outputs": [
+      {
+        "internalType": "contract IProtocolRevenueManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -388,9 +401,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint64",
         "name": "_newMaxBidAmount",
-        "type": "uint256"
+        "type": "uint64"
       }
     ],
     "name": "setMaxBidPrice",
@@ -401,9 +414,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint64",
         "name": "_newMinBidAmount",
-        "type": "uint256"
+        "type": "uint64"
       }
     ],
     "name": "setMinBidPrice",
@@ -486,9 +499,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "_newAmount",
-        "type": "uint256"
+        "type": "uint128"
       }
     ],
     "name": "updateWhitelistMinBidAmount",
@@ -501,9 +514,9 @@
     "name": "whitelistBidAmount",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "",
-        "type": "uint256"
+        "type": "uint128"
       }
     ],
     "stateMutability": "view",

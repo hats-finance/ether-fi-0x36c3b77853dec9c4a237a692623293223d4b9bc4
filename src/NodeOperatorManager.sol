@@ -5,10 +5,6 @@ import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "lib/forge-std/src/console.sol";
-
-/// TODO Test whitelist bidding in auction
-/// TODO Test permissionless bidding in auction
 
 contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //--------------------------------------------------------------------------------------
@@ -23,8 +19,6 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //--------------------------------------------------------------------------------------
 
     address public auctionManagerContractAddress;
-    IAuctionManager auctionMangerInterface;
-    address auctionContractAddress;
     bytes32 public merkleRoot;
 
     // user address => OperaterData Struct
@@ -36,6 +30,10 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Registers a user as a operator to allow them to bid
+    /// @param _merkleProof the proof verifying they are whitelisted
+    /// @param _ipfsHash location of all IPFS data stored for operator
+    /// @param _totalKeys The number of keys they have available, relates to how many validators they can run
     function registerNodeOperator(
         bytes32[] calldata _merkleProof,
         bytes memory _ipfsHash,
@@ -58,6 +56,9 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         );
     }
 
+    /// @notice Fetches the next key they have available to use
+    /// @param _user the user to fetch the key for
+    /// @return the ipfs index available for the validator
     function fetchNextKeyIndex(address _user) external onlyAuctionManagerContract returns (uint64)  {
         uint64 totalKeys = addressToOperatorData[_user].totalKeys;
         require(
@@ -84,14 +85,24 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //-----------------------------------  GETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice gets the number of keys the user has, used or un-used
+    /// @param _user the user to fetch the data for
+    /// @return totalKeys the number of keys the user has
     function getUserTotalKeys(address _user) external view returns (uint64 totalKeys) {
         totalKeys = addressToOperatorData[_user].totalKeys;
     }
 
+    /// @notice gets the number of keys the user has left to use
+    /// @param _user the user to fetch the data for
+    /// @return numKeysRemaining the number of keys the user has remaining
     function getNumKeysRemaining(address _user) external view returns (uint64 numKeysRemaining) {
         numKeysRemaining = addressToOperatorData[_user].totalKeys - addressToOperatorData[_user].keysUsed;
     }
 
+    /// @notice gets if the user is whitelisted
+    /// @dev used in the auction contract to verify when a user bids that they are indeed whitelisted
+    /// @param _user the user to fetch the data for
+    /// @return whitelisted bool value if they are whitelisted or not
     function isWhitelisted(address _user) public view returns (bool whitelisted) {
         whitelisted = whitelistedAddresses[_user];
     }
@@ -100,10 +111,11 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //-----------------------------------  SETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Sets the auction contract address for verification purposes
+    /// @dev Set manually due to circular dependencies
+    /// @param _auctionContractAddress address of the deployed auction contract address
     function setAuctionContractAddress(address _auctionContractAddress) public onlyOwner {
-        auctionMangerInterface = IAuctionManager(_auctionContractAddress);
         auctionManagerContractAddress = _auctionContractAddress;
-        auctionContractAddress = _auctionContractAddress;
     }
 
     //--------------------------------------------------------------------------------------

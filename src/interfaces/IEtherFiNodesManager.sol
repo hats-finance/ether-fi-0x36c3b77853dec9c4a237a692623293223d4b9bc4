@@ -39,10 +39,14 @@ interface IEtherFiNodesManager {
 
     // Non-VIEW functions
     function incrementNumberOfValidators(uint256 _count) external;
-    function createEtherfiNode(uint256 _validatorId) external returns (address);
     function registerEtherFiNode(uint256 _validatorId, address _address) external;
     function unregisterEtherFiNode(uint256 _validatorId) external;
 
+    function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) external;
+    function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) external;
+    function setNonExitPenaltyPrincipal(uint128 _nonExitPenaltyPrincipal) external; 
+    function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) external;
+    
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs) external;
     function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) payable external;
@@ -50,7 +54,7 @@ interface IEtherFiNodesManager {
     function sendExitRequest(uint256 _validatorId) external;
     function processNodeExit(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamp) external;
     function partialWithdraw(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external;
-    function partialWithdraw(uint256[] calldata _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external;
+    function partialWithdrawBatch(uint256[] calldata _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external;
     function partialWithdrawBatchGroupByOperator(address _operator, uint256[] memory _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external;
     function fullWithdraw(uint256 _validatorId) external;
     function fullWithdrawBatch(uint256[] calldata _validatorIds) external;

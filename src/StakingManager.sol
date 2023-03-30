@@ -10,15 +10,19 @@ import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+import "./EtherFiNode.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
     bool public test = true;
     uint128 public maxBatchDepositSize = 16;
     uint128 public stakeAmount;
+    address public implementationContract;
+    address public protocolRevenueManagerAddress;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
@@ -58,13 +62,14 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             stakeAmount = 32 ether;
         }
 
-        registerTnftContract();
-        registerBnftContract();
+        TNFTInterfaceInstance = ITNFT(address(new TNFT()));
+        BNFTInterfaceInstance = IBNFT(address(new BNFT()));
 
         auctionInterfaceInstance = IAuctionManager(_auctionAddress);
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
+
     }
 
     //--------------------------------------------------------------------------------------
@@ -83,6 +88,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
+
     function registerTnftContract() private returns (address) {
         TNFTInterfaceInstance = ITNFT(address(new TNFT()));
         return address(TNFTInterfaceInstance);
@@ -93,6 +99,9 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         return address(BNFTInterfaceInstance);
     }
 
+    /// @notice Allows depositing multiple stakes at once
+    /// @param _candidateBidIds IDs of the bids to be matched with each stake
+    /// @return Array of the bid IDs that were processed and assigned
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
         external
         payable
@@ -119,7 +128,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             bool isActive = auctionInterfaceInstance.isBidActive(bidId);
             if (bidStaker == address(0) && isActive) {
                 auctionInterfaceInstance.updateSelectedBidInformation(bidId);
-                processDeposit(bidId);
+                _processDeposit(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
             }
@@ -141,6 +150,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    ///        however, instead of the validator key, it will include the IPFS hash
+    ///        containing the validator key encrypted by the corresponding node operator's public key
     function registerValidator(uint256 _validatorId, DepositData calldata _depositData)
         public
         whenNotPaused 
@@ -150,13 +161,10 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
             "Incorrect phase"
         );
-        require(
-            bidIdToStaker[_validatorId] != address(0),
-            "Deposit does not exist"
-        );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         address staker = bidIdToStaker[_validatorId];
 
+        //Remove this before deployment, this should always happen
         if (test = false) {
             bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
                 .getWithdrawalCredentials(_validatorId);
@@ -216,10 +224,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _validatorId the ID of the validator deposit to cancel
     function cancelDeposit(uint256 _validatorId) public whenNotPaused {
-        require(
-            bidIdToStaker[_validatorId] != address(0),
-            "Deposit does not exist"
-        );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         require(
             nodesManagerIntefaceInstance.phase(_validatorId) ==
@@ -256,12 +260,25 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         require(sent, "Failed to send Ether");
     }
 
+    /// @notice Sets the EtherFi node manager contract
+    /// @dev Set manually due to circular dependency
+    /// @param _nodesManagerAddress aaddress of the manager contract being set    
     function setEtherFiNodesManagerAddress(address _nodesManagerAddress) public onlyOwner {
         nodesManagerIntefaceInstance = IEtherFiNodesManager(_nodesManagerAddress);
     }
 
+    function setProtocolRevenueManagerAddress(address _protocolRevenueManagerAddress) public onlyOwner {
+        protocolRevenueManagerAddress = _protocolRevenueManagerAddress;
+    }
+
+    /// @notice Sets the max number of deposits allowed at a time
+    /// @param _newMaxBatchDepositSize the max number of deposits allowed
     function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
         maxBatchDepositSize = _newMaxBatchDepositSize;
+    }
+
+    function registerEtherFiNodeImplementationContract(address _etherFiNodeImplementationContract) public onlyOwner {
+        implementationContract = _etherFiNodeImplementationContract;
     }
 
     //Pauses the contract
@@ -286,23 +303,29 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId the bid that won the right to the deposit
-    function processDeposit(uint256 _bidId) internal {
-        // Take the bid; Set the matched staker for the bid
+    function _processDeposit(uint256 _bidId) internal {
+        
         bidIdToStaker[_bidId] = msg.sender;
 
-        // Let validatorId = BidId
         uint256 validatorId = _bidId;
-
-        // Create the node contract
-        address etherfiNode = nodesManagerIntefaceInstance.createEtherfiNode(
-            validatorId
-        );
+        address etherfiNode = createEtherfiNode(validatorId);
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
             validatorId,
             IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
         emit StakeDeposit(msg.sender, _bidId, etherfiNode);
+    }
+
+    function createEtherfiNode(uint256 _validatorId) private returns (address) {
+        address clone = Clones.clone(implementationContract);
+        EtherFiNode node = EtherFiNode(payable(clone));
+        node.initialize();
+        node.registerEtherFiNodesManager(address(nodesManagerIntefaceInstance));
+        node.registerProtocolRevenueManager(protocolRevenueManagerAddress);
+        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
+        
+        return clone;
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake

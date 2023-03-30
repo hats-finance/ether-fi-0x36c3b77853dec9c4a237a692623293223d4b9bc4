@@ -276,12 +276,25 @@
   },
   {
     "inputs": [],
+    "name": "implementationContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "maxBatchDepositSize",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "",
-        "type": "uint256"
+        "type": "uint128"
       }
     ],
     "stateMutability": "view",
@@ -331,6 +344,32 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "protocolRevenueManagerAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_etherFiNodeImplementationContract",
+        "type": "address"
+      }
+    ],
+    "name": "registerEtherFiNodeImplementationContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -396,12 +435,25 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "_newMaxBatchDepositSize",
-        "type": "uint256"
+        "type": "uint128"
       }
     ],
     "name": "setMaxBatchDepositSize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_protocolRevenueManagerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setProtocolRevenueManagerAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -411,9 +463,9 @@
     "name": "stakeAmount",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint128",
         "name": "",
-        "type": "uint256"
+        "type": "uint128"
       }
     ],
     "stateMutability": "view",

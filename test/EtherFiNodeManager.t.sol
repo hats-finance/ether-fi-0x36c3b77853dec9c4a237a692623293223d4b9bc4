@@ -71,6 +71,7 @@ contract EtherFiNodesManagerTest is Test {
             address(TestTNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+        EtherFiNode node = new EtherFiNode();
 
         auctionInstance.setStakingManagerContractAddress(
             address(stakingManagerInstance)
@@ -91,7 +92,8 @@ contract EtherFiNodesManagerTest is Test {
         stakingManagerInstance.setEtherFiNodesManagerAddress(
             address(managerInstance)
         );
-
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
+        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
@@ -142,6 +144,82 @@ contract EtherFiNodesManagerTest is Test {
         safeInstance = EtherFiNode(payable(etherFiNode));
     }
 
+    function test_SetStakingRewardsSplit() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
+
+        vm.expectRevert("Amounts not equal to 1000000");
+        vm.prank(owner);
+        managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 300000);
+
+        (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = managerInstance.stakingRewardsSplit();
+        assertEq(treasury, 50000);
+        assertEq(nodeOperator, 50000);
+        assertEq(tnft, 815625);
+        assertEq(bnft, 84375);
+
+        vm.prank(owner);
+        managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
+
+        (treasury, nodeOperator, tnft, bnft) = managerInstance.stakingRewardsSplit();
+        assertEq(treasury, 100000);
+        assertEq(nodeOperator, 100000);
+        assertEq(tnft, 400000);
+        assertEq(bnft, 400000);
+    }
+
+    function test_SetProtocolRewardsSplit() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 400000);
+
+        vm.expectRevert("Amounts not equal to 1000000");
+        vm.prank(owner);
+        managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 300000);
+
+        (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = managerInstance.protocolRewardsSplit();
+        assertEq(treasury, 250000);
+        assertEq(nodeOperator, 250000);
+        assertEq(tnft, 453125);
+        assertEq(bnft, 46875);
+
+        vm.prank(owner);
+        managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 400000);
+
+        (treasury, nodeOperator, tnft, bnft) = managerInstance.protocolRewardsSplit();
+        assertEq(treasury, 100000);
+        assertEq(nodeOperator, 100000);
+        assertEq(tnft, 400000);
+        assertEq(bnft, 400000);
+    }
+
+    function test_SetNonExitPenaltyPrincipal() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        managerInstance.setNonExitPenaltyPrincipal(2 ether);
+
+        assertEq(managerInstance.nonExitPenaltyPrincipal(), 1 ether);
+
+        vm.prank(owner);
+        managerInstance.setNonExitPenaltyPrincipal(2 ether);
+
+        assertEq(managerInstance.nonExitPenaltyPrincipal(), 2 ether);
+    }
+
+    function test_SetNonExitPenaltyDailyRate() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        managerInstance.setNonExitPenaltyDailyRate(2 ether);
+
+        assertEq(managerInstance.nonExitPenaltyDailyRate(), 3);
+
+        vm.prank(owner);
+        managerInstance.setNonExitPenaltyDailyRate(5);
+
+        assertEq(managerInstance.nonExitPenaltyDailyRate(), 5);
+    }
+
     function test_SetEtherFiNodePhaseRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only staking manager contract function");
         vm.prank(owner);
@@ -189,10 +267,6 @@ contract EtherFiNodesManagerTest is Test {
     }
 
     function test_CreateEtherFiNode() public {
-        vm.expectRevert("Only staking manager contract function");
-        vm.prank(owner);
-        managerInstance.createEtherfiNode(bidId[0]);
-
          bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
