@@ -4,11 +4,11 @@ pragma solidity 0.8.13;
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/INodeOperatorManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
-
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract AuctionManager is IAuctionManager, Pausable, Ownable {
+contract AuctionManager is IAuctionManager, Pausable, Ownable, ReentrancyGuard {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -73,6 +73,7 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable {
         external
         payable
         whenNotPaused
+        nonReentrant
         returns (uint256[] memory) 
     {
         if (whitelistEnabled) {

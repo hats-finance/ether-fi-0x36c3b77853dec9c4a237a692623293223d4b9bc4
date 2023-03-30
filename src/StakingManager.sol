@@ -128,9 +128,9 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             bool isActive = auctionInterfaceInstance.isBidActive(bidId);
             if (bidStaker == address(0) && isActive) {
                 auctionInterfaceInstance.updateSelectedBidInformation(bidId);
-                _processDeposit(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
+                _processDeposit(bidId);
             }
         }
 
@@ -231,10 +231,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             "Incorrect phase"
         );
 
-        //Call function in auction contract to re-initiate the bid that won
-        //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(_validatorId);
-
         // Mark Canceled
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
             _validatorId,
@@ -244,7 +240,10 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         // Unset the pointers
         bidIdToStaker[_validatorId] = address(0);
         nodesManagerIntefaceInstance.unregisterEtherFiNode(_validatorId);
-
+        
+        //Call function in auction contract to re-initiate the bid that won
+        //Send in the bid ID to be re-initiated
+        auctionInterfaceInstance.reEnterAuction(_validatorId);
         _refundDeposit(msg.sender, stakeAmount);
 
         emit DepositCancelled(_validatorId);
