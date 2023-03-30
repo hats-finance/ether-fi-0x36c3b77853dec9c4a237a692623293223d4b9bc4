@@ -493,14 +493,6 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
         return IEtherFiNode(etherfiNode).getFullWithdrawalPayouts(stakingRewardsSplit, SCALE, nonExitPenaltyPrincipal, nonExitPenaltyDailyRate);
     }
 
-    function getNonExitPenaltyPrincipal() public view returns(uint256){
-        return nonExitPenaltyPrincipal;
-    }
-
-    function getNonExitPenaltyDailyRate() public view returns(uint256){
-        return nonExitPenaltyDailyRate;
-    }
-
     function isExited(uint256 _validatorId) external view returns (bool) {
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
     }
