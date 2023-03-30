@@ -9,6 +9,8 @@ interface IAuctionManager {
         bool isActive;
     }
 
+    function initialize(address _nodeOperatorManagerContract) external;
+
     function getBidOwner(uint256 _bidId) external view returns (address);
     function numberOfActiveBids() external view returns (uint256);
     function isBidActive(uint256 _bidId) external view returns (bool);

@@ -21,7 +21,8 @@ contract TreasuryTest is Test {
         // Deploy Contracts
         treasuryInstance = new Treasury();
         nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager(address(nodeOperatorManagerInstance));
+        auctionInstance = new AuctionManager();
+        auctionInstance.initialize(address(nodeOperatorManagerInstance));
         vm.stopPrank();
     }
 

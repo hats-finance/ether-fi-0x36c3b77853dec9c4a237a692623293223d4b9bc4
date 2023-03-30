@@ -7,25 +7,28 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 
-contract AuctionManager is IAuctionManager, Pausable, Ownable, ReentrancyGuard {
+contract AuctionManager is Initializable, IAuctionManager, Pausable, Ownable, ReentrancyGuard {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint128 public whitelistBidAmount = 0.001 ether;
-    uint64 public minBidAmount = 0.01 ether;
-    uint64 public maxBidAmount = 5 ether;
-    uint256 public numberOfBids = 1;
+    uint128 public whitelistBidAmount;
+    uint64 public minBidAmount;
+    uint64 public maxBidAmount;
+    uint256 public numberOfBids;
     uint256 public numberOfActiveBids;
 
     INodeOperatorManager public nodeOperatorManagerInterface;
     IProtocolRevenueManager public protocolRevenueManager;
 
     address public stakingManagerContractAddress;
-    bool public whitelistEnabled = true;
+    bool public whitelistEnabled;
 
     mapping(uint256 => Bid) public bids;
+
+    uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -51,19 +54,21 @@ contract AuctionManager is IAuctionManager, Pausable, Ownable, ReentrancyGuard {
     }
 
     //--------------------------------------------------------------------------------------
-    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Constructor to set variables on deployment
-    constructor(address _nodeOperatorManagerContract) {
+    /// @notice initialize to set variables on deployment
+    function initialize(address _nodeOperatorManagerContract) external initializer {
+        whitelistBidAmount = 0.001 ether;
+        minBidAmount = 0.01 ether;
+        maxBidAmount = 5 ether;
+        numberOfBids = 1;
+        whitelistEnabled = true;
+
         nodeOperatorManagerInterface = INodeOperatorManager(
             _nodeOperatorManagerContract
         );
     }
-
-    //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-    //--------------------------------------------------------------------------------------
 
     /// @notice Creates bid(s) for the right to run a validator node when ETH is deposited
     /// @param _bidSize the number of bids that the node operator would like to create

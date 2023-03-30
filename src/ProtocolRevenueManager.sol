@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -9,7 +10,7 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IAuctionManager.sol";
 
-contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable, ReentrancyGuard {
+contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausable, Ownable, ReentrancyGuard {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -17,10 +18,11 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable, R
     IEtherFiNodesManager public etherFiNodesManager;
     IAuctionManager public auctionManager;
 
-    uint256 public globalRevenueIndex = 1;
+    uint256 public globalRevenueIndex;
+    uint128 public vestedAuctionFeeSplitForStakers;
+    uint128 public auctionFeeVestingPeriodForStakersInDays;
 
-    uint128 public vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
-    uint128 public auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
+    uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -30,13 +32,15 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable, R
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Constructor to set variables on deployment
-    constructor() {
-    }
-
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    function initialize() external initializer {
+        globalRevenueIndex = 1;
+        vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
+        auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
+    }
 
     //Pauses the contract
     function pauseContract() external onlyOwner {

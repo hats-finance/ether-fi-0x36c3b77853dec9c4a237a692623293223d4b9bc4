@@ -47,12 +47,22 @@ contract NodeOperatorManagerTest is Test {
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager(address(nodeOperatorManagerInstance));
-        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance = new AuctionManager();
+        auctionInstance.initialize(address(nodeOperatorManagerInstance));
+        nodeOperatorManagerInstance.setAuctionContractAddress(
+            address(auctionInstance)
+        );
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
+        stakingManagerInstance = new StakingManager();
+        stakingManagerInstance.initialize(address(auctionInstance));
+        auctionInstance.setStakingManagerContractAddress(
+            address(stakingManagerInstance)
+        );
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
-        managerInstance = new EtherFiNodesManager(
+        managerInstance = new EtherFiNodesManager();
+        managerInstance.initialize(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),

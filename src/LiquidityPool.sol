@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IEETH.sol";
 
-contract LiquidityPool is Ownable {
+contract LiquidityPool is Initializable, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
     address public eETH;
+
+    uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -22,15 +25,11 @@ contract LiquidityPool is Ownable {
     event Withdraw(address indexed sender, uint256 amount);
 
     //--------------------------------------------------------------------------------------
-    //----------------------------------  CONSTRUCTOR   ------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    /// @notice initializes owner address
-    constructor() {}
-
-    //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    function initialize() external initializer {
+    }
 
     /// @notice sets the contract address for eETH
     /// @dev can't do it in constructor due to circular dependencies
@@ -52,7 +51,7 @@ contract LiquidityPool is Ownable {
     /// @param _amount the amount to withdraw from contract
     function withdraw(uint256 _amount) external payable {
         require(
-            IERC20(eETH).balanceOf(msg.sender) >= _amount,
+            IERC20Upgradeable(eETH).balanceOf(msg.sender) >= _amount,
             "Not enough eETH"
         );
 

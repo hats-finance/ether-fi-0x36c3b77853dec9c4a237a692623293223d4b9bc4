@@ -22,7 +22,11 @@ contract DeployLiquidityPoolScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         LiquidityPool liquidityPool = new LiquidityPool();
-        EETH eETH = new EETH(address(liquidityPool));
+        liquidityPool.initialize();
+        EETH eETH = new EETH();
+        eETH.initialize(address(liquidityPool));
+
+        liquidityPool.setTokenAddress(address(eETH));
 
         vm.stopBroadcast();
 

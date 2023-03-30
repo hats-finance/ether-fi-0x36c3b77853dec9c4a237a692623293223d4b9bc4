@@ -20,7 +20,7 @@ interface IEtherFiNodesManager {
     }
 
     // VIEW functions
-    function numberOfValidators() external view returns (uint256);
+    function numberOfValidators() external view returns (uint64);
     function etherfiNodeAddress(uint256 _validatorId) external view returns (address);
     function phase(uint256 _validatorId) external view returns (IEtherFiNode.VALIDATOR_PHASE phase);
     function ipfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory);
@@ -39,13 +39,15 @@ interface IEtherFiNodesManager {
     function protocolRevenueManagerContract() external view returns(address);
 
     // Non-VIEW functions
-    function incrementNumberOfValidators(uint256 _count) external;
+    function initialize( address _treasuryContract, address _auctionContract, address _stakingManagerContract, address _tnftContract, address _bnftContract, address _protocolRevenueManagerContract ) external;
+
+    function incrementNumberOfValidators(uint64 _count) external;
     function registerEtherFiNode(uint256 _validatorId, address _address) external;
     function unregisterEtherFiNode(uint256 _validatorId) external;
 
     function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) external;
     function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) external;
-    function setNonExitPenaltyPrincipal(uint128 _nonExitPenaltyPrincipal) external; 
+    function setNonExitPenaltyPrincipal(uint64 _nonExitPenaltyPrincipal) external; 
     function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) external;
     
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;
