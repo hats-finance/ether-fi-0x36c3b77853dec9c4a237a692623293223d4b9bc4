@@ -137,7 +137,7 @@ contract DeployScript is Script {
                     "\nEtherFi Node Manager: ",
                     Strings.toHexString(addressStruct.etherFiNodesManager),
                     "\nProtocol Revenue Manager: ",
-                    Strings.toHexString(addressStruct.protocolRevenueManager),
+                    Strings.toHexString(addressStruct.protocolRevenueManager)
                 )
             )
         );
