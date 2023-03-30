@@ -28,7 +28,6 @@ contract StakingManagerTest is Test {
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
-    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     IStakingManager.DepositData public test_data;
     IStakingManager.DepositData public test_data_2;
@@ -59,10 +58,17 @@ contract StakingManagerTest is Test {
         nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(address(nodeOperatorManagerInstance));
         stakingManagerInstance = new StakingManager(address(auctionInstance));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        managerInstance = new EtherFiNodesManager{salt:salt}();
+        managerInstance = new EtherFiNodesManager(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(stakingManagerInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
+        );
         EtherFiNode etherFiNode = new EtherFiNode();
 
         // Setup Dependencies
@@ -72,14 +78,6 @@ contract StakingManagerTest is Test {
         auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
         protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        managerInstance.setUpManager(
-            address(treasuryInstance),
-            address(auctionInstance),
-            address(stakingManagerInstance),
-            address(TestTNFTInstance),
-            address(TestBNFTInstance),
-            address(protocolRevenueManagerInstance)
-        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
         vm.stopPrank();

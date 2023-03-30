@@ -39,7 +39,6 @@ contract AuctionManagerTest is Test {
 
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
-    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     function setUp() public {
         vm.startPrank(owner);
@@ -52,8 +51,15 @@ contract AuctionManagerTest is Test {
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
-        managerInstance = new EtherFiNodesManager{salt:salt}();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        managerInstance = new EtherFiNodesManager(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(stakingManagerInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
+        );
         EtherFiNode etherFiNode = new EtherFiNode();
 
         // Setup dependencies
@@ -63,14 +69,6 @@ contract AuctionManagerTest is Test {
         auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
         protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        managerInstance.setUpManager(
-            address(treasuryInstance),
-            address(auctionInstance),
-            address(stakingManagerInstance),
-            address(TestTNFTInstance),
-            address(TestBNFTInstance),
-            address(protocolRevenueManagerInstance)
-        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
         

@@ -45,7 +45,6 @@ contract RewardsSkimmingTest is Test {
 
     bytes _ipfsHash = "ipfsHash";
     bytes aliceIPFSHash = "AliceIpfsHash";
-    bytes32 salt = 0x1234567890123456789012345678901234567890123456789012345678901234;
 
     uint256[] bidId;
 
@@ -76,11 +75,18 @@ contract RewardsSkimmingTest is Test {
         _merkleSetup();
         nodeOperatorManagerInstance = new NodeOperatorManager();
         auctionInstance = new AuctionManager(address(nodeOperatorManagerInstance));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager{salt:salt}();
+        protocolRevenueManagerInstance = new ProtocolRevenueManager();
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        managerInstance = new EtherFiNodesManager{salt:salt}();
+        managerInstance = new EtherFiNodesManager(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(stakingManagerInstance),
+            address(TestTNFTInstance),
+            address(TestBNFTInstance),
+            address(protocolRevenueManagerInstance)
+        );
         EtherFiNode etherFiNode = new EtherFiNode();
 
         // Setup dependencies
@@ -90,14 +96,6 @@ contract RewardsSkimmingTest is Test {
         auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
         protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        managerInstance.setUpManager(
-            address(treasuryInstance),
-            address(auctionInstance),
-            address(stakingManagerInstance),
-            address(TestTNFTInstance),
-            address(TestBNFTInstance),
-            address(protocolRevenueManagerInstance)
-        );
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
 
