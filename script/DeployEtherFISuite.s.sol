@@ -25,7 +25,6 @@ contract DeployScript is Script {
         address BNFT;
         address etherFiNodesManager;
         address protocolRevenueManager;
-        address etherFiNode;
     }
 
     addresses addressStruct;
@@ -71,8 +70,7 @@ contract DeployScript is Script {
             TNFT: TNFTAddress,
             BNFT: BNFTAddress,
             etherFiNodesManager: address(etherFiNodesManager),
-            protocolRevenueManager: address(protocolRevenueManager),
-            etherFiNode: address(etherFiNode)
+            protocolRevenueManager: address(protocolRevenueManager)
         });
 
         writeVersionFile();
@@ -136,12 +134,10 @@ contract DeployScript is Script {
                     Strings.toHexString(addressStruct.TNFT),
                     "\nBNFT: ",
                     Strings.toHexString(addressStruct.BNFT),
-                    "\nSafe Manager: ",
+                    "\nEtherFi Node Manager: ",
                     Strings.toHexString(addressStruct.etherFiNodesManager),
                     "\nProtocol Revenue Manager: ",
                     Strings.toHexString(addressStruct.protocolRevenueManager),
-                    "\nEtherFi Node: ",
-                    Strings.toHexString(addressStruct.etherFiNode)
                 )
             )
         );
