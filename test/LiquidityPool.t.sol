@@ -15,7 +15,7 @@ contract LiquidityPoolTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        liquidityPool = new LiquidityPool(owner);
+        liquidityPool = new LiquidityPool();
         eETH = new EETH(address(liquidityPool));
         liquidityPool.setTokenAddress(address(eETH));
         vm.stopPrank();
@@ -54,7 +54,7 @@ contract LiquidityPoolTest is Test {
     }
 
     function test_WithdrawFailsNotInitializedToken() public {
-        LiquidityPool liquidityPoolNoToken = new LiquidityPool(owner);
+        LiquidityPool liquidityPoolNoToken = new LiquidityPool();
 
         startHoax(alice);
         vm.expectRevert();
@@ -62,7 +62,7 @@ contract LiquidityPoolTest is Test {
     }
 
     function test_StakingManagerFailsNotInitializedToken() public {
-        LiquidityPool liquidityPoolNoToken = new LiquidityPool(owner);
+        LiquidityPool liquidityPoolNoToken = new LiquidityPool();
 
         vm.startPrank(alice);
         vm.deal(alice, 3 ether);

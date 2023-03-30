@@ -2,17 +2,19 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../src/LiquidityPool.sol";
-import "../src/EETH.sol";
-
+import "forge-std/console.sol";
+import "../test/TestERC20.sol";
+import "../src/EarlyAdopterPool.sol";
+import "../src/ClaimReceiverPool.sol";
+import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeployLiquidityPoolScript is Script {
+contract DeployClaimReceiverTestScript is Script {
     using Strings for string;
 
     struct addresses {
-        address liquidityPool;
-        address eETH;
+        address earlyAdopterPool;
+        address receiverPool;
     }
 
     addresses addressStruct;
@@ -21,14 +23,31 @@ contract DeployLiquidityPoolScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        LiquidityPool liquidityPool = new LiquidityPool();
-        EETH eETH = new EETH(address(liquidityPool));
+        TestERC20 rETH = new TestERC20("Test Rocket Eth", "trETH");
+        TestERC20 wstETH = new TestERC20("Test wrapped stake Eth", "twstETH");
+        TestERC20 sfrxETH = new TestERC20("Test staked frax Eth", "tsfrxETH");
+        TestERC20 cbETH = new TestERC20("Test coinbase Eth", "tcbETH");
+
+        EarlyAdopterPool earlyAdopterPool = new EarlyAdopterPool(
+            address(rETH),
+            address(wstETH),
+            address(sfrxETH),
+            address(cbETH)
+        );
+
+        ClaimReceiverPool receiverPool = new ClaimReceiverPool(
+            address(earlyAdopterPool),
+            address(rETH),
+            address(wstETH),
+            address(sfrxETH),
+            address(cbETH)
+        );
 
         vm.stopBroadcast();
 
         addressStruct = addresses({
-            liquidityPool: address(liquidityPool),
-            eETH: address(eETH)
+            earlyAdopterPool: address(earlyAdopterPool),
+            receiverPool: address(receiverPool)
         });
 
         writeVersionFile();
@@ -37,11 +56,9 @@ contract DeployLiquidityPoolScript is Script {
         /// @dev Initial version.txt and X.release files should be created manually
     }
 
-    function _stringToUint(string memory numString)
-        internal
-        pure
-        returns (uint256)
-    {
+    function _stringToUint(
+        string memory numString
+    ) internal pure returns (uint256) {
         uint256 val = 0;
         bytes memory stringBytes = bytes(numString);
         for (uint256 i = 0; i < stringBytes.length; i++) {
@@ -50,16 +67,14 @@ contract DeployLiquidityPoolScript is Script {
             uint8 uval = uint8(ival);
             uint256 jval = uval - uint256(0x30);
 
-            val += (uint256(jval) * (10**(exp - 1)));
+            val += (uint256(jval) * (10 ** (exp - 1)));
         }
         return val;
     }
 
     function writeVersionFile() internal {
         // Read Current version
-        string memory versionString = vm.readLine(
-            "release/logs/LiquidityPool/version.txt"
-        );
+        string memory versionString = vm.readLine("release/logs/version.txt");
 
         // Cast string to uint256
         uint256 version = _stringToUint(versionString);
@@ -68,7 +83,7 @@ contract DeployLiquidityPoolScript is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/LiquidityPool/version.txt",
+            "release/logs/version.txt",
             string(abi.encodePacked(Strings.toString(version)))
         );
 
@@ -76,7 +91,7 @@ contract DeployLiquidityPoolScript is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/LiquidityPool/",
+                    "release/logs/",
                     Strings.toString(version),
                     ".release"
                 )
@@ -84,10 +99,10 @@ contract DeployLiquidityPoolScript is Script {
             string(
                 abi.encodePacked(
                     Strings.toString(version),
-                    "\n",
-                    Strings.toHexString(addressStruct.liquidityPool),
-                    "\n",
-                    Strings.toHexString(addressStruct.eETH)
+                    "\nEAP: ",
+                    Strings.toHexString(addressStruct.earlyAdopterPool),
+                    "\nReceiverPool: ",
+                    Strings.toHexString(addressStruct.receiverPool)
                 )
             )
         );
