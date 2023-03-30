@@ -3,12 +3,13 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IAuctionManager.sol";
 
-contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
+contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable, ReentrancyGuard {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -62,7 +63,7 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
     /// @param _validatorId the validator ID
     function addAuctionRevenue(
         uint256 _validatorId
-    ) external payable onlyAuctionManager {
+    ) external payable onlyAuctionManager nonReentrant{
         require(
             etherFiNodesManager.numberOfValidators() > 0,
             "No Active Validator"
@@ -72,13 +73,14 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable {
             "addAuctionRevenue is already processed for the validator."
         );
 
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
         uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers * msg.value) / 100;
         uint256 amountToProtocol = msg.value - amountVestedForStakers;
-
         address etherfiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
-        IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: amountVestedForStakers}();
+        uint256 globalIndexlocal = globalRevenueIndex;
         globalRevenueIndex += amountToProtocol / etherFiNodesManager.numberOfValidators();
+        
+        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalIndexlocal);
+        IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: amountVestedForStakers}();
     }
 
     /// @notice Distribute the accrued rewards to the validator

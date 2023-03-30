@@ -88,17 +88,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         }
     }
 
-
-    function registerTnftContract() private returns (address) {
-        TNFTInterfaceInstance = ITNFT(address(new TNFT()));
-        return address(TNFTInterfaceInstance);
-    }
-
-    function registerBnftContract() private returns (address) {
-        BNFTInterfaceInstance = IBNFT(address(new BNFT()));
-        return address(BNFTInterfaceInstance);
-    }
-
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
@@ -128,9 +117,9 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             bool isActive = auctionInterfaceInstance.isBidActive(bidId);
             if (bidStaker == address(0) && isActive) {
                 auctionInterfaceInstance.updateSelectedBidInformation(bidId);
-                _processDeposit(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
+                _processDeposit(bidId);
             }
         }
 
@@ -223,7 +212,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _validatorId the ID of the validator deposit to cancel
-    function cancelDeposit(uint256 _validatorId) public whenNotPaused {
+    function cancelDeposit(uint256 _validatorId) public whenNotPaused nonReentrant {
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         require(
             nodesManagerIntefaceInstance.phase(_validatorId) ==
@@ -231,9 +220,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             "Incorrect phase"
         );
 
-        //Call function in auction contract to re-initiate the bid that won
-        //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(_validatorId);
+        bidIdToStaker[_validatorId] = address(0);
 
         // Mark Canceled
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
@@ -242,9 +229,11 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         );
 
         // Unset the pointers
-        bidIdToStaker[_validatorId] = address(0);
         nodesManagerIntefaceInstance.unregisterEtherFiNode(_validatorId);
-
+        
+        //Call function in auction contract to re-initiate the bid that won
+        //Send in the bid ID to be re-initiated
+        auctionInterfaceInstance.reEnterAuction(_validatorId);
         _refundDeposit(msg.sender, stakeAmount);
 
         emit DepositCancelled(_validatorId);

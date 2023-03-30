@@ -303,7 +303,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
 
         uint256 penaltyAmount = _principal - remaining;
         require(
-            penaltyAmount <= _principal && penaltyAmount >= 0,
+            penaltyAmount >= 0,
             "Incorrect penalty amount"
         );
 
