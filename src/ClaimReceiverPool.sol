@@ -107,7 +107,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable whenNotPaused {
-        require(_verifyValues(msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof), "Verfication failed");
+        require(_verifyValues(msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof), "Verification failed");
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
 

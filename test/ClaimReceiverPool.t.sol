@@ -8,6 +8,7 @@ import "../src/ClaimReceiverPool.sol";
 import "../src/EarlyAdopterPool.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../lib/murky/src/Merkle.sol";
 
 import "./TestERC20.sol";
 
@@ -27,6 +28,10 @@ contract ClaimReceiverPoolTest is Test {
 
     IWETH private weth = IWETH(WETH);
     IERC20 private dai = IERC20(DAI);
+
+    bytes32[] public whiteListedAddresses;
+    Merkle merkle;
+    bytes32 root;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
@@ -65,6 +70,53 @@ contract ClaimReceiverPoolTest is Test {
             address(cbEth)
         );
 
+        _merkleSetup();
+
         vm.stopPrank();
+    }
+
+    function test_DepositFailsWithIncorrectMerkle() public {
+        bytes32[] memory proof1 = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory proof3 = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(owner);
+        claimReceiverPool.updateMerkleRoot(root);
+
+        vm.expectRevert("Verification failed");
+        claimReceiverPool.deposit{value: 0 ether}(1, 0, 0, 0, 400, proof1);
+
+        vm.expectRevert("Verification failed");
+        claimReceiverPool.deposit{value: 0.2 ether}(0, 0, 0, 10, 652, proof2);
+
+        vm.expectRevert("Verification failed");
+        claimReceiverPool.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3);
+
+    }
+
+    function _merkleSetup() internal {
+        merkle = new Merkle();
+
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(uint256(0), uint256(10), uint256(0), uint256(0), uint256(0), uint256(400))
+            )
+        );
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(uint256(0.2 ether), uint256(0), uint256(0), uint256(0), uint256(0), uint256(652))
+            )
+        );
+        whiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(uint256(0), uint256(10), uint256(0), uint256(50), uint256(0), uint256(9464))
+            )
+        );
+
+        whiteListedAddresses.push(keccak256(abi.encodePacked(alice)));
+
+        whiteListedAddresses.push(keccak256(abi.encodePacked(bob)));
+
+        root = merkle.getRoot(whiteListedAddresses);
     }
 } 
