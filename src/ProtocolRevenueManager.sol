@@ -73,12 +73,13 @@ contract ProtocolRevenueManager is IProtocolRevenueManager, Pausable, Ownable, R
             "addAuctionRevenue is already processed for the validator."
         );
 
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalRevenueIndex);
         uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers * msg.value) / 100;
         uint256 amountToProtocol = msg.value - amountVestedForStakers;
-
         address etherfiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
+        uint256 globalIndexlocal = globalRevenueIndex;
         globalRevenueIndex += amountToProtocol / etherFiNodesManager.numberOfValidators();
+        
+        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalIndexlocal);
         IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: amountVestedForStakers}();
     }
 

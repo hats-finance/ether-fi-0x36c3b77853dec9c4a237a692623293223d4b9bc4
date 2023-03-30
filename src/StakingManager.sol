@@ -231,6 +231,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             "Incorrect phase"
         );
 
+        bidIdToStaker[_validatorId] = address(0);
+
         // Mark Canceled
         nodesManagerIntefaceInstance.setEtherFiNodePhase(
             _validatorId,
@@ -238,7 +240,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         );
 
         // Unset the pointers
-        bidIdToStaker[_validatorId] = address(0);
         nodesManagerIntefaceInstance.unregisterEtherFiNode(_validatorId);
         
         //Call function in auction contract to re-initiate the bid that won
