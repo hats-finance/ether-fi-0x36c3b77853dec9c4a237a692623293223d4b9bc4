@@ -13,13 +13,13 @@ contract StakingManagerDeployScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        // StakingManager stakingManager = new StakingManager(
-        //     0xa330fF6cc6B4d3DAb9ef9706Dfa7b1A30A466250
-        // );   
-
-        // stakingManager.setEtherFiNodesManagerAddress(
-        //     0x1f5dc22Aad6812D7ebCC0A07b0E04C9e5C6C85bb
-        // );
+        StakingManager stakingManager = new StakingManager();
+        stakingManager.initialize(
+            0xa330fF6cc6B4d3DAb9ef9706Dfa7b1A30A466250
+        );   
+        stakingManager.setEtherFiNodesManagerAddress(
+            0x1f5dc22Aad6812D7ebCC0A07b0E04C9e5C6C85bb
+        );
 
         vm.stopBroadcast();
     }
