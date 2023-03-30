@@ -53,22 +53,20 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-
-    receive() external payable {}
     
     /// @dev Sets the revenue splits on deployment
     /// @dev AuctionManager, treasury and deposit contracts must be deployed first
     /// @param _treasuryContract the address of the treasury contract for interaction
     /// @param _auctionContract the address of the auction contract for interaction
     /// @param _stakingManagerContract the address of the deposit contract for interaction
-    function setUpManager(
+    constructor(
         address _treasuryContract,
         address _auctionContract,
         address _stakingManagerContract,
         address _tnftContract,
         address _bnftContract,
         address _protocolRevenueManagerContract
-    ) public onlyOwner 
+    ) 
     {
 
         treasuryContract = _treasuryContract;
@@ -108,6 +106,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
             ""
         );
     }
+
+    receive() external payable {}
 
     /// @notice Sets the validator ID for the EtherFiNode contract
     /// @param _validatorId id of the validator associated to the node

@@ -313,7 +313,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
         address clone = Clones.clone(implementationContract);
         EtherFiNode node = EtherFiNode(payable(clone));
-        node.initialize();
+        node.initialize(address(nodesManagerIntefaceInstance));
         nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
         
         return clone;

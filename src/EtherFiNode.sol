@@ -469,9 +469,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         return (operator, tnft, bnft, treasury);
     }
 
-    // Local testnet address 0x4F91A7Ff5926223ee62C6F0dcB6c7e8890eA39f7
     function protocolRevenueManagerAddress() internal view returns (address) {
-        // TODO: Replace it with the mainnet address
         return IEtherFiNodesManager(etherFiNodesManager).protocolRevenueManagerContract();
     }
 
@@ -487,7 +485,6 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         _;
     }
 
-    // TODO
     modifier onlyProtocolRevenueManagerContract() {
         require(
             msg.sender == protocolRevenueManagerAddress(),
