@@ -8,9 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract EtherFiNode is IEtherFiNode, Ownable {
-    // TODO: Remove these two address variables
-    address etherfiNodesManager;
-    address protocolRevenueManager;
+    address public etherFiNodesManager;
 
     // TODO: reduce the size of these varaibles
     uint256 public localRevenueIndex;
@@ -25,9 +23,10 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize() public {
+    function initialize(address _etherFiNodesManager) public {
         require(stakingStartTimestamp == 0, "already initialised");
         stakingStartTimestamp = uint32(block.timestamp);
+        etherFiNodesManager = _etherFiNodesManager;
     }
 
     //--------------------------------------------------------------------------------------
@@ -36,14 +35,6 @@ contract EtherFiNode is IEtherFiNode, Ownable {
 
     //Allows ether to be sent to this contract
     receive() external payable {}
-
-    function registerEtherFiNodesManager(address _etherfiNodesManager) public {
-        etherfiNodesManager = _etherfiNodesManager;
-    }
-
-    function registerProtocolRevenueManager(address _protocolRevenueManager) public {
-        protocolRevenueManager = _protocolRevenueManager;
-    }
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
@@ -100,7 +91,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     function moveRewardsToManager(
         uint256 _amount
     ) external onlyEtherFiNodeManagerContract {
-        (bool sent, ) = payable(etherfiNodesManager).call{value: _amount}("");
+        (bool sent, ) = payable(etherFiNodesManager).call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -461,16 +452,8 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         return (operator, tnft, bnft, treasury);
     }
 
-    function etherfiNodesManagerAddress() internal view returns (address) {
-        // TODO: Replace it with the actual address
-        // return 0x...
-        return etherfiNodesManager;
-    }
-
     function protocolRevenueManagerAddress() internal view returns (address) {
-        // TODO: Replace it with the actual address
-        // return 0x...
-        return protocolRevenueManager;
+        return IEtherFiNodesManager(etherFiNodesManager).protocolRevenueManagerContract();
     }
 
     //--------------------------------------------------------------------------------------
@@ -479,16 +462,15 @@ contract EtherFiNode is IEtherFiNode, Ownable {
 
     modifier onlyEtherFiNodeManagerContract() {
         require(
-            msg.sender == etherfiNodesManager,
+            msg.sender == etherFiNodesManager,
             "Only EtherFiNodeManager Contract"
         );
         _;
     }
 
-    // TODO
     modifier onlyProtocolRevenueManagerContract() {
         require(
-            msg.sender == protocolRevenueManager,
+            msg.sender == protocolRevenueManagerAddress(),
             "Only protocol revenue manager contract function"
         );
         _;

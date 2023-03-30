@@ -17,11 +17,11 @@ contract TreasuryTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
+
+        // Deploy Contracts
         treasuryInstance = new Treasury();
         nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager(
-            address(nodeOperatorManagerInstance)
-        );
+        auctionInstance = new AuctionManager(address(nodeOperatorManagerInstance));
         vm.stopPrank();
     }
 

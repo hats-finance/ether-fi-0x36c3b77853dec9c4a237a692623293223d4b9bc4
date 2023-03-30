@@ -22,7 +22,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     uint128 public maxBatchDepositSize = 16;
     uint128 public stakeAmount;
     address public implementationContract;
-    address public protocolRevenueManagerAddress;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
@@ -256,10 +255,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
         nodesManagerIntefaceInstance = IEtherFiNodesManager(_nodesManagerAddress);
     }
 
-    function setProtocolRevenueManagerAddress(address _protocolRevenueManagerAddress) public onlyOwner {
-        protocolRevenueManagerAddress = _protocolRevenueManagerAddress;
-    }
-
     /// @notice Sets the max number of deposits allowed at a time
     /// @param _newMaxBatchDepositSize the max number of deposits allowed
     function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
@@ -309,9 +304,7 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
         address clone = Clones.clone(implementationContract);
         EtherFiNode node = EtherFiNode(payable(clone));
-        node.initialize();
-        node.registerEtherFiNodesManager(address(nodesManagerIntefaceInstance));
-        node.registerProtocolRevenueManager(protocolRevenueManagerAddress);
+        node.initialize(address(nodesManagerIntefaceInstance));
         nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
         
         return clone;

@@ -52,52 +52,34 @@ contract StakingManagerTest is Test {
     function setUp() public {
         vm.startPrank(owner);
 
+        // Deply Contracts
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager(
-            address(nodeOperatorManagerInstance)
-        );
-        nodeOperatorManagerInstance.setAuctionContractAddress(
-            address(auctionInstance)
-        );
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
+        auctionInstance = new AuctionManager(address(nodeOperatorManagerInstance));
         stakingManagerInstance = new StakingManager(address(auctionInstance));
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
-
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
         managerInstance = new EtherFiNodesManager(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
-            address(TestBNFTInstance),
             address(TestTNFTInstance),
+            address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
         EtherFiNode etherFiNode = new EtherFiNode();
 
-        auctionInstance.setStakingManagerContractAddress(
-            address(stakingManagerInstance)
-        );
-
-        auctionInstance.setProtocolRevenueManager(
-            address(protocolRevenueManagerInstance)
-        );
-
-        protocolRevenueManagerInstance.setAuctionManagerAddress(
-            address(auctionInstance)
-        );
-
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
-            address(managerInstance)
-        );
-
-        stakingManagerInstance.setEtherFiNodesManagerAddress(
-            address(managerInstance)
-        );
+        // Setup Dependencies
+        nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
+        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
+        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
+        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
-        stakingManagerInstance.setProtocolRevenueManagerAddress(address(protocolRevenueManagerInstance));
         vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
