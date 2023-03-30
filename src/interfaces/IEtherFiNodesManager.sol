@@ -36,6 +36,7 @@ interface IEtherFiNodesManager {
     function getStakingRewardsPayouts(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
     function getRewardsPayouts(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external view returns (uint256, uint256, uint256, uint256);
     function getFullWithdrawalPayouts(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
+    function protocolRevenueManagerContract() external view returns(address);
 
     // Non-VIEW functions
     function incrementNumberOfValidators(uint256 _count) external;
