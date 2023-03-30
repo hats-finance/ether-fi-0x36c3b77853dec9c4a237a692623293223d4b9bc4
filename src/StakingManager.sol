@@ -184,7 +184,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
             "Incorrect phase"
         );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
-        address staker = bidIdToStaker[_validatorId];
 
         //Remove this before deployment, this should always happen
         if (test = false) {
