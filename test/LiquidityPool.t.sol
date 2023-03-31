@@ -16,7 +16,9 @@ contract LiquidityPoolTest is Test {
     function setUp() public {
         vm.startPrank(owner);
         liquidityPool = new LiquidityPool();
-        eETH = new EETH(address(liquidityPool));
+        liquidityPool.initialize();
+        eETH = new EETH();
+        eETH.initialize(address(liquidityPool));
         liquidityPool.setTokenAddress(address(eETH));
         vm.stopPrank();
     }

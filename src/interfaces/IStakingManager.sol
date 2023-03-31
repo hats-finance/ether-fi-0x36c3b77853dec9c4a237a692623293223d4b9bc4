@@ -10,6 +10,8 @@ interface IStakingManager {
         string ipfsHashForEncryptedValidatorKey;
     }
 
+    function initialize(address _auctionAddress) external;
+
     function stakeAmount() external view returns(uint128);
     function bidIdToStaker(uint256 id) external view returns (address);
 

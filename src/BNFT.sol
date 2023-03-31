@@ -1,26 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
 
-contract BNFT is ERC721 {
+contract BNFT is ERC721Upgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
     address public stakingManagerContractAddress;
 
-    //--------------------------------------------------------------------------------------
-    //----------------------------------  CONSTRUCTOR   ------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    constructor() ERC721("Bond NFT", "BNFT") {
-        stakingManagerContractAddress = msg.sender;
-    }
+    uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    function initialize() initializer external {
+        __ERC721_init("Bond NFT", "BNFT");
+        stakingManagerContractAddress = msg.sender;
+    }
 
     /// @notice Mints NFT to required user
     /// @dev Only through the staking contratc and not by an EOA
@@ -35,7 +34,7 @@ contract BNFT is ERC721 {
         address from,
         address to,
         uint256 tokenId
-    ) public virtual override(ERC721) {
+    ) public virtual override(ERC721Upgradeable) {
         require(from == address(0), "Err: token is SOUL BOUND");
         super.transferFrom(from, to, tokenId);
     }

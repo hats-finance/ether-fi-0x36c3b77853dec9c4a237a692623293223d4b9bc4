@@ -36,12 +36,19 @@ contract DeployScript is Script {
         // Deploy contracts
         Treasury treasury = new Treasury();
         NodeOperatorManager nodeOperatorManager = new NodeOperatorManager();
-        AuctionManager auctionManager = new AuctionManager(address(nodeOperatorManager));
-        StakingManager stakingManager = new StakingManager(address(auctionManager));
+        AuctionManager auctionManager = new AuctionManager();
+        auctionManager.initialize(address(nodeOperatorManager));
+
+        StakingManager stakingManager = new StakingManager();
+        stakingManager.initialize(address(auctionManager));
+
         address TNFTAddress = address(stakingManager.TNFTInterfaceInstance());
         address BNFTAddress = address(stakingManager.BNFTInterfaceInstance());
         ProtocolRevenueManager protocolRevenueManager = new ProtocolRevenueManager();
-        EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager(
+
+        EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager();
+
+        etherFiNodesManager.initialize(
             address(treasury),
             address(auctionManager),
             address(stakingManager),

@@ -1,26 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC20/ERC20Upgradeable.sol";
 
-contract EETH is ERC20 {
+import "./interfaces/IEETH.sol";
+
+contract EETH is ERC20Upgradeable, IEETH {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
     
     address public liquidityPool;
 
-    //--------------------------------------------------------------------------------------
-    //----------------------------------  CONSTRUCTOR   ------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    constructor(address _liquidityPool) ERC20("EtherFi ETH", "eETH") {
-        liquidityPool = _liquidityPool;
-    }
+    uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    function initialize(address _liquidityPool) external initializer {
+        __ERC20_init("EtherFi ETH", "eETH");
+        liquidityPool = _liquidityPool;
+    }
 
     /// @notice function to mint eETH
     /// @dev only able to mint from LiquidityPool contract
