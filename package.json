@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^4.8.2",
     "hardhat": "^2.12.6",
     "hardhat-preprocessor": "^0.1.5",
     "keccak256": "^1.0.6",

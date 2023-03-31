@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/IEtherFiNode.sol";
@@ -9,14 +10,14 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 
-contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
+contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-    uint256 public numberOfValidators;
-    uint128 public nonExitPenaltyPrincipal = 1 ether;
-    uint64 public nonExitPenaltyDailyRate = 3; // 3% per day
-    uint64 public constant SCALE = 1000000;
+    uint64 public numberOfValidators;
+    uint64 public nonExitPenaltyPrincipal;
+    uint64 public nonExitPenaltyDailyRate;
+    uint64 public SCALE;
 
     address public treasuryContract;
     address public stakingManagerContract;
@@ -32,6 +33,8 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     //Holds the data for the revenue splits depending on where the funds are received from
     RewardsSplit public stakingRewardsSplit;
     RewardsSplit public protocolRewardsSplit;
+
+    uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -49,15 +52,17 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     /// @param _treasuryContract the address of the treasury contract for interaction
     /// @param _auctionContract the address of the auction contract for interaction
     /// @param _stakingManagerContract the address of the deposit contract for interaction
-    constructor(
+    function initialize(
         address _treasuryContract,
         address _auctionContract,
         address _stakingManagerContract,
         address _tnftContract,
         address _bnftContract,
         address _protocolRevenueManagerContract
-    ) 
-    {
+    ) external initializer {
+        nonExitPenaltyPrincipal = 1 ether;
+        nonExitPenaltyDailyRate = 3; // 3% per day
+        SCALE = 1000000;
 
         treasuryContract = _treasuryContract;
         stakingManagerContract = _stakingManagerContract;
@@ -296,7 +301,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
 
     /// @notice Sets the Non Exit Penalty Principal amount
     /// @param _nonExitPenaltyPrincipal the new principal amount
-    function setNonExitPenaltyPrincipal(uint128 _nonExitPenaltyPrincipal) public onlyOwner {
+    function setNonExitPenaltyPrincipal(uint64 _nonExitPenaltyPrincipal) public onlyOwner {
         nonExitPenaltyPrincipal = _nonExitPenaltyPrincipal;
     }
 
@@ -342,7 +347,7 @@ contract EtherFiNodesManager is IEtherFiNodesManager, Ownable {
     /// @notice Increments the number of validators by a certain amount
     /// @param _count how many new validators to increment by
     function incrementNumberOfValidators(
-        uint256 _count
+        uint64 _count
     ) external onlyStakingManagerContract {
         numberOfValidators += _count;
     }

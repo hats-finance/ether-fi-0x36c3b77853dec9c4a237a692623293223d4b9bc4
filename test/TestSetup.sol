@@ -46,16 +46,25 @@ contract TestSetup is Test {
     function setUpTests() public {
         vm.startPrank(owner);
 
-        // Deply Contracts
+        // Deploy Contracts
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager(address(nodeOperatorManagerInstance));
-        stakingManagerInstance = new StakingManager(address(auctionInstance));
+        auctionInstance = new AuctionManager();
+        auctionInstance.initialize(address(nodeOperatorManagerInstance));
+        nodeOperatorManagerInstance.setAuctionContractAddress(
+            address(auctionInstance)
+        );
+        nodeOperatorManagerInstance.updateMerkleRoot(root);
+        stakingManagerInstance = new StakingManager();
+        stakingManagerInstance.initialize(address(auctionInstance));
         protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        protocolRevenueManagerInstance.initialize();
+
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        managerInstance = new EtherFiNodesManager(
+        managerInstance = new EtherFiNodesManager();
+        managerInstance.initialize(
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
@@ -65,7 +74,7 @@ contract TestSetup is Test {
         );
         EtherFiNode etherFiNode = new EtherFiNode();
 
-        // Setup Dependencies
+        // Setup dependencies
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
@@ -74,7 +83,6 @@ contract TestSetup is Test {
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
-        vm.stopPrank();
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",

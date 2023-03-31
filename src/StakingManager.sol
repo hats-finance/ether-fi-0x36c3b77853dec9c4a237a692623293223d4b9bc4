@@ -15,11 +15,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 
-contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
+contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, ReentrancyGuard {
     /// @dev please remove before mainnet deployment
-    bool public test = true;
-    uint128 public maxBatchDepositSize = 16;
+    bool public test;
+    uint128 public maxBatchDepositSize;
     uint128 public stakeAmount;
     address public implementationContract;
 
@@ -29,6 +30,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     IDepositContract public depositContractEth2;
     IEtherFiNodesManager public nodesManagerIntefaceInstance;
     mapping(uint256 => address) public bidIdToStaker;
+
+    uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -47,14 +50,18 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
     );
 
     //--------------------------------------------------------------------------------------
-    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-
-    /// @notice Constructor to set variables on deployment
+    
+    /// @notice initialize to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    constructor(address _auctionAddress) {
+    function initialize(address _auctionAddress) external initializer {
+         /// @dev please remove before mainnet deployment
+        test = true;
+        maxBatchDepositSize = 16;
+
         if (test == true) {
             stakeAmount = 0.032 ether;
         } else {
@@ -63,6 +70,8 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
         TNFTInterfaceInstance = ITNFT(address(new TNFT()));
         BNFTInterfaceInstance = IBNFT(address(new BNFT()));
+        TNFTInterfaceInstance.initialize();
+        BNFTInterfaceInstance.initialize();
 
         auctionInterfaceInstance = IAuctionManager(_auctionAddress);
         depositContractEth2 = IDepositContract(
@@ -71,10 +80,6 @@ contract StakingManager is IStakingManager, Ownable, Pausable, ReentrancyGuard {
 
     }
 
-    //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-    //--------------------------------------------------------------------------------------
-    
     /// @notice Switches the deposit mode of the contract
     /// @dev Used for testing purposes. WILL BE DELETED BEFORE MAINNET DEPLOYMENT
     function switchMode() public {
