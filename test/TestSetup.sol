@@ -28,11 +28,16 @@ contract TestSetup is Test {
     bytes32 root;
     bytes32[] public whiteListedAddresses;
     IStakingManager.DepositData public test_data;
+    IStakingManager.DepositData public test_data_2;
 
     address owner = vm.addr(1);
     address alice = vm.addr(2);
     address bob = vm.addr(3);
     address chad = vm.addr(4);
+    address dan = vm.addr(5);
+    address egg = vm.addr(6);
+    address greg = vm.addr(7);
+    address henry = vm.addr(8);
 
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
@@ -77,6 +82,13 @@ contract TestSetup is Test {
             ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
         });
 
+        test_data_2 = IStakingManager.DepositData({
+            depositDataRoot: "test_deposit_root_2",
+            publicKey: "test_pubkey_2",
+            signature: "test_signature_2",
+            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash_2"
+        });
+
         vm.stopPrank();
     }
 
@@ -102,6 +114,8 @@ contract TestSetup is Test {
         whiteListedAddresses.push(keccak256(abi.encodePacked(alice)));
 
         whiteListedAddresses.push(keccak256(abi.encodePacked(bob)));
+
+        whiteListedAddresses.push(keccak256(abi.encodePacked(chad)));
 
         root = merkle.getRoot(whiteListedAddresses);
     }
