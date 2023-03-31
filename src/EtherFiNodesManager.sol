@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
@@ -10,7 +11,7 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 
-contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable {
+contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable, ReentrancyGuard {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -138,7 +139,7 @@ contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable {
     /// @notice Once the node's exit is observed, the protocol calls this function to process their exits.
     /// @param _validatorIds the list of validators which exited
     /// @param _exitTimestamps the list of exit timestamps of the validators
-    function processNodeExit(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamps) external onlyOwner {
+    function processNodeExit(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamps) external onlyOwner nonReentrant {
         require(_validatorIds.length == _exitTimestamps.length, "_validatorIds.length != _exitTimestamps.length");
         require(numberOfValidators >= _validatorIds.length, "Not enough validators");
         
@@ -149,7 +150,7 @@ contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable {
 
     /// @notice process the rewards skimming
     /// @param _validatorId the validator Id
-    function partialWithdraw(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) public {
+    function partialWithdraw(uint256 _validatorId, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) public nonReentrant {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         uint256 balance = address(etherfiNode).balance;
         require(balance < 8 ether, "etherfi node contract's balance is above 8 ETH. You should exit the node.");
@@ -185,7 +186,7 @@ contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable {
     }
 
     /// @notice batch-process the rewards skimming for the validator nodes belonging to the same operator
-    function partialWithdrawBatchGroupByOperator(address _operator, uint256[] memory _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external {
+    function partialWithdrawBatchGroupByOperator(address _operator, uint256[] memory _validatorIds, bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee) external nonReentrant {
         uint256 totalOperatorAmount;
         uint256 totalTreasuryAmount;
         address tnftHolder;
@@ -233,7 +234,10 @@ contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable {
 
     /// @notice process the full withdrawal
     /// @param _validatorId the validator Id
-    function fullWithdraw(uint256 _validatorId) public {
+    /// this fullWithdrawal is allowed only after it's marked as EXITED
+    /// EtherFi will be monitoring the status of the validator nodes and mark them EXITED if they do;
+    /// it is a point of centralization in Phase 1
+    function fullWithdraw(uint256 _validatorId) public nonReentrant {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         require (address(etherfiNode).balance >= 16 ether, "not enough balance for full withdrawal");
         require (IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED, "validator node is not exited");

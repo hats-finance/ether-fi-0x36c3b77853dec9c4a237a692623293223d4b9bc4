@@ -67,7 +67,7 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
     /// @param _validatorId the validator ID
     function addAuctionRevenue(
         uint256 _validatorId
-    ) external payable onlyAuctionManager nonReentrant{
+    ) external payable onlyAuctionManager nonReentrant {
         require(
             etherFiNodesManager.numberOfValidators() > 0,
             "No Active Validator"
@@ -91,7 +91,7 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
     /// @param _validatorId id of the validator
     function distributeAuctionRevenue(
         uint256 _validatorId
-    ) external onlyEtherFiNodesManager returns (uint256) {
+    ) external onlyEtherFiNodesManager nonReentrant returns (uint256) {
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(_validatorId, globalRevenueIndex);
         return amount;
