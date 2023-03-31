@@ -38,6 +38,7 @@ contract TestSetup is Test {
     address egg = vm.addr(6);
     address greg = vm.addr(7);
     address henry = vm.addr(8);
+    address liquidityPool = vm.addr(9);
 
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
