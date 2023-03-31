@@ -74,7 +74,7 @@ contract DeployClaimReceiverTestScript is Script {
 
     function writeVersionFile() internal {
         // Read Current version
-        string memory versionString = vm.readLine("release/logs/version.txt");
+        string memory versionString = vm.readLine("release/logs/ClaimReceiverTest/version.txt");
 
         // Cast string to uint256
         uint256 version = _stringToUint(versionString);
@@ -83,7 +83,7 @@ contract DeployClaimReceiverTestScript is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/version.txt",
+            "release/logs/ClaimReceiverTest/version.txt",
             string(abi.encodePacked(Strings.toString(version)))
         );
 
@@ -91,7 +91,7 @@ contract DeployClaimReceiverTestScript is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/",
+                    "release/logs/ClaimReceiverTest/",
                     Strings.toString(version),
                     ".release"
                 )
