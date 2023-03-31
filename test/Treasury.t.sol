@@ -1,28 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
+import "./TestSetup.sol";
 
-import "../src/Treasury.sol";
-import "../src/AuctionManager.sol";
-import "../src/NodeOperatorManager.sol";
-
-contract TreasuryTest is Test {
-    Treasury treasuryInstance;
-    AuctionManager auctionInstance;
-    NodeOperatorManager public nodeOperatorManagerInstance;
-
-    address owner = 0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84;
-    address alice = vm.addr(2);
+contract TreasuryTest is TestSetup {
 
     function setUp() public {
-        vm.startPrank(owner);
-
-        // Deploy Contracts
-        treasuryInstance = new Treasury();
-        nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager(address(nodeOperatorManagerInstance));
-        vm.stopPrank();
+        setUpTests();
     }
 
     function test_TreasuryCanReceiveFunds() public {
