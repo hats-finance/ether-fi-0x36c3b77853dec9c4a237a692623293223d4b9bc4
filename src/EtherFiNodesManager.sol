@@ -234,6 +234,9 @@ contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable, Re
 
     /// @notice process the full withdrawal
     /// @param _validatorId the validator Id
+    /// this fullWithdrawal is allowed only after it's marked as EXITED
+    /// EtherFi will be monitoring the status of the validator nodes and mark them EXITED if they do;
+    /// it is a point of centralization in Phase 1
     function fullWithdraw(uint256 _validatorId) public nonReentrant {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         require (address(etherfiNode).balance >= 16 ether, "not enough balance for full withdrawal");
