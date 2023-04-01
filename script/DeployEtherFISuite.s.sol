@@ -10,11 +10,25 @@ import "../src/EtherFiNode.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
+import "../src/UUPSProxy.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployScript is Script {
     using Strings for string;
+
+    UUPSProxy public auctionManagerProxy;
+    UUPSProxy public stakingManagerProxy;
+    UUPSProxy public etherFiNodeManagerProxy;
+    UUPSProxy public protocolRevenueManagerProxy;
+    UUPSProxy public TNFTProxy;
+    UUPSProxy public BNFTProxy;
+
+    BNFT public BNFTImplementation;
+    BNFT public BNFTInstance;
+
+    TNFT public TNFTImplementation;
+    TNFT public TNFTInstance;
 
     struct addresses {
         address treasury;
@@ -37,11 +51,22 @@ contract DeployScript is Script {
         // Deploy contracts
         Treasury treasury = new Treasury();
         NodeOperatorManager nodeOperatorManager = new NodeOperatorManager();
+
+        BNFTImplementation = new BNFT();
+        BNFTProxy = new UUPSProxy(address(BNFTImplementation),"");
+        BNFTInstance = BNFT(address(BNFTProxy));
+        BNFTInstance.initialize();
+
+        TNFTImplementation = new TNFT();
+        TNFTProxy = new UUPSProxy(address(TNFTImplementation),"");
+        TNFTInstance = TNFT(address(TNFTProxy));
+        TNFTInstance.initialize();
+
         AuctionManager auctionManager = new AuctionManager();
         auctionManager.initialize(address(nodeOperatorManager));
 
         StakingManager stakingManager = new StakingManager();
-        stakingManager.initialize(address(auctionManager));
+        stakingManager.initialize(address(auctionManager), address(TNFTInstance), address(BNFTInstance));
 
         address TNFTAddress = address(stakingManager.TNFTInterfaceInstance());
         address BNFTAddress = address(stakingManager.BNFTInterfaceInstance());

@@ -59,7 +59,7 @@ contract StakingManager is Initializable, IStakingManager, OwnableUpgradeable, P
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    function initialize(address _auctionAddress) external initializer {
+    function initialize(address _auctionAddress, address _tnftAddress, address _bnftAddress) external initializer {
          /// @dev please remove before mainnet deployment
         test = true;
         maxBatchDepositSize = 16;
@@ -75,10 +75,8 @@ contract StakingManager is Initializable, IStakingManager, OwnableUpgradeable, P
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
 
-        TNFTInterfaceInstance = ITNFT(address(new TNFT()));
-        BNFTInterfaceInstance = IBNFT(address(new BNFT()));
-        TNFTInterfaceInstance.initialize();
-        BNFTInterfaceInstance.initialize();
+        TNFTInterfaceInstance = ITNFT(_tnftAddress);
+        BNFTInterfaceInstance = IBNFT(_bnftAddress);
 
         auctionInterfaceInstance = IAuctionManager(_auctionAddress);
         depositContractEth2 = IDepositContract(

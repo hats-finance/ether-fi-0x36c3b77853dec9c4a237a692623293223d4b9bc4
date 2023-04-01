@@ -10,8 +10,6 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    address public stakingManagerContractAddress;
-
     uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
@@ -22,14 +20,13 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
         __ERC721_init("Transferrable NFT", "TNFT");
         __Ownable_init();
         __UUPSUpgradeable_init();
-        stakingManagerContractAddress = msg.sender;
     }
 
     /// @notice Mints NFT to required user
     /// @dev Only through the staking contratc and not by an EOA
     /// @param _reciever receiver of the NFT
     /// @param _validatorId the ID of the NFT
-    function mint(address _reciever, uint256 _validatorId) external onlyStakingManagerContract {
+    function mint(address _reciever, uint256 _validatorId) external onlyOwner {
         _safeMint(_reciever, _validatorId);
     }
 
@@ -55,11 +52,11 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyStakingManagerContract() {
-        require(
-            msg.sender == stakingManagerContractAddress,
-            "Only staking mananger contract function"
-        );
-        _;
-    }
+    // modifier onlyStakingManagerContract() {
+    //     require(
+    //         msg.sender == stakingManagerContractAddress,
+    //         "Only staking mananger contract function"
+    //     );
+    //     _;
+    // }
 }

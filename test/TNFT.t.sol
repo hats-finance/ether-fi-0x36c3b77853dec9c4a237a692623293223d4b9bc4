@@ -8,13 +8,13 @@ contract TnftTest is TestSetup {
     function setUp() public {
         setUpTests();
 
-        assertEq(TestTNFTInstance.stakingManagerContractAddress(), address(stakingManagerInstance));
+        // assertEq(TNFTInstance.stakingManagerContractAddress(), address(stakingManagerInstance));
     }
 
     function test_TNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
-        vm.expectRevert("Only staking mananger contract function");
-        TestTNFTInstance.mint(address(alice), 1);
+        vm.expectRevert("Ownable: caller is not the owner");
+        TNFTInstance.mint(address(alice), 1);
     }
 
     function test_Mint() public {
@@ -40,7 +40,7 @@ contract TnftTest is TestSetup {
         stakingManagerInstance.registerValidator(bidIds[0], test_data);
         vm.stopPrank();
 
-        assertEq(TestTNFTInstance.ownerOf(1), alice);
-        assertEq(TestTNFTInstance.balanceOf(alice), 1);
+        assertEq(TNFTInstance.ownerOf(1), alice);
+        assertEq(TNFTInstance.balanceOf(alice), 1);
     }
 }

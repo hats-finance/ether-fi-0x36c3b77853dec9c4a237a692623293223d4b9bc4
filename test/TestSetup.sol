@@ -20,6 +20,8 @@ contract TestSetup is Test {
     UUPSProxy public stakingManagerProxy;
     UUPSProxy public etherFiNodeManagerProxy;
     UUPSProxy public protocolRevenueManagerProxy;
+    UUPSProxy public TNFTProxy;
+    UUPSProxy public BNFTProxy;
 
     StakingManager public stakingManagerInstance;
     StakingManager public stakingManagerImplementation;
@@ -33,11 +35,13 @@ contract TestSetup is Test {
     EtherFiNodesManager public managerInstance;
     EtherFiNodesManager public managerImplementation;
 
-    EtherFiNode public withdrawSafeInstance;
-    
-    BNFT public TestBNFTInstance;
-    TNFT public TestTNFTInstance;
-    
+    TNFT public TNFTImplementation;
+    TNFT public TNFTInstance;
+
+    BNFT public BNFTImplementation;
+    BNFT public BNFTInstance;
+
+    EtherFiNode public node;
     Treasury public treasuryInstance;
     NodeOperatorManager public nodeOperatorManagerInstance;
     
@@ -68,6 +72,16 @@ contract TestSetup is Test {
         _merkleSetup();
         nodeOperatorManagerInstance = new NodeOperatorManager();
 
+        TNFTImplementation = new TNFT();
+        TNFTProxy = new UUPSProxy(address(TNFTImplementation), "");
+        TNFTInstance = TNFT(address(TNFTProxy));
+        TNFTInstance.initialize();
+
+        BNFTImplementation = new BNFT();
+        BNFTProxy = new UUPSProxy(address(BNFTImplementation), "");
+        BNFTInstance = BNFT(address(BNFTProxy));
+        BNFTInstance.initialize();
+
         auctionImplementation = new AuctionManager();
         auctionManagerProxy = new UUPSProxy(address(auctionImplementation), "");
         auctionInstance = AuctionManager(address(auctionManagerProxy));
@@ -76,15 +90,12 @@ contract TestSetup is Test {
         stakingManagerImplementation = new StakingManager();
         stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation), "");
         stakingManagerInstance = StakingManager(address(stakingManagerProxy));
-        stakingManagerInstance.initialize(address(auctionInstance));
+        stakingManagerInstance.initialize(address(auctionInstance), address(TNFTInstance), address(BNFTInstance));
 
         protocolRevenueManagerImplementation = new ProtocolRevenueManager();
         protocolRevenueManagerProxy = new UUPSProxy(address(protocolRevenueManagerImplementation), "");
         protocolRevenueManagerInstance = ProtocolRevenueManager(payable(address(protocolRevenueManagerProxy)));
         protocolRevenueManagerInstance.initialize();
-
-        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
-        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
 
         managerImplementation = new EtherFiNodesManager();
         etherFiNodeManagerProxy = new UUPSProxy(address(managerImplementation), "");
@@ -93,14 +104,16 @@ contract TestSetup is Test {
             address(treasuryInstance),
             address(auctionInstance),
             address(stakingManagerInstance),
-            address(TestTNFTInstance),
-            address(TestBNFTInstance),
+            address(TNFTInstance),
+            address(BNFTInstance),
             address(protocolRevenueManagerInstance)
         );
 
-        EtherFiNode etherFiNode = new EtherFiNode();
+        node = new EtherFiNode();
 
         // Setup dependencies
+        TNFTInstance.transferOwnership(address(stakingManagerInstance));
+        BNFTInstance.transferOwnership(address(stakingManagerInstance));
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
@@ -108,7 +121,7 @@ contract TestSetup is Test {
         protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",

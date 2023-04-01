@@ -32,14 +32,14 @@ contract BNFTTest is TestSetup {
         stakingManagerInstance.registerValidator(bidIds[0], test_data);
         vm.stopPrank();
 
-        assertEq(TestBNFTInstance.ownerOf(1), alice);
-        assertEq(TestBNFTInstance.balanceOf(alice), 1);
+        assertEq(BNFTInstance.ownerOf(1), alice);
+        assertEq(BNFTInstance.balanceOf(alice), 1);
     }
 
     function test_BNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
-        vm.expectRevert("Only deposit contract function");
-        TestBNFTInstance.mint(address(alice), 1);
+        vm.expectRevert("Ownable: caller is not the owner");
+        BNFTInstance.mint(address(alice), 1);
     }
 
     function test_BNFTCannotBeTransferred() public {
@@ -64,7 +64,7 @@ contract BNFTTest is TestSetup {
         );
 
         vm.expectRevert("Err: token is SOUL BOUND");
-        TestBNFTInstance.transferFrom(
+        BNFTInstance.transferFrom(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             address(alice),
             0
