@@ -25,6 +25,7 @@ contract DeployScript is Script {
         address BNFT;
         address etherFiNodesManager;
         address protocolRevenueManager;
+        address etherFiNode;
     }
 
     addresses addressStruct;
@@ -77,7 +78,8 @@ contract DeployScript is Script {
             TNFT: TNFTAddress,
             BNFT: BNFTAddress,
             etherFiNodesManager: address(etherFiNodesManager),
-            protocolRevenueManager: address(protocolRevenueManager)
+            protocolRevenueManager: address(protocolRevenueManager),
+            etherFiNode: address(etherFiNode)
         });
 
         writeVersionFile();
@@ -104,7 +106,7 @@ contract DeployScript is Script {
 
     function writeVersionFile() internal {
         // Read Current version
-        string memory versionString = vm.readLine("release/logs/version.txt");
+        string memory versionString = vm.readLine("release/logs/EtherFiSuite/version.txt");
 
         // Cast string to uint256
         uint256 version = _stringToUint(versionString);
@@ -113,7 +115,7 @@ contract DeployScript is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/version.txt",
+            "release/logs/EtherFiSuite/version.txt",
             string(abi.encodePacked(Strings.toString(version)))
         );
 
@@ -121,7 +123,7 @@ contract DeployScript is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/",
+                    "release/logs/EtherFiSuite/",
                     Strings.toString(version),
                     ".release"
                 )
@@ -137,14 +139,12 @@ contract DeployScript is Script {
                     Strings.toHexString(addressStruct.auctionManager),
                     "\nStakingManager: ",
                     Strings.toHexString(addressStruct.stakingManager),
-                    "\nTNFT: ",
-                    Strings.toHexString(addressStruct.TNFT),
-                    "\nBNFT: ",
-                    Strings.toHexString(addressStruct.BNFT),
                     "\nEtherFi Node Manager: ",
                     Strings.toHexString(addressStruct.etherFiNodesManager),
                     "\nProtocol Revenue Manager: ",
-                    Strings.toHexString(addressStruct.protocolRevenueManager)
+                    Strings.toHexString(addressStruct.protocolRevenueManager),
+                    "\nEtherFi Node: ",
+                    Strings.toHexString(addressStruct.etherFiNode)
                 )
             )
         );
