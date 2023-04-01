@@ -11,13 +11,15 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./EtherFiNode.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, ReentrancyGuard {
+
+contract StakingManager is Initializable, IStakingManager, OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     /// @dev please remove before mainnet deployment
     bool public test;
     uint128 public maxBatchDepositSize;
@@ -67,6 +69,11 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
         } else {
             stakeAmount = 32 ether;
         }
+
+        __Pausable_init();
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
 
         TNFTInterfaceInstance = ITNFT(address(new TNFT()));
         BNFTInterfaceInstance = IBNFT(address(new BNFT()));
@@ -308,7 +315,7 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
     }
 
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
-        address clone = Clones.clone(implementationContract);
+        address clone = ClonesUpgradeable.clone(implementationContract);
         EtherFiNode node = EtherFiNode(payable(clone));
         node.initialize(address(nodesManagerIntefaceInstance));
         nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
@@ -324,6 +331,20 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
         //Refund the user with their requested amount
         (bool sent, ) = _depositOwner.call{value: _amount}("");
         require(sent, "Failed to send Ether");
+    }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
+    //--------------------------------------------------------------------------------------
+    //------------------------------------  GETTERS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------
