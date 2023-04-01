@@ -2,8 +2,10 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
-contract BNFT is ERC721Upgradeable {
+contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -18,6 +20,8 @@ contract BNFT is ERC721Upgradeable {
 
     function initialize() initializer external {
         __ERC721_init("Bond NFT", "BNFT");
+        __Ownable_init();
+        __UUPSUpgradeable_init();
         stakingManagerContractAddress = msg.sender;
     }
 
@@ -37,6 +41,24 @@ contract BNFT is ERC721Upgradeable {
     ) public virtual override(ERC721Upgradeable) {
         require(from == address(0), "Err: token is SOUL BOUND");
         super.transferFrom(from, to, tokenId);
+    }
+
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  GETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------
