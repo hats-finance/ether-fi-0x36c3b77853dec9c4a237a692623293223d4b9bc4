@@ -11,19 +11,36 @@ import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
+import "../src/UUPSProxy.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract TestSetup is Test {
 
+    UUPSProxy public auctionManagerProxy;
+    UUPSProxy public stakingManagerProxy;
+    UUPSProxy public etherFiNodeManagerProxy;
+    UUPSProxy public protocolRevenueManagerProxy;
+
     StakingManager public stakingManagerInstance;
-    EtherFiNode public withdrawSafeInstance;
-    EtherFiNodesManager public managerInstance;
+    StakingManager public stakingManagerImplementation;
+
+    AuctionManager public auctionImplementation;
+    AuctionManager public auctionInstance;
+
     ProtocolRevenueManager public protocolRevenueManagerInstance;
+    ProtocolRevenueManager public protocolRevenueManagerImplementation;
+
+    EtherFiNodesManager public managerInstance;
+    EtherFiNodesManager public managerImplementation;
+
+    EtherFiNode public withdrawSafeInstance;
+    
     BNFT public TestBNFTInstance;
     TNFT public TestTNFTInstance;
-    AuctionManager public auctionInstance;
+    
     Treasury public treasuryInstance;
     NodeOperatorManager public nodeOperatorManagerInstance;
+    
     Merkle merkle;
     bytes32 root;
     bytes32[] public whiteListedAddresses;
@@ -50,20 +67,28 @@ contract TestSetup is Test {
         treasuryInstance = new Treasury();
         _merkleSetup();
         nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager();
+
+        auctionImplementation = new AuctionManager();
+        auctionManagerProxy = new UUPSProxy(address(auctionImplementation), "");
+        auctionInstance = AuctionManager(address(auctionManagerProxy));
         auctionInstance.initialize(address(nodeOperatorManagerInstance));
-        nodeOperatorManagerInstance.setAuctionContractAddress(
-            address(auctionInstance)
-        );
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
-        stakingManagerInstance = new StakingManager();
+
+        stakingManagerImplementation = new StakingManager();
+        stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation), "");
+        stakingManagerInstance = StakingManager(address(stakingManagerProxy));
         stakingManagerInstance.initialize(address(auctionInstance));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+
+        protocolRevenueManagerImplementation = new ProtocolRevenueManager();
+        protocolRevenueManagerProxy = new UUPSProxy(address(protocolRevenueManagerImplementation), "");
+        protocolRevenueManagerInstance = ProtocolRevenueManager(payable(address(protocolRevenueManagerProxy)));
         protocolRevenueManagerInstance.initialize();
 
         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        managerInstance = new EtherFiNodesManager();
+
+        managerImplementation = new EtherFiNodesManager();
+        etherFiNodeManagerProxy = new UUPSProxy(address(managerImplementation), "");
+        managerInstance = EtherFiNodesManager(payable(address(etherFiNodeManagerProxy)));
         managerInstance.initialize(
             address(treasuryInstance),
             address(auctionInstance),
@@ -72,6 +97,7 @@ contract TestSetup is Test {
             address(TestBNFTInstance),
             address(protocolRevenueManagerInstance)
         );
+
         EtherFiNode etherFiNode = new EtherFiNode();
 
         // Setup dependencies
