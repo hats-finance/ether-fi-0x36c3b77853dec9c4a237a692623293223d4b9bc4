@@ -148,6 +148,7 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
     function registerValidator(uint256 _validatorId, DepositData calldata _depositData)
         public
         whenNotPaused 
+        nonReentrant
     {
         require(
             nodesManagerIntefaceInstance.phase(_validatorId) ==
