@@ -2,15 +2,16 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 
 import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IAuctionManager.sol";
 
-contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausable, Ownable, ReentrancyGuard {
+contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, PausableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -25,18 +26,16 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
     uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
-    //-------------------------------------  EVENTS  ---------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    //--------------------------------------------------------------------------------------
-    //----------------------------------  CONSTRUCTOR   ------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
     function initialize() external initializer {
+
+        __Pausable_init();
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
+
         globalRevenueIndex = 1;
         vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
         auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
@@ -132,6 +131,12 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -148,6 +153,10 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
             amount = globalRevenueIndex - localRevenueIndex;
         }
         return amount;
+    }
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------
