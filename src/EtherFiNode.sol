@@ -33,9 +33,6 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    //Allows ether to be sent to this contract
-    receive() external payable {}
-
     /// @notice Set the validator phase
     /// @param _phase the new phase
     function setPhase(
