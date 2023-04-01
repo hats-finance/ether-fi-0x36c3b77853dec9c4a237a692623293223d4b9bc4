@@ -2,8 +2,9 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
@@ -11,7 +12,7 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 
-contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable, ReentrancyGuard {
+contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -61,6 +62,11 @@ contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable, Re
         address _bnftContract,
         address _protocolRevenueManagerContract
     ) external initializer {
+
+         __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
+
         nonExitPenaltyPrincipal = 1 ether;
         nonExitPenaltyDailyRate = 3; // 3% per day
         SCALE = 1000000;
@@ -402,6 +408,12 @@ contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable, Re
         emit NodeExitProcessed(_validatorId);
     }
 
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -500,6 +512,10 @@ contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, Ownable, Re
 
     function isExited(uint256 _validatorId) external view returns (bool) {
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
+    }
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
 
