@@ -67,9 +67,8 @@ contract TestSetup is Test {
     function setUpTests() public {
         vm.startPrank(owner);
 
-        // Deploy Contracts
+        // Deploy Contracts and Proxies
         treasuryInstance = new Treasury();
-        _merkleSetup();
         nodeOperatorManagerInstance = new NodeOperatorManager();
 
         TNFTImplementation = new TNFT();
@@ -111,9 +110,12 @@ contract TestSetup is Test {
 
         node = new EtherFiNode();
 
-        // Setup dependencies
+        // Transfer ownership of NFT's to staking manager contract
         TNFTInstance.transferOwnership(address(stakingManagerInstance));
         BNFTInstance.transferOwnership(address(stakingManagerInstance));
+
+        // Setup dependencies
+        _merkleSetup();
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
