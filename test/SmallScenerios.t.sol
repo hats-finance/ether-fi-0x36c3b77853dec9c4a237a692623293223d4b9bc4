@@ -1,122 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
-import "../src/interfaces/IStakingManager.sol";
-import "../src/StakingManager.sol";
-import "src/EtherFiNodesManager.sol";
-import "../src/NodeOperatorManager.sol";
-import "../src/ProtocolRevenueManager.sol";
-import "../src/BNFT.sol";
-import "../src/TNFT.sol";
-import "../src/AuctionManager.sol";
-import "../src/Treasury.sol";
-import "../lib/murky/src/Merkle.sol";
+import "./TestSetup.sol";
 
-contract AuctionManagerTest is Test {
-    StakingManager public stakingManagerInstance;
-    EtherFiNode public withdrawSafeInstance;
-    EtherFiNodesManager public managerInstance;
-    BNFT public TestBNFTInstance;
-    TNFT public TestTNFTInstance;
-    AuctionManager public auctionInstance;
-    Treasury public treasuryInstance;
-    NodeOperatorManager public nodeOperatorManagerInstance;
-    ProtocolRevenueManager public protocolRevenueManagerInstance;
-    Merkle merkle;
-    bytes32 root;
-    bytes32[] public whiteListedAddresses;
-    IStakingManager.DepositData public test_data;
-
-    address owner = vm.addr(1);
-    address alice = vm.addr(2);
-    address bob = vm.addr(3);
-    address chad = vm.addr(4);
-    address dan = vm.addr(5);
-    address egg = vm.addr(6);
-    address greg = vm.addr(7);
-    address henry = vm.addr(8);
-
-    bytes aliceIPFSHash = "AliceIPFS";
-    bytes _ipfsHash = "ipfsHash";
+contract SmallScenariosTest is TestSetup {
 
     function setUp() public {
-        vm.startPrank(owner);
-
-        // Deploy Contracts
-        treasuryInstance = new Treasury();
-        _merkleSetup();
-        nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager();
-        auctionInstance.initialize(address(nodeOperatorManagerInstance));
-        nodeOperatorManagerInstance.setAuctionContractAddress(
-            address(auctionInstance)
-        );
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
-        stakingManagerInstance = new StakingManager();
-        stakingManagerInstance.initialize(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(
-            address(stakingManagerInstance)
-        );
-        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
-        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
-        managerInstance = new EtherFiNodesManager();
-        managerInstance.initialize(
-            address(treasuryInstance),
-            address(auctionInstance),
-            address(stakingManagerInstance),
-            address(TestTNFTInstance),
-            address(TestBNFTInstance),
-            address(protocolRevenueManagerInstance)
-        );
-        EtherFiNode etherFiNode = new EtherFiNode();
-
-        // Setup dependencies
-        nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
-        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
-        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
-        
-        test_data = IStakingManager.DepositData({
-            publicKey: "test_pubkey",
-            signature: "test_signature",
-            depositDataRoot: "test_deposit_root",
-            ipfsHashForEncryptedValidatorKey: "test_ipfsHash"
-        });
-
-        vm.stopPrank();
-    }
-
-    function _merkleSetup() internal {
-        merkle = new Merkle();
-
-        whiteListedAddresses.push(
-            keccak256(
-                abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
-            )
-        );
-        whiteListedAddresses.push(
-            keccak256(
-                abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)
-            )
-        );
-        whiteListedAddresses.push(
-            keccak256(
-                abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)
-            )
-        );
-
-        whiteListedAddresses.push(keccak256(abi.encodePacked(alice)));
-        whiteListedAddresses.push(keccak256(abi.encodePacked(bob)));
-        whiteListedAddresses.push(keccak256(abi.encodePacked(chad)));
-        whiteListedAddresses.push(keccak256(abi.encodePacked(dan)));
-
-        root = merkle.getRoot(whiteListedAddresses);
+        setUpTests();
     }
 
     /*------ SCENARIO 1 ------*/

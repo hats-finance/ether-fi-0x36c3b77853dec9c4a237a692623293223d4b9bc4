@@ -1,37 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
-import "../src/interfaces/IStakingManager.sol";
-import "../src/interfaces/IEtherFiNode.sol";
-import "src/EtherFiNodesManager.sol";
-import "../src/StakingManager.sol";
-import "../src/AuctionManager.sol";
-import "../src/BNFT.sol";
-import "../src/NodeOperatorManager.sol";
-import "../src/ProtocolRevenueManager.sol";
-import "../src/TNFT.sol";
-import "../src/Treasury.sol";
-import "../lib/murky/src/Merkle.sol";
+import "./TestSetup.sol";
 
-contract RewardsSkimmingTest is Test {
-    IStakingManager public depositInterface;
-    StakingManager public stakingManagerInstance;
-    BNFT public TestBNFTInstance;
-    TNFT public TestTNFTInstance;
-    NodeOperatorManager public nodeOperatorManagerInstance;
-    AuctionManager public auctionInstance;
-    ProtocolRevenueManager public protocolRevenueManagerInstance;
-    Treasury public treasuryInstance;
-    EtherFiNode public safeInstance;
-    EtherFiNodesManager public managerInstance;
-
-    Merkle merkle;
-    bytes32 root;
-    bytes32[] public whiteListedAddresses;
-
-    IStakingManager.DepositData public test_data;
-
+contract RewardsSkimmingTest is TestSetup {
     uint256 num_operators;
     uint256 num_stakers;
     uint256 num_people;
@@ -43,14 +15,11 @@ contract RewardsSkimmingTest is Test {
     uint256[] validatorIdsOfMixedTNftHolders;
     uint256[] validatorIdsOfTNftsInLiquidityPool;
 
-    bytes _ipfsHash = "ipfsHash";
-    bytes aliceIPFSHash = "AliceIpfsHash";
-
     uint256[] bidId;
 
-    address owner = vm.addr(1);
-    address liquidityPool = vm.addr(2);
-
+    bytes32 newRoot;
+    bytes32[] public newWhiteListedAddresses;
+    
     function setUp() public {
         num_operators = 1; // should be 1
         num_stakers = 32;
@@ -68,57 +37,13 @@ contract RewardsSkimmingTest is Test {
             vm.deal(people[i], 1 ether);
         }    
 
-        vm.startPrank(owner);
+        setUpTests();
+        _setupMerkle();
 
-        // Deploy Contracts
-        treasuryInstance = new Treasury();
-        _merkleSetup();
-        nodeOperatorManagerInstance = new NodeOperatorManager();
-        auctionInstance = new AuctionManager();
-        auctionInstance.initialize(address(nodeOperatorManagerInstance));
-        nodeOperatorManagerInstance.setAuctionContractAddress(
-            address(auctionInstance)
-        );
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
-        protocolRevenueManagerInstance = new ProtocolRevenueManager();
+        vm.prank(owner);
+        nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
 
-        stakingManagerInstance = new StakingManager();
-        stakingManagerInstance.initialize(address(auctionInstance));
-        auctionInstance.setStakingManagerContractAddress(
-            address(stakingManagerInstance)
-        );
-        TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInterfaceInstance()));
-        TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInterfaceInstance()));
-        managerInstance = new EtherFiNodesManager();
-        managerInstance.initialize(
-            address(treasuryInstance),
-            address(auctionInstance),
-            address(stakingManagerInstance),
-            address(TestTNFTInstance),
-            address(TestBNFTInstance),
-            address(protocolRevenueManagerInstance)
-        );
-        EtherFiNode etherFiNode = new EtherFiNode();
-
-        // Setup dependencies
-        nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
-        auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
-        protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-        stakingManagerInstance.registerEtherFiNodeImplementationContract(address(etherFiNode));
-
-        test_data = IStakingManager.DepositData({
-            depositDataRoot: "test_deposit_root",
-            publicKey: "test_pubkey",
-            signature: "test_signature",
-            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
-        });
-        vm.stopPrank();
-
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory proof = merkle.getProof(newWhiteListedAddresses, 1);
 
         startHoax(operators[0]);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -158,19 +83,19 @@ contract RewardsSkimmingTest is Test {
         }        
     }
 
-    function _merkleSetup() internal {
+    function _setupMerkle() internal {
         merkle = new Merkle();
-        whiteListedAddresses.push(
+        newWhiteListedAddresses.push(
             keccak256(
                 abi.encodePacked(operators[0])
             )
         );
-        whiteListedAddresses.push(
+        newWhiteListedAddresses.push(
             keccak256(
                 abi.encodePacked(operators[0])
             )
         );
-        root = merkle.getRoot(whiteListedAddresses);
+        newRoot = merkle.getRoot(newWhiteListedAddresses);
     }
 
     function _deals() internal {
