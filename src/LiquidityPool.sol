@@ -3,10 +3,11 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IEETH.sol";
 
-contract LiquidityPool is Initializable, Ownable {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable{
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -29,6 +30,8 @@ contract LiquidityPool is Initializable, Ownable {
     //--------------------------------------------------------------------------------------
 
     function initialize() external initializer {
+        __Ownable_init();
+        __UUPSUpgradeable_init();
     }
 
     /// @notice sets the contract address for eETH
@@ -64,6 +67,24 @@ contract LiquidityPool is Initializable, Ownable {
     /// @notice Allows ether to be sent to this contract
     receive() external payable {
         emit Received(msg.sender, msg.value);
+    }
+
+    //--------------------------------------------------------------------------------------
+    //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
+    //--------------------------------------------------------------------------------------
+    //------------------------------------  GETTERS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------

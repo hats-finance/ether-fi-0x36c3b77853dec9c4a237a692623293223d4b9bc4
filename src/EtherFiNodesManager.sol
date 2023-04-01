@@ -63,7 +63,7 @@ contract EtherFiNodesManager is Initializable, IEtherFiNodesManager, OwnableUpgr
         address _protocolRevenueManagerContract
     ) external initializer {
 
-         __Ownable_init();
+        __Ownable_init();
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
 
