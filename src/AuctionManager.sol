@@ -4,12 +4,14 @@ pragma solidity 0.8.13;
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/INodeOperatorManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract AuctionManager is Initializable, IAuctionManager, Pausable, Ownable, ReentrancyGuard {
+
+contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -45,6 +47,15 @@ contract AuctionManager is Initializable, IAuctionManager, Pausable, Ownable, Re
     event Received(address indexed sender, uint256 value);
 
     //--------------------------------------------------------------------------------------
+    //-----------------------------------  CONSTRUCTOR  ------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
@@ -59,6 +70,11 @@ contract AuctionManager is Initializable, IAuctionManager, Pausable, Ownable, Re
         nodeOperatorManagerInterface = INodeOperatorManager(
             _nodeOperatorManagerContract
         );
+
+        __Pausable_init();
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
     }
 
     /// @notice Creates bid(s) for the right to run a validator node when ETH is deposited
@@ -221,6 +237,12 @@ contract AuctionManager is Initializable, IAuctionManager, Pausable, Ownable, Re
         }
     }
 
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -237,6 +259,10 @@ contract AuctionManager is Initializable, IAuctionManager, Pausable, Ownable, Re
     /// @return the boolean value of the active flag in bids
     function isBidActive(uint256 _bidId) external view returns (bool) {
         return bids[_bidId].isActive;
+    }
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------
