@@ -88,9 +88,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Allows ether to be sent to this contract
-    receive() external payable {}
-
     /// @notice Allows user to deposit into the conversion pool
     /// @dev The deposit amount must be the same as what they deposited into the EAP
     /// @param _rEthBal balance of the token to be sent in
