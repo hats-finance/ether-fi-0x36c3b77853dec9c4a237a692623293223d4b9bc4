@@ -21,11 +21,18 @@ contract TNFTV2 is TNFT {
     }
 }
 
+contract EtherFiNodesManagerV2 is EtherFiNodesManager {
+    function isUpgraded() public view returns(bool){
+        return true;
+    }
+}
+
 contract UpgradeTest is TestSetup {
 
     AuctionManagerV2 public auctionManagerV2Instance;
     BNFTV2 public BNFTV2Instance;
     TNFTV2 public TNFTV2Instance;
+    EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
 
     function setUp() public {
         setUpTests();
@@ -109,5 +116,44 @@ contract UpgradeTest is TestSetup {
 
         assertEq(TNFTV2Instance.getImplementation(), address(TNFTV2Implementation));
         assertEq(TNFTV2Instance.isUpgraded(), true);
+    }
+
+    function test_CanUpgradeEtherFiNodesManager() public {
+        assertEq(managerInstance.getImplementation(), address(managerImplementation));
+
+        vm.prank(owner);
+        managerInstance.setStakingRewardsSplit(uint64(100000), uint64(100000), uint64(400000), uint64(400000));
+
+        EtherFiNodesManagerV2 managerV2Implementation = new EtherFiNodesManagerV2();
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        managerInstance.upgradeTo(address(managerV2Implementation));
+
+        vm.prank(owner);
+        managerInstance.upgradeTo(address(managerV2Implementation));
+
+        etherFiNodesManagerV2Instance = EtherFiNodesManagerV2(payable(address(etherFiNodeManagerProxy)));
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        etherFiNodesManagerV2Instance.initialize(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(stakingManagerInstance),
+            address(TNFTInstance),
+            address(BNFTInstance),
+            address(protocolRevenueManagerInstance)
+        );
+
+        assertEq(etherFiNodesManagerV2Instance.getImplementation(), address(managerV2Implementation));
+        assertEq(etherFiNodesManagerV2Instance.isUpgraded(), true);
+
+        // State is maintained
+        (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = etherFiNodesManagerV2Instance.stakingRewardsSplit();
+        assertEq(treasury, 100000);
+        assertEq(nodeOperator, 100000);
+        assertEq(tnft, 400000);
+        assertEq(bnft, 400000);
     }
 }
