@@ -27,12 +27,19 @@ contract EtherFiNodesManagerV2 is EtherFiNodesManager {
     }
 }
 
+contract ProtocolRevenueManagerV2 is ProtocolRevenueManager {
+    function isUpgraded() public view returns(bool){
+        return true;
+    }
+}
+
 contract UpgradeTest is TestSetup {
 
     AuctionManagerV2 public auctionManagerV2Instance;
     BNFTV2 public BNFTV2Instance;
     TNFTV2 public TNFTV2Instance;
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
+    ProtocolRevenueManagerV2 public protocolRevenueManagerV2Instance;
 
     function setUp() public {
         setUpTests();
@@ -155,5 +162,33 @@ contract UpgradeTest is TestSetup {
         assertEq(nodeOperator, 100000);
         assertEq(tnft, 400000);
         assertEq(bnft, 400000);
+    }
+
+    function test_CanUpgradeProtocolRevenueManager() public {
+        assertEq(protocolRevenueManagerInstance.getImplementation(), address(protocolRevenueManagerImplementation));
+
+        vm.prank(owner);
+        protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(uint128(60));
+
+        ProtocolRevenueManagerV2 protocolRevenueManagerV2Implementation = new ProtocolRevenueManagerV2();
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        protocolRevenueManagerInstance.upgradeTo(address(protocolRevenueManagerV2Implementation));
+
+        vm.prank(owner);
+        protocolRevenueManagerInstance.upgradeTo(address(protocolRevenueManagerV2Implementation));
+
+        protocolRevenueManagerV2Instance = ProtocolRevenueManagerV2(payable(address(protocolRevenueManagerProxy)));
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        protocolRevenueManagerInstance.initialize();
+
+        assertEq(protocolRevenueManagerV2Instance.getImplementation(), address(protocolRevenueManagerV2Implementation));
+        assertEq(protocolRevenueManagerV2Instance.isUpgraded(), true);
+
+        // State is maintained
+        assertEq(protocolRevenueManagerV2Instance.vestedAuctionFeeSplitForStakers(), 60);
     }
 }
