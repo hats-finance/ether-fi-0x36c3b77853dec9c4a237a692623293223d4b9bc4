@@ -18,13 +18,17 @@ contract UpgradeTest is TestSetup {
         setUpTests();
     }
 
-    function test_CanUpgrade() public {
+    function test_CanUpgradeAuctionManager() public {
         AuctionManagerV2 auctionManagerV2Implementation = new AuctionManagerV2();
 
         vm.prank(owner);
         auctionInstance.upgradeTo(address(auctionManagerV2Implementation));
 
         auctionManagerV2Instance = AuctionManagerV2(address(auctionManagerProxy));
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        auctionManagerV2Instance.initialize(address(nodeOperatorManagerInstance));
 
         assertEq(auctionManagerV2Instance.numberOfBids(), 1);
         assertEq(auctionManagerV2Instance.isUpgraded(), true);
