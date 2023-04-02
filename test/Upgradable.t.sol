@@ -9,10 +9,16 @@ contract AuctionManagerV2 is AuctionManager {
     }
 }
 
+contract BNFTV2 is BNFT {
+    function isUpgraded() public view returns(bool){
+        return true;
+    }
+}
+
 contract UpgradeTest is TestSetup {
 
-    UUPSProxy public auctionManagerV2Proxy;
     AuctionManagerV2 public auctionManagerV2Instance;
+    BNFTV2 public BNFTV2Instance;
 
     function setUp() public {
         setUpTests();
@@ -34,6 +40,7 @@ contract UpgradeTest is TestSetup {
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
         assertEq(auctionInstance.numberOfActiveBids(), 1);
+        assertEq(auctionInstance.getImplementation(), address(auctionImplementation));
 
         AuctionManagerV2 auctionManagerV2Implementation = new AuctionManagerV2();
 
@@ -46,8 +53,14 @@ contract UpgradeTest is TestSetup {
         vm.prank(owner);
         auctionManagerV2Instance.initialize(address(nodeOperatorManagerInstance));
 
+        assertEq(auctionManagerV2Instance.getImplementation(), address(auctionManagerV2Implementation));
+
         // Check that state is maintained
         assertEq(auctionManagerV2Instance.numberOfActiveBids(), 1);
         assertEq(auctionManagerV2Instance.isUpgraded(), true);
+    }
+
+    function test_CanUpgradeBNFT() public {
+
     }
 }
