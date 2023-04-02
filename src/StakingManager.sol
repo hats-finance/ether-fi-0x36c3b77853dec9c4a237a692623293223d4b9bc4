@@ -280,6 +280,10 @@ contract StakingManager is Initializable, IStakingManager, OwnableUpgradeable, P
         BNFTInterfaceInstance.upgradeTo(_newImplementation);
     }
 
+    function upgradeTNFT(address _newImplementation) public onlyOwner {
+        TNFTInterfaceInstance.upgradeTo(_newImplementation);
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();

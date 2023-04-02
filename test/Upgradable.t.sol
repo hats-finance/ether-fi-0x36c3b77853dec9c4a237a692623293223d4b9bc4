@@ -15,10 +15,17 @@ contract BNFTV2 is BNFT {
     }
 }
 
+contract TNFTV2 is TNFT {
+    function isUpgraded() public view returns(bool){
+        return true;
+    }
+}
+
 contract UpgradeTest is TestSetup {
 
     AuctionManagerV2 public auctionManagerV2Instance;
     BNFTV2 public BNFTV2Instance;
+    TNFTV2 public TNFTV2Instance;
 
     function setUp() public {
         setUpTests();
@@ -80,5 +87,27 @@ contract UpgradeTest is TestSetup {
 
         assertEq(BNFTV2Instance.getImplementation(), address(BNFTV2Implementation));
         assertEq(BNFTV2Instance.isUpgraded(), true);
+    }
+
+    function test_CanUpgradeTNFT() public {
+        assertEq(TNFTInstance.getImplementation(), address(TNFTImplementation));
+
+        TNFTV2 TNFTV2Implementation = new TNFTV2();
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        stakingManagerInstance.upgradeTNFT(address(TNFTV2Implementation));
+
+        vm.prank(owner);
+        stakingManagerInstance.upgradeTNFT(address(TNFTV2Implementation));
+
+        TNFTV2Instance = TNFTV2(address(TNFTProxy));
+        
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        TNFTV2Instance.initialize();
+
+        assertEq(TNFTV2Instance.getImplementation(), address(TNFTV2Implementation));
+        assertEq(TNFTV2Instance.isUpgraded(), true);
     }
 }
