@@ -19,6 +19,22 @@ contract UpgradeTest is TestSetup {
     }
 
     function test_CanUpgradeAuctionManager() public {
+
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
+
+        assertEq(auctionInstance.numberOfActiveBids(), 0);
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+
+        assertEq(auctionInstance.numberOfActiveBids(), 1);
+
         AuctionManagerV2 auctionManagerV2Implementation = new AuctionManagerV2();
 
         vm.prank(owner);
@@ -30,7 +46,8 @@ contract UpgradeTest is TestSetup {
         vm.prank(owner);
         auctionManagerV2Instance.initialize(address(nodeOperatorManagerInstance));
 
-        assertEq(auctionManagerV2Instance.numberOfBids(), 1);
+        // Check that state is maintained
+        assertEq(auctionManagerV2Instance.numberOfActiveBids(), 1);
         assertEq(auctionManagerV2Instance.isUpgraded(), true);
     }
 }
