@@ -61,6 +61,24 @@ contract UpgradeTest is TestSetup {
     }
 
     function test_CanUpgradeBNFT() public {
+        assertEq(BNFTInstance.getImplementation(), address(BNFTImplementation));
 
+        BNFTV2 BNFTV2Implementation = new BNFTV2();
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        stakingManagerInstance.upgradeBNFT(address(BNFTV2Implementation));
+
+        vm.prank(owner);
+        stakingManagerInstance.upgradeBNFT(address(BNFTV2Implementation));
+
+        BNFTV2Instance = BNFTV2(address(BNFTProxy));
+        
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        BNFTV2Instance.initialize();
+
+        assertEq(BNFTV2Instance.getImplementation(), address(BNFTV2Implementation));
+        assertEq(BNFTV2Instance.isUpgraded(), true);
     }
 }

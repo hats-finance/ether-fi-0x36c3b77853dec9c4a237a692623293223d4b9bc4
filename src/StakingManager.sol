@@ -276,6 +276,10 @@ contract StakingManager is Initializable, IStakingManager, OwnableUpgradeable, P
         implementationContract = _etherFiNodeImplementationContract;
     }
 
+    function upgradeBNFT(address _newImplementation) public onlyOwner {
+        BNFTInterfaceInstance.upgradeTo(_newImplementation);
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
