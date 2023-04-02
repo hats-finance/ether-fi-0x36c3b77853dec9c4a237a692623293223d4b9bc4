@@ -33,6 +33,12 @@ contract ProtocolRevenueManagerV2 is ProtocolRevenueManager {
     }
 }
 
+contract StakingManagerV2 is StakingManager {
+    function isUpgraded() public view returns(bool){
+        return true;
+    }
+}
+
 contract UpgradeTest is TestSetup {
 
     AuctionManagerV2 public auctionManagerV2Instance;
@@ -40,6 +46,7 @@ contract UpgradeTest is TestSetup {
     TNFTV2 public TNFTV2Instance;
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
     ProtocolRevenueManagerV2 public protocolRevenueManagerV2Instance;
+    StakingManagerV2 public stakingManagerV2Instance;
 
     function setUp() public {
         setUpTests();
@@ -183,12 +190,40 @@ contract UpgradeTest is TestSetup {
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
-        protocolRevenueManagerInstance.initialize();
+        protocolRevenueManagerV2Instance.initialize();
 
         assertEq(protocolRevenueManagerV2Instance.getImplementation(), address(protocolRevenueManagerV2Implementation));
         assertEq(protocolRevenueManagerV2Instance.isUpgraded(), true);
 
         // State is maintained
         assertEq(protocolRevenueManagerV2Instance.vestedAuctionFeeSplitForStakers(), 60);
+    }
+
+    function test_CanUpgradeStakingManager() public {
+        assertEq(stakingManagerInstance.getImplementation(), address(stakingManagerImplementation));
+
+        vm.prank(owner);
+        stakingManagerInstance.setMaxBatchDepositSize(uint128(25));
+
+        StakingManagerV2 stakingManagerV2Implementation = new StakingManagerV2();
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
+
+        vm.prank(owner);
+        stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
+
+        stakingManagerV2Instance = StakingManagerV2(address(stakingManagerProxy));
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        stakingManagerV2Instance.initialize(address(auctionInstance), address(TNFTInstance), address(BNFTInstance));
+
+        assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
+        assertEq(stakingManagerV2Instance.isUpgraded(), true);
+        
+        // State is maintained
+        assertEq(stakingManagerV2Instance.maxBatchDepositSize(), 25);
     }
 }
