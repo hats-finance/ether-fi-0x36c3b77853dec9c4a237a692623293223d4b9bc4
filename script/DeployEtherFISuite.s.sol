@@ -186,8 +186,10 @@ contract DeployScript is Script {
                     Strings.toHexString(addressStruct.etherFiNodesManager),
                     "\nProtocol Revenue Manager: ",
                     Strings.toHexString(addressStruct.protocolRevenueManager),
-                    "\nEtherFi Node: ",
-                    Strings.toHexString(addressStruct.etherFiNode)
+                    "\nTNFT: ",
+                    Strings.toHexString(addressStruct.TNFT),
+                    "\nBNFT: ",
+                    Strings.toHexString(addressStruct.BNFT)
                 )
             )
         );
