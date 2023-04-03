@@ -159,7 +159,7 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
         address staker = bidIdToStaker[_validatorId];
 
         //Remove this before deployment, this should always happen
-        if (test = false) {
+        if (test == false) {
             bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
                 .getWithdrawalCredentials(_validatorId);
             depositContractEth2.deposit{value: stakeAmount}(

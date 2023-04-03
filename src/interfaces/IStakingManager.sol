@@ -17,7 +17,7 @@ interface IStakingManager {
 
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds) external payable returns (uint256[] memory);
     function cancelDeposit(uint256 _validatorId) external;
-    function registerValidator(uint256 _validatorId, DepositData calldata _depositData) external;
+    function registerValidator(uint256 _validatorId, DepositData calldata _depositData, bytes memory _withdraw) external;
     function fetchEtherFromContract(address _wallet) external;
     
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
