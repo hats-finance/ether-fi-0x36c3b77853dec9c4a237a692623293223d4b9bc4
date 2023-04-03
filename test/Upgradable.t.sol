@@ -39,6 +39,12 @@ contract StakingManagerV2 is StakingManager {
     }
 }
 
+contract EtherFiNodeV2 is EtherFiNode {
+    function isUpgraded() public view returns(bool){
+        return true;
+    }
+}
+
 contract UpgradeTest is TestSetup {
 
     AuctionManagerV2 public auctionManagerV2Instance;
@@ -225,5 +231,60 @@ contract UpgradeTest is TestSetup {
         
         // State is maintained
         assertEq(stakingManagerV2Instance.maxBatchDepositSize(), 25);
+    }
+
+    function test_canUpgradeEtherFiNode() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIds);
+
+        address safe1 = managerInstance.etherfiNodeAddress(processedBids[0]);
+        console.log(safe1);
+
+        vm.stopPrank();
+
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceProof,
+            _ipfsHash,
+            5
+        );
+
+        startHoax(alice);
+        uint256[] memory aliceBidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+
+        uint256[] memory aliceProcessedBids = stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(aliceBidIds);
+
+        address safe2 = managerInstance.etherfiNodeAddress(aliceProcessedBids[0]);
+        console.log(safe2);
+
+        vm.stopPrank();
+
+        EtherFiNodeV2 etherFiNodeV2 = new EtherFiNodeV2();
+
+        vm.prank(owner);
+        stakingManagerInstance.upgradeEtherFiNode(address(etherFiNodeV2));
+
+
+        safe1 = managerInstance.etherfiNodeAddress(processedBids[0]);
+        safe2 = managerInstance.etherfiNodeAddress(aliceProcessedBids[0]);
+
+        EtherFiNodeV2 safe1V2 = EtherFiNodeV2(safe1);
+        EtherFiNodeV2 safe2V2 = EtherFiNodeV2(safe2);
+
+        assertEq(safe1V2.isUpgraded(), true);
+        assertEq(safe2V2.isUpgraded(), true);
     }
 }
