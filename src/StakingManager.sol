@@ -269,14 +269,6 @@ contract StakingManager is
         require(bidIdToStaker[_validatorId] == address(0), "");
     }
 
-    /// @notice Allows withdrawal of funds from contract
-    /// @dev Will be removed in final version
-    /// @param _wallet the address to send the funds to
-    function fetchEtherFromContract(address _wallet) public onlyOwner {
-        (bool sent, ) = payable(_wallet).call{value: address(this).balance}("");
-        require(sent, "Failed to send Ether");
-    }
-
     /// @notice Sets the EtherFi node manager contract
     /// @dev Set manually due to circular dependency
     /// @param _nodesManagerAddress aaddress of the manager contract being set
