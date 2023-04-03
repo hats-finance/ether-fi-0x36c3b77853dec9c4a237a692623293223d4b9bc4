@@ -283,7 +283,7 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
          
     }
 
-    function upgradeEtherFiNode(address _newImplementation) public {
+    function upgradeEtherFiNode(address _newImplementation) public onlyOwner{
         upgradableBeacon.upgradeTo(_newImplementation);
         implementationContract = _newImplementation;
     }
