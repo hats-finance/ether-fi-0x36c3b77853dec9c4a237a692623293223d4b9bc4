@@ -64,7 +64,7 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    function initialize(address _auctionAddress, address _tnftAddress, address _bnftAddress) external initializer {
+    function initialize(address _auctionAddress) external initializer {
          /// @dev please remove before mainnet deployment
         test = true;
         maxBatchDepositSize = 16;
@@ -79,9 +79,6 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
-
-        TNFTInterfaceInstance = ITNFT(_tnftAddress);
-        BNFTInterfaceInstance = IBNFT(_bnftAddress);
 
         auctionInterfaceInstance = IAuctionManager(_auctionAddress);
         depositContractEth2 = IDepositContract(
@@ -283,17 +280,17 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
          
     }
 
+    function registerTNFTContract(address _tnftAddress) public onlyOwner {
+        TNFTInterfaceInstance = ITNFT(_tnftAddress);
+    }
+
+    function registerBNFTContract(address _bnftAddress) public onlyOwner {
+        BNFTInterfaceInstance = IBNFT(_bnftAddress);
+    }
+
     function upgradeEtherFiNode(address _newImplementation) public onlyOwner{
         upgradableBeacon.upgradeTo(_newImplementation);
         implementationContract = _newImplementation;
-    }
-
-    function upgradeBNFT(address _newImplementation) public onlyOwner {
-        BNFTInterfaceInstance.upgradeTo(_newImplementation);
-    }
-
-    function upgradeTNFT(address _newImplementation) public onlyOwner {
-        TNFTInterfaceInstance.upgradeTo(_newImplementation);
     }
 
     //Pauses the contract

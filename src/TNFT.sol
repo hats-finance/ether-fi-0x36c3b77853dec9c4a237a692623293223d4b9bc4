@@ -9,24 +9,26 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-
+    address public stakingManagerAddress;
     uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize() initializer external {
+    function initialize(address _stakingManagerAddress) initializer external {
         __ERC721_init("Transferrable NFT", "TNFT");
         __Ownable_init();
         __UUPSUpgradeable_init();
+
+        stakingManagerAddress = _stakingManagerAddress;
     }
 
     /// @notice Mints NFT to required user
     /// @dev Only through the staking contratc and not by an EOA
     /// @param _reciever receiver of the NFT
     /// @param _validatorId the ID of the NFT
-    function mint(address _reciever, uint256 _validatorId) external onlyOwner {
+    function mint(address _reciever, uint256 _validatorId) external onlyStakingManager {
         _safeMint(_reciever, _validatorId);
     }
 
@@ -46,5 +48,14 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
+    }
+
+    //--------------------------------------------------------------------------------------
+    //------------------------------------  MODIFIERS  -------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    modifier onlyStakingManager() {
+        require(msg.sender == stakingManagerAddress, "Only staking manager contract");
+        _;
     }
 }

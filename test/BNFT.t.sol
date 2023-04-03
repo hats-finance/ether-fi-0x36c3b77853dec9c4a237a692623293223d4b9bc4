@@ -38,7 +38,7 @@ contract BNFTTest is TestSetup {
 
     function test_BNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Only staking manager contract");
         BNFTInstance.mint(address(alice), 1);
     }
 

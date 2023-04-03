@@ -99,18 +99,14 @@ contract UpgradeTest is TestSetup {
 
         BNFTV2 BNFTV2Implementation = new BNFTV2();
 
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
-        stakingManagerInstance.upgradeBNFT(address(BNFTV2Implementation));
-
         vm.prank(owner);
-        stakingManagerInstance.upgradeBNFT(address(BNFTV2Implementation));
+        BNFTInstance.upgradeTo(address(BNFTV2Implementation));
 
         BNFTV2Instance = BNFTV2(address(BNFTProxy));
         
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
-        BNFTV2Instance.initialize();
+        BNFTV2Instance.initialize(address(stakingManagerInstance));
 
         assertEq(BNFTV2Instance.getImplementation(), address(BNFTV2Implementation));
         assertEq(BNFTV2Instance.isUpgraded(), true);
@@ -121,18 +117,14 @@ contract UpgradeTest is TestSetup {
 
         TNFTV2 TNFTV2Implementation = new TNFTV2();
 
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
-        stakingManagerInstance.upgradeTNFT(address(TNFTV2Implementation));
-
         vm.prank(owner);
-        stakingManagerInstance.upgradeTNFT(address(TNFTV2Implementation));
+        TNFTInstance.upgradeTo(address(TNFTV2Implementation));
 
         TNFTV2Instance = TNFTV2(address(TNFTProxy));
         
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
-        TNFTV2Instance.initialize();
+        TNFTV2Instance.initialize(address(stakingManagerInstance));
 
         assertEq(TNFTV2Instance.getImplementation(), address(TNFTV2Implementation));
         assertEq(TNFTV2Instance.isUpgraded(), true);
@@ -224,7 +216,7 @@ contract UpgradeTest is TestSetup {
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
-        stakingManagerV2Instance.initialize(address(auctionInstance), address(TNFTInstance), address(BNFTInstance));
+        stakingManagerV2Instance.initialize(address(auctionInstance));
 
         assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
         assertEq(stakingManagerV2Instance.isUpgraded(), true);
