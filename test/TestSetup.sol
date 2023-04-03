@@ -71,16 +71,6 @@ contract TestSetup is Test {
         treasuryInstance = new Treasury();
         nodeOperatorManagerInstance = new NodeOperatorManager();
 
-        TNFTImplementation = new TNFT();
-        TNFTProxy = new UUPSProxy(address(TNFTImplementation), "");
-        TNFTInstance = TNFT(address(TNFTProxy));
-        TNFTInstance.initialize();
-
-        BNFTImplementation = new BNFT();
-        BNFTProxy = new UUPSProxy(address(BNFTImplementation), "");
-        BNFTInstance = BNFT(address(BNFTProxy));
-        BNFTInstance.initialize();
-
         auctionImplementation = new AuctionManager();
         auctionManagerProxy = new UUPSProxy(address(auctionImplementation), "");
         auctionInstance = AuctionManager(address(auctionManagerProxy));
@@ -89,7 +79,17 @@ contract TestSetup is Test {
         stakingManagerImplementation = new StakingManager();
         stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation), "");
         stakingManagerInstance = StakingManager(address(stakingManagerProxy));
-        stakingManagerInstance.initialize(address(auctionInstance), address(TNFTInstance), address(BNFTInstance));
+        stakingManagerInstance.initialize(address(auctionInstance));
+
+        TNFTImplementation = new TNFT();
+        TNFTProxy = new UUPSProxy(address(TNFTImplementation), "");
+        TNFTInstance = TNFT(address(TNFTProxy));
+        TNFTInstance.initialize(address(stakingManagerInstance));
+
+        BNFTImplementation = new BNFT();
+        BNFTProxy = new UUPSProxy(address(BNFTImplementation), "");
+        BNFTInstance = BNFT(address(BNFTProxy));
+        BNFTInstance.initialize(address(stakingManagerInstance));
 
         protocolRevenueManagerImplementation = new ProtocolRevenueManager();
         protocolRevenueManagerProxy = new UUPSProxy(address(protocolRevenueManagerImplementation), "");
@@ -110,10 +110,6 @@ contract TestSetup is Test {
 
         node = new EtherFiNode();
 
-        // Transfer ownership of NFT's to staking manager contract
-        TNFTInstance.transferOwnership(address(stakingManagerInstance));
-        BNFTInstance.transferOwnership(address(stakingManagerInstance));
-
         // Setup dependencies
         _merkleSetup();
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
@@ -124,6 +120,8 @@ contract TestSetup is Test {
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
+        stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
+        stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
 
         test_data = IStakingManager.DepositData({
             depositDataRoot: "test_deposit_root",

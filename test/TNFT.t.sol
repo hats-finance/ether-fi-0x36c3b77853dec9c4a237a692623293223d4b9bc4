@@ -8,12 +8,12 @@ contract TnftTest is TestSetup {
     function setUp() public {
         setUpTests();
 
-        // assertEq(TNFTInstance.stakingManagerContractAddress(), address(stakingManagerInstance));
+        assertEq(TNFTInstance.stakingManagerAddress(), address(stakingManagerInstance));
     }
 
     function test_TNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Only staking manager contract");
         TNFTInstance.mint(address(alice), 1);
     }
 

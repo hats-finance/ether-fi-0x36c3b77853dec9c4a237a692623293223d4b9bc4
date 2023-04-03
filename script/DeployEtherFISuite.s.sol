@@ -64,16 +64,6 @@ contract DeployScript is Script {
         Treasury treasury = new Treasury();
         NodeOperatorManager nodeOperatorManager = new NodeOperatorManager();
 
-        BNFTImplementation = new BNFT();
-        BNFTProxy = new UUPSProxy(address(BNFTImplementation),"");
-        BNFTInstance = BNFT(address(BNFTProxy));
-        BNFTInstance.initialize();
-
-        TNFTImplementation = new TNFT();
-        TNFTProxy = new UUPSProxy(address(TNFTImplementation),"");
-        TNFTInstance = TNFT(address(TNFTProxy));
-        TNFTInstance.initialize();
-
         auctionManagerImplementation = new AuctionManager();
         auctionManagerProxy = new UUPSProxy(address(auctionManagerImplementation),"");
         auctionManager = AuctionManager(address(auctionManagerProxy));
@@ -82,7 +72,17 @@ contract DeployScript is Script {
         stakingManagerImplementation = new StakingManager();
         stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation),"");
         stakingManager = StakingManager(address(stakingManagerProxy));
-        stakingManager.initialize(address(auctionManager), address(TNFTInstance), address(BNFTInstance));
+        stakingManager.initialize(address(auctionManager));
+
+        BNFTImplementation = new BNFT();
+        BNFTProxy = new UUPSProxy(address(BNFTImplementation),"");
+        BNFTInstance = BNFT(address(BNFTProxy));
+        BNFTInstance.initialize(address(stakingManager));
+
+        TNFTImplementation = new TNFT();
+        TNFTProxy = new UUPSProxy(address(TNFTImplementation),"");
+        TNFTInstance = TNFT(address(TNFTProxy));
+        TNFTInstance.initialize(address(stakingManager));
 
         protocolRevenueManagerImplementation = new ProtocolRevenueManager();
         protocolRevenueManagerProxy = new UUPSProxy(address(protocolRevenueManagerImplementation),"");
@@ -111,6 +111,8 @@ contract DeployScript is Script {
         protocolRevenueManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
         stakingManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
         stakingManager.registerEtherFiNodeImplementationContract(address(etherFiNode));
+        stakingManager.registerTNFTContract(address(TNFTInstance));
+        stakingManager.registerBNFTContract(address(BNFTInstance));
 
         vm.stopBroadcast();
 
