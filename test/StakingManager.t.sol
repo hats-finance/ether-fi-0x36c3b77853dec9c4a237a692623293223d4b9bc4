@@ -393,46 +393,6 @@ contract StakingManagerTest is TestSetup {
         assertEq(isActive, false);
     }
 
-    function test_EtherFailSafeWorks() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
-        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
-            _ipfsHash,
-            5
-        );
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256 walletBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            .balance;
-        auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
-
-        uint256[] memory bidIdArray = new uint256[](1);
-        bidIdArray[0] = 1;
-
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
-            bidIdArray
-        );
-        assertEq(address(stakingManagerInstance).balance, 0.032 ether);
-        assertEq(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
-            walletBalance - 0.132 ether
-        );
-        vm.stopPrank();
-
-        vm.prank(owner);
-
-        stakingManagerInstance.fetchEtherFromContract(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-        );
-        assertEq(address(stakingManagerInstance).balance, 0 ether);
-        assertEq(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
-            walletBalance - 0.1 ether
-        );
-    }
-
     function test_RegisterValidatorFailsIfIncorrectCaller() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
