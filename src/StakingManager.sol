@@ -11,10 +11,11 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./EtherFiNode.sol";
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
@@ -24,13 +25,14 @@ contract StakingManager is Initializable, IStakingManager, OwnableUpgradeable, P
     bool public test;
     uint128 public maxBatchDepositSize;
     uint128 public stakeAmount;
-    address public implementationContract;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuctionManager public auctionInterfaceInstance;
     IDepositContract public depositContractEth2;
     IEtherFiNodesManager public nodesManagerIntefaceInstance;
+    UpgradeableBeacon public implementationContract;
+    
     mapping(uint256 => address) public bidIdToStaker;
 
     uint256[32] __gap;
@@ -273,7 +275,11 @@ contract StakingManager is Initializable, IStakingManager, OwnableUpgradeable, P
     }
 
     function registerEtherFiNodeImplementationContract(address _etherFiNodeImplementationContract) public onlyOwner {
-        implementationContract = _etherFiNodeImplementationContract;
+        implementationContract = UpgradeableBeacon(_etherFiNodeImplementationContract);
+    }
+
+    function upgradeEtherFiNode(address _newImplementation) public onlyOwner {
+        implementationContract.upgradeTo(_newImplementation);
     }
 
     function upgradeBNFT(address _newImplementation) public onlyOwner {
@@ -321,12 +327,12 @@ contract StakingManager is Initializable, IStakingManager, OwnableUpgradeable, P
     }
 
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
-        address clone = ClonesUpgradeable.clone(implementationContract);
-        EtherFiNode node = EtherFiNode(payable(clone));
+        BeaconProxy proxy = new BeaconProxy(address(implementationContract), "");
+        EtherFiNode node = EtherFiNode(address(proxy));
         node.initialize(address(nodesManagerIntefaceInstance));
-        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
+        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, address(node));
         
-        return clone;
+        return address(node);
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake

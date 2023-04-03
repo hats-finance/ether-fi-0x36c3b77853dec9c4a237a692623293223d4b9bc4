@@ -4,10 +4,11 @@ pragma solidity 0.8.13;
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
+import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-contract EtherFiNode is IEtherFiNode, Ownable {
+contract EtherFiNode is IEtherFiNode, IBeacon, Ownable {
     address public etherFiNodesManager;
 
     // TODO: reduce the size of these varaibles
@@ -451,6 +452,10 @@ contract EtherFiNode is IEtherFiNode, Ownable {
 
     function protocolRevenueManagerAddress() internal view returns (address) {
         return IEtherFiNodesManager(etherFiNodesManager).protocolRevenueManagerContract();
+    }
+
+    function implementation() external view returns (address) {
+        return address(this);
     }
 
     //--------------------------------------------------------------------------------------
