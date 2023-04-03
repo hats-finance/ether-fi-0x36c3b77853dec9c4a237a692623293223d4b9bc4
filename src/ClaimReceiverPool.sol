@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
 import "./EarlyAdopterPool.sol";
-import "lib/forge-std/src/console.sol";
 
 contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
@@ -42,11 +41,12 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //SwapRouter but Testnet, although address is actually the same
     ISwapRouter constant router =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-    
+
     EarlyAdopterPool public adopterPool;
 
     //Goerli Weth address used for unwrapping ERC20 Weth
-    IWETH constant wethContract = IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
+    IWETH constant wethContract =
+        IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
     //Used to track how much was deposited incase we need this information later
     //NB: This is not a balance, but a variable holding the amount of the deposit
@@ -104,7 +104,18 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable whenNotPaused {
-        require(_verifyValues(msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof), "Verification failed");
+        require(
+            _verifyValues(
+                msg.value,
+                _rEthBal,
+                _wstEthBal,
+                _sfrxEthBal,
+                _cbEthBal,
+                _points,
+                _merkleProof
+            ),
+            "Verification failed"
+        );
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
 
@@ -112,22 +123,34 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         }
 
         if (_rEthBal > 0) {
-            require(userToERC20Deposit[msg.sender][rETH] == 0, "Already Deposited");
+            require(
+                userToERC20Deposit[msg.sender][rETH] == 0,
+                "Already Deposited"
+            );
             _ERC20Update(rETH, _rEthBal);
         }
 
         if (_wstEthBal > 0) {
-            require(userToERC20Deposit[msg.sender][wstETH] == 0, "Already Deposited");
+            require(
+                userToERC20Deposit[msg.sender][wstETH] == 0,
+                "Already Deposited"
+            );
             _ERC20Update(wstETH, _wstEthBal);
         }
 
         if (_sfrxEthBal > 0) {
-            require(userToERC20Deposit[msg.sender][sfrxETH] == 0, "Already Deposited");
+            require(
+                userToERC20Deposit[msg.sender][sfrxETH] == 0,
+                "Already Deposited"
+            );
             _ERC20Update(sfrxETH, _sfrxEthBal);
         }
 
         if (_cbEthBal > 0) {
-            require(userToERC20Deposit[msg.sender][cbETH] == 0, "Already Deposited");
+            require(
+                userToERC20Deposit[msg.sender][cbETH] == 0,
+                "Already Deposited"
+            );
             _ERC20Update(cbETH, _cbEthBal);
         }
     }
@@ -142,7 +165,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         _unpause();
     }
 
-    /// @notice Updates the merkle root 
+    /// @notice Updates the merkle root
     /// @dev merkleroot gets generated in JS offline and sent to the contract
     /// @param _newMerkle new merkle root to be used for bidding
     function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
@@ -164,13 +187,22 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         uint256 _cbEthBal,
         uint256 _points,
         bytes32[] calldata _merkleProof
-    ) internal view returns (bool){
-        
-        return MerkleProof.verify(
-            _merkleProof,
-            merkleRoot,
-            keccak256(abi.encodePacked(_etherBalance, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points))
-        );
+    ) internal view returns (bool) {
+        return
+            MerkleProof.verify(
+                _merkleProof,
+                merkleRoot,
+                keccak256(
+                    abi.encodePacked(
+                        _etherBalance,
+                        _rEthBal,
+                        _wstEthBal,
+                        _sfrxEthBal,
+                        _cbEthBal,
+                        _points
+                    )
+                )
+            );
     }
 
     function _ERC20Update(address _token, uint256 _amount) internal {

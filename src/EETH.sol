@@ -5,15 +5,13 @@ import "@openzeppelin-upgradeable/contracts/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
-
-
 import "./interfaces/IEETH.sol";
 
-contract EETH is ERC20Upgradeable, UUPSUpgradeable,OwnableUpgradeable, IEETH {
+contract EETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-    
+
     address public liquidityPool;
 
     uint256[32] __gap;
@@ -45,11 +43,9 @@ contract EETH is ERC20Upgradeable, UUPSUpgradeable,OwnableUpgradeable, IEETH {
     //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyOwner
-    {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------
