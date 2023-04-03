@@ -256,7 +256,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // Transfer the T-NFT to 'dan'
         hoax(staker);
-        TestTNFTInstance.transferFrom(staker, dan, bidId[0]);
+        TNFTInstance.transferFrom(staker, dan, bidId[0]);
 
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
         uint256 treasuryBalance = address(treasuryInstance).balance;
@@ -324,7 +324,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // Transfer the T-NFT to 'dan'
         hoax(staker);
-        TestTNFTInstance.transferFrom(staker, dan, bidId[0]);
+        TNFTInstance.transferFrom(staker, dan, bidId[0]);
 
         // Send Exit Request and wait for 14 days to pass
         hoax(dan);
@@ -616,7 +616,7 @@ contract EtherFiNodeTest is TestSetup {
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
 
         hoax(staker);
-        TestTNFTInstance.transferFrom(staker, dan, bidId[0]);
+        TNFTInstance.transferFrom(staker, dan, bidId[0]);
 
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
         uint256 treasuryBalance = address(treasuryInstance).balance;
@@ -639,7 +639,7 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        hoax(TestTNFTInstance.ownerOf(validatorIds[0]));
+        hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // 1 day passed
@@ -667,7 +667,7 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        hoax(TestTNFTInstance.ownerOf(validatorIds[0]));
+        hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // 14 days passed
@@ -701,7 +701,7 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        hoax(TestTNFTInstance.ownerOf(validatorIds[0]));
+        hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // 28 days passed

@@ -11,13 +11,15 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./EtherFiNode.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/ClonesUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, ReentrancyGuard {
+
+contract StakingManager is Initializable, IStakingManager, OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     /// @dev please remove before mainnet deployment
     bool public test;
     uint128 public maxBatchDepositSize;
@@ -57,7 +59,7 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
-    function initialize(address _auctionAddress) external initializer {
+    function initialize(address _auctionAddress, address _tnftAddress, address _bnftAddress) external initializer {
          /// @dev please remove before mainnet deployment
         test = true;
         maxBatchDepositSize = 16;
@@ -68,10 +70,13 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
             stakeAmount = 32 ether;
         }
 
-        TNFTInterfaceInstance = ITNFT(address(new TNFT()));
-        BNFTInterfaceInstance = IBNFT(address(new BNFT()));
-        TNFTInterfaceInstance.initialize();
-        BNFTInterfaceInstance.initialize();
+        __Pausable_init();
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
+
+        TNFTInterfaceInstance = ITNFT(_tnftAddress);
+        BNFTInterfaceInstance = IBNFT(_bnftAddress);
 
         auctionInterfaceInstance = IAuctionManager(_auctionAddress);
         depositContractEth2 = IDepositContract(
@@ -271,6 +276,14 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
         implementationContract = _etherFiNodeImplementationContract;
     }
 
+    function upgradeBNFT(address _newImplementation) public onlyOwner {
+        BNFTInterfaceInstance.upgradeTo(_newImplementation);
+    }
+
+    function upgradeTNFT(address _newImplementation) public onlyOwner {
+        TNFTInterfaceInstance.upgradeTo(_newImplementation);
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
@@ -308,7 +321,7 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
     }
 
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
-        address clone = Clones.clone(implementationContract);
+        address clone = ClonesUpgradeable.clone(implementationContract);
         EtherFiNode node = EtherFiNode(payable(clone));
         node.initialize(address(nodesManagerIntefaceInstance));
         nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, clone);
@@ -324,6 +337,20 @@ contract StakingManager is Initializable, IStakingManager, Ownable, Pausable, Re
         //Refund the user with their requested amount
         (bool sent, ) = _depositOwner.call{value: _amount}("");
         require(sent, "Failed to send Ether");
+    }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
+    //--------------------------------------------------------------------------------------
+    //------------------------------------  GETTERS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------

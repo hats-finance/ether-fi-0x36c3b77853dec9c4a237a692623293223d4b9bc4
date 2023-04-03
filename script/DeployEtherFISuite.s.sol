@@ -10,11 +10,39 @@ import "../src/EtherFiNode.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
+import "../src/UUPSProxy.sol";
 import "../lib/murky/src/Merkle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployScript is Script {
     using Strings for string;
+
+    /*---- Storage variables ----*/
+
+    UUPSProxy public auctionManagerProxy;
+    UUPSProxy public stakingManagerProxy;
+    UUPSProxy public etherFiNodeManagerProxy;
+    UUPSProxy public protocolRevenueManagerProxy;
+    UUPSProxy public TNFTProxy;
+    UUPSProxy public BNFTProxy;
+
+    BNFT public BNFTImplementation;
+    BNFT public BNFTInstance;
+
+    TNFT public TNFTImplementation;
+    TNFT public TNFTInstance;
+
+    AuctionManager public auctionManagerImplementation;
+    AuctionManager public auctionManager;
+
+    StakingManager public stakingManagerImplementation;
+    StakingManager public stakingManager;
+
+    ProtocolRevenueManager public protocolRevenueManagerImplementation;
+    ProtocolRevenueManager public protocolRevenueManager;
+
+    EtherFiNodesManager public etherFiNodesManagerImplementation;
+    EtherFiNodesManager public etherFiNodesManager;
 
     struct addresses {
         address treasury;
@@ -37,26 +65,44 @@ contract DeployScript is Script {
         // Deploy contracts
         Treasury treasury = new Treasury();
         NodeOperatorManager nodeOperatorManager = new NodeOperatorManager();
-        AuctionManager auctionManager = new AuctionManager();
+
+        BNFTImplementation = new BNFT();
+        BNFTProxy = new UUPSProxy(address(BNFTImplementation),"");
+        BNFTInstance = BNFT(address(BNFTProxy));
+        BNFTInstance.initialize();
+
+        TNFTImplementation = new TNFT();
+        TNFTProxy = new UUPSProxy(address(TNFTImplementation),"");
+        TNFTInstance = TNFT(address(TNFTProxy));
+        TNFTInstance.initialize();
+
+        auctionManagerImplementation = new AuctionManager();
+        auctionManagerProxy = new UUPSProxy(address(auctionManagerImplementation),"");
+        auctionManager = AuctionManager(address(auctionManagerProxy));
         auctionManager.initialize(address(nodeOperatorManager));
 
-        StakingManager stakingManager = new StakingManager();
-        stakingManager.initialize(address(auctionManager));
+        stakingManagerImplementation = new StakingManager();
+        stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation),"");
+        stakingManager = StakingManager(address(stakingManagerProxy));
+        stakingManager.initialize(address(auctionManager), address(TNFTInstance), address(BNFTInstance));
 
-        address TNFTAddress = address(stakingManager.TNFTInterfaceInstance());
-        address BNFTAddress = address(stakingManager.BNFTInterfaceInstance());
-        ProtocolRevenueManager protocolRevenueManager = new ProtocolRevenueManager();
+        protocolRevenueManagerImplementation = new ProtocolRevenueManager();
+        protocolRevenueManagerProxy = new UUPSProxy(address(protocolRevenueManagerImplementation),"");
+        protocolRevenueManager = ProtocolRevenueManager(payable(address(protocolRevenueManagerProxy)));
+        protocolRevenueManager.initialize();
 
-        EtherFiNodesManager etherFiNodesManager = new EtherFiNodesManager();
-
+        etherFiNodesManagerImplementation = new EtherFiNodesManager();
+        etherFiNodeManagerProxy = new UUPSProxy(address(etherFiNodesManagerImplementation),"");
+        etherFiNodesManager = EtherFiNodesManager(payable(address(etherFiNodeManagerProxy)));
         etherFiNodesManager.initialize(
             address(treasury),
             address(auctionManager),
             address(stakingManager),
-            TNFTAddress,
-            BNFTAddress,
+            address(TNFTInstance),
+            address(BNFTInstance),
             address(protocolRevenueManager)
         );
+
         EtherFiNode etherFiNode = new EtherFiNode();
         
         // Setup dependencies
@@ -75,17 +121,14 @@ contract DeployScript is Script {
             nodeOperatorManager: address(nodeOperatorManager),
             auctionManager: address(auctionManager),
             stakingManager: address(stakingManager),
-            TNFT: TNFTAddress,
-            BNFT: BNFTAddress,
+            TNFT: address(TNFTInstance),
+            BNFT: address(BNFTInstance),
             etherFiNodesManager: address(etherFiNodesManager),
             protocolRevenueManager: address(protocolRevenueManager),
             etherFiNode: address(etherFiNode)
         });
 
         writeVersionFile();
-
-        // Set path to version file where current verion is recorded
-        /// @dev Initial version.txt and X.release files should be created manually
     }
 
     function _stringToUint(

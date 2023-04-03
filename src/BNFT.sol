@@ -2,13 +2,13 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
-contract BNFT is ERC721Upgradeable {
+contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
-
-    address public stakingManagerContractAddress;
 
     uint256[32] __gap;
 
@@ -18,14 +18,15 @@ contract BNFT is ERC721Upgradeable {
 
     function initialize() initializer external {
         __ERC721_init("Bond NFT", "BNFT");
-        stakingManagerContractAddress = msg.sender;
+        __Ownable_init();
+        __UUPSUpgradeable_init();
     }
 
     /// @notice Mints NFT to required user
     /// @dev Only through the staking contratc and not by an EOA
     /// @param _reciever receiver of the NFT
     /// @param _validatorId the ID of the NFT
-    function mint(address _reciever, uint256 _validatorId) external onlyStakingManagerContract {
+    function mint(address _reciever, uint256 _validatorId) external onlyOwner {
         _safeMint(_reciever, _validatorId);
     }
 
@@ -40,14 +41,20 @@ contract BNFT is ERC721Upgradeable {
     }
 
     //--------------------------------------------------------------------------------------
-    //-----------------------------------  MODIFIERS  --------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyStakingManagerContract() {
-        require(
-            msg.sender == stakingManagerContractAddress,
-            "Only deposit contract function"
-        );
-        _;
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  GETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 }

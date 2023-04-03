@@ -560,21 +560,21 @@ contract StakingManagerTest is TestSetup {
         assertEq(safeAddress, etherFiNode);
 
         assertEq(
-            TestBNFTInstance.ownerOf(bidId[0]),
+            BNFTInstance.ownerOf(bidId[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidId[0]),
+            TNFTInstance.ownerOf(bidId[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestBNFTInstance.balanceOf(
+            BNFTInstance.balanceOf(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             ),
             1
         );
         assertEq(
-            TestTNFTInstance.balanceOf(
+            TNFTInstance.balanceOf(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             ),
             1
@@ -638,27 +638,27 @@ contract StakingManagerTest is TestSetup {
         assertEq(address(auctionInstance).balance, 1.6 ether);
 
         assertEq(
-            TestBNFTInstance.ownerOf(bidIdArray[0]),
+            BNFTInstance.ownerOf(bidIdArray[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestBNFTInstance.ownerOf(bidIdArray[4]),
+            BNFTInstance.ownerOf(bidIdArray[4]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestBNFTInstance.ownerOf(bidIdArray[6]),
+            BNFTInstance.ownerOf(bidIdArray[6]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidIdArray[1]),
+            TNFTInstance.ownerOf(bidIdArray[1]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidIdArray[2]),
+            TNFTInstance.ownerOf(bidIdArray[2]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidIdArray[9]),
+            TNFTInstance.ownerOf(bidIdArray[9]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
@@ -1089,41 +1089,41 @@ contract StakingManagerTest is TestSetup {
         stakingManagerInstance.registerValidator(bidId2[0], test_data);
 
         assertEq(
-            TestBNFTInstance.ownerOf(bidId1[0]),
+            BNFTInstance.ownerOf(bidId1[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidId1[0]),
+            TNFTInstance.ownerOf(bidId1[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TestBNFTInstance.ownerOf(bidId2[0]),
+            BNFTInstance.ownerOf(bidId2[0]),
             0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
         );
         assertEq(
-            TestTNFTInstance.ownerOf(bidId2[0]),
+            TNFTInstance.ownerOf(bidId2[0]),
             0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
         );
         assertEq(
-            TestBNFTInstance.balanceOf(
+            BNFTInstance.balanceOf(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             ),
             1
         );
         assertEq(
-            TestTNFTInstance.balanceOf(
+            TNFTInstance.balanceOf(
                 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             ),
             1
         );
         assertEq(
-            TestBNFTInstance.balanceOf(
+            BNFTInstance.balanceOf(
                 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
             ),
             1
         );
         assertEq(
-            TestTNFTInstance.balanceOf(
+            TNFTInstance.balanceOf(
                 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
             ),
             1

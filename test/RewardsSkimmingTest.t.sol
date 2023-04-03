@@ -75,9 +75,9 @@ contract RewardsSkimmingTest is TestSetup {
         for (uint i = 0; i < num_stakers; i++) {
             vm.startPrank(stakers[i]);
             if (i % 2 == 0) {
-                TestTNFTInstance.transferFrom(stakers[i], people[i], validatorIds[i]);
+                TNFTInstance.transferFrom(stakers[i], people[i], validatorIds[i]);
             } else {
-                TestTNFTInstance.transferFrom(stakers[i], liquidityPool, validatorIds[i]);
+                TNFTInstance.transferFrom(stakers[i], liquidityPool, validatorIds[i]);
             }
             vm.stopPrank();
         }        
