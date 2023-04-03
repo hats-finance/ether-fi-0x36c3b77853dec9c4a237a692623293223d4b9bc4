@@ -24,7 +24,5 @@ interface IStakingManager {
         DepositData calldata _depositData
     ) external;
 
-    function fetchEtherFromContract(address _wallet) external;
-
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
 }
