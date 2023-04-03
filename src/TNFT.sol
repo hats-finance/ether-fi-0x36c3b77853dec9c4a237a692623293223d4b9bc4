@@ -47,16 +47,4 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
-
-    //--------------------------------------------------------------------------------------
-    //-----------------------------------  MODIFIERS  --------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    // modifier onlyStakingManagerContract() {
-    //     require(
-    //         msg.sender == stakingManagerContractAddress,
-    //         "Only staking mananger contract function"
-    //     );
-    //     _;
-    // }
 }
