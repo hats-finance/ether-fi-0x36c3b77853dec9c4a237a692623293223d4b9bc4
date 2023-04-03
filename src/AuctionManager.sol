@@ -10,8 +10,14 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-
-contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
+contract AuctionManager is
+    Initializable,
+    IAuctionManager,
+    PausableUpgradeable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -51,7 +57,9 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
     //--------------------------------------------------------------------------------------
 
     /// @notice initialize to set variables on deployment
-    function initialize(address _nodeOperatorManagerContract) external initializer {
+    function initialize(
+        address _nodeOperatorManagerContract
+    ) external initializer {
         whitelistBidAmount = 0.001 ether;
         minBidAmount = 0.01 ether;
         maxBidAmount = 5 ether;
@@ -72,13 +80,10 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
     /// @param _bidSize the number of bids that the node operator would like to create
     /// @param _bidAmountPerBid the ether value of each bid that is created
     /// @return bidIdArray array of the bidIDs that were created
-    function createBid(uint256 _bidSize, uint256 _bidAmountPerBid)
-        external
-        payable
-        whenNotPaused
-        nonReentrant
-        returns (uint256[] memory) 
-    {
+    function createBid(
+        uint256 _bidSize,
+        uint256 _bidAmountPerBid
+    ) external payable whenNotPaused nonReentrant returns (uint256[] memory) {
         if (whitelistEnabled) {
             require(
                 nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true,
@@ -91,7 +96,9 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
                 "Incorrect bid value"
             );
         } else {
-            if (nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true) {
+            if (
+                nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true
+            ) {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
                         _bidAmountPerBid >= whitelistBidAmount &&
@@ -108,15 +115,18 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
             }
         }
 
-        uint64 keysRemaining = nodeOperatorManagerInterface.getNumKeysRemaining(msg.sender);
+        uint64 keysRemaining = nodeOperatorManagerInterface.getNumKeysRemaining(
+            msg.sender
+        );
         require(_bidSize <= keysRemaining, "Insufficient public keys");
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
         for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
-            uint64 ipfsIndex = nodeOperatorManagerInterface
-                .fetchNextKeyIndex(msg.sender);
+            uint64 ipfsIndex = nodeOperatorManagerInterface.fetchNextKeyIndex(
+                msg.sender
+            );
 
             uint256 bidId = numberOfBids;
 
@@ -135,7 +145,12 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
         }
 
         numberOfActiveBids += _bidSize;
-        emit BidCreated(msg.sender, _bidAmountPerBid, bidIdArray, ipfsIndexArray);
+        emit BidCreated(
+            msg.sender,
+            _bidAmountPerBid,
+            bidIdArray,
+            ipfsIndexArray
+        );
         return bidIdArray;
     }
 
@@ -144,7 +159,6 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
             cancelBid(_bidIds[i]);
         }
     }
-
 
     /// @notice Cancels a specified bid by de-activating it
     /// @dev Require the bid to exist and be active
@@ -171,16 +185,20 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
     /// @notice Updates a bid winning bids details
     /// @dev Called by batchDepositWithBidIds() in StakingManager.sol
     /// @param _bidId the ID of the bid being removed from the auction (since it has been selected)
-    function updateSelectedBidInformation(uint256 _bidId) public onlyStakingManagerContract {
+    function updateSelectedBidInformation(
+        uint256 _bidId
+    ) public onlyStakingManagerContract {
         require(bids[_bidId].isActive, "The bid is not active");
 
         bids[_bidId].isActive = false;
         numberOfActiveBids--;
     }
-    
+
     /// @notice Lets a bid that was matched to a cancelled stake re-enter the auction
     /// @param _bidId the ID of the bid which was matched to the cancelled stake.
-    function reEnterAuction(uint256 _bidId) external onlyStakingManagerContract {
+    function reEnterAuction(
+        uint256 _bidId
+    ) external onlyStakingManagerContract {
         require(bids[_bidId].isActive == false, "Bid already active");
         //Reactivate the bid
         bids[_bidId].isActive = true;
@@ -191,7 +209,9 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
     /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
     /// @dev Called by registerValidator() in StakingManager.sol
     /// @param _bidId the ID of the validator
-    function processAuctionFeeTransfer(uint256 _bidId) external onlyStakingManagerContract {
+    function processAuctionFeeTransfer(
+        uint256 _bidId
+    ) external onlyStakingManagerContract {
         uint256 amount = bids[_bidId].amount;
         protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
     }
@@ -228,11 +248,9 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
         }
     }
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyOwner
-    {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
@@ -264,13 +282,19 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
     /// @dev Needed to process an auction fee
     /// @param _protocolRevenueManager the addres of the protocol manager
     /// @notice Performed this way due to circular dependencies
-    function setProtocolRevenueManager(address _protocolRevenueManager) external onlyOwner {
-        protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManager);
+    function setProtocolRevenueManager(
+        address _protocolRevenueManager
+    ) external onlyOwner {
+        protocolRevenueManager = IProtocolRevenueManager(
+            _protocolRevenueManager
+        );
     }
 
     /// @notice Sets the stakingManagerContractAddress address in the current contract
     /// @param _stakingManagerContractAddress new stakingManagerContract address
-    function setStakingManagerContractAddress(address _stakingManagerContractAddress) external onlyOwner {
+    function setStakingManagerContractAddress(
+        address _stakingManagerContractAddress
+    ) external onlyOwner {
         stakingManagerContractAddress = _stakingManagerContractAddress;
     }
 
@@ -290,7 +314,9 @@ contract AuctionManager is Initializable, IAuctionManager, PausableUpgradeable, 
 
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
-    function updateWhitelistMinBidAmount(uint128 _newAmount) external onlyOwner {
+    function updateWhitelistMinBidAmount(
+        uint128 _newAmount
+    ) external onlyOwner {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
         whitelistBidAmount = _newAmount;
     }

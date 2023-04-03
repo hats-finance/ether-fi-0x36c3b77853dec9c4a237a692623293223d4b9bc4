@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract EtherFiNode is IEtherFiNode, Ownable {
-
     address public etherFiNodesManager;
 
     // TODO: reduce the size of these varaibles
@@ -138,12 +137,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         public
         view
         onlyEtherFiNodeManagerContract
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
+        returns (uint256, uint256, uint256, uint256)
     {
         uint256 operator;
         uint256 tnft;
@@ -163,7 +157,10 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         }
 
         if (_protocolRewards) {
-            (tmps[0], tmps[1], tmps[2], tmps[3]) = getProtocolRewardsPayouts(_PRsplits, _PRscale);
+            (tmps[0], tmps[1], tmps[2], tmps[3]) = getProtocolRewardsPayouts(
+                _PRsplits,
+                _PRscale
+            );
             operator += tmps[0];
             tnft += tmps[1];
             bnft += tmps[2];
@@ -242,9 +239,20 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     /// @return toTnft          the payout to the T-NFT holder
     /// @return toBnft          the payout to the B-NFT holder
     /// @return toTreasury      the payout to the Treasury
-    function getProtocolRewardsPayouts(IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) 
-        public view onlyEtherFiNodeManagerContract 
-        returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
+    function getProtocolRewardsPayouts(
+        IEtherFiNodesManager.RewardsSplit memory _splits,
+        uint256 _scale
+    )
+        public
+        view
+        onlyEtherFiNodeManagerContract
+        returns (
+            uint256 toNodeOperator,
+            uint256 toTnft,
+            uint256 toBnft,
+            uint256 toTreasury
+        )
+    {
         if (localRevenueIndex == 0) {
             return (0, 0, 0, 0);
         }
@@ -291,10 +299,7 @@ contract EtherFiNode is IEtherFiNode, Ownable {
         }
 
         uint256 penaltyAmount = _principal - remaining;
-        require(
-            penaltyAmount >= 0,
-            "Incorrect penalty amount"
-        );
+        require(penaltyAmount >= 0, "Incorrect penalty amount");
 
         return penaltyAmount;
     }
@@ -333,7 +338,8 @@ contract EtherFiNode is IEtherFiNode, Ownable {
             phase == VALIDATOR_PHASE.EXITED,
             "validator node is not exited"
         );
-        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
+        uint256 balance = address(this).balance -
+            (vestedAuctionRewards - _getClaimableVestedRewards());
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
@@ -398,7 +404,8 @@ contract EtherFiNode is IEtherFiNode, Ownable {
 
         require(
             payouts[0] + payouts[1] + payouts[2] + payouts[3] ==
-                address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards()),
+                address(this).balance -
+                    (vestedAuctionRewards - _getClaimableVestedRewards()),
             "Incorrect Amount"
         );
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
@@ -451,7 +458,9 @@ contract EtherFiNode is IEtherFiNode, Ownable {
     }
 
     function protocolRevenueManagerAddress() internal view returns (address) {
-        return IEtherFiNodesManager(etherFiNodesManager).protocolRevenueManagerContract();
+        return
+            IEtherFiNodesManager(etherFiNodesManager)
+                .protocolRevenueManagerContract();
     }
 
     function implementation() external view returns (address) {

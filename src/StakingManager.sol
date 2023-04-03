@@ -20,8 +20,15 @@ import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-
-contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
+contract StakingManager is
+    Initializable,
+    IStakingManager,
+    IBeaconUpgradeable,
+    OwnableUpgradeable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
     /// @dev please remove before mainnet deployment
     bool public test;
     uint128 public maxBatchDepositSize;
@@ -59,7 +66,7 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-    
+
     /// @notice initialize to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager contract must be deployed first
@@ -84,7 +91,6 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
-
     }
 
     /// @notice Switches the deposit mode of the contract
@@ -102,7 +108,9 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
+    function batchDepositWithBidIds(
+        uint256[] calldata _candidateBidIds
+    )
         external
         payable
         whenNotPaused
@@ -114,15 +122,19 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
         uint256 numberOfDeposits = msg.value / stakeAmount;
         require(numberOfDeposits <= maxBatchDepositSize, "Batch too large");
         require(
-            auctionInterfaceInstance.numberOfActiveBids() >=
-                numberOfDeposits,
+            auctionInterfaceInstance.numberOfActiveBids() >= numberOfDeposits,
             "No bids available at the moment"
         );
 
         uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
         uint256 processedBidIdsCount = 0;
 
-        for (uint256 i = 0; i < _candidateBidIds.length && processedBidIdsCount < numberOfDeposits; ++i) {
+        for (
+            uint256 i = 0;
+            i < _candidateBidIds.length &&
+                processedBidIdsCount < numberOfDeposits;
+            ++i
+        ) {
             uint256 bidId = _candidateBidIds[i];
             address bidStaker = bidIdToStaker[bidId];
             bool isActive = auctionInterfaceInstance.isBidActive(bidId);
@@ -152,11 +164,10 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     ///        however, instead of the validator key, it will include the IPFS hash
     ///        containing the validator key encrypted by the corresponding node operator's public key
-    function registerValidator(uint256 _validatorId, DepositData calldata _depositData)
-        public
-        whenNotPaused 
-        nonReentrant
-    {
+    function registerValidator(
+        uint256 _validatorId,
+        DepositData calldata _depositData
+    ) public whenNotPaused nonReentrant {
         require(
             nodesManagerIntefaceInstance.phase(_validatorId) ==
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
@@ -206,15 +217,18 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
-    function batchRegisterValidators(uint256[] calldata _validatorId, DepositData[] calldata _depositData)
-        public
-        whenNotPaused
-    {
+    function batchRegisterValidators(
+        uint256[] calldata _validatorId,
+        DepositData[] calldata _depositData
+    ) public whenNotPaused {
         require(
             _validatorId.length == _depositData.length,
             "Array lengths must match"
         );
-        require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
+        require(
+            _validatorId.length <= maxBatchDepositSize,
+            "Too many validators"
+        );
 
         for (uint256 x; x < _validatorId.length; ++x) {
             registerValidator(_validatorId[x], _depositData[x]);
@@ -224,7 +238,9 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _validatorId the ID of the validator deposit to cancel
-    function cancelDeposit(uint256 _validatorId) public whenNotPaused nonReentrant {
+    function cancelDeposit(
+        uint256 _validatorId
+    ) public whenNotPaused nonReentrant {
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         require(
             nodesManagerIntefaceInstance.phase(_validatorId) ==
@@ -242,7 +258,7 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
 
         // Unset the pointers
         nodesManagerIntefaceInstance.unregisterEtherFiNode(_validatorId);
-        
+
         //Call function in auction contract to re-initiate the bid that won
         //Send in the bid ID to be re-initiated
         auctionInterfaceInstance.reEnterAuction(_validatorId);
@@ -263,21 +279,28 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
 
     /// @notice Sets the EtherFi node manager contract
     /// @dev Set manually due to circular dependency
-    /// @param _nodesManagerAddress aaddress of the manager contract being set    
-    function setEtherFiNodesManagerAddress(address _nodesManagerAddress) public onlyOwner {
-        nodesManagerIntefaceInstance = IEtherFiNodesManager(_nodesManagerAddress);
+    /// @param _nodesManagerAddress aaddress of the manager contract being set
+    function setEtherFiNodesManagerAddress(
+        address _nodesManagerAddress
+    ) public onlyOwner {
+        nodesManagerIntefaceInstance = IEtherFiNodesManager(
+            _nodesManagerAddress
+        );
     }
 
     /// @notice Sets the max number of deposits allowed at a time
     /// @param _newMaxBatchDepositSize the max number of deposits allowed
-    function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
+    function setMaxBatchDepositSize(
+        uint128 _newMaxBatchDepositSize
+    ) public onlyOwner {
         maxBatchDepositSize = _newMaxBatchDepositSize;
     }
 
-    function registerEtherFiNodeImplementationContract(address _etherFiNodeImplementationContract) public onlyOwner {
+    function registerEtherFiNodeImplementationContract(
+        address _etherFiNodeImplementationContract
+    ) public onlyOwner {
         implementationContract = _etherFiNodeImplementationContract;
-        upgradableBeacon = new UpgradeableBeacon(implementationContract);
-         
+        upgradableBeacon = new UpgradeableBeacon(implementationContract);      
     }
 
     function registerTNFTContract(address _tnftAddress) public onlyOwner {
@@ -288,7 +311,7 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
         BNFTInterfaceInstance = IBNFT(_bnftAddress);
     }
 
-    function upgradeEtherFiNode(address _newImplementation) public onlyOwner{
+    function upgradeEtherFiNode(address _newImplementation) public onlyOwner {
         upgradableBeacon.upgradeTo(_newImplementation);
         implementationContract = _newImplementation;
     }
@@ -316,7 +339,6 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId the bid that won the right to the deposit
     function _processDeposit(uint256 _bidId) internal {
-        
         bidIdToStaker[_bidId] = msg.sender;
 
         uint256 validatorId = _bidId;
@@ -333,8 +355,11 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
         BeaconProxy proxy = new BeaconProxy(address(upgradableBeacon), "");
         EtherFiNode node = EtherFiNode(address(proxy));
         node.initialize(address(nodesManagerIntefaceInstance));
-        nodesManagerIntefaceInstance.registerEtherFiNode(_validatorId, address(node));
-        
+        nodesManagerIntefaceInstance.registerEtherFiNode(
+            _validatorId,
+            address(node)
+        );
+
         return address(node);
     }
 
@@ -348,11 +373,9 @@ contract StakingManager is Initializable, IStakingManager, IBeaconUpgradeable, O
         require(sent, "Failed to send Ether");
     }
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyOwner
-    {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------

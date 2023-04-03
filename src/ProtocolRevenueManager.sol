@@ -11,7 +11,14 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IAuctionManager.sol";
 
-contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, PausableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
+contract ProtocolRevenueManager is
+    Initializable,
+    IProtocolRevenueManager,
+    PausableUpgradeable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -30,7 +37,6 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
     //--------------------------------------------------------------------------------------
 
     function initialize() external initializer {
-
         __Pausable_init();
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -76,14 +82,24 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
             "addAuctionRevenue is already processed for the validator."
         );
 
-        uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers * msg.value) / 100;
+        uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers *
+            msg.value) / 100;
         uint256 amountToProtocol = msg.value - amountVestedForStakers;
-        address etherfiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
+        address etherfiNode = etherFiNodesManager.etherfiNodeAddress(
+            _validatorId
+        );
         uint256 globalIndexlocal = globalRevenueIndex;
-        globalRevenueIndex += amountToProtocol / etherFiNodesManager.numberOfValidators();
-        
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalIndexlocal);
-        IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: amountVestedForStakers}();
+        globalRevenueIndex +=
+            amountToProtocol /
+            etherFiNodesManager.numberOfValidators();
+
+        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(
+            _validatorId,
+            globalIndexlocal
+        );
+        IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{
+            value: amountVestedForStakers
+        }();
     }
 
     /// @notice Distribute the accrued rewards to the validator
@@ -92,7 +108,10 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
         uint256 _validatorId
     ) external onlyEtherFiNodesManager nonReentrant returns (uint256) {
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(_validatorId, globalRevenueIndex);
+        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(
+            _validatorId,
+            globalRevenueIndex
+        );
         return amount;
     }
 
@@ -114,28 +133,29 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
         auctionManager = IAuctionManager(_auctionManager);
     }
 
-    /// @notice set the auction reward vesting period 
+    /// @notice set the auction reward vesting period
     /// @param _periodInDays vesting period in days
-    function setAuctionRewardVestingPeriod(uint128 _periodInDays) external onlyOwner {
+    function setAuctionRewardVestingPeriod(
+        uint128 _periodInDays
+    ) external onlyOwner {
         auctionFeeVestingPeriodForStakersInDays = _periodInDays;
     }
 
-    /// @notice set the auction reward split for stakers 
+    /// @notice set the auction reward split for stakers
     /// @param _split vesting period in days
-    function setAuctionRewardSplitForStakers(uint128 _split) external onlyOwner {
+    function setAuctionRewardSplitForStakers(
+        uint128 _split
+    ) external onlyOwner {
         vestedAuctionFeeSplitForStakers = _split;
     }
-
 
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyOwner
-    {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
@@ -146,8 +166,11 @@ contract ProtocolRevenueManager is Initializable, IProtocolRevenueManager, Pausa
     function getAccruedAuctionRevenueRewards(
         uint256 _validatorId
     ) public view returns (uint256) {
-        address etherFiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
-        uint256 localRevenueIndex = IEtherFiNode(etherFiNode).localRevenueIndex();
+        address etherFiNode = etherFiNodesManager.etherfiNodeAddress(
+            _validatorId
+        );
+        uint256 localRevenueIndex = IEtherFiNode(etherFiNode)
+            .localRevenueIndex();
         uint256 amount = 0;
         if (localRevenueIndex > 0) {
             amount = globalRevenueIndex - localRevenueIndex;
