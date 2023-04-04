@@ -309,19 +309,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_wallet",
-        "type": "address"
-      }
-    ],
-    "name": "fetchEtherFromContract",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "getImplementation",
     "outputs": [
@@ -365,16 +352,6 @@
       {
         "internalType": "address",
         "name": "_auctionAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_tnftAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_bnftAddress",
         "type": "address"
       }
     ],
@@ -459,11 +436,37 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "_bnftAddress",
+        "type": "address"
+      }
+    ],
+    "name": "registerBNFTContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_etherFiNodeImplementationContract",
         "type": "address"
       }
     ],
     "name": "registerEtherFiNodeImplementationContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_tnftAddress",
+        "type": "address"
+      }
+    ],
+    "name": "registerTNFTContract",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -602,33 +605,7 @@
         "type": "address"
       }
     ],
-    "name": "upgradeBNFT",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newImplementation",
-        "type": "address"
-      }
-    ],
     "name": "upgradeEtherFiNode",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newImplementation",
-        "type": "address"
-      }
-    ],
-    "name": "upgradeTNFT",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
