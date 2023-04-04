@@ -17,7 +17,7 @@ update:; forge update
 
 build:; forge build
 
-test :; forge test --fork-url ${GOERLI_RPC_URL}
+test :; forge test --fork-url GOERLI_RPC_URL
 
 snapshot :; forge snapshot
 
