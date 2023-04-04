@@ -591,7 +591,7 @@ contract EtherFiNodesManager is
     /// @return the generated withdraw key for the node
     function generateWithdrawalCredentials(
         address _address
-    ) public pure returns (bytes memory) {
+    ) public pure returns (bytes memory) {   
         return abi.encodePacked(bytes1(0x01), bytes11(0x0), _address);
     }
 

@@ -530,24 +530,24 @@ contract StakingManagerTest is TestSetup {
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](10);
         depositDataArray[0] = test_data;
-        depositDataArray[1] = test_data_2;
+        depositDataArray[1] = test_data;
         depositDataArray[2] = test_data;
-        depositDataArray[3] = test_data_2;
+        depositDataArray[3] = test_data;
         depositDataArray[4] = test_data;
-        depositDataArray[5] = test_data_2;
+        depositDataArray[5] = test_data;
         depositDataArray[6] = test_data;
-        depositDataArray[7] = test_data_2;
+        depositDataArray[7] = test_data;
         depositDataArray[8] = test_data;
-        depositDataArray[9] = test_data_2;
+        depositDataArray[9] = test_data;
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        uint256[] memory processedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 320 ether}(
             bidIdArray
         );
 
         assertEq(address(auctionInstance).balance, 3 ether);
 
         stakingManagerInstance.batchRegisterValidators(
-            bidIdArray,
+            processedBidIds,
             depositDataArray
         );
 
