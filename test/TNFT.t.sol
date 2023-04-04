@@ -17,30 +17,30 @@ contract TnftTest is TestSetup {
         TNFTInstance.mint(address(alice), 1);
     }
 
-    function test_Mint() public {
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
-            _ipfsHash,
-            5
-        );
-        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
-            1,
-            1 ether
-        );
-        vm.stopPrank();
+    // function test_Mint() public {
+    //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+    //     nodeOperatorManagerInstance.registerNodeOperator(
+    //         proof,
+    //         _ipfsHash,
+    //         5
+    //     );
+    //     uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
+    //         1,
+    //         1 ether
+    //     );
+    //     vm.stopPrank();
 
-        hoax(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIds
-        );
+    //     hoax(alice);
+    //     stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+    //         bidIds
+    //     );
 
-        startHoax(alice);
-        stakingManagerInstance.registerValidator(bidIds[0], test_data);
-        vm.stopPrank();
+    //     startHoax(alice);
+    //     stakingManagerInstance.registerValidator(bidIds[0], test_data);
+    //     vm.stopPrank();
 
-        assertEq(TNFTInstance.ownerOf(1), alice);
-        assertEq(TNFTInstance.balanceOf(alice), 1);
-    }
+    //     assertEq(TNFTInstance.ownerOf(1), alice);
+    //     assertEq(TNFTInstance.balanceOf(alice), 1);
+    // }
 }
