@@ -468,11 +468,39 @@ contract StakingManagerTest is TestSetup {
 
     function test_BatchRegisterValidatorWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        DepositDataGeneration depGen = new DepositDataGeneration();
 
-        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](10);
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            100
+        );
+
+        for (uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+        }
+        for (uint256 x = 0; x < 10; x++) {
+            auctionInstance.createBid{value: 0.2 ether}(1, 0.2 ether);
+        }
+
+        uint256[] memory bidIdArray = new uint256[](10);
+        bidIdArray[0] = 1;
+        bidIdArray[1] = 2;
+        bidIdArray[2] = 6;
+        bidIdArray[3] = 7;
+        bidIdArray[4] = 8;
+        bidIdArray[5] = 9;
+        bidIdArray[6] = 11;
+        bidIdArray[7] = 12;
+        bidIdArray[8] = 19;
+        bidIdArray[9] = 20;
+
 
         uint256[] memory processedBidIds = stakingManagerInstance
             .batchDepositWithBidIds{value: 320 ether}(bidIdArray);
+
+        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](10);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -530,14 +558,15 @@ contract StakingManagerTest is TestSetup {
 
         assertEq(managerInstance.numberOfValidators(), 10);
 
-        //address safeAddress = managerInstance.etherfiNodeAddress(bidIdArray[1]);
-        //IEtherFiNode etherFiNode = IEtherFiNode(safeAddress);
+    //     //address safeAddress = managerInstance.etherfiNodeAddress(bidIdArray[1]);
+    //     //IEtherFiNode etherFiNode = IEtherFiNode(safeAddress);
 
-        //assertEq(etherFiNode.localRevenueIndex(), 1.1 ether);
-    // }
+    //     //assertEq(etherFiNode.localRevenueIndex(), 1.1 ether);
+    }
 
     function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(proof, _ipfsHash, 100);
