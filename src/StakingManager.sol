@@ -144,8 +144,8 @@ contract StakingManager is
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
-    ///        however, instead of the validator key, it will include the IPFS hash
-    ///        containing the validator key encrypted by the corresponding node operator's public key
+    /// however, instead of the validator key, it will include the IPFS hash
+    /// containing the validator key encrypted by the corresponding node operator's public key
     function registerValidator(
         uint256 _validatorId,
         DepositData calldata _depositData
