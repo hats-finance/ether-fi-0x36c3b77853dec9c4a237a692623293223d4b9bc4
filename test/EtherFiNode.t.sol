@@ -30,7 +30,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
 
@@ -141,7 +141,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId1[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
 
@@ -149,7 +149,7 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId2[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
 

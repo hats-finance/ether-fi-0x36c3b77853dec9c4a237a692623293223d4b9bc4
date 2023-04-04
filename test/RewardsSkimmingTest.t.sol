@@ -66,7 +66,7 @@ contract RewardsSkimmingTest is TestSetup {
             startHoax(stakers[i]);
             uint256[] memory candidateBidIds = new uint256[](1);
              candidateBidIds[0] = validatorIds[i];
-            stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(candidateBidIds);
+            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds);
             stakingManagerInstance.registerValidator(validatorIds[i], test_data);
             vm.stopPrank();
         }

@@ -32,7 +32,7 @@ contract TnftTest is TestSetup {
         vm.stopPrank();
 
         hoax(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIds
         );
 

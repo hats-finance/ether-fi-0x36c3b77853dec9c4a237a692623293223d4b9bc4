@@ -24,7 +24,7 @@ contract BNFTTest is TestSetup {
         vm.stopPrank();
 
         hoax(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIds
         );
 
@@ -59,7 +59,7 @@ contract BNFTTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = 1;
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
 
