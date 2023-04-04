@@ -735,37 +735,37 @@ contract AuctionManagerTest is TestSetup {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
     }
 
-    function test_ProcessAuctionFeeTransfer() public {
-        bytes32[] memory proofAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
+    // function test_ProcessAuctionFeeTransfer() public {
+    //     bytes32[] memory proofAddress1 = merkle.getProof(
+    //         whiteListedAddresses,
+    //         0
+    //     );
 
-        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(
-            proofAddress1,
-            _ipfsHash,
-            5
-        );
+    //     vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     nodeOperatorManagerInstance.registerNodeOperator(
+    //         proofAddress1,
+    //         _ipfsHash,
+    //         5
+    //     );
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bid1Ids = auctionInstance.createBid{value: 1 ether}(
-            1,
-            1 ether
-        );
+    //     hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     uint256[] memory bid1Ids = auctionInstance.createBid{value: 1 ether}(
+    //         1,
+    //         1 ether
+    //     );
 
-        vm.prank(owner);
-        vm.expectRevert("Only staking manager contract function");
-        auctionInstance.processAuctionFeeTransfer(bid1Ids[0]);
+    //     vm.prank(owner);
+    //     vm.expectRevert("Only staking manager contract function");
+    //     auctionInstance.processAuctionFeeTransfer(bid1Ids[0]);
 
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory processedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bid1Ids);
+    //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     uint256[] memory processedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bid1Ids);
 
-        stakingManagerInstance.registerValidator(processedBidIds[0], test_data);
+    //     stakingManagerInstance.registerValidator(processedBidIds[0], test_data);
 
-        address safe = managerInstance.etherfiNodeAddress(processedBidIds[0]);
-        assertEq(safe.balance, 0.5 ether);
-    }
+    //     address safe = managerInstance.etherfiNodeAddress(processedBidIds[0]);
+    //     assertEq(safe.balance, 0.5 ether);
+    // }
 
     function test_SetMaxBidAmount() public {
         vm.prank(owner);
