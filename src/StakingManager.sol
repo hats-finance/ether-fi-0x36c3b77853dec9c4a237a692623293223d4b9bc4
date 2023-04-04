@@ -73,6 +73,7 @@ contract StakingManager is
     function initialize(address _auctionAddress) external initializer {
          
         stakeAmount = 32 ether;
+        maxBatchDepositSize = 16;
 
         __Pausable_init();
         __Ownable_init();
@@ -105,6 +106,7 @@ contract StakingManager is
             auctionInterfaceInstance.numberOfActiveBids() >= numberOfDeposits,
             "No bids available at the moment"
         );
+        // require(msg.value == _candidateBidIds.length * stakeAmount, "incorrect amount sent");
 
         uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
         uint256 processedBidIdsCount = 0;
