@@ -17,7 +17,7 @@ update:; forge update
 
 build:; forge build
 
-test :; forge test --fork-url ${GOERLI_RPC_URL}
+test :; forge test --fork-url https://eth-goerli.g.alchemy.com/v2/Gj8oS16rKivma6TYb_xZFiLY-EJJZ0jn
 
 snapshot :; forge snapshot
 
