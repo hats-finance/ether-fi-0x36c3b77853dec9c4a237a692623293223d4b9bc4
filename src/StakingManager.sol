@@ -163,7 +163,6 @@ contract StakingManager is
             .getWithdrawalCredentials(_validatorId);
         
         // Deposit to the Beacon Chain
-        // test withdrawal credentials hex"010000000000000000000000aa7ace4c6c6861f0c6eb5048e4eefb226d447c8f"
         depositContractEth2.deposit{value: stakeAmount}(
             _depositData.publicKey,
             withdrawalCredentials,

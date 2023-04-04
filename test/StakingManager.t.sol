@@ -291,10 +291,13 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[8] = 19;
         bidIdArray[9] = 20;
 
+        uint256 userBalanceBefore = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+            .balance;
+
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
-        assertEq(auctionInstance.numberOfActiveBids(), 10);
+        assertEq(auctionInstance.numberOfActiveBids(), 19);
 
         (uint256 amount, , , bool isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
@@ -302,18 +305,15 @@ contract StakingManagerTest is TestSetup {
 
         (amount, , , isActive) = auctionInstance.bids(7);
         assertEq(amount, 0.1 ether);
-        assertEq(isActive, false);
+        assertEq(isActive, true);
 
         (amount, , , isActive) = auctionInstance.bids(20);
         assertEq(amount, 0.2 ether);
-        assertEq(isActive, false);
+        assertEq(isActive, true);
 
         (amount, , , isActive) = auctionInstance.bids(3);
         assertEq(amount, 0.1 ether);
         assertEq(isActive, true);
-
-        uint256 userBalanceBefore = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-            .balance;
 
         uint256[] memory bidIdArray2 = new uint256[](10);
         bidIdArray2[0] = 1;
@@ -327,15 +327,15 @@ contract StakingManagerTest is TestSetup {
         bidIdArray2[8] = 19;
         bidIdArray2[9] = 20;
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 16 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray2
         );
 
         assertEq(
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931.balance,
-            userBalanceBefore - 0.064 ether
+            userBalanceBefore - 64 ether
         );
-        assertEq(auctionInstance.numberOfActiveBids(), 8);
+        assertEq(auctionInstance.numberOfActiveBids(), 18);
 
         (amount, , , isActive) = auctionInstance.bids(1);
         assertEq(amount, 0.1 ether);
@@ -343,7 +343,7 @@ contract StakingManagerTest is TestSetup {
 
         (amount, , , isActive) = auctionInstance.bids(13);
         assertEq(amount, 0.2 ether);
-        assertEq(isActive, false);
+        assertEq(isActive, true);
 
         (amount, , , isActive) = auctionInstance.bids(3);
         assertEq(amount, 0.1 ether);
