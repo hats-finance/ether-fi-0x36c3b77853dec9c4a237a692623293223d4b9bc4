@@ -236,66 +236,66 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(node, address(0));
     }
 
-    // function test_SendExitRequestWorksCorrectly() public {
-    //     assertEq(managerInstance.isExitRequested(bidId[0]), false);
+    function test_SendExitRequestWorksCorrectly() public {
+        assertEq(managerInstance.isExitRequested(bidId[0]), false);
 
-    //     hoax(alice);
-    //     vm.expectRevert("You are not the owner of the T-NFT");
-    //     managerInstance.sendExitRequest(bidId[0]);
+        hoax(alice);
+        vm.expectRevert("You are not the owner of the T-NFT");
+        managerInstance.sendExitRequest(bidId[0]);
 
-    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-    //     managerInstance.sendExitRequest(bidId[0]);
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        managerInstance.sendExitRequest(bidId[0]);
 
-    //     assertEq(managerInstance.isExitRequested(bidId[0]), true);
+        assertEq(managerInstance.isExitRequested(bidId[0]), true);
 
-    //     hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-    //     vm.expectRevert("Exit request was already sent.");
-    //     managerInstance.sendExitRequest(bidId[0]);
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        vm.expectRevert("Exit request was already sent.");
+        managerInstance.sendExitRequest(bidId[0]);
 
-    //     assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0);
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0);
 
-    //     // 1 day passed
-    //     vm.warp(block.timestamp + (1 + 86400));
-    //     assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0.03 ether);
+        // 1 day passed
+        vm.warp(block.timestamp + (1 + 86400));
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0.03 ether);
 
-    //     vm.warp(block.timestamp + (1 + 86400 + 3600));
-    //     assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0.03 ether);
+        vm.warp(block.timestamp + (1 + (86400 + 3600)));
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0.0591 ether);
 
-    //     vm.warp(block.timestamp + (1 + 2 * 86400));
-    //     assertEq(
-    //         managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
-    //         0.0591 ether
-    //     );
+        vm.warp(block.timestamp + (1 + 2 * 86400));
+        assertEq(
+            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
+            0.114707190000000000 ether
+        );
 
-    //     // 10 days passed
-    //     vm.warp(block.timestamp + (1 + 10 * 86400));
-    //     assertEq(
-    //         managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
-    //         0.262575873105071740 ether
-    //     );
+        // 10 days passed
+        vm.warp(block.timestamp + (1 + 10 * 86400));
+        assertEq(
+            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
+            0.347163722539392386 ether
+        );
 
-    //     // 28 days passed
-    //     vm.warp(block.timestamp + (1 + 28 * 86400));
-    //     assertEq(
-    //         managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
-    //         0.573804794831376551 ether
-    //     );
+        // 28 days passed
+        vm.warp(block.timestamp + (1 + 28 * 86400));
+        assertEq(
+            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
+            0.721764308786155954 ether
+        );
 
-    //     // 365 days passed
-    //     vm.warp(block.timestamp + (1 + 365 * 86400));
-    //     assertEq(
-    //         managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
-    //         0.999985151485507863 ether
-    //     );
+        // 365 days passed
+        vm.warp(block.timestamp + (1 + 365 * 86400));
+        assertEq(
+            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
+            1 ether
+        );
 
-    //     // more than 1 year passed
-    //     vm.warp(block.timestamp + (1 + 366 * 86400));
-    //     assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
+        // more than 1 year passed
+        vm.warp(block.timestamp + (1 + 366 * 86400));
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
 
-    //     vm.warp(block.timestamp + (1 + 400 * 86400));
-    //     assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
+        vm.warp(block.timestamp + (1 + 400 * 86400));
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
 
-    //     vm.warp(block.timestamp + (1 + 1000 * 86400));
-    //     assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
-    // }
+        vm.warp(block.timestamp + (1 + 1000 * 86400));
+        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
+    }
 }
