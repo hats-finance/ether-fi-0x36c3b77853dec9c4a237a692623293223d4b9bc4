@@ -78,7 +78,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bobBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
 
@@ -105,7 +105,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray1 = new uint256[](1);
         bidIdArray1[0] = bobBidIds[1];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray1
         );
 
@@ -129,7 +129,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray2 = new uint256[](1);
         bidIdArray2[0] = bobBidIds[2];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray2
         );
 
@@ -152,7 +152,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray3 = new uint256[](1);
         bidIdArray3[0] = chadBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray3
         );
 
@@ -216,7 +216,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = chadBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
 
@@ -242,7 +242,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray2 = new uint256[](1);
         bidIdArray2[0] = bobBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray2
         );
 
@@ -276,275 +276,97 @@ contract SmallScenariosTest is TestSetup {
         assertTrue(isBobBid2Active);
         assertTrue(isBobBid3Active);
     }
+
+    /**
+     *  One bid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+     *  Second bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+     *  One deposit - 0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
+     *  Register validator - 0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
+     *  Accept validator - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+     */
+    function test_ScenarioThree() public {
+        bytes32[] memory proofForAddress1 = merkle.getProof(
+            whiteListedAddresses,
+            0
+        );
+        bytes32[] memory proofForAddress2 = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
+        bytes32[] memory proofForAddress3 = merkle.getProof(
+            whiteListedAddresses,
+            2
+        );
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proofForAddress1,
+            _ipfsHash,
+            10
+        );
+
+        vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proofForAddress2,
+            _ipfsHash,
+            10
+        );
+
+        //Bid One
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidIds1 = auctionInstance.createBid{value: 0.9 ether}(1, 0.9 ether);
+        assertEq(address(stakingManagerInstance).balance, 0 ether);
+        assertEq(address(auctionInstance).balance, 0.9 ether);
+
+        //Bid Two
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        uint256[] memory bidIds2 = auctionInstance.createBid{value: 0.3 ether}(1, 0.3 ether);
+        assertEq(address(stakingManagerInstance).balance, 0 ether);
+        assertEq(address(auctionInstance).balance, 1.2 ether);
+
+        //StakingManager One
+        startHoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds1);
+        assertEq(address(stakingManagerInstance).balance, 32 ether);
+        assertEq(address(auctionInstance).balance, 1.2 ether);
+
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidIds1[0]);
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
+        //Register validator
+        stakingManagerInstance.registerValidator(bidIds1[0], depositData);
+
+        assertEq(
+            TNFTInstance.ownerOf(bidIds1[0]),
+            0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
+        );
+        assertEq(
+            BNFTInstance.ownerOf(bidIds1[0]),
+            0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
+        );
+        assertEq(
+            BNFTInstance.balanceOf(
+                0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
+            ),
+            1
+        );
+        assertEq(
+            TNFTInstance.balanceOf(
+                0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
+            ),
+            1
+        );
+    }
 }
-
-//     /**
-//      *  One bid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-//      *  One deposit - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      */
-//     function test_ScenarioOne() public {
-//         bytes32[] memory proofForAddress1 = merkle.getProof(
-//             whiteListedAddresses,
-//             0
-//         );
-
-//         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         auctionInstance.bidOnStake{value: 0.3 ether}(
-//             proofForAddress1,
-//             "test_pubKey"
-//         );
-//         assertEq(auctionInstance.numberOfActiveBids(), 1);
-
-//         assertEq(address(auctionInstance).balance, 0.3 ether);
-//         assertEq(address(stakingManagerInstance).balance, 0);
-
-//         (
-//             uint256 amount,
-//             ,
-//             address bidderAddress,
-//             bool isActiveBeforeStake,
-
-//         assertEq(auctionInstance.numberOfBids() - 1, 1);
-//         assertEq(amount, 0.3 ether);
-//         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         assertEq(isActiveBeforeStake, true);
-
-//         vm.stopPrank();
-//         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-
-//         stakingManagerInstance.deposit{value: 0.032 ether}();
-//         // (, address withdrawalSafe, , , , , , ) = stakingManagerInstance.stakes(0);
-
-//         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
-//         assertEq(address(auctionInstance).balance, 0.3 ether);
-//         // assertEq(withdrawalSafe.balance, 0.3 ether);
-
-//         (, , , bool isActiveAfterStake, ) = auctionInstance.bids(1);
-//         assertEq(isActiveAfterStake, false);
-//     }
-
-//     /**
-//      *  One bid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-//      *  One cancel - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-//      *  Second bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      *  One updated bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      */
-//     function test_ScenarioTwo() public {
-//         bytes32[] memory proofForAddress1 = merkle.getProof(
-//             whiteListedAddresses,
-//             0
-//         );
-//         bytes32[] memory proofForAddress2 = merkle.getProof(
-//             whiteListedAddresses,
-//             1
-//         );
-
-//         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         auctionInstance.bidOnStake{value: 0.3 ether}(
-//             proofForAddress1,
-//             "test_pubKey"
-//         );
-//         assertEq(auctionInstance.numberOfActiveBids(), 1);
-
-//         assertEq(address(auctionInstance).balance, 0.3 ether);
-
-//         (
-//             uint256 amount,
-//             ,
-//             address bidderAddress,
-//             bool isActiveAfterStake,
-
-//         ) = auctionInstance.bids(auctionInstance.currentHighestBidId());
-
-//         assertEq(auctionInstance.numberOfBids() - 1, 1);
-//         assertEq(amount, 0.3 ether);
-//         assertEq(bidderAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         assertEq(auctionInstance.currentHighestBidId(), 1);
-//         assertEq(isActiveAfterStake, true);
-
-//         auctionInstance.cancelBid(1);
-//         assertEq(auctionInstance.numberOfActiveBids(), 0);
-
-//         (, , , bool isActiveAfterCancel, ) = auctionInstance.bids(1);
-//         assertEq(isActiveAfterCancel, false);
-
-//         vm.stopPrank();
-//         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-
-//         auctionInstance.bidOnStake{value: 0.2 ether}(
-//             proofForAddress2,
-//             "test_pubKey"
-//         );
-//         assertEq(auctionInstance.numberOfBids() - 1, 2);
-//         assertEq(auctionInstance.currentHighestBidId(), 2);
-//         assertEq(address(auctionInstance).balance, 0.2 ether);
-//         assertEq(auctionInstance.numberOfActiveBids(), 1);
-
-//         // auctionInstance.increaseBid{value: 0.3 ether}(2);
-//         // assertEq(auctionInstance.numberOfBids() - 1, 2);
-//         // assertEq(auctionInstance.currentHighestBidId(), 2);
-//         // assertEq(address(auctionInstance).balance, 0.5 ether);
-//         // assertEq(auctionInstance.numberOfActiveBids(), 1);
-//     }
-
-//     function test_TwoStakingManagersAtOnceStillWorks() public {
-//         bytes32[] memory proofForAddress1 = merkle.getProof(
-//             whiteListedAddresses,
-//             0
-//         );
-//         bytes32[] memory proofForAddress2 = merkle.getProof(
-//             whiteListedAddresses,
-//             1
-//         );
-//         bytes32[] memory proofForAddress3 = merkle.getProof(
-//             whiteListedAddresses,
-//             2
-//         );
-
-//         //Bid One
-//         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         auctionInstance.bidOnStake{value: 0.1 ether}(
-//             proofForAddress1,
-//             "test_pubKey"
-//         );
-
-//         //Bid Two
-//         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-//         auctionInstance.bidOnStake{value: 0.3 ether}(
-//             proofForAddress2,
-//             "test_pubKey"
-//         );
-
-//         //Bid Three
-//         hoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
-//         auctionInstance.bidOnStake{value: 0.2 ether}(
-//             proofForAddress3,
-//             "test_pubKey"
-//         );
-
-//         assertEq(auctionInstance.currentHighestBidId(), 2);
-
-//         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         stakingManagerInstance.deposit{value: 0.032 ether}();
-//         assertEq(auctionInstance.currentHighestBidId(), 3);
-//         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-//         stakingManagerInstance.deposit{value: 0.032 ether}();
-//         assertEq(auctionInstance.currentHighestBidId(), 1);
-//         assertEq(address(stakingManagerInstance).balance, 0.064 ether);
-//     }
-
-//     /**
-//      *  One bid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-//      *  Second bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      *  One deposit - 0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
-//      *  Register validator - 0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
-//      *  Accept validator - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-//      */
-//     function test_ScenarioThree() public {
-//         bytes32[] memory proofForAddress1 = merkle.getProof(
-//             whiteListedAddresses,
-//             0
-//         );
-//         bytes32[] memory proofForAddress2 = merkle.getProof(
-//             whiteListedAddresses,
-//             1
-//         );
-//         bytes32[] memory proofForAddress3 = merkle.getProof(
-//             whiteListedAddresses,
-//             2
-//         );
-
-//         //Bid One
-//         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         auctionInstance.bidOnStake{value: 0.9 ether}(
-//             proofForAddress1,
-//             "test_pubKey"
-//         );
-//         assertEq(address(stakingManagerInstance).balance, 0 ether);
-//         assertEq(address(auctionInstance).balance, 0.9 ether);
-
-//         //Bid Two
-//         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-//         auctionInstance.bidOnStake{value: 0.3 ether}(
-//             proofForAddress2,
-//             "test_pubKey"
-//         );
-//         assertEq(address(stakingManagerInstance).balance, 0 ether);
-//         assertEq(address(auctionInstance).balance, 1.2 ether);
-
-//         //StakingManager One
-//         startHoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
-//         stakingManagerInstance.deposit{value: 0.032 ether}();
-//         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
-//         assertEq(address(auctionInstance).balance, 1.2 ether);
-
-//         //Register validator
-//         stakingManagerInstance.registerValidator(
-//             0,
-//             "Encrypted_Key",
-//             "encrypted_key_password",
-//             "test_stakerPubKey",
-//             test_data
-//         );
-//         (
-//             uint256 validatorId,
-//             uint256 bidId,
-//             uint256 stakeId,
-//             bytes memory validatorKey,
-//             bytes memory encryptedValidatorKeyPassword,
-
-//         ) = stakingManagerInstance.validators(0);
-//         assertEq(validatorId, 0);
-//         assertEq(bidId, 1);
-//         assertEq(stakeId, 0);
-//         assertEq(validatorKey, "Encrypted_Key");
-//         assertEq(encryptedValidatorKeyPassword, "encrypted_key_password");
-
-//         //Accept validator
-//         vm.stopPrank();
-//         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         stakingManagerInstance.acceptValidator(0);
-
-//         assertEq(
-//             TestBNFTInstance.ownerOf(0),
-//             0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
-//         );
-//         assertEq(
-//             TestTNFTInstance.ownerOf(0),
-//             0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
-//         );
-//         assertEq(
-//             TestBNFTInstance.balanceOf(
-//                 0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
-//             ),
-//             1
-//         );
-//         assertEq(
-//             TestTNFTInstance.balanceOf(
-//                 0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
-//             ),
-//             1
-//         );
-//     }
-
-//     function _merkleSetup() internal {
-//         merkle = new Merkle();
-
-//         whiteListedAddresses.push(
-//             keccak256(
-//                 abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
-//             )
-//         );
-//         whiteListedAddresses.push(
-//             keccak256(
-//                 abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)
-//             )
-//         );
-//         whiteListedAddresses.push(
-//             keccak256(
-//                 abi.encodePacked(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20)
-//             )
-//         );
-//         root = merkle.getRoot(whiteListedAddresses);
-//     }
-// }

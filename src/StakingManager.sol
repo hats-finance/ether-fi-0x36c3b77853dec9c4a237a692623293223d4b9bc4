@@ -29,8 +29,7 @@ contract StakingManager is
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
-    /// @dev please remove before mainnet deployment
-    bool public test;
+    
     uint128 public maxBatchDepositSize;
     uint128 public stakeAmount;
 
@@ -72,15 +71,9 @@ contract StakingManager is
     /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
     function initialize(address _auctionAddress) external initializer {
-         /// @dev please remove before mainnet deployment
-        test = true;
+         
+        stakeAmount = 32 ether;
         maxBatchDepositSize = 16;
-
-        if (test == true) {
-            stakeAmount = 0.032 ether;
-        } else {
-            stakeAmount = 32 ether;
-        }
 
         __Pausable_init();
         __Ownable_init();
@@ -91,18 +84,6 @@ contract StakingManager is
         depositContractEth2 = IDepositContract(
             0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b
         );
-    }
-
-    /// @notice Switches the deposit mode of the contract
-    /// @dev Used for testing purposes. WILL BE DELETED BEFORE MAINNET DEPLOYMENT
-    function switchMode() public {
-        if (test == true) {
-            test = false;
-            stakeAmount = 32 ether;
-        } else if (test == false) {
-            test = true;
-            stakeAmount = 0.032 ether;
-        }
     }
 
     /// @notice Allows depositing multiple stakes at once
@@ -125,6 +106,7 @@ contract StakingManager is
             auctionInterfaceInstance.numberOfActiveBids() >= numberOfDeposits,
             "No bids available at the moment"
         );
+        // require(msg.value == _candidateBidIds.length * stakeAmount, "incorrect amount sent");
 
         uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
         uint256 processedBidIdsCount = 0;
@@ -162,8 +144,8 @@ contract StakingManager is
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
-    ///        however, instead of the validator key, it will include the IPFS hash
-    ///        containing the validator key encrypted by the corresponding node operator's public key
+    /// however, instead of the validator key, it will include the IPFS hash
+    /// containing the validator key encrypted by the corresponding node operator's public key
     function registerValidator(
         uint256 _validatorId,
         DepositData calldata _depositData
@@ -176,17 +158,18 @@ contract StakingManager is
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
         address staker = bidIdToStaker[_validatorId];
 
-        //Remove this before deployment, this should always happen
-        if (test == false) {
-            bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
-                .getWithdrawalCredentials(_validatorId);
-            depositContractEth2.deposit{value: stakeAmount}(
-                _depositData.publicKey,
-                withdrawalCredentials,
-                _depositData.signature,
-                _depositData.depositDataRoot
-            );
-        }
+        
+        bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
+            .getWithdrawalCredentials(_validatorId);
+        
+        // Deposit to the Beacon Chain
+        depositContractEth2.deposit{value: stakeAmount}(
+            _depositData.publicKey,
+            withdrawalCredentials,
+            _depositData.signature,
+            _depositData.depositDataRoot
+        );
+    
 
         nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
         nodesManagerIntefaceInstance.setEtherFiNodePhase(

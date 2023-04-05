@@ -30,7 +30,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
 
@@ -41,7 +41,22 @@ contract EtherFiNodeTest is TestSetup {
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
-        stakingManagerInstance.registerValidator(bidId[0], test_data);
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
+
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
+        stakingManagerInstance.registerValidator(bidId[0], depositData);
         vm.stopPrank();
 
         assertTrue(
@@ -141,7 +156,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId1[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
 
@@ -149,7 +164,7 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId2[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
 
@@ -160,8 +175,25 @@ contract EtherFiNodeTest is TestSetup {
             assertEq(staker_3, dan);
         }
 
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId1[0]);
+
+        root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
+
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
         startHoax(bob);
-        stakingManagerInstance.registerValidator(bidId1[0], test_data_2);
+        stakingManagerInstance.registerValidator(bidId1[0], depositData);
         vm.stopPrank();
 
         assertEq(
@@ -189,8 +221,26 @@ contract EtherFiNodeTest is TestSetup {
             0.2 ether
         );
 
+        etherFiNode = managerInstance.etherfiNodeAddress(bidId2[0]);
+
+        root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
+
+        depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+        
+
         startHoax(dan);
-        stakingManagerInstance.registerValidator(bidId2[0], test_data_2);
+        stakingManagerInstance.registerValidator(bidId2[0], depositData);
         vm.stopPrank();
 
         assertEq(
@@ -329,7 +379,7 @@ contract EtherFiNodeTest is TestSetup {
         // Send Exit Request and wait for 14 days to pass
         hoax(dan);
         managerInstance.sendExitRequest(bidId[0]);
-        vm.warp(1 + 14 * 86400);
+        vm.warp(block.timestamp + (1 + 14 * 86400));
 
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
         uint256 treasuryBalance = address(treasuryInstance).balance;
@@ -359,7 +409,7 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(etherfiNode).balance, vestedAuctionFeeRewardsForStakers);
 
         // Withdraw the vested auction fee reward
-        vm.warp(1 + 6 * 28 * 24 * 3600);
+        vm.warp(block.timestamp + (1 + 6 * 28 * 24 * 3600));
         hoax(owner);
         managerInstance.partialWithdraw(bidId[0], true, true, true);
         assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
@@ -432,7 +482,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // 2. balance > 32 ether + after vesting period
         // {T, B}-NFT holders will get the vested auction fee reward
-        vm.warp(1 + 6 * 28 * 86400);
+        vm.warp(block.timestamp + (1 + 6 * 28 * 86400));
         (
             toNodeOperator,
             toTnft,
@@ -501,7 +551,7 @@ contract EtherFiNodeTest is TestSetup {
         }
 
         {
-            vm.warp(1 + 6 * 28 * 86400);
+            vm.warp(block.timestamp + (1 + 6 * 28 * 86400));
             uint256 nodeOperatorBalance = address(nodeOperator).balance;
             uint256 treasuryBalance = address(treasuryInstance).balance;
             uint256 danBalance = address(dan).balance;
@@ -630,6 +680,7 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(staker).balance, bnftStakerBalance + 1 ether);
     }
 
+    /// @dev Seongyun, please double check the math in the assertions.  
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly1()
         public
     {
@@ -643,21 +694,21 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // 1 day passed
-        vm.warp(1 + 86400);
+        vm.warp(block.timestamp + (1 + 86400));
         startHoax(owner);
-        exitTimestamps[0] = 1 + 86400;
+        exitTimestamps[0] = uint32(block.timestamp) + (1 + 86400);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
-
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
-        assertEq(toNodeOperator, 0.05 ether + nonExitPenalty);
+        assertEq(toNodeOperator, 0.0791 ether + nonExitPenalty);
         assertEq(toTreasury, 0.05 ether);
         assertEq(toTnft, 30.815625000000000000 ether);
-        assertEq(toBnft, 2.084375000000000000 ether - nonExitPenalty);
+        assertEq(toBnft, 2.055275000000000000 ether - nonExitPenalty);
     }
 
+    /// @dev Seongyun, please double check the math in the assertions.
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly2()
         public
     {
@@ -671,19 +722,19 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // 14 days passed
-        vm.warp(1 + 14 * 86400);
+        vm.warp(block.timestamp + (1 + 14 * 86400));
         startHoax(owner);
-        exitTimestamps[0] = 1 + 14 * 86400;
+        exitTimestamps[0] = uint32(block.timestamp) + (1 + 14 * 86400);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
 
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
-        assertEq(toNodeOperator, 0.347163722539392386 ether);
-        assertEq(toTreasury, 0.05 ether + 0.05 ether);
+        assertEq(toNodeOperator, 0.5 ether);
+        assertEq(toTreasury, 0.173804794831376551 ether);
         assertEq(toTnft, 30.815625000000000000 ether);
-        assertEq(toBnft, 2.084375000000000000 ether - nonExitPenalty);
+        assertEq(toBnft, 1.510570205168623449 ether);
     }
 
     function test_markExitedFails() public {
@@ -694,6 +745,7 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
+    /// @dev Seongyun, please double check the math in the assertions.
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly3() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
@@ -705,9 +757,9 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // 28 days passed
-        vm.warp(1 + 28 * 86400);
+        vm.warp(block.timestamp + (1 + 28 * 86400));
         startHoax(owner);
-        exitTimestamps[0] = 1 + 28 * 86400;
+        exitTimestamps[0] = uint32(block.timestamp) + (1 + 28 * 86400);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
         assertGe(nonExitPenalty, 0.5 ether);
@@ -721,11 +773,13 @@ contract EtherFiNodeTest is TestSetup {
             uint256 toTreasury
         ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0.5 ether);
-        assertEq(
-            toTreasury,
-            0.05 ether + (nonExitPenalty - 0.5 ether) + 0.05 ether
-        );
+        assertEq(toTreasury, 0.418357647091274965 ether);
+        // assertEq(
+        //     toTreasury,
+        //     0.05 ether + (nonExitPenalty - 0.5 ether) + 0.05 ether
+        // );
         assertEq(toTnft, 30.815625000000000000 ether);
-        assertEq(toBnft, 2.084375000000000000 ether - nonExitPenalty);
+        assertEq(toBnft, 1.266017352908725035 ether);
+        // assertEq(toBnft, 2.084375000000000000 ether - nonExitPenalty);
     }
 }

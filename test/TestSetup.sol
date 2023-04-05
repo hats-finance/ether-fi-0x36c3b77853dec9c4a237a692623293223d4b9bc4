@@ -12,6 +12,7 @@ import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../src/UUPSProxy.sol";
+import "./DepositDataGeneration.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract TestSetup is Test {
@@ -22,6 +23,8 @@ contract TestSetup is Test {
     UUPSProxy public protocolRevenueManagerProxy;
     UUPSProxy public TNFTProxy;
     UUPSProxy public BNFTProxy;
+
+    DepositDataGeneration public depGen;
 
     StakingManager public stakingManagerInstance;
     StakingManager public stakingManagerImplementation;
@@ -123,19 +126,11 @@ contract TestSetup is Test {
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
 
-        test_data = IStakingManager.DepositData({
-            depositDataRoot: "test_deposit_root",
-            publicKey: "test_pubkey",
-            signature: "test_signature",
-            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
-        });
+        depGen = new DepositDataGeneration();
 
-        test_data_2 = IStakingManager.DepositData({
-            depositDataRoot: "test_deposit_root_2",
-            publicKey: "test_pubkey_2",
-            signature: "test_signature_2",
-            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash_2"
-        });
+        bytes32 deposit_data_root1 = 0x9120ef13437690c401c436a3e454aa08c438eb5908279b0a49dee167fde30399;
+        bytes memory pub_key1 = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+        bytes memory signature1 = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
 
         vm.stopPrank();
     }
