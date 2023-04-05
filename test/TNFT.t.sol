@@ -17,30 +17,46 @@ contract TnftTest is TestSetup {
         TNFTInstance.mint(address(alice), 1);
     }
 
-    // function test_Mint() public {
-    //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-    //     bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-    //     nodeOperatorManagerInstance.registerNodeOperator(
-    //         proof,
-    //         _ipfsHash,
-    //         5
-    //     );
-    //     uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
-    //         1,
-    //         1 ether
-    //     );
-    //     vm.stopPrank();
+    function test_Mint() public {
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
+        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
+            1,
+            1 ether
+        );
+        vm.stopPrank();
 
-    //     hoax(alice);
-    //     stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-    //         bidIds
-    //     );
+        hoax(alice);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+            bidIds
+        );
 
-    //     startHoax(alice);
-    //     stakingManagerInstance.registerValidator(bidIds[0], test_data);
-    //     vm.stopPrank();
+        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
 
-    //     assertEq(TNFTInstance.ownerOf(1), alice);
-    //     assertEq(TNFTInstance.balanceOf(alice), 1);
-    // }
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
+        startHoax(alice);
+        stakingManagerInstance.registerValidator(bidIds[0], depositData);
+        vm.stopPrank();
+
+        assertEq(TNFTInstance.ownerOf(1), alice);
+        assertEq(TNFTInstance.balanceOf(alice), 1);
+    }
 }
