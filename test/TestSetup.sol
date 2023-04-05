@@ -12,6 +12,7 @@ import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../src/UUPSProxy.sol";
+import "./DepositDataGeneration.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract TestSetup is Test {
@@ -22,6 +23,8 @@ contract TestSetup is Test {
     UUPSProxy public protocolRevenueManagerProxy;
     UUPSProxy public TNFTProxy;
     UUPSProxy public BNFTProxy;
+
+    DepositDataGeneration public depGen;
 
     StakingManager public stakingManagerInstance;
     StakingManager public stakingManagerImplementation;
@@ -122,6 +125,8 @@ contract TestSetup is Test {
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
+
+        depGen = new DepositDataGeneration();
 
         bytes32 deposit_data_root1 = 0x9120ef13437690c401c436a3e454aa08c438eb5908279b0a49dee167fde30399;
         bytes memory pub_key1 = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
