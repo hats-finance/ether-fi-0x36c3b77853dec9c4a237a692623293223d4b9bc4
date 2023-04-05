@@ -20,116 +20,134 @@ contract RewardsSkimmingTest is TestSetup {
     bytes32 newRoot;
     bytes32[] public newWhiteListedAddresses;
     
-    // function setUp() public {
-    //     num_operators = 1; // should be 1
-    //     num_stakers = 32;
-    //     num_people = num_stakers;
-    //     for (uint i = 0; i < num_operators; i++) {
-    //         operators.push(vm.addr(i+1));
-    //         vm.deal(operators[i], 1 ether);
-    //     }
-    //     for (uint i = 0; i < num_stakers; i++) {
-    //         stakers.push(vm.addr(i+10000));
-    //         vm.deal(stakers[i], 1 ether);
-    //     }
-    //     for (uint i = 0; i < num_people; i++) {
-    //         people.push(vm.addr(i+10000000));
-    //         vm.deal(people[i], 1 ether);
-    //     }    
+    function setUp() public {
+        num_operators = 1; // should be 1
+        num_stakers = 32;
+        num_people = num_stakers;
+        for (uint i = 0; i < num_operators; i++) {
+            operators.push(vm.addr(i+1));
+            vm.deal(operators[i], 1 ether);
+        }
+        for (uint i = 0; i < num_stakers; i++) {
+            stakers.push(vm.addr(i+10000));
+            vm.deal(stakers[i], 1 ether);
+        }
+        for (uint i = 0; i < num_people; i++) {
+            people.push(vm.addr(i+10000000));
+            vm.deal(people[i], 1 ether);
+        }    
 
-    //     setUpTests();
-    //     _setupMerkle();
+        setUpTests();
+        _setupMerkle();
 
-    //     vm.prank(owner);
-    //     nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
+        vm.prank(owner);
+        nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
 
-    //     bytes32[] memory proof = merkle.getProof(newWhiteListedAddresses, 1);
+        bytes32[] memory proof = merkle.getProof(newWhiteListedAddresses, 1);
 
-    //     startHoax(operators[0]);
-    //     nodeOperatorManagerInstance.registerNodeOperator(
-    //         proof,
-    //         _ipfsHash,
-    //         1000
-    //     );
-    //     for (uint i = 0; i < num_stakers; i++) {
-    //         uint256[] memory ids = auctionInstance.createBid{value: 0.4 ether}(1, 0.4 ether);
-    //         validatorIds.push(ids[0]);
-    //         if (i % 2 == 0) {
-    //             validatorIdsOfMixedTNftHolders.push(ids[0]);
-    //         } else {
-    //             validatorIdsOfTNftsInLiquidityPool.push(ids[0]);
-    //         }
-    //     }
-    //     vm.stopPrank();
+        startHoax(operators[0]);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            1000
+        );
+        for (uint i = 0; i < num_stakers; i++) {
+            uint256[] memory ids = auctionInstance.createBid{value: 0.4 ether}(1, 0.4 ether);
+            validatorIds.push(ids[0]);
+            if (i % 2 == 0) {
+                validatorIdsOfMixedTNftHolders.push(ids[0]);
+            } else {
+                validatorIdsOfTNftsInLiquidityPool.push(ids[0]);
+            }
+        }
+        vm.stopPrank();
 
-    //     for (uint i = 0; i < num_stakers; i++) {
-    //         startHoax(stakers[i]);
-    //         uint256[] memory candidateBidIds = new uint256[](1);
-    //          candidateBidIds[0] = validatorIds[i];
-    //         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds);
-    //         stakingManagerInstance.registerValidator(validatorIds[i], test_data);
-    //         vm.stopPrank();
-    //     }
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](num_stakers);
 
-    //     // Mix the T-NFT holders
-    //     for (uint i = 0; i < num_stakers; i++) {
-    //         vm.startPrank(stakers[i]);
-    //         if (i % 2 == 0) {
-    //             TNFTInstance.transferFrom(stakers[i], people[i], validatorIds[i]);
-    //         } else {
-    //             TNFTInstance.transferFrom(stakers[i], liquidityPool, validatorIds[i]);
-    //         }
-    //         vm.stopPrank();
-    //     }        
-    // }
+        for (uint i = 0; i < num_stakers; i++) {
+            startHoax(stakers[i]);
+            uint256[] memory candidateBidIds = new uint256[](1);
+            candidateBidIds[0] = validatorIds[i];
+            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds);
 
-    // function _setupMerkle() internal {
-    //     merkle = new Merkle();
-    //     newWhiteListedAddresses.push(
-    //         keccak256(
-    //             abi.encodePacked(operators[0])
-    //         )
-    //     );
-    //     newWhiteListedAddresses.push(
-    //         keccak256(
-    //             abi.encodePacked(operators[0])
-    //         )
-    //     );
-    //     newRoot = merkle.getRoot(newWhiteListedAddresses);
-    // }
+            address etherFiNode = managerInstance.etherfiNodeAddress(candidateBidIds[0]);
 
-    // function _deals() internal {
-    //     vm.deal(liquidityPool, 1 ether);
-    //     vm.deal(address(managerInstance), 100 ether);
-    //     vm.deal(operators[0], 1 ether);
-    //     for (uint i = 0; i < num_stakers; i++) {
-    //         vm.deal(payable(managerInstance.etherfiNodeAddress(i)), 1 ether);
-    //         vm.deal(stakers[i], 1 ether);
-    //         vm.deal(people[i], 1 ether);
-    //     }
-    // }
+            bytes32 root = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                32 ether
+            );
+            depositDataArray[i] = IStakingManager.DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+            stakingManagerInstance.registerValidator(validatorIds[i], depositDataArray[i]);
+            vm.stopPrank();
+        }
 
-    // function test_partialWithdraw_batch_base() public {
-    //     _deals();
-    //     startHoax(operators[0]);
-    //     for (uint i = 0; i < num_stakers/2; i++) {
-    //         managerInstance.partialWithdraw(validatorIds[i], true, false, false);
-    //     }
-    //     vm.stopPrank();
-    // }
+        // Mix the T-NFT holders
+        for (uint i = 0; i < num_stakers; i++) {
+            vm.startPrank(stakers[i]);
+            if (i % 2 == 0) {
+                TNFTInstance.transferFrom(stakers[i], people[i], validatorIds[i]);
+            } else {
+                TNFTInstance.transferFrom(stakers[i], liquidityPool, validatorIds[i]);
+            }
+            vm.stopPrank();
+        }        
+    }
 
-    // function test_partialWithdrawBatchGroupByOperator() public {
-    //     _deals();
-    //     startHoax(operators[0]);
-    //     managerInstance.partialWithdrawBatchGroupByOperator(operators[0], validatorIdsOfMixedTNftHolders, true, false, false);
-    //     vm.stopPrank();
-    // }
+    function _setupMerkle() internal {
+        merkle = new Merkle();
+        newWhiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(operators[0])
+            )
+        );
+        newWhiteListedAddresses.push(
+            keccak256(
+                abi.encodePacked(operators[0])
+            )
+        );
+        newRoot = merkle.getRoot(newWhiteListedAddresses);
+    }
 
-    // function test_partialWithdrawBatchForTNftInLiquidityPool() public {
-    //     _deals();
-    //     startHoax(operators[0]);
-    //     // managerInstance.partialWithdrawBatchForOperatorAndTNftHolder(operators[0], liquidityPool, validatorIdsOfTNftsInLiquidityPool);
-    //     vm.stopPrank();
-    // }
+    function _deals() internal {
+        vm.deal(liquidityPool, 1 ether);
+        vm.deal(address(managerInstance), 100 ether);
+        vm.deal(operators[0], 1 ether);
+        for (uint i = 0; i < num_stakers; i++) {
+            vm.deal(payable(managerInstance.etherfiNodeAddress(i)), 1 ether);
+            vm.deal(stakers[i], 1 ether);
+            vm.deal(people[i], 1 ether);
+        }
+    }
+
+    function test_partialWithdraw_batch_base() public {
+        _deals();
+        startHoax(operators[0]);
+        for (uint i = 0; i < num_stakers/2; i++) {
+            managerInstance.partialWithdraw(validatorIds[i], true, false, false);
+        }
+        vm.stopPrank();
+    }
+
+    function test_partialWithdrawBatchGroupByOperator() public {
+        _deals();
+        startHoax(operators[0]);
+        managerInstance.partialWithdrawBatchGroupByOperator(operators[0], validatorIdsOfMixedTNftHolders, true, false, false);
+        vm.stopPrank();
+    }
+
+    function test_partialWithdrawBatchForTNftInLiquidityPool() public {
+        _deals();
+        startHoax(operators[0]);
+        // managerInstance.partialWithdrawBatchForOperatorAndTNftHolder(operators[0], liquidityPool, validatorIdsOfTNftsInLiquidityPool);
+        vm.stopPrank();
+    }
 
 }
