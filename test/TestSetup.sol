@@ -132,20 +132,6 @@ contract TestSetup is Test {
         bytes memory pub_key1 = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
         bytes memory signature1 = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
 
-        test_data = IStakingManager.DepositData({
-            depositDataRoot: deposit_data_root1,
-            publicKey: pub_key1,
-            signature: signature1,
-            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash"
-        });
-
-        test_data_2 = IStakingManager.DepositData({
-            depositDataRoot: "test_deposit_root_2",
-            publicKey: "test_pubkey_2",
-            signature: "test_signature_2",
-            ipfsHashForEncryptedValidatorKey: "test_ipfs_hash_2"
-        });
-
         vm.stopPrank();
     }
 
