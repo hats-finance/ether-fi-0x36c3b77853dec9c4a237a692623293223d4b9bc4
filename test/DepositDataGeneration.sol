@@ -9,7 +9,7 @@ contract DepositDataGeneration {
         bytes calldata signature,
         bytes calldata withdrawal_credentials,
         uint256 _amountIn
-    ) public view returns (bytes32) {
+    ) public pure returns (bytes32) {
 
         uint deposit_amount = _amountIn / GWEI;
         bytes memory amount = to_little_endian_64(uint64(deposit_amount));
