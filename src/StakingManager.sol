@@ -175,8 +175,8 @@ contract StakingManager is
         uint256[] calldata _validatorId,
         DepositData[] calldata _depositData
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
-        require(_validatorId.length == _depositData.length,"Array lengths must match");
-        require(_validatorId.length <= maxBatchDepositSize,"Too many validators");
+        require(_validatorId.length == _depositData.length, "Array lengths must match");
+        require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
         
         for (uint256 x; x < _validatorId.length; ++x) {
             _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
