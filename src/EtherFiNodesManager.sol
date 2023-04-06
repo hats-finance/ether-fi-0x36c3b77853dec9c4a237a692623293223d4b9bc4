@@ -147,7 +147,7 @@ contract EtherFiNodesManager is
     }
 
     /// @notice send the request to exit the validator node
-    function sendExitRequest(uint256 _validatorId) external {
+    function sendExitRequest(uint256 _validatorId) public {
         require(
             msg.sender == tnftInstance.ownerOf(_validatorId),
             "You are not the owner of the T-NFT"
@@ -156,6 +156,13 @@ contract EtherFiNodesManager is
         IEtherFiNode(etherfiNode).setExitRequestTimestamp();
 
         emit NodeExitRequested(_validatorId);
+    }
+
+    /// @notice send the request to exit the validator node
+    function batchSendExitRequest(uint256[] calldata _validatorIds) external {
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            sendExitRequest(_validatorIds[i]);
+        }
     }
 
     /// @notice Once the node's exit is observed, the protocol calls this function to process their exits.
