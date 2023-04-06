@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import "forge-std/console.sol";
 
 contract StakingManagerTest is TestSetup {
     event StakeDeposit(
@@ -18,6 +19,10 @@ contract StakingManagerTest is TestSetup {
 
     function setUp() public {
         setUpTests();
+    }
+
+    function test_fake() public {
+        console.logBytes32(_getDepositRoot());
     }
 
     function test_StakingManagerContractInstantiatedCorrectly() public {
@@ -69,7 +74,7 @@ contract StakingManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        stakingManagerInstance.registerValidator(bidId[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
 
         uint256 validatorId = bidId[0];
         uint256 winningBid = bidId[0];
@@ -353,8 +358,9 @@ contract StakingManagerTest is TestSetup {
         vm.stopPrank();
 
         vm.prank(owner);
+        bytes32 root = _getDepositRoot();
         vm.expectRevert("Not deposit owner");
-        stakingManagerInstance.registerValidator(bidId[0], test_data);
+        stakingManagerInstance.registerValidator(root, bidId[0], test_data);
     }
 
     function test_RegisterValidatorFailsIfIncorrectPhase() public {
@@ -391,12 +397,13 @@ contract StakingManagerTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(bidIdArray[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIdArray[0], depositData);
         vm.stopPrank();
 
+        bytes32 depositRoot = _getDepositRoot();
         vm.expectRevert("Incorrect phase");
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        stakingManagerInstance.registerValidator(bidIdArray[0], depositData);
+        stakingManagerInstance.registerValidator(depositRoot, bidIdArray[0], depositData);
     }
 
     function test_RegisterValidatorFailsIfContractPaused() public {
@@ -413,15 +420,16 @@ contract StakingManagerTest is TestSetup {
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
         );
-
         vm.stopPrank();
 
         vm.prank(owner);
         stakingManagerInstance.pauseContract();
+        vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        bytes32 depositRoot = _getDepositRoot();
         vm.expectRevert("Pausable: paused");
-        stakingManagerInstance.registerValidator(0, test_data);
+        stakingManagerInstance.registerValidator(depositRoot, 0, test_data);
     }
 
     function test_RegisterValidatorWorksCorrectly() public {
@@ -458,7 +466,7 @@ contract StakingManagerTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(bidId[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
 
         uint256 selectedBidId = bidId[0];
         etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -543,7 +551,7 @@ contract StakingManagerTest is TestSetup {
         }
 
         assertEq(address(auctionInstance).balance, 3 ether);
-        stakingManagerInstance.batchRegisterValidators(
+        stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), 
             processedBidIds,
             depositDataArray
         );
@@ -621,9 +629,10 @@ contract StakingManagerTest is TestSetup {
         );
 
         assertEq(address(auctionInstance).balance, 3 ether);
-
+        
+        bytes32 root = _getDepositRoot();
         vm.expectRevert("Array lengths must match");
-        stakingManagerInstance.batchRegisterValidators(
+        stakingManagerInstance.batchRegisterValidators(root, 
             bidIdArray,
             depositDataArray
         );
@@ -678,13 +687,14 @@ contract StakingManagerTest is TestSetup {
             });
         }
 
-        stakingManagerInstance.batchRegisterValidators(
+        stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), 
             processedBidIds,
             depositDataArray
         );
 
+        bytes32 root = _getDepositRoot();
         vm.expectRevert("Incorrect phase");
-        stakingManagerInstance.batchRegisterValidators(
+        stakingManagerInstance.batchRegisterValidators(root, 
             bidIdArray,
             depositDataArray
         );
@@ -748,8 +758,9 @@ contract StakingManagerTest is TestSetup {
 
         assertEq(address(auctionInstance).balance, 3 ether);
 
+        bytes32 root = _getDepositRoot();
         vm.expectRevert("Too many validators");
-        stakingManagerInstance.batchRegisterValidators(
+        stakingManagerInstance.batchRegisterValidators(root, 
             bidIdArray,
             depositDataArray
         );
@@ -839,7 +850,7 @@ contract StakingManagerTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(bidId[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
 
         vm.expectRevert("Incorrect phase");
         stakingManagerInstance.cancelDeposit(bidId[0]);
@@ -976,7 +987,7 @@ contract StakingManagerTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(bidId1[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId1[0], depositData);
 
         vm.stopPrank();
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
@@ -1006,7 +1017,7 @@ contract StakingManagerTest is TestSetup {
             ipfsHashForEncryptedValidatorKey: "test_ipfs"
         });
 
-        stakingManagerInstance.registerValidator(bidId2[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId2[0], depositData);
 
         assertEq(
             BNFTInstance.ownerOf(bidId1[0]),
@@ -1112,6 +1123,6 @@ contract StakingManagerTest is TestSetup {
 
         vm.expectEmit(true, false, false, true);
         emit ValidatorRegistered(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, bidId1[0], "test_ipfs");
-        stakingManagerInstance.registerValidator(bidId1[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId1[0], depositData);
     }
 }

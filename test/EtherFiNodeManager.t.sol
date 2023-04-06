@@ -50,7 +50,7 @@ contract EtherFiNodesManagerTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(bidId[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
         vm.stopPrank();
 
         assertTrue(
