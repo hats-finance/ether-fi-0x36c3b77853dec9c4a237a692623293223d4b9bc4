@@ -325,8 +325,8 @@ contract StakingManager is
 
         emit ValidatorRegistered(
             auctionInterfaceInstance.getBidOwner(_validatorId),
-            staker,
-            staker,
+            _bNftRecipient,
+            _tNftRecipient,
             _validatorId,
             _depositData.publicKey,
             _depositData.ipfsHashForEncryptedValidatorKey
