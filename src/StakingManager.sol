@@ -58,7 +58,10 @@ contract StakingManager is
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(
         address indexed operator,
+        address indexed bNftOwner,
+        address indexed tNftOwner,
         uint256 validatorId,
+        bytes validatorPubKey,
         string ipfsHashForEncryptedValidatorKey
     );
 
@@ -106,7 +109,6 @@ contract StakingManager is
             auctionInterfaceInstance.numberOfActiveBids() >= numberOfDeposits,
             "No bids available at the moment"
         );
-        // require(msg.value == _candidateBidIds.length * stakeAmount, "incorrect amount sent");
 
         uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
         uint256 processedBidIdsCount = 0;
@@ -152,7 +154,17 @@ contract StakingManager is
         uint256 _validatorId,
         DepositData calldata _depositData
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {        
-        return _registerValidator(_validatorId, _depositData);
+        return _registerValidator(_validatorId, msg.sender, msg.sender, _depositData);
+    }
+
+    function registerValidator(
+        bytes32 _depositRoot,
+        uint256 _validatorId,
+        address _bNftRecipient, 
+        address _tNftRecipient,
+        DepositData calldata _depositData
+    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {        
+        return _registerValidator(_validatorId, _bNftRecipient, _tNftRecipient, _depositData);
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
@@ -163,17 +175,11 @@ contract StakingManager is
         uint256[] calldata _validatorId,
         DepositData[] calldata _depositData
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
-        require(
-            _validatorId.length == _depositData.length,
-            "Array lengths must match"
-        );
-        require(
-            _validatorId.length <= maxBatchDepositSize,
-            "Too many validators"
-        );
-
+        require(_validatorId.length == _depositData.length,"Array lengths must match");
+        require(_validatorId.length <= maxBatchDepositSize,"Too many validators");
+        
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], _depositData[x]);
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
         }
     }
 
@@ -266,11 +272,15 @@ contract StakingManager is
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
+    /// @param _bNftRecipient the address to receive the minted B-NFT
+    /// @param _tNftRecipient the address to receive the minted T-NFT
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     /// however, instead of the validator key, it will include the IPFS hash
     /// containing the validator key encrypted by the corresponding node operator's public key
     function _registerValidator(
         uint256 _validatorId,
+        address _bNftRecipient, 
+        address _tNftRecipient,
         DepositData calldata _depositData
     ) internal {
         require(
@@ -308,22 +318,19 @@ contract StakingManager is
         // Let valiadatorId = nftTokenId
         // Mint {T, B}-NFTs to the Staker
         uint256 nftTokenId = _validatorId;
-        TNFTInterfaceInstance.mint(staker, nftTokenId);
-        BNFTInterfaceInstance.mint(staker, nftTokenId);
+        TNFTInterfaceInstance.mint(_tNftRecipient, nftTokenId);
+        BNFTInterfaceInstance.mint(_bNftRecipient, nftTokenId);
 
         auctionInterfaceInstance.processAuctionFeeTransfer(_validatorId);
 
         emit ValidatorRegistered(
             auctionInterfaceInstance.getBidOwner(_validatorId),
+            staker,
+            staker,
             _validatorId,
+            _depositData.publicKey,
             _depositData.ipfsHashForEncryptedValidatorKey
         );
-    }
-
-    function uncheckedInc(uint x) private pure returns (uint) {
-        unchecked {
-            return x + 1;
-        }
     }
 
     /// @notice Update the state of the contract now that a deposit has been made
