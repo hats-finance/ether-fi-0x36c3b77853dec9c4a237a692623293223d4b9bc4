@@ -130,6 +130,7 @@ interface IEtherFiNodesManager {
     ) external payable;
 
     function sendExitRequest(uint256 _validatorId) external;
+    function batchSendExitRequest(uint256[] calldata _validatorIds) external;
 
     function processNodeExit(
         uint256[] calldata _validatorIds,
