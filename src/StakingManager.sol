@@ -141,69 +141,28 @@ contract StakingManager is
         return processedBidIds;
     }
 
+
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     /// however, instead of the validator key, it will include the IPFS hash
     /// containing the validator key encrypted by the corresponding node operator's public key
     function registerValidator(
+        bytes32 _depositRoot,
         uint256 _validatorId,
         DepositData calldata _depositData
-    ) public whenNotPaused nonReentrant {
-        require(
-            nodesManagerIntefaceInstance.phase(_validatorId) ==
-                IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
-            "Incorrect phase"
-        );
-        require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
-        address staker = bidIdToStaker[_validatorId];
-
-        
-        bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
-            .getWithdrawalCredentials(_validatorId);
-        
-        // Deposit to the Beacon Chain
-        depositContractEth2.deposit{value: stakeAmount}(
-            _depositData.publicKey,
-            withdrawalCredentials,
-            _depositData.signature,
-            _depositData.depositDataRoot
-        );
-    
-
-        nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
-        nodesManagerIntefaceInstance.setEtherFiNodePhase(
-            _validatorId,
-            IEtherFiNode.VALIDATOR_PHASE.LIVE
-        );
-        nodesManagerIntefaceInstance
-            .setEtherFiNodeIpfsHashForEncryptedValidatorKey(
-                _validatorId,
-                _depositData.ipfsHashForEncryptedValidatorKey
-            );
-
-        // Let valiadatorId = nftTokenId
-        // Mint {T, B}-NFTs to the Staker
-        uint256 nftTokenId = _validatorId;
-        TNFTInterfaceInstance.mint(staker, nftTokenId);
-        BNFTInterfaceInstance.mint(staker, nftTokenId);
-
-        auctionInterfaceInstance.processAuctionFeeTransfer(_validatorId);
-
-        emit ValidatorRegistered(
-            auctionInterfaceInstance.getBidOwner(_validatorId),
-            _validatorId,
-            _depositData.ipfsHashForEncryptedValidatorKey
-        );
+    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {        
+        return _registerValidator(_validatorId, _depositData);
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function batchRegisterValidators(
+        bytes32 _depositRoot,
         uint256[] calldata _validatorId,
         DepositData[] calldata _depositData
-    ) public whenNotPaused {
+    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
         require(
             _validatorId.length == _depositData.length,
             "Array lengths must match"
@@ -214,7 +173,7 @@ contract StakingManager is
         );
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            registerValidator(_validatorId[x], _depositData[x]);
+            _registerValidator(_validatorId[x], _depositData[x]);
         }
     }
 
@@ -305,6 +264,62 @@ contract StakingManager is
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
+    /// @param _validatorId id of the validator to register
+    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    /// however, instead of the validator key, it will include the IPFS hash
+    /// containing the validator key encrypted by the corresponding node operator's public key
+    function _registerValidator(
+        uint256 _validatorId,
+        DepositData calldata _depositData
+    ) internal {
+        require(
+            nodesManagerIntefaceInstance.phase(_validatorId) ==
+                IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
+            "Incorrect phase"
+        );
+        require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
+        address staker = bidIdToStaker[_validatorId];
+
+        
+        bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
+            .getWithdrawalCredentials(_validatorId);
+        
+        // Deposit to the Beacon Chain
+        depositContractEth2.deposit{value: stakeAmount}(
+            _depositData.publicKey,
+            withdrawalCredentials,
+            _depositData.signature,
+            _depositData.depositDataRoot
+        );
+    
+
+        nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
+        nodesManagerIntefaceInstance.setEtherFiNodePhase(
+            _validatorId,
+            IEtherFiNode.VALIDATOR_PHASE.LIVE
+        );
+        nodesManagerIntefaceInstance
+            .setEtherFiNodeIpfsHashForEncryptedValidatorKey(
+                _validatorId,
+                _depositData.ipfsHashForEncryptedValidatorKey
+            );
+
+        // Let valiadatorId = nftTokenId
+        // Mint {T, B}-NFTs to the Staker
+        uint256 nftTokenId = _validatorId;
+        TNFTInterfaceInstance.mint(staker, nftTokenId);
+        BNFTInterfaceInstance.mint(staker, nftTokenId);
+
+        auctionInterfaceInstance.processAuctionFeeTransfer(_validatorId);
+
+        emit ValidatorRegistered(
+            auctionInterfaceInstance.getBidOwner(_validatorId),
+            _validatorId,
+            _depositData.ipfsHashForEncryptedValidatorKey
+        );
+    }
+
     function uncheckedInc(uint x) private pure returns (uint) {
         unchecked {
             return x + 1;
@@ -373,6 +388,12 @@ contract StakingManager is
             msg.value > 0 && msg.value % stakeAmount == 0,
             "Insufficient staking amount"
         );
+        _;
+    }
+
+    modifier verifyDepositState(bytes32 _depositRoot) {
+        bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
+        require(_depositRoot == onchainDepositRoot, "deposit root changed");
         _;
     }
 }

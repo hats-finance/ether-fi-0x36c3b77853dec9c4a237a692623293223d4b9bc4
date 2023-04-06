@@ -53,7 +53,7 @@ contract TnftTest is TestSetup {
             });
 
         startHoax(alice);
-        stakingManagerInstance.registerValidator(bidIds[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIds[0], depositData);
         vm.stopPrank();
 
         assertEq(TNFTInstance.ownerOf(1), alice);

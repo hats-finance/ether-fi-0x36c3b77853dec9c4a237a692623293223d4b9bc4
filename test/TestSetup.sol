@@ -25,6 +25,7 @@ contract TestSetup is Test {
     UUPSProxy public BNFTProxy;
 
     DepositDataGeneration public depGen;
+    IDepositContract public depositContractEth2;
 
     StakingManager public stakingManagerInstance;
     StakingManager public stakingManagerImplementation;
@@ -131,6 +132,7 @@ contract TestSetup is Test {
         bytes32 deposit_data_root1 = 0x9120ef13437690c401c436a3e454aa08c438eb5908279b0a49dee167fde30399;
         bytes memory pub_key1 = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
         bytes memory signature1 = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
+        depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b);
 
         vm.stopPrank();
     }
@@ -161,5 +163,10 @@ contract TestSetup is Test {
         whiteListedAddresses.push(keccak256(abi.encodePacked(chad)));
 
         root = merkle.getRoot(whiteListedAddresses);
+    }
+
+    function _getDepositRoot() internal returns (bytes32) {
+        bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
+        return onchainDepositRoot;
     }
 }

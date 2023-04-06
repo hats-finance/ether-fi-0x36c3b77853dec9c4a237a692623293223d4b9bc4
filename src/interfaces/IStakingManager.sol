@@ -9,20 +9,15 @@ interface IStakingManager {
         string ipfsHashForEncryptedValidatorKey;
     }
 
-    function initialize(address _auctionAddress) external;
-
     function bidIdToStaker(uint256 id) external view returns (address);
 
-    function batchDepositWithBidIds(
-        uint256[] calldata _candidateBidIds
-    ) external payable returns (uint256[] memory);
+    function initialize(address _auctionAddress) external;
+    function setEtherFiNodesManagerAddress(address _managerAddress) external;
+
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds) external payable returns (uint256[] memory);
 
     function cancelDeposit(uint256 _validatorId) external;
 
-    function registerValidator(
-        uint256 _validatorId,
-        DepositData calldata _depositData
-    ) external;
-
-    function setEtherFiNodesManagerAddress(address _managerAddress) external;
+    function registerValidator(bytes32 _depositRoot, uint256 _validatorId, DepositData calldata _depositData) external;
+    function batchRegisterValidators(bytes32 depositRoot, uint256[] calldata _validatorId,DepositData[] calldata _depositData) external;
 }

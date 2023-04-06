@@ -778,7 +778,7 @@ contract AuctionManagerTest is TestSetup {
             });
 
 
-        stakingManagerInstance.registerValidator(processedBidIds[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), processedBidIds[0], depositData);
 
         assertEq(etherFiNode.balance, 0.5 ether);
     }

@@ -346,7 +346,7 @@ contract SmallScenariosTest is TestSetup {
             });
 
         //Register validator
-        stakingManagerInstance.registerValidator(bidIds1[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIds1[0], depositData);
 
         assertEq(
             TNFTInstance.ownerOf(bidIds1[0]),

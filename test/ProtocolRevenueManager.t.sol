@@ -81,7 +81,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        stakingManagerInstance.registerValidator(bidIds[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIds[0], depositData);
 
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 500000000000000001);
 
@@ -115,7 +115,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        stakingManagerInstance.registerValidator(bidId[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
 
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1750000000000000001);
 
@@ -151,7 +151,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        stakingManagerInstance.registerValidator(bidId[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
         vm.stopPrank();
 
         assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId[0]), 0.5 ether);
@@ -180,7 +180,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        stakingManagerInstance.registerValidator(bidIds2[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIds2[0], depositData);
         vm.stopPrank();
 
         assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId[0]), 0.75 ether);
@@ -228,7 +228,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             });
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
-        stakingManagerInstance.registerValidator(bidId[0], depositData);
+        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
         vm.stopPrank();
 
         // 0.1 ether

@@ -85,7 +85,7 @@ contract RewardsSkimmingTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-            stakingManagerInstance.registerValidator(validatorIds[i], depositDataArray[i]);
+            stakingManagerInstance.registerValidator(_getDepositRoot(), validatorIds[i], depositDataArray[i]);
             vm.stopPrank();
         }
 
