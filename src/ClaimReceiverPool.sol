@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
 import "./EarlyAdopterPool.sol";
+import "./interfaces/ILiquidityPool.sol";
 
 contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
@@ -34,7 +35,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     address private immutable sfrxETH;
     address private immutable cbETH;
 
-    address public liquidityPool;
+    ILiquidityPool public liquidityPool;
 
     bytes32 public merkleRoot;
 
@@ -157,12 +158,17 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         }
     }
 
+    /// @notice Transfers users ether to function in the LP
     function migrateFunds() external {
+        
+        uint256 userBalance = etherBalance[msg.sender];
+        etherBalance[msg.sender] = 0;
 
+        liquidityPool.deposit{value: userBalance}(userPoints[msg.sender]);
     }
 
-    function setLiquidityPoolAddress(address _liquidityPoolAddress) external onlyOwner {
-        liquidityPool = _liquidityPoolAddress;
+    function setLiquidityPool(address _liquidityPoolAddress) external onlyOwner {
+        liquidityPool = ILiquidityPool(_liquidityPoolAddress);
     }
 
     //Pauses the contract
