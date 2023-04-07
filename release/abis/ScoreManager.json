@@ -36,56 +36,12 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "points",
-        "type": "uint256"
-      }
-    ],
-    "name": "FundsMigrated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
         "internalType": "uint8",
         "name": "version",
         "type": "uint8"
       }
     ],
     "name": "Initialized",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "name": "MerkleUpdated",
     "type": "event"
   },
   {
@@ -122,8 +78,27 @@
   },
   {
     "anonymous": false,
-    "inputs": [],
-    "name": "TransferCompleted",
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum IScoreManager.SCORE_TYPE",
+        "name": "score_type",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "data",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ScoreSet",
     "type": "event"
   },
   {
@@ -155,55 +130,17 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_rEthBal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_wstEthBal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_sfrxEthBal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_cbEthBal",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_points",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
-      }
-    ],
-    "name": "deposit",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "",
         "type": "address"
       }
     ],
-    "name": "etherBalance",
+    "name": "allowedCallers",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bool",
         "name": "",
-        "type": "uint256"
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -223,67 +160,8 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_rEth",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_wstEth",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_sfrxEth",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_cbEth",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_scoreManager",
-        "type": "address"
-      }
-    ],
+    "inputs": [],
     "name": "initialize",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "liquidityPool",
-    "outputs": [
-      {
-        "internalType": "contract ILiquidityPool",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "merkleRoot",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "migrateFunds",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -303,32 +181,12 @@
   },
   {
     "inputs": [],
-    "name": "pauseContract",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "paused",
     "outputs": [
       {
         "internalType": "bool",
         "name": "",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "poolFee",
-    "outputs": [
-      {
-        "internalType": "uint24",
-        "name": "",
-        "type": "uint24"
       }
     ],
     "stateMutability": "view",
@@ -355,13 +213,24 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "scoreManager",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "contract IScoreManager",
+        "internalType": "enum IScoreManager.SCORE_TYPE",
+        "name": "",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "name": "scores",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -371,11 +240,39 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_liquidityPoolAddress",
+        "name": "_caller",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_flag",
+        "type": "bool"
       }
     ],
-    "name": "setLiquidityPool",
+    "name": "setCallerStatus",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum IScoreManager.SCORE_TYPE",
+        "name": "_type",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_score",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setScore",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -389,26 +286,6 @@
       }
     ],
     "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "unPauseContract",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "_newMerkle",
-        "type": "bytes32"
-      }
-    ],
-    "name": "updateMerkleRoot",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -442,49 +319,6 @@
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "userPoints",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "userToERC20Deposit",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]
