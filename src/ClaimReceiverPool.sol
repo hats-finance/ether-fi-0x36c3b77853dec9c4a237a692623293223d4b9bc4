@@ -67,6 +67,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
     event TransferCompleted();
     event MerkleUpdated(bytes32, bytes32);
+    event FundsMigrated(address user, uint256 amount, uint256 points);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -160,11 +161,13 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
     /// @notice Transfers users ether to function in the LP
     function migrateFunds() external {
-        
         uint256 userBalance = etherBalance[msg.sender];
+        
+        require(userBalance > 0, "User has no funds");
         etherBalance[msg.sender] = 0;
 
         liquidityPool.deposit{value: userBalance}(userPoints[msg.sender]);
+        emit FundsMigrated(msg.sender, userBalance, userPoints[msg.sender]);
     }
 
     function setLiquidityPool(address _liquidityPoolAddress) external onlyOwner {
