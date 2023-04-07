@@ -23,7 +23,7 @@ contract ScoreManagerTest is TestSetup {
 
     function test_setScoreFailsIfAddressZero() public {
         vm.prank(owner);
-        scoreManagerInstance.switchCallerStatus(alice);
+        scoreManagerInstance.setCallerStatus(alice, true);
 
         vm.prank(alice);
         vm.expectRevert("Cannot be address zero");
@@ -38,7 +38,7 @@ contract ScoreManagerTest is TestSetup {
 
     function test_setScoreWorksCorrectly() public {
         vm.prank(owner);
-        scoreManagerInstance.switchCallerStatus(alice);
+        scoreManagerInstance.setCallerStatus(alice, true);
 
         vm.prank(alice);
         scoreManagerInstance.setScore("category_1", bob, "0x1234");
@@ -49,20 +49,20 @@ contract ScoreManagerTest is TestSetup {
     function test_switchCallerStatusFailsIfAddressZero() public {
         vm.prank(owner);
         vm.expectRevert("Cannot be address zero");
-        scoreManagerInstance.switchCallerStatus(address(0));
+        scoreManagerInstance.setCallerStatus(address(0), true);
     }
 
     function test_switchCallerStatusFailsIfNotOwner() public {
         vm.prank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
-        scoreManagerInstance.switchCallerStatus(alice);
+        scoreManagerInstance.setCallerStatus(alice, true);
     }
 
     function test_switchCallerWorksCorrectly() public {
         assertEq(scoreManagerInstance.allowedCallers(alice), false);
         
         vm.prank(owner);
-        scoreManagerInstance.switchCallerStatus(alice);
+        scoreManagerInstance.setCallerStatus(alice, true);
 
         assertEq(scoreManagerInstance.allowedCallers(alice), true);
     }

@@ -27,7 +27,6 @@ contract ScoreManager is
     //--------------------------------------------------------------------------------------
 
     event ScoreSet(address user, string category, bytes data);
-    event CallerStatusUpdated(address user, bool status);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -52,21 +51,16 @@ contract ScoreManager is
         string memory _name,
         address _user,
         bytes memory _score
-    ) external allowedCaller(msg.sender) notAddressZero(_user) {
+    ) external allowedCaller(msg.sender) NonZeroAddress(_user) {
         scores[_name][_user] = _score;
         emit ScoreSet(_user, _name, _score);
     }
 
     /// @notice updates the status of a caller
     /// @param _caller the address of the contract or EOA that is being updated
-    function switchCallerStatus(address _caller) external onlyOwner notAddressZero(_caller) {
-        if(allowedCallers[_caller] == true) {
-            allowedCallers[_caller] = false;
-        }else {
-            allowedCallers[_caller] = true;
-        }
-
-        emit CallerStatusUpdated(_caller, allowedCallers[_caller]);
+    /// @param _flag the bool value to update by
+    function setCallerStatus(address _caller, bool _flag) external onlyOwner NonZeroAddress(_caller) {
+        allowedCallers[_caller] = _flag;
     }
 
     //--------------------------------------------------------------------------------------
@@ -90,7 +84,7 @@ contract ScoreManager is
         _;
     }
 
-    modifier notAddressZero(address _user) {
+    modifier NonZeroAddress(address _user) {
         require(_user != address(0), "Cannot be address zero");
         _;
     }

@@ -9,6 +9,6 @@ interface IScoreManager {
         bytes memory _score
     ) external;
 
-    function switchCallerStatus(address _caller) external;
+    function setCallerStatus(address _caller, bool _flag) external;
     
 }
