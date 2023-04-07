@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 import "./TestSetup.sol";
+import "../src/interfaces/IScoreManager.sol";
 
 contract ClaimReceiverPoolTest is TestSetup {
     //goerli addresses
@@ -14,7 +15,7 @@ contract ClaimReceiverPoolTest is TestSetup {
     address constant DAI = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
 
     EarlyAdopterPool public adopterPool;
-
+    
     IWETH private weth = IWETH(WETH);
     IERC20 private dai = IERC20(DAI);
 
@@ -29,7 +30,6 @@ contract ClaimReceiverPoolTest is TestSetup {
             address(sfrxEth),
             address(cbEth)
         );
-
         vm.stopPrank();
     }
 
@@ -78,6 +78,7 @@ contract ClaimReceiverPoolTest is TestSetup {
             eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
             0.2 ether
         );
+        assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(652))));
     }
 
     function test_SetLPAddressFailsIfZeroAddress() public {

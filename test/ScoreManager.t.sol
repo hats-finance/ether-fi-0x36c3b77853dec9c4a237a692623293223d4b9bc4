@@ -2,23 +2,11 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
-import "../src/ScoreManager.sol";
 
-contract ScoreManagerTest is TestSetup {
-
-    UUPSProxy public scoreManagerProxy;
-    ScoreManager public scoreManagerInstance;
-    ScoreManager public scoreManagerImplementation;
+contract ScoreManagerTest is TestSetup {    
     
     function setUp() public {
         setUpTests();
-
-        vm.startPrank(owner);
-        scoreManagerImplementation = new ScoreManager();
-        scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
-        scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
-        scoreManagerInstance.initialize();
-        vm.stopPrank();
     }
 
     function test_setScoreFailsIfAddressZero() public {
@@ -27,13 +15,13 @@ contract ScoreManagerTest is TestSetup {
 
         vm.prank(alice);
         vm.expectRevert("Cannot be address zero");
-        scoreManagerInstance.setScore("category_1", address(0), "0x1234");
+        scoreManagerInstance.setScore(earlyAdopterPoolScoreType, address(0), "0x1234");
     }
 
     function test_setScoreFailsIfCallerNotAllowed() public {
         vm.prank(alice);
         vm.expectRevert("Caller not permissioned");
-        scoreManagerInstance.setScore("category_1", address(0), "0x1234");
+        scoreManagerInstance.setScore(earlyAdopterPoolScoreType, address(0), "0x1234");
     }
 
     function test_setScoreWorksCorrectly() public {
@@ -41,9 +29,9 @@ contract ScoreManagerTest is TestSetup {
         scoreManagerInstance.setCallerStatus(alice, true);
 
         vm.prank(alice);
-        scoreManagerInstance.setScore("category_1", bob, "0x1234");
+        scoreManagerInstance.setScore(earlyAdopterPoolScoreType, bob, "0x1234");
 
-        assertEq(scoreManagerInstance.scores("category_1", bob), "0x1234");
+        assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, bob), "0x1234");
     }
 
     function test_switchCallerStatusFailsIfAddressZero() public {

@@ -13,6 +13,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IScoreManager.sol";
 
 contract ClaimReceiverPool is
     Initializable,
@@ -53,7 +54,8 @@ contract ClaimReceiverPool is
         IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
     ILiquidityPool public liquidityPool;
-
+    IScoreManager public scoreManager;
+    
     //Used to track how much was deposited incase we need this information later
     //NB: This is not a balance, but a variable holding the amount of the deposit
     mapping(address => mapping(address => uint256)) public userToERC20Deposit;
@@ -81,12 +83,15 @@ contract ClaimReceiverPool is
         address _rEth,
         address _wstEth,
         address _sfrxEth,
-        address _cbEth
+        address _cbEth,
+        address _scoreManager
     ) external initializer {
         rETH = _rEth;
         wstETH = _wstEth;
         sfrxETH = _sfrxEth;
         cbETH = _cbEth;
+
+        scoreManager = IScoreManager(_scoreManager);
 
         __Pausable_init();
         __Ownable_init();
@@ -175,9 +180,11 @@ contract ClaimReceiverPool is
         etherBalance[msg.sender] = 0;
 
         liquidityPool.deposit{value: userBalance}(
-            msg.sender,
-            userPoints[msg.sender]
+            msg.sender
         );
+        scoreManager.setScore(IScoreManager.SCORE_TYPE.EarlyAdopterPool, 
+                              msg.sender, 
+                              bytes32(abi.encodePacked(userPoints[msg.sender])));
 
         emit FundsMigrated(msg.sender, userBalance, userPoints[msg.sender]);
     }
