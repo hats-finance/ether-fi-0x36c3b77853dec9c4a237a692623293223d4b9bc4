@@ -5,15 +5,22 @@ pragma abicoder v2;
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
-import "./EarlyAdopterPool.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
+contract ClaimReceiverPool is
+    Initializable,
+    PausableUpgradeable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
     using SafeERC20 for IERC20;
 
     //--------------------------------------------------------------------------------------
@@ -30,20 +37,16 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
     //Testnet addresses
     address private immutable wEth = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
-    address private immutable rETH;
-    address private immutable wstETH;
-    address private immutable sfrxETH;
-    address private immutable cbETH;
+    address private rETH;
+    address private wstETH;
+    address private sfrxETH;
+    address private cbETH;
 
     bytes32 public merkleRoot;
-
-    bool public dataTransferCompleted = false;
 
     //SwapRouter but Testnet, although address is actually the same
     ISwapRouter constant router =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-
-    EarlyAdopterPool public adopterPool;
 
     //Goerli Weth address used for unwrapping ERC20 Weth
     IWETH constant wethContract =
@@ -73,19 +76,22 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
-    constructor(
-        address _adopterPool,
+    /// @notice initialize to set variables on deployment
+    function initialize(
         address _rEth,
         address _wstEth,
         address _sfrxEth,
         address _cbEth
-    ) {
+    ) external initializer {
         rETH = _rEth;
         wstETH = _wstEth;
         sfrxETH = _sfrxEth;
         cbETH = _cbEth;
 
-        adopterPool = EarlyAdopterPool(payable(_adopterPool));
+        __Pausable_init();
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
     }
 
     //--------------------------------------------------------------------------------------
@@ -164,11 +170,14 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     /// @notice Transfers users ether to function in the LP
     function migrateFunds() external nonReentrant {
         uint256 userBalance = etherBalance[msg.sender];
-        
+
         require(userBalance > 0, "User has no funds");
         etherBalance[msg.sender] = 0;
 
-        liquidityPool.deposit{value: userBalance}(msg.sender, userPoints[msg.sender]);
+        liquidityPool.deposit{value: userBalance}(
+            msg.sender,
+            userPoints[msg.sender]
+        );
 
         emit FundsMigrated(msg.sender, userBalance, userPoints[msg.sender]);
     }
@@ -176,7 +185,9 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     /// @notice Sets the liquidity pool instance
     /// @dev Only owner can call it and should only be called once unless LP address changes
     /// @param _liquidityPoolAddress the address of the liquidity pool
-    function setLiquidityPool(address _liquidityPoolAddress) external onlyOwner {
+    function setLiquidityPool(
+        address _liquidityPoolAddress
+    ) external onlyOwner {
         require(_liquidityPoolAddress != address(0), "Cannot be address zero");
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
     }
@@ -199,6 +210,10 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         merkleRoot = _newMerkle;
 
         emit MerkleUpdated(oldMerkle, _newMerkle);
+    }
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------
@@ -260,4 +275,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
         amountOut = router.exactInputSingle(params);
     }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 }
