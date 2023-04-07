@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
 import "./EarlyAdopterPool.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "forge-std/console.sol";
 
 contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
@@ -120,6 +121,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
             ),
             "Verification failed"
         );
+
+        userPoints[msg.sender] = _points;
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
 
@@ -166,7 +169,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         require(userBalance > 0, "User has no funds");
         etherBalance[msg.sender] = 0;
 
-        liquidityPool.deposit{value: userBalance}(userPoints[msg.sender]);
+        liquidityPool.deposit{value: userBalance}(msg.sender, userPoints[msg.sender]);
+
         emit FundsMigrated(msg.sender, userBalance, userPoints[msg.sender]);
     }
 

@@ -6,6 +6,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IEETH.sol";
+import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -44,9 +45,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     /// @notice deposit into pool
     /// @dev mints the amount of eTH 1:1 with ETH sent
-    function deposit(uint256 _score) external payable {
-        IEETH(eETH).mint(msg.sender, msg.value);
-        emit Deposit(msg.sender, msg.value);
+    function deposit(address _user, uint256 _score) external payable {
+        IEETH(eETH).mint(_user, msg.value);
+
+        emit Deposit(_user, msg.value);
     }
 
     /// @notice withdraw from pool
