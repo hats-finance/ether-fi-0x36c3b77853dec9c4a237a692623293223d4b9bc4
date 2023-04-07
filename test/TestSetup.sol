@@ -11,6 +11,7 @@ import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
+import "../src/ClaimReceiverPool.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
 import "../lib/murky/src/Merkle.sol";

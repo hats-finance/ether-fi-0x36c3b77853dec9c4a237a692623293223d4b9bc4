@@ -2,6 +2,13 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import "../src/interfaces/IWeth.sol";
+import "../src/interfaces/ILiquidityPool.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import "./TestERC20.sol";
+import "../lib/murky/src/Merkle.sol";
+import "../src/LiquidityPool.sol";
+import "../src/EETH.sol";
 
 contract AuctionManagerV2 is AuctionManager {
     function isUpgraded() public view returns(bool){
@@ -45,16 +52,96 @@ contract EtherFiNodeV2 is EtherFiNode {
     }
 }
 
+contract ClaimReceiverPoolV2 is ClaimReceiverPool {
+    function isUpgraded() public view returns(bool){
+        return true;
+    }
+
+    function updateUserPoints(
+        uint256 _amount
+    ) external {
+        userPoints[msg.sender] = _amount;
+    }
+}
+
 contract UpgradeTest is TestSetup {
 
+    Merkle merkleMigration;
+    bytes32 rootMigration;
+
+    TestERC20 public rETH;
+    TestERC20 public wstETH;
+    TestERC20 public sfrxEth;
+    TestERC20 public cbEth;
+    bytes32[] public dataForVerification;
+
     AuctionManagerV2 public auctionManagerV2Instance;
+    ClaimReceiverPoolV2 public claimReceiverPoolV2Instance;
     BNFTV2 public BNFTV2Instance;
     TNFTV2 public TNFTV2Instance;
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
     ProtocolRevenueManagerV2 public protocolRevenueManagerV2Instance;
     StakingManagerV2 public stakingManagerV2Instance;
+    LiquidityPool public liquidityPoolImplementation;
+    LiquidityPool public liquidityPoolInstance;
+    EETH public eETHImplementation;
+    EETH public eETHInstance;
+    ClaimReceiverPool public claimReceiverPoolImplementation;
+    ClaimReceiverPool public claimReceiverPoolInstance;
+    UUPSProxy public claimReceiverPoolProxy;
+    UUPSProxy public liquidityPoolProxy;
+    UUPSProxy public eETHProxy;
 
     function setUp() public {
+        rETH = new TestERC20("Rocket Pool ETH", "rETH");
+        rETH.mint(alice, 10e18);
+        rETH.mint(bob, 10e18);
+        cbEth = new TestERC20("Staked ETH", "wstETH");
+        cbEth.mint(alice, 10e18);
+        cbEth.mint(bob, 10e18);
+        wstETH = new TestERC20("Coinbase ETH", "cbEth");
+        wstETH.mint(alice, 10e18);
+        wstETH.mint(bob, 10e18);
+        sfrxEth = new TestERC20("Frax ETH", "sfrxEth");
+        sfrxEth.mint(alice, 10e18);
+        sfrxEth.mint(bob, 10e18);
+        
+        vm.startPrank(owner);
+        claimReceiverPoolImplementation = new ClaimReceiverPool();
+        claimReceiverPoolProxy = new UUPSProxy(
+            address(claimReceiverPoolImplementation),
+            ""
+        );
+        claimReceiverPoolInstance = ClaimReceiverPool(
+            payable(address(claimReceiverPoolProxy))
+        );
+        claimReceiverPoolInstance.initialize(
+            address(rETH),
+            address(wstETH),
+            address(sfrxEth),
+            address(cbEth)
+        );
+
+        liquidityPoolImplementation = new LiquidityPool();
+        liquidityPoolProxy = new UUPSProxy(
+            address(liquidityPoolImplementation),
+            ""
+        );
+        liquidityPoolInstance = LiquidityPool(
+            payable(address(liquidityPoolProxy))
+        );
+        liquidityPoolInstance.initialize();
+
+        eETHImplementation = new EETH();
+        eETHProxy = new UUPSProxy(address(eETHImplementation), "");
+        eETHInstance = EETH(address(eETHProxy));
+        eETHInstance.initialize(payable(address(liquidityPoolInstance)));
+
+        claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
+        liquidityPoolInstance.setTokenAddress(address(eETHInstance));
+
+        vm.stopPrank();
+        _merkleSetupMigration();
         setUpTests();
     }
 
@@ -92,6 +179,46 @@ contract UpgradeTest is TestSetup {
         // Check that state is maintained
         assertEq(auctionManagerV2Instance.numberOfActiveBids(), 1);
         assertEq(auctionManagerV2Instance.isUpgraded(), true);
+    }
+
+    function test_CanUpgradeClaimReceiverPool() public {
+
+        bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
+
+        vm.prank(owner);
+        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
+
+        assertEq(address(claimReceiverPoolInstance).balance, 0.2 ether);
+
+        claimReceiverPoolInstance.migrateFunds();
+
+        assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
+        assertEq(claimReceiverPoolInstance.getImplementation(), address(claimReceiverPoolImplementation));
+
+        ClaimReceiverPoolV2 claimReceiverV2Implementation = new ClaimReceiverPoolV2();
+        vm.stopPrank();
+        
+        vm.prank(owner);
+        claimReceiverPoolInstance.upgradeTo(address(claimReceiverV2Implementation));
+        claimReceiverPoolV2Instance = ClaimReceiverPoolV2(address(claimReceiverPoolProxy));
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.startPrank(owner);
+        claimReceiverPoolV2Instance.initialize(
+            address(rETH),
+            address(wstETH),
+            address(sfrxEth),
+            address(cbEth)
+        );
+        claimReceiverPoolV2Instance.updateUserPoints(20000);
+        assertEq(claimReceiverPoolV2Instance.userPoints(owner), 20000);
+        assertEq(claimReceiverPoolV2Instance.getImplementation(), address(claimReceiverV2Implementation));
+
+        // Check that state is maintained
+        assertEq(claimReceiverPoolV2Instance.isUpgraded(), true);
     }
 
     function test_CanUpgradeBNFT() public {
@@ -278,5 +405,46 @@ contract UpgradeTest is TestSetup {
 
         assertEq(safe1V2.isUpgraded(), true);
         assertEq(safe2V2.isUpgraded(), true);
+    }
+
+    function _merkleSetupMigration() internal {
+        merkleMigration = new Merkle();
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    uint256(0),
+                    uint256(10),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(400)
+                )
+            )
+        );
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    uint256(0.2 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(652)
+                )
+            )
+        );
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    uint256(0),
+                    uint256(10),
+                    uint256(0),
+                    uint256(50),
+                    uint256(0),
+                    uint256(9464)
+                )
+            )
+        );
+        rootMigration = merkleMigration.getRoot(dataForVerification);
     }
 }

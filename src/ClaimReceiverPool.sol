@@ -12,6 +12,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
+import "./interfaces/ILiquidityPool.sol";
 
 contract ClaimReceiverPool is
     Initializable,
@@ -36,10 +37,10 @@ contract ClaimReceiverPool is
 
     //Testnet addresses
     address private immutable wEth = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
-    address private immutable rETH;
-    address private immutable wstETH;
-    address private immutable sfrxETH;
-    address private immutable cbETH;
+    address private rETH;
+    address private wstETH;
+    address private sfrxETH;
+    address private cbETH;
 
     bytes32 public merkleRoot;
 
@@ -50,6 +51,8 @@ contract ClaimReceiverPool is
     //Goerli Weth address used for unwrapping ERC20 Weth
     IWETH constant wethContract =
         IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
+
+    ILiquidityPool public liquidityPool;
 
     //Used to track how much was deposited incase we need this information later
     //NB: This is not a balance, but a variable holding the amount of the deposit
@@ -67,6 +70,7 @@ contract ClaimReceiverPool is
 
     event TransferCompleted();
     event MerkleUpdated(bytes32, bytes32);
+    event FundsMigrated(address user, uint256 amount, uint256 points);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -122,6 +126,8 @@ contract ClaimReceiverPool is
             ),
             "Verification failed"
         );
+
+        userPoints[msg.sender] = _points;
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
 
@@ -204,6 +210,10 @@ contract ClaimReceiverPool is
         merkleRoot = _newMerkle;
 
         emit MerkleUpdated(oldMerkle, _newMerkle);
+    }
+
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------
