@@ -2,6 +2,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
+import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
 import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
@@ -75,6 +76,8 @@ contract TestSetup is Test {
     Treasury public treasuryInstance;
     NodeOperatorManager public nodeOperatorManagerInstance;
     
+    IScoreManager.SCORE_TYPE public earlyAdopterPoolScoreType = IScoreManager.SCORE_TYPE.EarlyAdopterPool;
+
     Merkle merkle;
     Merkle merkleMigration;
     bytes32 root;

@@ -2,9 +2,13 @@
 pragma solidity 0.8.13;
 
 interface IScoreManager {
+    // the type of score
+    enum SCORE_TYPE {
+        EarlyAdopterPool
+    }
 
    function setScore(
-        string memory _name,
+        SCORE_TYPE _type,
         address _user,
         bytes32 _score
     ) external;

@@ -7,7 +7,10 @@ import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
+import "./interfaces/IScoreManager.sol";
+
 contract ScoreManager is
+    IScoreManager,
     Initializable,
     OwnableUpgradeable,
     PausableUpgradeable,
@@ -17,7 +20,7 @@ contract ScoreManager is
     // string: indicate the type of the score (like the name of the promotion)
     // address: user wallet address
     // bytes32: a byte stream of user score + etc
-    mapping(string => mapping(address => bytes32)) public scores;
+    mapping(SCORE_TYPE => mapping(address => bytes32)) public scores;
     mapping(address => bool) public allowedCallers;
 
     uint256[32] __gap;
@@ -26,7 +29,7 @@ contract ScoreManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event ScoreSet(address user, string category, bytes32 data);
+    event ScoreSet(address indexed user, SCORE_TYPE score_type, bytes32 data);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -44,16 +47,16 @@ contract ScoreManager is
 
     /// @notice sets the score of a user
     /// @dev will be called by approved contracts that can set reward totals
-    /// @param _name the name of the category
+    /// @param _type the type of the score
     /// @param _user the user to fetch the score for
     /// @param _score the score the user will receive in bytes form
     function setScore(
-        string memory _name,
+        SCORE_TYPE _type,
         address _user,
         bytes32 _score
     ) external allowedCaller(msg.sender) nonZeroAddress(_user) {
-        scores[_name][_user] = _score;
-        emit ScoreSet(_user, _name, _score);
+        scores[_type][_user] = _score;
+        emit ScoreSet(_user, _type, _score);
     }
 
     /// @notice updates the status of a caller
