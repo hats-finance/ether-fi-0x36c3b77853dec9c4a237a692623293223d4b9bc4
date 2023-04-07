@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
 import "./EarlyAdopterPool.sol";
 import "./interfaces/ILiquidityPool.sol";
-import "forge-std/console.sol";
 
 contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
