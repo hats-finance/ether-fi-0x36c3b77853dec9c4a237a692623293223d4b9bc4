@@ -34,6 +34,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     address private immutable sfrxETH;
     address private immutable cbETH;
 
+    address public liquidityPool;
+
     bytes32 public merkleRoot;
 
     bool public dataTransferCompleted = false;
@@ -153,6 +155,14 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
             );
             _ERC20Update(cbETH, _cbEthBal);
         }
+    }
+
+    function migrateFunds() external {
+
+    }
+
+    function setLiquidityPoolAddress(address _liquidityPoolAddress) external onlyOwner {
+        liquidityPool = _liquidityPoolAddress;
     }
 
     //Pauses the contract
