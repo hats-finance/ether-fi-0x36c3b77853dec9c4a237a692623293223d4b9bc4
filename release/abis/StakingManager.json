@@ -150,10 +150,28 @@
         "type": "address"
       },
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "bNftOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "tNftOwner",
+        "type": "address"
+      },
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "validatorId",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "validatorPubKey",
+        "type": "bytes"
       },
       {
         "indexed": false,
@@ -225,6 +243,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_depositRoot",
+        "type": "bytes32"
+      },
       {
         "internalType": "uint256[]",
         "name": "_validatorId",
@@ -474,9 +497,69 @@
   {
     "inputs": [
       {
+        "internalType": "bytes32",
+        "name": "_depositRoot",
+        "type": "bytes32"
+      },
+      {
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes",
+            "name": "publicKey",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "depositDataRoot",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string",
+            "name": "ipfsHashForEncryptedValidatorKey",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct IStakingManager.DepositData",
+        "name": "_depositData",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerValidator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_depositRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_bNftRecipient",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_tNftRecipient",
+        "type": "address"
       },
       {
         "components": [

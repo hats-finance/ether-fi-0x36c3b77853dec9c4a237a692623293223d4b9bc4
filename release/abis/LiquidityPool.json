@@ -147,7 +147,13 @@
     "type": "event"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
     "name": "deposit",
     "outputs": [],
     "stateMutability": "payable",
