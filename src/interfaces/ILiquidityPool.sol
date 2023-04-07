@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
- pragma solidity 0.8.13;
+pragma solidity 0.8.13;
 
- interface ILiquidityPool {
+interface ILiquidityPool {
 
-     function deposit(address _user, uint256 _score) external payable;
+    function deposit(address _user, uint256 _score) external payable;
 
- }
+}
