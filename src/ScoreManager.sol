@@ -26,6 +26,9 @@ contract StakingManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
+    event ScoreSet(address user, string category, bytes data);
+    event CallerStatusUpdated(address user, bool status);
+
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
@@ -44,7 +47,7 @@ contract StakingManager is
     /// @param _name the name of the category
     /// @param _user the user to fetch the score for
     /// @return the score the user has
-    function get(
+    function getScore(
         string memory _name,
         address _user
     ) external view returns (bytes memory) {
@@ -56,12 +59,13 @@ contract StakingManager is
     /// @param _name the name of the category
     /// @param _user the user to fetch the score for
     /// @param _score the score the user will receive in bytes form
-    function set(
+    function setScore(
         string memory _name,
         address _user,
         bytes memory _score
     ) external allowedCaller(msg.sender) {
         scores[_name][_user] = _score;
+        emit ScoreSet(_user, _name, _score);
     }
 
     /// @notice updates the status of a caller
@@ -69,6 +73,7 @@ contract StakingManager is
     /// @param _flag true or false value to update their calling status
     function setCallerStatus(address _caller, bool _flag) external onlyOwner {
         allowedCallers[_caller] = _flag;
+        emit CallerStatusUpdated(_caller, _flag);
     }
 
     //--------------------------------------------------------------------------------------
