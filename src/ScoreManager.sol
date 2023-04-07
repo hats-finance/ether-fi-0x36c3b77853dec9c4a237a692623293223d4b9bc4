@@ -7,7 +7,7 @@ import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract StakingManager is
+contract ScoreManager is
     Initializable,
     OwnableUpgradeable,
     PausableUpgradeable,
@@ -17,8 +17,8 @@ contract StakingManager is
     // string: indicate the type of the score (like the name of the promotion)
     // address: user wallet address
     // bytes256: a byte stream of user score + etc
-    mapping(string => mapping(address => bytes)) scores;
-    mapping(address => bool) allowedCallers;
+    mapping(string => mapping(address => bytes)) public scores;
+    mapping(address => bool) public allowedCallers;
 
     uint256[32] __gap;
 
@@ -86,7 +86,7 @@ contract StakingManager is
     //--------------------------------------------------------------------------------------
 
     modifier allowedCaller(address _caller) {
-        require(allowedCallers[_caller], "now allowed to call");
+        require(allowedCallers[_caller], "Caller not permissioned");
         _;
     }
 
