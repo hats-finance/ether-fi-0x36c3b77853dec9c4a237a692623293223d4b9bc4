@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
 import "./EarlyAdopterPool.sol";
+import "./interfaces/ILiquidityPool.sol";
 
 contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
@@ -48,6 +49,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     IWETH constant wethContract =
         IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
+    ILiquidityPool public liquidityPool;
+
     //Used to track how much was deposited incase we need this information later
     //NB: This is not a balance, but a variable holding the amount of the deposit
     mapping(address => mapping(address => uint256)) public userToERC20Deposit;
@@ -64,6 +67,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
 
     event TransferCompleted();
     event MerkleUpdated(bytes32, bytes32);
+    event FundsMigrated(address user, uint256 amount, uint256 points);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -116,6 +120,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
             ),
             "Verification failed"
         );
+
+        userPoints[msg.sender] = _points;
         if (msg.value > 0) {
             require(etherBalance[msg.sender] == 0, "Already Deposited");
 
@@ -153,6 +159,26 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
             );
             _ERC20Update(cbETH, _cbEthBal);
         }
+    }
+
+    /// @notice Transfers users ether to function in the LP
+    function migrateFunds() external nonReentrant {
+        uint256 userBalance = etherBalance[msg.sender];
+        
+        require(userBalance > 0, "User has no funds");
+        etherBalance[msg.sender] = 0;
+
+        liquidityPool.deposit{value: userBalance}(msg.sender, userPoints[msg.sender]);
+
+        emit FundsMigrated(msg.sender, userBalance, userPoints[msg.sender]);
+    }
+
+    /// @notice Sets the liquidity pool instance
+    /// @dev Only owner can call it and should only be called once unless LP address changes
+    /// @param _liquidityPoolAddress the address of the liquidity pool
+    function setLiquidityPool(address _liquidityPoolAddress) external onlyOwner {
+        require(_liquidityPoolAddress != address(0), "Cannot be address zero");
+        liquidityPool = ILiquidityPool(_liquidityPoolAddress);
     }
 
     //Pauses the contract
