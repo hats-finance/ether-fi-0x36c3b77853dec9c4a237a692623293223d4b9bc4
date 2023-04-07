@@ -63,17 +63,21 @@ contract StakingManager is
         string memory _name,
         address _user,
         bytes memory _score
-    ) external allowedCaller(msg.sender) {
+    ) external allowedCaller(msg.sender) notAddressZero(_user) {
         scores[_name][_user] = _score;
         emit ScoreSet(_user, _name, _score);
     }
 
     /// @notice updates the status of a caller
     /// @param _caller the address of the contract or EOA that is being updated
-    /// @param _flag true or false value to update their calling status
-    function setCallerStatus(address _caller, bool _flag) external onlyOwner {
-        allowedCallers[_caller] = _flag;
-        emit CallerStatusUpdated(_caller, _flag);
+    function switchCallerStatus(address _caller) external onlyOwner notAddressZero(_caller) {
+        if(allowedCallers[_caller] == true) {
+            allowedCallers[_caller] = false;
+        }else {
+            allowedCallers[_caller] = true;
+        }
+
+        emit CallerStatusUpdated(_caller, allowedCallers[_caller]);
     }
 
     //--------------------------------------------------------------------------------------
@@ -94,6 +98,11 @@ contract StakingManager is
 
     modifier allowedCaller(address _caller) {
         require(allowedCallers[_caller], "now allowed to call");
+        _;
+    }
+
+    modifier notAddressZero(address _user) {
+        require(_user != address(0), "Cannot be address zero");
         _;
     }
 }
