@@ -1,38 +1,42 @@
-// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
 import "../src/ClaimReceiverPool.sol";
 import "../src/EarlyAdopterPool.sol";
+import "../src/LiquidityPool.sol";
+import "../src/EETH.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../lib/murky/src/Merkle.sol";
+import "../src/UUPSProxy.sol";
 
 import "./TestERC20.sol";
 
 contract ClaimReceiverPoolTest is Test {
-
     //goerli addresses
     address constant WETH = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
     address constant DAI = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
 
-    ClaimReceiverPool public claimReceiverPool;
+    ClaimReceiverPool public claimReceiverPoolImplementation;
+    ClaimReceiverPool public claimReceiverPoolInstance;
     EarlyAdopterPool public adopterPool;
+    LiquidityPool public liquidityPoolImplementation;
+    LiquidityPool public liquidityPoolInstance;
+    EETH public eETHImplementation;
+    EETH public eETHInstance;
+    UUPSProxy public liquidityPoolProxy;
+    UUPSProxy public eETHProxy;
+    UUPSProxy public claimReceiverPoolProxy;
 
     TestERC20 public rETH;
     TestERC20 public wstETH;
     TestERC20 public sfrxEth;
     TestERC20 public cbEth;
-
     IWETH private weth = IWETH(WETH);
     IERC20 private dai = IERC20(DAI);
-
     bytes32[] public whiteListedAddresses;
     Merkle merkle;
     bytes32 root;
-
     address owner = vm.addr(1);
     address alice = vm.addr(2);
     address bob = vm.addr(3);
@@ -41,19 +45,15 @@ contract ClaimReceiverPoolTest is Test {
         rETH = new TestERC20("Rocket Pool ETH", "rETH");
         rETH.mint(alice, 10e18);
         rETH.mint(bob, 10e18);
-
         cbEth = new TestERC20("Staked ETH", "wstETH");
         cbEth.mint(alice, 10e18);
         cbEth.mint(bob, 10e18);
-
         wstETH = new TestERC20("Coinbase ETH", "cbEth");
         wstETH.mint(alice, 10e18);
         wstETH.mint(bob, 10e18);
-
         sfrxEth = new TestERC20("Frax ETH", "sfrxEth");
         sfrxEth.mint(alice, 10e18);
         sfrxEth.mint(bob, 10e18);
-
         vm.startPrank(owner);
         adopterPool = new EarlyAdopterPool(
             address(rETH),
@@ -61,13 +61,39 @@ contract ClaimReceiverPoolTest is Test {
             address(sfrxEth),
             address(cbEth)
         );
-
-        claimReceiverPool = new ClaimReceiverPool(
+        
+        claimReceiverPoolImplementation = new ClaimReceiverPool();
+        claimReceiverPoolProxy = new UUPSProxy(
+            address(claimReceiverPoolImplementation),
+            ""
+        );
+        claimReceiverPoolInstance = ClaimReceiverPool(
+            payable(address(claimReceiverPoolProxy))
+        );
+        claimReceiverPoolInstance.initialize(
             address(rETH),
             address(wstETH),
             address(sfrxEth),
             address(cbEth)
         );
+
+        liquidityPoolImplementation = new LiquidityPool();
+        liquidityPoolProxy = new UUPSProxy(
+            address(liquidityPoolImplementation),
+            ""
+        );
+        liquidityPoolInstance = LiquidityPool(
+            payable(address(liquidityPoolProxy))
+        );
+        liquidityPoolInstance.initialize();
+
+        eETHImplementation = new EETH();
+        eETHProxy = new UUPSProxy(address(eETHImplementation), "");
+        eETHInstance = EETH(address(eETHProxy));
+        eETHInstance.initialize(payable(address(liquidityPoolInstance)));
+
+        claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
+        liquidityPoolInstance.setTokenAddress(address(eETHInstance));
 
         _merkleSetup();
 
@@ -78,44 +104,101 @@ contract ClaimReceiverPoolTest is Test {
         bytes32[] memory proof1 = merkle.getProof(whiteListedAddresses, 0);
         bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 0);
         bytes32[] memory proof3 = merkle.getProof(whiteListedAddresses, 0);
+        vm.prank(owner);
+        claimReceiverPoolInstance.updateMerkleRoot(root);
+        vm.expectRevert("Verification failed");
+        claimReceiverPoolInstance.deposit{value: 0 ether}(1, 0, 0, 0, 400, proof1);
+        vm.expectRevert("Verification failed");
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 10, 652, proof2);
+
+        vm.expectRevert("Verification failed");
+        claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3);
+    }
+
+    function test_MigrateFailsIfUserHasNoBalance() public {
+        vm.prank(alice);
+        vm.expectRevert("User has no funds");
+        claimReceiverPoolInstance.migrateFunds();
+    }
+
+    function test_MigrateWorksCorrectly() public {
+        bytes32[] memory proof1 = merkle.getProof(whiteListedAddresses, 1);
 
         vm.prank(owner);
-        claimReceiverPool.updateMerkleRoot(root);
+        claimReceiverPoolInstance.updateMerkleRoot(root);
 
-        vm.expectRevert("Verification failed");
-        claimReceiverPool.deposit{value: 0 ether}(1, 0, 0, 0, 400, proof1);
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
 
-        vm.expectRevert("Verification failed");
-        claimReceiverPool.deposit{value: 0.2 ether}(0, 0, 0, 10, 652, proof2);
+        assertEq(address(claimReceiverPoolInstance).balance, 0.2 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0 ether);
+        assertEq(
+            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
+            0
+        );
 
-        vm.expectRevert("Verification failed");
-        claimReceiverPool.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3);
+        claimReceiverPoolInstance.migrateFunds();
 
+        assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0.2 ether);
+        assertEq(
+            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
+            0.2 ether
+        );
+    }
+
+    function test_SetLPAddressFailsIfZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert("Cannot be address zero");
+        claimReceiverPoolInstance.setLiquidityPool(address(0));
+    }
+
+    function test_SetLPAddressFailsIfNonOwner() public {
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
     }
 
     function _merkleSetup() internal {
         merkle = new Merkle();
-
         whiteListedAddresses.push(
             keccak256(
-                abi.encodePacked(uint256(0), uint256(10), uint256(0), uint256(0), uint256(0), uint256(400))
+                abi.encodePacked(
+                    uint256(0),
+                    uint256(10),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(400)
+                )
             )
         );
         whiteListedAddresses.push(
             keccak256(
-                abi.encodePacked(uint256(0.2 ether), uint256(0), uint256(0), uint256(0), uint256(0), uint256(652))
+                abi.encodePacked(
+                    uint256(0.2 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(652)
+                )
             )
         );
         whiteListedAddresses.push(
             keccak256(
-                abi.encodePacked(uint256(0), uint256(10), uint256(0), uint256(50), uint256(0), uint256(9464))
+                abi.encodePacked(
+                    uint256(0),
+                    uint256(10),
+                    uint256(0),
+                    uint256(50),
+                    uint256(0),
+                    uint256(9464)
+                )
             )
         );
-
         whiteListedAddresses.push(keccak256(abi.encodePacked(alice)));
-
         whiteListedAddresses.push(keccak256(abi.encodePacked(bob)));
-
         root = merkle.getRoot(whiteListedAddresses);
     }
-} 
+}

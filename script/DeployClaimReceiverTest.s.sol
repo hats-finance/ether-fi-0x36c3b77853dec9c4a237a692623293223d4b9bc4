@@ -7,6 +7,7 @@ import "../test/TestERC20.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../lib/murky/src/Merkle.sol";
+import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployClaimReceiverTestScript is Script {
@@ -16,6 +17,10 @@ contract DeployClaimReceiverTestScript is Script {
         address earlyAdopterPool;
         address receiverPool;
     }
+
+    ClaimReceiverPool public claimReceiverPoolImplementation;
+    ClaimReceiverPool public claimReceiverPoolInstance;
+    UUPSProxy public claimReceiverPoolProxy;
 
     addresses addressStruct;
 
@@ -35,7 +40,15 @@ contract DeployClaimReceiverTestScript is Script {
             address(cbETH)
         );
 
-        ClaimReceiverPool receiverPool = new ClaimReceiverPool(
+        claimReceiverPoolImplementation = new ClaimReceiverPool();
+        claimReceiverPoolProxy = new UUPSProxy(
+            address(claimReceiverPoolImplementation),
+            ""
+        );
+        claimReceiverPoolInstance = ClaimReceiverPool(
+            payable(address(claimReceiverPoolProxy))
+        );
+        claimReceiverPoolInstance.initialize(
             address(rETH),
             address(wstETH),
             address(sfrxETH),
@@ -46,7 +59,7 @@ contract DeployClaimReceiverTestScript is Script {
 
         addressStruct = addresses({
             earlyAdopterPool: address(earlyAdopterPool),
-            receiverPool: address(receiverPool)
+            receiverPool: address(claimReceiverPoolInstance)
         });
 
         writeVersionFile();
