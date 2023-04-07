@@ -44,7 +44,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     /// @notice deposit into pool
     /// @dev mints the amount of eTH 1:1 with ETH sent
-    function deposit(address _user, uint256 _score) external payable {
+    function deposit(address _user) external payable {
         IEETH(eETH).mint(_user, msg.value);
 
         emit Deposit(_user, msg.value);

@@ -14,6 +14,7 @@ import "../src/Treasury.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
+import "../src/ScoreManager.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
 import "../lib/murky/src/Merkle.sol";
@@ -35,7 +36,8 @@ contract TestSetup is Test {
     UUPSProxy public claimReceiverPoolProxy;
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public eETHProxy;
-    
+    UUPSProxy public scoreManagerProxy;
+
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
 
@@ -50,6 +52,9 @@ contract TestSetup is Test {
 
     EtherFiNodesManager public managerInstance;
     EtherFiNodesManager public managerImplementation;
+
+    ScoreManager public scoreManagerInstance;
+    ScoreManager public scoreManagerImplementation;
 
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
@@ -136,6 +141,11 @@ contract TestSetup is Test {
             address(protocolRevenueManagerInstance)
         );
 
+        scoreManagerImplementation = new ScoreManager();
+        scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
+        scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
+        scoreManagerInstance.initialize();
+
         node = new EtherFiNode();
 
         rETH = new TestERC20("Rocket Pool ETH", "rETH");
@@ -163,7 +173,8 @@ contract TestSetup is Test {
             address(rETH),
             address(wstETH),
             address(sfrxEth),
-            address(cbEth)
+            address(cbEth),
+            address(scoreManagerInstance)
         );
 
         liquidityPoolImplementation = new LiquidityPool();
@@ -196,6 +207,7 @@ contract TestSetup is Test {
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
+        scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
         
         depGen = new DepositDataGeneration();
 

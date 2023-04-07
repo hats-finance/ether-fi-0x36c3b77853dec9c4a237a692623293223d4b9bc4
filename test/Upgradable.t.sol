@@ -142,7 +142,8 @@ contract UpgradeTest is TestSetup {
             address(rETH),
             address(wstETH),
             address(sfrxEth),
-            address(cbEth)
+            address(cbEth),
+            address(scoreManagerInstance)
         );
         claimReceiverPoolV2Instance.updateUserPoints(20000);
         assertEq(claimReceiverPoolV2Instance.userPoints(owner), 20000);

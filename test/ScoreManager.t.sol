@@ -2,23 +2,11 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
-import "../src/ScoreManager.sol";
 
-contract ScoreManagerTest is TestSetup {
-
-    UUPSProxy public scoreManagerProxy;
-    ScoreManager public scoreManagerInstance;
-    ScoreManager public scoreManagerImplementation;
+contract ScoreManagerTest is TestSetup {    
     
     function setUp() public {
         setUpTests();
-
-        vm.startPrank(owner);
-        scoreManagerImplementation = new ScoreManager();
-        scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
-        scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
-        scoreManagerInstance.initialize();
-        vm.stopPrank();
     }
 
     function test_setScoreFailsIfAddressZero() public {
