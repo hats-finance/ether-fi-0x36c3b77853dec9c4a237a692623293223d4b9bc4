@@ -43,17 +43,6 @@ contract StakingManager is
         __ReentrancyGuard_init();
     }
 
-    /// @notice fetches the score in bytes form for a specific user and for a specific reward category
-    /// @param _name the name of the category
-    /// @param _user the user to fetch the score for
-    /// @return the score the user has
-    function getScore(
-        string memory _name,
-        address _user
-    ) external view returns (bytes memory) {
-        return scores[_name][_user];
-    }
-
     /// @notice sets the score of a user
     /// @dev will be called by approved contracts that can set reward totals
     /// @param _name the name of the category
