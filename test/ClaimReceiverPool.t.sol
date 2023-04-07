@@ -139,6 +139,18 @@ contract ClaimReceiverPoolTest is Test {
         assertEq(eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0.2 ether);
     }
 
+    function test_SetLPAddressFailsIfZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert("Cannot be address zero");
+        claimReceiverPool.setLiquidityPool(address(0));
+    }
+
+    function test_SetLPAddressFailsIfNonOwner() public {
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        claimReceiverPool.setLiquidityPool(address(liquidityPoolInstance));
+    }
+
     function _merkleSetup() internal {
         merkle = new Merkle();
 

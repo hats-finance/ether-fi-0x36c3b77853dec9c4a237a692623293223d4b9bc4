@@ -162,7 +162,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     }
 
     /// @notice Transfers users ether to function in the LP
-    function migrateFunds() external {
+    function migrateFunds() external nonReentrant {
         uint256 userBalance = etherBalance[msg.sender];
         
         require(userBalance > 0, "User has no funds");
@@ -177,6 +177,7 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     /// @dev Only owner can call it and should only be called once unless LP address changes
     /// @param _liquidityPoolAddress the address of the liquidity pool
     function setLiquidityPool(address _liquidityPoolAddress) external onlyOwner {
+        require(_liquidityPoolAddress != address(0), "Cannot be address zero");
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
     }
 
