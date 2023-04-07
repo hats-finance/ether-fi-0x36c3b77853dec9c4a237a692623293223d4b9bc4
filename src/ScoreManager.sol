@@ -16,8 +16,8 @@ contract ScoreManager is
 {
     // string: indicate the type of the score (like the name of the promotion)
     // address: user wallet address
-    // bytes256: a byte stream of user score + etc
-    mapping(string => mapping(address => bytes)) public scores;
+    // bytes32: a byte stream of user score + etc
+    mapping(string => mapping(address => bytes32)) public scores;
     mapping(address => bool) public allowedCallers;
 
     uint256[32] __gap;
@@ -26,7 +26,7 @@ contract ScoreManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event ScoreSet(address user, string category, bytes data);
+    event ScoreSet(address user, string category, bytes32 data);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -50,8 +50,8 @@ contract ScoreManager is
     function setScore(
         string memory _name,
         address _user,
-        bytes memory _score
-    ) external allowedCaller(msg.sender) NonZeroAddress(_user) {
+        bytes32 _score
+    ) external allowedCaller(msg.sender) nonZeroAddress(_user) {
         scores[_name][_user] = _score;
         emit ScoreSet(_user, _name, _score);
     }
@@ -59,7 +59,7 @@ contract ScoreManager is
     /// @notice updates the status of a caller
     /// @param _caller the address of the contract or EOA that is being updated
     /// @param _flag the bool value to update by
-    function setCallerStatus(address _caller, bool _flag) external onlyOwner NonZeroAddress(_caller) {
+    function setCallerStatus(address _caller, bool _flag) external onlyOwner nonZeroAddress(_caller) {
         allowedCallers[_caller] = _flag;
     }
 
@@ -88,7 +88,7 @@ contract ScoreManager is
         _;
     }
 
-    modifier NonZeroAddress(address _user) {
+    modifier nonZeroAddress(address _user) {
         require(_user != address(0), "Cannot be address zero");
         _;
     }

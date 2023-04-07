@@ -182,7 +182,7 @@ contract ClaimReceiverPool is
         liquidityPool.deposit{value: userBalance}(
             msg.sender
         );
-        scoreManager.setScore("Claim Receiver Pool", msg.sender, abi.encodePacked(address(this),  userPoints[msg.sender]));
+        scoreManager.setScore("EarlyAdopterPool", msg.sender, bytes32(abi.encodePacked(userPoints[msg.sender])));
 
         emit FundsMigrated(msg.sender, userBalance, userPoints[msg.sender]);
     }

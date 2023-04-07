@@ -6,7 +6,7 @@ interface IScoreManager {
    function setScore(
         string memory _name,
         address _user,
-        bytes memory _score
+        bytes32 _score
     ) external;
 
     function setCallerStatus(address _caller, bool _flag) external;

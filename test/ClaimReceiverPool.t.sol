@@ -78,7 +78,7 @@ contract ClaimReceiverPoolTest is TestSetup {
             eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
             0.2 ether
         );
-        assertEq(scoreManagerInstance.scores("Claim Receiver Pool", 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), abi.encodePacked(address(claimReceiverPoolInstance), uint256(652)));
+        assertEq(scoreManagerInstance.scores("EarlyAdopterPool", 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(652))));
     }
 
     function test_SetLPAddressFailsIfZeroAddress() public {
