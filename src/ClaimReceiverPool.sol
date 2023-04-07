@@ -35,8 +35,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     address private immutable sfrxETH;
     address private immutable cbETH;
 
-    ILiquidityPool public liquidityPool;
-
     bytes32 public merkleRoot;
 
     bool public dataTransferCompleted = false;
@@ -50,6 +48,8 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //Goerli Weth address used for unwrapping ERC20 Weth
     IWETH constant wethContract =
         IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
+
+    ILiquidityPool public liquidityPool;
 
     //Used to track how much was deposited incase we need this information later
     //NB: This is not a balance, but a variable holding the amount of the deposit
@@ -170,6 +170,9 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         emit FundsMigrated(msg.sender, userBalance, userPoints[msg.sender]);
     }
 
+    /// @notice Sets the liquidity pool instance
+    /// @dev Only owner can call it and should only be called once unless LP address changes
+    /// @param _liquidityPoolAddress the address of the liquidity pool
     function setLiquidityPool(address _liquidityPoolAddress) external onlyOwner {
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
     }
