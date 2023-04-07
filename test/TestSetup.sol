@@ -12,11 +12,19 @@ import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../src/ClaimReceiverPool.sol";
+import "../src/LiquidityPool.sol";
+import "../src/EETH.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
 import "../lib/murky/src/Merkle.sol";
+import "./TestERC20.sol";
 
 contract TestSetup is Test {
+
+    TestERC20 public rETH;
+    TestERC20 public wstETH;
+    TestERC20 public sfrxEth;
+    TestERC20 public cbEth;
 
     UUPSProxy public auctionManagerProxy;
     UUPSProxy public stakingManagerProxy;
@@ -24,7 +32,10 @@ contract TestSetup is Test {
     UUPSProxy public protocolRevenueManagerProxy;
     UUPSProxy public TNFTProxy;
     UUPSProxy public BNFTProxy;
-
+    UUPSProxy public claimReceiverPoolProxy;
+    UUPSProxy public liquidityPoolProxy;
+    UUPSProxy public eETHProxy;
+    
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
 
@@ -46,13 +57,25 @@ contract TestSetup is Test {
     BNFT public BNFTImplementation;
     BNFT public BNFTInstance;
 
+    LiquidityPool public liquidityPoolImplementation;
+    LiquidityPool public liquidityPoolInstance;
+    
+    EETH public eETHImplementation;
+    EETH public eETHInstance;
+    
+    ClaimReceiverPool public claimReceiverPoolImplementation;
+    ClaimReceiverPool public claimReceiverPoolInstance;
+
     EtherFiNode public node;
     Treasury public treasuryInstance;
     NodeOperatorManager public nodeOperatorManagerInstance;
     
     Merkle merkle;
+    Merkle merkleMigration;
     bytes32 root;
+    bytes32 rootMigration;
     bytes32[] public whiteListedAddresses;
+    bytes32[] public dataForVerification;
     IStakingManager.DepositData public test_data;
     IStakingManager.DepositData public test_data_2;
 
@@ -115,8 +138,52 @@ contract TestSetup is Test {
 
         node = new EtherFiNode();
 
+        rETH = new TestERC20("Rocket Pool ETH", "rETH");
+        rETH.mint(alice, 10e18);
+        rETH.mint(bob, 10e18);
+        cbEth = new TestERC20("Staked ETH", "wstETH");
+        cbEth.mint(alice, 10e18);
+        cbEth.mint(bob, 10e18);
+        wstETH = new TestERC20("Coinbase ETH", "cbEth");
+        wstETH.mint(alice, 10e18);
+        wstETH.mint(bob, 10e18);
+        sfrxEth = new TestERC20("Frax ETH", "sfrxEth");
+        sfrxEth.mint(alice, 10e18);
+        sfrxEth.mint(bob, 10e18);
+        
+        claimReceiverPoolImplementation = new ClaimReceiverPool();
+        claimReceiverPoolProxy = new UUPSProxy(
+            address(claimReceiverPoolImplementation),
+            ""
+        );
+        claimReceiverPoolInstance = ClaimReceiverPool(
+            payable(address(claimReceiverPoolProxy))
+        );
+        claimReceiverPoolInstance.initialize(
+            address(rETH),
+            address(wstETH),
+            address(sfrxEth),
+            address(cbEth)
+        );
+
+        liquidityPoolImplementation = new LiquidityPool();
+        liquidityPoolProxy = new UUPSProxy(
+            address(liquidityPoolImplementation),
+            ""
+        );
+        liquidityPoolInstance = LiquidityPool(
+            payable(address(liquidityPoolProxy))
+        );
+        liquidityPoolInstance.initialize();
+
+        eETHImplementation = new EETH();
+        eETHProxy = new UUPSProxy(address(eETHImplementation), "");
+        eETHInstance = EETH(address(eETHProxy));
+        eETHInstance.initialize(payable(address(liquidityPoolInstance)));
+
         // Setup dependencies
         _merkleSetup();
+        _merkleSetupMigration();
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
         nodeOperatorManagerInstance.updateMerkleRoot(root);
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
@@ -127,7 +194,9 @@ contract TestSetup is Test {
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
-
+        claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
+        liquidityPoolInstance.setTokenAddress(address(eETHInstance));
+        
         depGen = new DepositDataGeneration();
 
         bytes32 deposit_data_root1 = 0x9120ef13437690c401c436a3e454aa08c438eb5908279b0a49dee167fde30399;
@@ -164,6 +233,47 @@ contract TestSetup is Test {
         whiteListedAddresses.push(keccak256(abi.encodePacked(chad)));
 
         root = merkle.getRoot(whiteListedAddresses);
+    }
+
+    function _merkleSetupMigration() internal {
+        merkleMigration = new Merkle();
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    uint256(0),
+                    uint256(10),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(400)
+                )
+            )
+        );
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    uint256(0.2 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(652)
+                )
+            )
+        );
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    uint256(0),
+                    uint256(10),
+                    uint256(0),
+                    uint256(50),
+                    uint256(0),
+                    uint256(9464)
+                )
+            )
+        );
+        rootMigration = merkleMigration.getRoot(dataForVerification);
     }
 
     function _getDepositRoot() internal returns (bytes32) {
