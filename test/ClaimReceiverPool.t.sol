@@ -63,7 +63,6 @@ contract ClaimReceiverPoolTest is Test {
         );
 
         claimReceiverPool = new ClaimReceiverPool(
-            address(adopterPool),
             address(rETH),
             address(wstETH),
             address(sfrxEth),

@@ -36,7 +36,6 @@ contract DeployClaimReceiverTestScript is Script {
         );
 
         ClaimReceiverPool receiverPool = new ClaimReceiverPool(
-            address(earlyAdopterPool),
             address(rETH),
             address(wstETH),
             address(sfrxETH),

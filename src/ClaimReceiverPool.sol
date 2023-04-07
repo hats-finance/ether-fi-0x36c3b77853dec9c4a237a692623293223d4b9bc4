@@ -40,8 +40,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     ISwapRouter constant router =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
-    EarlyAdopterPool public adopterPool;
-
     //Goerli Weth address used for unwrapping ERC20 Weth
     IWETH constant wethContract =
         IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
@@ -68,7 +66,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
     //--------------------------------------------------------------------------------------
 
     constructor(
-        address _adopterPool,
         address _rEth,
         address _wstEth,
         address _sfrxEth,
@@ -78,8 +75,6 @@ contract ClaimReceiverPool is Ownable, ReentrancyGuard, Pausable {
         wstETH = _wstEth;
         sfrxETH = _sfrxEth;
         cbETH = _cbEth;
-
-        adopterPool = EarlyAdopterPool(payable(_adopterPool));
     }
 
     //--------------------------------------------------------------------------------------
