@@ -48,12 +48,6 @@ contract ClaimReceiverPoolTest is TestSetup {
         claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3);
     }
 
-    function test_MigrateFailsIfUserHasNoBalance() public {
-        vm.prank(alice);
-        vm.expectRevert("User has no funds");
-        claimReceiverPoolInstance.migrateFunds();
-    }
-
     function test_MigrateWorksCorrectly() public {
         bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
 
@@ -63,15 +57,6 @@ contract ClaimReceiverPoolTest is TestSetup {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
 
-        assertEq(address(claimReceiverPoolInstance).balance, 0.2 ether);
-        assertEq(address(liquidityPoolInstance).balance, 0 ether);
-        assertEq(
-            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
-            0
-        );
-
-        claimReceiverPoolInstance.migrateFunds();
-
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0.2 ether);
         assertEq(
@@ -79,6 +64,9 @@ contract ClaimReceiverPoolTest is TestSetup {
             0.2 ether
         );
         assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(652))));
+
+        vm.expectRevert("Already Deposited");
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
     }
 
     function test_SetLPAddressFailsIfZeroAddress() public {
