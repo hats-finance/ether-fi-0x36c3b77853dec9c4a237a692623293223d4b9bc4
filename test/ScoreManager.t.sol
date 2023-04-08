@@ -22,6 +22,9 @@ contract ScoreManagerTest is TestSetup {
         vm.prank(alice);
         vm.expectRevert("Caller not permissioned");
         scoreManagerInstance.setScore(earlyAdopterPoolScoreType, address(0), "0x1234");
+
+        vm.expectRevert("Caller not permissioned");
+        scoreManagerInstance.setTotalScore(earlyAdopterPoolScoreType, "0x1234");
     }
 
     function test_setScoreWorksCorrectly() public {

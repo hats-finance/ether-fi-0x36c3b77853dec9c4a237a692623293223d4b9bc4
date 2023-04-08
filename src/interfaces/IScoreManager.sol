@@ -13,6 +13,11 @@ interface IScoreManager {
         bytes32 _score
     ) external;
 
+    function setTotalScore(
+        SCORE_TYPE _type,
+        bytes32 _totalScore
+    ) external;
+
     function setCallerStatus(address _caller, bool _flag) external;
     
 }

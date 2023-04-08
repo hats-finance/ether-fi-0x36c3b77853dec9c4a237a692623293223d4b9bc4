@@ -17,10 +17,15 @@ contract ScoreManager is
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
-    // string: indicate the type of the score (like the name of the promotion)
+    // SCORE_TYPE: the type of the score
     // address: user wallet address
     // bytes32: a byte stream of user score + etc
     mapping(SCORE_TYPE => mapping(address => bytes32)) public scores;
+
+    // SCORE_TYPE: the type of the score
+    // bytes32: a byte stream of aggregated info of users' scores (e.g., total sum)
+    mapping(SCORE_TYPE => bytes32) public totalScores;
+
     mapping(address => bool) public allowedCallers;
 
     uint256[32] __gap;
@@ -56,7 +61,16 @@ contract ScoreManager is
         bytes32 _score
     ) external allowedCaller(msg.sender) nonZeroAddress(_user) {
         scores[_type][_user] = _score;
-        emit ScoreSet(_user, _type, _score);
+    }
+
+    /// @notice sets the total score of a score type
+    /// @param _type the type of the score
+    /// @param _totalScore the total score
+    function setTotalScore(
+        SCORE_TYPE _type,
+        bytes32 _totalScore
+    ) external allowedCaller(msg.sender) {
+        totalScores[_type] = _totalScore;
     }
 
     /// @notice updates the status of a caller
