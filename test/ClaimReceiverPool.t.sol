@@ -38,6 +38,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         bytes32[] memory proof2 = merkle.getProof(dataForVerification, 1);
         bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
         vm.prank(owner);
+
         vm.expectRevert("Verification failed");
         claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1);
         vm.expectRevert("Verification failed");
@@ -50,6 +51,9 @@ contract ClaimReceiverPoolTest is TestSetup {
         bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
 
         vm.prank(owner);
+
+        assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.totalScores(earlyAdopterPoolScoreType), bytes32(abi.encodePacked(uint256(0))));
 
         assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
         assertEq(scoreManagerInstance.totalScores(earlyAdopterPoolScoreType), bytes32(abi.encodePacked(uint256(0))));
