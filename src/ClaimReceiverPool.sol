@@ -134,9 +134,16 @@ contract ClaimReceiverPool is
         _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal);
         _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal);
 
+        bytes32 totalScore32 = scoreManager.totalScores(IScoreManager.SCORE_TYPE.EarlyAdopterPool);
+        uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
+        totalScore += _points;
+
         scoreManager.setScore(IScoreManager.SCORE_TYPE.EarlyAdopterPool, 
                         msg.sender, 
                         bytes32(abi.encodePacked(_points)));
+        scoreManager.setTotalScore(IScoreManager.SCORE_TYPE.EarlyAdopterPool, 
+                                   bytes32(abi.encodePacked(totalScore)));
+                        
         liquidityPool.deposit{value: _ethAmount}(msg.sender);
         
         emit FundsMigrated(msg.sender, _ethAmount, _points);
