@@ -16,10 +16,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    // TODO replace the below with the storage in ScoreManager
-    mapping(address => uint256) scores; // ScoreManager.scores
-    uint256 totalScores; // ScoreManager.totalScores
-
     IEETH eETH; 
     IStakingManager stakingManager; 
     IEtherFiNodesManager nodesManager; 
@@ -28,7 +24,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     mapping(uint256 => bool) validators;
     uint256 accruedSlashingPenalties;
     uint256 accruedEapRewards;
-    uint256 bufferedEth;
 
     uint64  numValidators;
 
@@ -85,8 +80,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (eETH.totalShares() > 0) {
             staked = (getTotalPooledEther() * eETH.shares(_user)) / eETH.totalShares();
         }
-        if (totalScores > 0) {
-            boosted = (accruedEapRewards * scores[_user]) / totalScores;
+        if (_totalEapScores() > 0) {
+            boosted = (accruedEapRewards * _eapScore(_user)) / _totalEapScores();
         }
         return staked + boosted;
     }
@@ -133,6 +128,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit TokenAddressChanged(_eETH);
     }
 
+    function setScoreManager(address _address) external onlyOwner {
+        scoreManager = IScoreManager(_address);
+    }
+
+
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -143,6 +143,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             return 0;
         }
         return (_amount * eETH.totalShares()) / totalPooledEther;
+    }
+
+    function _totalEapScores() internal view returns (uint256) {
+        bytes32 totalScore32 = scoreManager.totalScores(IScoreManager.SCORE_TYPE.EarlyAdopterPool);
+        uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
+        return totalScore;
+    }
+
+    function _eapScore(address _user) internal view returns (uint256) {
+        bytes32 score32 = scoreManager.scores(IScoreManager.SCORE_TYPE.EarlyAdopterPool, _user);
+        uint256 score = abi.decode(bytes.concat(score32), (uint256));
+        return score;
     }
 
     function _authorizeUpgrade(

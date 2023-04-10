@@ -73,4 +73,5 @@ contract LiquidityPoolTest is TestSetup {
         vm.expectRevert();
         liquidityPoolNoToken.deposit{value: 2 ether}(alice);
     }
+
 }
