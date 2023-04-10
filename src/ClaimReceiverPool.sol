@@ -56,16 +56,6 @@ contract ClaimReceiverPool is
     ILiquidityPool public liquidityPool;
     IScoreManager public scoreManager;
     
-    //Used to track how much was deposited incase we need this information later
-    //NB: This is not a balance, but a variable holding the amount of the deposit
-    mapping(address => mapping(address => uint256)) public userToERC20Deposit;
-
-    //Every users ether balance
-    mapping(address => uint256) public etherBalance;
-
-    //Hodling how many points a user has
-    mapping(address => uint256) public userPoints;
-
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -104,6 +94,7 @@ contract ClaimReceiverPool is
     //--------------------------------------------------------------------------------------
 
     /// @notice Allows user to deposit into the conversion pool
+    /// @notice Transfers users ether to function in the LP
     /// @dev The deposit amount must be the same as what they deposited into the EAP
     /// @param _rEthBal balance of the token to be sent in
     /// @param _wstEthBal balance of the token to be sent in
@@ -131,62 +122,24 @@ contract ClaimReceiverPool is
             ),
             "Verification failed"
         );
+        require(scoreManager.scores(
+                    IScoreManager.SCORE_TYPE.EarlyAdopterPool, 
+                    msg.sender) == bytes32(0), "Already Deposited");
+        require(_points > 0, "You don't have any point to claim");
 
-        userPoints[msg.sender] = _points;
-        if (msg.value > 0) {
-            require(etherBalance[msg.sender] == 0, "Already Deposited");
+        uint256 _ethAmount = 0;
+        _ethAmount += msg.value;
+        _ethAmount += _swapERC20ForETH(rETH, _rEthBal);
+        _ethAmount += _swapERC20ForETH(wstETH, _wstEthBal);
+        _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal);
+        _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal);
 
-            etherBalance[msg.sender] += msg.value;
-        }
-
-        if (_rEthBal > 0) {
-            require(
-                userToERC20Deposit[msg.sender][rETH] == 0,
-                "Already Deposited"
-            );
-            _ERC20Update(rETH, _rEthBal);
-        }
-
-        if (_wstEthBal > 0) {
-            require(
-                userToERC20Deposit[msg.sender][wstETH] == 0,
-                "Already Deposited"
-            );
-            _ERC20Update(wstETH, _wstEthBal);
-        }
-
-        if (_sfrxEthBal > 0) {
-            require(
-                userToERC20Deposit[msg.sender][sfrxETH] == 0,
-                "Already Deposited"
-            );
-            _ERC20Update(sfrxETH, _sfrxEthBal);
-        }
-
-        if (_cbEthBal > 0) {
-            require(
-                userToERC20Deposit[msg.sender][cbETH] == 0,
-                "Already Deposited"
-            );
-            _ERC20Update(cbETH, _cbEthBal);
-        }
-    }
-
-    /// @notice Transfers users ether to function in the LP
-    function migrateFunds() external nonReentrant {
-        uint256 userBalance = etherBalance[msg.sender];
-
-        require(userBalance > 0, "User has no funds");
-        etherBalance[msg.sender] = 0;
-
-        liquidityPool.deposit{value: userBalance}(
-            msg.sender
-        );
         scoreManager.setScore(IScoreManager.SCORE_TYPE.EarlyAdopterPool, 
-                              msg.sender, 
-                              bytes32(abi.encodePacked(userPoints[msg.sender])));
-
-        emit FundsMigrated(msg.sender, userBalance, userPoints[msg.sender]);
+                        msg.sender, 
+                        bytes32(abi.encodePacked(_points)));
+        liquidityPool.deposit{value: _ethAmount}(msg.sender);
+        
+        emit FundsMigrated(msg.sender, _ethAmount, _points);
     }
 
     /// @notice Sets the liquidity pool instance
@@ -253,13 +206,14 @@ contract ClaimReceiverPool is
             );
     }
 
-    function _ERC20Update(address _token, uint256 _amount) internal {
-        userToERC20Deposit[msg.sender][_token] = _amount;
+    function _swapERC20ForETH(address _token, uint256 _amount) internal returns (uint256) {
+        if (_amount == 0) {
+            return 0;
+        }
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-
         uint256 amountOut = _swapExactInputSingle(_amount, _token);
         wethContract.withdraw(amountOut);
-        etherBalance[msg.sender] += amountOut;
+        return amountOut;
     }
 
     function _swapExactInputSingle(

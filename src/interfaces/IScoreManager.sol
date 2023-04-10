@@ -6,8 +6,10 @@ interface IScoreManager {
     enum SCORE_TYPE {
         EarlyAdopterPool
     }
+    
+    function scores(SCORE_TYPE _type, address _user) external view returns (bytes32);
 
-   function setScore(
+    function setScore(
         SCORE_TYPE _type,
         address _user,
         bytes32 _score

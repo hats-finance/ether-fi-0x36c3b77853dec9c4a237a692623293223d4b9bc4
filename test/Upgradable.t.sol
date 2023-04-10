@@ -53,12 +53,6 @@ contract ClaimReceiverPoolV2 is ClaimReceiverPool {
     function isUpgraded() public view returns(bool){
         return true;
     }
-
-    function updateUserPoints(
-        uint256 _amount
-    ) external {
-        userPoints[msg.sender] = _amount;
-    }
 }
 
 contract ScoreManagerV2 is ScoreManager {
@@ -129,10 +123,6 @@ contract UpgradeTest is TestSetup {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
 
-        assertEq(address(claimReceiverPoolInstance).balance, 0.2 ether);
-
-        claimReceiverPoolInstance.migrateFunds();
-
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
         assertEq(claimReceiverPoolInstance.getImplementation(), address(claimReceiverPoolImplementation));
 
@@ -152,8 +142,6 @@ contract UpgradeTest is TestSetup {
             address(cbEth),
             address(scoreManagerInstance)
         );
-        claimReceiverPoolV2Instance.updateUserPoints(20000);
-        assertEq(claimReceiverPoolV2Instance.userPoints(owner), 20000);
         assertEq(claimReceiverPoolV2Instance.getImplementation(), address(claimReceiverV2Implementation));
 
         // Check that state is maintained
@@ -168,10 +156,6 @@ contract UpgradeTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
-
-        assertEq(address(claimReceiverPoolInstance).balance, 0.2 ether);
-
-        claimReceiverPoolInstance.migrateFunds();
 
         assertEq(scoreManagerInstance.getImplementation(), address(scoreManagerImplementation));
 
