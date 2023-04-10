@@ -8,6 +8,7 @@ interface IScoreManager {
     }
     
     function scores(SCORE_TYPE _type, address _user) external view returns (bytes32);
+    function totalScores(SCORE_TYPE _type) external view returns (bytes32);
 
     function setScore(
         SCORE_TYPE _type,
