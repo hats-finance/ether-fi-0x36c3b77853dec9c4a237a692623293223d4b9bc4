@@ -9,6 +9,8 @@ import "../src/EtherFiNode.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
+import "../src/ScoreManager.sol";
+import "../src/ClaimReceiverPool.sol";
 import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -23,6 +25,8 @@ contract DeployScript is Script {
     UUPSProxy public protocolRevenueManagerProxy;
     UUPSProxy public TNFTProxy;
     UUPSProxy public BNFTProxy;
+    UUPSProxy public scoreManagerProxy;
+    UUPSProxy public claimReceiverPoolProxy;
 
     BNFT public BNFTImplementation;
     BNFT public BNFTInstance;
@@ -35,6 +39,12 @@ contract DeployScript is Script {
 
     StakingManager public stakingManagerImplementation;
     StakingManager public stakingManager;
+
+    ScoreManager public scoreManagerInstance;
+    ScoreManager public scoreManagerImplementation;
+
+    ClaimReceiverPool public claimReceiverPoolImplementation;
+    ClaimReceiverPool public claimReceiverPoolInstance;
 
     ProtocolRevenueManager public protocolRevenueManagerImplementation;
     ProtocolRevenueManager public protocolRevenueManager;
@@ -52,6 +62,8 @@ contract DeployScript is Script {
         address etherFiNodesManager;
         address protocolRevenueManager;
         address etherFiNode;
+        address scoreManager;
+        address claimReceiverPool;
     }
 
     addresses addressStruct;
@@ -101,6 +113,22 @@ contract DeployScript is Script {
             address(protocolRevenueManager)
         );
 
+        scoreManagerImplementation = new ScoreManager();
+        scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
+        scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
+        scoreManagerInstance.initialize();
+
+        claimReceiverPoolImplementation = new ClaimReceiverPool();
+        claimReceiverPoolProxy = new UUPSProxy(address(claimReceiverPoolImplementation), "");
+        claimReceiverPoolInstance = ClaimReceiverPool(payable(address(claimReceiverPoolProxy)));
+        claimReceiverPoolInstance.initialize(
+            0xae78736Cd615f374D3085123A210448E74Fc6393,
+            0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+            0xac3E018457B222d93114458476f3E3416Abbe38F,
+            0xBe9895146f7AF43049ca1c1AE358B0541Ea49704,
+            address(scoreManagerInstance)
+        );
+
         EtherFiNode etherFiNode = new EtherFiNode();
         
         // Setup dependencies
@@ -113,6 +141,7 @@ contract DeployScript is Script {
         stakingManager.registerEtherFiNodeImplementationContract(address(etherFiNode));
         stakingManager.registerTNFTContract(address(TNFTInstance));
         stakingManager.registerBNFTContract(address(BNFTInstance));
+        scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
 
         vm.stopBroadcast();
 
@@ -125,7 +154,9 @@ contract DeployScript is Script {
             BNFT: address(BNFTInstance),
             etherFiNodesManager: address(etherFiNodesManager),
             protocolRevenueManager: address(protocolRevenueManager),
-            etherFiNode: address(etherFiNode)
+            etherFiNode: address(etherFiNode),
+            scoreManager: address(stakingManager),
+            claimReceiverPool: address(claimReceiverPoolInstance)
         });
 
         writeVersionFile();
@@ -189,7 +220,11 @@ contract DeployScript is Script {
                     "\nTNFT: ",
                     Strings.toHexString(addressStruct.TNFT),
                     "\nBNFT: ",
-                    Strings.toHexString(addressStruct.BNFT)
+                    Strings.toHexString(addressStruct.BNFT),
+                    "\nScoreManager: ",
+                    Strings.toHexString(addressStruct.scoreManager),
+                    "\nClaimReceiverPool: ",
+                    Strings.toHexString(addressStruct.claimReceiverPool)
                 )
             )
         );
