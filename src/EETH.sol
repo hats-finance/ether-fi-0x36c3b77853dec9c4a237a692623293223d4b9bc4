@@ -48,7 +48,6 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
     }
 
     function initialize(address _liquidityPool) external initializer {
-        // __ERC20_init("EtherFi ETH", "eETH");
         __UUPSUpgradeable_init();
         __Ownable_init();
         liquidityPool = ILiquidityPool(_liquidityPool);
