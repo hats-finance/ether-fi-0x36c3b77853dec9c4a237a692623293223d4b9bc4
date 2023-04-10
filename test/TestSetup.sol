@@ -255,6 +255,7 @@ contract TestSetup is Test {
         dataForVerification.push(
             keccak256(
                 abi.encodePacked(
+                    alice,
                     uint256(0),
                     uint256(10),
                     uint256(0),
@@ -267,6 +268,7 @@ contract TestSetup is Test {
         dataForVerification.push(
             keccak256(
                 abi.encodePacked(
+                    0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
                     uint256(0.2 ether),
                     uint256(0),
                     uint256(0),
@@ -279,6 +281,7 @@ contract TestSetup is Test {
         dataForVerification.push(
             keccak256(
                 abi.encodePacked(
+                    chad,
                     uint256(0),
                     uint256(10),
                     uint256(0),
