@@ -76,8 +76,6 @@ contract TestSetup is Test {
     Treasury public treasuryInstance;
     NodeOperatorManager public nodeOperatorManagerInstance;
     
-    IScoreManager.SCORE_TYPE public earlyAdopterPoolScoreType = IScoreManager.SCORE_TYPE.EarlyAdopterPool;
-
     Merkle merkle;
     Merkle merkleMigration;
     bytes32 root;
@@ -211,7 +209,8 @@ contract TestSetup is Test {
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
         scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
-        
+        scoreManagerInstance.setNewScoreType("Early Adopter Pool");
+
         depGen = new DepositDataGeneration();
 
         bytes32 deposit_data_root1 = 0x9120ef13437690c401c436a3e454aa08c438eb5908279b0a49dee167fde30399;
