@@ -112,6 +112,7 @@ contract ClaimReceiverPool is
     ) external payable whenNotPaused {
         require(
             _verifyValues(
+                msg.sender,
                 msg.value,
                 _rEthBal,
                 _wstEthBal,
@@ -188,6 +189,7 @@ contract ClaimReceiverPool is
     //--------------------------------------------------------------------------------------
 
     function _verifyValues(
+        address _user,
         uint256 _etherBalance,
         uint256 _rEthBal,
         uint256 _wstEthBal,
@@ -202,6 +204,7 @@ contract ClaimReceiverPool is
                 merkleRoot,
                 keccak256(
                     abi.encodePacked(
+                        _user,
                         _etherBalance,
                         _rEthBal,
                         _wstEthBal,

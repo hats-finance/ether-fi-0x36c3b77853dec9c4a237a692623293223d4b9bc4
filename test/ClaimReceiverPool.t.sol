@@ -34,16 +34,15 @@ contract ClaimReceiverPoolTest is TestSetup {
     }
 
     function test_DepositFailsWithIncorrectMerkle() public {
-        bytes32[] memory proof1 = merkle.getProof(whiteListedAddresses, 0);
-        bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 0);
-        bytes32[] memory proof3 = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory proof1 = merkle.getProof(dataForVerification, 0);
+        bytes32[] memory proof2 = merkle.getProof(dataForVerification, 1);
+        bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
         vm.prank(owner);
-        claimReceiverPoolInstance.updateMerkleRoot(root);
+        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
         vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0 ether}(1, 0, 0, 0, 400, proof1);
+        claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1);
         vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 10, 652, proof2);
-
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof2);
         vm.expectRevert("Verification failed");
         claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3);
     }
