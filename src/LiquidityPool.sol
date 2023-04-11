@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "../src/interfaces/IStakingManager.sol";
+import "../src/interfaces/IScoreManager.sol";
+import "../src/interfaces/IEtherFiNodesManager.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IEETH.sol";
-import "./interfaces/IStakingManager.sol";
-import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IScoreManager.sol";
 import "forge-std/console.sol";
 
@@ -17,8 +18,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
 
     IEETH eETH; 
-    IStakingManager stakingManager; 
-    IEtherFiNodesManager nodesManager; 
     IScoreManager scoreManager;
 
     mapping(uint256 => bool) validators;

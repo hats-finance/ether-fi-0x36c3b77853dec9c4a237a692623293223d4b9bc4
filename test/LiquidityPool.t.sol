@@ -2,10 +2,12 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
-import "lib/forge-std/src/console.sol";
+import "forge-std/console.sol";
 
 contract LiquidityPoolTest is TestSetup {
+
     function setUp() public {
+        setUpTests();
         setUpTests();
     }
 
@@ -14,7 +16,9 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(alice, 2 ether);
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
-        assertEq(alice.balance, 1 ether);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        assertEq(alice.balance, 0 ether);
     }
 
     function test_StakingManagerLiquidityFails() public {
