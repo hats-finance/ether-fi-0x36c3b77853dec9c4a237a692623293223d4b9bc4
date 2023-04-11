@@ -209,7 +209,7 @@ contract TestSetup is Test {
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
         scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
-        scoreManagerInstance.setNewScoreType("Early Adopter Pool");
+        scoreManagerInstance.addNewScoreType("Early Adopter Pool");
 
         depGen = new DepositDataGeneration();
 

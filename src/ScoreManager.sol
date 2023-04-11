@@ -17,6 +17,8 @@ contract ScoreManager is
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
+    uint32 public numberOfTypes;
+
     // string: indicate the type of the score (like the name of the promotion)
     // address: user wallet address
     // bytes32: a byte stream of user score + etc
@@ -25,8 +27,6 @@ contract ScoreManager is
     mapping(uint256 => bytes) public scoreTypes;
     mapping(bytes => uint256) public typeIds;
 
-    uint256 public numberOfTypes;
-
     uint256[32] __gap;
 
     //--------------------------------------------------------------------------------------
@@ -34,6 +34,7 @@ contract ScoreManager is
     //--------------------------------------------------------------------------------------
 
     event ScoreSet(address indexed user, uint256 score_typeID, bytes32 data);
+    event NewTypeAdded(uint256 Id, bytes ScoreType);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -72,9 +73,14 @@ contract ScoreManager is
 
     /// @notice creates a new type of score
     /// @param _type the bytes value type being added
-    function setNewScoreType(bytes memory _type) external onlyOwner {
+    function addNewScoreType(bytes memory _type) external onlyOwner returns (uint256) {
         scoreTypes[numberOfTypes] = _type;
+        typeIds[_type] = numberOfTypes;
+
+        emit NewTypeAdded(numberOfTypes, _type);
+
         numberOfTypes++;
+        return numberOfTypes - 1;
     }
 
     //--------------------------------------------------------------------------------------

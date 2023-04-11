@@ -17,6 +17,6 @@ interface IScoreManager {
 
     function setCallerStatus(address _caller, bool _flag) external;
 
-    function setNewScoreType(bytes memory _type) external;
+    function addNewScoreType(bytes memory _type) external returns (uint256);
    
 }
