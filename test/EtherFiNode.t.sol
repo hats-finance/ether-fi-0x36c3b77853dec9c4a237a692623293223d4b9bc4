@@ -781,4 +781,17 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(toTnft, 30.815625000000000000 ether);
         assertEq(toBnft, 2.084375000000000000 ether - nonExitPenalty);
     }
+
+    function test_sendEthToEtherFiNodeContractFail() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        validatorIds[0] = bidId[0];
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+
+        vm.deal(owner, 10 ether);
+        vm.prank(owner);
+        uint256 nodeBalance = address(etherfiNode).balance;
+        vm.expectRevert("EvmError: Revert");
+        (bool sent, ) = address(etherfiNode).call{value: 5 ether}("");
+        assertEq(address(etherfiNode).balance, nodeBalance);
+    }
 }
