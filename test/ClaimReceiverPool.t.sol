@@ -38,7 +38,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         bytes32[] memory proof2 = merkle.getProof(dataForVerification, 1);
         bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
         vm.prank(owner);
-        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
+
         vm.expectRevert("Verification failed");
         claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1);
         vm.expectRevert("Verification failed");
@@ -51,7 +51,9 @@ contract ClaimReceiverPoolTest is TestSetup {
         bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
 
         vm.prank(owner);
-        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
+
+        assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.totalScores(earlyAdopterPoolScoreType), bytes32(abi.encodePacked(uint256(0))));
 
         assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
         assertEq(scoreManagerInstance.totalScores(0), bytes32(abi.encodePacked(uint256(0))));
@@ -70,6 +72,22 @@ contract ClaimReceiverPoolTest is TestSetup {
 
         vm.expectRevert("Already Deposited");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
+        vm.stopPrank();
+
+        vm.deal(owner, 100 ether);
+        vm.prank(owner);
+        liquidityPoolInstance.accrueEapRewards{value: 1 ether}();
+        assertEq(
+            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
+            0.2 ether + 1 ether
+        );
+
+        vm.prank(owner);
+        liquidityPoolInstance.accrueEapRewards{value: 10 ether}();
+        assertEq(
+            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
+            0.2 ether + 1 ether + 10 ether
+        );
     }
 
     function test_SetLPAddressFailsIfZeroAddress() public {
@@ -82,5 +100,31 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.prank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
+    }
+
+
+    function test_EapRewardsWorksCorrectly() public {
+        bytes32[] memory bobProof = merkle.getProof(dataForVerification, 3);
+        bytes32[] memory danProof = merkle.getProof(dataForVerification, 4);
+
+        vm.deal(bob, 0.1 ether);
+        vm.deal(dan, 0.1 ether);
+
+        vm.prank(bob);
+        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 400, bobProof);
+        vm.stopPrank();
+        vm.prank(dan);
+        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 800, danProof);
+        vm.stopPrank();
+
+        assertEq(eETHInstance.balanceOf(bob), 0.1 ether);
+        assertEq(eETHInstance.balanceOf(dan), 0.1 ether);
+
+        vm.deal(owner, 100 ether);
+        vm.prank(owner);
+        liquidityPoolInstance.accrueEapRewards{value: 3 ether}();
+
+        assertEq(eETHInstance.balanceOf(bob), 0.1 ether + 1 ether);
+        assertEq(eETHInstance.balanceOf(dan), 0.1 ether + 2 ether);
     }
 }

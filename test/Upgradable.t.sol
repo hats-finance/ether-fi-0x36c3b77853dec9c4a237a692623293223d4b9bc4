@@ -74,7 +74,6 @@ contract UpgradeTest is TestSetup {
    
     function setUp() public {
         setUpTests();
-        _merkleSetupMigration();
     }
 
     function test_CanUpgradeAuctionManager() public {

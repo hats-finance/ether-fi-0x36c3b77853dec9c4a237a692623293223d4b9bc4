@@ -4,7 +4,11 @@ pragma solidity 0.8.13;
 interface IEETH {
     function initialize(address _liquidityPool) external;
 
-    function mint(address _account, uint256 _amount) external;
+    function totalShares() external view returns (uint256);
 
-    function burn(address _account, uint256 _amount) external;
+    function shares(address _user) external view returns (uint256);
+    function balanceOf(address _user) external view returns (uint256);
+
+    function mintShares(address _user, uint256 _share) external;
+    function burnShares(address _user, uint256 _share) external;
 }
