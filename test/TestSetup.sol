@@ -208,6 +208,7 @@ contract TestSetup is Test {
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
+        liquidityPoolInstance.setScoreManager(address(scoreManagerInstance));
         scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
         scoreManagerInstance.addNewScoreType("Early Adopter Pool");
 
@@ -290,7 +291,34 @@ contract TestSetup is Test {
                 )
             )
         );
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    bob,
+                    uint256(0.1 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(400)
+                )
+            )
+        );
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    dan,
+                    uint256(0.1 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(800)
+                )
+            )
+        );
         rootMigration = merkleMigration.getRoot(dataForVerification);
+        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
     }
 
     function _getDepositRoot() internal returns (bytes32) {
