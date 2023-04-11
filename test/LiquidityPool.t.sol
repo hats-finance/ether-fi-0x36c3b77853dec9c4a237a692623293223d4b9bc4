@@ -17,8 +17,8 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
-        assertEq(eETHInstance.balanceOf(alice), 1 ether);
-        assertEq(alice.balance, 1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        assertEq(alice.balance, 0 ether);
     }
 
     function test_StakingManagerLiquidityFails() public {
