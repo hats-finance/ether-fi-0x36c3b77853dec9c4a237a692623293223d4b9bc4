@@ -52,8 +52,8 @@ contract ClaimReceiverPoolTest is TestSetup {
 
         vm.prank(owner);
 
-        assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
-        assertEq(scoreManagerInstance.totalScores(earlyAdopterPoolScoreType), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.totalScores(0), bytes32(abi.encodePacked(uint256(0))));
 
         assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
         assertEq(scoreManagerInstance.totalScores(0), bytes32(abi.encodePacked(uint256(0))));
