@@ -1,58 +1,45 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
-import "../src/LiquidityPool.sol";
-import "../src/EETH.sol";
+import "./TestSetup.sol";
 import "forge-std/console.sol";
 
-contract LiquidityPoolTest is Test {
-    LiquidityPool public liquidityPool;
-    EETH public eETH;
-
-    address owner = vm.addr(1);
-    address alice = vm.addr(2);
+contract LiquidityPoolTest is TestSetup {
 
     function setUp() public {
-        vm.startPrank(owner);
-        liquidityPool = new LiquidityPool();
-        liquidityPool.initialize();
-        eETH = new EETH();
-        eETH.initialize(address(liquidityPool));
-        liquidityPool.setTokenAddress(address(eETH));
-        vm.stopPrank();
+        setUpTests();
     }
 
     function test_StakingManagerLiquidityPool() public {
         vm.startPrank(alice);
         vm.deal(alice, 2 ether);
-        liquidityPool.deposit{value: 1 ether}(alice);
-        assertEq(eETH.balanceOf(alice), 1 ether);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(alice.balance, 1 ether);
     }
 
     function test_StakingManagerLiquidityFails() public {
         vm.startPrank(owner);
         vm.expectRevert();
-        liquidityPool.deposit{value: 2 ether}(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
     }
 
     function test_WithdrawLiquidityPool() public {
         vm.startPrank(alice);
         vm.deal(alice, 3 ether);
-        liquidityPool.deposit{value: 2 ether}(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(alice.balance, 1 ether);
-        assertEq(eETH.balanceOf(alice), 2 ether);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
 
-        liquidityPool.withdraw(2 ether);
-        assertEq(eETH.balanceOf(alice), 0);
+        liquidityPoolInstance.withdraw(2 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0);
         assertEq(alice.balance, 3 ether);
     }
 
     function test_WithdrawLiquidityPoolFails() public {
         startHoax(alice);
         vm.expectRevert("Not enough eETH");
-        liquidityPool.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(2 ether);
     }
 
     function test_WithdrawFailsNotInitializedToken() public {
@@ -60,7 +47,7 @@ contract LiquidityPoolTest is Test {
 
         startHoax(alice);
         vm.expectRevert();
-        liquidityPool.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(2 ether);
     }
 
     function test_StakingManagerFailsNotInitializedToken() public {
@@ -70,5 +57,41 @@ contract LiquidityPoolTest is Test {
         vm.deal(alice, 3 ether);
         vm.expectRevert();
         liquidityPoolNoToken.deposit{value: 2 ether}(alice);
+    }
+
+    function test_SetEeTHAddress() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        liquidityPoolInstance.setTokenAddress(address(eETHInstance));
+
+        // address set in setup
+        assertEq(liquidityPoolInstance.eETH(), address(eETHInstance));
+    }
+
+    function test_SetScoreManagerAddress() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        liquidityPoolInstance.setScoreManagerAddress(address(scoreManagerInstance));
+
+        // address set in setup
+        assertEq(liquidityPoolInstance.scoreManagerAddress(), address(scoreManagerInstance));
+    }
+
+    function test_SetStakingManagerAddress() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        liquidityPoolInstance.setStakingManagerAddress(address(stakingManagerInstance));
+
+        // address set in setup
+        assertEq(liquidityPoolInstance.stakingManagerAddress(), address(stakingManagerInstance));
+    }
+
+    function test_SetEtherFiNodesManagerAddress() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        liquidityPoolInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+
+        // address set in setup
+        assertEq(liquidityPoolInstance.etherFiNodesManagerAddress(), address(managerInstance));
     }
 }

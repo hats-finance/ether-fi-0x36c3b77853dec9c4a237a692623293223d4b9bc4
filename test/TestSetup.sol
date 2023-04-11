@@ -200,16 +200,25 @@ contract TestSetup is Test {
         _merkleSetupMigration();
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
         nodeOperatorManagerInstance.updateMerkleRoot(root);
+
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
         auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
+
         protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
+
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
+
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
+        liquidityPoolInstance.setScoreManagerAddress(address(scoreManagerInstance));
+        liquidityPoolInstance.setStakingManagerAddress(address(stakingManagerInstance));
+        liquidityPoolInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+
         scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
         
         depGen = new DepositDataGeneration();
