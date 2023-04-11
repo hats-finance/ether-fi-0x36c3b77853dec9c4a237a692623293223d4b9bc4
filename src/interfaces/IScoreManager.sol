@@ -9,7 +9,7 @@ interface IScoreManager {
 
     function typeIds(bytes memory _type) external view returns (uint256);
     
-    function totalScores(bytes memory _type) external view returns (bytes32);
+    function totalScores(uint256 _typeId) external view returns (bytes32);
 
     function setScore(
         uint256 _type,
@@ -18,7 +18,7 @@ interface IScoreManager {
     ) external;
 
     function setTotalScore(
-        SCORE_TYPE _type,
+        uint256 _type,
         bytes32 _totalScore
     ) external;
 
