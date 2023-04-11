@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
-import "lib/forge-std/src/console.sol";
+import "forge-std/console.sol";
 
 contract LiquidityPoolTest is Test {
     LiquidityPool public liquidityPool;

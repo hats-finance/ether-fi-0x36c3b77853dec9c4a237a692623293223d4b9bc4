@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "../src/interfaces/IStakingManager.sol";
+import "../src/interfaces/IScoreManager.sol";
+import "../src/interfaces/IEtherFiNodesManager.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
@@ -11,8 +14,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
+    
+    IStakingManager stakingManagerInstance;
+    IScoreManager scoreManagerInstance;
+    IEtherFiNodesManager nodesManagerInstance;
 
     address public eETH;
+    address public scoreManagerAddress;
+    address public stakingManagerAddress;
+    address public etherFiNodesManagerAddress;
 
     uint256[32] __gap;
 
@@ -37,9 +47,24 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @notice sets the contract address for eETH
     /// @dev can't do it in constructor due to circular dependencies
     /// @param _eETH address of eETH contract
-    function setTokenAddress(address _eETH) external {
+    function setTokenAddress(address _eETH) public onlyOwner {
         eETH = _eETH;
         emit TokenAddressChanged(_eETH);
+    }
+
+    function setScoreManagerAddress(address _scoreManagerAddress) public onlyOwner {
+        scoreManagerAddress = _scoreManagerAddress;
+        scoreManagerInstance = IScoreManager(_scoreManagerAddress);
+    }
+
+    function setStakingManagerAddress(address _stakingManagerAddress) public onlyOwner {
+        stakingManagerAddress = _stakingManagerAddress;
+        stakingManagerInstance = IStakingManager(_stakingManagerAddress); 
+    }
+
+    function setEtherFiNodesManagerAddress(address _etherFiNodesManagerAddress) public onlyOwner {
+        etherFiNodesManagerAddress = _etherFiNodesManagerAddress;
+        nodesManagerInstance = IEtherFiNodesManager(_etherFiNodesManagerAddress);
     }
 
     /// @notice deposit into pool
