@@ -48,6 +48,25 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "Id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "ScoreType",
+        "type": "bytes"
+      }
+    ],
+    "name": "NewTypeAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "previousOwner",
@@ -87,9 +106,9 @@
       },
       {
         "indexed": false,
-        "internalType": "enum IScoreManager.SCORE_TYPE",
-        "name": "score_type",
-        "type": "uint8"
+        "internalType": "uint256",
+        "name": "score_typeID",
+        "type": "uint256"
       },
       {
         "indexed": false,
@@ -130,6 +149,25 @@
   {
     "inputs": [
       {
+        "internalType": "bytes",
+        "name": "_type",
+        "type": "bytes"
+      }
+    ],
+    "name": "addNewScoreType",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -164,6 +202,19 @@
     "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "numberOfTypes",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -215,9 +266,28 @@
   {
     "inputs": [
       {
-        "internalType": "enum IScoreManager.SCORE_TYPE",
+        "internalType": "uint256",
         "name": "",
-        "type": "uint8"
+        "type": "uint256"
+      }
+    ],
+    "name": "scoreTypes",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -257,9 +327,9 @@
   {
     "inputs": [
       {
-        "internalType": "enum IScoreManager.SCORE_TYPE",
-        "name": "_type",
-        "type": "uint8"
+        "internalType": "uint256",
+        "name": "_typeId",
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -280,6 +350,43 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "typeId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_totalScore",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setTotalScore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "totalScores",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "newOwner",
         "type": "address"
@@ -288,6 +395,25 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "typeIds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
