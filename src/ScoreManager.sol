@@ -19,10 +19,13 @@ contract ScoreManager is
 {
     uint32 public numberOfTypes;
 
-    // string: indicate the type of the score (like the name of the promotion)
+    // bytes: indicate the type of the score (like the name of the promotion)
     // address: user wallet address
     // bytes32: a byte stream of user score + etc
-    mapping(uint256 => mapping(address => bytes32)) public scores;
+    mapping(bytes => mapping(address => bytes32)) public scores;
+
+    // bytes32: a byte stream of aggregated info of users' scores (e.g., total sum)
+    mapping(bytes => bytes32) public totalScores;
     mapping(address => bool) public allowedCallers;
     mapping(uint256 => bytes) public scoreTypes;
     mapping(bytes => uint256) public typeIds;
@@ -62,6 +65,16 @@ contract ScoreManager is
     ) external allowedCaller(msg.sender) nonZeroAddress(_user) {
         scores[_typeId][_user] = _score;
         emit ScoreSet(_user, _typeId, _score);
+    }
+
+    /// @notice sets the total score of a score type
+    /// @param _type the type of the score
+    /// @param _totalScore the total score
+    function setTotalScore(
+        bytes memory _type,
+        bytes32memory _totalScore
+    ) external allowedCaller(msg.sender) {
+        totalScores[_type] = _totalScore;
     }
 
     /// @notice updates the status of a caller
