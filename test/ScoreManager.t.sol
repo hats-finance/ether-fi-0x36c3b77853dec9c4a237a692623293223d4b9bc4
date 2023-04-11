@@ -15,16 +15,13 @@ contract ScoreManagerTest is TestSetup {
 
         vm.prank(alice);
         vm.expectRevert("Cannot be address zero");
-        scoreManagerInstance.setScore(earlyAdopterPoolScoreType, address(0), "0x1234");
+        scoreManagerInstance.setScore(0, address(0), "0x1234");
     }
 
     function test_setScoreFailsIfCallerNotAllowed() public {
         vm.prank(alice);
         vm.expectRevert("Caller not permissioned");
-        scoreManagerInstance.setScore(earlyAdopterPoolScoreType, address(0), "0x1234");
-
-        vm.expectRevert("Caller not permissioned");
-        scoreManagerInstance.setTotalScore(earlyAdopterPoolScoreType, "0x1234");
+        scoreManagerInstance.setScore(0, address(0), "0x1234");
     }
 
     function test_setScoreWorksCorrectly() public {
@@ -32,9 +29,9 @@ contract ScoreManagerTest is TestSetup {
         scoreManagerInstance.setCallerStatus(alice, true);
 
         vm.prank(alice);
-        scoreManagerInstance.setScore(earlyAdopterPoolScoreType, bob, "0x1234");
+        scoreManagerInstance.setScore(0, bob, "0x1234");
 
-        assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, bob), "0x1234");
+        assertEq(scoreManagerInstance.scores(0, bob), "0x1234");
     }
 
     function test_switchCallerStatusFailsIfAddressZero() public {

@@ -79,9 +79,6 @@ contract DeployEtherFiSuiteScript is Script {
         address etherFiNodesManager;
         address protocolRevenueManager;
         address etherFiNode;
-    }
-
-    struct lpAddresses {
         address scoreManager;
         address claimReceiverPool;
         address liquidityPool;
@@ -89,7 +86,6 @@ contract DeployEtherFiSuiteScript is Script {
     }
 
     suiteAddresses suiteAddressesStruct;
-    lpAddresses lpAddressesStruct;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -201,9 +197,7 @@ contract DeployEtherFiSuiteScript is Script {
         claimReceiverPool.setLiquidityPool(address(liquidityPool));
 
         liquidityPool.setTokenAddress(address(eETH));
-        liquidityPool.setScoreManagerAddress(address(scoreManager));
-        liquidityPool.setStakingManagerAddress(address(stakingManager));
-        liquidityPool.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
+        liquidityPool.setScoreManager(address(scoreManager));
 
         scoreManager.setCallerStatus(address(claimReceiverPool), true);
 
@@ -218,10 +212,7 @@ contract DeployEtherFiSuiteScript is Script {
             BNFT: address(BNFTInstance),
             etherFiNodesManager: address(etherFiNodesManager),
             protocolRevenueManager: address(protocolRevenueManager),
-            etherFiNode: address(etherFiNode)
-        });
-
-        lpAddressesStruct = lpAddresses({
+            etherFiNode: address(etherFiNode),
             scoreManager: address(scoreManager),
             claimReceiverPool: address(claimReceiverPool),
             liquidityPool: address(liquidityPool),
@@ -324,13 +315,13 @@ contract DeployEtherFiSuiteScript is Script {
                 abi.encodePacked(
                     Strings.toString(version),
                     "\nScore Manager: ",
-                    Strings.toHexString(lpAddressesStruct.scoreManager),
+                    Strings.toHexString(suiteAddressesStruct.scoreManager),
                     "\nClaim Receiver Pool: ",
-                    Strings.toHexString(lpAddressesStruct.claimReceiverPool),
+                    Strings.toHexString(suiteAddressesStruct.claimReceiverPool),
                     "\nLiquidity Pool: ",
-                    Strings.toHexString(lpAddressesStruct.liquidityPool),
+                    Strings.toHexString(suiteAddressesStruct.liquidityPool),
                     "\neETH: ",
-                    Strings.toHexString(lpAddressesStruct.eETH)
+                    Strings.toHexString(suiteAddressesStruct.eETH)
                 )
             )
         );

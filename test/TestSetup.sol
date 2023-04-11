@@ -76,8 +76,6 @@ contract TestSetup is Test {
     Treasury public treasuryInstance;
     NodeOperatorManager public nodeOperatorManagerInstance;
     
-    IScoreManager.SCORE_TYPE public earlyAdopterPoolScoreType = IScoreManager.SCORE_TYPE.EarlyAdopterPool;
-
     Merkle merkle;
     Merkle merkleMigration;
     bytes32 root;
@@ -215,12 +213,10 @@ contract TestSetup is Test {
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
 
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
-        liquidityPoolInstance.setScoreManagerAddress(address(scoreManagerInstance));
-        liquidityPoolInstance.setStakingManagerAddress(address(stakingManagerInstance));
-        liquidityPoolInstance.setEtherFiNodesManagerAddress(address(managerInstance));
-
+        liquidityPoolInstance.setScoreManager(address(scoreManagerInstance));
         scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
-        
+        scoreManagerInstance.addNewScoreType("Early Adopter Pool");
+
         depGen = new DepositDataGeneration();
 
         bytes32 deposit_data_root1 = 0x9120ef13437690c401c436a3e454aa08c438eb5908279b0a49dee167fde30399;
@@ -300,7 +296,34 @@ contract TestSetup is Test {
                 )
             )
         );
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    bob,
+                    uint256(0.1 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(400)
+                )
+            )
+        );
+        dataForVerification.push(
+            keccak256(
+                abi.encodePacked(
+                    dan,
+                    uint256(0.1 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(800)
+                )
+            )
+        );
         rootMigration = merkleMigration.getRoot(dataForVerification);
+        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
     }
 
     function _getDepositRoot() internal returns (bytes32) {
