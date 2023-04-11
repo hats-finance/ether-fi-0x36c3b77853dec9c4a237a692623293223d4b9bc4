@@ -17,7 +17,7 @@ update:; forge update
 
 build:; forge build
 
-test :; forge test --fork-url https://eth-goerli.g.alchemy.com/v2/0z7pxDff9KkuVkuVY4QxuITXogzKOMS1 --etherscan-api-key 1YTFXGVDUI38JU3RSY7S5AAUPXQXYKR2SR
+test :; @forge test --fork-url ${GOERLI_RPC_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}
 
 snapshot :; forge snapshot
 
@@ -29,9 +29,7 @@ format :; prettier --write src/**/*.sol && prettier --write src/*.sol
 lint :; solhint src/**/*.sol && solhint src/*.sol
 
 # use the "@" to hide the command from your shell 
-deploy-goerli-suite :; @forge script script/DeployEtherFISuite.s.sol:DeployScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow
-
-deploy-goerli-lp :; @forge script script/DeployLiquidityPool.s.sol:DeployLiquidityPoolScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow
+deploy-goerli-suite :; @forge script script/DeployEtherFISuite.s.sol:DeployEtherFiSuiteScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow
 
 deploy-goerli-early-reward-pool :; @forge script script/DeployEarlyAdopterPool.s.sol:DeployEarlyAdopterPoolScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow
 
