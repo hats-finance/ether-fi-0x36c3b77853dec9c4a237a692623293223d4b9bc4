@@ -75,7 +75,7 @@ contract StakingManager is
     /// @param _auctionAddress the address of the auction contract for interaction
     function initialize(address _auctionAddress) external initializer {
          
-        stakeAmount = 32 ether;
+        stakeAmount = 0.032 ether;
         maxBatchDepositSize = 16;
 
         __Pausable_init();
@@ -296,13 +296,12 @@ contract StakingManager is
             .getWithdrawalCredentials(_validatorId);
         
         // Deposit to the Beacon Chain
-        depositContractEth2.deposit{value: stakeAmount}(
-            _depositData.publicKey,
-            withdrawalCredentials,
-            _depositData.signature,
-            _depositData.depositDataRoot
-        );
-    
+        // depositContractEth2.deposit{value: stakeAmount}(
+        //     _depositData.publicKey,
+        //     withdrawalCredentials,
+        //     _depositData.signature,
+        //     _depositData.depositDataRoot
+        // );
 
         nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
         nodesManagerIntefaceInstance.setEtherFiNodePhase(

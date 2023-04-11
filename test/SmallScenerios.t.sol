@@ -78,7 +78,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bobBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidIdArray
         );
 
@@ -105,7 +105,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray1 = new uint256[](1);
         bidIdArray1[0] = bobBidIds[1];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidIdArray1
         );
 
@@ -129,7 +129,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray2 = new uint256[](1);
         bidIdArray2[0] = bobBidIds[2];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidIdArray2
         );
 
@@ -152,7 +152,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray3 = new uint256[](1);
         bidIdArray3[0] = chadBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidIdArray3
         );
 
@@ -216,7 +216,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = chadBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidIdArray
         );
 
@@ -242,7 +242,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray2 = new uint256[](1);
         bidIdArray2[0] = bobBidIds[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidIdArray2
         );
 
@@ -326,8 +326,8 @@ contract SmallScenariosTest is TestSetup {
 
         //StakingManager One
         startHoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds1);
-        assertEq(address(stakingManagerInstance).balance, 32 ether);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIds1);
+        assertEq(address(stakingManagerInstance).balance, 0.032 ether);
         assertEq(address(auctionInstance).balance, 1.2 ether);
 
         address etherFiNode = managerInstance.etherfiNodeAddress(bidIds1[0]);

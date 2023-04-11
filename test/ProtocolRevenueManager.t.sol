@@ -60,7 +60,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
         vm.expectRevert("No Active Validator");
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds);
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(bidIds);
 
         vm.expectRevert("No Active Validator");
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");
@@ -96,7 +96,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1 ether
         );
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidId
         );
 
@@ -133,7 +133,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1,
             1 ether
         );
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidId
         );
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
@@ -162,7 +162,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1,
             1 ether
         );
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidIds2
         );
         etherFiNode = managerInstance.etherfiNodeAddress(2);
@@ -208,7 +208,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+        stakingManagerInstance.batchDepositWithBidIds{value: 0.032 ether}(
             bidIdArray
         );
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
