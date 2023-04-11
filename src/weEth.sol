@@ -28,16 +28,26 @@ contract EETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Per
         eEth = IEETH(_eEth);
     }
 
-    /// @notice function to mint eETH
-    /// @dev only able to mint from LiquidityPool contract
-    function mint(address _account, uint256 _amount) external {
-        _mint(_account, _amount);
+    /// @notice Wraps eEth
+    /// @param _eETHAmount the amount of eEth to wrap
+    /// @return returns the amount of weEth the user recieves
+    function wrap(uint256 _eETHAmount) external returns (uint256) {
+        require(_eETHAmount > 0, "wstETH: can't wrap zero stETH");
+        //uint256 weEthAmount = eEth.getSharesByPooledEth(_eETHAmount);
+        //_mint(msg.sender, weEthAmount);
+        //eEth.transferFrom(msg.sender, address(this), _eETHAmount);
+        //return weEthAmount;
     }
 
-    /// @notice function to burn eETH
-    /// @dev only able to burn from LiquidityPool contract
-    function burn(address _account, uint256 _amount) external {
-        _burn(_account, _amount);
+    /// @notice Unwraps weEth
+    /// @param _weETHAmount the amount of weEth to unwrap
+    /// @return returns the amount of eEth the user recieves
+    function unwrap(uint256 _weETHAmount) external returns (uint256) {
+        require(_weETHAmount > 0, "Cannot wrap a zero amount");
+        //uint256 eEthAmount = eEth.getPooledEthByShares(_weETHAmount);
+        //_burn(msg.sender, _weETHAmount);
+        //eEth.transfer(msg.sender, eEthAmount);
+        //return eEthAmount;
     }
 
     //--------------------------------------------------------------------------------------

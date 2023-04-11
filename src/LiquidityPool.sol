@@ -146,13 +146,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _totalEapScores() internal view returns (uint256) {
-        bytes32 totalScore32 = scoreManager.totalScores(IScoreManager.SCORE_TYPE.EarlyAdopterPool);
+        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
+        bytes32 totalScore32 = scoreManager.totalScores(typeId);
         uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
         return totalScore;
     }
 
     function _eapScore(address _user) internal view returns (uint256) {
-        bytes32 score32 = scoreManager.scores(IScoreManager.SCORE_TYPE.EarlyAdopterPool, _user);
+        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
+        bytes32 score32 = scoreManager.scores(typeId, _user);
         uint256 score = abi.decode(bytes.concat(score32), (uint256));
         return score;
     }

@@ -138,7 +138,6 @@ contract ClaimReceiverPool is
 
         uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
 
-
         bytes32 totalScore32 = scoreManager.totalScores(typeId);
         uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
         totalScore += _points;
