@@ -17,16 +17,18 @@ contract ScoreManager is
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
-    // SCORE_TYPE: the type of the score
+    uint32 public numberOfTypes;
+
+    // bytes: indicate the type of the score (like the name of the promotion)
     // address: user wallet address
     // bytes32: a byte stream of user score + etc
-    mapping(SCORE_TYPE => mapping(address => bytes32)) public scores;
+    mapping(uint256 => mapping(address => bytes32)) public scores;
 
-    // SCORE_TYPE: the type of the score
     // bytes32: a byte stream of aggregated info of users' scores (e.g., total sum)
-    mapping(SCORE_TYPE => bytes32) public totalScores;
-
+    mapping(uint256 => bytes32) public totalScores;
     mapping(address => bool) public allowedCallers;
+    mapping(uint256 => bytes) public scoreTypes;
+    mapping(bytes => uint256) public typeIds;
 
     uint256[32] __gap;
 
@@ -34,7 +36,8 @@ contract ScoreManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event ScoreSet(address indexed user, SCORE_TYPE score_type, bytes32 data);
+    event ScoreSet(address indexed user, uint256 score_typeID, bytes32 data);
+    event NewTypeAdded(uint256 Id, bytes ScoreType);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -52,25 +55,26 @@ contract ScoreManager is
 
     /// @notice sets the score of a user
     /// @dev will be called by approved contracts that can set reward totals
-    /// @param _type the type of the score
+    /// @param _typeId the ID of the type of the score
     /// @param _user the user to fetch the score for
     /// @param _score the score the user will receive in bytes form
     function setScore(
-        SCORE_TYPE _type,
+        uint256 _typeId,
         address _user,
         bytes32 _score
     ) external allowedCaller(msg.sender) nonZeroAddress(_user) {
-        scores[_type][_user] = _score;
+        scores[_typeId][_user] = _score;
+        emit ScoreSet(_user, _typeId, _score);
     }
 
     /// @notice sets the total score of a score type
-    /// @param _type the type of the score
+    /// @param typeId the ID of the type of the score
     /// @param _totalScore the total score
     function setTotalScore(
-        SCORE_TYPE _type,
+        uint256 typeId,
         bytes32 _totalScore
     ) external allowedCaller(msg.sender) {
-        totalScores[_type] = _totalScore;
+        totalScores[typeId] = _totalScore;
     }
 
     /// @notice updates the status of a caller
@@ -78,6 +82,18 @@ contract ScoreManager is
     /// @param _flag the bool value to update by
     function setCallerStatus(address _caller, bool _flag) external onlyOwner nonZeroAddress(_caller) {
         allowedCallers[_caller] = _flag;
+    }
+
+    /// @notice creates a new type of score
+    /// @param _type the bytes value type being added
+    function addNewScoreType(bytes memory _type) external onlyOwner returns (uint256) {
+        scoreTypes[numberOfTypes] = _type;
+        typeIds[_type] = numberOfTypes;
+
+        emit NewTypeAdded(numberOfTypes, _type);
+
+        numberOfTypes++;
+        return numberOfTypes - 1;
     }
 
     //--------------------------------------------------------------------------------------

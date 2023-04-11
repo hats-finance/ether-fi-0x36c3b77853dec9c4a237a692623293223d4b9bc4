@@ -53,8 +53,8 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.prank(owner);
         claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
 
-        assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
-        assertEq(scoreManagerInstance.totalScores(earlyAdopterPoolScoreType), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.totalScores(0), bytes32(abi.encodePacked(uint256(0))));
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
@@ -65,8 +65,8 @@ contract ClaimReceiverPoolTest is TestSetup {
             eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
             0.2 ether
         );
-        assertEq(scoreManagerInstance.scores(earlyAdopterPoolScoreType, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(652))));
-        assertEq(scoreManagerInstance.totalScores(earlyAdopterPoolScoreType), bytes32(abi.encodePacked(uint256(652))));
+        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(652))));
+
 
         vm.expectRevert("Already Deposited");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
