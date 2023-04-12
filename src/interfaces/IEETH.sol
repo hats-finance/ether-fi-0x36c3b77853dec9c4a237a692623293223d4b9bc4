@@ -11,4 +11,8 @@ interface IEETH {
 
     function mintShares(address _user, uint256 _share) external;
     function burnShares(address _user, uint256 _share) external;
+
+    function transferFrom(address _sender, address _recipient, uint256 _amount) external returns (bool);
+    function transfer(address _recipient, uint256 _amount) external returns (bool);
+
 }
