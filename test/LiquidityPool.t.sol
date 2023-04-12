@@ -8,7 +8,6 @@ contract LiquidityPoolTest is TestSetup {
 
     function setUp() public {
         setUpTests();
-        setUpTests();
     }
 
     function test_StakingManagerLiquidityPool() public {
