@@ -77,4 +77,37 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolNoToken.deposit{value: 2 ether}(alice);
     }
 
+    function test_LiquidityPoolBatchDepositWithBidIds() public {
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceProof,
+            _ipfsHash,
+            5
+        );
+
+        hoax(alice);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
+
+        vm.expectRevert("Not enough balance");
+        vm.prank(owner);
+        liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
+
+        vm.deal(address(liquidityPoolInstance), 35 ether);
+        assertEq(address(liquidityPoolInstance).balance, 35 ether);
+
+        vm.prank(owner);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
+
+        assertEq(address(liquidityPoolInstance).balance, 3 ether);
+        assertEq(address(stakingManagerInstance).balance, 32 ether);
+        assertEq(newValidators.length, 1);
+        assertEq(newValidators[0], 1);
+    }
+
 }
