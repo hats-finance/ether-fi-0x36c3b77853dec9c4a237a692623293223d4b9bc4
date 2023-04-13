@@ -7,8 +7,9 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
 import "./interfaces/IEETH.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "forge-std/console.sol";
 
-contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
+contract WeEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -37,6 +38,7 @@ contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
     function wrap(uint256 _eETHAmount) external returns (uint256) {
         require(_eETHAmount > 0, "wstETH: can't wrap zero stETH");
         uint256 weEthAmount = liquidityPool.sharesForAmount(_eETHAmount);
+        console.log(weEthAmount);
         _mint(msg.sender, weEthAmount);
         eEth.transferFrom(msg.sender, address(this), _eETHAmount);
         return weEthAmount;
