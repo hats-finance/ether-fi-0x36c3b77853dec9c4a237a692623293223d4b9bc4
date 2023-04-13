@@ -10,6 +10,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IEETH.sol";
 import "./interfaces/IScoreManager.sol";
+import "./interfaces/IStakingManager.sol";
 import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
@@ -19,6 +20,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     IEETH eETH; 
     IScoreManager scoreManager;
+    IStakingManager stakingManager;
 
     mapping(uint256 => bool) validators;
     uint256 accruedSlashingPenalties;
@@ -71,6 +73,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         (bool sent, ) = msg.sender.call{value: _amount}("");
         require(sent, "Failed to send Ether");
         emit Withdraw(msg.sender, msg.value);
+    }
+
+    function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds) public onlyOwner returns (uint256[] memory) {
+        uint256 amount = 32 ether * _numDeposits;
+        require(address(this).balance >= amount, "Not enough balance");
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds);
+
+        return newValidators;
     }
 
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
@@ -129,6 +139,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function setScoreManager(address _address) external onlyOwner {
         scoreManager = IScoreManager(_address);
+    }
+
+    function setStakingManager(address _address) external onlyOwner {
+        stakingManager = IStakingManager(_address);
     }
 
 
