@@ -4,6 +4,9 @@ import "./TestSetup.sol";
 
 contract EETHTest is TestSetup {
 
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
     function setUp() public {
        
         setUpTests();
@@ -33,20 +36,45 @@ contract EETHTest is TestSetup {
 
         assertEq(eETHInstance.balanceOf(alice), 0);
         assertEq(eETHInstance.totalSupply(), 0);
+
+        vm.expectRevert("Only pool contract function");
+        vm.prank(alice);
+        eETHInstance.mintShares(alice, 100);
     }
 
+    function test_BurnShares() public {
+        vm.prank(address(liquidityPoolInstance));
+        eETHInstance.mintShares(alice, 100);
+
+        assertEq(eETHInstance.shares(alice), 100);
+        assertEq(eETHInstance.totalShares(), 100);
+
+        vm.prank(address(liquidityPoolInstance));
+        eETHInstance.burnShares(alice, 50);
+
+        assertEq(eETHInstance.shares(alice), 50);
+        assertEq(eETHInstance.totalShares(), 50);
+
+        vm.expectRevert("Only pool contract function");
+        vm.prank(alice);
+        eETHInstance.burnShares(alice, 100);
+    }
+
+    /// @dev Tests eETH balanceOf and totalSupply functions as well
     function test_EEthRebase() public {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
 
         // Total pooled ether = 10
         vm.deal(address(liquidityPoolInstance), 10 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.totalSupply(), 10 ether);
 
         // Total pooled ether = 20
         hoax(alice);
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
+        assertEq(eETHInstance.totalSupply(), 20 ether);
 
         // ALice is first so get 100% of shares
         assertEq(eETHInstance.shares(alice), 10 ether);
@@ -60,13 +88,11 @@ contract EETHTest is TestSetup {
         liquidityPoolInstance.deposit{value: 5 ether}(bob);
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 25 ether);
+        assertEq(eETHInstance.totalSupply(), 25 ether);
 
         // Bob Shares = (5 * 10) / (25 - 5) = 2,5
         assertEq(eETHInstance.shares(bob), 2.5 ether);
         assertEq(eETHInstance.totalShares(), 12.5 ether);
-
-        // console.logUint(eETHInstance.shares(alice));
-        // console.logUint(eETHInstance.shares(bob));
 
         // Bob claimable Ether
         /// (25 * 2,5) / 12,5 = 5 ether
@@ -76,20 +102,165 @@ contract EETHTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5 ether);
 
+        assertEq(eETHInstance.balanceOf(alice), 20 ether);
+        assertEq(eETHInstance.balanceOf(bob), 5 ether);
+
         // Staking Rewards sent to liquidity pool
-        // vm.deal sets the balance of whoever its called on
+        /// vm.deal sets the balance of whoever its called on
         /// In this case 10 ether is added as reward 
         vm.deal(address(liquidityPoolInstance), 35 ether);
         
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 35 ether);
+        assertEq(eETHInstance.totalSupply(), 35 ether);
 
         // Bob claimable Ether
         /// (35 * 2,5) / 12,5 = 7 ether
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 7 ether);
 
-        //ALice Claimable Ether
+        // Alice Claimable Ether
         /// (35 * 10) / 12,5 = 20 ether
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 28 ether);
+
+        assertEq(eETHInstance.balanceOf(alice), 28 ether);
+        assertEq(eETHInstance.balanceOf(bob), 7 ether);
+    }
+
+    function test_TransferWithAmount() public {
+        hoax(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0 ether);
+        assertEq(eETHInstance.shares(alice), 1 ether);
+        assertEq(eETHInstance.shares(bob), 0);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(alice, bob, 0.5 ether);
+        vm.prank(alice);
+        eETHInstance.transfer(bob, 0.5 ether);
+
+        assertEq(eETHInstance.balanceOf(alice), 0.5 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0.5 ether);
+        assertEq(eETHInstance.shares(alice), 0.5 ether);
+        assertEq(eETHInstance.shares(bob), 0.5 ether);
+
+        vm.expectRevert("TRANSFER_FROM_THE_ZERO_ADDRESS");
+        vm.prank(address(0));
+        eETHInstance.transfer(bob, 0.5 ether);
+
+        vm.expectRevert("TRANSFER_TO_THE_ZERO_ADDRESS");
+        vm.prank(alice);
+        eETHInstance.transfer(address(0), 0.5 ether);
+
+        vm.expectRevert("TRANSFER_AMOUNT_EXCEEDS_BALANCE");
+        vm.prank(alice);
+        eETHInstance.transfer(bob, 1 ether);
+    }
+
+    function test_TransferWithZero() public {
+        hoax(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0 ether);
+        assertEq(eETHInstance.shares(alice), 1 ether);
+        assertEq(eETHInstance.shares(bob), 0);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(alice, bob, 0);
+        vm.prank(alice);
+        eETHInstance.transfer(bob, 0);
+
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0 ether);
+        assertEq(eETHInstance.shares(alice), 1 ether);
+        assertEq(eETHInstance.shares(bob), 0);
+    }
+
+    function test_ApproveWithAmount() public {
+        assertEq(eETHInstance.allowance(alice, bob), 0);
+
+        vm.expectEmit(true, true, false, true);
+        emit Approval(alice, bob, 5 ether);
+        vm.prank(alice);
+        eETHInstance.approve(bob, 5 ether);
+
+        assertEq(eETHInstance.allowance(alice, bob), 5 ether);
+
+        vm.expectRevert("APPROVE_FROM_ZERO_ADDRESS");
+        vm.prank(address(0));
+        eETHInstance.approve(bob, 5 ether);
+
+        vm.expectRevert("APPROVE_TO_ZERO_ADDRESS");
+        vm.prank(alice);
+        eETHInstance.approve(address(0), 5 ether);
+    }
+
+    function test_ApproveWithZero() public {
+        assertEq(eETHInstance.allowance(alice, bob), 0);
+
+        vm.expectEmit(true, true, false, true);
+        emit Approval(alice, bob, 0 ether);
+        vm.prank(alice);
+        eETHInstance.approve(bob, 0 ether);
+
+        assertEq(eETHInstance.allowance(alice, bob), 0 ether);
+    }
+
+    function test_TransferFromWithAmount() public {
+        hoax(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0 ether);
+        assertEq(eETHInstance.shares(alice), 1 ether);
+        assertEq(eETHInstance.shares(bob), 0);
+
+        vm.expectRevert("TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
+        vm.prank(bob);
+        eETHInstance.transferFrom(alice, bob, 0.5 ether);
+
+        vm.prank(alice);
+        eETHInstance.approve(bob, 0.5 ether);
+        assertEq(eETHInstance.allowance(alice, bob), 0.5 ether);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(alice, bob, 0.5 ether);
+        vm.prank(bob);
+        eETHInstance.transferFrom(alice, bob, 0.5 ether);
+
+        assertEq(eETHInstance.balanceOf(alice), 0.5 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0.5 ether);
+        assertEq(eETHInstance.shares(alice), 0.5 ether);
+        assertEq(eETHInstance.shares(bob), 0.5 ether);
+
+        assertEq(eETHInstance.allowance(alice, bob), 0 ether);
+    }
+
+    function test_TransferFromWithZero() public {
+        hoax(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0 ether);
+        assertEq(eETHInstance.shares(alice), 1 ether);
+        assertEq(eETHInstance.shares(bob), 0);
+
+        vm.prank(alice);
+        eETHInstance.approve(bob, 0.5 ether);
+        assertEq(eETHInstance.allowance(alice, bob), 0.5 ether);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(alice, bob, 0 ether);
+        vm.prank(bob);
+        eETHInstance.transferFrom(alice, bob, 0 ether);
+
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0 ether);
+        assertEq(eETHInstance.shares(alice), 1 ether);
+        assertEq(eETHInstance.shares(bob), 0 ether);
+
+        assertEq(eETHInstance.allowance(alice, bob), 0.5 ether);
     }
 
 }
