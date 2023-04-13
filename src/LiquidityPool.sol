@@ -101,7 +101,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (totalPooledEther == 0) {
             return 0;
         }
-        return ((_amount * 1e18) * eETH.totalShares()) / totalPooledEther;
+        return (_amount * eETH.totalShares()) / totalPooledEther;
     }
 
     function amountForShare(uint256 _share) public view returns (uint256) {
@@ -109,7 +109,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (totalShares == 0) {
             return 0;
         }
-        return (_share * getTotalPooledEther()) / eETH.totalShares();
+    
+        return ((_share * getTotalPooledEther()) / eETH.totalShares() / 1e18);
     }
 
     /// @notice ether.fi protocol will send the ETH as the rewards for EAP users
