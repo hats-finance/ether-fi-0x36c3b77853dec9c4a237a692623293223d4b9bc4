@@ -75,11 +75,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit Withdraw(msg.sender, msg.value);
     }
 
-    batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds) public onlyOwner returns (uint256[] memory) {
+    function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds) public onlyOwner returns (uint256[] memory) {
         uint256 amount = 32 ether * _numDeposits;
         require(address(this).balance >= amount, "Not enough balance");
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds);
-        
+
         return newValidators;
     }
 
