@@ -10,6 +10,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IEETH.sol";
 import "./interfaces/IScoreManager.sol";
+import "./interfaces/IStakingManager.sol";
 import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
@@ -19,6 +20,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     IEETH eETH; 
     IScoreManager scoreManager;
+    IStakingManager stakingManager;
 
     mapping(uint256 => bool) validators;
     uint256 accruedSlashingPenalties;
@@ -129,6 +131,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function setScoreManager(address _address) external onlyOwner {
         scoreManager = IScoreManager(_address);
+    }
+
+    function setStakingManager(address _address) external onlyOwner {
+        stakingManager = IStakingManager(_address);
     }
 
 

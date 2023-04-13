@@ -214,6 +214,8 @@ contract TestSetup is Test {
 
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
         liquidityPoolInstance.setScoreManager(address(scoreManagerInstance));
+        liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
+
         scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
         scoreManagerInstance.addNewScoreType("Early Adopter Pool");
 
