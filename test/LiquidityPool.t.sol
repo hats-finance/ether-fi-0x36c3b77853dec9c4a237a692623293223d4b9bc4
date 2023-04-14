@@ -158,13 +158,17 @@ contract LiquidityPoolTest is TestSetup {
 
         bytes32 depositRoot = _getDepositRoot();
 
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
-        liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, alice, alice, depositDataArray);
-
         assertFalse(liquidityPoolInstance.validators(newValidators[0]));
         assertFalse(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.numValidators(), 0);
+
+        vm.expectRevert("Only liquidity pool contract");
+        vm.prank(alice);
+        stakingManagerInstance.batchRegisterValidators(depositRoot, newValidators, owner, owner, depositDataArray);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, alice, alice, depositDataArray);
 
         vm.prank(owner);
         liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, owner, owner, depositDataArray);

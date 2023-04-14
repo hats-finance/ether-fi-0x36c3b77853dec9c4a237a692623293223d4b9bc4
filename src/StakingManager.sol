@@ -34,6 +34,7 @@ contract StakingManager is
     uint128 public stakeAmount;
 
     address public implementationContract;
+    address public liquidityPoolContract;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
@@ -183,9 +184,6 @@ contract StakingManager is
         }
     }
 
-    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @param _validatorId id of the validator to register
-    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
     function batchRegisterValidators(
         bytes32 _depositRoot,
         uint256[] calldata _validatorId,
@@ -193,6 +191,7 @@ contract StakingManager is
         address _tNftRecipient,
         DepositData[] calldata _depositData
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
+        require(msg.sender == liquidityPoolContract, "Only liquidity pool contract");
         require(_validatorId.length == _depositData.length, "Array lengths must match");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
         
@@ -244,6 +243,15 @@ contract StakingManager is
         nodesManagerIntefaceInstance = IEtherFiNodesManager(
             _nodesManagerAddress
         );
+    }
+
+    /// @notice Sets the Liquidity pool contract address
+    /// @dev Set manually due to circular dependency
+    /// @param _liquidityPoolAddress aaddress of the liquidity pool contract being set
+    function setLiquidityPoolAddress(
+        address _liquidityPoolAddress
+    ) public onlyOwner {
+        liquidityPoolContract = _liquidityPoolAddress;
     }
 
     /// @notice Sets the max number of deposits allowed at a time

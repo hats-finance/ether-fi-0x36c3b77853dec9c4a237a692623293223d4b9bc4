@@ -190,6 +190,7 @@ contract DeployEtherFiSuiteScript is Script {
         protocolRevenueManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
 
         stakingManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
+        stakingManager.setLiquidityPoolAddress(address(liquidityPool));
         stakingManager.registerEtherFiNodeImplementationContract(address(etherFiNode));
         stakingManager.registerTNFTContract(address(TNFTInstance));
         stakingManager.registerBNFTContract(address(BNFTInstance));
