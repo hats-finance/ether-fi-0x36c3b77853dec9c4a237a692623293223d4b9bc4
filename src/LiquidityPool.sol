@@ -85,6 +85,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return staked + boosted;
     }
 
+    function batchRegisterValidators(uint256[] calldata _validatorIds, DepositData[] calldata _depositData) onlyOwner {
+        stakingManager.batchRegisterValidators(_validatorIds, _depositData);
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            uint256 validatorId = _validatorIds[i];
+            validators[validatorId] = true;
+        }
+        numValidators += _validatorIds.length;
+    }
+
     function getEtherStakingPrincipal() public view returns (uint256) {
         return (32 ether * numValidators) - accruedSlashingPenalties;
     }
