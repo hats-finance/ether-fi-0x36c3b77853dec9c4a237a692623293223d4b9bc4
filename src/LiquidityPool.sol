@@ -22,11 +22,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IScoreManager scoreManager;
     IStakingManager stakingManager;
 
-    mapping(uint256 => bool) validators;
-    uint256 accruedSlashingPenalties;
-    uint256 accruedEapRewards;
+    mapping(uint256 => bool) public validators;
+    uint256 public accruedSlashingPenalties;
+    uint256 public accruedEapRewards;
 
-    uint64  numValidators;
+    uint64 public numValidators;
 
     uint256[32] __gap;
 
@@ -83,13 +83,20 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return newValidators;
     }
 
-    function batchRegisterValidators(uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _depositData) onlyOwner {
-        stakingManager.batchRegisterValidators(_validatorIds, _depositData);
+    function batchRegisterValidators(
+        bytes32 _depositRoot, 
+        uint256[] calldata _validatorIds,
+        address _bNftRecipient, 
+        address _tNftRecipient,
+        IStakingManager.DepositData[] calldata _depositData
+        ) public onlyOwner 
+    {
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, _tNftRecipient, _bNftRecipient, _depositData);
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             validators[validatorId] = true;
         }
-        numValidators += _validatorIds.length;
+        numValidators += uint64(_validatorIds.length);
     }
 
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {

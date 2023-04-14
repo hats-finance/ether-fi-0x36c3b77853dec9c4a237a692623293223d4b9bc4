@@ -20,4 +20,11 @@ interface IStakingManager {
 
     function registerValidator(bytes32 _depositRoot, uint256 _validatorId, DepositData calldata _depositData) external;
     function batchRegisterValidators(bytes32 depositRoot, uint256[] calldata _validatorId,DepositData[] calldata _depositData) external;
+    function batchRegisterValidators(
+        bytes32 _depositRoot,
+        uint256[] calldata _validatorId,
+        address _bNftRecipient, 
+        address _tNftRecipient,
+        DepositData[] calldata _depositData
+    ) external;
 }

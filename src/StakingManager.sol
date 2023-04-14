@@ -183,6 +183,24 @@ contract StakingManager is
         }
     }
 
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
+    /// @param _validatorId id of the validator to register
+    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    function batchRegisterValidators(
+        bytes32 _depositRoot,
+        uint256[] calldata _validatorId,
+        address _bNftRecipient, 
+        address _tNftRecipient,
+        DepositData[] calldata _depositData
+    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
+        require(_validatorId.length == _depositData.length, "Array lengths must match");
+        require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
+        
+        for (uint256 x; x < _validatorId.length; ++x) {
+            _registerValidator(_validatorId[x], _tNftRecipient, _bNftRecipient, _depositData[x]);
+        }
+    }
+
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
     /// @param _validatorId the ID of the validator deposit to cancel
