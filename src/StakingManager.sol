@@ -179,14 +179,8 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
 
-        if(msg.sender == liquidityPoolContract) {
-            for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], owner(), address(liquidityPoolContract), _depositData[x]);
-            }
-        } else {
-            for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
-            }
+        for (uint256 x; x < _validatorId.length; ++x) {
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);    
         }  
     }
 

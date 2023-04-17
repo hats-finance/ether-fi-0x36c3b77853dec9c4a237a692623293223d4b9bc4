@@ -89,10 +89,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData
         ) public onlyOwner 
-    {
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, _depositData);
+    {  
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
+            stakingManager.registerValidator(_depositRoot, validatorId, owner(), address(this), _depositData[i]);
             validators[validatorId] = true;
         }
         numValidators += uint64(_validatorIds.length);
