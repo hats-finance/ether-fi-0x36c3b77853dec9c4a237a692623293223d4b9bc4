@@ -115,8 +115,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (totalShares == 0) {
             return 0;
         }
-    
-        return ((_share * getTotalPooledEther()) / eETH.totalShares() / 1e18);
+        return (_share * getTotalPooledEther()) / eETH.totalShares();
     }
 
     /// @notice ether.fi protocol will send the ETH as the rewards for EAP users

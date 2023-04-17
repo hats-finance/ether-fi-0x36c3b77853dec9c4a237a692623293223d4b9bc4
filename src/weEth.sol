@@ -76,7 +76,7 @@ contract WeEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
     /// @notice Fetches the amount of eEth respective to the amount of weEth sent in
     /// @param _weETHAmount amount sent in
     /// @return The total amount for the number of shares sent in
-    function geteETHByWetETH(uint256 _weETHAmount) external view returns (uint256) {
+    function getEETHByWetETH(uint256 _weETHAmount) external view returns (uint256) {
         return liquidityPool.amountForShare(_weETHAmount);
     }
 
