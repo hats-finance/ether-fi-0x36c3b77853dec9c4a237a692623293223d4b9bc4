@@ -7,6 +7,7 @@ import "../src/interfaces/IEtherFiNode.sol";
 import "src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorManager.sol";
+import "../src/RegulationsManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
@@ -38,6 +39,7 @@ contract TestSetup is Test {
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public eETHProxy;
     UUPSProxy public scoreManagerProxy;
+    UUPSProxy public regulationsManagerProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -56,6 +58,9 @@ contract TestSetup is Test {
 
     ScoreManager public scoreManagerInstance;
     ScoreManager public scoreManagerImplementation;
+
+    RegulationsManager public regulationsManagerInstance;
+    RegulationsManager public regulationsManagerImplementation;
 
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
@@ -146,6 +151,11 @@ contract TestSetup is Test {
         scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
         scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
         scoreManagerInstance.initialize();
+
+        regulationsManagerImplementation = new RegulationsManager();
+        regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
+        regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
+        regulationsManagerInstance.initialize();
 
         node = new EtherFiNode();
 
