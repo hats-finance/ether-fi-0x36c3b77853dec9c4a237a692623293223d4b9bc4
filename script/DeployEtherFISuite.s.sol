@@ -200,6 +200,7 @@ contract DeployEtherFiSuiteScript is Script {
         liquidityPool.setTokenAddress(address(eETH));
         liquidityPool.setScoreManager(address(scoreManager));
         liquidityPool.setStakingManager(address(stakingManager));
+        liquidityPool.setEtherFiNodesManager(address(etherFiNodesManager));
 
         scoreManager.setCallerStatus(address(claimReceiverPool), true);
 
