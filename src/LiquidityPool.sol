@@ -97,12 +97,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return staked + boosted;
     }
 
-    function getEtherStakingPrincipal() public view returns (uint256) {
-        return (32 ether * numValidators) - accruedSlashingPenalties;
-    }
-
     function getTotalPooledEther() public view returns (uint256) {
-        return getEtherStakingPrincipal() + address(this).balance - accruedEapRewards;
+        return (32 ether * numValidators) + address(this).balance - (accruedSlashingPenalties + accruedEapRewards);
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
