@@ -71,7 +71,6 @@ contract StakingManager is
     //--------------------------------------------------------------------------------------
 
     /// @notice initialize to set variables on deployment
-    /// @notice maxBatchDepositSize = 5% * (30_000_000 * 330_300)
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
