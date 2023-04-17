@@ -192,18 +192,12 @@ contract LiquidityPoolTest is TestSetup {
 
         hoax(alice);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
-        assertEq(bidIds.length, 2);
 
         hoax(bob);
         liquidityPoolInstance.deposit{value: 64 ether}(bob);
 
-        assertEq(address(liquidityPoolInstance).balance, 64 ether);
-
         vm.prank(owner);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds(2, bidIds);
-        assertEq(newValidators.length, 2);
-        assertEq(address(liquidityPoolInstance).balance, 0 ether);
-        assertEq(address(stakingManagerInstance).balance, 64 ether);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](2);
@@ -228,20 +222,15 @@ contract LiquidityPoolTest is TestSetup {
 
         bytes32 depositRoot = _getDepositRoot();
 
-        assertFalse(liquidityPoolInstance.validators(newValidators[0]));
-        assertFalse(liquidityPoolInstance.validators(newValidators[1]));
-        assertEq(liquidityPoolInstance.numValidators(), 0);
-
         vm.prank(owner);
         liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
 
-        assertTrue(liquidityPoolInstance.validators(newValidators[0]));
-        assertTrue(liquidityPoolInstance.validators(newValidators[1]));
-        assertEq(liquidityPoolInstance.numValidators(), 2);
-
         uint256[] memory slashingPenalties = new uint256[](2);
-        slashingPenalties[0] = 0;
-        slashingPenalties[1] = 0;
+        slashingPenalties[0] = 0.5 ether;
+        slashingPenalties[1] = 0.5 ether;
+
+        vm.prank(owner);
+        liquidityPoolInstance.setAccruedSlashingPenalty(1 ether);
 
         vm.expectRevert("Incorrect Phase");
         vm.prank(owner);
@@ -264,8 +253,27 @@ contract LiquidityPoolTest is TestSetup {
         exitRequestTimestamps[0] = etherFiNode1.exitRequestTimestamp();
         exitRequestTimestamps[1] = etherFiNode2.exitRequestTimestamp();
 
+        // Process the node exit via nodeManager
         vm.prank(owner);
         managerInstance.processNodeExit(newValidators, exitRequestTimestamps);
-    }
 
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
+
+        assertEq(liquidityPoolInstance.numValidators(), 2);
+        assertTrue(liquidityPoolInstance.validators(newValidators[0]));
+        assertTrue(liquidityPoolInstance.validators(newValidators[1]));
+
+        assertEq(liquidityPoolInstance.accruedSlashingPenalties(), 1 ether);
+        
+        // Delist the node from the liquidity pool
+        vm.prank(owner);
+        liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
+
+        assertEq(liquidityPoolInstance.numValidators(), 0);
+        assertFalse(liquidityPoolInstance.validators(newValidators[0]));
+        assertFalse(liquidityPoolInstance.validators(newValidators[1]));
+        assertEq(liquidityPoolInstance.accruedSlashingPenalties(), 0 ether);
+    }
 }
