@@ -179,14 +179,26 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
 
-        if(msg.sender == liquidityPoolContract) {
-            for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], owner(), address(liquidityPoolContract), _depositData[x]);
-            }
-        } else {
-            for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
-            }
+        for (uint256 x; x < _validatorId.length; ++x) {
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);    
+        }  
+    }
+
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
+    /// @param _validatorId id of the validator to register
+    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    function batchRegisterValidators(
+        bytes32 _depositRoot,
+        uint256[] calldata _validatorId,
+        address _bNftRecipient, 
+        address _tNftRecipient,
+        DepositData[] calldata _depositData
+    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
+        require(_validatorId.length == _depositData.length, "Array lengths must match");
+        require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
+
+        for (uint256 x; x < _validatorId.length; ++x) {
+            _registerValidator(_validatorId[x],_bNftRecipient, _tNftRecipient, _depositData[x]);    
         }  
     }
 

@@ -530,10 +530,10 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[9] = 20;
 
         uint256[] memory processedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 320 ether}(bidIdArray);
+            .batchDepositWithBidIds{value: 128 ether}(bidIdArray);
 
         IStakingManager.DepositData[]
-            memory depositDataArray = new IStakingManager.DepositData[](10);
+            memory depositDataArray = new IStakingManager.DepositData[](4);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -559,35 +559,43 @@ contract StakingManagerTest is TestSetup {
             depositDataArray
         );
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.7 ether);
-        assertEq(address(auctionInstance).balance, 1.6 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.2 ether);
+        assertEq(address(auctionInstance).balance, 2.6 ether);
 
         assertEq(
-            BNFTInstance.ownerOf(bidIdArray[0]),
+            BNFTInstance.ownerOf(processedBidIds[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            BNFTInstance.ownerOf(bidIdArray[4]),
+            BNFTInstance.ownerOf(processedBidIds[1]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            BNFTInstance.ownerOf(bidIdArray[6]),
+            BNFTInstance.ownerOf(processedBidIds[2]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TNFTInstance.ownerOf(bidIdArray[1]),
+            BNFTInstance.ownerOf(processedBidIds[3]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TNFTInstance.ownerOf(bidIdArray[2]),
+            TNFTInstance.ownerOf(processedBidIds[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TNFTInstance.ownerOf(bidIdArray[9]),
+            TNFTInstance.ownerOf(processedBidIds[1]),
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
+        assertEq(
+            TNFTInstance.ownerOf(processedBidIds[2]),
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
+        assertEq(
+            TNFTInstance.ownerOf(processedBidIds[3]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
-        assertEq(managerInstance.numberOfValidators(), 10);
+        assertEq(managerInstance.numberOfValidators(), 4);
     }
 
     function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
@@ -654,23 +662,17 @@ contract StakingManagerTest is TestSetup {
             auctionInstance.createBid{value: 0.2 ether}(1, 0.2 ether);
         }
 
-        uint256[] memory bidIdArray = new uint256[](10);
+        uint256[] memory bidIdArray = new uint256[](4);
         bidIdArray[0] = 1;
         bidIdArray[1] = 2;
         bidIdArray[2] = 6;
         bidIdArray[3] = 7;
-        bidIdArray[4] = 8;
-        bidIdArray[5] = 9;
-        bidIdArray[6] = 11;
-        bidIdArray[7] = 12;
-        bidIdArray[8] = 19;
-        bidIdArray[9] = 20;
 
         uint256[] memory processedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 320 ether}(bidIdArray);
+            .batchDepositWithBidIds{value: 128 ether}(bidIdArray);
 
         IStakingManager.DepositData[]
-            memory depositDataArray = new IStakingManager.DepositData[](10);
+            memory depositDataArray = new IStakingManager.DepositData[](4);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -1129,5 +1131,25 @@ contract StakingManagerTest is TestSetup {
         stakingManagerInstance.registerValidator(_getDepositRoot(), bidId1[0], alice, bob, depositData);
         assertEq(BNFTInstance.ownerOf(bidId1[0]), alice);
         assertEq(TNFTInstance.ownerOf(bidId1[0]), bob);
+    }
+
+    function test_MaxBatchBidGasFee() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.4 ether}(
+            4,
+            0.1 ether
+        );
+
+        startHoax(alice);
+        stakingManagerInstance.batchDepositWithBidIds{value: 128 ether}(bidIds);
     }
 }

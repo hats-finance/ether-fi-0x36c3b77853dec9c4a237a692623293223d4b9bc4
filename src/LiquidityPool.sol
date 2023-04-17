@@ -92,8 +92,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData
         ) public onlyOwner 
-    {
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, _depositData);
+    {  
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             validators[validatorId] = true;
@@ -134,12 +134,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         return staked + boosted;
     }
 
-    function getEtherStakingPrincipal() public view returns (uint256) {
-        return (32 ether * numValidators) - accruedSlashingPenalties;
-    }
-
     function getTotalPooledEther() public view returns (uint256) {
-        return getEtherStakingPrincipal() + address(this).balance - accruedEapRewards;
+        return (32 ether * numValidators) + address(this).balance - (accruedSlashingPenalties + accruedEapRewards);
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
