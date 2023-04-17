@@ -16,6 +16,8 @@ contract RegulationsManager is
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
+    mapping(address => bool) public isEligible;
+    mapping(address => bytes) public userIsoCode;
 
     uint256[32] __gap;
 
@@ -23,23 +25,31 @@ contract RegulationsManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
+    event EligibilityConfirmed(bytes isoCode, address user);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    function confirmEligibility(bytes memory _isoCode) external {
+        require(_isoCode.length == 2, "Invalid IDO Code");
+
+        isEligible[msg.sender] = true;
+        userIsoCode[msg.sender] = _isoCode;
+
+        emit EligibilityConfirmed(_isoCode, msg.sender);
+
+    }
+
     /// @notice initialize to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager contract must be deployed first
-    /// @param _auctionAddress the address of the auction contract for interaction
-    function initialize(address _auctionAddress) external initializer {
+    function initialize() external initializer {
         __Pausable_init();
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
     }
-
-    
 
     //Pauses the contract
     function pauseContract() external onlyOwner {
