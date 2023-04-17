@@ -19,9 +19,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IEETH eETH; 
-    IScoreManager scoreManager;
-    IStakingManager stakingManager;
+    IEETH public eETH; 
+    IScoreManager public scoreManager;
+    IStakingManager public stakingManager;
+    IEtherFiNodesManager public nodesManager;
 
     mapping(uint256 => bool) public validators;
     uint256 public accruedSlashingPenalties;
@@ -98,6 +99,19 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         numValidators += uint64(_validatorIds.length);
     }
 
+    // After the nodes are exited, delist them from the liquidity pool
+    function processNodeExit(uint256[] calldata _validatorIds, uint256[] calldata _slashingPenalties) public onlyOwner {
+        uint256 totalSlashingPenalties = 0;
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            uint256 validatorId = _validatorIds[i];
+            require(nodesManager.phase(validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED, "");
+            validators[validatorId] = false;
+            totalSlashingPenalties += _slashingPenalties[i];
+        }
+        numValidators -= uint64(_validatorIds.length);
+        accruedSlashingPenalties -= totalSlashingPenalties;
+    }
+
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
         uint256 staked;
         uint256 boosted;
@@ -158,6 +172,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
 
     function setStakingManager(address _address) external onlyOwner {
         stakingManager = IStakingManager(_address);
+    }
+
+    function setEtherFiNodesManager(address _address) external onlyOwner {
+        nodesManager = IEtherFiNodesManager(_address);
     }
 
 
