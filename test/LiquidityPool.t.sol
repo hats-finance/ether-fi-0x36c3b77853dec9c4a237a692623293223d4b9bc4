@@ -180,4 +180,92 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(BNFTInstance.ownerOf(newValidators[1]), owner);
     }
 
+    function test_ProcessNodeExit() public {
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceProof,
+            _ipfsHash,
+            5
+        );
+
+        hoax(alice);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
+        assertEq(bidIds.length, 2);
+
+        hoax(bob);
+        liquidityPoolInstance.deposit{value: 64 ether}(bob);
+
+        assertEq(address(liquidityPoolInstance).balance, 64 ether);
+
+        vm.prank(owner);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds(2, bidIds);
+        assertEq(newValidators.length, 2);
+        assertEq(address(liquidityPoolInstance).balance, 0 ether);
+        assertEq(address(stakingManagerInstance).balance, 64 ether);
+
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](2);
+
+        for (uint256 i = 0; i < newValidators.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                newValidators[i]
+            );
+            bytes32 root = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                32 ether
+            );
+            depositDataArray[i] = IStakingManager.DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+        }
+
+        bytes32 depositRoot = _getDepositRoot();
+
+        assertFalse(liquidityPoolInstance.validators(newValidators[0]));
+        assertFalse(liquidityPoolInstance.validators(newValidators[1]));
+        assertEq(liquidityPoolInstance.numValidators(), 0);
+
+        vm.prank(owner);
+        liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
+
+        assertTrue(liquidityPoolInstance.validators(newValidators[0]));
+        assertTrue(liquidityPoolInstance.validators(newValidators[1]));
+        assertEq(liquidityPoolInstance.numValidators(), 2);
+
+        uint256[] memory slashingPenalties = new uint256[](2);
+        slashingPenalties[0] = 0;
+        slashingPenalties[1] = 0;
+
+        vm.expectRevert("Incorrect Phase");
+        vm.prank(owner);
+        liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        liquidityPoolInstance.sendExitRequests(newValidators);
+
+        vm.prank(owner);
+        liquidityPoolInstance.sendExitRequests(newValidators);
+
+        address node1 = managerInstance.etherfiNodeAddress(newValidators[0]);
+        address node2 = managerInstance.etherfiNodeAddress(newValidators[1]);
+
+        EtherFiNode etherFiNode1 = EtherFiNode(node1);
+        EtherFiNode etherFiNode2 = EtherFiNode(node2);
+
+        uint32[] memory exitRequestTimestamps = new uint32[](2);
+        exitRequestTimestamps[0] = etherFiNode1.exitRequestTimestamp();
+        exitRequestTimestamps[1] = etherFiNode2.exitRequestTimestamp();
+
+        vm.prank(owner);
+        managerInstance.processNodeExit(newValidators, exitRequestTimestamps);
+    }
+
 }
