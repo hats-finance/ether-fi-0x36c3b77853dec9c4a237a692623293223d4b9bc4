@@ -21,6 +21,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IEETH eETH; 
     IScoreManager scoreManager;
     IStakingManager stakingManager;
+    IEtherFiNodesManager nodesManager;
 
     mapping(uint256 => bool) validators;
     uint256 accruedSlashingPenalties;
@@ -82,6 +83,19 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         return newValidators;
     }
+
+    // After the nodes are exited, delist them from the liquidity pool
+    function processNodeExit(uint256[] calldata _validatorIds, uint256[] calldata _slashingPenalties) public onlyOwner {
+        uint256 totalSlashingPenalty = 0;
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            uint256 validatorId = _validatorIds[i];
+            require(nodesManager.phase(validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED, "");
+            validators[validatorId] = false;
+            totalSlashingPenalty += _slashingPenalties[i];
+        }
+        numValidators -= uint64(_validatorIds.length);
+        accruedSlashingPenalties -= totalSlashingPenalty;
+    }  
 
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
         uint256 staked;
