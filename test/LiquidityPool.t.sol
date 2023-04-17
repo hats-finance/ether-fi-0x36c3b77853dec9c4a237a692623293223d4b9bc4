@@ -32,12 +32,14 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0);
         vm.stopPrank();
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
         liquidityPoolInstance.deposit{value: 2 ether}(bob);
         assertEq(bob.balance, 1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 2 ether);
         vm.stopPrank();
 
@@ -110,6 +112,33 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(newValidators[0], 1);
     }
 
+    function test_WithdrawLiquidityPoolSlashingPenalties() public {
+        vm.deal(alice, 3 ether);
+        vm.startPrank(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
+        assertEq(alice.balance, 1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0);
+        vm.stopPrank();
+
+        vm.deal(bob, 3 ether);
+        vm.startPrank(bob);
+        liquidityPoolInstance.deposit{value: 2 ether}(bob);
+        assertEq(bob.balance, 1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        assertEq(eETHInstance.balanceOf(bob), 2 ether);
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        liquidityPoolInstance.setAccruedSlashingPenalty(1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 1.5 ether);
+        assertEq(eETHInstance.balanceOf(bob), 1.5 ether);
+
+        liquidityPoolInstance.setAccruedSlashingPenalty(2 ether);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(eETHInstance.balanceOf(bob), 1 ether);
+        vm.stopPrank();
+    }
     function test_LiquidityPoolBatchRegisterValidators() public {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
