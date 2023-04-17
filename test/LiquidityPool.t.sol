@@ -279,11 +279,8 @@ contract LiquidityPoolTest is TestSetup {
         EtherFiNode etherFiNode2 = EtherFiNode(node2);
 
         uint32[] memory exitRequestTimestamps = new uint32[](2);
-        exitRequestTimestamps[0] = uint32(block.timestamp);
-        console.log(block.timestamp);
-        skip(3600);
-        console.log(block.timestamp);
-        exitRequestTimestamps[1] = uint32(block.timestamp);
+        exitRequestTimestamps[0] = 1681351200; // Thu Apr 13 2023 02:00:00 UTC
+        exitRequestTimestamps[1] = 1681075815; // Sun Apr 09 2023 21:30:15 UTC
 
         // Process the node exit via nodeManager
         vm.prank(owner);
