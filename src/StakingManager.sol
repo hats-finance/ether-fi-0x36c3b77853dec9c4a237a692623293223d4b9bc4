@@ -77,7 +77,7 @@ contract StakingManager is
     function initialize(address _auctionAddress) external initializer {
          
         stakeAmount = 32 ether;
-        maxBatchDepositSize = 4;
+        maxBatchDepositSize = 25;
 
         __Pausable_init();
         __Ownable_init();
