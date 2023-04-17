@@ -5,6 +5,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
@@ -16,6 +17,7 @@ contract EtherFiNodesManager is
     Initializable,
     IEtherFiNodesManager,
     OwnableUpgradeable,
+    PausableUpgradeable,
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
@@ -147,7 +149,7 @@ contract EtherFiNodesManager is
     }
 
     /// @notice send the request to exit the validator node
-    function sendExitRequest(uint256 _validatorId) public {
+    function sendExitRequest(uint256 _validatorId) public whenNotPaused {
         require(
             msg.sender == tnftInstance.ownerOf(_validatorId),
             "You are not the owner of the T-NFT"
@@ -159,7 +161,7 @@ contract EtherFiNodesManager is
     }
 
     /// @notice send the request to exit the validator node
-    function batchSendExitRequest(uint256[] calldata _validatorIds) external {
+    function batchSendExitRequest(uint256[] calldata _validatorIds) external whenNotPaused {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             sendExitRequest(_validatorIds[i]);
         }
@@ -171,7 +173,7 @@ contract EtherFiNodesManager is
     function processNodeExit(
         uint256[] calldata _validatorIds,
         uint32[] calldata _exitTimestamps
-    ) external onlyOwner nonReentrant {
+    ) external onlyOwner nonReentrant whenNotPaused {
         require(
             _validatorIds.length == _exitTimestamps.length,
             "_validatorIds.length != _exitTimestamps.length"
@@ -193,7 +195,7 @@ contract EtherFiNodesManager is
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee
-    ) public nonReentrant {
+    ) public nonReentrant whenNotPaused {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         uint256 balance = address(etherfiNode).balance;
         require(
@@ -245,7 +247,7 @@ contract EtherFiNodesManager is
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee
-    ) external {
+    ) external whenNotPaused{
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             partialWithdraw(
                 _validatorIds[i],
@@ -263,7 +265,7 @@ contract EtherFiNodesManager is
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee
-    ) external nonReentrant {
+    ) external nonReentrant whenNotPaused{
         uint256 totalOperatorAmount;
         uint256 totalTreasuryAmount;
         address tnftHolder;
@@ -336,7 +338,7 @@ contract EtherFiNodesManager is
     /// this fullWithdrawal is allowed only after it's marked as EXITED
     /// EtherFi will be monitoring the status of the validator nodes and mark them EXITED if they do;
     /// it is a point of centralization in Phase 1
-    function fullWithdraw(uint256 _validatorId) public nonReentrant {
+    function fullWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused{
         address etherfiNode = etherfiNodeAddress[_validatorId];
         require(
             address(etherfiNode).balance >= 16 ether,
@@ -374,7 +376,7 @@ contract EtherFiNodesManager is
 
     /// @notice process the full withdrawal
     /// @param _validatorIds the validator Ids
-    function fullWithdrawBatch(uint256[] calldata _validatorIds) external {
+    function fullWithdrawBatch(uint256[] calldata _validatorIds) external whenNotPaused {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             fullWithdraw(_validatorIds[i]);
         }
@@ -430,7 +432,7 @@ contract EtherFiNodesManager is
 
     /// @notice Sets the Non Exit Penalty Principal amount
     /// @param _nonExitPenaltyPrincipal the new principal amount
-    function setNonExitPenaltyPrincipal(
+    function setNonExitPenaltyPrincipal (
         uint64 _nonExitPenaltyPrincipal
     ) public onlyOwner {
         nonExitPenaltyPrincipal = _nonExitPenaltyPrincipal;
