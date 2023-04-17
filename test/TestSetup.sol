@@ -206,6 +206,7 @@ contract TestSetup is Test {
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setLiquidityPoolAddress(address(liquidityPoolInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
