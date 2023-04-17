@@ -13,18 +13,11 @@ interface IStakingManager {
 
     function initialize(address _auctionAddress) external;
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
-
+    function setLiquidityPoolAddress(address _liquidityPoolAddress) external;
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds) external payable returns (uint256[] memory);
 
     function cancelDeposit(uint256 _validatorId) external;
 
     function registerValidator(bytes32 _depositRoot, uint256 _validatorId, DepositData calldata _depositData) external;
-    function batchRegisterValidators(bytes32 depositRoot, uint256[] calldata _validatorId,DepositData[] calldata _depositData) external;
-    function batchRegisterValidators(
-        bytes32 _depositRoot,
-        uint256[] calldata _validatorId,
-        address _bNftRecipient, 
-        address _tNftRecipient,
-        DepositData[] calldata _depositData
-    ) external;
+    function batchRegisterValidators(bytes32 _depositRoot, uint256[] calldata _validatorId, DepositData[] calldata _depositData) external;
 }

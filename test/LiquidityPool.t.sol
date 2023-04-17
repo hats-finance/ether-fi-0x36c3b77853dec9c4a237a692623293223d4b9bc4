@@ -162,24 +162,20 @@ contract LiquidityPoolTest is TestSetup {
         assertFalse(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.numValidators(), 0);
 
-        vm.expectRevert("Only liquidity pool contract");
-        vm.prank(alice);
-        stakingManagerInstance.batchRegisterValidators(depositRoot, newValidators, owner, owner, depositDataArray);
-
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(alice);
-        liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, alice, alice, depositDataArray);
+        liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
 
         vm.prank(owner);
-        liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, owner, owner, depositDataArray);
+        liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
 
         assertEq(address(stakingManagerInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
         assertTrue(liquidityPoolInstance.validators(newValidators[0]));
         assertTrue(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.numValidators(), 2);
-        assertEq(TNFTInstance.ownerOf(newValidators[0]), owner);
-        assertEq(TNFTInstance.ownerOf(newValidators[1]), owner);
+        assertEq(TNFTInstance.ownerOf(newValidators[0]), address(liquidityPoolInstance));
+        assertEq(TNFTInstance.ownerOf(newValidators[1]), address(liquidityPoolInstance));
         assertEq(BNFTInstance.ownerOf(newValidators[0]), owner);
         assertEq(BNFTInstance.ownerOf(newValidators[1]), owner);
     }

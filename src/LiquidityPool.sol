@@ -5,6 +5,7 @@ import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNodesManager.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
@@ -13,7 +14,7 @@ import "./interfaces/IScoreManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "forge-std/console.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IERC721ReceiverUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -86,12 +87,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function batchRegisterValidators(
         bytes32 _depositRoot, 
         uint256[] calldata _validatorIds,
-        address _bNftRecipient, 
-        address _tNftRecipient,
         IStakingManager.DepositData[] calldata _depositData
         ) public onlyOwner 
     {
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, _tNftRecipient, _bNftRecipient, _depositData);
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, _depositData);
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             validators[validatorId] = true;
@@ -191,6 +190,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return IERC721ReceiverUpgradeable.onERC721Received.selector;
+    }
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------

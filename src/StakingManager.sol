@@ -178,26 +178,16 @@ contract StakingManager is
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
         require(_validatorId.length == _depositData.length, "Array lengths must match");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
-        
-        for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
-        }
-    }
 
-    function batchRegisterValidators(
-        bytes32 _depositRoot,
-        uint256[] calldata _validatorId,
-        address _bNftRecipient, 
-        address _tNftRecipient,
-        DepositData[] calldata _depositData
-    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
-        require(msg.sender == liquidityPoolContract, "Only liquidity pool contract");
-        require(_validatorId.length == _depositData.length, "Array lengths must match");
-        require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
-        
-        for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], _tNftRecipient, _bNftRecipient, _depositData[x]);
-        }
+        if(msg.sender == liquidityPoolContract) {
+            for (uint256 x; x < _validatorId.length; ++x) {
+            _registerValidator(_validatorId[x], owner(), address(liquidityPoolContract), _depositData[x]);
+            }
+        } else {
+            for (uint256 x; x < _validatorId.length; ++x) {
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
+            }
+        }  
     }
 
     /// @notice Cancels a users stake
