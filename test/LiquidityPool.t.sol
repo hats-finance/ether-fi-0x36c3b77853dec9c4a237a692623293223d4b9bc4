@@ -250,8 +250,11 @@ contract LiquidityPoolTest is TestSetup {
         EtherFiNode etherFiNode2 = EtherFiNode(node2);
 
         uint32[] memory exitRequestTimestamps = new uint32[](2);
-        exitRequestTimestamps[0] = etherFiNode1.exitRequestTimestamp();
-        exitRequestTimestamps[1] = etherFiNode2.exitRequestTimestamp();
+        exitRequestTimestamps[0] = uint32(block.timestamp);
+        console.log(block.timestamp);
+        skip(3600);
+        console.log(block.timestamp);
+        exitRequestTimestamps[1] = uint32(block.timestamp);
 
         // Process the node exit via nodeManager
         vm.prank(owner);
