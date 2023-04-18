@@ -20,7 +20,7 @@ contract RegulationsManager is
 {
     mapping(uint32 => mapping (address => bool)) public isEligible;
     mapping(uint32 => mapping (address => bytes)) public userIsoCode;
-    mapping(uint32 => mapping (address => string)) public declarationHash;
+    mapping(uint32 => mapping (address => bytes32)) public declarationHash;
 
     uint32 public declarationIteration;
 
@@ -30,7 +30,7 @@ contract RegulationsManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event EligibilityConfirmed(bytes isoCode, string declarationHash, uint32 declarationIteration, address user);
+    event EligibilityConfirmed(bytes isoCode, bytes32 declarationHash, uint32 declarationIteration, address user);
     event EligibilityRemoved(uint32 declarationIteration, address user);
     event DeclarationIterationIncreased(uint32 currentDeclaration);
 
@@ -48,7 +48,7 @@ contract RegulationsManager is
         __ReentrancyGuard_init();
     }
 
-    function confirmEligibility(bytes memory _isoCode, string memory _declarationHash) external whenNotPaused {
+    function confirmEligibility(bytes memory _isoCode, bytes32 _declarationHash) external whenNotPaused {
         require(_isoCode.length == 2, "Invalid IDO Code");
 
         isEligible[declarationIteration][msg.sender] = true;
