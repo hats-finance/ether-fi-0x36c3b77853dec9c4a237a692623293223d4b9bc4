@@ -44,6 +44,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    receive() external payable {}
+
     function initialize() external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -116,6 +118,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther();
+       
         if (totalPooledEther == 0) {
             return 0;
         }

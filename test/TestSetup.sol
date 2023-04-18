@@ -4,7 +4,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
-import "src/EtherFiNodesManager.sol";
+import "../src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorManager.sol";
 import "../src/AuctionManager.sol";
@@ -15,6 +15,7 @@ import "../src/Treasury.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
+import "../src/WeEth.sol";
 import "../src/ScoreManager.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
@@ -38,6 +39,7 @@ contract TestSetup is Test {
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public eETHProxy;
     UUPSProxy public scoreManagerProxy;
+    UUPSProxy public weETHProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -68,7 +70,10 @@ contract TestSetup is Test {
     
     EETH public eETHImplementation;
     EETH public eETHInstance;
-    
+
+    WeEth public weEthImplementation;
+    WeEth public weEthInstance;
+
     ClaimReceiverPool public claimReceiverPoolImplementation;
     ClaimReceiverPool public claimReceiverPoolInstance;
 
@@ -192,6 +197,11 @@ contract TestSetup is Test {
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
         eETHInstance = EETH(address(eETHProxy));
         eETHInstance.initialize(payable(address(liquidityPoolInstance)));
+
+        weEthImplementation = new WeEth();
+        weETHProxy = new UUPSProxy(address(weEthImplementation), "");
+        weEthInstance = WeEth(address(weETHProxy));
+        weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
         // Setup dependencies
         _merkleSetup();
