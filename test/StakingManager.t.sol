@@ -530,10 +530,10 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[9] = 20;
 
         uint256[] memory processedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 320 ether}(bidIdArray);
+            .batchDepositWithBidIds{value: 128 ether}(bidIdArray);
 
         IStakingManager.DepositData[]
-            memory depositDataArray = new IStakingManager.DepositData[](10);
+            memory depositDataArray = new IStakingManager.DepositData[](4);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -559,35 +559,43 @@ contract StakingManagerTest is TestSetup {
             depositDataArray
         );
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.7 ether);
-        assertEq(address(auctionInstance).balance, 1.6 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, 0.2 ether);
+        assertEq(address(auctionInstance).balance, 2.6 ether);
 
         assertEq(
-            BNFTInstance.ownerOf(bidIdArray[0]),
+            BNFTInstance.ownerOf(processedBidIds[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            BNFTInstance.ownerOf(bidIdArray[4]),
+            BNFTInstance.ownerOf(processedBidIds[1]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            BNFTInstance.ownerOf(bidIdArray[6]),
+            BNFTInstance.ownerOf(processedBidIds[2]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TNFTInstance.ownerOf(bidIdArray[1]),
+            BNFTInstance.ownerOf(processedBidIds[3]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TNFTInstance.ownerOf(bidIdArray[2]),
+            TNFTInstance.ownerOf(processedBidIds[0]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(
-            TNFTInstance.ownerOf(bidIdArray[9]),
+            TNFTInstance.ownerOf(processedBidIds[1]),
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
+        assertEq(
+            TNFTInstance.ownerOf(processedBidIds[2]),
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
+        assertEq(
+            TNFTInstance.ownerOf(processedBidIds[3]),
             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
-        assertEq(managerInstance.numberOfValidators(), 10);
+        assertEq(managerInstance.numberOfValidators(), 4);
     }
 
     function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
@@ -654,23 +662,17 @@ contract StakingManagerTest is TestSetup {
             auctionInstance.createBid{value: 0.2 ether}(1, 0.2 ether);
         }
 
-        uint256[] memory bidIdArray = new uint256[](10);
+        uint256[] memory bidIdArray = new uint256[](4);
         bidIdArray[0] = 1;
         bidIdArray[1] = 2;
         bidIdArray[2] = 6;
         bidIdArray[3] = 7;
-        bidIdArray[4] = 8;
-        bidIdArray[5] = 9;
-        bidIdArray[6] = 11;
-        bidIdArray[7] = 12;
-        bidIdArray[8] = 19;
-        bidIdArray[9] = 20;
 
         uint256[] memory processedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 320 ether}(bidIdArray);
+            .batchDepositWithBidIds{value: 128 ether}(bidIdArray);
 
         IStakingManager.DepositData[]
-            memory depositDataArray = new IStakingManager.DepositData[](10);
+            memory depositDataArray = new IStakingManager.DepositData[](4);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -716,7 +718,7 @@ contract StakingManagerTest is TestSetup {
             auctionInstance.createBid{value: 0.2 ether}(1, 0.2 ether);
         }
 
-        uint256[] memory bidIdArray = new uint256[](17);
+        uint256[] memory bidIdArray = new uint256[](27);
         bidIdArray[0] = 1;
         bidIdArray[1] = 2;
         bidIdArray[2] = 3;
@@ -734,26 +736,38 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[14] = 15;
         bidIdArray[15] = 16;
         bidIdArray[16] = 17;
+        bidIdArray[17] = 18;
+        bidIdArray[18] = 19;
+        bidIdArray[19] = 20;
+        bidIdArray[20] = 21;
+        bidIdArray[21] = 22;
+        bidIdArray[22] = 23;
+        bidIdArray[23] = 24;
+        bidIdArray[24] = 25;
+        bidIdArray[25] = 26;
+        bidIdArray[26] = 27;
 
         IStakingManager.DepositData[]
-            memory depositDataArray = new IStakingManager.DepositData[](17);
-        depositDataArray[0] = test_data;
-        depositDataArray[1] = test_data_2;
-        depositDataArray[2] = test_data;
-        depositDataArray[3] = test_data_2;
-        depositDataArray[4] = test_data;
-        depositDataArray[5] = test_data_2;
-        depositDataArray[6] = test_data;
-        depositDataArray[7] = test_data_2;
-        depositDataArray[8] = test_data;
-        depositDataArray[9] = test_data;
-        depositDataArray[10] = test_data;
-        depositDataArray[11] = test_data;
-        depositDataArray[12] = test_data;
-        depositDataArray[13] = test_data;
-        depositDataArray[14] = test_data;
-        depositDataArray[15] = test_data;
-        depositDataArray[16] = test_data;
+            memory depositDataArray = new IStakingManager.DepositData[](27);
+
+
+        for (uint256 i = 0; i < bidIdArray.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                bidIdArray[i]
+            );
+            bytes32 root = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                32 ether
+            );
+            depositDataArray[i] = IStakingManager.DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+        }
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray
@@ -1057,7 +1071,7 @@ contract StakingManagerTest is TestSetup {
     }
 
     function test_SetMaxDeposit() public {
-        assertEq(stakingManagerInstance.maxBatchDepositSize(), 16);
+        assertEq(stakingManagerInstance.maxBatchDepositSize(), 25);
         vm.prank(owner);
         stakingManagerInstance.setMaxBatchDepositSize(12);
         assertEq(stakingManagerInstance.maxBatchDepositSize(), 12);
@@ -1129,5 +1143,25 @@ contract StakingManagerTest is TestSetup {
         stakingManagerInstance.registerValidator(_getDepositRoot(), bidId1[0], alice, bob, depositData);
         assertEq(BNFTInstance.ownerOf(bidId1[0]), alice);
         assertEq(TNFTInstance.ownerOf(bidId1[0]), bob);
+    }
+
+    function test_MaxBatchBidGasFee() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            proof,
+            _ipfsHash,
+            5
+        );
+
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.4 ether}(
+            4,
+            0.1 ether
+        );
+
+        startHoax(alice);
+        stakingManagerInstance.batchDepositWithBidIds{value: 128 ether}(bidIds);
     }
 }

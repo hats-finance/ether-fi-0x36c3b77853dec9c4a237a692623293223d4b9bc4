@@ -4,7 +4,7 @@ import "forge-std/Test.sol";
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
-import "src/EtherFiNodesManager.sol";
+import "../src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorManager.sol";
 import "../src/RegulationsManager.sol";
@@ -16,6 +16,7 @@ import "../src/Treasury.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
+import "../src/WeEth.sol";
 import "../src/ScoreManager.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
@@ -40,6 +41,7 @@ contract TestSetup is Test {
     UUPSProxy public eETHProxy;
     UUPSProxy public scoreManagerProxy;
     UUPSProxy public regulationsManagerProxy;
+    UUPSProxy public weETHProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -73,7 +75,10 @@ contract TestSetup is Test {
     
     EETH public eETHImplementation;
     EETH public eETHInstance;
-    
+
+    WeEth public weEthImplementation;
+    WeEth public weEthInstance;
+
     ClaimReceiverPool public claimReceiverPoolImplementation;
     ClaimReceiverPool public claimReceiverPoolInstance;
 
@@ -204,6 +209,11 @@ contract TestSetup is Test {
         eETHInstance = EETH(address(eETHProxy));
         eETHInstance.initialize(payable(address(liquidityPoolInstance)));
 
+        weEthImplementation = new WeEth();
+        weETHProxy = new UUPSProxy(address(weEthImplementation), "");
+        weEthInstance = WeEth(address(weETHProxy));
+        weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
+
         // Setup dependencies
         _merkleSetup();
         _merkleSetupMigration();
@@ -217,6 +227,7 @@ contract TestSetup is Test {
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setLiquidityPoolAddress(address(liquidityPoolInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));

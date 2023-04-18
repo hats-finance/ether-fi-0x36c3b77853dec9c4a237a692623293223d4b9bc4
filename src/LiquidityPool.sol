@@ -5,6 +5,7 @@ import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNodesManager.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
@@ -14,7 +15,7 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "forge-std/console.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IERC721ReceiverUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -24,11 +25,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IStakingManager stakingManager;
     IRegulationsManager regulationsManager;
 
-    mapping(uint256 => bool) validators;
-    uint256 accruedSlashingPenalties;
-    uint256 accruedEapRewards;
+    mapping(uint256 => bool) public validators;
+    uint256 public accruedSlashingPenalties;
+    uint256 public accruedEapRewards;
 
-    uint64  numValidators;
+    uint64 public numValidators;
 
     uint256[32] __gap;
 
@@ -44,6 +45,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    receive() external payable {}
 
     function initialize(address _regulationsManager) external initializer {
         __Ownable_init();
@@ -87,6 +90,20 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return newValidators;
     }
 
+    function batchRegisterValidators(
+        bytes32 _depositRoot, 
+        uint256[] calldata _validatorIds,
+        IStakingManager.DepositData[] calldata _depositData
+        ) public onlyOwner 
+    {  
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            uint256 validatorId = _validatorIds[i];
+            validators[validatorId] = true;
+        }
+        numValidators += uint64(_validatorIds.length);
+    }
+
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
         uint256 staked;
         uint256 boosted;
@@ -105,6 +122,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther();
+       
         if (totalPooledEther == 0) {
             return 0;
         }
@@ -175,6 +193,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return IERC721ReceiverUpgradeable.onERC721Received.selector;
+    }
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------

@@ -73,7 +73,7 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         return liquidityPool.getTotalEtherClaimOf(_user);
     }
 
-    function transfer(address _recipient, uint256 _amount) external returns (bool) {
+    function transfer(address _recipient, uint256 _amount) external override(IEETH, IERC20Upgradeable) returns (bool) {
         _transfer(msg.sender, _recipient, _amount);
         return true;
     }
@@ -87,7 +87,7 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         return true;
     }
 
-    function transferFrom(address _sender, address _recipient, uint256 _amount) external returns (bool) {
+    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IEETH, IERC20Upgradeable) returns (bool) {
         uint256 currentAllowance = allowances[_sender][msg.sender];
         require(currentAllowance >= _amount, "TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
 
