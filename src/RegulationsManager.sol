@@ -18,6 +18,7 @@ contract RegulationsManager is
 {
     mapping(address => bool) public isEligible;
     mapping(address => bytes) public userIsoCode;
+    mapping(address => string) public declarationHash;
 
     uint256[32] __gap;
 
@@ -25,30 +26,12 @@ contract RegulationsManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event EligibilityConfirmed(bytes isoCode, address user);
-    event EligibilityRemoved(bytes isoCode, address user);
+    event EligibilityConfirmed(bytes isoCode, string declarationHash, address user);
+    event EligibilityRemoved(address user);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-
-    function confirmEligibility(bytes memory _isoCode) external {
-        require(_isoCode.length == 2, "Invalid IDO Code");
-
-        isEligible[msg.sender] = true;
-        userIsoCode[msg.sender] = _isoCode;
-
-        emit EligibilityConfirmed(_isoCode, msg.sender);
-
-    }
-
-    function removeFromWhitelist(bytes memory _isoCode, address _user) external {
-        require(msg.sender == _user || msg.sender == owner());
-
-        isEligible[_user] = false;
-
-        emit EligibilityRemoved(_isoCode, _user);
-    }
 
     /// @notice initialize to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
@@ -58,6 +41,26 @@ contract RegulationsManager is
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+    }
+
+    function confirmEligibility(bytes memory _isoCode, string memory _declarationHash) external {
+        require(_isoCode.length == 2, "Invalid IDO Code");
+
+        isEligible[msg.sender] = true;
+        userIsoCode[msg.sender] = _isoCode;
+        declarationHash[msg.sender] = _declarationHash;
+
+        emit EligibilityConfirmed(_isoCode, _declarationHash, msg.sender);
+
+    }
+
+    function removeFromWhitelist(address _user) external {
+        require(msg.sender == _user || msg.sender == owner());
+        require(isEligible[_user] == true, "User not whitelisted");
+
+        isEligible[_user] = false;
+
+        emit EligibilityRemoved(_user);
     }
 
     //Pauses the contract
