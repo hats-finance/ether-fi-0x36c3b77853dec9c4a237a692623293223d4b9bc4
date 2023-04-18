@@ -196,7 +196,7 @@ contract TestSetup is Test {
         liquidityPoolInstance = LiquidityPool(
             payable(address(liquidityPoolProxy))
         );
-        liquidityPoolInstance.initialize();
+        liquidityPoolInstance.initialize(address(regulationsManagerInstance));
 
         eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");

@@ -11,6 +11,7 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IEETH.sol";
 import "./interfaces/IScoreManager.sol";
 import "./interfaces/IStakingManager.sol";
+import "./interfaces/IRegulationsManager.sol";
 import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
@@ -21,6 +22,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IEETH eETH; 
     IScoreManager scoreManager;
     IStakingManager stakingManager;
+    IRegulationsManager regulationsManager;
 
     mapping(uint256 => bool) validators;
     uint256 accruedSlashingPenalties;
@@ -43,14 +45,16 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize() external initializer {
+    function initialize(address _regulationsManager) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
+        regulationsManager = IRegulationsManager(_regulationsManager);
     }
 
     /// @notice deposit into pool
     /// @dev mints the amount of eTH 1:1 with ETH sent
     function deposit(address _user) external payable {
+        require(regulationsManager.isEligible(regulationsManager.declarationIteration(), _user), "User is not whitelisted");
         uint256 share = _sharesForAmountAfterDeposit(msg.value);
         if (share == 0) {
             share = msg.value;
