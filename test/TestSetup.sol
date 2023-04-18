@@ -185,7 +185,8 @@ contract TestSetup is Test {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManagerInstance)
+            address(scoreManagerInstance),
+            address(regulationsManagerInstance)
         );
 
         liquidityPoolImplementation = new LiquidityPool();

@@ -173,7 +173,8 @@ contract DeployEtherFiSuiteScript is Script {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManager)
+            address(scoreManager),
+            address(regulationsManagerInstance)
         );
 
         liquidityPoolImplementation = new LiquidityPool();

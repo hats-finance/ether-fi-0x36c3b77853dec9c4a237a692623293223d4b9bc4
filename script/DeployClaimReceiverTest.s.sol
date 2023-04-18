@@ -7,6 +7,7 @@ import "../test/TestERC20.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/ScoreManager.sol";
+import "../src/RegulationsManager.sol";
 import "../lib/murky/src/Merkle.sol";
 import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -25,8 +26,12 @@ contract DeployClaimReceiverTestScript is Script {
     ScoreManager public scoreManagerInstance;
     ScoreManager public scoreManagerImplementation;
 
+    RegulationsManager public regulationsManagerInstance;
+    RegulationsManager public regulationsManagerImplementation;
+
     UUPSProxy public claimReceiverPoolProxy;
     UUPSProxy public scoreManagerProxy;
+    UUPSProxy public regulationsManagerProxy;
 
     addresses addressStruct;
 
@@ -43,6 +48,11 @@ contract DeployClaimReceiverTestScript is Script {
         scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
         scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
         scoreManagerInstance.initialize();
+
+        regulationsManagerImplementation = new RegulationsManager();
+        regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
+        regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
+        regulationsManagerInstance.initialize();
 
         EarlyAdopterPool earlyAdopterPool = new EarlyAdopterPool(
             address(rETH),
@@ -64,7 +74,8 @@ contract DeployClaimReceiverTestScript is Script {
             address(wstETH),
             address(sfrxETH),
             address(cbETH),
-            address(scoreManagerInstance)
+            address(scoreManagerInstance),
+            address(regulationsManagerInstance)
         );
 
         vm.stopBroadcast();
