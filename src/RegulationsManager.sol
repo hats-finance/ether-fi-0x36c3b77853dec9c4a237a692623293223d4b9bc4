@@ -8,17 +8,21 @@ import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "./interfaces/IRegulationsManager.sol";
 
 contract RegulationsManager is
+    IRegulationsManager,
     Initializable,
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
-    mapping(address => bool) public isEligible;
+    mapping(uint32 => mapping (address => bool)) public isEligible;
     mapping(address => bytes) public userIsoCode;
     mapping(address => string) public declarationHash;
+
+    uint32 public declarationIteration;
 
     uint256[32] __gap;
 
@@ -26,8 +30,9 @@ contract RegulationsManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event EligibilityConfirmed(bytes isoCode, string declarationHash, address user);
-    event EligibilityRemoved(address user);
+    event EligibilityConfirmed(bytes isoCode, string declarationHash, uint32 declarationIteration, address user);
+    event EligibilityRemoved(uint32 declarationIteration, address user);
+    event DeclarationIterationIncreased(uint32 currentDeclaration);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -46,21 +51,27 @@ contract RegulationsManager is
     function confirmEligibility(bytes memory _isoCode, string memory _declarationHash) external {
         require(_isoCode.length == 2, "Invalid IDO Code");
 
-        isEligible[msg.sender] = true;
+        isEligible[declarationIteration][msg.sender] = true;
         userIsoCode[msg.sender] = _isoCode;
         declarationHash[msg.sender] = _declarationHash;
 
-        emit EligibilityConfirmed(_isoCode, _declarationHash, msg.sender);
+        emit EligibilityConfirmed(_isoCode, _declarationHash, declarationIteration, msg.sender);
 
     }
 
     function removeFromWhitelist(address _user) external {
         require(msg.sender == _user || msg.sender == owner());
-        require(isEligible[_user] == true, "User not whitelisted");
+        require(isEligible[declarationIteration][_user] == true, "User not whitelisted");
 
-        isEligible[_user] = false;
+        isEligible[declarationIteration][_user] = false;
 
-        emit EligibilityRemoved(_user);
+        emit EligibilityRemoved(declarationIteration, _user);
+    }
+
+    function resetWhitelist() external onlyOwner {
+        declarationIteration++;
+
+        emit DeclarationIterationIncreased(declarationIteration);
     }
 
     //Pauses the contract
