@@ -101,7 +101,7 @@ contract SmallScenariosTest is TestSetup {
         vm.stopPrank();
 
         // Egg stakes
-        startHoax(egg);
+        startHoax(elvis);
         uint256[] memory bidIdArray1 = new uint256[](1);
         bidIdArray1[0] = bobBidIds[1];
 
@@ -121,7 +121,7 @@ contract SmallScenariosTest is TestSetup {
         assertFalse(isBobBid2Active);
         assertTrue(isBobBid3Active);
 
-        assertEq(staker, egg);
+        assertEq(staker, elvis);
         vm.stopPrank();
 
         // Greg stakes
