@@ -26,6 +26,7 @@ contract RegulationsManager is
     //--------------------------------------------------------------------------------------
 
     event EligibilityConfirmed(bytes isoCode, address user);
+    event EligibilityRemoved(bytes isoCode, address user);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -39,6 +40,14 @@ contract RegulationsManager is
 
         emit EligibilityConfirmed(_isoCode, msg.sender);
 
+    }
+
+    function removeFromWhitelist(bytes memory _isoCode, address _user) external {
+        require(msg.sender == _user || msg.sender == owner());
+
+        isEligible[_user] = false;
+
+        emit EligibilityRemoved(_isoCode, _user);
     }
 
     /// @notice initialize to set variables on deployment
