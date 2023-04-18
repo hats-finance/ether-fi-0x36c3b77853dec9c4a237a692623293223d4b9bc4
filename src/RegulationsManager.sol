@@ -19,8 +19,8 @@ contract RegulationsManager is
     UUPSUpgradeable
 {
     mapping(uint32 => mapping (address => bool)) public isEligible;
-    mapping(address => bytes) public userIsoCode;
-    mapping(address => string) public declarationHash;
+    mapping(uint32 => mapping (address => bytes)) public userIsoCode;
+    mapping(uint32 => mapping (address => string)) public declarationHash;
 
     uint32 public declarationIteration;
 
@@ -48,19 +48,18 @@ contract RegulationsManager is
         __ReentrancyGuard_init();
     }
 
-    function confirmEligibility(bytes memory _isoCode, string memory _declarationHash) external {
+    function confirmEligibility(bytes memory _isoCode, string memory _declarationHash) external whenNotPaused {
         require(_isoCode.length == 2, "Invalid IDO Code");
 
         isEligible[declarationIteration][msg.sender] = true;
-        userIsoCode[msg.sender] = _isoCode;
-        declarationHash[msg.sender] = _declarationHash;
+        userIsoCode[declarationIteration][msg.sender] = _isoCode;
+        declarationHash[declarationIteration][msg.sender] = _declarationHash;
 
         emit EligibilityConfirmed(_isoCode, _declarationHash, declarationIteration, msg.sender);
-
     }
 
-    function removeFromWhitelist(address _user) external {
-        require(msg.sender == _user || msg.sender == owner());
+    function removeFromWhitelist(address _user) external whenNotPaused {
+        require(msg.sender == _user || msg.sender == owner(), "Incorrect Caller");
         require(isEligible[declarationIteration][_user] == true, "User not whitelisted");
 
         isEligible[declarationIteration][_user] = false;
