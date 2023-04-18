@@ -120,6 +120,7 @@ contract UpgradeTest is TestSetup {
         claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
@@ -155,6 +156,7 @@ contract UpgradeTest is TestSetup {
         claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
 
         assertEq(scoreManagerInstance.getImplementation(), address(scoreManagerImplementation));

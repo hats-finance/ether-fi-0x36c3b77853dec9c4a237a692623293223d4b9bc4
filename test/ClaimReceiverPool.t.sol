@@ -37,12 +37,14 @@ contract ClaimReceiverPoolTest is TestSetup {
         bytes32[] memory proof1 = merkle.getProof(dataForVerification, 0);
         bytes32[] memory proof2 = merkle.getProof(dataForVerification, 1);
         bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
-        vm.prank(owner);
+        
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
 
         vm.expectRevert("Verification failed");
         claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1);
         vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof2);
+        claimReceiverPoolInstance.deposit{value: 0.3 ether}(0, 0, 0, 0, 652, proof2);
         vm.expectRevert("Verification failed");
         claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3);
     }
@@ -59,6 +61,10 @@ contract ClaimReceiverPoolTest is TestSetup {
         assertEq(scoreManagerInstance.totalScores(0), bytes32(abi.encodePacked(uint256(0))));
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.expectRevert("User is not whitelisted");
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
+
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
@@ -110,10 +116,12 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.deal(bob, 0.1 ether);
         vm.deal(dan, 0.1 ether);
 
-        vm.prank(bob);
+        vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 400, bobProof);
         vm.stopPrank();
-        vm.prank(dan);
+        vm.startPrank(dan);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 800, danProof);
         vm.stopPrank();
 

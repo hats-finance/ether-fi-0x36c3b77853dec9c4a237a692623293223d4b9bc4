@@ -70,8 +70,10 @@ contract EETHTest is TestSetup {
         assertEq(eETHInstance.totalSupply(), 10 ether);
 
         // Total pooled ether = 20
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
         assertEq(eETHInstance.totalSupply(), 20 ether);
@@ -84,8 +86,10 @@ contract EETHTest is TestSetup {
         /// (20 * 10) / 10
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
 
-        hoax(bob);
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         liquidityPoolInstance.deposit{value: 5 ether}(bob);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 25 ether);
         assertEq(eETHInstance.totalSupply(), 25 ether);
@@ -126,8 +130,10 @@ contract EETHTest is TestSetup {
     }
 
     function test_TransferWithAmount() public {
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(eETHInstance.balanceOf(bob), 0 ether);
@@ -158,8 +164,10 @@ contract EETHTest is TestSetup {
     }
 
     function test_TransferWithZero() public {
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(eETHInstance.balanceOf(bob), 0 ether);
@@ -208,8 +216,10 @@ contract EETHTest is TestSetup {
     }
 
     function test_TransferFromWithAmount() public {
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(eETHInstance.balanceOf(bob), 0 ether);
@@ -238,8 +248,10 @@ contract EETHTest is TestSetup {
     }
 
     function test_TransferFromWithZero() public {
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(eETHInstance.balanceOf(bob), 0 ether);
