@@ -304,4 +304,48 @@ contract EtherFiNodesManagerTest is TestSetup {
         vm.warp(block.timestamp + (1 + 1000 * 86400));
         assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
     }
+
+    function test_PausableModifierWorks() public {
+        hoax(owner);
+        managerInstance.pauseContract();
+        
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        vm.expectRevert("Pausable: paused");
+        managerInstance.sendExitRequest(bidId[0]);
+
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = bidId[0];
+
+        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        vm.expectRevert("Pausable: paused");
+        managerInstance.batchSendExitRequest(ids);
+
+        uint32[] memory timeStamps = new uint32[](1);
+        ids[0] = block.timestamp;
+
+        hoax(owner);
+        vm.expectRevert("Pausable: paused");
+        managerInstance.processNodeExit(ids, timeStamps);
+
+        hoax(owner);
+        vm.expectRevert("Pausable: paused");
+        managerInstance.partialWithdraw(0, true, true, true);
+
+        hoax(owner);
+        vm.expectRevert("Pausable: paused");
+        managerInstance.partialWithdrawBatch(ids, true, true, true);
+
+        hoax(owner);
+        vm.expectRevert("Pausable: paused");
+        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids, true, true, true);
+
+        hoax(owner);
+        vm.expectRevert("Pausable: paused");
+        managerInstance.fullWithdraw(0);
+
+        hoax(owner);
+        vm.expectRevert("Pausable: paused");
+        managerInstance.fullWithdrawBatch(ids);
+
+    }
 }

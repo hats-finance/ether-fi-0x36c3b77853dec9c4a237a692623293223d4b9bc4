@@ -206,6 +206,7 @@ contract TestSetup is Test {
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
 
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
+        stakingManagerInstance.setLiquidityPoolAddress(address(liquidityPoolInstance));
         stakingManagerInstance.registerEtherFiNodeImplementationContract(address(node));
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
@@ -214,6 +215,9 @@ contract TestSetup is Test {
 
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
         liquidityPoolInstance.setScoreManager(address(scoreManagerInstance));
+        liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
+        liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
+
         scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
         scoreManagerInstance.addNewScoreType("Early Adopter Pool");
 

@@ -190,6 +190,7 @@ contract DeployEtherFiSuiteScript is Script {
         protocolRevenueManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
 
         stakingManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
+        stakingManager.setLiquidityPoolAddress(address(liquidityPool));
         stakingManager.registerEtherFiNodeImplementationContract(address(etherFiNode));
         stakingManager.registerTNFTContract(address(TNFTInstance));
         stakingManager.registerBNFTContract(address(BNFTInstance));
@@ -198,6 +199,8 @@ contract DeployEtherFiSuiteScript is Script {
 
         liquidityPool.setTokenAddress(address(eETH));
         liquidityPool.setScoreManager(address(scoreManager));
+        liquidityPool.setStakingManager(address(stakingManager));
+        liquidityPool.setEtherFiNodesManager(address(etherFiNodesManager));
 
         scoreManager.setCallerStatus(address(claimReceiverPool), true);
 

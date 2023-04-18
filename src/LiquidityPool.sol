@@ -5,26 +5,30 @@ import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNodesManager.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IEETH.sol";
 import "./interfaces/IScoreManager.sol";
+import "./interfaces/IStakingManager.sol";
 import "forge-std/console.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IERC721ReceiverUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IEETH eETH; 
-    IScoreManager scoreManager;
+    IEETH public eETH; 
+    IScoreManager public scoreManager;
+    IStakingManager public stakingManager;
+    IEtherFiNodesManager public nodesManager;
 
-    mapping(uint256 => bool) validators;
-    uint256 accruedSlashingPenalties;
-    uint256 accruedEapRewards;
+    mapping(uint256 => bool) public validators;
+    uint256 public accruedSlashingPenalties;
+    uint256 public accruedEapRewards;
 
-    uint64  numValidators;
+    uint64 public numValidators;
 
     uint256[32] __gap;
 
@@ -45,6 +49,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         __Ownable_init();
         __UUPSUpgradeable_init();
     }
+
+    receive() external payable {}
 
     /// @notice deposit into pool
     /// @dev mints the amount of eTH 1:1 with ETH sent
@@ -73,6 +79,49 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit Withdraw(msg.sender, msg.value);
     }
 
+    function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds) public onlyOwner returns (uint256[] memory) {
+        uint256 amount = 32 ether * _numDeposits;
+        require(address(this).balance >= amount, "Not enough balance");
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds);
+
+        return newValidators;
+    }
+
+    function batchRegisterValidators(
+        bytes32 _depositRoot, 
+        uint256[] calldata _validatorIds,
+        IStakingManager.DepositData[] calldata _depositData
+        ) public onlyOwner 
+    {  
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            uint256 validatorId = _validatorIds[i];
+            validators[validatorId] = true;
+        }
+        numValidators += uint64(_validatorIds.length);
+    }
+
+    // After the nodes are exited, delist them from the liquidity pool
+    function processNodeExit(uint256[] calldata _validatorIds, uint256[] calldata _slashingPenalties) public onlyOwner {
+        uint256 totalSlashingPenalties = 0;
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            uint256 validatorId = _validatorIds[i];
+            require(nodesManager.phase(validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED, "Incorrect Phase");
+            validators[validatorId] = false;
+            totalSlashingPenalties += _slashingPenalties[i];
+        }
+        numValidators -= uint64(_validatorIds.length);
+        accruedSlashingPenalties -= totalSlashingPenalties;
+    }
+
+    // Send the exit reqeusts as the T-NFT holder
+    function sendExitRequests(uint256[] calldata _validatorIds) public onlyOwner {
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            uint256 validatorId = _validatorIds[i];
+            nodesManager.sendExitRequest(validatorId);
+        }
+    }
+
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
         uint256 staked;
         uint256 boosted;
@@ -85,12 +134,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return staked + boosted;
     }
 
-    function getEtherStakingPrincipal() public view returns (uint256) {
-        return (32 ether * numValidators) - accruedSlashingPenalties;
-    }
-
     function getTotalPooledEther() public view returns (uint256) {
-        return getEtherStakingPrincipal() + address(this).balance - accruedEapRewards;
+        return (32 ether * numValidators) + address(this).balance - (accruedSlashingPenalties + accruedEapRewards);
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
@@ -131,6 +176,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         scoreManager = IScoreManager(_address);
     }
 
+    function setStakingManager(address _address) external onlyOwner {
+        stakingManager = IStakingManager(_address);
+    }
+
+    function setEtherFiNodesManager(address _address) external onlyOwner {
+        nodesManager = IEtherFiNodesManager(_address);
+    }
+
 
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
@@ -161,6 +214,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return IERC721ReceiverUpgradeable.onERC721Received.selector;
+    }
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------
