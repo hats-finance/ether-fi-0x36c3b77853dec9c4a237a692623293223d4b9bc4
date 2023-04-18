@@ -48,6 +48,9 @@ contract RegulationsManager is
         __ReentrancyGuard_init();
     }
 
+    /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
+    /// @param _isoCode the ISO code of the country the user resides in
+    /// @param _declarationHash hash of the users private key with the test they signed
     function confirmEligibility(bytes memory _isoCode, bytes32 _declarationHash) external whenNotPaused {
         require(_isoCode.length == 2, "Invalid IDO Code");
 
@@ -58,6 +61,9 @@ contract RegulationsManager is
         emit EligibilityConfirmed(_isoCode, _declarationHash, declarationIteration, msg.sender);
     }
 
+    /// @notice removes a user from the whitelist
+    /// @dev can be called by the owner or the user themself
+    /// @param _user the user to remove from the whitelist
     function removeFromWhitelist(address _user) external whenNotPaused {
         require(msg.sender == _user || msg.sender == owner(), "Incorrect Caller");
         require(isEligible[declarationIteration][_user] == true, "User not whitelisted");
@@ -67,6 +73,8 @@ contract RegulationsManager is
         emit EligibilityRemoved(declarationIteration, _user);
     }
 
+    /// @notice resets the whitelist by incrementing the iteration
+    /// @dev happens when there is an update to the blacklisted country list
     function resetWhitelist() external onlyOwner {
         declarationIteration++;
 
