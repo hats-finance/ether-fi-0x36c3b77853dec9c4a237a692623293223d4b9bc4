@@ -10,7 +10,7 @@ contract WethETHTest is TestSetup {
     }
 
     function test_WrapEETHFailsIfZeroAmount() public {
-        vm.expectRevert("wstETH: can't wrap zero wstETH");
+        vm.expectRevert("wstETH: can't wrap zero eETH");
         weEthInstance.wrap(0);
     }
 
