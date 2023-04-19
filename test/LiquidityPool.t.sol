@@ -13,7 +13,12 @@ contract LiquidityPoolTest is TestSetup {
     function test_StakingManagerLiquidityPool() public {
         vm.startPrank(alice);
         vm.deal(alice, 2 ether);
+        vm.expectRevert("User is not whitelisted");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
+
+        regulationsManagerInstance.confirmEligibility();
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -21,6 +26,9 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_StakingManagerLiquidityFails() public {
+        vm.prank(alice);
+        regulationsManagerInstance.confirmEligibility();
+
         vm.startPrank(owner);
         vm.expectRevert();
         liquidityPoolInstance.deposit{value: 2 ether}(alice);
@@ -29,6 +37,7 @@ contract LiquidityPoolTest is TestSetup {
     function test_WithdrawLiquidityPoolSuccess() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -37,6 +46,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 2 ether}(bob);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -74,6 +84,7 @@ contract LiquidityPoolTest is TestSetup {
         LiquidityPool liquidityPoolNoToken = new LiquidityPool();
 
         vm.startPrank(alice);
+        regulationsManagerInstance.confirmEligibility();
         vm.deal(alice, 3 ether);
         vm.expectRevert();
         liquidityPoolNoToken.deposit{value: 2 ether}(alice);
@@ -115,6 +126,7 @@ contract LiquidityPoolTest is TestSetup {
     function test_WithdrawLiquidityPoolSlashingPenalties() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -123,6 +135,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 2 ether}(bob);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -199,8 +212,10 @@ contract LiquidityPoolTest is TestSetup {
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
         assertEq(bidIds.length, 2);
 
-        hoax(bob);
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 64 ether}(bob);
+        vm.stopPrank();
 
         assertEq(address(liquidityPoolInstance).balance, 64 ether);
 

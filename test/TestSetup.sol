@@ -7,6 +7,7 @@ import "../src/interfaces/IEtherFiNode.sol";
 import "../src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorManager.sol";
+import "../src/RegulationsManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
@@ -40,6 +41,7 @@ contract TestSetup is Test {
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public eETHProxy;
     UUPSProxy public scoreManagerProxy;
+    UUPSProxy public regulationsManagerProxy;
     UUPSProxy public weETHProxy;
 
     DepositDataGeneration public depGen;
@@ -59,6 +61,9 @@ contract TestSetup is Test {
 
     ScoreManager public scoreManagerInstance;
     ScoreManager public scoreManagerImplementation;
+
+    RegulationsManager public regulationsManagerInstance;
+    RegulationsManager public regulationsManagerImplementation;
 
     EarlyAdopterPool public earlyAdopterPoolInstance;
 
@@ -162,6 +167,11 @@ contract TestSetup is Test {
         scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
         scoreManagerInstance.initialize();
 
+        regulationsManagerImplementation = new RegulationsManager();
+        regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
+        regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
+        regulationsManagerInstance.initialize();
+
         node = new EtherFiNode();
 
         rETH = new TestERC20("Rocket Pool ETH", "rETH");
@@ -197,7 +207,8 @@ contract TestSetup is Test {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManagerInstance)
+            address(scoreManagerInstance),
+            address(regulationsManagerInstance)
         );
 
         liquidityPoolImplementation = new LiquidityPool();
@@ -208,7 +219,7 @@ contract TestSetup is Test {
         liquidityPoolInstance = LiquidityPool(
             payable(address(liquidityPoolProxy))
         );
-        liquidityPoolInstance.initialize();
+        liquidityPoolInstance.initialize(address(regulationsManagerInstance));
 
         eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");

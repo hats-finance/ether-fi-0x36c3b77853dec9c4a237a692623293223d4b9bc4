@@ -13,6 +13,7 @@ import "../src/AuctionManager.sol";
 import "../src/LiquidityPool.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/EETH.sol";
+import "../src/RegulationsManager.sol";
 import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -38,6 +39,7 @@ contract DeployEtherFiSuiteScript is Script {
     UUPSProxy public eETHProxy;
     UUPSProxy public scoreManagerProxy;
     UUPSProxy public claimReceiverPoolProxy;
+    UUPSProxy public regulationsManagerProxy;
 
     BNFT public BNFTImplementation;
     BNFT public BNFTInstance;
@@ -66,6 +68,9 @@ contract DeployEtherFiSuiteScript is Script {
     ScoreManager public scoreManagerImplementation;
     ScoreManager public scoreManager;
 
+    RegulationsManager public regulationsManagerInstance;
+    RegulationsManager public regulationsManagerImplementation;
+
     ClaimReceiverPool public claimReceiverPoolImplementation;
     ClaimReceiverPool public claimReceiverPool;
 
@@ -80,6 +85,7 @@ contract DeployEtherFiSuiteScript is Script {
         address protocolRevenueManager;
         address etherFiNode;
         address scoreManager;
+        address regulationsManager;
         address claimReceiverPool;
         address liquidityPool;
         address eETH;
@@ -137,6 +143,11 @@ contract DeployEtherFiSuiteScript is Script {
         scoreManager = ScoreManager(address(scoreManagerProxy));
         scoreManager.initialize();
 
+        regulationsManagerImplementation = new RegulationsManager();
+        regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
+        regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
+        regulationsManagerInstance.initialize();
+
         EtherFiNode etherFiNode = new EtherFiNode();
 
         // Mainnet Addresses
@@ -162,7 +173,8 @@ contract DeployEtherFiSuiteScript is Script {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManager)
+            address(scoreManager),
+            address(regulationsManagerInstance)
         );
 
         liquidityPoolImplementation = new LiquidityPool();
@@ -173,7 +185,7 @@ contract DeployEtherFiSuiteScript is Script {
         liquidityPool = LiquidityPool(
             payable(address(liquidityPoolProxy))
         );
-        liquidityPool.initialize();
+        liquidityPool.initialize(address(regulationsManagerInstance));
 
         eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
@@ -216,6 +228,7 @@ contract DeployEtherFiSuiteScript is Script {
             protocolRevenueManager: address(protocolRevenueManager),
             etherFiNode: address(etherFiNode),
             scoreManager: address(scoreManager),
+            regulationsManager: address(regulationsManagerInstance),
             claimReceiverPool: address(claimReceiverPool),
             liquidityPool: address(liquidityPool),
             eETH: address(eETH)
@@ -318,6 +331,8 @@ contract DeployEtherFiSuiteScript is Script {
                     Strings.toString(version),
                     "\nScore Manager: ",
                     Strings.toHexString(suiteAddressesStruct.scoreManager),
+                    "\nRegulations Manager: ",
+                    Strings.toHexString(suiteAddressesStruct.regulationsManager),
                     "\nClaim Receiver Pool: ",
                     Strings.toHexString(suiteAddressesStruct.claimReceiverPool),
                     "\nLiquidity Pool: ",
