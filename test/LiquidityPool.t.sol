@@ -44,9 +44,16 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        assertEq(alice.balance, 0 ether);
+        assertEq(eETHInstance.balanceOf(alice), 3 ether);
+        assertEq(eETHInstance.balanceOf(bob), 2 ether);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
         liquidityPoolInstance.withdraw(2 ether);
-        assertEq(eETHInstance.balanceOf(alice), 0);
-        assertEq(alice.balance, 3 ether);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(alice.balance, 2 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);

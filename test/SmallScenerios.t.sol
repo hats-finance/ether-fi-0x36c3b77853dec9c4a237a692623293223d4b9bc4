@@ -79,7 +79,7 @@ contract SmallScenariosTest is TestSetup {
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
 
         // Check that scores are recorded in Score Manager
-        assertEq(scoreManagerInstance.scores(0, alice), bytes32(bytes(abi.encode(alicePoints))));
+        assertEq(liquidityPoolInstance.eapScore(alice), alicePoints);
 
         // Chad withdraws and does not deposit
         // If he does not deposit his points will not be stored in the score manager

@@ -126,9 +126,7 @@ contract ClaimReceiverPool is
             "Verification failed"
         );
         uint256 scoreTypeId = scoreManager.typeIds("Early Adopter Pool");
-        require(scoreManager.scores(
-                   scoreTypeId, 
-                    msg.sender) == bytes32(0), "Already Deposited");
+        require(scoreManager.scores(scoreTypeId, msg.sender) == bytes32(0), "Already Deposited");
         require(_points > 0, "You don't have any point to claim");
 
         uint256 _ethAmount = 0;
@@ -138,20 +136,9 @@ contract ClaimReceiverPool is
         _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal);
         _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal);
 
-        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-
-        bytes32 totalScore32 = scoreManager.totalScores(typeId);
-        uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
-        totalScore += _points;
-
-        scoreManager.setScore(typeId, 
-                        msg.sender, 
-                        bytes32(abi.encodePacked(_points)));
-        scoreManager.setTotalScore(typeId, 
-                                   bytes32(abi.encodePacked(totalScore)));
-                        
+        liquidityPool.setEapScore(msg.sender, _points);
         liquidityPool.deposit{value: _ethAmount}(msg.sender);
-        
+
         emit FundsMigrated(msg.sender, _ethAmount, _points);
     }
 

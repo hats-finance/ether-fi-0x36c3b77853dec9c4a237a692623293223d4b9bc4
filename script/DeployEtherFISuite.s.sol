@@ -201,7 +201,7 @@ contract DeployEtherFiSuiteScript is Script {
         liquidityPool.setScoreManager(address(scoreManager));
         liquidityPool.setStakingManager(address(stakingManager));
 
-        scoreManager.setCallerStatus(address(claimReceiverPool), true);
+        scoreManager.setCallerStatus(address(liquidityPool), true);
 
         vm.stopBroadcast();
 

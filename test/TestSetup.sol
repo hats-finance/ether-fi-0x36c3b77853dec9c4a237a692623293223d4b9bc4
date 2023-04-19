@@ -245,7 +245,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setScoreManager(address(scoreManagerInstance));
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
 
-        scoreManagerInstance.setCallerStatus(address(claimReceiverPoolInstance), true);
+        scoreManagerInstance.setCallerStatus(address(liquidityPoolInstance), true);
         scoreManagerInstance.addNewScoreType("Early Adopter Pool");
 
         depGen = new DepositDataGeneration();
