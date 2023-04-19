@@ -16,8 +16,7 @@ contract RegulationsManager is
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
-    mapping(uint32 => mapping (address => bool)) public isEligible;
-    mapping(uint32 => mapping (address => bytes32)) public declarationHash;
+    mapping(uint32 => mapping(address => bool)) public isEligible;
 
     uint32 public whitelistVersion;
 
@@ -27,7 +26,7 @@ contract RegulationsManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event EligibilityConfirmed(bytes32 declarationHash, uint32 whitelistVersion, address user);
+    event EligibilityConfirmed(uint32 whitelistVersion, address user);
     event EligibilityRemoved(uint32 whitelistVersion, address user);
     event whitelistVersionIncreased(uint32 currentDeclaration);
 
@@ -45,19 +44,48 @@ contract RegulationsManager is
 
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
     /// @param _declarationHash hash of the agreement the user signed containing blacklisted countries
-    function confirmEligibility(bytes32 _declarationHash) external whenNotPaused {
+    function confirmEligibility(
+        string memory _message,
+        bytes _signature
+    ) external whenNotPaused {
+        bytes32 hash = keccak256(abi.encodePacked(_message));
+        bytes32 messageHash = toEthSignedMessageHash(hash);
+
+        // address signer = messageHash.recover(signature)
+        // require(signer == msg.sender);
+
         isEligible[whitelistVersion][msg.sender] = true;
         declarationHash[whitelistVersion][msg.sender] = _declarationHash;
 
-        emit EligibilityConfirmed(_declarationHash, whitelistVersion, msg.sender);
+        emit EligibilityConfirmed(whitelistVersion, msg.sender);
+    }
+
+    /**
+     * toEthSignedMessageHash
+     * @dev prefix a bytes32 value with "\x19Ethereum Signed Message:"
+     * and hash the result
+     */
+    function toEthSignedMessageHash(
+        bytes32 hash
+    ) internal pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+            );
     }
 
     /// @notice removes a user from the whitelist
     /// @dev can be called by the owner or the user themself
     /// @param _user the user to remove from the whitelist
     function removeFromWhitelist(address _user) external whenNotPaused {
-        require(msg.sender == _user || msg.sender == owner(), "Incorrect Caller");
-        require(isEligible[whitelistVersion][_user] == true, "User not whitelisted");
+        require(
+            msg.sender == _user || msg.sender == owner(),
+            "Incorrect Caller"
+        );
+        require(
+            isEligible[whitelistVersion][_user] == true,
+            "User not whitelisted"
+        );
 
         isEligible[whitelistVersion][_user] = false;
 
@@ -101,6 +129,4 @@ contract RegulationsManager is
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
-
-  
 }
