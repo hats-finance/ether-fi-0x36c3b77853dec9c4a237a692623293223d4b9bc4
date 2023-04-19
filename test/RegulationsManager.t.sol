@@ -13,17 +13,16 @@ contract RegulationsManagerTest is TestSetup {
         vm.startPrank(owner);
         regulationsManagerInstance.pauseContract();
         vm.expectRevert("Pausable: paused");
-        regulationsManagerInstance.confirmEligibility("hash_example");
+        regulationsManagerInstance.confirmEligibility();
         regulationsManagerInstance.unPauseContract();
         vm.stopPrank();
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), false);
         
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("hash_example");
+        regulationsManagerInstance.confirmEligibility();
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), true);
-        assertEq(regulationsManagerInstance.declarationHash(0, alice), "hash_example");
     }
 
     function test_RemoveFromWhitelistWorks() public {
@@ -43,28 +42,25 @@ contract RegulationsManagerTest is TestSetup {
         vm.stopPrank();
 
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("hash_example");
+        regulationsManagerInstance.confirmEligibility();
+
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), true);
-        assertEq(regulationsManagerInstance.declarationHash(0, alice), "hash_example");
 
         vm.prank(owner);
         regulationsManagerInstance.removeFromWhitelist(alice);
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), false);
-        assertEq(regulationsManagerInstance.declarationHash(0,alice), "hash_example");
 
         vm.prank(bob);
-        regulationsManagerInstance.confirmEligibility("hash_example_2");
+        regulationsManagerInstance.confirmEligibility();
 
         assertEq(regulationsManagerInstance.isEligible(0, bob), true);
-        assertEq(regulationsManagerInstance.declarationHash(0, bob), "hash_example_2");
 
         vm.prank(bob);
         regulationsManagerInstance.removeFromWhitelist(bob);
 
         assertEq(regulationsManagerInstance.isEligible(0, bob), false);
-        assertEq(regulationsManagerInstance.declarationHash(0, bob), "hash_example_2");
     }
 
     function test_ResetWhitelistWorks() public {
@@ -74,11 +70,10 @@ contract RegulationsManagerTest is TestSetup {
 
         assertEq(regulationsManagerInstance.whitelistVersion(), 0);
 
-        regulationsManagerInstance.confirmEligibility("hash_example");
+        regulationsManagerInstance.confirmEligibility();
         vm.stopPrank();
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), true);
-        assertEq(regulationsManagerInstance.declarationHash(0, alice), "hash_example");
 
         vm.prank(owner);
         regulationsManagerInstance.resetWhitelist();

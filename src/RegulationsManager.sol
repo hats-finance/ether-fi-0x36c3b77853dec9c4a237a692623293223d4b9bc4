@@ -43,35 +43,10 @@ contract RegulationsManager is
     }
 
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
-    /// @param _declarationHash hash of the agreement the user signed containing blacklisted countries
-    function confirmEligibility(
-        string memory _message,
-        bytes _signature
-    ) external whenNotPaused {
-        bytes32 hash = keccak256(abi.encodePacked(_message));
-        bytes32 messageHash = toEthSignedMessageHash(hash);
-
-        // address signer = messageHash.recover(signature)
-        // require(signer == msg.sender);
-
+    function confirmEligibility() external whenNotPaused {
         isEligible[whitelistVersion][msg.sender] = true;
-        declarationHash[whitelistVersion][msg.sender] = _declarationHash;
 
         emit EligibilityConfirmed(whitelistVersion, msg.sender);
-    }
-
-    /**
-     * toEthSignedMessageHash
-     * @dev prefix a bytes32 value with "\x19Ethereum Signed Message:"
-     * and hash the result
-     */
-    function toEthSignedMessageHash(
-        bytes32 hash
-    ) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
-            );
     }
 
     /// @notice removes a user from the whitelist
