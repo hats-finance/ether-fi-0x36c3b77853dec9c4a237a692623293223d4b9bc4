@@ -24,7 +24,6 @@ contract SmallScenariosTest is TestSetup {
         -   Chad withdraws his funds after the snapshot but does not deposit into the CRP losing all his points.
 
         -   Dan withdraws his funds after the snapshot but does not deposit into the CRP. 
-            He is given permission from ether.Fi to set his score in the CRP manually.
         */
         
         // Acotrs deposit into EAP
