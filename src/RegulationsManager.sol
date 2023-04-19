@@ -19,7 +19,6 @@ contract RegulationsManager is
     UUPSUpgradeable
 {
     mapping(uint32 => mapping (address => bool)) public isEligible;
-    mapping(uint32 => mapping (address => bytes)) public userIsoCode;
     mapping(uint32 => mapping (address => bytes32)) public declarationHash;
 
     uint32 public declarationIteration;
@@ -30,7 +29,7 @@ contract RegulationsManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event EligibilityConfirmed(bytes isoCode, bytes32 declarationHash, uint32 declarationIteration, address user);
+    event EligibilityConfirmed(bytes32 declarationHash, uint32 declarationIteration, address user);
     event EligibilityRemoved(uint32 declarationIteration, address user);
     event DeclarationIterationIncreased(uint32 currentDeclaration);
 
@@ -49,16 +48,12 @@ contract RegulationsManager is
     }
 
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
-    /// @param _isoCode the ISO code of the country the user resides in
-    /// @param _declarationHash hash of the users private key with the test they signed
-    function confirmEligibility(bytes memory _isoCode, bytes32 _declarationHash) external whenNotPaused {
-        require(_isoCode.length == 2, "Invalid IDO Code");
-
+    /// @param _declarationHash hash of the agreement the user signed containing blacklisted countries
+    function confirmEligibility(bytes32 _declarationHash) external whenNotPaused {
         isEligible[declarationIteration][msg.sender] = true;
-        userIsoCode[declarationIteration][msg.sender] = _isoCode;
         declarationHash[declarationIteration][msg.sender] = _declarationHash;
 
-        emit EligibilityConfirmed(_isoCode, _declarationHash, declarationIteration, msg.sender);
+        emit EligibilityConfirmed(_declarationHash, declarationIteration, msg.sender);
     }
 
     /// @notice removes a user from the whitelist

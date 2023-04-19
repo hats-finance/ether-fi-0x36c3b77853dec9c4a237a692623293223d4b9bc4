@@ -71,7 +71,7 @@ contract EETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
         vm.stopPrank();
 
@@ -87,7 +87,7 @@ contract EETHTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 5 ether}(bob);
         vm.stopPrank();
 
@@ -131,7 +131,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferWithAmount() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
         vm.stopPrank();
 
@@ -165,7 +165,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferWithZero() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
         vm.stopPrank();
 
@@ -217,7 +217,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferFromWithAmount() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
         vm.stopPrank();
 
@@ -249,7 +249,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferFromWithZero() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("ZA", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
         vm.stopPrank();
 

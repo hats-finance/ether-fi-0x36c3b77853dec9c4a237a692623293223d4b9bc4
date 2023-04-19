@@ -10,23 +10,19 @@ contract RegulationsManagerTest is TestSetup {
     }
 
     function test_ConfirmEligibilityWorks() public {
-        vm.expectRevert("Invalid IDO Code");
-        regulationsManagerInstance.confirmEligibility("ZAS", "hash_example");
-
         vm.startPrank(owner);
         regulationsManagerInstance.pauseContract();
         vm.expectRevert("Pausable: paused");
-        regulationsManagerInstance.confirmEligibility("ZAS", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
         regulationsManagerInstance.unPauseContract();
         vm.stopPrank();
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), false);
         
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("US", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), true);
-        assertEq(regulationsManagerInstance.userIsoCode(0, alice), "US");
         assertEq(regulationsManagerInstance.declarationHash(0, alice), "hash_example");
     }
 
@@ -47,31 +43,27 @@ contract RegulationsManagerTest is TestSetup {
         vm.stopPrank();
 
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("US", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), true);
-        assertEq(regulationsManagerInstance.userIsoCode(0, alice), "US");
         assertEq(regulationsManagerInstance.declarationHash(0, alice), "hash_example");
 
         vm.prank(owner);
         regulationsManagerInstance.removeFromWhitelist(alice);
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), false);
-        assertEq(regulationsManagerInstance.userIsoCode(0, alice), "US");
         assertEq(regulationsManagerInstance.declarationHash(0,alice), "hash_example");
 
         vm.prank(bob);
-        regulationsManagerInstance.confirmEligibility("ZA", "hash_example_2");
+        regulationsManagerInstance.confirmEligibility("hash_example_2");
 
         assertEq(regulationsManagerInstance.isEligible(0, bob), true);
-        assertEq(regulationsManagerInstance.userIsoCode(0, bob), "ZA");
         assertEq(regulationsManagerInstance.declarationHash(0, bob), "hash_example_2");
 
         vm.prank(bob);
         regulationsManagerInstance.removeFromWhitelist(bob);
 
         assertEq(regulationsManagerInstance.isEligible(0, bob), false);
-        assertEq(regulationsManagerInstance.userIsoCode(0, bob), "ZA");
         assertEq(regulationsManagerInstance.declarationHash(0, bob), "hash_example_2");
     }
 
@@ -82,11 +74,10 @@ contract RegulationsManagerTest is TestSetup {
 
         assertEq(regulationsManagerInstance.declarationIteration(), 0);
 
-        regulationsManagerInstance.confirmEligibility("US", "hash_example");
+        regulationsManagerInstance.confirmEligibility("hash_example");
         vm.stopPrank();
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), true);
-        assertEq(regulationsManagerInstance.userIsoCode(0, alice), "US");
         assertEq(regulationsManagerInstance.declarationHash(0, alice), "hash_example");
 
         vm.prank(owner);

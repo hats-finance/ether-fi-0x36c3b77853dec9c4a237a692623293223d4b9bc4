@@ -22,8 +22,10 @@ contract WethETHTest is TestSetup {
         assertEq(eETHInstance.totalSupply(), 10 ether);
 
         // Total pooled ether = 20
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
         assertEq(eETHInstance.totalSupply(), 20 ether);
@@ -56,8 +58,10 @@ contract WethETHTest is TestSetup {
         assertEq(eETHInstance.totalSupply(), 10 ether);
 
         // Total pooled ether = 20
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
         assertEq(eETHInstance.totalSupply(), 20 ether);
@@ -86,8 +90,10 @@ contract WethETHTest is TestSetup {
     }
 
     function test_MultipleDepositsAndFunctionalityWorksCorrectly() public {
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
         assertEq(eETHInstance.totalSupply(), 10 ether);
@@ -97,8 +103,10 @@ contract WethETHTest is TestSetup {
 
         //----------------------------------------------------------------------------------------------------------
 
-        hoax(bob);
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 5 ether}(bob);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 15 ether);
         assertEq(eETHInstance.totalSupply(), 15 ether);
@@ -109,8 +117,10 @@ contract WethETHTest is TestSetup {
 
         //----------------------------------------------------------------------------------------------------------
 
-        hoax(greg);
+        startHoax(greg);
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 35 ether}(greg);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 50 ether);
         assertEq(eETHInstance.totalSupply(), 50 ether);
