@@ -122,6 +122,10 @@ contract WethETHTest is TestSetup {
 
         //----------------------------------------------------------------------------------------------------------
 
+        vm.startPrank(owner);
+        liquidityPoolInstance.setAccruedStakingReards(10 ether);
+        vm.stopPrank();
+
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(liquidityPoolInstance).call{value: 10 ether}("");
         require(sent, "Failed to send Ether");        
@@ -143,6 +147,10 @@ contract WethETHTest is TestSetup {
         vm.stopPrank();
 
         //----------------------------------------------------------------------------------------------------------
+
+        vm.startPrank(owner);
+        liquidityPoolInstance.setAccruedStakingReards(50 ether);
+        vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (sent, ) = address(liquidityPoolInstance).call{value: 50 ether}("");
