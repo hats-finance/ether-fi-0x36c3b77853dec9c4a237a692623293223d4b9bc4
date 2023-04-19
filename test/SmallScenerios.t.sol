@@ -26,6 +26,18 @@ contract SmallScenariosTest is TestSetup {
         earlyAdopterPoolInstance.depositEther{value: 2 ether}();
         vm.stopPrank();
 
+        skip(1 days);
+
+        startHoax(chad);
+        earlyAdopterPoolInstance.depositEther{value: 2 ether}();
+        vm.stopPrank();
+
+        skip(1 days);
+        
+        startHoax(dan);
+        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
+        vm.stopPrank();
+
         skip(8 weeks);
 
         // PAUSE CONTRACTS AND GET READY FOR SNAPSHOT
@@ -37,10 +49,11 @@ contract SmallScenariosTest is TestSetup {
         /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
         // Alice's Points are 100224
         // Bob's points are 136850
-        vm.prank(alice);
+
         uint256 alicePoints = earlyAdopterPoolInstance.calculateUserPoints(alice);
-        vm.prank(bob);
         uint256 bobPoints = earlyAdopterPoolInstance.calculateUserPoints(bob);
+        uint256 chadPoints = earlyAdopterPoolInstance.calculateUserPoints(chad);
+        uint256 danPoints = earlyAdopterPoolInstance.calculateUserPoints(dan);
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
@@ -61,7 +74,7 @@ contract SmallScenariosTest is TestSetup {
         // Alice Deposits into the Claim Receiver Pool and receives eETH in return
         bytes32[] memory aliceProof = merkleMigration2.getProof(dataForVerification2, 0);
         vm.startPrank(alice);
-        claimReceiverPoolInstance.deposit{value: 1 ether}(0, 0, 0, 0, 100224, aliceProof);
+        claimReceiverPoolInstance.deposit{value: 1 ether}(0, 0, 0, 0, 103680, aliceProof);
         vm.stopPrank();
 
         assertEq(address(claimReceiverPoolInstance).balance, 0);
@@ -78,7 +91,7 @@ contract SmallScenariosTest is TestSetup {
 
         // Bob Deposits into the Claim Receiver Pool and receives eETH in return
         bytes32[] memory bobProof = merkleMigration2.getProof(dataForVerification2, 1);
-        claimReceiverPoolInstance.deposit{value: 2 ether}(0, 0, 0, 0, 136850, bobProof);
+        claimReceiverPoolInstance.deposit{value: 2 ether}(0, 0, 0, 0, 141738, bobProof);
         vm.stopPrank();
 
         assertEq(address(claimReceiverPoolInstance).balance, 0);
@@ -90,6 +103,31 @@ contract SmallScenariosTest is TestSetup {
         // Check that scores are recorded in Score Manager
         assertEq(scoreManagerInstance.scores(0, alice), bytes32(bytes(abi.encode(alicePoints))));
         assertEq(scoreManagerInstance.scores(0, bob), bytes32(bytes(abi.encode(bobPoints))));
+
+        // Chad withdraws and does not deposit
+        // If he does not deposit his points will not be stored in the score manager
+        uint256 chadBalanceBeforeWithdrawal = chad.balance;
+        uint256 eapBalanceBeforeWithdrawal = address(earlyAdopterPoolInstance).balance;
+        vm.prank(chad);
+        earlyAdopterPoolInstance.withdraw();
+        assertEq(chad.balance, chadBalanceBeforeWithdrawal + 2 ether);
+        assertEq(address(earlyAdopterPoolInstance).balance, eapBalanceBeforeWithdrawal - 2 ether);
+
+        // Dan withdraws and does not deposit but gets special approval from ether.Fi to set his score in the score manager
+        uint256 danBalanceBeforeWithdrawal = dan.balance;
+        eapBalanceBeforeWithdrawal = address(earlyAdopterPoolInstance).balance;
+        vm.prank(dan);
+        earlyAdopterPoolInstance.withdraw();
+        assertEq(dan.balance, danBalanceBeforeWithdrawal + 1 ether);
+        assertEq(address(earlyAdopterPoolInstance).balance, eapBalanceBeforeWithdrawal - 1 ether);
+
+        // ether.Fi approves dan to set his score
+        vm.prank(owner);
+        scoreManagerInstance.setCallerStatus(dan, true);
+
+        vm.prank(dan);
+        scoreManagerInstance.setScore(0, dan, bytes32(abi.encodePacked(danPoints)));
+        assertEq(scoreManagerInstance.scores(0, dan), bytes32(bytes(abi.encode(danPoints))));
     }
 
     /*------ SCENARIO 1 ------*/

@@ -368,7 +368,7 @@ contract TestSetup is Test {
                     uint256(0),
                     uint256(0),
                     uint256(0),
-                    uint256(100224)
+                    uint256(103680)
                 )
             )
         );
@@ -381,7 +381,33 @@ contract TestSetup is Test {
                     uint256(0),
                     uint256(0),
                     uint256(0),
-                    uint256(136850)
+                    uint256(141738)
+                )
+            )
+        );
+        dataForVerification2.push(
+            keccak256(
+                abi.encodePacked(
+                    chad,
+                    uint256(2 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(139294)
+                )
+            )
+        );
+        dataForVerification2.push(
+            keccak256(
+                abi.encodePacked(
+                    dan,
+                    uint256(1 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(96768)
                 )
             )
         );
