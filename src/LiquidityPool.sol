@@ -163,7 +163,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         stakingManager = IStakingManager(_address);
     }
 
-
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
