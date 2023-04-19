@@ -19,7 +19,7 @@ contract RegulationsManager is
     mapping(uint32 => mapping (address => bool)) public isEligible;
     mapping(uint32 => mapping (address => bytes32)) public declarationHash;
 
-    uint32 public declarationIteration;
+    uint32 public whitelistVersion;
 
     uint256[32] __gap;
 
@@ -27,17 +27,15 @@ contract RegulationsManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event EligibilityConfirmed(bytes32 declarationHash, uint32 declarationIteration, address user);
-    event EligibilityRemoved(uint32 declarationIteration, address user);
-    event DeclarationIterationIncreased(uint32 currentDeclaration);
+    event EligibilityConfirmed(bytes32 declarationHash, uint32 whitelistVersion, address user);
+    event EligibilityRemoved(uint32 whitelistVersion, address user);
+    event whitelistVersionIncreased(uint32 currentDeclaration);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice initialize to set variables on deployment
-    /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
-    /// @dev AuctionManager contract must be deployed first
+    /// @notice initializes contract
     function initialize() external initializer {
         __Pausable_init();
         __Ownable_init();
@@ -48,10 +46,10 @@ contract RegulationsManager is
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
     /// @param _declarationHash hash of the agreement the user signed containing blacklisted countries
     function confirmEligibility(bytes32 _declarationHash) external whenNotPaused {
-        isEligible[declarationIteration][msg.sender] = true;
-        declarationHash[declarationIteration][msg.sender] = _declarationHash;
+        isEligible[whitelistVersion][msg.sender] = true;
+        declarationHash[whitelistVersion][msg.sender] = _declarationHash;
 
-        emit EligibilityConfirmed(_declarationHash, declarationIteration, msg.sender);
+        emit EligibilityConfirmed(_declarationHash, whitelistVersion, msg.sender);
     }
 
     /// @notice removes a user from the whitelist
@@ -59,19 +57,19 @@ contract RegulationsManager is
     /// @param _user the user to remove from the whitelist
     function removeFromWhitelist(address _user) external whenNotPaused {
         require(msg.sender == _user || msg.sender == owner(), "Incorrect Caller");
-        require(isEligible[declarationIteration][_user] == true, "User not whitelisted");
+        require(isEligible[whitelistVersion][_user] == true, "User not whitelisted");
 
-        isEligible[declarationIteration][_user] = false;
+        isEligible[whitelistVersion][_user] = false;
 
-        emit EligibilityRemoved(declarationIteration, _user);
+        emit EligibilityRemoved(whitelistVersion, _user);
     }
 
     /// @notice resets the whitelist by incrementing the iteration
     /// @dev happens when there is an update to the blacklisted country list
     function resetWhitelist() external onlyOwner {
-        declarationIteration++;
+        whitelistVersion++;
 
-        emit DeclarationIterationIncreased(declarationIteration);
+        emit whitelistVersionIncreased(whitelistVersion);
     }
 
     //Pauses the contract

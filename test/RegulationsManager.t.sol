@@ -72,7 +72,7 @@ contract RegulationsManagerTest is TestSetup {
         vm.expectRevert("Ownable: caller is not the owner");
         regulationsManagerInstance.resetWhitelist();
 
-        assertEq(regulationsManagerInstance.declarationIteration(), 0);
+        assertEq(regulationsManagerInstance.whitelistVersion(), 0);
 
         regulationsManagerInstance.confirmEligibility("hash_example");
         vm.stopPrank();
@@ -83,7 +83,7 @@ contract RegulationsManagerTest is TestSetup {
         vm.prank(owner);
         regulationsManagerInstance.resetWhitelist();
 
-        assertEq(regulationsManagerInstance.declarationIteration(), 1);
-        assertEq(regulationsManagerInstance.isEligible(regulationsManagerInstance.declarationIteration(), alice), false);
+        assertEq(regulationsManagerInstance.whitelistVersion(), 1);
+        assertEq(regulationsManagerInstance.isEligible(regulationsManagerInstance.whitelistVersion(), alice), false);
     }
 }

@@ -10,9 +10,9 @@ interface IRegulationsManager {
 
     function resetWhitelist() external;
 
-    function isEligible(uint32 _declarationIteration, address _user) external view returns (bool);
-    function declarationHash(uint32 _declarationIteration, address user) external view returns (bytes32);
+    function isEligible(uint32 _whitelistVersion, address _user) external view returns (bool);
+    function declarationHash(uint32 _whitelistVersion, address user) external view returns (bytes32);
 
-    function declarationIteration() external view returns (uint32);
+    function whitelistVersion() external view returns (uint32);
 
 }
