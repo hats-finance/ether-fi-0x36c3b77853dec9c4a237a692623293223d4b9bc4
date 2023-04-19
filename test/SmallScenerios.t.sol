@@ -14,19 +14,25 @@ contract SmallScenariosTest is TestSetup {
     function test_EapMigration() public {
         /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
         /// @notice Gareth has tested the ERC20 deposits on goerli and assures everything works.
+
+        /*
+        Alice, Chad and Dan all deposit into the Early Adopter Pool
+        
+        -   Alice withdraws her funds after the snapshot has been taken. 
+            She then deposits her ETH into the Claim Receiver Pool and has her score is set in the score manager contract.
+        
+        -   Chad withdraws his funds after the snapshot but does not deposit into the CRP losing all his points.
+
+        -   Dan withdraws his funds after the snapshot but does not deposit into the CRP. 
+            He is given permission from ether.Fi to set his score in the CRP manually.
+        */
         
         // Acotrs deposit into EAP
         startHoax(alice);
         earlyAdopterPoolInstance.depositEther{value: 1 ether}();
         vm.stopPrank();
 
-        skip(2 days);
-        
-        startHoax(bob);
-        earlyAdopterPoolInstance.depositEther{value: 2 ether}();
-        vm.stopPrank();
-
-        skip(1 days);
+        skip(3 days);
 
         startHoax(chad);
         earlyAdopterPoolInstance.depositEther{value: 2 ether}();
@@ -51,7 +57,6 @@ contract SmallScenariosTest is TestSetup {
         // Bob's points are 136850
 
         uint256 alicePoints = earlyAdopterPoolInstance.calculateUserPoints(alice);
-        uint256 bobPoints = earlyAdopterPoolInstance.calculateUserPoints(bob);
         uint256 chadPoints = earlyAdopterPoolInstance.calculateUserPoints(chad);
         uint256 danPoints = earlyAdopterPoolInstance.calculateUserPoints(dan);
 
@@ -83,26 +88,8 @@ contract SmallScenariosTest is TestSetup {
         // Check that Alice has received eETH
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
 
-        // Bob withdraws and deposits into CRP
-        vm.startPrank(bob);
-        earlyAdopterPoolInstance.withdraw();
-
-        // Bob signs blacklist country declaration
-
-        // Bob Deposits into the Claim Receiver Pool and receives eETH in return
-        bytes32[] memory bobProof = merkleMigration2.getProof(dataForVerification2, 1);
-        claimReceiverPoolInstance.deposit{value: 2 ether}(0, 0, 0, 0, 141738, bobProof);
-        vm.stopPrank();
-
-        assertEq(address(claimReceiverPoolInstance).balance, 0);
-        assertEq(address(liquidityPoolInstance).balance, 3 ether);
-
-        // Check that Bob has received eETH
-        assertEq(eETHInstance.balanceOf(bob), 2 ether);
-
         // Check that scores are recorded in Score Manager
         assertEq(scoreManagerInstance.scores(0, alice), bytes32(bytes(abi.encode(alicePoints))));
-        assertEq(scoreManagerInstance.scores(0, bob), bytes32(bytes(abi.encode(bobPoints))));
 
         // Chad withdraws and does not deposit
         // If he does not deposit his points will not be stored in the score manager
