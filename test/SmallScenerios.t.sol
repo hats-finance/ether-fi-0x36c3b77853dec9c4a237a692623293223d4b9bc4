@@ -12,45 +12,83 @@ contract SmallScenariosTest is TestSetup {
 
     /*----- EAP MIGRATION SCENARIO -----*/
     function test_EapMigration() public {
-        //Deposit into EAP
+        /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
+
+        // Acotrs deposit into EAP
         startHoax(alice);
-        rETH.approve(address(earlyAdopterPoolInstance), 1 ether);
-        earlyAdopterPoolInstance.deposit(address(rETH), 1 ether);
         earlyAdopterPoolInstance.depositEther{value: 1 ether}();
         vm.stopPrank();
 
         skip(2 days);
         
         startHoax(bob);
-        wstETH.approve(address(earlyAdopterPoolInstance), 1 ether);
-        earlyAdopterPoolInstance.deposit(address(wstETH), 1 ether);
-        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
+        earlyAdopterPoolInstance.depositEther{value: 2 ether}();
         vm.stopPrank();
 
         skip(8 weeks);
 
+        // PAUSE CONTRACTS AND GET READY FOR SNAPSHOT
+        vm.startPrank(owner);
+        earlyAdopterPoolInstance.pauseContract();
+        claimReceiverPoolInstance.pauseContract();
+        vm.stopPrank();
+
+        /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
+        // Alice's Points are 100224
+        // Bob's points are 136850
         vm.prank(alice);
         uint256 alicePoints = earlyAdopterPoolInstance.calculateUserPoints(alice);
-
         vm.prank(bob);
         uint256 bobPoints = earlyAdopterPoolInstance.calculateUserPoints(bob);
 
-        console.logUint(alicePoints);
-        console.logUint(bobPoints);
-
+        /// MERKLE TREE GETS GENERATED AND UPDATED
+        vm.prank(owner);
+        claimReceiverPoolInstance.updateMerkleRoot(rootMigration2);
+        
+        // Unpause CRP to allow for depoists
         vm.startPrank(owner);
-        earlyAdopterPoolInstance.setClaimReceiverContract(address(claimReceiverPoolInstance));
-        // User has 60 days to claim
-        earlyAdopterPoolInstance.setClaimingOpen(60);
+        claimReceiverPoolInstance.unPauseContract();
         vm.stopPrank();
 
-        //Alice Claims
+        // Alice Withdraws
         vm.startPrank(alice);
-        earlyAdopterPoolInstance.claim();
+        earlyAdopterPoolInstance.withdraw();
         vm.stopPrank();
 
+        // Alice signs blacklist country declaration
 
+        // Alice Deposits into the Claim Receiver Pool and receives eETH in return
+        bytes32[] memory aliceProof = merkleMigration2.getProof(dataForVerification2, 0);
+        vm.startPrank(alice);
+        claimReceiverPoolInstance.deposit{value: 1 ether}(0, 0, 0, 0, 100224, aliceProof);
+        vm.stopPrank();
 
+        assertEq(address(claimReceiverPoolInstance).balance, 0);
+        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+        
+        // Check that Alice has received eETH
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+
+        // Bob withdraws and deposits into CRP
+        vm.startPrank(bob);
+        earlyAdopterPoolInstance.withdraw();
+
+        // Bob signs blacklist country declaration
+
+        // Bob Deposits into the Claim Receiver Pool and receives eETH in return
+        bytes32[] memory bobProof = merkleMigration2.getProof(dataForVerification2, 1);
+        claimReceiverPoolInstance.deposit{value: 2 ether}(0, 0, 0, 0, 136850, bobProof);
+        vm.stopPrank();
+
+        assertEq(address(claimReceiverPoolInstance).balance, 0);
+        assertEq(address(liquidityPoolInstance).balance, 3 ether);
+
+        // Check that Bob has received eETH
+        assertEq(eETHInstance.balanceOf(bob), 2 ether);
+
+        // Check that scores are recorded in Score Manager
+        assertEq(scoreManagerInstance.scores(0, alice), bytes32(bytes(abi.encode(alicePoints))));
+        assertEq(scoreManagerInstance.scores(0, bob), bytes32(bytes(abi.encode(bobPoints))));
     }
 
     /*------ SCENARIO 1 ------*/

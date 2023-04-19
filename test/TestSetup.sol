@@ -364,11 +364,11 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     alice,
                     uint256(1 ether),
-                    uint256(1 ether),
                     uint256(0),
                     uint256(0),
                     uint256(0),
-                    uint256(1417380)
+                    uint256(0),
+                    uint256(100224)
                 )
             )
         );
@@ -376,9 +376,9 @@ contract TestSetup is Test {
             keccak256(
                 abi.encodePacked(
                     bob,
-                    uint256(1 ether),
+                    uint256(2 ether),
                     uint256(0),
-                    uint256(1 ether),
+                    uint256(0),
                     uint256(0),
                     uint256(0),
                     uint256(136850)
@@ -386,8 +386,7 @@ contract TestSetup is Test {
             )
         );
         
-        rootMigration2 = merkleMigration.getRoot(dataForVerification2);
-        claimReceiverPoolInstance.updateMerkleRoot(rootMigration2);
+        rootMigration2 = merkleMigration2.getRoot(dataForVerification2);
     }
 
     function _getDepositRoot() internal returns (bytes32) {
