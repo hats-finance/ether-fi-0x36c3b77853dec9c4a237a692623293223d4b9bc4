@@ -93,6 +93,8 @@ contract ClaimReceiverPool is
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    receive() external payable {}
+    
     /// @notice Allows user to deposit into the conversion pool
     /// @notice Transfers users ether to function in the LP
     /// @dev The deposit amount must be the same as what they deposited into the EAP

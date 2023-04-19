@@ -7,6 +7,50 @@ contract SmallScenariosTest is TestSetup {
 
     function setUp() public {
         setUpTests();
+        
+    }
+
+    /*----- EAP MIGRATION SCENARIO -----*/
+    function test_EapMigration() public {
+        //Deposit into EAP
+        startHoax(alice);
+        rETH.approve(address(earlyAdopterPoolInstance), 1 ether);
+        earlyAdopterPoolInstance.deposit(address(rETH), 1 ether);
+        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
+        vm.stopPrank();
+
+        skip(2 days);
+        
+        startHoax(bob);
+        wstETH.approve(address(earlyAdopterPoolInstance), 1 ether);
+        earlyAdopterPoolInstance.deposit(address(wstETH), 1 ether);
+        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
+        vm.stopPrank();
+
+        skip(8 weeks);
+
+        vm.prank(alice);
+        uint256 alicePoints = earlyAdopterPoolInstance.calculateUserPoints(alice);
+
+        vm.prank(bob);
+        uint256 bobPoints = earlyAdopterPoolInstance.calculateUserPoints(bob);
+
+        console.logUint(alicePoints);
+        console.logUint(bobPoints);
+
+        vm.startPrank(owner);
+        earlyAdopterPoolInstance.setClaimReceiverContract(address(claimReceiverPoolInstance));
+        // User has 60 days to claim
+        earlyAdopterPoolInstance.setClaimingOpen(60);
+        vm.stopPrank();
+
+        //Alice Claims
+        vm.startPrank(alice);
+        earlyAdopterPoolInstance.claim();
+        vm.stopPrank();
+
+
+
     }
 
     /*------ SCENARIO 1 ------*/
