@@ -116,7 +116,7 @@ contract ClaimReceiverPool is
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable whenNotPaused {
-        require(regulationsManager.isEligible(regulationsManager.declarationIteration(), msg.sender), "User is not whitelisted");
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
         require(
             _verifyValues(
                 msg.sender,

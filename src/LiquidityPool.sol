@@ -57,7 +57,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     /// @notice deposit into pool
     /// @dev mints the amount of eTH 1:1 with ETH sent
     function deposit(address _user) external payable {
-        require(regulationsManager.isEligible(regulationsManager.declarationIteration(), _user), "User is not whitelisted");
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
         uint256 share = _sharesForAmountAfterDeposit(msg.value);
         if (share == 0) {
             share = msg.value;

@@ -173,14 +173,18 @@ contract WethETHTest is TestSetup {
 
     function test_UnwrappingWithRewards() public {
         // Alice deposits into LP
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        vm.stopPrank();
 
         // Bob deposits into LP
-        hoax(bob);
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility("hash_example");
         liquidityPoolInstance.deposit{value: 1 ether}(bob);
         assertEq(eETHInstance.balanceOf(bob), 1 ether);
+        vm.stopPrank();
 
         //Bob chooses to wrap his eETH into weETH
         vm.startPrank(bob);
