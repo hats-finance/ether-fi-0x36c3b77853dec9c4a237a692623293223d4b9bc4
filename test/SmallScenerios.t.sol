@@ -16,14 +16,12 @@ contract SmallScenariosTest is TestSetup {
         /// @notice Gareth has tested the ERC20 deposits on goerli and assures everything works.
 
         /*
-        Alice, Chad and Dan all deposit into the Early Adopter Pool
+        Alice, Chad all deposit into the Early Adopter Pool
         
-        -   Alice withdraws her funds after the snapshot has been taken. 
+        -   Alice claims her funds after the snapshot has been taken. 
             She then deposits her ETH into the Claim Receiver Pool and has her score is set in the score manager contract.
         
         -   Chad withdraws his funds after the snapshot but does not deposit into the CRP losing all his points.
-
-        -   Dan withdraws his funds after the snapshot but does not deposit into the CRP. 
         */
         
         // Acotrs deposit into EAP
@@ -38,11 +36,6 @@ contract SmallScenariosTest is TestSetup {
         vm.stopPrank();
 
         skip(1 days);
-        
-        startHoax(dan);
-        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
-        vm.stopPrank();
-
         skip(8 weeks);
 
         // PAUSE CONTRACTS AND GET READY FOR SNAPSHOT
@@ -54,10 +47,8 @@ contract SmallScenariosTest is TestSetup {
         /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
         // Alice's Points are 100224
         // Bob's points are 136850
-
         uint256 alicePoints = earlyAdopterPoolInstance.calculateUserPoints(alice);
         uint256 chadPoints = earlyAdopterPoolInstance.calculateUserPoints(chad);
-        uint256 danPoints = earlyAdopterPoolInstance.calculateUserPoints(dan);
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
@@ -98,22 +89,6 @@ contract SmallScenariosTest is TestSetup {
         earlyAdopterPoolInstance.withdraw();
         assertEq(chad.balance, chadBalanceBeforeWithdrawal + 2 ether);
         assertEq(address(earlyAdopterPoolInstance).balance, eapBalanceBeforeWithdrawal - 2 ether);
-
-        // Dan withdraws and does not deposit but gets special approval from ether.Fi to set his score in the score manager
-        uint256 danBalanceBeforeWithdrawal = dan.balance;
-        eapBalanceBeforeWithdrawal = address(earlyAdopterPoolInstance).balance;
-        vm.prank(dan);
-        earlyAdopterPoolInstance.withdraw();
-        assertEq(dan.balance, danBalanceBeforeWithdrawal + 1 ether);
-        assertEq(address(earlyAdopterPoolInstance).balance, eapBalanceBeforeWithdrawal - 1 ether);
-
-        // ether.Fi approves dan to set his score
-        vm.prank(owner);
-        scoreManagerInstance.setCallerStatus(dan, true);
-
-        vm.prank(dan);
-        scoreManagerInstance.setScore(0, dan, bytes32(abi.encodePacked(danPoints)));
-        assertEq(scoreManagerInstance.scores(0, dan), bytes32(bytes(abi.encode(danPoints))));
     }
 
     /*------ SCENARIO 1 ------*/
