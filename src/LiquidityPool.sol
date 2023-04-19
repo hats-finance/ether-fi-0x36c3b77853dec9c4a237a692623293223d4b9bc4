@@ -44,7 +44,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    // receive() external payable {}
+    receive() external payable {}
 
     function initialize() external initializer {
         __Ownable_init();
