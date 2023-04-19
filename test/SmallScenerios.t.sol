@@ -13,7 +13,8 @@ contract SmallScenariosTest is TestSetup {
     /*----- EAP MIGRATION SCENARIO -----*/
     function test_EapMigration() public {
         /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
-
+        /// @notice Gareth has tested the ERC20 deposits on goerli and assures everything works.
+        
         // Acotrs deposit into EAP
         startHoax(alice);
         earlyAdopterPoolInstance.depositEther{value: 1 ether}();
@@ -65,7 +66,7 @@ contract SmallScenariosTest is TestSetup {
 
         assertEq(address(claimReceiverPoolInstance).balance, 0);
         assertEq(address(liquidityPoolInstance).balance, 1 ether);
-        
+
         // Check that Alice has received eETH
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
 
