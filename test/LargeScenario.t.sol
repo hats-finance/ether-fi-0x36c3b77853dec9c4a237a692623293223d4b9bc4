@@ -93,7 +93,7 @@ contract LargeScenariosTest is TestSetup {
         isActive = auctionInstance.isBidActive(aliceBidIds[9]);
         assertFalse(isActive);
 
-        // Cancel a deposit
+        // Elvis cancels a deposit
         vm.prank(elvis);
         balanceBefore = elvis.balance;
         stakingManagerInstance.cancelDeposit(elvisProcessedBidIds[0]);
@@ -139,20 +139,24 @@ contract LargeScenariosTest is TestSetup {
         stakingManagerInstance.registerValidator(_getDepositRoot(), danProcessedBidIds[0], depositData);
         vm.stopPrank();
 
+        // Check that 32 ETH has been deposited into the Beacon Chain
         assertEq(address(stakingManagerInstance).balance, 288 ether);
+
+        // Check node state and NFT Owners
         assertTrue(IEtherFiNode(danNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertEq(TNFTInstance.ownerOf(danProcessedBidIds[0]), dan);
         assertEq(BNFTInstance.ownerOf(danProcessedBidIds[0]), dan);
 
         assertEq(managerInstance.numberOfValidators(), 1);
 
-        // Bid amount gets distributed
+        // Auction Rewards get distributed
         assertEq(address(auctionInstance).balance, 0.65 ether - 0.005 ether);
         assertEq(danNode.balance, 0.0025 ether);
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 0.0025 ether + 1);
         assertEq(EtherFiNode(danNode).localRevenueIndex(), 1);
 
-        // Batch register validators
+        /// Elvis batch registers validators
+        // Generate Elvis's deposit data
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](newElvisProcessedBidIds.length);
 
@@ -185,6 +189,7 @@ contract LargeScenariosTest is TestSetup {
 
         assertEq(address(stakingManagerInstance).balance, 32 ether);
 
+        // Check nodes state and NFT Owners
         for(uint256 i = 0; i < newElvisProcessedBidIds.length; i ++){
             address elvisNode = managerInstance.etherfiNodeAddress(newElvisProcessedBidIds[i]);
             assertTrue(IEtherFiNode(elvisNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
@@ -193,6 +198,8 @@ contract LargeScenariosTest is TestSetup {
         }
 
         assertEq(managerInstance.numberOfValidators(), 9);
+
+        // Auction Revenue gets transfered
         // 0.005 ether * 8 bids = 0.04 ether
         assertEq(address(auctionInstance).balance, 0.645 ether - 0.04 ether);
 
@@ -201,6 +208,7 @@ contract LargeScenariosTest is TestSetup {
             assertEq(elvisNode.balance, 0.0025 ether);
         }
 
+        // Greg registers his validator
         address gregNode = managerInstance.etherfiNodeAddress(gregProcessedBidIds[0]);
 
         root = depGen.generateDepositRoot(
@@ -221,19 +229,29 @@ contract LargeScenariosTest is TestSetup {
         stakingManagerInstance.registerValidator(_getDepositRoot(), gregProcessedBidIds[0], depositData);
         vm.stopPrank();
 
+        // Auction Revenue gets transfered
         // Because he used bobs bid of 0.002 ether
         assertEq(gregNode.balance, 0.001 ether);
         assertEq(address(auctionInstance).balance, 0.605 ether - 0.002 ether);
+
+        // Check nodes state and NFT Owners
         assertTrue(IEtherFiNode(gregNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertEq(TNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
         assertEq(BNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
 
         /*---- Staking Rewards come in ----*/
+
         // Owner acting as deposit contract
         skip(2 weeks);
         hoax(owner);
         (bool sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");
         require(sent, "Failed to send Ether");
+
+        // Bob is N.O.
+        // Greg is TNFT and BNFT owner
+        uint256 bobBalanceBeforeSkim = bob.balance;
+        uint256 gregBalanceBeforeSkim = greg.balance;
+        uint256 treasuryBalanceBeforeSkim = address(treasuryInstance).balance;
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = managerInstance.getRewardsPayouts(
                 gregProcessedBidIds[0],
@@ -241,13 +259,16 @@ contract LargeScenariosTest is TestSetup {
                 true,
                 true
             );
-        console.logUint(toOperator);
-        console.logUint(toTnft);
-        console.logUint(toBnft);
-        console.logUint(toTreasury);
 
         // Greg skims rewards
         vm.prank(greg);
-        //managerInstance.partialWithdraw()
+        managerInstance.partialWithdraw(gregProcessedBidIds[0], true, true, true);
+
+        // Correct rewards go to NFT holders, Node Operator and Treasury
+        assertEq(greg.balance, gregBalanceBeforeSkim + toTnft + toBnft);
+        assertEq(bob.balance, bobBalanceBeforeSkim + toOperator);
+        assertEq(address(treasuryInstance).balance, treasuryBalanceBeforeSkim + toTreasury);
+
+        // Elvis batch skims his rewards 
     }
 }
