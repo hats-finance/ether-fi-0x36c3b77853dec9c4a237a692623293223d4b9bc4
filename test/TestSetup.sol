@@ -15,7 +15,7 @@ import "../src/Treasury.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
-import "../src/WeEth.sol";
+import "../src/weEth.sol";
 import "../src/ScoreManager.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
