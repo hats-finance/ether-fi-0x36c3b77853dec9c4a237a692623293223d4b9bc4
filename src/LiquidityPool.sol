@@ -24,8 +24,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     IStakingManager stakingManager;
 
     mapping(uint256 => bool) public validators;
-    uint256 public accruedSlashingPenalties;
-    uint256 public accruedEapRewards;
+    uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
+    uint256 public accruedEapRewards;           // total amounts of accrued EAP rewards
+    uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
 
     uint64 public numValidators;
 
@@ -44,7 +45,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    receive() external payable {}
+    receive() external payable {
+        require(accruedStakingRewards >= msg.value, "Update the accrued rewards first");
+        accruedStakingRewards -= msg.value;
+    }
 
     function initialize() external initializer {
         __Ownable_init();
@@ -113,7 +117,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     }
 
     function getTotalPooledEther() public view returns (uint256) {
-        return (32 ether * numValidators) + address(this).balance - (accruedSlashingPenalties + accruedEapRewards);
+        return (32 ether * numValidators) + accruedStakingRewards + address(this).balance - (accruedSlashingPenalties + accruedEapRewards);
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
@@ -136,6 +140,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     /// @notice ether.fi protocol will send the ETH as the rewards for EAP users
     function accrueEapRewards() external payable onlyOwner {
         accruedEapRewards += msg.value;
+    }
+
+    /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
+    function setAccruedStakingReards(uint256 _amount) external onlyOwner {
+        accruedStakingRewards = _amount;
     }
 
     /// @notice ether.fi protocol will be monitoring the status of validator nodes
