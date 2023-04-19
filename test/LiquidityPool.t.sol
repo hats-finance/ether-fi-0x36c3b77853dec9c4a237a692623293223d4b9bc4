@@ -156,6 +156,7 @@ contract LiquidityPoolTest is TestSetup {
     function test_WithdrawLiquidityPoolAccrueStakingRewardsWithoutPartialWithdrawal() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -164,6 +165,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 2 ether}(bob);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
