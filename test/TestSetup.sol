@@ -15,8 +15,9 @@ import "../src/Treasury.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
-import "../src/WeEth.sol";
+import "../src/weEth.sol";
 import "../src/ScoreManager.sol";
+import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
 import "../lib/murky/src/Merkle.sol";
@@ -59,6 +60,8 @@ contract TestSetup is Test {
     ScoreManager public scoreManagerInstance;
     ScoreManager public scoreManagerImplementation;
 
+    EarlyAdopterPool public earlyAdopterPoolInstance;
+
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
 
@@ -82,11 +85,18 @@ contract TestSetup is Test {
     NodeOperatorManager public nodeOperatorManagerInstance;
     
     Merkle merkle;
-    Merkle merkleMigration;
     bytes32 root;
+
+    Merkle merkleMigration;
     bytes32 rootMigration;
+
+    Merkle merkleMigration2;
+    bytes32 rootMigration2;
+
     bytes32[] public whiteListedAddresses;
     bytes32[] public dataForVerification;
+    bytes32[] public dataForVerification2;
+
     IStakingManager.DepositData public test_data;
     IStakingManager.DepositData public test_data_2;
 
@@ -166,6 +176,13 @@ contract TestSetup is Test {
         sfrxEth = new TestERC20("Frax ETH", "sfrxEth");
         sfrxEth.mint(alice, 10e18);
         sfrxEth.mint(bob, 10e18);
+
+        earlyAdopterPoolInstance = new EarlyAdopterPool(
+            address(rETH),
+            address(wstETH),
+            address(sfrxEth),
+            address(cbEth)
+        );
         
         claimReceiverPoolImplementation = new ClaimReceiverPool();
         claimReceiverPoolProxy = new UUPSProxy(
@@ -206,6 +223,7 @@ contract TestSetup is Test {
         // Setup dependencies
         _merkleSetup();
         _merkleSetupMigration();
+        _merkleSetupMigration2();
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
         nodeOperatorManagerInstance.updateMerkleRoot(root);
 
@@ -337,6 +355,64 @@ contract TestSetup is Test {
         );
         rootMigration = merkleMigration.getRoot(dataForVerification);
         claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
+    }
+
+    function _merkleSetupMigration2() internal {
+        merkleMigration2 = new Merkle();
+        dataForVerification2.push(
+            keccak256(
+                abi.encodePacked(
+                    alice,
+                    uint256(1 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(103680)
+                )
+            )
+        );
+        dataForVerification2.push(
+            keccak256(
+                abi.encodePacked(
+                    bob,
+                    uint256(2 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(141738)
+                )
+            )
+        );
+        dataForVerification2.push(
+            keccak256(
+                abi.encodePacked(
+                    chad,
+                    uint256(2 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(139294)
+                )
+            )
+        );
+        dataForVerification2.push(
+            keccak256(
+                abi.encodePacked(
+                    dan,
+                    uint256(1 ether),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(0),
+                    uint256(96768)
+                )
+            )
+        );
+        
+        rootMigration2 = merkleMigration2.getRoot(dataForVerification2);
     }
 
     function _getDepositRoot() internal returns (bytes32) {

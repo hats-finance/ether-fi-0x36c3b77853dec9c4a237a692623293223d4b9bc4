@@ -130,7 +130,7 @@ contract UpgradeTest is TestSetup {
         
         vm.prank(owner);
         claimReceiverPoolInstance.upgradeTo(address(claimReceiverV2Implementation));
-        claimReceiverPoolV2Instance = ClaimReceiverPoolV2(address(claimReceiverPoolProxy));
+        claimReceiverPoolV2Instance = ClaimReceiverPoolV2(payable(address(claimReceiverPoolProxy)));
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.startPrank(owner);
