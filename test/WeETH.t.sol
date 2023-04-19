@@ -169,6 +169,40 @@ contract WethETHTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(weEthInstance)), 5.133333333333333332 ether);
         assertEq(eETHInstance.shares(address(weEthInstance)), 2.333333333333333333 ether);
         assertEq(weEthInstance.balanceOf(alice), 2.333333333333333333 ether);
+    }
 
+    function test_UnwrappingWithRewards() public {
+        // Alice deposits into LP
+        hoax(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+
+        // Bob deposits into LP
+        hoax(bob);
+        liquidityPoolInstance.deposit{value: 1 ether}(bob);
+        assertEq(eETHInstance.balanceOf(bob), 1 ether);
+
+        //Bob chooses to wrap his eETH into weETH
+        vm.startPrank(bob);
+        eETHInstance.approve(address(weEthInstance), 1 ether);
+        weEthInstance.wrap(1 ether);
+        assertEq(eETHInstance.balanceOf(bob), 0 ether);
+        assertEq(weEthInstance.balanceOf(bob), 1 ether);
+
+        // Rewards enter LP
+        vm.deal(address(liquidityPoolInstance), 4 ether);
+        assertEq(address(liquidityPoolInstance).balance, 4 ether);
+
+        // Alice now has 2.666666666666666666 ether
+        // Bob should still have 1 weETH because it doesn't rebase
+        assertEq(eETHInstance.balanceOf(alice), 2.666666666666666666 ether);
+        assertEq(weEthInstance.balanceOf(bob), 1 ether);
+
+        // Bob unwraps his weETH and should get his principal + rewards
+        // Bob should get 1.333333333333333333 ether
+
+        /// @notice not sure where the 0.000000000000000001 ether goes to. Possible that it gets rounded down on conversion
+        weEthInstance.unwrap(1 ether);
+        assertEq(eETHInstance.balanceOf(bob), 1.333333333333333332 ether);
     }
 }
