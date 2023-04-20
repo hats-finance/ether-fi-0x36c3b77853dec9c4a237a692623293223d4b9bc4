@@ -27,7 +27,7 @@ contract RegulationsManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event EligibilityConfirmed(uint32 whitelistVersion, address user);
+    event EligibilityConfirmed(uint32 whitelistVersion, bytes32 hash, address user);
     event EligibilityRemoved(uint32 whitelistVersion, address user);
     event whitelistVersionIncreased(uint32 currentDeclaration);
 
@@ -48,7 +48,7 @@ contract RegulationsManager is
         isEligible[whitelistVersion][msg.sender] = true;
         declarationHashes[msg.sender] = _hash;
 
-        emit EligibilityConfirmed(whitelistVersion, msg.sender);
+        emit EligibilityConfirmed(whitelistVersion, _hash, msg.sender);
     }
 
     /// @notice removes a user from the whitelist
