@@ -125,7 +125,7 @@ contract SmallScenariosTest is TestSetup {
 
     // 4 Stakers
     //  Dan - Stakes once, should be matched with Bob's first bid of 1 ETH
-    //  Egg - Stakes once, should be matched with Bob's second bid of 1 ETH
+    //  elvis - Stakes once, should be matched with Bob's second bid of 1 ETH
     //  Greg - Stakes once, should be matched with Bob's third bid of 1 ETH
     //  Henry - Stakes once, should be matched with Chad's first bid of 0.2 ETH
     function test_ScenarioOne() public {
@@ -208,8 +208,8 @@ contract SmallScenariosTest is TestSetup {
         assertEq(staker, dan);
         vm.stopPrank();
 
-        // Egg stakes
-        startHoax(egg);
+        // elvis stakes
+        startHoax(elvis);
         uint256[] memory bidIdArray1 = new uint256[](1);
         bidIdArray1[0] = bobBidIds[1];
 
@@ -229,7 +229,7 @@ contract SmallScenariosTest is TestSetup {
         assertFalse(isBobBid2Active);
         assertTrue(isBobBid3Active);
 
-        assertEq(staker, egg);
+        assertEq(staker, elvis);
         vm.stopPrank();
 
         // Greg stakes
