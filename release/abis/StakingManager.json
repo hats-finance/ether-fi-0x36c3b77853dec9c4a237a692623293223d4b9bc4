@@ -289,6 +289,61 @@
   {
     "inputs": [
       {
+        "internalType": "bytes32",
+        "name": "_depositRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorId",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "address",
+        "name": "_bNftRecipient",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_tNftRecipient",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes",
+            "name": "publicKey",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "depositDataRoot",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string",
+            "name": "ipfsHashForEncryptedValidatorKey",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct IStakingManager.DepositData[]",
+        "name": "_depositData",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "batchRegisterValidators",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
@@ -381,6 +436,19 @@
     "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "liquidityPoolContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -610,6 +678,19 @@
       }
     ],
     "name": "setEtherFiNodesManagerAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_liquidityPoolAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setLiquidityPoolAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
