@@ -17,6 +17,7 @@ contract RegulationsManager is
     UUPSUpgradeable
 {
     mapping(uint32 => mapping(address => bool)) public isEligible;
+    mapping(address => bytes32) public declarationHashes;
 
     uint32 public whitelistVersion;
 
@@ -26,7 +27,7 @@ contract RegulationsManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event EligibilityConfirmed(uint32 whitelistVersion, address user);
+    event EligibilityConfirmed(uint32 whitelistVersion, bytes32 hash, address user);
     event EligibilityRemoved(uint32 whitelistVersion, address user);
     event whitelistVersionIncreased(uint32 currentDeclaration);
 
@@ -43,10 +44,11 @@ contract RegulationsManager is
     }
 
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
-    function confirmEligibility() external whenNotPaused {
+    function confirmEligibility(bytes23 _hash) external whenNotPaused {
         isEligible[whitelistVersion][msg.sender] = true;
+        declarationHashes[msg.sender] = _hash;
 
-        emit EligibilityConfirmed(whitelistVersion, msg.sender);
+        emit EligibilityConfirmed(whitelistVersion, _hash, msg.sender);
     }
 
     /// @notice removes a user from the whitelist
