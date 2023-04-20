@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 interface IRegulationsManager {
     function initialize() external;
 
-    function confirmEligibility(bytes23 _hash) external;
+    function confirmEligibility(bytes32 hash) external;
 
     function removeFromWhitelist(address _user) external;
 
