@@ -69,7 +69,7 @@ contract SmallScenariosTest is TestSetup {
         // Alice Deposits into the Claim Receiver Pool and receives eETH in return
         bytes32[] memory aliceProof = merkleMigration2.getProof(dataForVerification2, 0);
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         claimReceiverPoolInstance.deposit{value: 1 ether}(0, 0, 0, 0, 103680, aliceProof);
         vm.stopPrank();
 

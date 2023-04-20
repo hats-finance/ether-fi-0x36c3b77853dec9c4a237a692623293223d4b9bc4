@@ -13,14 +13,14 @@ contract RegulationsManagerTest is TestSetup {
         vm.startPrank(owner);
         regulationsManagerInstance.pauseContract();
         vm.expectRevert("Pausable: paused");
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         regulationsManagerInstance.unPauseContract();
         vm.stopPrank();
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), false);
         
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), true);
     }
@@ -42,7 +42,7 @@ contract RegulationsManagerTest is TestSetup {
         vm.stopPrank();
 
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
 
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), true);
@@ -53,7 +53,7 @@ contract RegulationsManagerTest is TestSetup {
         assertEq(regulationsManagerInstance.isEligible(0, alice), false);
 
         vm.prank(bob);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
 
         assertEq(regulationsManagerInstance.isEligible(0, bob), true);
 
@@ -70,7 +70,7 @@ contract RegulationsManagerTest is TestSetup {
 
         assertEq(regulationsManagerInstance.whitelistVersion(), 0);
 
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         vm.stopPrank();
 
         assertEq(regulationsManagerInstance.isEligible(0, alice), true);
