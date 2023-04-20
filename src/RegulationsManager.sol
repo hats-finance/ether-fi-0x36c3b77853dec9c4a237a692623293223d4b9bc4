@@ -17,6 +17,7 @@ contract RegulationsManager is
     UUPSUpgradeable
 {
     mapping(uint32 => mapping(address => bool)) public isEligible;
+    mapping(address => bytes32) public declarationHashes;
 
     uint32 public whitelistVersion;
 
@@ -43,8 +44,9 @@ contract RegulationsManager is
     }
 
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
-    function confirmEligibility() external whenNotPaused {
+    function confirmEligibility(bytes32 _hash) external whenNotPaused {
         isEligible[whitelistVersion][msg.sender] = true;
+        declarationHashes[msg.sender] = _hash;
 
         emit EligibilityConfirmed(whitelistVersion, msg.sender);
     }

@@ -23,7 +23,7 @@ contract WethETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
         vm.stopPrank();
 
@@ -59,7 +59,7 @@ contract WethETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
         vm.stopPrank();
 
@@ -91,7 +91,7 @@ contract WethETHTest is TestSetup {
 
     function test_MultipleDepositsAndFunctionalityWorksCorrectly() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
         vm.stopPrank();
 
@@ -104,7 +104,7 @@ contract WethETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         liquidityPoolInstance.deposit{value: 5 ether}(bob);
         vm.stopPrank();
 
@@ -118,7 +118,7 @@ contract WethETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         startHoax(greg);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         liquidityPoolInstance.deposit{value: 35 ether}(greg);
         vm.stopPrank();
 
@@ -174,14 +174,14 @@ contract WethETHTest is TestSetup {
     function test_UnwrappingWithRewards() public {
         // Alice deposits into LP
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         vm.stopPrank();
 
         // Bob deposits into LP
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         liquidityPoolInstance.deposit{value: 1 ether}(bob);
         assertEq(eETHInstance.balanceOf(bob), 1 ether);
         vm.stopPrank();

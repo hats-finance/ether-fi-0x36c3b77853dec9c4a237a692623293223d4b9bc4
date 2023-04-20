@@ -39,7 +39,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
         
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
 
         vm.expectRevert("Verification failed");
         claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1);
@@ -64,7 +64,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.expectRevert("User is not whitelisted");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
 
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
@@ -117,11 +117,11 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.deal(dan, 0.1 ether);
 
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 400, bobProof);
         vm.stopPrank();
         vm.startPrank(dan);
-        regulationsManagerInstance.confirmEligibility();
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 800, danProof);
         vm.stopPrank();
 
