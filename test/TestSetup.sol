@@ -79,8 +79,8 @@ contract TestSetup is Test {
     EETH public eETHImplementation;
     EETH public eETHInstance;
 
-    WeEth public weEthImplementation;
-    WeEth public weEthInstance;
+    weEth public weEthImplementation;
+    weEth public weEthInstance;
 
     ClaimReceiverPool public claimReceiverPoolImplementation;
     ClaimReceiverPool public claimReceiverPoolInstance;
@@ -226,9 +226,9 @@ contract TestSetup is Test {
         eETHInstance = EETH(address(eETHProxy));
         eETHInstance.initialize(payable(address(liquidityPoolInstance)));
 
-        weEthImplementation = new WeEth();
+        weEthImplementation = new weEth();
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
-        weEthInstance = WeEth(address(weETHProxy));
+        weEthInstance = weEth(address(weETHProxy));
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
         // Setup dependencies
