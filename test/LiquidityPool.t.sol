@@ -174,6 +174,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
         liquidityPoolInstance.setAccruedStakingReards(2 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
