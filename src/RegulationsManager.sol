@@ -44,7 +44,7 @@ contract RegulationsManager is
     }
 
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
-    function confirmEligibility(bytes23 _hash) external whenNotPaused {
+    function confirmEligibility(bytes32 _hash) external whenNotPaused {
         isEligible[whitelistVersion][msg.sender] = true;
         declarationHashes[msg.sender] = _hash;
 
