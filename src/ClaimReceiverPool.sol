@@ -13,6 +13,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IScoreManager.sol";
 
 contract ClaimReceiverPool is
@@ -55,6 +56,7 @@ contract ClaimReceiverPool is
 
     ILiquidityPool public liquidityPool;
     IScoreManager public scoreManager;
+    IRegulationsManager public regulationsManager;
     
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -74,7 +76,8 @@ contract ClaimReceiverPool is
         address _wstEth,
         address _sfrxEth,
         address _cbEth,
-        address _scoreManager
+        address _scoreManager,
+        address _regulationsManager
     ) external initializer {
         rETH = _rEth;
         wstETH = _wstEth;
@@ -82,6 +85,7 @@ contract ClaimReceiverPool is
         cbETH = _cbEth;
 
         scoreManager = IScoreManager(_scoreManager);
+        regulationsManager = IRegulationsManager(_regulationsManager);
 
         __Pausable_init();
         __Ownable_init();
@@ -112,6 +116,7 @@ contract ClaimReceiverPool is
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable whenNotPaused {
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
         require(
             _verifyValues(
                 msg.sender,

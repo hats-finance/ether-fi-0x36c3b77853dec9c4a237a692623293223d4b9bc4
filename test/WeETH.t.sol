@@ -10,7 +10,7 @@ contract WethETHTest is TestSetup {
     }
 
     function test_WrapEETHFailsIfZeroAmount() public {
-        vm.expectRevert("wstETH: can't wrap zero eETH");
+        vm.expectRevert("weETH: can't wrap zero eETH");
         weEthInstance.wrap(0);
     }
 
@@ -22,8 +22,10 @@ contract WethETHTest is TestSetup {
         assertEq(eETHInstance.totalSupply(), 10 ether);
 
         // Total pooled ether = 20
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
         assertEq(eETHInstance.totalSupply(), 20 ether);
@@ -56,8 +58,10 @@ contract WethETHTest is TestSetup {
         assertEq(eETHInstance.totalSupply(), 10 ether);
 
         // Total pooled ether = 20
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
         assertEq(eETHInstance.totalSupply(), 20 ether);
@@ -86,8 +90,10 @@ contract WethETHTest is TestSetup {
     }
 
     function test_MultipleDepositsAndFunctionalityWorksCorrectly() public {
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
         assertEq(eETHInstance.totalSupply(), 10 ether);
@@ -97,8 +103,10 @@ contract WethETHTest is TestSetup {
 
         //----------------------------------------------------------------------------------------------------------
 
-        hoax(bob);
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 5 ether}(bob);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 15 ether);
         assertEq(eETHInstance.totalSupply(), 15 ether);
@@ -109,8 +117,10 @@ contract WethETHTest is TestSetup {
 
         //----------------------------------------------------------------------------------------------------------
 
-        hoax(greg);
+        startHoax(greg);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 35 ether}(greg);
+        vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 50 ether);
         assertEq(eETHInstance.totalSupply(), 50 ether);
@@ -171,14 +181,18 @@ contract WethETHTest is TestSetup {
 
     function test_UnwrappingWithRewards() public {
         // Alice deposits into LP
-        hoax(alice);
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        vm.stopPrank();
 
         // Bob deposits into LP
-        hoax(bob);
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility();
         liquidityPoolInstance.deposit{value: 1 ether}(bob);
         assertEq(eETHInstance.balanceOf(bob), 1 ether);
+        vm.stopPrank();
 
         //Bob chooses to wrap his eETH into weETH
         vm.startPrank(bob);
