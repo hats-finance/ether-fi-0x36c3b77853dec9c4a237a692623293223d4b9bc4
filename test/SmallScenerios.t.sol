@@ -14,14 +14,12 @@ contract SmallScenariosTest is TestSetup {
         /// @notice Gareth has tested the ERC20 deposits on goerli and assures everything works.
 
         /*
-        Alice, Chad and Dan all deposit into the Early Adopter Pool
+        Alice, Chad all deposit into the Early Adopter Pool
         
-        -   Alice withdraws her funds after the snapshot has been taken. 
+        -   Alice claims her funds after the snapshot has been taken. 
             She then deposits her ETH into the Claim Receiver Pool and has her score is set in the score manager contract.
         
         -   Chad withdraws his funds after the snapshot but does not deposit into the CRP losing all his points.
-
-        -   Dan withdraws his funds after the snapshot but does not deposit into the CRP. 
         */
 
         // Acotrs deposit into EAP
@@ -41,6 +39,7 @@ contract SmallScenariosTest is TestSetup {
         earlyAdopterPoolInstance.depositEther{value: 1 ether}();
         vm.stopPrank();
 
+
         skip(8 weeks);
 
         // PAUSE CONTRACTS AND GET READY FOR SNAPSHOT
@@ -56,8 +55,8 @@ contract SmallScenariosTest is TestSetup {
         uint256 alicePoints = earlyAdopterPoolInstance.calculateUserPoints(
             alice
         );
+
         uint256 chadPoints = earlyAdopterPoolInstance.calculateUserPoints(chad);
-        uint256 danPoints = earlyAdopterPoolInstance.calculateUserPoints(dan);
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
@@ -102,6 +101,7 @@ contract SmallScenariosTest is TestSetup {
             bytes32(bytes(abi.encode(alicePoints)))
         );
 
+
         // Chad withdraws and does not deposit
         // If he does not deposit his points will not be stored in the score manager
         uint256 chadBalanceBeforeWithdrawal = chad.balance;
@@ -140,6 +140,7 @@ contract SmallScenariosTest is TestSetup {
             scoreManagerInstance.scores(0, dan),
             bytes32(bytes(abi.encode(danPoints)))
         );
+
     }
 
     /*------ AUCTION / STAKER FLOW ------*/

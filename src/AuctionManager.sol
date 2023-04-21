@@ -165,20 +165,19 @@ contract AuctionManager is
     /// @dev Require the bid to exist and be active
     /// @param _bidId the ID of the bid to cancel
     function cancelBid(uint256 _bidId) public whenNotPaused {
-        require(bids[_bidId].bidderAddress == msg.sender, "Invalid bid");
-        require(bids[_bidId].isActive == true, "Bid already cancelled");
+
+        Bid storage bid = bids[_bidId];
+
+        require(bid.bidderAddress == msg.sender, "Invalid bid");
+        require(bid.isActive == true, "Bid already cancelled");
 
         // Cancel the bid by de-activating it
-        bids[_bidId].isActive = false;
-
-        // Get the value of the cancelled bid to refund
-        uint256 bidValue = bids[_bidId].amount;
+        bid.isActive = false;
+        numberOfActiveBids--;
 
         // Refund the user with their bid amount
-        (bool sent, ) = msg.sender.call{value: bidValue}("");
+        (bool sent, ) = msg.sender.call{value: bid.amount}("");
         require(sent, "Failed to send Ether");
-
-        numberOfActiveBids--;
 
         emit BidCancelled(_bidId);
     }

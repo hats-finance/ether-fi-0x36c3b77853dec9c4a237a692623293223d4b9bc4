@@ -9,7 +9,7 @@ import "./interfaces/IEETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "forge-std/console.sol";
 
-contract WeEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
+contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------

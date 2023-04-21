@@ -13,6 +13,7 @@ import "../src/AuctionManager.sol";
 import "../src/LiquidityPool.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/EETH.sol";
+import "../src/weEth.sol";
 import "../src/RegulationsManager.sol";
 import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -40,12 +41,16 @@ contract DeployEtherFiSuiteScript is Script {
     UUPSProxy public scoreManagerProxy;
     UUPSProxy public claimReceiverPoolProxy;
     UUPSProxy public regulationsManagerProxy;
+    UUPSProxy public weETHProxy;
 
     BNFT public BNFTImplementation;
     BNFT public BNFTInstance;
 
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
+
+    weEth public weEthImplementation;
+    weEth public weEthInstance;
 
     AuctionManager public auctionManagerImplementation;
     AuctionManager public auctionManager;
@@ -89,6 +94,7 @@ contract DeployEtherFiSuiteScript is Script {
         address claimReceiverPool;
         address liquidityPool;
         address eETH;
+        address weEth;
     }
 
     suiteAddresses suiteAddressesStruct;
@@ -213,7 +219,12 @@ contract DeployEtherFiSuiteScript is Script {
         liquidityPool.setScoreManager(address(scoreManager));
         liquidityPool.setStakingManager(address(stakingManager));
 
-        scoreManager.setCallerStatus(address(claimReceiverPool), true);
+        weEthImplementation = new weEth();
+        weETHProxy = new UUPSProxy(address(weEthImplementation), "");
+        weEthInstance = weEth(address(weETHProxy));
+        weEthInstance.initialize(payable(address(liquidityPool)), address(eETH));
+
+        scoreManager.setCallerStatus(address(liquidityPool), true);
 
         vm.stopBroadcast();
 
@@ -231,7 +242,8 @@ contract DeployEtherFiSuiteScript is Script {
             regulationsManager: address(regulationsManagerInstance),
             claimReceiverPool: address(claimReceiverPool),
             liquidityPool: address(liquidityPool),
-            eETH: address(eETH)
+            eETH: address(eETH),
+            weEth: address(weEthInstance)
         });
 
         writeSuiteVersionFile();
@@ -338,7 +350,9 @@ contract DeployEtherFiSuiteScript is Script {
                     "\nLiquidity Pool: ",
                     Strings.toHexString(suiteAddressesStruct.liquidityPool),
                     "\neETH: ",
-                    Strings.toHexString(suiteAddressesStruct.eETH)
+                    Strings.toHexString(suiteAddressesStruct.eETH),
+                    "\nweETH: ",
+                    Strings.toHexString(suiteAddressesStruct.weEth)
                 )
             )
         );

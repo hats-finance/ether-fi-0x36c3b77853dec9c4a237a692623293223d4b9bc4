@@ -26,8 +26,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     IRegulationsManager regulationsManager;
 
     mapping(uint256 => bool) public validators;
-    uint256 public accruedSlashingPenalties;
-    uint256 public accruedEapRewards;
+    uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
+    uint256 public accruedEapRewards;           // total amounts of accrued EAP rewards
+    uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
 
     uint64 public numValidators;
 
@@ -46,7 +47,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    receive() external payable {}
+    receive() external payable {
+        require(accruedStakingRewards >= msg.value, "Update the accrued rewards first");
+        accruedStakingRewards -= msg.value;
+    }
 
     function initialize(address _regulationsManager) external initializer {
         __Ownable_init();
@@ -55,10 +59,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     }
 
     /// @notice deposit into pool
-    /// @dev mints the amount of eTH 1:1 with ETH sent
+    /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user) external payable {
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
-        uint256 share = _sharesForAmountAfterDeposit(msg.value);
+        uint256 share = _sharesForDepositAmount(msg.value);
+
         if (share == 0) {
             share = msg.value;
         }
@@ -73,12 +78,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     /// TODO WARNING! This implementation does not take into consideration the score
     function withdraw(uint256 _amount) external payable {
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
+        require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
 
         uint256 share = sharesForAmount(_amount);
         eETH.burnShares(msg.sender, share);
 
         (bool sent, ) = msg.sender.call{value: _amount}("");
         require(sent, "Failed to send Ether");
+        
         emit Withdraw(msg.sender, msg.value);
     }
 
@@ -107,17 +114,19 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
         uint256 staked;
         uint256 boosted;
-        if (eETH.totalShares() > 0) {
-            staked = (getTotalPooledEther() * eETH.shares(_user)) / eETH.totalShares();
+        uint256 totalShares = eETH.totalShares();
+        uint256 totalEapScores = totalEapScores();
+        if (totalShares > 0) {
+            staked = (getTotalPooledEther() * eETH.shares(_user)) / totalShares;
         }
-        if (_totalEapScores() > 0) {
-            boosted = (accruedEapRewards * _eapScore(_user)) / _totalEapScores();
+        if (totalEapScores > 0) {
+            boosted = (accruedEapRewards * eapScore(_user)) / totalEapScores;
         }
         return staked + boosted;
     }
 
     function getTotalPooledEther() public view returns (uint256) {
-        return (32 ether * numValidators) + address(this).balance - (accruedSlashingPenalties + accruedEapRewards);
+        return (32 ether * numValidators) + accruedStakingRewards + address(this).balance - (accruedSlashingPenalties + accruedEapRewards);
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
@@ -137,9 +146,39 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         return (_share * getTotalPooledEther()) / eETH.totalShares();
     }
 
+    function totalEapScores() public view returns (uint256) {
+        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
+        bytes32 totalScore32 = scoreManager.totalScores(typeId);
+        uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
+        return totalScore;
+    }
+
+    // TODO: add the modifier for 'onlyCRP'
+    function setEapScore(address _user, uint256 _score) public {
+        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
+        bytes32 totalScore32 = scoreManager.totalScores(typeId);
+        uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
+        totalScore -= eapScore(_user);
+        totalScore += _score;
+        scoreManager.setScore(typeId, _user, bytes32(abi.encodePacked(_score)));
+        scoreManager.setTotalScore(typeId, bytes32(abi.encodePacked(totalScore)));
+    }
+
+    function eapScore(address _user) public view returns (uint256) {
+        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
+        bytes32 score32 = scoreManager.scores(typeId, _user);
+        uint256 score = abi.decode(bytes.concat(score32), (uint256));
+        return score;
+    }
+
     /// @notice ether.fi protocol will send the ETH as the rewards for EAP users
     function accrueEapRewards() external payable onlyOwner {
         accruedEapRewards += msg.value;
+    }
+
+    /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
+    function setAccruedStakingReards(uint256 _amount) external onlyOwner {
+        accruedStakingRewards = _amount;
     }
 
     /// @notice ether.fi protocol will be monitoring the status of validator nodes
@@ -167,26 +206,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _sharesForAmountAfterDeposit(uint256 _amount) internal returns (uint256) {
-        uint256 totalPooledEther = getTotalPooledEther() - _amount;
+    function _sharesForDepositAmount(uint256 _depositAmount) internal returns (uint256) {
+        uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;
         if (totalPooledEther == 0) {
             return 0;
         }
-        return (_amount * eETH.totalShares()) / totalPooledEther;
-    }
-
-    function _totalEapScores() internal view returns (uint256) {
-        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        bytes32 totalScore32 = scoreManager.totalScores(typeId);
-        uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
-        return totalScore;
-    }
-
-    function _eapScore(address _user) internal view returns (uint256) {
-        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        bytes32 score32 = scoreManager.scores(typeId, _user);
-        uint256 score = abi.decode(bytes.concat(score32), (uint256));
-        return score;
+        return (_depositAmount * eETH.totalShares()) / totalPooledEther;
     }
 
     function _authorizeUpgrade(
