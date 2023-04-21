@@ -57,6 +57,7 @@ contract SmallScenariosTest is TestSetup {
         );
 
         uint256 chadPoints = earlyAdopterPoolInstance.calculateUserPoints(chad);
+        uint256 danPoints = earlyAdopterPoolInstance.calculateUserPoints(dan);
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
