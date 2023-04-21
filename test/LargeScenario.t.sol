@@ -331,17 +331,6 @@ contract LargeScenariosTest is TestSetup {
         assertEq(
             address(treasuryInstance).balance,
             treasuryBalanceBeforeSkim + toTreasury
-        );
-
-        // Elvis batch skims his rewards
-        // vm.startPrank(elvis);
-        // for (uint256 i = 0; i < newElvisProcessedBidIds.length; i++) {
-        //     managerInstance.partialWithdraw(
-        //         newElvisProcessedBidIds[i],
-        //         true,
-        //         true,
-        //         true
-        //     );
-        // }
+        );    
     }
 }
