@@ -443,6 +443,7 @@ contract EtherFiNodesManager is
     function setNonExitPenaltyDailyRate(
         uint64 _nonExitPenaltyDailyRate
     ) public onlyOwner {
+        require(_nonExitPenaltyDailyRate >= 0 && _nonExitPenaltyDailyRate <= 100, "Invalid penalty rate");
         nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
 
