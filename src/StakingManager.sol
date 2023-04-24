@@ -233,7 +233,7 @@ contract StakingManager is
 
         emit DepositCancelled(_validatorId);
 
-        require(bidIdToStaker[_validatorId] == address(0), "");
+        require(bidIdToStaker[_validatorId] == address(0), "Bid already cancelled");
     }
 
     /// @notice Sets the EtherFi node manager contract
