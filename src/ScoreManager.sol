@@ -92,7 +92,7 @@ contract ScoreManager is
 
         emit NewTypeAdded(numberOfTypes, _type);
 
-        numberOfTypes++;
+        unchecked {numberOfTypes++;}
         return numberOfTypes - 1;
     }
 
