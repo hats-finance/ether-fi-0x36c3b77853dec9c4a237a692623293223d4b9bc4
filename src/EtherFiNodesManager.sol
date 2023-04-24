@@ -44,7 +44,7 @@ contract EtherFiNodesManager is
     RewardsSplit public stakingRewardsSplit;
     RewardsSplit public protocolRewardsSplit;
 
-    uint256[32] __gap;
+    uint256[32] public __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
