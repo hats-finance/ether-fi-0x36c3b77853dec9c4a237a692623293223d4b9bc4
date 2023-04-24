@@ -301,6 +301,7 @@ contract AuctionManager is
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint64 _newMinBidAmount) external onlyOwner {
         require(_newMinBidAmount < maxBidAmount, "Min bid exceeds max bid");
+        require(_newMinBidAmount > whitelistBidAmount, "Min bid less than whitelist bid amount");
         minBidAmount = _newMinBidAmount;
     }
 
