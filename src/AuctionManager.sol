@@ -60,6 +60,8 @@ contract AuctionManager is
     function initialize(
         address _nodeOperatorManagerContract
     ) external initializer {
+        require(_nodeOperatorManagerContract != address(0), "No Zero Addresses");
+        
         whitelistBidAmount = 0.001 ether;
         minBidAmount = 0.01 ether;
         maxBidAmount = 5 ether;
