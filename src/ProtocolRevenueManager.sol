@@ -107,6 +107,10 @@ contract ProtocolRevenueManager is
     function distributeAuctionRevenue(
         uint256 _validatorId
     ) external onlyEtherFiNodesManager nonReentrant returns (uint256) {
+        if (etherFiNodesManager.isExited(_validatorId)) {
+            return 0;
+        }
+
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(
             _validatorId,
