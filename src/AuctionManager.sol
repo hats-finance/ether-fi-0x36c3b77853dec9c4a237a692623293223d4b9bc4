@@ -86,7 +86,7 @@ contract AuctionManager is
     ) external payable whenNotPaused nonReentrant returns (uint256[] memory) {
         if (whitelistEnabled) {
             require(
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true,
+                nodeOperatorManagerInterface.isWhitelisted(msg.sender),
                 "Only whitelisted addresses"
             );
             require(
@@ -97,7 +97,7 @@ contract AuctionManager is
             );
         } else {
             if (
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true
+                nodeOperatorManagerInterface.isWhitelisted(msg.sender)
             ) {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
@@ -168,7 +168,7 @@ contract AuctionManager is
         Bid storage bid = bids[_bidId];
 
         require(bid.bidderAddress == msg.sender, "Invalid bid");
-        require(bid.isActive == true, "Bid already cancelled");
+        require(bid.isActive, "Bid already cancelled");
 
         // Cancel the bid by de-activating it
         bid.isActive = false;
@@ -198,7 +198,7 @@ contract AuctionManager is
     function reEnterAuction(
         uint256 _bidId
     ) external onlyStakingManagerContract {
-        require(bids[_bidId].isActive == false, "Bid already active");
+        require(!bids[_bidId].isActive, "Bid already active");
         //Reactivate the bid
         bids[_bidId].isActive = true;
         numberOfActiveBids++;
