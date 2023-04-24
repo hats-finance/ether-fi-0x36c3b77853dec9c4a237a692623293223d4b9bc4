@@ -155,8 +155,9 @@ contract AuctionManager is
     }
 
     function cancelBidBatch(uint256[] calldata _bidIds) external whenNotPaused {
-        for (uint256 i = 0; i < _bidIds.length; i++) {
+        for (uint256 i = 0; i < _bidIds.length;) {
             cancelBid(_bidIds[i]);
+            unchecked {i++;}
         }
     }
 
