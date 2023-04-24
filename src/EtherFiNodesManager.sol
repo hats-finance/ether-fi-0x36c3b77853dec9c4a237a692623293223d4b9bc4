@@ -76,7 +76,7 @@ contract EtherFiNodesManager is
 
         nonExitPenaltyPrincipal = 1 ether;
         nonExitPenaltyDailyRate = 3; // 3% per day
-        SCALE = 1000000;
+        SCALE = 1_000_000;
 
         treasuryContract = _treasuryContract;
         stakingManagerContract = _stakingManagerContract;
@@ -92,10 +92,10 @@ contract EtherFiNodesManager is
 
         // in basis points for higher resolution
         stakingRewardsSplit = RewardsSplit({
-            treasury: 50000, // 5 %
-            nodeOperator: 50000, // 5 %
-            tnft: 815625, // 90 % * 29 / 32
-            bnft: 84375 // 90 % * 3 / 32
+            treasury: 50_000, // 5 %
+            nodeOperator: 50_000, // 5 %
+            tnft: 815_625, // 90 % * 29 / 32
+            bnft: 84_375 // 90 % * 3 / 32
         });
         require(
             (stakingRewardsSplit.treasury +
@@ -106,10 +106,10 @@ contract EtherFiNodesManager is
         );
 
         protocolRewardsSplit = RewardsSplit({
-            treasury: 250000, // 25 %
-            nodeOperator: 250000, // 25 %
-            tnft: 453125, // 50 % * 29 / 32
-            bnft: 46875 // 50 % * 3 / 32
+            treasury: 250_000, // 25 %
+            nodeOperator: 250_000, // 25 %
+            tnft: 453_125, // 50 % * 29 / 32
+            bnft: 46_875 // 50 % * 3 / 32
         });
         require(
             (protocolRewardsSplit.treasury +
