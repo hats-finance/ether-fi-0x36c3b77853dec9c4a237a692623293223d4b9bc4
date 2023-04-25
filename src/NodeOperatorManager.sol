@@ -127,6 +127,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     function setAuctionContractAddress(
         address _auctionContractAddress
     ) public onlyOwner {
+        require(_auctionContractAddress != address(0), "No zero addresses");
         auctionManagerContractAddress = _auctionContractAddress;
     }
 
