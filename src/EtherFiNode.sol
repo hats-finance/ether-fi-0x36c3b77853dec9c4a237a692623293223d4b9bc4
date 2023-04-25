@@ -10,6 +10,7 @@ contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
     // TODO: reduce the size of these varaibles
+    uint256 public constant thirtyTwoEther = 32 ether;
     uint256 public localRevenueIndex;
     uint256 public vestedAuctionRewards;
     string public ipfsHashForEncryptedValidatorKey;
@@ -202,8 +203,8 @@ contract EtherFiNode is IEtherFiNode {
         uint256 rewards = (balance > vestedAuctionRewards)
             ? balance - vestedAuctionRewards
             : 0;
-        if (rewards >= 32 ether) {
-            rewards -= 32 ether;
+        if (rewards >= thirtyTwoEther) {
+            rewards -= thirtyTwoEther;
         } else if (rewards >= 8 ether) {
             // In a case of Slashing, without the Oracle, the exact staking rewards cannot be computed in this case
             // Assume no staking rewards in this case.
@@ -342,7 +343,7 @@ contract EtherFiNode is IEtherFiNode {
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
-        if (balance > 32 ether) {
+        if (balance > thirtyTwoEther) {
             (
                 payouts[0],
                 payouts[1],
@@ -357,7 +358,7 @@ contract EtherFiNode is IEtherFiNode {
                 _splits,
                 _scale
             );
-            balance = 32 ether;
+            balance = thirtyTwoEther;
         }
 
         // Compute the payouts for the principals to {B, T}-NFTs
