@@ -154,6 +154,7 @@ contract ProtocolRevenueManager is
     function setAuctionRewardSplitForStakers(
         uint128 _split
     ) external onlyOwner {
+        require(_split <= 100, "Cannot be more than 100% split");
         vestedAuctionFeeSplitForStakers = _split;
     }
 
