@@ -32,7 +32,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
 
     uint64 public numValidators;
 
-    uint256[32] __gap;
+    uint256[41] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
