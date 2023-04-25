@@ -170,7 +170,7 @@ contract EtherFiNode is IEtherFiNode {
             uint256 rewards = _getClaimableVestedRewards();
             uint256 toTnft = (rewards * 29) / 32;
             tnft += toTnft; // 29 / 32
-            bnft += rewards - toTnft; // 3 / 32
+            unchecked { bnft += rewards - toTnft; } // 3 / 32
         }
 
         return (operator, tnft, bnft, treasury);
