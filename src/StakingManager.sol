@@ -396,7 +396,7 @@ contract StakingManager is
 
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
         BeaconProxy proxy = new BeaconProxy(address(upgradableBeacon), "");
-        EtherFiNode node = EtherFiNode(address(proxy));
+        EtherFiNode node = EtherFiNode(payable(proxy));
         node.initialize(address(nodesManagerIntefaceInstance));
         nodesManagerIntefaceInstance.registerEtherFiNode(
             _validatorId,
