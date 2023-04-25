@@ -283,7 +283,7 @@ contract EtherFiNode is IEtherFiNode {
 
         uint256 remaining = _principal;
         if (daysElapsed > 365) {
-            remaining = 0;
+            return _principal;
         } else {
             for (uint64 i = 0; i < weeksElapsed; i++) {
                 remaining =
