@@ -304,6 +304,8 @@ contract TestSetup is Test {
 
         root = merkle.getRoot(whiteListedAddresses);
         liquidityPoolInstance.setMerkleProof(merkle.getProof(whiteListedAddresses, 9));
+        stakingManagerInstance.updateMerkleRoot(root);
+
     }
 
     function _merkleSetupMigration() internal {

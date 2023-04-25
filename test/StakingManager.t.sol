@@ -58,7 +58,19 @@ contract StakingManagerTest is TestSetup {
 
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
+        vm.stopPrank();
 
+        startHoax(owner);
+        stakingManagerInstance.enableWhitelist();
+        vm.expectRevert("User not whitelisted");
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+            bidIdArray,
+            proof
+        );
+        stakingManagerInstance.disableWhitelist();
+        vm.stopPrank();
+        
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
             proof
@@ -233,7 +245,13 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[7] = 12;
         bidIdArray[8] = 19;
         bidIdArray[9] = 20;
+        vm.stopPrank();
 
+        vm.startPrank(owner);
+        stakingManagerInstance.enableWhitelist();
+        vm.stopPrank();
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
             proof
@@ -1204,5 +1222,16 @@ contract StakingManagerTest is TestSetup {
 
         vm.expectRevert("Address already set");
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(0));
+    }
+
+    function test_EnablingAndDisablingWhitelistingWorks() public {
+        assertEq(stakingManagerInstance.whitelistEnabled(), false);
+
+        vm.startPrank(owner);
+        stakingManagerInstance.enableWhitelist();
+        assertEq(stakingManagerInstance.whitelistEnabled(), true);
+
+        stakingManagerInstance.disableWhitelist();
+        assertEq(stakingManagerInstance.whitelistEnabled(), false);
     }
 }

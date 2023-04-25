@@ -20,14 +20,29 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(alice, 2 ether);
         vm.expectRevert("User is not whitelisted");
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        vm.stopPrank();
 
+        hoax(alice);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
+
+        startHoax(owner);
+        stakingManagerInstance.enableWhitelist();
+        vm.expectRevert("User not permitted to stake");
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, bobProof);
+        stakingManagerInstance.disableWhitelist();
+        vm.stopPrank();
+
+        vm.prank(owner);
+        stakingManagerInstance.enableWhitelist();
+
+        startHoax(alice);
+        uint256 aliceBalBefore = alice.balance;
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
-        assertEq(alice.balance, 0 ether);
+        assertEq(alice.balance, aliceBalBefore - 2 ether);
     }
 
     function test_StakingManagerLiquidityFails() public {
@@ -126,7 +141,8 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(address(liquidityPoolInstance), 35 ether);
         assertEq(address(liquidityPoolInstance).balance, 35 ether);
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        stakingManagerInstance.enableWhitelist();
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
 
         assertEq(address(liquidityPoolInstance).balance, 3 ether);

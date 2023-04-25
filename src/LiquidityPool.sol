@@ -65,7 +65,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
         if(stakingManager.whitelistEnabled()) {
-            require(MerkleProofUpgradeable.verify(_merkleProof, stakingManager.merkleRoot(), keccak256(abi.encodePacked(_user))), "User not whitelisted");
+            require(MerkleProofUpgradeable.verify(_merkleProof, stakingManager.merkleRoot(), keccak256(abi.encodePacked(_user))), "User not permitted to stake");
         }
 
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
