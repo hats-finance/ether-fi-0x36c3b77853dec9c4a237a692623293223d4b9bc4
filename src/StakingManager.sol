@@ -76,6 +76,7 @@ contract StakingManager is
     /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
     function initialize(address _auctionAddress) external initializer {
+        require(_auctionAddress != address(0), "No zero addresses");
          
         stakeAmount = 32 ether;
         maxBatchDepositSize = 25;
@@ -243,6 +244,7 @@ contract StakingManager is
     function setEtherFiNodesManagerAddress(
         address _nodesManagerAddress
     ) public onlyOwner {
+        require(_nodesManagerAddress != address(0), "No zero addresses");
         nodesManagerIntefaceInstance = IEtherFiNodesManager(
             _nodesManagerAddress
         );
@@ -254,6 +256,7 @@ contract StakingManager is
     function setLiquidityPoolAddress(
         address _liquidityPoolAddress
     ) public onlyOwner {
+        require(_liquidityPoolAddress != address(0), "No zero addresses");
         liquidityPoolContract = _liquidityPoolAddress;
     }
 
@@ -268,19 +271,23 @@ contract StakingManager is
     function registerEtherFiNodeImplementationContract(
         address _etherFiNodeImplementationContract
     ) public onlyOwner {
+        require(_etherFiNodeImplementationContract != address(0), "No zero addresses");
         implementationContract = _etherFiNodeImplementationContract;
         upgradableBeacon = new UpgradeableBeacon(implementationContract);      
     }
 
     function registerTNFTContract(address _tnftAddress) public onlyOwner {
+        require(_tnftAddress != address(0), "No zero addresses");
         TNFTInterfaceInstance = ITNFT(_tnftAddress);
     }
 
     function registerBNFTContract(address _bnftAddress) public onlyOwner {
+        require(_bnftAddress != address(0), "No zero addresses");
         BNFTInterfaceInstance = IBNFT(_bnftAddress);
     }
 
     function upgradeEtherFiNode(address _newImplementation) public onlyOwner {
+        require(_newImplementation != address(0), "No zero addresses");
         upgradableBeacon.upgradeTo(_newImplementation);
         implementationContract = _newImplementation;
     }
