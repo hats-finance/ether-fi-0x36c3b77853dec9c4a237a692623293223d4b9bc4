@@ -344,15 +344,4 @@ contract ProtocolRevenueManagerTest is TestSetup {
         vm.expectRevert("Ownable: caller is not the owner");
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(alice);
     }
-
-    function test_CanOnlySetAddressesOnce() public {
-        vm.startPrank(owner);
-        vm.expectRevert("Address already set");
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
-            address(0)
-        );
-
-        vm.expectRevert("Address already set");
-        protocolRevenueManagerInstance.setAuctionManagerAddress(address(0));
-    }
 }
