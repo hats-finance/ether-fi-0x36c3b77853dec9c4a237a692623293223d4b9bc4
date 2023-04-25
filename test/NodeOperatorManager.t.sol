@@ -141,4 +141,12 @@ contract NodeOperatorManagerTest is TestSetup {
         vm.expectRevert("Ownable: caller is not the owner");
         nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
     }
+
+    function test_CanOnlySetAddressesOnce() public {
+         vm.startPrank(owner);
+         vm.expectRevert("Address already set");
+         nodeOperatorManagerInstance.setAuctionContractAddress(
+             address(0)
+         );
+     }
 }
