@@ -202,6 +202,7 @@ contract EtherFiNode is IEtherFiNode {
         uint256 rewards = (balance > vestedAuctionRewards)
             ? balance - vestedAuctionRewards
             : 0;
+        
         if (rewards >= 32 ether) {
             rewards -= 32 ether;
         } else if (rewards >= 8 ether) {
@@ -209,6 +210,7 @@ contract EtherFiNode is IEtherFiNode {
             // Assume no staking rewards in this case.
             rewards = 0;
         }
+
         (
             uint256 operator,
             uint256 tnft,
