@@ -329,16 +329,15 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
+        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
         require(
-            address(this).balance >= 16 ether,
+            balance >= 16 ether,
             "not enough balance for full withdrawal"
         );
         require(
             phase == VALIDATOR_PHASE.EXITED,
             "validator node is not exited"
         );
-        uint256 balance = address(this).balance -
-            (vestedAuctionRewards - _getClaimableVestedRewards());
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
