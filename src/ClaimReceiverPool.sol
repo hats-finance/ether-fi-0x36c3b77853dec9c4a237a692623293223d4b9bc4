@@ -233,7 +233,7 @@ contract ClaimReceiverPool is
     ) internal returns (uint256 amountOut) {
         IERC20(_tokenIn).approve(address(router), _amountIn);
 
-        uint256 minimumAmountAfterSlippage = _amountIn - (_amountIn * _slippageBasisPoints / 10_000);
+        uint256 minimumAmountAfterSlippage = _amountIn - (_amountIn * _slippageBasisPoints) / 10_000;
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
