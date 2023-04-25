@@ -68,6 +68,7 @@ contract EtherFiNode is IEtherFiNode {
     function markExited(
         uint32 _exitTimestamp
     ) external onlyEtherFiNodeManagerContract {
+        require(_exitTimestamp <= block.timestamp, "Invalid exit timesamp");
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
     }

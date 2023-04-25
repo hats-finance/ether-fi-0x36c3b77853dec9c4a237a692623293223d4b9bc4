@@ -746,7 +746,6 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
-    /// @dev Seongyun, please double check the math in the assertions.
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly3() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
