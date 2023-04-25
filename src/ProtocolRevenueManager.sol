@@ -121,6 +121,8 @@ contract ProtocolRevenueManager is
     function setEtherFiNodesManagerAddress(
         address _etherFiNodesManager
     ) external onlyOwner {
+        require(address(etherFiNodesManager) == address(0), "Address already set");
+
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
     }
 
@@ -130,6 +132,7 @@ contract ProtocolRevenueManager is
     function setAuctionManagerAddress(
         address _auctionManager
     ) external onlyOwner {
+        require(address(auctionManager) == address(0), "Address already set");
         auctionManager = IAuctionManager(_auctionManager);
     }
 
