@@ -52,6 +52,8 @@ contract AuctionManager is
     event BidCancelled(uint256 indexed bidId);
     event BidReEnteredAuction(uint256 indexed bidId);
     event Received(address indexed sender, uint256 value);
+    event WhitelistDisabled(bool whitelistStatus);
+    event WhitelistEnabled(bool whitelistStatus);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -208,12 +210,14 @@ contract AuctionManager is
     /// @dev Allows both regular users and whitelisted users to bid
     function disableWhitelist() public onlyOwner {
         whitelistEnabled = false;
+        emit WhitelistDisabled(whitelistEnabled);
     }
 
     /// @notice Enables the bid whitelist
     /// @dev Only users who are on a whitelist can bid
     function enableWhitelist() public onlyOwner {
         whitelistEnabled = true;
+        emit WhitelistEnabled(whitelistEnabled);
     }
 
     //Pauses the contract
