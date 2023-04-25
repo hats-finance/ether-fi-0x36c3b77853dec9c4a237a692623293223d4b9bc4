@@ -28,6 +28,7 @@ contract EtherFiNodesManager is
     uint64 public nonExitPenaltyPrincipal;
     uint64 public nonExitPenaltyDailyRate;
     uint64 public SCALE;
+    uint256 public constant eightEther = 8 ether;
 
     address public treasuryContract;
     address public stakingManagerContract;
@@ -206,7 +207,7 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId];
         uint256 balance = address(etherfiNode).balance;
         require(
-            balance < 8 ether,
+            balance < eightEther,
             "etherfi node contract's balance is above 8 ETH. You should exit the node."
         );
 
@@ -288,7 +289,7 @@ contract EtherFiNodesManager is
                 ""
             );
             require(
-                payable(etherfiNode).balance < 8 ether,
+                payable(etherfiNode).balance < eightEther,
                 "etherfi node contract's balance is above 8 ETH. You should exit the node."
             );
 

@@ -26,6 +26,7 @@ contract ProtocolRevenueManager is
     IEtherFiNodesManager public etherFiNodesManager;
     IAuctionManager public auctionManager;
 
+    
     uint256 public globalRevenueIndex;
     uint128 public vestedAuctionFeeSplitForStakers;
     uint128 public auctionFeeVestingPeriodForStakersInDays;
