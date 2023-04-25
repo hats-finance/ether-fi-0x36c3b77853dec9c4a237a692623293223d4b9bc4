@@ -162,8 +162,9 @@ contract EtherFiNodesManager is
 
     /// @notice send the request to exit the validator node
     function batchSendExitRequest(uint256[] calldata _validatorIds) external whenNotPaused {
-        for (uint256 i = 0; i < _validatorIds.length; i++) {
+        for (uint256 i = 0; i < _validatorIds.length;) {
             sendExitRequest(_validatorIds[i]);
+            unchecked {++i;}
         }
     }
 
@@ -183,8 +184,9 @@ contract EtherFiNodesManager is
             "Not enough validators"
         );
 
-        for (uint256 i = 0; i < _validatorIds.length; i++) {
+        for (uint256 i = 0; i < _validatorIds.length;) {
             _processNodeExit(_validatorIds[i], _exitTimestamps[i]);
+            unchecked {++i;}
         }
     }
 
@@ -248,13 +250,14 @@ contract EtherFiNodesManager is
         bool _protocolRewards,
         bool _vestedAuctionFee
     ) external whenNotPaused{
-        for (uint256 i = 0; i < _validatorIds.length; i++) {
+        for (uint256 i = 0; i < _validatorIds.length;) {
             partialWithdraw(
                 _validatorIds[i],
                 _stakingRewards,
                 _protocolRewards,
                 _vestedAuctionFee
             );
+            unchecked{++i;}
         }
     }
 
@@ -273,7 +276,7 @@ contract EtherFiNodesManager is
 
         address etherfiNode;
         uint256 _validatorId;
-        for (uint i = 0; i < _validatorIds.length; i++) {
+        for (uint i = 0; i < _validatorIds.length;) {
             _validatorId = _validatorIds[i];
             etherfiNode = etherfiNodeAddress[_validatorId];
             require(
@@ -324,6 +327,8 @@ contract EtherFiNodesManager is
             }
             totalOperatorAmount += toOperator;
             totalTreasuryAmount += toTreasury;
+
+            unchecked {i++;}
         }
         (bool sent, ) = payable(_operator).call{value: totalOperatorAmount}("");
         require(sent, "Failed to send Ether");
@@ -377,8 +382,9 @@ contract EtherFiNodesManager is
     /// @notice process the full withdrawal
     /// @param _validatorIds the validator Ids
     function fullWithdrawBatch(uint256[] calldata _validatorIds) external whenNotPaused {
-        for (uint256 i = 0; i < _validatorIds.length; i++) {
+        for (uint256 i = 0; i < _validatorIds.length;) {
             fullWithdraw(_validatorIds[i]);
+            unchecked {++i;}
         }
     }
 
