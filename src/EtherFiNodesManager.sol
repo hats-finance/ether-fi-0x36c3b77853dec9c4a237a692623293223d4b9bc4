@@ -70,6 +70,13 @@ contract EtherFiNodesManager is
         address _bnftContract,
         address _protocolRevenueManagerContract
     ) external initializer {
+        require(_treasuryContract != address(0), "No zero addresses");
+        require(_auctionContract != address(0), "No zero addresses");
+        require(_stakingManagerContract != address(0), "No zero addresses");
+        require(_tnftContract != address(0), "No zero addresses");
+        require(_bnftContract != address(0), "No zero addresses");
+        require(_protocolRevenueManagerContract != address(0), "No zero addresses"); 
+               
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
