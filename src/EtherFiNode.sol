@@ -395,7 +395,7 @@ contract EtherFiNode is IEtherFiNode {
         //  the rest goes to the treasury
         if (bnftNonExitPenalty > 0.5 ether) {
             payouts[0] += 0.5 ether;
-            payouts[3] += (bnftNonExitPenalty - 0.5 ether);
+            payouts[3] += bnftNonExitPenalty - 0.5 ether;
         } else {
             payouts[0] += bnftNonExitPenalty;
         }
