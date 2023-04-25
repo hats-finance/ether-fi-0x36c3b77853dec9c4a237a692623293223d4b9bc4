@@ -892,4 +892,13 @@ contract AuctionManagerTest is TestSetup {
         emit BidCancelled(bidIds[0]);
         auctionInstance.cancelBid(bidIds[0]);      
     }
+
+    function test_CanOnlySetAddressesOnce() public {
+        vm.startPrank(owner);
+        vm.expectRevert("Address already set");
+        auctionInstance.setProtocolRevenueManager(address(0));
+
+        vm.expectRevert("Address already set");
+        auctionInstance.setStakingManagerContractAddress(address(0));
+    }
 }

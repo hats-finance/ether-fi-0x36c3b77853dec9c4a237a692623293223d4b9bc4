@@ -28,6 +28,8 @@ contract AuctionManager is
     uint64 public maxBidAmount;
     uint256 public numberOfBids;
     uint256 public numberOfActiveBids;
+    uint128 public protocolRevenueManagerAddressSet;
+    uint128 public stakingManagerAddressSet;
 
     INodeOperatorManager public nodeOperatorManagerInterface;
     IProtocolRevenueManager public protocolRevenueManager;
@@ -287,6 +289,8 @@ contract AuctionManager is
     function setProtocolRevenueManager(
         address _protocolRevenueManager
     ) external onlyOwner {
+        require(protocolRevenueManagerAddressSet == 0, "Address already set");
+        protocolRevenueManagerAddressSet = 1;
         protocolRevenueManager = IProtocolRevenueManager(
             _protocolRevenueManager
         );
@@ -297,6 +301,8 @@ contract AuctionManager is
     function setStakingManagerContractAddress(
         address _stakingManagerContractAddress
     ) external onlyOwner {
+        require(stakingManagerAddressSet == 0, "Address already set");
+        stakingManagerAddressSet = 1;
         stakingManagerContractAddress = _stakingManagerContractAddress;
     }
 
