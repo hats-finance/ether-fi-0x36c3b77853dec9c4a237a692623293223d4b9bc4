@@ -296,6 +296,7 @@ contract AuctionManager is
     function setProtocolRevenueManager(
         address _protocolRevenueManager
     ) external onlyOwner {
+        require(address(protocolRevenueManager) == address(0), "Address already set");
         protocolRevenueManager = IProtocolRevenueManager(
             _protocolRevenueManager
         );
@@ -306,6 +307,7 @@ contract AuctionManager is
     function setStakingManagerContractAddress(
         address _stakingManagerContractAddress
     ) external onlyOwner {
+        require(address(stakingManagerContractAddress) == address(0), "Address already set");
         stakingManagerContractAddress = _stakingManagerContractAddress;
     }
 
