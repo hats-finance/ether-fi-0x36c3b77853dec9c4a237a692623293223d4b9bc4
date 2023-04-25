@@ -63,18 +63,20 @@ contract ScoreManager is
         address _user,
         bytes32 _score
     ) external allowedCaller(msg.sender) nonZeroAddress(_user) {
+        require(_typeId <= numberOfTypes, "Invalid score type");
         scores[_typeId][_user] = _score;
         emit ScoreSet(_user, _typeId, _score);
     }
 
     /// @notice sets the total score of a score type
-    /// @param typeId the ID of the type of the score
+    /// @param _typeId the ID of the type of the score
     /// @param _totalScore the total score
     function setTotalScore(
-        uint256 typeId,
+        uint256 _typeId,
         bytes32 _totalScore
     ) external allowedCaller(msg.sender) {
-        totalScores[typeId] = _totalScore;
+        require(_typeId <= numberOfTypes, "Invalid score type");
+        totalScores[_typeId] = _totalScore;
     }
 
     /// @notice updates the status of a caller
