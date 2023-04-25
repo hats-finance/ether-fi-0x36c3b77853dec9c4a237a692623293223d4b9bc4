@@ -54,11 +54,11 @@ contract ClaimReceiverPoolTest is TestSetup {
 
         vm.prank(owner);
 
-        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
-        assertEq(scoreManagerInstance.totalScores(0), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+        assertEq(scoreManagerInstance.totalScores(0), 0);
 
-        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
-        assertEq(scoreManagerInstance.totalScores(0), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),0);
+        assertEq(scoreManagerInstance.totalScores(0), 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.expectRevert("User is not whitelisted");
@@ -73,7 +73,7 @@ contract ClaimReceiverPoolTest is TestSetup {
             eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
             0.2 ether
         );
-        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(652))));
+        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 652);
 
 
         vm.expectRevert("Already Deposited");
@@ -119,10 +119,15 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
         claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 400, bobProof);
+        assertEq(scoreManagerInstance.scores(0, bob), 400);
+        assertEq(scoreManagerInstance.totalScores(0), 400);
         vm.stopPrank();
+
         vm.startPrank(dan);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
         claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 800, danProof);
+        assertEq(scoreManagerInstance.scores(0, dan), 800);
+        assertEq(scoreManagerInstance.totalScores(0), 1200);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(bob), 0.1 ether);
