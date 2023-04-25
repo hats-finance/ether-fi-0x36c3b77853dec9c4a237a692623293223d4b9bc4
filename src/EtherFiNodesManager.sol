@@ -108,7 +108,7 @@ contract EtherFiNodesManager is
             stakingRewardsSplit.treasury +
                 stakingRewardsSplit.nodeOperator +
                 stakingRewardsSplit.tnft +
-                stakingRewardsSplit.bnft) == SCALE,
+                stakingRewardsSplit.bnft == SCALE,
             "Splits not equal to scale"
         );
 
@@ -122,7 +122,7 @@ contract EtherFiNodesManager is
             protocolRewardsSplit.treasury +
                 protocolRewardsSplit.nodeOperator +
                 protocolRewardsSplit.tnft +
-                protocolRewardsSplit.bnft) == SCALE,
+                protocolRewardsSplit.bnft == SCALE,
             "Splits not equal to scale"
         );
     }
