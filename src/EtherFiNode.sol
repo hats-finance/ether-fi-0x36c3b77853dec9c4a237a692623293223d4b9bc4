@@ -24,6 +24,7 @@ contract EtherFiNode is IEtherFiNode {
 
     function initialize(address _etherFiNodesManager) public {
         require(stakingStartTimestamp == 0, "already initialised");
+        require(_etherFiNodesManager != address(0), "No zero addresses");
         stakingStartTimestamp = uint32(block.timestamp);
         etherFiNodesManager = _etherFiNodesManager;
     }
@@ -78,7 +79,7 @@ contract EtherFiNode is IEtherFiNode {
         vestedAuctionRewards = msg.value;
     }
 
-    function processVestedAuctionFeeWithdrawal() external {
+    function processVestedAuctionFeeWithdrawal() external onlyEtherFiNodeManagerContract {
         if (_getClaimableVestedRewards() > 0) {
             vestedAuctionRewards = 0;
         }
@@ -202,6 +203,7 @@ contract EtherFiNode is IEtherFiNode {
         uint256 rewards = (balance > vestedAuctionRewards)
             ? balance - vestedAuctionRewards
             : 0;
+        
         if (rewards >= 32 ether) {
             rewards -= 32 ether;
         } else if (rewards >= 8 ether) {
@@ -209,6 +211,7 @@ contract EtherFiNode is IEtherFiNode {
             // Assume no staking rewards in this case.
             rewards = 0;
         }
+
         (
             uint256 operator,
             uint256 tnft,
