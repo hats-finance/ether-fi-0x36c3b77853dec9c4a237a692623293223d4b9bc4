@@ -26,6 +26,7 @@ contract ProtocolRevenueManager is
     IEtherFiNodesManager public etherFiNodesManager;
     IAuctionManager public auctionManager;
 
+    uint256 public constant oneHundred = 100;
     uint256 public globalRevenueIndex;
     uint128 public vestedAuctionFeeSplitForStakers;
     uint128 public auctionFeeVestingPeriodForStakersInDays;
@@ -83,7 +84,7 @@ contract ProtocolRevenueManager is
         );
 
         uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers *
-            msg.value) / 100;
+            msg.value) / oneHundred;
         uint256 amountToProtocol = msg.value - amountVestedForStakers;
         address etherfiNode = etherFiNodesManager.etherfiNodeAddress(
             _validatorId
