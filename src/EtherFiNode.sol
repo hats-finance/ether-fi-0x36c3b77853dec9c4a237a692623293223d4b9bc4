@@ -285,15 +285,17 @@ contract EtherFiNode is IEtherFiNode {
         if (daysElapsed > 365) {
             remaining = 0;
         } else {
-            for (uint64 i = 0; i < weeksElapsed; i++) {
+            for (uint64 i = 0; i < weeksElapsed;) {
                 remaining =
                     (remaining * (100 - _dailyPenalty) ** daysPerWeek) /
                     (100 ** daysPerWeek);
+                    unchecked {++i;}
             }
 
             daysElapsed -= weeksElapsed * daysPerWeek;
-            for (uint64 i = 0; i < daysElapsed; i++) {
+            for (uint64 i = 0; i < daysElapsed;) {
                 remaining = (remaining * (100 - _dailyPenalty)) / 100;
+                unchecked {++i;}
             }
         }
 
