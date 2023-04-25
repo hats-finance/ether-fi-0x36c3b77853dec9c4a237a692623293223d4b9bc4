@@ -89,6 +89,7 @@ contract AuctionManager is
         uint256 _bidSize,
         uint256 _bidAmountPerBid
     ) external payable whenNotPaused nonReentrant returns (uint256[] memory) {
+        require(_bidSize > 0, "Bid size is too small");
         if (whitelistEnabled) {
             require(
                 nodeOperatorManagerInterface.isWhitelisted(msg.sender),
