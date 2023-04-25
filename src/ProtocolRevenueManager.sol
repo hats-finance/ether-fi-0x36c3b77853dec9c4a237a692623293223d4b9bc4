@@ -181,8 +181,12 @@ contract ProtocolRevenueManager is
         );
         uint256 localRevenueIndex = IEtherFiNode(etherFiNode)
             .localRevenueIndex();
-        uint256 amount = 0;
-        if (localRevenueIndex > 0) {
+        uint256 amount;
+        
+        if (localRevenueIndex == 0) {
+            return 0;
+        }
+        else {
             amount = globalRevenueIndex - localRevenueIndex;
         }
         return amount;

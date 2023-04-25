@@ -219,8 +219,12 @@ contract AuctionManagerTest is TestSetup {
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
 
-        hoax(alice);
+        startHoax(alice);
         auctionInstance.createBid{value: 0.004 ether}(4, 0.001 ether);
+
+        vm.expectRevert("Bid size is too small");
+        auctionInstance.createBid{value: 0.004 ether}(0, 0.001 ether);
+        vm.stopPrank();
 
         vm.expectRevert("Insufficient public keys");
         startHoax(alice);

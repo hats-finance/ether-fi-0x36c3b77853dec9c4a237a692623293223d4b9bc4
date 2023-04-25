@@ -81,6 +81,14 @@ contract ClaimReceiverPool is
         address _scoreManager,
         address _regulationsManager
     ) external initializer {
+        
+        require(_rEth != address(0), "No zero addresses");
+        require(_wstEth != address(0), "No zero addresses");
+        require(_sfrxEth != address(0), "No zero addresses");
+        require(_cbEth != address(0), "No zero addresses");
+        require(_scoreManager != address(0), "No zero addresses");
+        require(_regulationsManager != address(0), "No zero addresses");
+
         rETH = _rEth;
         wstETH = _wstEth;
         sfrxETH = _sfrxEth;
