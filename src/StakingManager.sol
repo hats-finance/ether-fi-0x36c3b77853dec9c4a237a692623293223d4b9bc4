@@ -244,6 +244,7 @@ contract StakingManager is
     function setEtherFiNodesManagerAddress(
         address _nodesManagerAddress
     ) public onlyOwner {
+        require(address(nodesManagerIntefaceInstance) == address(0), "Address already set");
         require(_nodesManagerAddress != address(0), "No zero addresses");
         nodesManagerIntefaceInstance = IEtherFiNodesManager(
             _nodesManagerAddress
@@ -256,6 +257,7 @@ contract StakingManager is
     function setLiquidityPoolAddress(
         address _liquidityPoolAddress
     ) public onlyOwner {
+        require(liquidityPoolContract == address(0), "Address already set");
         require(_liquidityPoolAddress != address(0), "No zero addresses");
         liquidityPoolContract = _liquidityPoolAddress;
     }
@@ -271,17 +273,20 @@ contract StakingManager is
     function registerEtherFiNodeImplementationContract(
         address _etherFiNodeImplementationContract
     ) public onlyOwner {
+        require(implementationContract == address(0), "Address already set");
         require(_etherFiNodeImplementationContract != address(0), "No zero addresses");
         implementationContract = _etherFiNodeImplementationContract;
         upgradableBeacon = new UpgradeableBeacon(implementationContract);      
     }
 
     function registerTNFTContract(address _tnftAddress) public onlyOwner {
+        require(address(TNFTInterfaceInstance) == address(0), "Address already set");
         require(_tnftAddress != address(0), "No zero addresses");
         TNFTInterfaceInstance = ITNFT(_tnftAddress);
     }
 
     function registerBNFTContract(address _bnftAddress) public onlyOwner {
+        require(address(BNFTInterfaceInstance) == address(0), "Address already set");
         require(_bnftAddress != address(0), "No zero addresses");
         BNFTInterfaceInstance = IBNFT(_bnftAddress);
     }
