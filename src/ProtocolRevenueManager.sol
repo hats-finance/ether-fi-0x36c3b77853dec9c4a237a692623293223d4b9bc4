@@ -30,9 +30,6 @@ contract ProtocolRevenueManager is
     uint128 public vestedAuctionFeeSplitForStakers;
     uint128 public auctionFeeVestingPeriodForStakersInDays;
 
-    uint128 public etherFiNodeManagerAddressSet;
-    uint128 public auctionAddressSet;
-
     uint256[32] public __gap;
 
     //--------------------------------------------------------------------------------------
@@ -124,8 +121,6 @@ contract ProtocolRevenueManager is
     function setEtherFiNodesManagerAddress(
         address _etherFiNodesManager
     ) external onlyOwner {
-        require(etherFiNodeManagerAddressSet == 0, "Address already set");
-        etherFiNodeManagerAddressSet = 1;
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
     }
 
@@ -135,8 +130,6 @@ contract ProtocolRevenueManager is
     function setAuctionManagerAddress(
         address _auctionManager
     ) external onlyOwner {
-        require(auctionAddressSet == 0, "Address already set");
-        auctionAddressSet = 1;
         auctionManager = IAuctionManager(_auctionManager);
     }
 
