@@ -128,6 +128,7 @@ contract ProtocolRevenueManager is
     ) external onlyOwner {
         require(_etherFiNodesManager != address(0), "No zero addresses");
         require(address(etherFiNodesManager) == address(0), "Address already set");
+
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
     }
 
