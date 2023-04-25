@@ -1,377 +1,336 @@
-// // SPDX-License-Identifier: UNLICENSED
-// pragma solidity ^0.8.13;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
 
-// import "forge-std/Test.sol";
-// import "../src/StakingManager.sol";
-// import "../src/EtherFiNode.sol";
-// import "../src/BNFT.sol";
-// import "../src/TNFT.sol";
-// import "src/AuctionManager.sol";
-// import "../src/Treasury.sol";
-// import "../src/interfaces/IStakingManager.sol";
-// import "../lib/murky/src/Merkle.sol";
+import "./TestSetup.sol";
 
-// contract LargeScenariosTest is Test {
-//     StakingManager public stakingManagerInstance;
-//     EtherFiNode public withdrawSafeInstance;
-//     BNFT public TestBNFTInstance;
-//     TNFT public TestTNFTInstance;
-//     AuctionManager public auctionInstance;
-//     Treasury public treasuryInstance;
-//     Merkle merkle;
-//     bytes32 root;
-//     bytes32[] public whiteListedAddresses;
-//     IStakingManager.DepositData public test_data;
+contract LargeScenariosTest is TestSetup {
+    bytes IPFS_Hash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
 
-//     address owner = vm.addr(1);
-//     address alice = vm.addr(2);
+    function setUp() public {
+        setUpTests();
+    }
 
-//     function setUp() public {
-//         vm.startPrank(owner);
-//         _merkleSetup();
-//         treasuryInstance = new Treasury();
-//         auctionInstance = new AuctionManager(address(treasuryInstance));
-//         auctionInstance.updateMerkleRoot(root);
-//         stakingManagerInstance = new StakingManager(
-//             address(auctionInstance),
-//             address(treasuryInstance)
-//         );
-//         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
-//         TestBNFTInstance = BNFT(address(stakingManagerInstance.BNFTInstance()));
-//         TestTNFTInstance = TNFT(address(stakingManagerInstance.TNFTInstance()));
-//         withdrawSafeInstance = new EtherFiNode(
-//             address(treasuryInstance),
-//             address(auctionInstance),
-//             address(stakingManagerInstance),
-//             address(TestTNFTInstance),
-//             address(TestBNFTInstance)
-//         );
+    function test_LargeScenarioOne() public {
+        /* 
+         Alice, Bob, Chad - Operators
+         Dan, Elvis, Greg, - Stakers
+         */
 
-//         test_data = IStakingManager.DepositData({
-//             operator: 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
-//             withdrawalCredentials: "test_credentials",
-//             depositDataRoot: "test_deposit_root",
-//             publicKey: "test_pubkey",
-//             signature: "test_signature"
-//         });
+        /// Register Node Operators
+        bytes32[] memory emptyProof = new bytes32[](0);
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
+        bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
 
-//         vm.stopPrank();
-//     }
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceProof,
+            IPFS_Hash,
+            1000
+        );
 
-//     /**
-//      *  Three bids - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf, 0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
-//      *  One bid cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      *  One deposit - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      *  Attempted Bid - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      *  Fourth Bid - 0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098
-//      *  UpdatedBid - 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-//      *  Second deposit - 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
-//      *  First deposit cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      *  Second deposit register validator - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      *  Attempted second deposit cancel - 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//      *  Second deposit acceptValidator -
-//      *  Funds get sent to withdraw safe to immitate closing of validator
-//      *  Second deposit staker withdraws funds - 
-//      */
-//     function test_LargeScenario() public {
-//         bytes32[] memory proofForAddress1 = merkle.getProof(
-//             whiteListedAddresses,
-//             0
-//         );
-//         bytes32[] memory proofForAddress2 = merkle.getProof(
-//             whiteListedAddresses,
-//             1
-//         );
-//         bytes32[] memory proofForAddress3 = merkle.getProof(
-//             whiteListedAddresses,
-//             2
-//         );
-//         bytes32[] memory proofForAddress4 = merkle.getProof(
-//             whiteListedAddresses,
-//             3
-//         );
+        vm.prank(bob);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            bobProof,
+            IPFS_Hash,
+            4000
+        );
 
-//         //Bid One
-//         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         auctionInstance.bidOnStake{value: 0.1 ether}(
-//             proofForAddress1,
-//             "test_pubKey"
-//         );
-//         //Check auction contract received funds
-//         assertEq(address(auctionInstance).balance, 0.1 ether);
-//         //Check the bid is the current highest
-//         assertEq(auctionInstance.currentHighestBidId(), 1);
-//         //Check the number of bids has increased
-//         assertEq(auctionInstance.numberOfBids() - 1, 1);
-//         //Check the number of active bids has increased
-//         assertEq(auctionInstance.numberOfActiveBids(), 1);
-//         //Check the bid information was captured correctly
-//         (
-//             uint256 amountAfterBid1,
-//             ,
-//             address bidderAddressForBid1,
-//             bool isActiveBid1,
+        vm.prank(chad);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            chadProof,
+            IPFS_Hash,
+            6000
+        );
 
-//         ) = auctionInstance.bids(1);
-//         assertEq(amountAfterBid1, 0.1 ether);
-//         assertEq(
-//             bidderAddressForBid1,
-//             0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
-//         );
-//         assertEq(isActiveBid1, true);
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            emptyProof,
+            IPFS_Hash,
+            100
+        );
 
-//         //Bid Two
-//         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-//         auctionInstance.bidOnStake{value: 0.4 ether}(
-//             proofForAddress2,
-//             "test_pubKey"
-//         );
-//         //Check auction contract received funds
-//         assertEq(address(auctionInstance).balance, 0.5 ether);
-//         //Check the bid is the current highest
-//         assertEq(auctionInstance.currentHighestBidId(), 2);
-//         //Check the number of bids has increased
-//         assertEq(auctionInstance.numberOfBids() - 1, 2);
-//         //Check the number of active bids has increased
-//         assertEq(auctionInstance.numberOfActiveBids(), 2);
-//         //Check the bid information was captured correctly
-//         (
-//             uint256 amountAfterBid2,
-//             ,
-//             address bidderAddressForBid2,
-//             bool isActiveBid2,
+        /// Actors Bid
+        hoax(alice);
+        uint256[] memory aliceBidIds = auctionInstance.createBid{
+            value: 0.05 ether
+        }(10, 0.005 ether);
+        assertEq(aliceBidIds.length, 10);
+        hoax(bob);
+        uint256[] memory bobBidIds = auctionInstance.createBid{
+            value: 0.1 ether
+        }(50, 0.002 ether);
+        assertEq(bobBidIds.length, 50);
+        hoax(chad);
+        uint256[] memory chadBidIds = auctionInstance.createBid{
+            value: 0.5 ether
+        }(100, 0.005 ether);
+        assertEq(chadBidIds.length, 100);
+        vm.expectRevert("Only whitelisted addresses");
+        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        auctionInstance.createBid{value: 0.5 ether}(100, 0.005 ether);
 
-//         ) = auctionInstance.bids(2);
-//         assertEq(amountAfterBid2, 0.4 ether);
-//         assertEq(
-//             bidderAddressForBid2,
-//             0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
-//         );
-//         assertEq(isActiveBid2, true);
+        assertEq(address(auctionInstance).balance, 0.65 ether);
 
-//         //Bid Three
-//         hoax(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20);
-//         auctionInstance.bidOnStake{value: 0.7 ether}(
-//             proofForAddress3,
-//             "test_pubKey"
-//         );
-//         //Check auction contract received funds
-//         assertEq(address(auctionInstance).balance, 1.2 ether);
-//         //Check the bid is the current highest
-//         assertEq(auctionInstance.currentHighestBidId(), 3);
-//         //Check the number of bids has increased
-//         assertEq(auctionInstance.numberOfBids() - 1, 3);
-//         //Check the number of active bids has increased
-//         assertEq(auctionInstance.numberOfActiveBids(), 3);
-//         //Check the bid information was captured correctly
-//         (
-//             uint256 amountAfterBid3,
-//             ,
-//             address bidderAddressForBid3,
-//             bool isActiveBid3,
+        /// Actors Stake
+        hoax(dan);
+        uint256[] memory danProcessedBidIds = stakingManagerInstance
+            .batchDepositWithBidIds{value: 32 ether}(aliceBidIds);
+        assertEq(danProcessedBidIds.length, 1);
+        assertEq(danProcessedBidIds[0], aliceBidIds[0]);
+        address staker = stakingManagerInstance.bidIdToStaker(
+            danProcessedBidIds[0]
+        );
+        assertEq(staker, dan);
+        bool isActive = auctionInstance.isBidActive(aliceBidIds[0]);
+        assertFalse(isActive);
+        address danNode = managerInstance.etherfiNodeAddress(
+            danProcessedBidIds[0]
+        );
+        assert(danNode != address(0));
+        assertTrue(
+            IEtherFiNode(danNode).phase() ==
+                IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
+        );
 
-//         ) = auctionInstance.bids(3);
-//         assertEq(amountAfterBid3, 0.7 ether);
-//         assertEq(
-//             bidderAddressForBid3,
-//             0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20
-//         );
-//         assertEq(isActiveBid3, true);
+        assertEq(address(stakingManagerInstance).balance, 32 ether);
 
-//         //Bid cancelled
-//         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-//         auctionInstance.cancelBid(2);
-//         //Check auction contract received funds
-//         assertEq(address(auctionInstance).balance, 0.8 ether);
-//         //Check the bid is the current highest
-//         assertEq(auctionInstance.currentHighestBidId(), 3);
-//         //Check the number of bids has increased
-//         assertEq(auctionInstance.numberOfBids() - 1, 3);
-//         //Check the number of active bids has increased
-//         assertEq(auctionInstance.numberOfActiveBids(), 2);
-//         //Check the bid has been de-activated
-//         (, , , bool isActiveAfterCancel, ) = auctionInstance.bids(2);
-//         assertEq(isActiveAfterCancel, false);
+        hoax(elvis);
+        // 10 Deposits but only 9 bids
+        uint256 balanceBefore = elvis.balance;
+        uint256[] memory elvisProcessedBidIds = stakingManagerInstance
+            .batchDepositWithBidIds{value: 320 ether}(aliceBidIds);
+        assertEq(elvisProcessedBidIds.length, 9);
+        // staking manager balance should be 320 ether. 320 ether - 32 ether (1 deposit) + 32 ether from previous deposit
+        assertEq(address(stakingManagerInstance).balance, 320 ether);
+        assertEq(elvis.balance, balanceBefore - 288 ether);
+        isActive = auctionInstance.isBidActive(aliceBidIds[9]);
+        assertFalse(isActive);
 
-//         //StakingManager One
-//         stakingManagerInstance.deposit{value: 0.032 ether}();
+        // Elvis cancels a deposit
+        vm.prank(elvis);
+        balanceBefore = elvis.balance;
+        stakingManagerInstance.cancelDeposit(elvisProcessedBidIds[0]);
+        assertTrue(auctionInstance.isBidActive(elvisProcessedBidIds[0]));
+        assertEq(address(stakingManagerInstance).balance, 320 ether - 32 ether);
+        assertEq(elvis.balance, balanceBefore + 32 ether);
 
-//         assertEq(auctionInstance.currentHighestBidId(), 1);
-//         assertEq(auctionInstance.numberOfActiveBids(), 1);
-//         assertEq(address(auctionInstance).balance, 0.8 ether);
-//         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
-//         vm.stopPrank();
+        // Elvis needs a new array because he cancelled a bid
+        uint256[] memory newElvisProcessedBidIds = new uint256[](
+            elvisProcessedBidIds.length - 1
+        );
+        newElvisProcessedBidIds[0] = elvisProcessedBidIds[1];
+        newElvisProcessedBidIds[1] = elvisProcessedBidIds[2];
+        newElvisProcessedBidIds[2] = elvisProcessedBidIds[3];
+        newElvisProcessedBidIds[3] = elvisProcessedBidIds[4];
+        newElvisProcessedBidIds[4] = elvisProcessedBidIds[5];
+        newElvisProcessedBidIds[5] = elvisProcessedBidIds[6];
+        newElvisProcessedBidIds[6] = elvisProcessedBidIds[7];
+        newElvisProcessedBidIds[7] = elvisProcessedBidIds[8];
 
-//         //Bid Four
-//         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-//         auctionInstance.bidOnStake{value: 0.4 ether}(
-//             proofForAddress4,
-//             "test_pubKey"
-//         );
-//         //Check auction contract received funds
-//         assertEq(address(auctionInstance).balance, 1.2 ether);
-//         //Check the bid is the current highest
-//         assertEq(auctionInstance.currentHighestBidId(), 4);
-//         //Check the number of bids has increased
-//         assertEq(auctionInstance.numberOfBids() - 1, 4);
-//         //Check the number of active bids has increased
-//         assertEq(auctionInstance.numberOfActiveBids(), 2);
-//         //Check the bid information was captured correctly
-//         (
-//             uint256 amountAfterBid4,
-//             ,
-//             address bidderAddressForBid4,
-//             bool isActiveBid4,
+        hoax(greg);
+        uint256[] memory gregProcessedBidIds = stakingManagerInstance
+            .batchDepositWithBidIds{value: 32 ether}(bobBidIds);
+        assertEq(gregProcessedBidIds.length, 1);
 
-//         ) = auctionInstance.bids(4);
-//         assertEq(amountAfterBid4, 0.4 ether);
-//         assertEq(
-//             bidderAddressForBid4,
-//             0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098
-//         );
-//         assertEq(isActiveBid4, true);
+        /// Register Validators
+        // generate deposit data
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(danNode),
+            32 ether
+        );
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
 
-//         //StakingManager Two
-//         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-//         stakingManagerInstance.deposit{value: 0.032 ether}();
+        staker = stakingManagerInstance.bidIdToStaker(danProcessedBidIds[0]);
+        assertEq(staker, dan);
 
-//         assertEq(auctionInstance.currentHighestBidId(), 1);
-//         assertEq(auctionInstance.numberOfActiveBids(), 1);
+        startHoax(dan);
+        stakingManagerInstance.registerValidator(
+            _getDepositRoot(),
+            danProcessedBidIds[0],
+            depositData
+        );
+        vm.stopPrank();
 
-//         assertEq(address(auctionInstance).balance, 1.2 ether);
-//         assertEq(address(stakingManagerInstance).balance, 0.064 ether);
+        // Check that 32 ETH has been deposited into the Beacon Chain
+        assertEq(address(stakingManagerInstance).balance, 288 ether);
 
-//         //StakingManager One cancelled
-//         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-//         stakingManagerInstance.cancelStake(0);
+        // Check node state and NFT Owners
+        assertTrue(
+            IEtherFiNode(danNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE
+        );
+        assertEq(TNFTInstance.ownerOf(danProcessedBidIds[0]), dan);
+        assertEq(BNFTInstance.ownerOf(danProcessedBidIds[0]), dan);
 
-//         assertEq(auctionInstance.currentHighestBidId(), 3);
-//         assertEq(auctionInstance.numberOfBids() - 1, 4);
-//         assertEq(auctionInstance.numberOfActiveBids(), 2);
+        assertEq(managerInstance.numberOfValidators(), 1);
 
-//         assertEq(address(auctionInstance).balance, 1.2 ether);
-//         assertEq(address(stakingManagerInstance).balance, 0.032 ether);
+        // Auction Rewards get distributed
+        assertEq(address(auctionInstance).balance, 0.65 ether - 0.005 ether);
+        assertEq(danNode.balance, 0.0025 ether);
+        assertEq(
+            protocolRevenueManagerInstance.globalRevenueIndex(),
+            0.0025 ether + 1
+        );
+        assertEq(EtherFiNode(danNode).localRevenueIndex(), 1);
 
-//         //StakingManager Two register validator
-//         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-//         stakingManagerInstance.registerValidator(
-//             1,
-//             "Encrypted_Key",
-//             "encrypted_key_password",
-//             "test_stakerPubKey",
-//             test_data
-//         );
+        /// Elvis batch registers validators
+        // Generate Elvis's deposit data
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](
+                newElvisProcessedBidIds.length
+            );
 
-//         (
-//             uint256 validatorId,
-//             uint256 bidId,
-//             uint256 stakeId,
-//             bytes memory validatorKey,
-//             bytes memory encryptedValidatorKeyPassword,
+        for (uint256 i = 0; i < newElvisProcessedBidIds.length; i++) {
+            address node = managerInstance.etherfiNodeAddress(
+                newElvisProcessedBidIds[i]
+            );
 
-//         ) = stakingManagerInstance.validators(0);
-//         assertEq(validatorId, 0);
-//         assertEq(bidId, 4);
-//         assertEq(stakeId, 1);
-//         assertEq(validatorKey, "Encrypted_Key");
-//         assertEq(encryptedValidatorKeyPassword, "encrypted_key_password");
+            root = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                managerInstance.generateWithdrawalCredentials(node),
+                32 ether
+            );
+            depositDataArray[i] = IStakingManager.DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+        }
 
-//         //Attempt deposit two cancel
-//         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-//         vm.expectRevert("Cancelling availability closed");
-//         stakingManagerInstance.cancelStake(1);
+        for (uint256 i = 0; i < newElvisProcessedBidIds.length; i++) {
+            staker = stakingManagerInstance.bidIdToStaker(
+                newElvisProcessedBidIds[i]
+            );
+            assertEq(staker, elvis);
+        }
 
-//         //StakingManager two operator accepting validator
-//         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-//         vm.expectRevert("Incorrect caller");
-//         stakingManagerInstance.acceptValidator(0);
+        startHoax(elvis);
+        stakingManagerInstance.batchRegisterValidators(
+            _getDepositRoot(),
+            newElvisProcessedBidIds,
+            depositDataArray
+        );
+        vm.stopPrank();
 
-//         uint256 auctionBalanceBeforeTransfer = address(auctionInstance).balance;
+        assertEq(address(stakingManagerInstance).balance, 32 ether);
 
-//         hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-//         stakingManagerInstance.acceptValidator(0);
+        // Check nodes state and NFT Owners
+        for (uint256 i = 0; i < newElvisProcessedBidIds.length; i++) {
+            address elvisNode = managerInstance.etherfiNodeAddress(
+                newElvisProcessedBidIds[i]
+            );
+            assertTrue(
+                IEtherFiNode(elvisNode).phase() ==
+                    IEtherFiNode.VALIDATOR_PHASE.LIVE
+            );
+            assertEq(TNFTInstance.ownerOf(newElvisProcessedBidIds[i]), elvis);
+            assertEq(BNFTInstance.ownerOf(newElvisProcessedBidIds[i]), elvis);
+        }
 
-//         (
-//             ,
-//             address withdrawSafeAddress,
-//             ,
-//             ,
-//             ,
-//             uint256 winningBidId,
-//             ,
+        assertEq(managerInstance.numberOfValidators(), 9);
 
-//         ) = stakingManagerInstance.stakes(1);
+        // Auction Revenue gets transfered
+        // 0.005 ether * 8 bids = 0.04 ether
+        assertEq(address(auctionInstance).balance, 0.645 ether - 0.04 ether);
 
-//         (uint256 amount, , , , ) = auctionInstance.bids(winningBidId);
+        for (uint256 i = 0; i < newElvisProcessedBidIds.length; i++) {
+            address elvisNode = managerInstance.etherfiNodeAddress(
+                newElvisProcessedBidIds[i]
+            );
+            assertEq(elvisNode.balance, 0.0025 ether);
+        }
 
-//         assertEq(
-//             TestBNFTInstance.ownerOf(0),
-//             0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
-//         );
-//         assertEq(
-//             TestTNFTInstance.ownerOf(0),
-//             0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
-//         );
-//         assertEq(
-//             TestBNFTInstance.balanceOf(
-//                 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
-//             ),
-//             1
-//         );
-//         assertEq(
-//             TestTNFTInstance.balanceOf(
-//                 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f
-//             ),
-//             1
-//         );
-//         withdrawSafeInstance = EtherFiNode(payable(withdrawSafeAddress));
+        // Greg registers his validator
+        address gregNode = managerInstance.etherfiNodeAddress(
+            gregProcessedBidIds[0]
+        );
 
-//         assertEq(address(withdrawSafeInstance).balance, amount);
-//         assertEq(
-//             address(auctionInstance).balance,
-//             auctionBalanceBeforeTransfer - amount
-//         );
+        root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(gregNode),
+            32 ether
+        );
+        depositData = IStakingManager.DepositData({
+            publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            depositDataRoot: root,
+            ipfsHashForEncryptedValidatorKey: "test_ipfs"
+        });
 
+        startHoax(greg);
+        stakingManagerInstance.registerValidator(
+            _getDepositRoot(),
+            gregProcessedBidIds[0],
+            depositData
+        );
+        vm.stopPrank();
 
-//         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-//         (bool sent, ) = address(withdrawSafeInstance).call{value: 0.04 ether}("");
-//         require(sent, "Failed to send Ether");
+        // Auction Revenue gets transfered
+        // Because he used bobs bid of 0.002 ether
+        assertEq(gregNode.balance, 0.001 ether);
+        assertEq(address(auctionInstance).balance, 0.605 ether - 0.002 ether);
 
-//         assertEq(address(withdrawSafeInstance).balance, 0.44 ether);
+        // Check nodes state and NFT Owners
+        assertTrue(
+            IEtherFiNode(gregNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE
+        );
+        assertEq(TNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
+        assertEq(BNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
 
-//         uint256 stakerBalance = 0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f.balance;
-//         uint256 operatorBalance = 0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098.balance;
-//         hoax(0x835ff0CC6F35B148b85e0E289DAeA0497ec5aA7f);
-//         withdrawSafeInstance.withdrawFunds();
-//         assertEq(address(withdrawSafeInstance).balance, 0 ether);
-//         assertEq(address(treasuryInstance).balance, 0.0404 ether);
-//         assertEq(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098.balance, operatorBalance + 0.0404 ether);
-//     }
+        /*---- Staking Rewards come in ----*/
 
-//     function _merkleSetup() internal {
-//         merkle = new Merkle();
+        // Owner acting as deposit contract
+        skip(2 weeks);
+        hoax(owner);
+        (bool sent, ) = address(protocolRevenueManagerInstance).call{
+            value: 1 ether
+        }("");
+        require(sent, "Failed to send Ether");
 
-//         whiteListedAddresses.push(
-//             keccak256(
-//                 abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
-//             )
-//         );
-//         whiteListedAddresses.push(
-//             keccak256(
-//                 abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)
-//             )
-//         );
-//         whiteListedAddresses.push(
-//             keccak256(
-//                 abi.encodePacked(0x2DEFD6537cF45E040639AdA147Ac3377c7C61F20)
-//             )
-//         );
-//         whiteListedAddresses.push(
-//             keccak256(
-//                 abi.encodePacked(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098)
-//             )
-//         );
+        // Bob is N.O.
+        // Greg is TNFT and BNFT owner
+        uint256 bobBalanceBeforeSkim = bob.balance;
+        uint256 gregBalanceBeforeSkim = greg.balance;
+        uint256 treasuryBalanceBeforeSkim = address(treasuryInstance).balance;
 
-//         root = merkle.getRoot(whiteListedAddresses);
-//     }
-// }
+        (
+            uint256 toOperator,
+            uint256 toTnft,
+            uint256 toBnft,
+            uint256 toTreasury
+        ) = managerInstance.getRewardsPayouts(
+                gregProcessedBidIds[0],
+                true,
+                true,
+                true
+            );
+
+        // Greg skims rewards
+        vm.prank(greg);
+        managerInstance.partialWithdraw(
+            gregProcessedBidIds[0],
+            true,
+            true,
+            true
+        );
+
+        // Correct rewards go to NFT holders, Node Operator and Treasury
+        assertEq(greg.balance, gregBalanceBeforeSkim + toTnft + toBnft);
+        assertEq(bob.balance, bobBalanceBeforeSkim + toOperator);
+        assertEq(
+            address(treasuryInstance).balance,
+            treasuryBalanceBeforeSkim + toTreasury
+        );    
+    }
+}

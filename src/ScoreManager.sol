@@ -30,7 +30,7 @@ contract ScoreManager is
     mapping(uint256 => bytes) public scoreTypes;
     mapping(bytes => uint256) public typeIds;
 
-    uint256[32] __gap;
+    uint256[32] public __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -38,6 +38,7 @@ contract ScoreManager is
 
     event ScoreSet(address indexed user, uint256 score_typeID, uint256 score);
     event NewTypeAdded(uint256 Id, bytes ScoreType);
+
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -63,6 +64,7 @@ contract ScoreManager is
         address _user,
         uint256 _score
     ) external allowedCaller(msg.sender) nonZeroAddress(_user) {
+        require(_typeId <= numberOfTypes, "Invalid score type");
         scores[_typeId][_user] = _score;
         totalScores[_typeId] += _score;
         emit ScoreSet(_user, _typeId, _score);

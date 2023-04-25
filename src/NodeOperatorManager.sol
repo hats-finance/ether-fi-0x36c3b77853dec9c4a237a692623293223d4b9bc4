@@ -39,7 +39,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         bytes memory _ipfsHash,
         uint64 _totalKeys
     ) public {
-        require(registered[msg.sender] == false, "Already registered");
+        require(!registered[msg.sender], "Already registered");
 
         addressToOperatorData[msg.sender] = KeyData({
             totalKeys: _totalKeys,
@@ -127,6 +127,8 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     function setAuctionContractAddress(
         address _auctionContractAddress
     ) public onlyOwner {
+        require(auctionManagerContractAddress == address(0), "Address already set");
+        require(_auctionContractAddress != address(0), "No zero addresses");
         auctionManagerContractAddress = _auctionContractAddress;
     }
 
