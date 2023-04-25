@@ -219,8 +219,12 @@ contract AuctionManagerTest is TestSetup {
         assertEq(bidderAddress, alice);
         assertTrue(isActive);
 
-        hoax(alice);
+        startHoax(alice);
         auctionInstance.createBid{value: 0.004 ether}(4, 0.001 ether);
+
+        vm.expectRevert("Bid size is too small");
+        auctionInstance.createBid{value: 0.004 ether}(0, 0.001 ether);
+        vm.stopPrank();
 
         vm.expectRevert("Insufficient public keys");
         startHoax(alice);
@@ -891,5 +895,14 @@ contract AuctionManagerTest is TestSetup {
         vm.expectEmit(true, false, false, true);
         emit BidCancelled(bidIds[0]);
         auctionInstance.cancelBid(bidIds[0]);      
+    }
+
+    function test_CanOnlySetAddressesOnce() public {
+        vm.startPrank(owner);
+        vm.expectRevert("Address already set");
+        auctionInstance.setProtocolRevenueManager(address(0));
+
+        vm.expectRevert("Address already set");
+        auctionInstance.setStakingManagerContractAddress(address(0));
     }
 }

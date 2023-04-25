@@ -44,7 +44,7 @@ contract EtherFiNodesManager is
     RewardsSplit public stakingRewardsSplit;
     RewardsSplit public protocolRewardsSplit;
 
-    uint256[32] public __gap;
+    uint256[39] public __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -56,6 +56,11 @@ contract EtherFiNodesManager is
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /// @dev Sets the revenue splits on deployment
     /// @dev AuctionManager, treasury and deposit contracts must be deployed first
@@ -105,11 +110,11 @@ contract EtherFiNodesManager is
             bnft: 84_375 // 90 % * 3 / 32
         });
         require(
-            (stakingRewardsSplit.treasury +
+            stakingRewardsSplit.treasury +
                 stakingRewardsSplit.nodeOperator +
                 stakingRewardsSplit.tnft +
-                stakingRewardsSplit.bnft) == SCALE,
-            ""
+                stakingRewardsSplit.bnft == SCALE,
+            "Splits not equal to scale"
         );
 
         protocolRewardsSplit = RewardsSplit({
@@ -119,11 +124,11 @@ contract EtherFiNodesManager is
             bnft: 46_875 // 50 % * 3 / 32
         });
         require(
-            (protocolRewardsSplit.treasury +
+            protocolRewardsSplit.treasury +
                 protocolRewardsSplit.nodeOperator +
                 protocolRewardsSplit.tnft +
-                protocolRewardsSplit.bnft) == SCALE,
-            ""
+                protocolRewardsSplit.bnft == SCALE,
+            "Splits not equal to scale"
         );
     }
 
@@ -209,7 +214,7 @@ contract EtherFiNodesManager is
             balance < 8 ether,
             "etherfi node contract's balance is above 8 ETH. You should exit the node."
         );
-
+        
         // Retrieve all possible rewards: {Staking, Protocol} rewards and the vested auction fee reward
         (
             uint256 toOperator,
@@ -285,7 +290,7 @@ contract EtherFiNodesManager is
             etherfiNode = etherfiNodeAddress[_validatorId];
             require(
                 _operator == auctionInterfaceInstance.getBidOwner(_validatorId),
-                ""
+                "Not bid owner"
             );
             require(
                 payable(etherfiNode).balance < 8 ether,
@@ -450,6 +455,7 @@ contract EtherFiNodesManager is
     function setNonExitPenaltyDailyRate(
         uint64 _nonExitPenaltyDailyRate
     ) public onlyOwner {
+        require(_nonExitPenaltyDailyRate <= 100, "Invalid penalty rate");
         nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
 
@@ -714,7 +720,7 @@ contract EtherFiNodesManager is
             );
     }
 
-    function isExited(uint256 _validatorId) external view returns (bool) {
+    function isExited(uint256 _validatorId) public view returns (bool) {
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
     }
 
