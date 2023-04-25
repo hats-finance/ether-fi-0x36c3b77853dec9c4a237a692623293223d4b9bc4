@@ -109,7 +109,7 @@ contract EtherFiNodesManager is
                 stakingRewardsSplit.nodeOperator +
                 stakingRewardsSplit.tnft +
                 stakingRewardsSplit.bnft) == SCALE,
-            ""
+            "Splits not equal to scale"
         );
 
         protocolRewardsSplit = RewardsSplit({
@@ -123,7 +123,7 @@ contract EtherFiNodesManager is
                 protocolRewardsSplit.nodeOperator +
                 protocolRewardsSplit.tnft +
                 protocolRewardsSplit.bnft) == SCALE,
-            ""
+            "Splits not equal to scale"
         );
     }
 
@@ -209,7 +209,7 @@ contract EtherFiNodesManager is
             balance < 8 ether,
             "etherfi node contract's balance is above 8 ETH. You should exit the node."
         );
-
+        
         // Retrieve all possible rewards: {Staking, Protocol} rewards and the vested auction fee reward
         (
             uint256 toOperator,
@@ -285,7 +285,7 @@ contract EtherFiNodesManager is
             etherfiNode = etherfiNodeAddress[_validatorId];
             require(
                 _operator == auctionInterfaceInstance.getBidOwner(_validatorId),
-                ""
+                "Not bid owner"
             );
             require(
                 payable(etherfiNode).balance < 8 ether,
@@ -714,7 +714,7 @@ contract EtherFiNodesManager is
             );
     }
 
-    function isExited(uint256 _validatorId) external view returns (bool) {
+    function isExited(uint256 _validatorId) public view returns (bool) {
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
     }
 
