@@ -105,10 +105,10 @@ contract EtherFiNodesManager is
             bnft: 84_375 // 90 % * 3 / 32
         });
         require(
-            (stakingRewardsSplit.treasury +
+            stakingRewardsSplit.treasury +
                 stakingRewardsSplit.nodeOperator +
                 stakingRewardsSplit.tnft +
-                stakingRewardsSplit.bnft) == SCALE,
+                stakingRewardsSplit.bnft == SCALE,
             "Splits not equal to scale"
         );
 
@@ -119,10 +119,10 @@ contract EtherFiNodesManager is
             bnft: 46_875 // 50 % * 3 / 32
         });
         require(
-            (protocolRewardsSplit.treasury +
+            protocolRewardsSplit.treasury +
                 protocolRewardsSplit.nodeOperator +
                 protocolRewardsSplit.tnft +
-                protocolRewardsSplit.bnft) == SCALE,
+                protocolRewardsSplit.bnft == SCALE,
             "Splits not equal to scale"
         );
     }
@@ -450,6 +450,7 @@ contract EtherFiNodesManager is
     function setNonExitPenaltyDailyRate(
         uint64 _nonExitPenaltyDailyRate
     ) public onlyOwner {
+        require(_nonExitPenaltyDailyRate <= 100, "Invalid penalty rate");
         nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
 

@@ -209,7 +209,7 @@ contract EtherFiNode is IEtherFiNode {
         } else if (rewards >= 8 ether) {
             // In a case of Slashing, without the Oracle, the exact staking rewards cannot be computed in this case
             // Assume no staking rewards in this case.
-            rewards = 0;
+            return (0, 0, 0, 0);
         }
 
         (
@@ -329,16 +329,15 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
+        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
         require(
-            address(this).balance >= 16 ether,
+            balance >= 16 ether,
             "not enough balance for full withdrawal"
         );
         require(
             phase == VALIDATOR_PHASE.EXITED,
             "validator node is not exited"
         );
-        uint256 balance = address(this).balance -
-            (vestedAuctionRewards - _getClaimableVestedRewards());
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
@@ -396,7 +395,7 @@ contract EtherFiNode is IEtherFiNode {
         //  the rest goes to the treasury
         if (bnftNonExitPenalty > 0.5 ether) {
             payouts[0] += 0.5 ether;
-            payouts[3] += (bnftNonExitPenalty - 0.5 ether);
+            payouts[3] += bnftNonExitPenalty - 0.5 ether;
         } else {
             payouts[0] += bnftNonExitPenalty;
         }
