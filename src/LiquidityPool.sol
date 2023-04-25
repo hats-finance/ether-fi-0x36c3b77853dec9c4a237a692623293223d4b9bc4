@@ -35,7 +35,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
 
     bytes32[] private merkleProof;
 
-    uint256[32] __gap;
+    uint256[40] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -155,26 +155,22 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
 
     function totalEapScores() public view returns (uint256) {
         uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        bytes32 totalScore32 = scoreManager.totalScores(typeId);
-        uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
+        uint256 totalScore = scoreManager.totalScores(typeId);
         return totalScore;
     }
 
     // TODO: add the modifier for 'onlyCRP'
     function setEapScore(address _user, uint256 _score) public {
         uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        bytes32 totalScore32 = scoreManager.totalScores(typeId);
-        uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
+        uint256 totalScore = scoreManager.totalScores(typeId);
         totalScore -= eapScore(_user);
         totalScore += _score;
-        scoreManager.setScore(typeId, _user, bytes32(abi.encodePacked(_score)));
-        scoreManager.setTotalScore(typeId, bytes32(abi.encodePacked(totalScore)));
+        scoreManager.setScore(typeId, _user, _score);
     }
 
     function eapScore(address _user) public view returns (uint256) {
         uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        bytes32 score32 = scoreManager.scores(typeId, _user);
-        uint256 score = abi.decode(bytes.concat(score32), (uint256));
+        uint256 score = scoreManager.scores(typeId, _user);
         return score;
     }
 

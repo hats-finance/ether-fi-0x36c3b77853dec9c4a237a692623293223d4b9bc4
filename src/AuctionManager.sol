@@ -37,7 +37,7 @@ contract AuctionManager is
 
     mapping(uint256 => Bid) public bids;
 
-    uint256[32] public __gap;
+    uint256[43] public __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -54,6 +54,11 @@ contract AuctionManager is
     event Received(address indexed sender, uint256 value);
     event WhitelistDisabled(bool whitelistStatus);
     event WhitelistEnabled(bool whitelistStatus);
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------

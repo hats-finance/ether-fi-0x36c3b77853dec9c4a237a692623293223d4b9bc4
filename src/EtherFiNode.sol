@@ -22,6 +22,11 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        stakingStartTimestamp = type(uint32).max;
+    }
+
     function initialize(address _etherFiNodesManager) public {
         require(stakingStartTimestamp == 0, "already initialised");
         require(_etherFiNodesManager != address(0), "No zero addresses");
@@ -281,23 +286,17 @@ contract EtherFiNode is IEtherFiNode {
             exitRequestTimestamp,
             _exitTimestamp
         );
-        uint256 daysPerWeek = 7;
-        uint256 weeksElapsed = daysElapsed / daysPerWeek;
+
+        // full penalty
+        if (daysElapsed > 365) {
+            return _principal;
+        }
 
         uint256 remaining = _principal;
-        if (daysElapsed > 365) {
-            remaining = 0;
-        } else {
-            for (uint64 i = 0; i < weeksElapsed; i++) {
-                remaining =
-                    (remaining * (100 - _dailyPenalty) ** daysPerWeek) /
-                    (100 ** daysPerWeek);
-            }
-
-            daysElapsed -= weeksElapsed * daysPerWeek;
-            for (uint64 i = 0; i < daysElapsed; i++) {
-                remaining = (remaining * (100 - _dailyPenalty)) / 100;
-            }
+        while (daysElapsed > 0) {
+            uint256 exponent = Math.min(30, daysElapsed); // valid with principle <= 1e43
+            remaining = (remaining * (100 - uint256(_dailyPenalty)) ** exponent) / (100 ** exponent);
+            daysElapsed -= Math.min(30, daysElapsed);
         }
 
         return _principal - remaining;
@@ -329,16 +328,15 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
+        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
         require(
-            address(this).balance >= 16 ether,
+            balance >= 16 ether,
             "not enough balance for full withdrawal"
         );
         require(
             phase == VALIDATOR_PHASE.EXITED,
             "validator node is not exited"
         );
-        uint256 balance = address(this).balance -
-            (vestedAuctionRewards - _getClaimableVestedRewards());
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
@@ -396,7 +394,7 @@ contract EtherFiNode is IEtherFiNode {
         //  the rest goes to the treasury
         if (bnftNonExitPenalty > 0.5 ether) {
             payouts[0] += 0.5 ether;
-            payouts[3] += (bnftNonExitPenalty - 0.5 ether);
+            payouts[3] += bnftNonExitPenalty - 0.5 ether;
         } else {
             payouts[0] += bnftNonExitPenalty;
         }

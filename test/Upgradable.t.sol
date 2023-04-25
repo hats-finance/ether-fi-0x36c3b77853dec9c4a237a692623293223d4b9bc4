@@ -71,9 +71,17 @@ contract UpgradeTest is TestSetup {
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
     ProtocolRevenueManagerV2 public protocolRevenueManagerV2Instance;
     StakingManagerV2 public stakingManagerV2Instance;
+
+    uint256[] public slippageArray;
    
     function setUp() public {
         setUpTests();
+
+        slippageArray = new uint256[](4);
+        slippageArray[0] = 90;
+        slippageArray[1] = 90;
+        slippageArray[2] = 90;
+        slippageArray[3] = 90;
     }
 
     function test_CanUpgradeAuctionManager() public {
@@ -121,7 +129,7 @@ contract UpgradeTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
         assertEq(claimReceiverPoolInstance.getImplementation(), address(claimReceiverPoolImplementation));
@@ -157,7 +165,7 @@ contract UpgradeTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
 
         assertEq(scoreManagerInstance.getImplementation(), address(scoreManagerImplementation));
 

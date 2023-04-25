@@ -30,11 +30,16 @@ contract ProtocolRevenueManager is
     uint128 public vestedAuctionFeeSplitForStakers;
     uint128 public auctionFeeVestingPeriodForStakersInDays;
 
-    uint256[32] public __gap;
+    uint256[46] public __gap;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize() external initializer {
         __Pausable_init();
@@ -128,6 +133,7 @@ contract ProtocolRevenueManager is
     ) external onlyOwner {
         require(_etherFiNodesManager != address(0), "No zero addresses");
         require(address(etherFiNodesManager) == address(0), "Address already set");
+
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
     }
 
