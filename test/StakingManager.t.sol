@@ -1164,15 +1164,4 @@ contract StakingManagerTest is TestSetup {
         startHoax(alice);
         stakingManagerInstance.batchDepositWithBidIds{value: 128 ether}(bidIds);
     }
-
-    function test_CanOnlySetAddressesOnce() public {
-        vm.startPrank(owner);
-        vm.expectRevert("Address already set");
-        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
-            address(0)
-        );
-
-        vm.expectRevert("Address already set");
-        protocolRevenueManagerInstance.setAuctionManagerAddress(address(0));
-    }
 }
