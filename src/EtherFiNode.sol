@@ -297,10 +297,7 @@ contract EtherFiNode is IEtherFiNode {
             }
         }
 
-        uint256 penaltyAmount = _principal - remaining;
-        require(penaltyAmount >= 0, "Incorrect penalty amount");
-
-        return penaltyAmount;
+        return _principal - remaining;
     }
 
     /// @notice Given the current balance of the ether fi node after its EXIT,
