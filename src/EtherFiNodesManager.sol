@@ -109,7 +109,7 @@ contract EtherFiNodesManager is
                 stakingRewardsSplit.nodeOperator +
                 stakingRewardsSplit.tnft +
                 stakingRewardsSplit.bnft) == SCALE,
-            ""
+            "Splits not equal to scale"
         );
 
         protocolRewardsSplit = RewardsSplit({
@@ -123,7 +123,7 @@ contract EtherFiNodesManager is
                 protocolRewardsSplit.nodeOperator +
                 protocolRewardsSplit.tnft +
                 protocolRewardsSplit.bnft) == SCALE,
-            ""
+            "Splits not equal to scale"
         );
     }
 
@@ -285,7 +285,7 @@ contract EtherFiNodesManager is
             etherfiNode = etherfiNodeAddress[_validatorId];
             require(
                 _operator == auctionInterfaceInstance.getBidOwner(_validatorId),
-                ""
+                "Not bid owner"
             );
             require(
                 payable(etherfiNode).balance < 8 ether,
