@@ -5,7 +5,6 @@ import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "forge-std/console2.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
