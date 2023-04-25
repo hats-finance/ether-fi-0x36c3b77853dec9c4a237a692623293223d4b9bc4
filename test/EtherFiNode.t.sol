@@ -695,7 +695,7 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // 1 day passed
-        vm.warp(block.timestamp + 86400);
+        vm.warp(block.timestamp + 86401);
         startHoax(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
@@ -724,7 +724,7 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // 14 days passed
-        vm.warp(block.timestamp + (1 + 14 * 86400));
+        vm.warp(block.timestamp + (1 + 14 * 86401));
         startHoax(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
@@ -746,7 +746,6 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
-    /// @dev Seongyun, please double check the math in the assertions.
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly3() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
@@ -759,7 +758,7 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // 28 days passed
-        vm.warp(block.timestamp + (1 + 28 * 86400));
+        vm.warp(block.timestamp + (1 + 28 * 86401));
         startHoax(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
