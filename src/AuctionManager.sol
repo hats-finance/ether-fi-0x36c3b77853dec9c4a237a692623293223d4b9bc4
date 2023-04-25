@@ -9,6 +9,7 @@ import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "forge-std/console.sol";
 
 contract AuctionManager is
     Initializable,
@@ -36,7 +37,7 @@ contract AuctionManager is
 
     mapping(uint256 => Bid) public bids;
 
-    uint256[32] __gap;
+    uint256[32] public __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -60,6 +61,8 @@ contract AuctionManager is
     function initialize(
         address _nodeOperatorManagerContract
     ) external initializer {
+        require(_nodeOperatorManagerContract != address(0), "No Zero Addresses");
+        
         whitelistBidAmount = 0.001 ether;
         minBidAmount = 0.01 ether;
         maxBidAmount = 5 ether;
@@ -86,7 +89,7 @@ contract AuctionManager is
     ) external payable whenNotPaused nonReentrant returns (uint256[] memory) {
         if (whitelistEnabled) {
             require(
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true,
+                nodeOperatorManagerInterface.isWhitelisted(msg.sender),
                 "Only whitelisted addresses"
             );
             require(
@@ -97,7 +100,7 @@ contract AuctionManager is
             );
         } else {
             if (
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender) == true
+                nodeOperatorManagerInterface.isWhitelisted(msg.sender)
             ) {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
@@ -168,7 +171,7 @@ contract AuctionManager is
         Bid storage bid = bids[_bidId];
 
         require(bid.bidderAddress == msg.sender, "Invalid bid");
-        require(bid.isActive == true, "Bid already cancelled");
+        require(bid.isActive, "Bid already cancelled");
 
         // Cancel the bid by de-activating it
         bid.isActive = false;
@@ -198,7 +201,7 @@ contract AuctionManager is
     function reEnterAuction(
         uint256 _bidId
     ) external onlyStakingManagerContract {
-        require(bids[_bidId].isActive == false, "Bid already active");
+        require(!bids[_bidId].isActive, "Bid already active");
         //Reactivate the bid
         bids[_bidId].isActive = true;
         numberOfActiveBids++;
@@ -301,6 +304,7 @@ contract AuctionManager is
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint64 _newMinBidAmount) external onlyOwner {
         require(_newMinBidAmount < maxBidAmount, "Min bid exceeds max bid");
+        require(_newMinBidAmount > whitelistBidAmount, "Min bid less than whitelist bid amount");
         minBidAmount = _newMinBidAmount;
     }
 

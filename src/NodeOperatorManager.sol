@@ -39,7 +39,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         bytes memory _ipfsHash,
         uint64 _totalKeys
     ) public {
-        require(registered[msg.sender] == false, "Already registered");
+        require(!registered[msg.sender], "Already registered");
 
         addressToOperatorData[msg.sender] = KeyData({
             totalKeys: _totalKeys,

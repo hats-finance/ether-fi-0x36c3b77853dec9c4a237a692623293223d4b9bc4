@@ -4,26 +4,34 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 
 contract ProtocolRevenueManagerTest is TestSetup {
-
     function setUp() public {
         setUpTests();
 
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
-        assertEq(protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(), 50);
-        assertEq(protocolRevenueManagerInstance.auctionFeeVestingPeriodForStakersInDays(), 168);
-        assertEq(address(protocolRevenueManagerInstance.etherFiNodesManager()), address(managerInstance));
-        assertEq(address(protocolRevenueManagerInstance.auctionManager()), address(auctionInstance));
+        assertEq(
+            protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(),
+            50
+        );
+        assertEq(
+            protocolRevenueManagerInstance
+                .auctionFeeVestingPeriodForStakersInDays(),
+            168
+        );
+        assertEq(
+            address(protocolRevenueManagerInstance.etherFiNodesManager()),
+            address(managerInstance)
+        );
+        assertEq(
+            address(protocolRevenueManagerInstance.auctionManager()),
+            address(auctionInstance)
+        );
 
         vm.stopPrank();
 
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
-            _ipfsHash,
-            5
-        );
+        nodeOperatorManagerInstance.registerNodeOperator(proof, _ipfsHash, 5);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -41,13 +49,27 @@ contract ProtocolRevenueManagerTest is TestSetup {
         protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(10);
 
         vm.startPrank(owner);
-        assertEq(protocolRevenueManagerInstance.auctionFeeVestingPeriodForStakersInDays(), 168);
+        assertEq(
+            protocolRevenueManagerInstance
+                .auctionFeeVestingPeriodForStakersInDays(),
+            168
+        );
         protocolRevenueManagerInstance.setAuctionRewardVestingPeriod(1);
-        assertEq(protocolRevenueManagerInstance.auctionFeeVestingPeriodForStakersInDays(), 1);
+        assertEq(
+            protocolRevenueManagerInstance
+                .auctionFeeVestingPeriodForStakersInDays(),
+            1
+        );
 
-        assertEq(protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(), 50);
+        assertEq(
+            protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(),
+            50
+        );
         protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(10);
-        assertEq(protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(), 10);
+        assertEq(
+            protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(),
+            10
+        );
     }
 
     function test_Receive() public {
@@ -55,7 +77,10 @@ contract ProtocolRevenueManagerTest is TestSetup {
         startHoax(alice);
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");
 
-        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(1, 1 ether);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
+            1,
+            1 ether
+        );
 
         vm.expectRevert("No Active Validator");
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");
@@ -81,13 +106,23 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIds[0], depositData);
+        stakingManagerInstance.registerValidator(
+            _getDepositRoot(),
+            bidIds[0],
+            depositData
+        );
 
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 500000000000000001);
+        assertEq(
+            protocolRevenueManagerInstance.globalRevenueIndex(),
+            500000000000000001
+        );
 
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");
 
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1500000000000000001);
+        assertEq(
+            protocolRevenueManagerInstance.globalRevenueIndex(),
+            1500000000000000001
+        );
         vm.stopPrank();
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -96,9 +131,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1 ether
         );
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidId
-        );
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId);
 
         etherFiNode = managerInstance.etherfiNodeAddress(2);
         root = depGen.generateDepositRoot(
@@ -108,22 +141,30 @@ contract ProtocolRevenueManagerTest is TestSetup {
             32 ether
         );
 
-        depositData = IStakingManager
-            .DepositData({
-                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-                depositDataRoot: root,
-                ipfsHashForEncryptedValidatorKey: "test_ipfs"
-            });
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
+        depositData = IStakingManager.DepositData({
+            publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            depositDataRoot: root,
+            ipfsHashForEncryptedValidatorKey: "test_ipfs"
+        });
+        stakingManagerInstance.registerValidator(
+            _getDepositRoot(),
+            bidId[0],
+            depositData
+        );
 
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1750000000000000001);
+        assertEq(
+            protocolRevenueManagerInstance.globalRevenueIndex(),
+            1750000000000000001
+        );
 
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");
         vm.stopPrank();
 
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 2250000000000000001);
-
+        assertEq(
+            protocolRevenueManagerInstance.globalRevenueIndex(),
+            2250000000000000001
+        );
     }
 
     function test_GetAccruedAuctionRevenueRewards() public {
@@ -133,9 +174,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1,
             1 ether
         );
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidId
-        );
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId);
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -151,10 +190,19 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
+        stakingManagerInstance.registerValidator(
+            _getDepositRoot(),
+            bidId[0],
+            depositData
+        );
         vm.stopPrank();
 
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId[0]), 0.5 ether);
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId[0]
+            ),
+            0.5 ether
+        );
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
@@ -162,9 +210,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1,
             1 ether
         );
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIds2
-        );
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds2);
         etherFiNode = managerInstance.etherfiNodeAddress(2);
         root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -173,18 +219,31 @@ contract ProtocolRevenueManagerTest is TestSetup {
             32 ether
         );
 
-        depositData = IStakingManager
-            .DepositData({
-                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-                depositDataRoot: root,
-                ipfsHashForEncryptedValidatorKey: "test_ipfs"
-            });
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIds2[0], depositData);
+        depositData = IStakingManager.DepositData({
+            publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            depositDataRoot: root,
+            ipfsHashForEncryptedValidatorKey: "test_ipfs"
+        });
+        stakingManagerInstance.registerValidator(
+            _getDepositRoot(),
+            bidIds2[0],
+            depositData
+        );
         vm.stopPrank();
 
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId[0]), 0.75 ether);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidIds2[0]), 0.25 ether);
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidId[0]
+            ),
+            0.75 ether
+        );
+        assertEq(
+            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
+                bidIds2[0]
+            ),
+            0.25 ether
+        );
     }
 
     function test_AddAuctionRevenueWorksAndFailsCorrectly() public {
@@ -228,7 +287,11 @@ contract ProtocolRevenueManagerTest is TestSetup {
             });
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
+        stakingManagerInstance.registerValidator(
+            _getDepositRoot(),
+            bidId[0],
+            depositData
+        );
         vm.stopPrank();
 
         // 0.1 ether
@@ -280,5 +343,16 @@ contract ProtocolRevenueManagerTest is TestSetup {
 
         vm.expectRevert("Ownable: caller is not the owner");
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(alice);
+    }
+
+    function test_CanOnlySetAddressesOnce() public {
+        vm.startPrank(owner);
+        vm.expectRevert("Address already set");
+        protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(
+            address(0)
+        );
+
+        vm.expectRevert("Address already set");
+        protocolRevenueManagerInstance.setAuctionManagerAddress(address(0));
     }
 }

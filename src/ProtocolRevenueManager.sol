@@ -30,7 +30,7 @@ contract ProtocolRevenueManager is
     uint128 public vestedAuctionFeeSplitForStakers;
     uint128 public auctionFeeVestingPeriodForStakersInDays;
 
-    uint256[32] __gap;
+    uint256[32] public __gap;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -107,6 +107,10 @@ contract ProtocolRevenueManager is
     function distributeAuctionRevenue(
         uint256 _validatorId
     ) external onlyEtherFiNodesManager nonReentrant returns (uint256) {
+        if (etherFiNodesManager.isExited(_validatorId)) {
+            return 0;
+        }
+
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(
             _validatorId,
@@ -122,6 +126,7 @@ contract ProtocolRevenueManager is
         address _etherFiNodesManager
     ) external onlyOwner {
         require(_etherFiNodesManager != address(0), "No zero addresses");
+        require(address(etherFiNodesManager) == address(0), "Address already set");
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
     }
 
@@ -132,6 +137,7 @@ contract ProtocolRevenueManager is
         address _auctionManager
     ) external onlyOwner {
         require(_auctionManager != address(0), "No zero addresses");
+        require(address(auctionManager) == address(0), "Address already set");
         auctionManager = IAuctionManager(_auctionManager);
     }
 

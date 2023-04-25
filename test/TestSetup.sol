@@ -110,7 +110,7 @@ contract TestSetup is Test {
     address bob = vm.addr(3);
     address chad = vm.addr(4);
     address dan = vm.addr(5);
-    address egg = vm.addr(6);
+    address elvis = vm.addr(6);
     address greg = vm.addr(7);
     address henry = vm.addr(8);
     address liquidityPool = vm.addr(9);
