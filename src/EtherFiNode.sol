@@ -22,6 +22,11 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        stakingStartTimestamp = uint32 (type(uint256).max);
+    }
+
     function initialize(address _etherFiNodesManager) public {
         require(stakingStartTimestamp == 0, "already initialised");
         require(_etherFiNodesManager != address(0), "No zero addresses");
