@@ -18,6 +18,7 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
 
     function initialize(address _stakingManagerAddress) initializer external {
+        require(_stakingManagerAddress != address(0), "No zero addresses");
         __ERC721_init("Bond NFT", "BNFT");
         __Ownable_init();
         __UUPSUpgradeable_init();

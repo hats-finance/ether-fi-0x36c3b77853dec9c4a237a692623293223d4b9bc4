@@ -199,7 +199,7 @@ contract EtherFiNode is IEtherFiNode {
         )
     {
         uint256 balance = address(this).balance;
-        uint256 rewards = (balance > vestedAuctionRewards)
+        uint256 rewards = balance > vestedAuctionRewards
             ? balance - vestedAuctionRewards
             : 0;
         if (rewards >= 32 ether) {
@@ -393,7 +393,7 @@ contract EtherFiNode is IEtherFiNode {
         //  the rest goes to the treasury
         if (bnftNonExitPenalty > 0.5 ether) {
             payouts[0] += 0.5 ether;
-            payouts[3] += (bnftNonExitPenalty - 0.5 ether);
+            payouts[3] += bnftNonExitPenalty - 0.5 ether;
         } else {
             payouts[0] += bnftNonExitPenalty;
         }
