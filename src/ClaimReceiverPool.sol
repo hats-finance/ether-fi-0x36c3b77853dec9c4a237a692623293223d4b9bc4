@@ -72,6 +72,11 @@ contract ClaimReceiverPool is
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice initialize to set variables on deployment
     function initialize(
         address _rEth,
