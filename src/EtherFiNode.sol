@@ -24,7 +24,7 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
-        stakingStartTimestamp = uint32 (type(uint256).max);
+        stakingStartTimestamp = type(uint32).max;
     }
 
     function initialize(address _etherFiNodesManager) public {
