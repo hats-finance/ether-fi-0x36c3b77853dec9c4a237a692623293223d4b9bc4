@@ -142,7 +142,7 @@ contract ClaimReceiverPool is
             "Verification failed"
         );
         uint256 scoreTypeId = scoreManager.typeIds("Early Adopter Pool");
-        require(scoreManager.scores(scoreTypeId, msg.sender) == bytes32(0), "Already Deposited");
+        require(scoreManager.scores(scoreTypeId, msg.sender) == 0, "Already Deposited");
         require(_points > 0, "You don't have any point to claim");
 
         uint256 _ethAmount = 0;
