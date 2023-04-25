@@ -43,6 +43,11 @@ contract ScoreManager is
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice initialize to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager contract must be deployed first
