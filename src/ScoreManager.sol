@@ -30,7 +30,7 @@ contract ScoreManager is
     mapping(uint256 => bytes) public scoreTypes;
     mapping(bytes => uint256) public typeIds;
 
-    uint256[32] public __gap;
+    uint256[44] public __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------

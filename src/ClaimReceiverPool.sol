@@ -46,7 +46,7 @@ contract ClaimReceiverPool is
 
     bytes32 public merkleRoot;
 
-    uint256[32] public __gap;
+    uint256[44] public __gap;
 
     //SwapRouter but Testnet, although address is actually the same
     ISwapRouter public constant router =
