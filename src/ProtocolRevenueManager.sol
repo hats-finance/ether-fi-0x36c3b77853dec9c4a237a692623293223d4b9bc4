@@ -59,13 +59,14 @@ contract ProtocolRevenueManager is
 
     /// @notice All of the received Ether is shared to all validators! Cool!
     receive() external payable {
+        uint256 numberOfValidators = etherFiNodesManager.numberOfValidators();
         require(
-            etherFiNodesManager.numberOfValidators() > 0,
+            numberOfValidators > 0,
             "No Active Validator"
         );
         globalRevenueIndex +=
             msg.value /
-            etherFiNodesManager.numberOfValidators();
+            numberOfValidators;
     }
 
     /// @notice add the revenue from the auction fee paid by the node operator for the corresponding validator
