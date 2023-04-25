@@ -30,7 +30,7 @@ contract ProtocolRevenueManager is
     uint128 public vestedAuctionFeeSplitForStakers;
     uint128 public auctionFeeVestingPeriodForStakersInDays;
 
-    uint256[32] public __gap;
+    uint256[45] public __gap;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
