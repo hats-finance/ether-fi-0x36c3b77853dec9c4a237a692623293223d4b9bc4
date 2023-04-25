@@ -30,7 +30,7 @@ contract ProtocolRevenueManager is
     uint128 public vestedAuctionFeeSplitForStakers;
     uint128 public auctionFeeVestingPeriodForStakersInDays;
 
-    uint256[32] __gap;
+    uint256[32] public __gap;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -59,13 +59,14 @@ contract ProtocolRevenueManager is
 
     /// @notice All of the received Ether is shared to all validators! Cool!
     receive() external payable {
+        uint256 numberOfValidators = etherFiNodesManager.numberOfValidators();
         require(
-            etherFiNodesManager.numberOfValidators() > 0,
+            numberOfValidators > 0,
             "No Active Validator"
         );
         globalRevenueIndex +=
             msg.value /
-            etherFiNodesManager.numberOfValidators();
+            numberOfValidators;
     }
 
     /// @notice add the revenue from the auction fee paid by the node operator for the corresponding validator
@@ -107,6 +108,10 @@ contract ProtocolRevenueManager is
     function distributeAuctionRevenue(
         uint256 _validatorId
     ) external onlyEtherFiNodesManager nonReentrant returns (uint256) {
+        if (etherFiNodesManager.isExited(_validatorId)) {
+            return 0;
+        }
+
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(
             _validatorId,
@@ -121,6 +126,9 @@ contract ProtocolRevenueManager is
     function setEtherFiNodesManagerAddress(
         address _etherFiNodesManager
     ) external onlyOwner {
+        require(_etherFiNodesManager != address(0), "No zero addresses");
+        require(address(etherFiNodesManager) == address(0), "Address already set");
+
         etherFiNodesManager = IEtherFiNodesManager(_etherFiNodesManager);
     }
 
@@ -130,6 +138,8 @@ contract ProtocolRevenueManager is
     function setAuctionManagerAddress(
         address _auctionManager
     ) external onlyOwner {
+        require(_auctionManager != address(0), "No zero addresses");
+        require(address(auctionManager) == address(0), "Address already set");
         auctionManager = IAuctionManager(_auctionManager);
     }
 
@@ -146,6 +156,7 @@ contract ProtocolRevenueManager is
     function setAuctionRewardSplitForStakers(
         uint128 _split
     ) external onlyOwner {
+        require(_split <= 100, "Cannot be more than 100% split");
         vestedAuctionFeeSplitForStakers = _split;
     }
 
@@ -171,8 +182,12 @@ contract ProtocolRevenueManager is
         );
         uint256 localRevenueIndex = IEtherFiNode(etherFiNode)
             .localRevenueIndex();
-        uint256 amount = 0;
-        if (localRevenueIndex > 0) {
+        uint256 amount;
+        
+        if (localRevenueIndex == 0) {
+            return 0;
+        }
+        else {
             amount = globalRevenueIndex - localRevenueIndex;
         }
         return amount;
