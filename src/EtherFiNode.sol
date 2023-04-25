@@ -430,7 +430,7 @@ contract EtherFiNode is IEtherFiNode {
         uint32 _endTimestamp
     ) internal pure returns (uint256) {
         uint256 timeElapsed = _endTimestamp - _startTimestamp;
-        return uint256(timeElapsed / (24 * 3600));
+        return uint256(timeElapsed / (24 * 3_600));
     }
 
     function calculatePayouts(
