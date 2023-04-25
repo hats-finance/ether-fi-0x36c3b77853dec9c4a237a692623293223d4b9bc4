@@ -110,7 +110,7 @@ contract NodeOperatorManagerTest is TestSetup {
 
         bytes32[] memory proofForAddress4 = merkle.getProof(
             whiteListedAddresses,
-            6
+            10
         );
 
         assertEq(nodeOperatorManagerInstance.merkleRoot(), newRoot);

@@ -10,11 +10,13 @@ interface IStakingManager {
     }
 
     function bidIdToStaker(uint256 id) external view returns (address);
+    function merkleRoot() external view returns (bytes32);
+    function whitelistEnabled() external view returns (bool);
 
     function initialize(address _auctionAddress) external;
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
     function setLiquidityPoolAddress(address _liquidityPoolAddress) external;
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds) external payable returns (uint256[] memory);
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof) external payable returns (uint256[] memory);
 
     function cancelDeposit(uint256 _validatorId) external;
 

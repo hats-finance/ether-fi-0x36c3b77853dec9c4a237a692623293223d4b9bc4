@@ -4,6 +4,10 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 
 contract ProtocolRevenueManagerTest is TestSetup {
+        
+    bytes32[] public proof;
+    bytes32[] public aliceProof;
+    
     function setUp() public {
         setUpTests();
 
@@ -28,8 +32,8 @@ contract ProtocolRevenueManagerTest is TestSetup {
 
         vm.stopPrank();
 
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        proof = merkle.getProof(whiteListedAddresses, 0);
+        aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(proof, _ipfsHash, 5);
         vm.stopPrank();
@@ -85,7 +89,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
         vm.expectRevert("No Active Validator");
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, aliceProof);
 
         vm.expectRevert("No Active Validator");
         address(protocolRevenueManagerInstance).call{value: 1 ether}("");
@@ -131,7 +135,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1 ether
         );
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, proof);
 
         etherFiNode = managerInstance.etherfiNodeAddress(2);
         root = depGen.generateDepositRoot(
@@ -174,7 +178,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1,
             1 ether
         );
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof);
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -210,7 +214,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1,
             1 ether
         );
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds2);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds2, proof);
         etherFiNode = managerInstance.etherfiNodeAddress(2);
         root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -268,7 +272,8 @@ contract ProtocolRevenueManagerTest is TestSetup {
         bidIdArray[0] = bidId[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            aliceProof
         );
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(

@@ -152,7 +152,7 @@ contract ClaimReceiverPool is
         _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal);
 
         liquidityPool.setEapScore(msg.sender, _points);
-        liquidityPool.deposit{value: _ethAmount}(msg.sender);
+        liquidityPool.deposit{value: _ethAmount}(msg.sender, _merkleProof);
 
         emit FundsMigrated(msg.sender, _ethAmount, _points);
     }

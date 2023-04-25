@@ -294,7 +294,16 @@ contract TestSetup is Test {
 
         whiteListedAddresses.push(keccak256(abi.encodePacked(chad)));
 
+        whiteListedAddresses.push(keccak256(abi.encodePacked(dan)));
+
+        whiteListedAddresses.push(keccak256(abi.encodePacked(elvis)));
+
+        whiteListedAddresses.push(keccak256(abi.encodePacked(greg)));
+
+        whiteListedAddresses.push(keccak256(abi.encodePacked(address(liquidityPoolInstance))));
+
         root = merkle.getRoot(whiteListedAddresses);
+        liquidityPoolInstance.setMerkleProof(merkle.getProof(whiteListedAddresses, 9));
     }
 
     function _merkleSetupMigration() internal {
@@ -425,6 +434,8 @@ contract TestSetup is Test {
         
         rootMigration2 = merkleMigration2.getRoot(dataForVerification2);
     }
+
+    
 
     function _getDepositRoot() internal returns (bytes32) {
         bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();

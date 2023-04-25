@@ -9,6 +9,7 @@ import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradea
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 import "./interfaces/IEETH.sol";
 import "./interfaces/IScoreManager.sol";
 import "./interfaces/IStakingManager.sol";
@@ -31,6 +32,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
 
     uint64 public numValidators;
+
+    bytes32[] private merkleProof;
 
     uint256[32] __gap;
 
@@ -60,7 +63,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
 
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user) external payable {
+    function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
+        if(stakingManager.whitelistEnabled()) {
+            require(MerkleProofUpgradeable.verify(_merkleProof, stakingManager.merkleRoot(), keccak256(abi.encodePacked(_user))), "User not whitelisted");
+        }
+
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
         uint256 share = _sharesForDepositAmount(msg.value);
 
@@ -92,7 +99,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds) public onlyOwner returns (uint256[] memory) {
         uint256 amount = 32 ether * _numDeposits;
         require(address(this).balance >= amount, "Not enough balance");
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, merkleProof);
 
         return newValidators;
     }
@@ -200,6 +207,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
 
     function setStakingManager(address _address) external onlyOwner {
         stakingManager = IStakingManager(_address);
+    }
+
+    function setMerkleProof(bytes32[] calldata _merkleProof) public onlyOwner {
+        merkleProof = _merkleProof;
     }
 
     //--------------------------------------------------------------------------------------
