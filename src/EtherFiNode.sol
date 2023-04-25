@@ -199,7 +199,7 @@ contract EtherFiNode is IEtherFiNode {
         )
     {
         uint256 balance = address(this).balance;
-        uint256 rewards = balance > vestedAuctionRewards
+        uint256 rewards = (balance > vestedAuctionRewards)
             ? balance - vestedAuctionRewards
             : 0;
         if (rewards >= 32 ether) {
