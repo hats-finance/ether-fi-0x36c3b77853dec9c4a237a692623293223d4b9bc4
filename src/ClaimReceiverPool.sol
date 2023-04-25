@@ -116,7 +116,8 @@ contract ClaimReceiverPool is
         uint256 _sfrxEthBal,
         uint256 _cbEthBal,
         uint256 _points,
-        bytes32[] calldata _merkleProof
+        bytes32[] calldata _merkleProof,
+        uint256[] calldata _slippageAmounts
     ) external payable whenNotPaused {
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
         require(
@@ -138,10 +139,10 @@ contract ClaimReceiverPool is
 
         uint256 _ethAmount = 0;
         _ethAmount += msg.value;
-        _ethAmount += _swapERC20ForETH(rETH, _rEthBal);
-        _ethAmount += _swapERC20ForETH(wstETH, _wstEthBal);
-        _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal);
-        _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal);
+        _ethAmount += _swapERC20ForETH(rETH, _rEthBal, _slippageAmounts[0]);
+        _ethAmount += _swapERC20ForETH(wstETH, _wstEthBal, _slippageAmounts[1]);
+        _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal, _slippageAmounts[2]);
+        _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal, _slippageAmounts[3]);
 
         liquidityPool.setEapScore(msg.sender, _points);
         liquidityPool.deposit{value: _ethAmount}(msg.sender);
@@ -215,21 +216,24 @@ contract ClaimReceiverPool is
             );
     }
 
-    function _swapERC20ForETH(address _token, uint256 _amount) internal returns (uint256) {
+    function _swapERC20ForETH(address _token, uint256 _amount, uint256 _slippagePercentage) internal returns (uint256) {
         if (_amount == 0) {
             return 0;
         }
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        uint256 amountOut = _swapExactInputSingle(_amount, _token);
+        uint256 amountOut = _swapExactInputSingle(_amount, _token, _slippagePercentage);
         wethContract.withdraw(amountOut);
         return amountOut;
     }
 
     function _swapExactInputSingle(
         uint256 _amountIn,
-        address _tokenIn
+        address _tokenIn,
+        uint256 _slippagePercentage
     ) internal returns (uint256 amountOut) {
         IERC20(_tokenIn).approve(address(router), _amountIn);
+
+        uint256 minimumAmountAfterSlippage = _amountIn - (_amountIn * _slippagePercentage / 1_00);
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
@@ -239,7 +243,7 @@ contract ClaimReceiverPool is
                 recipient: address(this),
                 deadline: block.timestamp + 100,
                 amountIn: _amountIn,
-                amountOutMinimum: 0,
+                amountOutMinimum: minimumAmountAfterSlippage,
                 sqrtPriceLimitX96: 0
             });
 

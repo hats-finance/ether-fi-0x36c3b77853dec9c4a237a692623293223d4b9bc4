@@ -4,8 +4,16 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 
 contract SmallScenariosTest is TestSetup {
+    uint256[] public slippageArray;
+
     function setUp() public {
         setUpTests();
+
+        slippageArray = new uint256[](4);
+        slippageArray[0] = 90;
+        slippageArray[1] = 90;
+        slippageArray[2] = 90;
+        slippageArray[3] = 90;
     }
 
     /*----- EAP MIGRATION SCENARIO -----*/
@@ -86,7 +94,8 @@ contract SmallScenariosTest is TestSetup {
             0,
             0,
             103680,
-            aliceProof
+            aliceProof,
+            slippageArray
         );
         vm.stopPrank();
 
