@@ -5,6 +5,7 @@ import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "forge-std/console2.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
@@ -278,24 +279,56 @@ contract EtherFiNode is IEtherFiNode {
             exitRequestTimestamp,
             _exitTimestamp
         );
+
         uint256 daysPerWeek = 7;
         uint256 weeksElapsed = daysElapsed / daysPerWeek;
 
-        uint256 remaining = _principal;
-        if (daysElapsed > 365) {
-            remaining = 0;
-        } else {
-            for (uint64 i = 0; i < weeksElapsed; i++) {
-                remaining =
-                    (remaining * (100 - _dailyPenalty) ** daysPerWeek) /
-                    (100 ** daysPerWeek);
-            }
 
-            daysElapsed -= weeksElapsed * daysPerWeek;
-            for (uint64 i = 0; i < daysElapsed; i++) {
-                remaining = (remaining * (100 - _dailyPenalty)) / 100;
-            }
+        // full penalty
+        if (daysElapsed > 365) {
+            return _principal;
         }
+
+     //   return 5;
+
+      uint256 remaining = _principal;
+     /*
+        console2.log("start");
+        while (daysElapsed > 30) {
+            console2.log("loop");
+            remaining = (remaining * (100 - _dailyPenalty) ** Math.min(30, daysElapsed)) / (10 ** Math.min(30, daysElapsed));
+            daysElapsed -= Math.min(30, daysElapsed);
+        }
+        */
+
+       /*
+        console2.log("single");
+        console2.log(daysElapsed);
+       // console2.log(remaining);
+        //remaining = (remaining * (100 - _dailyPenalty) ** Math.min(30, daysElapsed)) / (100 ** Math.min(30, daysElapsed));
+        remaining = (remaining * (100 - uint256(_dailyPenalty)) ** 10) / (100 ** 10);
+        console2.log(remaining);
+
+        */
+       while (daysElapsed > 0) {
+           uint256 exponent = Math.min(30, daysElapsed);
+           remaining = (remaining * (100 - uint256(_dailyPenalty)) ** exponent) / (100 ** exponent);
+           daysElapsed -= Math.min(30, daysElapsed);
+       }
+        
+       /*
+        for (uint64 i = 0; i < weeksElapsed; i++) {
+            remaining =
+                (remaining * (100 - _dailyPenalty) ** daysPerWeek) /
+                (100 ** daysPerWeek);
+        }
+
+
+        daysElapsed -= weeksElapsed * daysPerWeek;
+        for (uint64 i = 0; i < daysElapsed; i++) {
+            remaining = (remaining * (100 - _dailyPenalty)) / 100;
+        }
+        */
 
         uint256 penaltyAmount = _principal - remaining;
         require(penaltyAmount >= 0, "Incorrect penalty amount");
