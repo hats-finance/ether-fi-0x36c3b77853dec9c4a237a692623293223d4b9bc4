@@ -47,11 +47,11 @@ contract ClaimReceiverPool is
     bytes32 public merkleRoot;
 
     //SwapRouter but Testnet, although address is actually the same
-    ISwapRouter constant router =
+    ISwapRouter public constant router =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
     //Goerli Weth address used for unwrapping ERC20 Weth
-    IWETH constant wethContract =
+    IWETH public constant wethContract =
         IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
     ILiquidityPool public liquidityPool;
