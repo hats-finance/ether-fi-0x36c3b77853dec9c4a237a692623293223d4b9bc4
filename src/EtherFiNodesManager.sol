@@ -98,10 +98,10 @@ contract EtherFiNodesManager is
             bnft: 84375 // 90 % * 3 / 32
         });
         require(
-            (stakingRewardsSplit.treasury +
+            stakingRewardsSplit.treasury +
                 stakingRewardsSplit.nodeOperator +
                 stakingRewardsSplit.tnft +
-                stakingRewardsSplit.bnft) == SCALE,
+                stakingRewardsSplit.bnft == SCALE,
             ""
         );
 
@@ -112,10 +112,10 @@ contract EtherFiNodesManager is
             bnft: 46875 // 50 % * 3 / 32
         });
         require(
-            (protocolRewardsSplit.treasury +
+            protocolRewardsSplit.treasury +
                 protocolRewardsSplit.nodeOperator +
                 protocolRewardsSplit.tnft +
-                protocolRewardsSplit.bnft) == SCALE,
+                protocolRewardsSplit.bnft == SCALE,
             ""
         );
     }
