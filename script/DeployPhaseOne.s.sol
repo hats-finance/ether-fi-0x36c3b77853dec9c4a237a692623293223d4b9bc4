@@ -130,7 +130,7 @@ contract DeployPhaseOne is Script {
         stakingManager.registerTNFTContract(address(TNFTInstance));
         stakingManager.registerBNFTContract(address(BNFTInstance));
 
-        scoreManagerInstance.addNewScoreType("Early Adopter Pool");
+        scoreManager.addNewScoreType("Early Adopter Pool");
 
         vm.stopBroadcast();
 
