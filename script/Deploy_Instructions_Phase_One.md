@@ -4,6 +4,7 @@
 ## Setup Environment
 
 Once you have the environment on VS code, you will need to run the following three commands to get everything working.
+
 * curl -L https://foundry.paradigm.xyz | bash
 * foundryup
 * git submodule update --init --recursive
@@ -31,7 +32,8 @@ If you currently do not have a .env file, and only a .example.env, perform the f
     source .env
 
 5. Lastly, run the following command to deploy
-    forge script script/DeployPhaseOne.s.sol:DeployPhaseOne --rpc-url $GOERLI_RPC_URL --broadcast --verify -vvvv
+    forge script script/DeployPhaseOne.s.sol:DeployPhaseOne --rpc-url $GOERLI_RPC_URL --broadcast --slow --verify -vvvv
+    
 
 If you are deploying to mainnet, change $GOERLI_RPC_URL to $MAINNET_RPC_URL
 
