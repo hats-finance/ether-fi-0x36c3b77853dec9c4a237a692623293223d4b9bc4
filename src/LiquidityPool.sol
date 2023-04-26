@@ -25,6 +25,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     IScoreManager public scoreManager;
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
+    IRegulationsManager public regulationsManager;
 
     mapping(uint256 => bool) public validators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
@@ -231,6 +232,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     function setMerkleProof(bytes32[] calldata _merkleProof) public onlyOwner {
         merkleProof = _merkleProof;
     }
+
+    function setEtherFiNodesManager(address _nodeManager) public onlyOwner {
+        nodesManager = IEtherFiNodesManager(_nodeManager);
+    }
+
 
 
     //--------------------------------------------------------------------------------------

@@ -314,8 +314,11 @@ contract LiquidityPoolTest is TestSetup {
         hoax(alice);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
 
-        hoax(bob);
-        liquidityPoolInstance.deposit{value: 64 ether}(bob);
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        liquidityPoolInstance.deposit{value: 64 ether}(bob, bobProof);
+        vm.stopPrank();
+
 
         vm.prank(owner);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds(2, bidIds);
@@ -367,8 +370,9 @@ contract LiquidityPoolTest is TestSetup {
         address node1 = managerInstance.etherfiNodeAddress(newValidators[0]);
         address node2 = managerInstance.etherfiNodeAddress(newValidators[1]);
 
-        EtherFiNode etherFiNode1 = EtherFiNode(node1);
-        EtherFiNode etherFiNode2 = EtherFiNode(node2);
+        EtherFiNode etherFiNode1 = EtherFiNode(payable(node1));
+        EtherFiNode etherFiNode2 = EtherFiNode(payable(node2));
+
 
         uint32[] memory exitRequestTimestamps = new uint32[](2);
         exitRequestTimestamps[0] = 1681351200; // Thu Apr 13 2023 02:00:00 UTC
