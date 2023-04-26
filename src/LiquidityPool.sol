@@ -62,8 +62,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         regulationsManager = IRegulationsManager(_regulationsManager);
     }
 
-    receive() external payable {}
-
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
