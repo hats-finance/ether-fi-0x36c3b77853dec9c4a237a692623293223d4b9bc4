@@ -169,7 +169,7 @@ contract DeployPhaseOne is Script {
 
     function writeSuiteVersionFile() internal {
         // Read Current version
-        string memory versionString = vm.readLine("release/logs/EtherFiSuite/version.txt");
+        string memory versionString = vm.readLine("release/logs/PhaseOne/version.txt");
 
         // Cast string to uint256
         uint256 version = _stringToUint(versionString);
@@ -178,7 +178,7 @@ contract DeployPhaseOne is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/EtherFiSuite/version.txt",
+            "release/logs/PhaseOne/version.txt",
             string(abi.encodePacked(Strings.toString(version)))
         );
 
@@ -186,7 +186,7 @@ contract DeployPhaseOne is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/EtherFiSuite/",
+                    "release/logs/PhaseOne/",
                     Strings.toString(version),
                     ".release"
                 )
@@ -215,7 +215,7 @@ contract DeployPhaseOne is Script {
 
     function writeNFTVersionFile() internal {
         // Read Current version
-        string memory versionString = vm.readLine("release/logs/NFTs/version.txt");
+        string memory versionString = vm.readLine("release/logs/PhaseOneNFTs/version.txt");
 
         // Cast string to uint256
         uint256 version = _stringToUint(versionString);
@@ -224,7 +224,7 @@ contract DeployPhaseOne is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/NFTs/version.txt",
+            "release/logs/PhaseOneNFTs/version.txt",
             string(abi.encodePacked(Strings.toString(version)))
         );
 
@@ -232,7 +232,7 @@ contract DeployPhaseOne is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/NFTs/",
+                    "release/logs/PhaseOneNFTs/",
                     Strings.toString(version),
                     ".release"
                 )
