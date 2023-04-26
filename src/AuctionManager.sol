@@ -9,7 +9,6 @@ import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "forge-std/console.sol";
 
 contract AuctionManager is
     Initializable,
