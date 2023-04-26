@@ -4,9 +4,9 @@
 ## Setup Environment
 
 Once you have the environment on VS code, you will need to run the following three commands to get everything working.
-    curl -L https://foundry.paradigm.xyz | bash
-    foundryup
-    git submodule update --init --recursive
+* curl -L https://foundry.paradigm.xyz | bash
+* foundryup
+* git submodule update --init --recursive
 
 # Step 2:
 ## Deploy EtherFi Suite
