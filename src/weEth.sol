@@ -7,7 +7,6 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
 import "./interfaces/IEETH.sol";
 import "./interfaces/ILiquidityPool.sol";
-import "forge-std/console.sol";
 
 contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
     //--------------------------------------------------------------------------------------
