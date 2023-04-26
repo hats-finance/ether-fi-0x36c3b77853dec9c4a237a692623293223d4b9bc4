@@ -134,7 +134,7 @@ contract AuctionManager is
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
-        for (uint256 i = 0; i < _bidSize; i = i++) {
+        for (uint256 i = 0; i < _bidSize; i++) {
             uint64 ipfsIndex = nodeOperatorManagerInterface.fetchNextKeyIndex(
                 msg.sender
             );
