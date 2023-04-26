@@ -182,7 +182,7 @@ contract LargeScenariosTest is TestSetup {
             protocolRevenueManagerInstance.globalRevenueIndex(),
             0.0025 ether + 1
         );
-        assertEq(EtherFiNode(danNode).localRevenueIndex(), 1);
+        assertEq(IEtherFiNode(danNode).localRevenueIndex(), 1);
 
         /// Elvis batch registers validators
         // Generate Elvis's deposit data
