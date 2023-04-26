@@ -70,8 +70,8 @@ contract StakingManager is
         bytes validatorPubKey,
         string ipfsHashForEncryptedValidatorKey
     );
-    event WhitelistDisabled(bool whitelistStatus);
-    event WhitelistEnabled(bool whitelistStatus);
+    event WhitelistDisabled();
+    event WhitelistEnabled();
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
     //--------------------------------------------------------------------------------------
@@ -318,14 +318,14 @@ contract StakingManager is
     /// @dev Allows both regular users and whitelisted users to bid
     function disableWhitelist() public onlyOwner {
         whitelistEnabled = false;
-        emit WhitelistDisabled(whitelistEnabled);
+        emit WhitelistDisabled();
     }
 
     /// @notice Enables the bid whitelist
     /// @dev Only users who are on a whitelist can bid
     function enableWhitelist() public onlyOwner {
         whitelistEnabled = true;
-        emit WhitelistEnabled(whitelistEnabled);
+        emit WhitelistEnabled();
     }
 
     /// @notice Updates the merkle root whitelists have been updated
