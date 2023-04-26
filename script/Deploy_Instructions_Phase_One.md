@@ -21,9 +21,9 @@ If you currently do not have a .env file, and only a .example.env, perform the f
 1. Copy the .example.env file and create a new file with the same contents called .env (this name will hide it from public sources)
 2. The file will consist of the following:
 
-GOERLI_RPC_URL=
-PRIVATE_KEY=
-ETHERSCAN_API_KEY=
+    * GOERLI_RPC_URL=
+    * PRIVATE_KEY=
+    * ETHERSCAN_API_KEY=
 
 3. Please fill in the data accordingly. You can find a GOERLI_RPC_URL or MAINNET_RPC_URL in the case of mainnet deployment, on Alchemy. The private key used here will be the multisig wallet you wish to use. And lastly you can retreive a ETHERSCAN_API_KEY from etherscan if you sign up.
 
@@ -39,5 +39,8 @@ If you are deploying to mainnet, change $GOERLI_RPC_URL to $MAINNET_RPC_URL
 # Step 3
 ## Set Merkle Root
 
-Once all contracts have been deployed and dependencies set up, generate a merkle root and set in using the updateMerkleRoot function on the NodeOperator contract. This will allow for whitelist bidding in the Auction.
+Once all contracts have been deployed and dependencies set up, we will need to update the merkle roots. 
+
+1. Generate the merkle tree for the Node Operators and call the updateMerkleRoot function in the Node Operator Manager to set the root.
+2. Gnerate the merkle tree for stakers who are whitelisted and call the updateMerkleRoot function in the Staking Manager to set the root.
 
