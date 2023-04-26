@@ -41,6 +41,18 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_DisableInitializer() public {
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        claimReceiverPoolImplementation.initialize(
+            address(rETH),
+            address(wstETH),
+            address(sfrxEth),
+            address(cbEth),
+            address(scoreManagerInstance),
+            address(regulationsManagerInstance));
+    }
+
     function test_DepositFailsWithIncorrectMerkle() public {
         bytes32[] memory proof1 = merkle.getProof(dataForVerification, 0);
         bytes32[] memory proof2 = merkle.getProof(dataForVerification, 1);

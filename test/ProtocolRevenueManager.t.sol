@@ -11,6 +11,10 @@ contract ProtocolRevenueManagerTest is TestSetup {
     function setUp() public {
         setUpTests();
 
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        protocolRevenueManagerImplementation.initialize();
+
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
         assertEq(
             protocolRevenueManagerInstance.vestedAuctionFeeSplitForStakers(),

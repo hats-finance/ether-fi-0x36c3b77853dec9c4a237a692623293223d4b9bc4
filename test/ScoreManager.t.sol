@@ -9,6 +9,12 @@ contract ScoreManagerTest is TestSetup {
         setUpTests();
     }
 
+     function test_DisableInitializer() public {
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        scoreManagerImplementation.initialize();
+    }
+
     function test_setScoreFailsIfAddressZero() public {
         vm.prank(owner);
         scoreManagerInstance.setCallerStatus(alice, true);
