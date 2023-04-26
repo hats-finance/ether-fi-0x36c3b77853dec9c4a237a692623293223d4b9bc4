@@ -108,7 +108,7 @@ contract SmallScenariosTest is TestSetup {
         // Check that scores are recorded in Score Manager
         assertEq(
             scoreManagerInstance.scores(0, alice),
-            bytes32(bytes(abi.encode(alicePoints)))
+            alicePoints
         );
 
 
@@ -144,11 +144,11 @@ contract SmallScenariosTest is TestSetup {
         scoreManagerInstance.setScore(
             0,
             dan,
-            bytes32(abi.encodePacked(danPoints))
+            danPoints
         );
         assertEq(
             scoreManagerInstance.scores(0, dan),
-            bytes32(bytes(abi.encode(danPoints)))
+           danPoints
         );
 
     }
