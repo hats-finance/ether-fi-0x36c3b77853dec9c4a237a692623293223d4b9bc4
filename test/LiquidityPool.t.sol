@@ -6,23 +6,43 @@ import "forge-std/console.sol";
 
 contract LiquidityPoolTest is TestSetup {
 
+    bytes32[] public aliceProof;
+    bytes32[] public bobProof;
+
     function setUp() public {
         setUpTests();
+        aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        bobProof = merkle.getProof(whiteListedAddresses, 4);
     }
 
     function test_StakingManagerLiquidityPool() public {
         vm.startPrank(alice);
         vm.deal(alice, 2 ether);
         vm.expectRevert("User is not whitelisted");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        vm.stopPrank();
 
+        hoax(alice);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+
+        startHoax(owner);
+        stakingManagerInstance.enableWhitelist();
+        vm.expectRevert("User not permitted to stake");
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, bobProof);
+        stakingManagerInstance.disableWhitelist();
+        vm.stopPrank();
+
+        vm.prank(owner);
+        stakingManagerInstance.enableWhitelist();
+
+        startHoax(alice);
+        uint256 aliceBalBefore = alice.balance;
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
-        assertEq(alice.balance, 0 ether);
+        assertEq(alice.balance, aliceBalBefore - 2 ether);
     }
 
     function test_StakingManagerLiquidityFails() public {
@@ -31,14 +51,14 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.startPrank(owner);
         vm.expectRevert();
-        liquidityPoolInstance.deposit{value: 2 ether}(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
     }
 
     function test_WithdrawLiquidityPoolSuccess() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.deposit{value: 2 ether}(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 0);
@@ -47,14 +67,14 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.deposit{value: 2 ether}(bob);
+        liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 2 ether);
         vm.stopPrank();
 
         vm.startPrank(alice);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
         assertEq(alice.balance, 0 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 2 ether);
@@ -94,7 +114,7 @@ contract LiquidityPoolTest is TestSetup {
         regulationsManagerInstance.confirmEligibility("Hash_Example");
         vm.deal(alice, 3 ether);
         vm.expectRevert();
-        liquidityPoolNoToken.deposit{value: 2 ether}(alice);
+        liquidityPoolNoToken.deposit{value: 2 ether}(alice, aliceProof);
     }
 
     function test_LiquidityPoolBatchDepositWithBidIds() public {
@@ -121,7 +141,8 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(address(liquidityPoolInstance), 35 ether);
         assertEq(address(liquidityPoolInstance).balance, 35 ether);
 
-        vm.prank(owner);
+        vm.startPrank(owner);
+        stakingManagerInstance.enableWhitelist();
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
 
         assertEq(address(liquidityPoolInstance).balance, 3 ether);
@@ -134,7 +155,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.deposit{value: 2 ether}(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 0);
@@ -143,7 +164,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.deposit{value: 2 ether}(bob);
+        liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 2 ether);
@@ -164,7 +185,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.deposit{value: 2 ether}(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 0);
@@ -173,7 +194,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.deposit{value: 2 ether}(bob);
+        liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 2 ether);
@@ -224,7 +245,7 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.deposit{value: 64 ether}(bob);
+        liquidityPoolInstance.deposit{value: 64 ether}(bob, bobProof);
         vm.stopPrank();
 
         assertEq(address(liquidityPoolInstance).balance, 64 ether);

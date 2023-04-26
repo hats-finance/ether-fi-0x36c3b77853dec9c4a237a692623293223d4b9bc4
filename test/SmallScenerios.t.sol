@@ -229,9 +229,12 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = chadBidIds[4];
 
+        bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
+
         startHoax(dan);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            danProof
         );
 
         (amount, , , isActive) = auctionInstance.bids(chadBidIds[4]);
@@ -265,6 +268,7 @@ contract SmallScenariosTest is TestSetup {
         //-------------------------------------------------------------------------------------------------------------------------------
 
         uint256 gregBalanceBeforeStaking = greg.balance;
+        bytes32[] memory gregProof = merkle.getProof(whiteListedAddresses, 8);
 
         startHoax(greg);
         uint256[] memory bidIdArray2 = new uint256[](6);
@@ -276,7 +280,8 @@ contract SmallScenariosTest is TestSetup {
         bidIdArray2[5] = bobBidIds[3];
 
         uint256[] memory gregProcessedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 192 ether}(
-            bidIdArray2
+            bidIdArray2,
+            gregProof
         );
 
         staker = stakingManagerInstance.bidIdToStaker(bobBidIds[2]);

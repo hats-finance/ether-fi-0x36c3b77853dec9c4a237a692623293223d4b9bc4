@@ -14,6 +14,7 @@ contract EtherFiNodeTest is TestSetup {
         setUpTests();
 
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
             proof,
@@ -31,7 +32,8 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray[0] = bidId[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            proof2
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -125,6 +127,8 @@ contract EtherFiNodeTest is TestSetup {
 
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
+        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
+        bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -157,7 +161,8 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray[0] = bidId1[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            bobProof
         );
 
         hoax(dan);
@@ -165,7 +170,8 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray[0] = bidId2[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            danProof
         );
 
         {

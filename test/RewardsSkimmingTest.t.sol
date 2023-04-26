@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import "../lib/murky/src/Merkle.sol";
 
 contract RewardsSkimmingTest is TestSetup {
     uint256 num_operators;
@@ -18,8 +19,12 @@ contract RewardsSkimmingTest is TestSetup {
     uint256[] bidId;
 
     bytes32 newRoot;
+    Merkle merkleStakers;
+    bytes32 rootStakers;
+
     bytes32[] public newWhiteListedAddresses;
-    
+    bytes32[] public stakerWhitelistedAddresses;
+
     function setUp() public {
         num_operators = 1; // should be 1
         num_stakers = 32;
@@ -39,11 +44,14 @@ contract RewardsSkimmingTest is TestSetup {
 
         setUpTests();
         _setupMerkle();
+        _setUpStakerMerkle();
 
-        vm.prank(owner);
+        vm.startPrank(owner);
         nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
+        stakingManagerInstance.updateMerkleRoot(rootStakers);
 
         bytes32[] memory proof = merkle.getProof(newWhiteListedAddresses, 1);
+        vm.stopPrank();
 
         startHoax(operators[0]);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -69,7 +77,8 @@ contract RewardsSkimmingTest is TestSetup {
             startHoax(stakers[i]);
             uint256[] memory candidateBidIds = new uint256[](1);
             candidateBidIds[0] = validatorIds[i];
-            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds);
+            bytes32[] memory proof = merkleStakers.getProof(stakerWhitelistedAddresses, i);
+            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds, proof);
 
             address etherFiNode = managerInstance.etherfiNodeAddress(candidateBidIds[0]);
 
@@ -114,6 +123,17 @@ contract RewardsSkimmingTest is TestSetup {
             )
         );
         newRoot = merkle.getRoot(newWhiteListedAddresses);
+    }
+
+    function _setUpStakerMerkle() internal {
+        merkleStakers = new Merkle();
+
+        for(uint256 x; x < 32; x++){
+            stakerWhitelistedAddresses.push(keccak256(
+                abi.encodePacked(stakers[x])
+            ));
+        }
+        rootStakers = merkleStakers.getRoot(stakerWhitelistedAddresses);
     }
 
     function _deals() internal {

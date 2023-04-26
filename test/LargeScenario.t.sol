@@ -21,6 +21,9 @@ contract LargeScenariosTest is TestSetup {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
         bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
+        bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
+        bytes32[] memory elvisProof = merkle.getProof(whiteListedAddresses, 7);
+        bytes32[] memory gregProof = merkle.getProof(whiteListedAddresses, 8);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -75,7 +78,7 @@ contract LargeScenariosTest is TestSetup {
         /// Actors Stake
         hoax(dan);
         uint256[] memory danProcessedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 32 ether}(aliceBidIds);
+            .batchDepositWithBidIds{value: 32 ether}(aliceBidIds, danProof);
         assertEq(danProcessedBidIds.length, 1);
         assertEq(danProcessedBidIds[0], aliceBidIds[0]);
         address staker = stakingManagerInstance.bidIdToStaker(
@@ -99,7 +102,7 @@ contract LargeScenariosTest is TestSetup {
         // 10 Deposits but only 9 bids
         uint256 balanceBefore = elvis.balance;
         uint256[] memory elvisProcessedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 320 ether}(aliceBidIds);
+            .batchDepositWithBidIds{value: 320 ether}(aliceBidIds, elvisProof);
         assertEq(elvisProcessedBidIds.length, 9);
         // staking manager balance should be 320 ether. 320 ether - 32 ether (1 deposit) + 32 ether from previous deposit
         assertEq(address(stakingManagerInstance).balance, 320 ether);
@@ -130,7 +133,7 @@ contract LargeScenariosTest is TestSetup {
 
         hoax(greg);
         uint256[] memory gregProcessedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 32 ether}(bobBidIds);
+            .batchDepositWithBidIds{value: 32 ether}(bobBidIds, gregProof);
         assertEq(gregProcessedBidIds.length, 1);
 
         /// Register Validators

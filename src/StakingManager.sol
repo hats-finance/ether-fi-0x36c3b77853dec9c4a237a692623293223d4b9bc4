@@ -19,6 +19,7 @@ import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 import "forge-std/console.sol";
 
 contract StakingManager is
@@ -36,6 +37,9 @@ contract StakingManager is
 
     address public implementationContract;
     address public liquidityPoolContract;
+
+    bool public whitelistEnabled;
+    bytes32 public merkleRoot;
 
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
@@ -66,6 +70,9 @@ contract StakingManager is
         bytes validatorPubKey,
         string ipfsHashForEncryptedValidatorKey
     );
+    event WhitelistDisabled();
+    event WhitelistEnabled();
+    event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -101,7 +108,8 @@ contract StakingManager is
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
     function batchDepositWithBidIds(
-        uint256[] calldata _candidateBidIds
+        uint256[] calldata _candidateBidIds,
+        bytes32[] calldata _merkleProof
     )
         external
         payable
@@ -110,6 +118,10 @@ contract StakingManager is
         nonReentrant
         returns (uint256[] memory)
     {
+        if(whitelistEnabled) {
+            require(MerkleProofUpgradeable.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(msg.sender))), "User not whitelisted");
+        }
+
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
         require(numberOfDeposits <= maxBatchDepositSize, "Batch too large");
@@ -300,6 +312,31 @@ contract StakingManager is
         require(_newImplementation != address(0), "No zero addresses");
         upgradableBeacon.upgradeTo(_newImplementation);
         implementationContract = _newImplementation;
+    }
+
+    /// @notice Disables the bid whitelist
+    /// @dev Allows both regular users and whitelisted users to bid
+    function disableWhitelist() public onlyOwner {
+        whitelistEnabled = false;
+        emit WhitelistDisabled();
+    }
+
+    /// @notice Enables the bid whitelist
+    /// @dev Only users who are on a whitelist can bid
+    function enableWhitelist() public onlyOwner {
+        whitelistEnabled = true;
+        emit WhitelistEnabled();
+    }
+
+    /// @notice Updates the merkle root whitelists have been updated
+    /// @dev merkleroot gets generated in JS offline and sent to the contract
+    /// @dev used in the staking manager and LP
+    /// @param _newMerkle new merkle root to be used for staking
+    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
+        bytes32 oldMerkle = merkleRoot;
+        merkleRoot = _newMerkle;
+
+        emit MerkleUpdated(oldMerkle, _newMerkle);
     }
 
     //Pauses the contract
