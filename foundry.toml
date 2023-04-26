@@ -12,3 +12,4 @@ goerli = "${GOERLI_RPC_URL}"
 
 [etherscan]
 mainnet = { key = "${ETHERSCAN_API_KEY}" }
+goerli =  { key = "${ETHERSCAN_API_KEY}" }
