@@ -438,6 +438,9 @@ contract EtherFiNode is IEtherFiNode {
         uint32 _startTimestamp,
         uint32 _endTimestamp
     ) internal pure returns (uint256) {
+        if (_endTimestamp <= _startTimestamp) {
+            return 0;
+        }
         uint256 timeElapsed = _endTimestamp - _startTimestamp;
         return uint256(timeElapsed / (24 * 3_600));
     }

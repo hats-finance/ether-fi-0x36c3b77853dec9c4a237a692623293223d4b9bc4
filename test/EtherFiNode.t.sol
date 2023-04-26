@@ -798,4 +798,41 @@ contract EtherFiNodeTest is TestSetup {
         (bool sent, ) = address(etherfiNode).call{value: 5 ether}("");
         assertEq(address(etherfiNode).balance, nodeBalance + 5 ether);
     }
+
+    function test_ExitRequestAfterExitFails() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitTimestamps = new uint32[](1);
+
+        validatorIds[0] = bidId[0];
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+
+        vm.prank(owner);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+
+        vm.prank(TNFTInstance.ownerOf(validatorIds[0]));
+        exitTimestamps[0] = uint32(block.timestamp) - 1000;
+
+        // T-NFT holder sends the exit request after the node is marked EXITED
+        vm.expectRevert("validator node is not live");
+        managerInstance.sendExitRequest(validatorIds[0]);
+    }
+
+    function test_ExitTimestampBeforeExitRequestLeadsToZeroNonExitPenalty() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitTimestamps = new uint32[](1);
+
+        validatorIds[0] = bidId[0];
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+
+        vm.prank(TNFTInstance.ownerOf(validatorIds[0]));
+        managerInstance.sendExitRequest(validatorIds[0]);
+
+        // the node actually exited a second before the exit request from the T-NFT holder
+        vm.prank(owner);
+        exitTimestamps[0] = uint32(block.timestamp) - 1;
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
+        assertEq(nonExitPenalty, 0 ether);
+    }
 }
