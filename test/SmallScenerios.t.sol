@@ -148,7 +148,8 @@ contract SmallScenariosTest is TestSetup {
         );
         assertEq(
             scoreManagerInstance.scores(0, dan),
-           danPoints
+            danPoints
+
         );
 
     }

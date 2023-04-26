@@ -38,6 +38,13 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Based on the sources where they come from, the staking rewards are split into
+    ///  - those from the execution layer: transaction fees and MEV
+    ///  - those from the consensus layer: Pstaking rewards for attesting the state of the chain, 
+    ///    proposing a new block, or being selected in a validator sync committe
+    ///  To receive the rewards from the execution layer, it should have 'receive()' function.
+    receive() external payable {}
+
     /// @notice Set the validator phase
     /// @param _phase the new phase
     function setPhase(
