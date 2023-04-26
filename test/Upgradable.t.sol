@@ -365,8 +365,8 @@ contract UpgradeTest is TestSetup {
         safe1 = managerInstance.etherfiNodeAddress(processedBids[0]);
         safe2 = managerInstance.etherfiNodeAddress(aliceProcessedBids[0]);
 
-        EtherFiNodeV2 safe1V2 = EtherFiNodeV2(safe1);
-        EtherFiNodeV2 safe2V2 = EtherFiNodeV2(safe2);
+        EtherFiNodeV2 safe1V2 = EtherFiNodeV2(payable(safe1));
+        EtherFiNodeV2 safe2V2 = EtherFiNodeV2(payable(safe2));
 
         assertEq(safe1V2.isUpgraded(), true);
         assertEq(safe2V2.isUpgraded(), true);
