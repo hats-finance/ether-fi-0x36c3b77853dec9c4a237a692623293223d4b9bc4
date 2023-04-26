@@ -12,6 +12,16 @@ contract EtherFiNodesManagerTest is TestSetup {
     function setUp() public {
         setUpTests();
 
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        managerImplementation.initialize(
+            address(treasuryInstance),
+            address(auctionInstance),
+            address(stakingManagerInstance),
+            address(TNFTInstance),
+            address(BNFTInstance),
+            address(protocolRevenueManagerInstance));
+
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
         

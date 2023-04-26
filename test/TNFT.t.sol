@@ -11,6 +11,12 @@ contract TnftTest is TestSetup {
         assertEq(TNFTInstance.stakingManagerAddress(), address(stakingManagerInstance));
     }
 
+    function test_DisableInitializer() public {
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        BNFTImplementation.initialize(address(stakingManagerInstance));
+    }
+
     function test_TNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
         vm.expectRevert("Only staking manager contract");
