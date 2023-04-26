@@ -302,9 +302,9 @@ contract EtherFiNode is IEtherFiNode {
 
         uint256 remaining = _principal;
         while (daysElapsed > 0) {
-            uint256 exponent = Math.min(30, daysElapsed); // valid with principle <= 1e43
+            uint256 exponent = Math.min(7, daysElapsed); // TODO: Re-calculate bounds
             remaining = (remaining * (100 - uint256(_dailyPenalty)) ** exponent) / (100 ** exponent);
-            daysElapsed -= Math.min(30, daysElapsed);
+            daysElapsed -= Math.min(7, daysElapsed);
         }
 
         return _principal - remaining;
