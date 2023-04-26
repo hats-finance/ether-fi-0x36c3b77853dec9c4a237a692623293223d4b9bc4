@@ -134,7 +134,7 @@ contract AuctionManager is
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
-        for (uint256 i = 0; i < _bidSize; i = uncheckedInc(i)) {
+        for (uint256 i = 0; i < _bidSize; i = ++i) {
             uint64 ipfsIndex = nodeOperatorManagerInterface.fetchNextKeyIndex(
                 msg.sender
             );
@@ -239,12 +239,6 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
-
-    function uncheckedInc(uint256 x) private pure returns (uint256) {
-        unchecked {
-            return x + 1;
-        }
-    }
 
     function _cancelBid(uint256 _bidId) internal {
 
