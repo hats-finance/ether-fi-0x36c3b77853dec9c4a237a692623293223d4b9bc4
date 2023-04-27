@@ -11,13 +11,19 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
 
     address public stakingManagerAddress;
-    uint256[32] __gap;
+    uint256[49] public __gap;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
     function initialize(address _stakingManagerAddress) initializer external {
+        require(_stakingManagerAddress != address(0), "No zero addresses");
         __ERC721_init("Bond NFT", "BNFT");
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -30,17 +36,17 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     /// @param _reciever receiver of the NFT
     /// @param _validatorId the ID of the NFT
     function mint(address _reciever, uint256 _validatorId) external onlyStakingManager {
-        _safeMint(_reciever, _validatorId);
+        _mint(_reciever, _validatorId);
     }
-
-    //ERC721 transfer function being overidden to make it soulbound
-    function transferFrom(
+    
+    //ERC721 function being overidden to make it soulbound
+    function _beforeTokenTransfer(
         address from,
         address to,
-        uint256 tokenId
-    ) public virtual override(ERC721Upgradeable) {
+        uint256 firstTokenId,
+        uint256 batchSize
+    ) internal virtual override(ERC721Upgradeable ){
         require(from == address(0), "Err: token is SOUL BOUND");
-        super.transferFrom(from, to, tokenId);
     }
 
     //--------------------------------------------------------------------------------------

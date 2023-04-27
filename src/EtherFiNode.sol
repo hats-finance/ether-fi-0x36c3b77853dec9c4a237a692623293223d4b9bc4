@@ -22,8 +22,14 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        stakingStartTimestamp = type(uint32).max;
+    }
+
     function initialize(address _etherFiNodesManager) public {
         require(stakingStartTimestamp == 0, "already initialised");
+        require(_etherFiNodesManager != address(0), "No zero addresses");
         stakingStartTimestamp = uint32(block.timestamp);
         etherFiNodesManager = _etherFiNodesManager;
     }
@@ -31,6 +37,13 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    /// @notice Based on the sources where they come from, the staking rewards are split into
+    ///  - those from the execution layer: transaction fees and MEV
+    ///  - those from the consensus layer: Pstaking rewards for attesting the state of the chain, 
+    ///    proposing a new block, or being selected in a validator sync committe
+    ///  To receive the rewards from the execution layer, it should have 'receive()' function.
+    receive() external payable {}
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
@@ -62,6 +75,7 @@ contract EtherFiNode is IEtherFiNode {
     function markExited(
         uint32 _exitTimestamp
     ) external onlyEtherFiNodeManagerContract {
+        require(_exitTimestamp <= block.timestamp, "Invalid exit timesamp");
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
     }
@@ -78,7 +92,7 @@ contract EtherFiNode is IEtherFiNode {
         vestedAuctionRewards = msg.value;
     }
 
-    function processVestedAuctionFeeWithdrawal() external {
+    function processVestedAuctionFeeWithdrawal() external onlyEtherFiNodeManagerContract {
         if (_getClaimableVestedRewards() > 0) {
             vestedAuctionRewards = 0;
         }
@@ -202,13 +216,15 @@ contract EtherFiNode is IEtherFiNode {
         uint256 rewards = (balance > vestedAuctionRewards)
             ? balance - vestedAuctionRewards
             : 0;
+        
         if (rewards >= 32 ether) {
             rewards -= 32 ether;
         } else if (rewards >= 8 ether) {
             // In a case of Slashing, without the Oracle, the exact staking rewards cannot be computed in this case
             // Assume no staking rewards in this case.
-            rewards = 0;
+            return (0, 0, 0, 0);
         }
+
         (
             uint256 operator,
             uint256 tnft,
@@ -278,29 +294,20 @@ contract EtherFiNode is IEtherFiNode {
             exitRequestTimestamp,
             _exitTimestamp
         );
-        uint256 daysPerWeek = 7;
-        uint256 weeksElapsed = daysElapsed / daysPerWeek;
 
-        uint256 remaining = _principal;
+        // full penalty
         if (daysElapsed > 365) {
-            remaining = 0;
-        } else {
-            for (uint64 i = 0; i < weeksElapsed; i++) {
-                remaining =
-                    (remaining * (100 - _dailyPenalty) ** daysPerWeek) /
-                    (100 ** daysPerWeek);
-            }
-
-            daysElapsed -= weeksElapsed * daysPerWeek;
-            for (uint64 i = 0; i < daysElapsed; i++) {
-                remaining = (remaining * (100 - _dailyPenalty)) / 100;
-            }
+            return _principal;
         }
 
-        uint256 penaltyAmount = _principal - remaining;
-        require(penaltyAmount >= 0, "Incorrect penalty amount");
+        uint256 remaining = _principal;
+        while (daysElapsed > 0) {
+            uint256 exponent = Math.min(7, daysElapsed); // TODO: Re-calculate bounds
+            remaining = (remaining * (100 - uint256(_dailyPenalty)) ** exponent) / (100 ** exponent);
+            daysElapsed -= Math.min(7, daysElapsed);
+        }
 
-        return penaltyAmount;
+        return _principal - remaining;
     }
 
     /// @notice Given the current balance of the ether fi node after its EXIT,
@@ -329,16 +336,15 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
+        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
         require(
-            address(this).balance >= 16 ether,
+            balance >= 16 ether,
             "not enough balance for full withdrawal"
         );
         require(
             phase == VALIDATOR_PHASE.EXITED,
             "validator node is not exited"
         );
-        uint256 balance = address(this).balance -
-            (vestedAuctionRewards - _getClaimableVestedRewards());
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
@@ -396,7 +402,7 @@ contract EtherFiNode is IEtherFiNode {
         //  the rest goes to the treasury
         if (bnftNonExitPenalty > 0.5 ether) {
             payouts[0] += 0.5 ether;
-            payouts[3] += (bnftNonExitPenalty - 0.5 ether);
+            payouts[3] += bnftNonExitPenalty - 0.5 ether;
         } else {
             payouts[0] += bnftNonExitPenalty;
         }
@@ -432,8 +438,11 @@ contract EtherFiNode is IEtherFiNode {
         uint32 _startTimestamp,
         uint32 _endTimestamp
     ) internal pure returns (uint256) {
+        if (_endTimestamp <= _startTimestamp) {
+            return 0;
+        }
         uint256 timeElapsed = _endTimestamp - _startTimestamp;
-        return uint256(timeElapsed / (24 * 3600));
+        return uint256(timeElapsed / (24 * 3_600));
     }
 
     function calculatePayouts(

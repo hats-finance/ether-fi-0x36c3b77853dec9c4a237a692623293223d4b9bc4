@@ -14,14 +14,22 @@ contract ClaimReceiverPoolTest is TestSetup {
     address constant WETH = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
     address constant DAI = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
 
-    EarlyAdopterPool public adopterPool;
-    
+    uint256[] public slippageArray;
+
     IWETH private weth = IWETH(WETH);
     IERC20 private dai = IERC20(DAI);
+
+    EarlyAdopterPool public adopterPool;
 
     function setUp() public {
         
         setUpTests();
+
+        slippageArray = new uint256[](4);
+        slippageArray[0] = 90;
+        slippageArray[1] = 90;
+        slippageArray[2] = 90;
+        slippageArray[3] = 90;
 
         vm.startPrank(owner);
         adopterPool = new EarlyAdopterPool(
@@ -33,18 +41,32 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_DisableInitializer() public {
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        claimReceiverPoolImplementation.initialize(
+            address(rETH),
+            address(wstETH),
+            address(sfrxEth),
+            address(cbEth),
+            address(scoreManagerInstance),
+            address(regulationsManagerInstance));
+    }
+
     function test_DepositFailsWithIncorrectMerkle() public {
         bytes32[] memory proof1 = merkle.getProof(dataForVerification, 0);
         bytes32[] memory proof2 = merkle.getProof(dataForVerification, 1);
         bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
-        vm.prank(owner);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
 
         vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1);
+        claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1, slippageArray);
         vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof2);
+        claimReceiverPoolInstance.deposit{value: 0.3 ether}(0, 0, 0, 0, 652, proof2, slippageArray);
         vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3);
+        claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3, slippageArray);
     }
 
     function test_MigrateWorksCorrectly() public {
@@ -52,14 +74,18 @@ contract ClaimReceiverPoolTest is TestSetup {
 
         vm.prank(owner);
 
-        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
-        assertEq(scoreManagerInstance.totalScores(0), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+        assertEq(scoreManagerInstance.totalScores(0), 0);
 
-        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(0))));
-        assertEq(scoreManagerInstance.totalScores(0), bytes32(abi.encodePacked(uint256(0))));
+        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),0);
+        assertEq(scoreManagerInstance.totalScores(0), 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
+        vm.expectRevert("User is not whitelisted");
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
+
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0.2 ether);
@@ -67,11 +93,11 @@ contract ClaimReceiverPoolTest is TestSetup {
             eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
             0.2 ether
         );
-        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), bytes32(abi.encodePacked(uint256(652))));
+        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 652);
 
 
         vm.expectRevert("Already Deposited");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
         vm.stopPrank();
 
         vm.deal(owner, 100 ether);
@@ -110,11 +136,16 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.deal(bob, 0.1 ether);
         vm.deal(dan, 0.1 ether);
 
-        vm.prank(bob);
-        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 400, bobProof);
+        vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+
+        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 400, bobProof, slippageArray);
         vm.stopPrank();
-        vm.prank(dan);
-        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 800, danProof);
+
+        vm.startPrank(dan);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+
+        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 800, danProof, slippageArray);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(bob), 0.1 ether);

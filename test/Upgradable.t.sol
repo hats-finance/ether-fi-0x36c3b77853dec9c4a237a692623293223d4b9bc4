@@ -71,9 +71,17 @@ contract UpgradeTest is TestSetup {
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
     ProtocolRevenueManagerV2 public protocolRevenueManagerV2Instance;
     StakingManagerV2 public stakingManagerV2Instance;
+
+    uint256[] public slippageArray;
    
     function setUp() public {
         setUpTests();
+
+        slippageArray = new uint256[](4);
+        slippageArray[0] = 90;
+        slippageArray[1] = 90;
+        slippageArray[2] = 90;
+        slippageArray[3] = 90;
     }
 
     function test_CanUpgradeAuctionManager() public {
@@ -120,7 +128,8 @@ contract UpgradeTest is TestSetup {
         claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
         assertEq(claimReceiverPoolInstance.getImplementation(), address(claimReceiverPoolImplementation));
@@ -130,7 +139,7 @@ contract UpgradeTest is TestSetup {
         
         vm.prank(owner);
         claimReceiverPoolInstance.upgradeTo(address(claimReceiverV2Implementation));
-        claimReceiverPoolV2Instance = ClaimReceiverPoolV2(address(claimReceiverPoolProxy));
+        claimReceiverPoolV2Instance = ClaimReceiverPoolV2(payable(address(claimReceiverPoolProxy)));
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.startPrank(owner);
@@ -139,7 +148,8 @@ contract UpgradeTest is TestSetup {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManagerInstance)
+            address(scoreManagerInstance),
+            address(regulationsManagerInstance)
         );
         assertEq(claimReceiverPoolV2Instance.getImplementation(), address(claimReceiverV2Implementation));
 
@@ -154,7 +164,8 @@ contract UpgradeTest is TestSetup {
         claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
 
         assertEq(scoreManagerInstance.getImplementation(), address(scoreManagerImplementation));
 
@@ -319,7 +330,7 @@ contract UpgradeTest is TestSetup {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, proof);
 
         address safe1 = managerInstance.etherfiNodeAddress(processedBids[0]);
         console.log(safe1);
@@ -338,7 +349,7 @@ contract UpgradeTest is TestSetup {
         startHoax(alice);
         uint256[] memory aliceBidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        uint256[] memory aliceProcessedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(aliceBidIds);
+        uint256[] memory aliceProcessedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(aliceBidIds, aliceProof);
 
         address safe2 = managerInstance.etherfiNodeAddress(aliceProcessedBids[0]);
         console.log(safe2);
@@ -354,8 +365,8 @@ contract UpgradeTest is TestSetup {
         safe1 = managerInstance.etherfiNodeAddress(processedBids[0]);
         safe2 = managerInstance.etherfiNodeAddress(aliceProcessedBids[0]);
 
-        EtherFiNodeV2 safe1V2 = EtherFiNodeV2(safe1);
-        EtherFiNodeV2 safe2V2 = EtherFiNodeV2(safe2);
+        EtherFiNodeV2 safe1V2 = EtherFiNodeV2(payable(safe1));
+        EtherFiNodeV2 safe2V2 = EtherFiNodeV2(payable(safe2));
 
         assertEq(safe1V2.isUpgraded(), true);
         assertEq(safe2V2.isUpgraded(), true);

@@ -39,19 +39,21 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         bytes memory _ipfsHash,
         uint64 _totalKeys
     ) public {
-        require(registered[msg.sender] == false, "Already registered");
-
-        addressToOperatorData[msg.sender] = KeyData({
+        require(!registered[msg.sender], "Already registered");
+        
+        KeyData memory keyData = KeyData({
             totalKeys: _totalKeys,
             keysUsed: 0,
             ipfsHash: abi.encodePacked(_ipfsHash)
         });
 
+        addressToOperatorData[msg.sender] = keyData;
+
         _verifyWhitelistedAddress(msg.sender, _merkleProof);
         registered[msg.sender] = true;
         emit OperatorRegistered(
-            addressToOperatorData[msg.sender].totalKeys,
-            addressToOperatorData[msg.sender].keysUsed,
+            keyData.totalKeys,
+            keyData.keysUsed,
             _ipfsHash
         );
     }
@@ -62,14 +64,15 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     function fetchNextKeyIndex(
         address _user
     ) external onlyAuctionManagerContract returns (uint64) {
-        uint64 totalKeys = addressToOperatorData[_user].totalKeys;
+        KeyData storage keyData = addressToOperatorData[_user];
+        uint64 totalKeys = keyData.totalKeys;
         require(
-            addressToOperatorData[_user].keysUsed < totalKeys,
+            keyData.keysUsed < totalKeys,
             "Insufficient public keys"
         );
 
-        uint64 ipfsIndex = addressToOperatorData[_user].keysUsed;
-        addressToOperatorData[_user].keysUsed++;
+        uint64 ipfsIndex = keyData.keysUsed;
+        keyData.keysUsed++;
         return ipfsIndex;
     }
 
@@ -102,9 +105,10 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     function getNumKeysRemaining(
         address _user
     ) external view returns (uint64 numKeysRemaining) {
+        KeyData storage keyData = addressToOperatorData[_user];
+
         numKeysRemaining =
-            addressToOperatorData[_user].totalKeys -
-            addressToOperatorData[_user].keysUsed;
+            keyData.totalKeys - keyData.keysUsed;
     }
 
     /// @notice gets if the user is whitelisted
@@ -127,6 +131,8 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     function setAuctionContractAddress(
         address _auctionContractAddress
     ) public onlyOwner {
+        require(auctionManagerContractAddress == address(0), "Address already set");
+        require(_auctionContractAddress != address(0), "No zero addresses");
         auctionManagerContractAddress = _auctionContractAddress;
     }
 

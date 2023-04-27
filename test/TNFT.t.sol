@@ -11,6 +11,12 @@ contract TnftTest is TestSetup {
         assertEq(TNFTInstance.stakingManagerAddress(), address(stakingManagerInstance));
     }
 
+    function test_DisableInitializer() public {
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        BNFTImplementation.initialize(address(stakingManagerInstance));
+    }
+
     function test_TNFTMintsFailsIfNotCorrectCaller() public {
         vm.startPrank(alice);
         vm.expectRevert("Only staking manager contract");
@@ -20,6 +26,7 @@ contract TnftTest is TestSetup {
     function test_Mint() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         nodeOperatorManagerInstance.registerNodeOperator(
             proof,
             _ipfsHash,
@@ -33,7 +40,8 @@ contract TnftTest is TestSetup {
 
         hoax(alice);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIds
+            bidIds,
+            aliceProof
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);

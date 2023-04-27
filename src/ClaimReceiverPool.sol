@@ -13,6 +13,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IWeth.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IScoreManager.sol";
 
 contract ClaimReceiverPool is
@@ -28,7 +29,7 @@ contract ClaimReceiverPool is
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint24 public constant poolFee = 3000;
+    uint24 public constant poolFee = 3_000;
 
     // Mainnet Addresses
     // address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
@@ -45,16 +46,19 @@ contract ClaimReceiverPool is
 
     bytes32 public merkleRoot;
 
+    uint256[44] public __gap;
+
     //SwapRouter but Testnet, although address is actually the same
-    ISwapRouter constant router =
+    ISwapRouter public constant router =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
     //Goerli Weth address used for unwrapping ERC20 Weth
-    IWETH constant wethContract =
+    IWETH public constant wethContract =
         IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
     ILiquidityPool public liquidityPool;
     IScoreManager public scoreManager;
+    IRegulationsManager public regulationsManager;
     
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -68,20 +72,35 @@ contract ClaimReceiverPool is
     //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice initialize to set variables on deployment
     function initialize(
         address _rEth,
         address _wstEth,
         address _sfrxEth,
         address _cbEth,
-        address _scoreManager
+        address _scoreManager,
+        address _regulationsManager
     ) external initializer {
+        
+        require(_rEth != address(0), "No zero addresses");
+        require(_wstEth != address(0), "No zero addresses");
+        require(_sfrxEth != address(0), "No zero addresses");
+        require(_cbEth != address(0), "No zero addresses");
+        require(_scoreManager != address(0), "No zero addresses");
+        require(_regulationsManager != address(0), "No zero addresses");
+
         rETH = _rEth;
         wstETH = _wstEth;
         sfrxETH = _sfrxEth;
         cbETH = _cbEth;
 
         scoreManager = IScoreManager(_scoreManager);
+        regulationsManager = IRegulationsManager(_regulationsManager);
 
         __Pausable_init();
         __Ownable_init();
@@ -92,6 +111,8 @@ contract ClaimReceiverPool is
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    receive() external payable {}
 
     /// @notice Allows user to deposit into the conversion pool
     /// @notice Transfers users ether to function in the LP
@@ -108,8 +129,10 @@ contract ClaimReceiverPool is
         uint256 _sfrxEthBal,
         uint256 _cbEthBal,
         uint256 _points,
-        bytes32[] calldata _merkleProof
+        bytes32[] calldata _merkleProof,
+        uint256[] calldata _slippageBasisPoints
     ) external payable whenNotPaused {
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
         require(
             _verifyValues(
                 msg.sender,
@@ -124,33 +147,19 @@ contract ClaimReceiverPool is
             "Verification failed"
         );
         uint256 scoreTypeId = scoreManager.typeIds("Early Adopter Pool");
-        require(scoreManager.scores(
-                   scoreTypeId, 
-                    msg.sender) == bytes32(0), "Already Deposited");
+        require(scoreManager.scores(scoreTypeId, msg.sender) == 0, "Already Deposited");
         require(_points > 0, "You don't have any point to claim");
 
         uint256 _ethAmount = 0;
         _ethAmount += msg.value;
-        _ethAmount += _swapERC20ForETH(rETH, _rEthBal);
-        _ethAmount += _swapERC20ForETH(wstETH, _wstEthBal);
-        _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal);
-        _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal);
+        _ethAmount += _swapERC20ForETH(rETH, _rEthBal, _slippageBasisPoints[0]);
+        _ethAmount += _swapERC20ForETH(wstETH, _wstEthBal, _slippageBasisPoints[1]);
+        _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal, _slippageBasisPoints[2]);
+        _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal, _slippageBasisPoints[3]);
 
-        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
+        liquidityPool.setEapScore(msg.sender, _points);
+        liquidityPool.deposit{value: _ethAmount}(msg.sender, _merkleProof);
 
-
-        bytes32 totalScore32 = scoreManager.totalScores(typeId);
-        uint256 totalScore = abi.decode(bytes.concat(totalScore32), (uint256));
-        totalScore += _points;
-
-        scoreManager.setScore(typeId, 
-                        msg.sender, 
-                        bytes32(abi.encodePacked(_points)));
-        scoreManager.setTotalScore(typeId, 
-                                   bytes32(abi.encodePacked(totalScore)));
-                        
-        liquidityPool.deposit{value: _ethAmount}(msg.sender);
-        
         emit FundsMigrated(msg.sender, _ethAmount, _points);
     }
 
@@ -220,21 +229,24 @@ contract ClaimReceiverPool is
             );
     }
 
-    function _swapERC20ForETH(address _token, uint256 _amount) internal returns (uint256) {
+    function _swapERC20ForETH(address _token, uint256 _amount, uint256 _slippageBasisPoints) internal returns (uint256) {
         if (_amount == 0) {
             return 0;
         }
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        uint256 amountOut = _swapExactInputSingle(_amount, _token);
+        uint256 amountOut = _swapExactInputSingle(_amount, _token, _slippageBasisPoints);
         wethContract.withdraw(amountOut);
         return amountOut;
     }
 
     function _swapExactInputSingle(
         uint256 _amountIn,
-        address _tokenIn
+        address _tokenIn,
+        uint256 _slippageBasisPoints
     ) internal returns (uint256 amountOut) {
         IERC20(_tokenIn).approve(address(router), _amountIn);
+
+        uint256 minimumAmountAfterSlippage = _amountIn - (_amountIn * _slippageBasisPoints) / 10_000;
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
@@ -242,9 +254,9 @@ contract ClaimReceiverPool is
                 tokenOut: wEth,
                 fee: poolFee,
                 recipient: address(this),
-                deadline: block.timestamp,
+                deadline: block.timestamp + 100,
                 amountIn: _amountIn,
-                amountOutMinimum: 0,
+                amountOutMinimum: minimumAmountAfterSlippage,
                 sqrtPriceLimitX96: 0
             });
 

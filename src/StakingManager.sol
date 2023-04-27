@@ -19,6 +19,7 @@ import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 
 contract StakingManager is
     Initializable,
@@ -36,6 +37,9 @@ contract StakingManager is
     address public implementationContract;
     address public liquidityPoolContract;
 
+    bool public whitelistEnabled;
+    bytes32 public merkleRoot;
+
     ITNFT public TNFTInterfaceInstance;
     IBNFT public BNFTInterfaceInstance;
     IAuctionManager public auctionInterfaceInstance;
@@ -45,7 +49,7 @@ contract StakingManager is
 
     mapping(uint256 => address) public bidIdToStaker;
 
-    uint256[32] __gap;
+    uint256[40] public __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -65,19 +69,28 @@ contract StakingManager is
         bytes validatorPubKey,
         string ipfsHashForEncryptedValidatorKey
     );
+    event WhitelistDisabled();
+    event WhitelistEnabled();
+    event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /// @notice initialize to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager contract must be deployed first
     /// @param _auctionAddress the address of the auction contract for interaction
     function initialize(address _auctionAddress) external initializer {
+        require(_auctionAddress != address(0), "No zero addresses");
          
         stakeAmount = 32 ether;
-        maxBatchDepositSize = 16;
+        maxBatchDepositSize = 25;
 
         __Pausable_init();
         __Ownable_init();
@@ -94,7 +107,8 @@ contract StakingManager is
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
     function batchDepositWithBidIds(
-        uint256[] calldata _candidateBidIds
+        uint256[] calldata _candidateBidIds,
+        bytes32[] calldata _merkleProof
     )
         external
         payable
@@ -103,6 +117,10 @@ contract StakingManager is
         nonReentrant
         returns (uint256[] memory)
     {
+        if(whitelistEnabled) {
+            require(MerkleProofUpgradeable.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(msg.sender))), "User not whitelisted");
+        }
+
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
         require(numberOfDeposits <= maxBatchDepositSize, "Batch too large");
@@ -233,7 +251,7 @@ contract StakingManager is
 
         emit DepositCancelled(_validatorId);
 
-        require(bidIdToStaker[_validatorId] == address(0), "");
+        require(bidIdToStaker[_validatorId] == address(0), "Bid already cancelled");
     }
 
     /// @notice Sets the EtherFi node manager contract
@@ -242,6 +260,8 @@ contract StakingManager is
     function setEtherFiNodesManagerAddress(
         address _nodesManagerAddress
     ) public onlyOwner {
+        require(address(nodesManagerIntefaceInstance) == address(0), "Address already set");
+        require(_nodesManagerAddress != address(0), "No zero addresses");
         nodesManagerIntefaceInstance = IEtherFiNodesManager(
             _nodesManagerAddress
         );
@@ -253,6 +273,8 @@ contract StakingManager is
     function setLiquidityPoolAddress(
         address _liquidityPoolAddress
     ) public onlyOwner {
+        require(liquidityPoolContract == address(0), "Address already set");
+        require(_liquidityPoolAddress != address(0), "No zero addresses");
         liquidityPoolContract = _liquidityPoolAddress;
     }
 
@@ -267,21 +289,53 @@ contract StakingManager is
     function registerEtherFiNodeImplementationContract(
         address _etherFiNodeImplementationContract
     ) public onlyOwner {
+        require(implementationContract == address(0), "Address already set");
+        require(_etherFiNodeImplementationContract != address(0), "No zero addresses");
         implementationContract = _etherFiNodeImplementationContract;
         upgradableBeacon = new UpgradeableBeacon(implementationContract);      
     }
 
     function registerTNFTContract(address _tnftAddress) public onlyOwner {
+        require(address(TNFTInterfaceInstance) == address(0), "Address already set");
+        require(_tnftAddress != address(0), "No zero addresses");
         TNFTInterfaceInstance = ITNFT(_tnftAddress);
     }
 
     function registerBNFTContract(address _bnftAddress) public onlyOwner {
+        require(address(BNFTInterfaceInstance) == address(0), "Address already set");
+        require(_bnftAddress != address(0), "No zero addresses");
         BNFTInterfaceInstance = IBNFT(_bnftAddress);
     }
 
     function upgradeEtherFiNode(address _newImplementation) public onlyOwner {
+        require(_newImplementation != address(0), "No zero addresses");
         upgradableBeacon.upgradeTo(_newImplementation);
         implementationContract = _newImplementation;
+    }
+
+    /// @notice Disables the bid whitelist
+    /// @dev Allows both regular users and whitelisted users to bid
+    function disableWhitelist() public onlyOwner {
+        whitelistEnabled = false;
+        emit WhitelistDisabled();
+    }
+
+    /// @notice Enables the bid whitelist
+    /// @dev Only users who are on a whitelist can bid
+    function enableWhitelist() public onlyOwner {
+        whitelistEnabled = true;
+        emit WhitelistEnabled();
+    }
+
+    /// @notice Updates the merkle root whitelists have been updated
+    /// @dev merkleroot gets generated in JS offline and sent to the contract
+    /// @dev used in the staking manager and LP
+    /// @param _newMerkle new merkle root to be used for staking
+    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
+        bytes32 oldMerkle = merkleRoot;
+        merkleRoot = _newMerkle;
+
+        emit MerkleUpdated(oldMerkle, _newMerkle);
     }
 
     //Pauses the contract
@@ -378,7 +432,7 @@ contract StakingManager is
 
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
         BeaconProxy proxy = new BeaconProxy(address(upgradableBeacon), "");
-        EtherFiNode node = EtherFiNode(address(proxy));
+        EtherFiNode node = EtherFiNode(payable(proxy));
         node.initialize(address(nodesManagerIntefaceInstance));
         nodesManagerIntefaceInstance.registerEtherFiNode(
             _validatorId,

@@ -13,7 +13,12 @@ contract EtherFiNodeTest is TestSetup {
        
         setUpTests();
 
+        vm.expectRevert("already initialised");
+        vm.prank(owner);
+        node.initialize(address(managerInstance));
+
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
             proof,
@@ -31,7 +36,8 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray[0] = bidId[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            proof2
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -125,6 +131,8 @@ contract EtherFiNodeTest is TestSetup {
 
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
+        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
+        bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -157,7 +165,8 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray[0] = bidId1[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            bobProof
         );
 
         hoax(dan);
@@ -165,7 +174,8 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray[0] = bidId2[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            danProof
         );
 
         {
@@ -746,7 +756,6 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
-    /// @dev Seongyun, please double check the math in the assertions.
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly3() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
@@ -782,7 +791,7 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(toBnft, 2.084375000000000000 ether - nonExitPenalty);
     }
 
-    function test_sendEthToEtherFiNodeContractFail() public {
+    function test_sendEthToEtherFiNodeContractSucceeds() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
@@ -790,8 +799,44 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(owner, 10 ether);
         vm.prank(owner);
         uint256 nodeBalance = address(etherfiNode).balance;
-        vm.expectRevert("EvmError: Revert");
         (bool sent, ) = address(etherfiNode).call{value: 5 ether}("");
-        assertEq(address(etherfiNode).balance, nodeBalance);
+        assertEq(address(etherfiNode).balance, nodeBalance + 5 ether);
+    }
+
+    function test_ExitRequestAfterExitFails() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitTimestamps = new uint32[](1);
+
+        validatorIds[0] = bidId[0];
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+
+        vm.prank(owner);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+
+        vm.prank(TNFTInstance.ownerOf(validatorIds[0]));
+        exitTimestamps[0] = uint32(block.timestamp) - 1000;
+
+        // T-NFT holder sends the exit request after the node is marked EXITED
+        vm.expectRevert("validator node is not live");
+        managerInstance.sendExitRequest(validatorIds[0]);
+    }
+
+    function test_ExitTimestampBeforeExitRequestLeadsToZeroNonExitPenalty() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitTimestamps = new uint32[](1);
+
+        validatorIds[0] = bidId[0];
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+
+        vm.prank(TNFTInstance.ownerOf(validatorIds[0]));
+        managerInstance.sendExitRequest(validatorIds[0]);
+
+        // the node actually exited a second before the exit request from the T-NFT holder
+        vm.prank(owner);
+        exitTimestamps[0] = uint32(block.timestamp) - 1;
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
+        assertEq(nonExitPenalty, 0 ether);
     }
 }
