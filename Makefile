@@ -17,7 +17,7 @@ update:; forge update
 
 build:; forge build
 
-test :; forge test --fork-url https://eth-goerli.g.alchemy.com/v2/0z7pxDff9KkuVkuVY4QxuITXogzKOMS1 --etherscan-api-key 1YTFXGVDUI38JU3RSY7S5AAUPXQXYKR2SR
+test :; forge test --fork-url ${GOERLI_RPC_URL} --etherscan-api-key ${ETHERSCAN_API_KEY} 
 
 snapshot :; forge snapshot
 
@@ -33,6 +33,6 @@ deploy-goerli-suite :; @forge script script/DeployEtherFISuite.s.sol:DeployEther
 
 deploy-goerli-early-reward-pool :; @forge script script/DeployEarlyAdopterPool.s.sol:DeployEarlyAdopterPoolScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow
 
-deploy-phase-1:; @forge script script/DeployPhaseOne.s.sol:DeployPhaseOne --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-phase-1:; forge clean && forge script script/DeployPhaseOne.s.sol:DeployPhaseOne --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
 extract-abi :; bash script/extractABI.sh
