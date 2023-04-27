@@ -166,6 +166,10 @@ contract EtherFiNodesManager is
             msg.sender == tnftInstance.ownerOf(_validatorId),
             "You are not the owner of the T-NFT"
         );
+        require(
+            phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.LIVE,
+            "validator node is not live"
+        );
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setExitRequestTimestamp();
 
