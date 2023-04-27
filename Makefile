@@ -33,6 +33,6 @@ deploy-goerli-suite :; @forge script script/DeployEtherFISuite.s.sol:DeployEther
 
 deploy-goerli-early-reward-pool :; @forge script script/DeployEarlyAdopterPool.s.sol:DeployEarlyAdopterPoolScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow
 
-deploy-phase-1:; @forge script script/DeployPhaseOne.s.sol:DeployPhaseOne --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-phase-1:; forge clean && forge script script/DeployPhaseOne.s.sol:DeployPhaseOne --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
 extract-abi :; bash script/extractABI.sh
