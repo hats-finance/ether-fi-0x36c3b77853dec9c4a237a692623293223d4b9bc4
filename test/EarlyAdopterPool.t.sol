@@ -426,7 +426,6 @@ contract EarlyAdopterPoolTest is Test {
         assertEq(wstETH.balanceOf(bob), balanceBeforeBob + 0.1 ether);
         assertEq(totalERC20Balance, 0 ether);
         assertEq(wstETH.balanceOf(address(earlyAdopterPoolInstance)), 0);
-        vm.stopPrank();
     }
 
     function test_RewardsPoolMinDeposit() public {
@@ -661,7 +660,6 @@ contract EarlyAdopterPoolTest is Test {
         );
         hoax(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
         earlyAdopterPoolInstance.depositEther{value: 0.1 ether}();
-        vm.stopPrank();
 
         vm.warp(block.timestamp + 5184000);
 

@@ -462,7 +462,6 @@ contract StakingManagerTest is TestSetup {
 
         vm.prank(owner);
         stakingManagerInstance.pauseContract();
-        vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         bytes32 depositRoot = _getDepositRoot();
