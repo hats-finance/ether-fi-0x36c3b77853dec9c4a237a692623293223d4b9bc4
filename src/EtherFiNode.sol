@@ -118,6 +118,7 @@ contract EtherFiNode is IEtherFiNode {
         // the recipients of the funds must be able to receive the fund
         // For example, if it is a smart contract, 
         // they should implement either recieve() or fallback() properly
+        // It's designed to prevent malicious actors from pausing the withdrawals
         bool sent;
         (sent, ) = payable(_operator).call{value: _operatorAmount}("");
         _treasuryAmount += (!sent) ? _operatorAmount : 0;
