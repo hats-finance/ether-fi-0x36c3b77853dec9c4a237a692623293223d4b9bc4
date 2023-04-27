@@ -13,6 +13,10 @@ contract EtherFiNodeTest is TestSetup {
        
         setUpTests();
 
+        vm.expectRevert("already initialised");
+        vm.prank(owner);
+        node.initialize(address(managerInstance));
+
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
