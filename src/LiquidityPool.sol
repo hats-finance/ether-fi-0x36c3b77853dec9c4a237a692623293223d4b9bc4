@@ -15,7 +15,7 @@ import "./interfaces/IScoreManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IERC721ReceiverUpgradeable {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -219,10 +219,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     }
 
     function setScoreManager(address _address) external onlyOwner {
+        require(_address != address(0), "No zero addresses");
         scoreManager = IScoreManager(_address);
     }
 
     function setStakingManager(address _address) external onlyOwner {
+        require(_address != address(0), "No zero addresses");
         stakingManager = IStakingManager(_address);
     }
 
@@ -231,6 +233,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     }
 
     function setEtherFiNodesManager(address _nodeManager) public onlyOwner {
+        require(_nodeManager != address(0), "No zero addresses");
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
@@ -251,15 +254,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
-
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) external returns (bytes4) {
-        return IERC721ReceiverUpgradeable.onERC721Received.selector;
-    }
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------
