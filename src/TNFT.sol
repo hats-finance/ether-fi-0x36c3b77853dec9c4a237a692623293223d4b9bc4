@@ -36,7 +36,7 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     /// @param _reciever receiver of the NFT
     /// @param _validatorId the ID of the NFT
     function mint(address _reciever, uint256 _validatorId) external onlyStakingManager {
-        _safeMint(_reciever, _validatorId);
+        _mint(_reciever, _validatorId);
     }
 
     //--------------------------------------------------------------------------------------

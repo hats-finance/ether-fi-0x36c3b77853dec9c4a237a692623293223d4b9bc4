@@ -48,7 +48,7 @@ contract ProtocolRevenueManager is
         __ReentrancyGuard_init();
 
         globalRevenueIndex = 1;
-        vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested for the {T, B}-NFT holders for 6 months
+        vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested
         auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
     }
 
