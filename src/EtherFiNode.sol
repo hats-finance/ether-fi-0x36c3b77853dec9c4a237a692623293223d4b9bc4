@@ -115,13 +115,17 @@ contract EtherFiNode is IEtherFiNode {
         address _bnftHolder,
         uint256 _bnftAmount
     ) external onlyEtherFiNodeManagerContract {
-        (bool sent, ) = _treasury.call{value: _treasuryAmount}("");
-        require(sent, "Failed to send Ether");
+        // the recipients of the funds must be able to receive the fund
+        // For example, if it is a smart contract, 
+        // they should implement either recieve() or fallback() properly
+        bool sent;
         (sent, ) = payable(_operator).call{value: _operatorAmount}("");
-        require(sent, "Failed to send Ether");
+        _treasuryAmount += (!sent) ? _operatorAmount : 0;
         (sent, ) = payable(_tnftHolder).call{value: _tnftAmount}("");
-        require(sent, "Failed to send Ether");
+        _treasuryAmount += (!sent) ? _tnftAmount : 0;
         (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");
+        _treasuryAmount += (!sent) ? _bnftAmount : 0;
+        (sent, ) = _treasury.call{value: _treasuryAmount}("");
         require(sent, "Failed to send Ether");
     }
 
