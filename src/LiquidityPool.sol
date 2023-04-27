@@ -219,10 +219,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     }
 
     function setScoreManager(address _address) external onlyOwner {
+        require(_address != address(0), "No zero addresses");
         scoreManager = IScoreManager(_address);
     }
 
     function setStakingManager(address _address) external onlyOwner {
+        require(_address != address(0), "No zero addresses");
         stakingManager = IStakingManager(_address);
     }
 
@@ -231,6 +233,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     }
 
     function setEtherFiNodesManager(address _nodeManager) public onlyOwner {
+        require(_nodeManager != address(0), "No zero addresses");
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 

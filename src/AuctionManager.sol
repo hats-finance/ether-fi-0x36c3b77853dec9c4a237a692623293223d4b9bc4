@@ -295,6 +295,7 @@ contract AuctionManager is
         address _protocolRevenueManager
     ) external onlyOwner {
         require(address(protocolRevenueManager) == address(0), "Address already set");
+        require(_protocolRevenueManager != address(0), "No zero addresses");
         protocolRevenueManager = IProtocolRevenueManager(
             _protocolRevenueManager
         );
@@ -306,6 +307,7 @@ contract AuctionManager is
         address _stakingManagerContractAddress
     ) external onlyOwner {
         require(address(stakingManagerContractAddress) == address(0), "Address already set");
+        require(_stakingManagerContractAddress != address(0), "No zero addresses");
         stakingManagerContractAddress = _stakingManagerContractAddress;
     }
 
