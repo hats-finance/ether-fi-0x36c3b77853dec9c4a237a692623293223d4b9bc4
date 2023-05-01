@@ -5,6 +5,7 @@ import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "forge-std/console.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
@@ -356,23 +357,21 @@ contract EtherFiNode is IEtherFiNode {
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
-        if (balance > 32 ether - vestedAuctionRewards) {
-            (
-                payouts[0],
-                payouts[1],
-                payouts[2],
-                payouts[3]
-            ) = getRewardsPayouts(
-                true,
-                false,
-                true,
-                _splits,
-                _scale,
-                _splits,
-                _scale
-            );
-            balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
-        }
+        (
+            payouts[0],
+            payouts[1],
+            payouts[2],
+            payouts[3]
+        ) = getRewardsPayouts(
+            true,
+            false,
+            true,
+            _splits,
+            _scale,
+            _splits,
+            _scale
+        );
+        balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
         uint256 toBnftPrincipal;

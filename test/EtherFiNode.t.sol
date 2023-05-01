@@ -690,6 +690,55 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(staker).balance, bnftStakerBalance + 1 ether);
     }
 
+    function test_getFullWithrdawalPayoutsAuditFix3() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        validatorIds[0] = bidId[0];
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = 1;
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
+
+        startHoax(owner);
+        assertEq(managerInstance.numberOfValidators(), 1);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        assertEq(managerInstance.numberOfValidators(), 0);
+        vm.stopPrank();
+
+        vm.deal(etherfiNode, 32.04 ether + vestedAuctionFeeRewardsForStakers);
+        assertEq(
+            address(etherfiNode).balance,
+            32.09000000000000000 ether
+        ); 
+
+        {
+            (uint256 toNodeOperator,
+            uint256 toTnft,
+            uint256 toBnft,
+            uint256 toTreasury
+            ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
+
+            assertEq(toNodeOperator, 0.002 ether);
+            assertEq(toTnft, 30.032625000000000000 ether);
+            assertEq(toBnft, 2.003375000000000000 ether);
+            assertEq(toTreasury, 0.002 ether);
+        }
+
+        skip(6 * 7 * 4 days);
+
+        {         
+            (uint256 toNodeOperator,
+            uint256 toTnft,
+            uint256 toBnft,
+            uint256 toTreasury
+            ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
+
+            assertEq(toNodeOperator, 0.002 ether);
+            assertEq(toTnft, 30.077937500000000000 ether);
+            assertEq(toBnft, 2.008062500000000000 ether);
+            assertEq(toTreasury, 0.002 ether);   
+        }
+    }
+
     function test_getFullWithrdawalPayoutsAuditFix2() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
@@ -739,7 +788,7 @@ contract EtherFiNodeTest is TestSetup {
         }
     }
 
-        function test_getFullWithrdawalPayoutsAuditFix1() public {
+    function test_getFullWithrdawalPayoutsAuditFix1() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
