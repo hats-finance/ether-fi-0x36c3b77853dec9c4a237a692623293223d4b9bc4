@@ -371,7 +371,7 @@ contract EtherFiNode is IEtherFiNode {
                 _splits,
                 _scale
             );
-            balance = 32 ether;
+            balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
         }
 
         // Compute the payouts for the principals to {B, T}-NFTs
