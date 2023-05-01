@@ -356,23 +356,21 @@ contract EtherFiNode is IEtherFiNode {
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
-        if (balance > 32 ether) {
-            (
-                payouts[0],
-                payouts[1],
-                payouts[2],
-                payouts[3]
-            ) = getRewardsPayouts(
-                true,
-                false,
-                true,
-                _splits,
-                _scale,
-                _splits,
-                _scale
-            );
-            balance = 32 ether;
-        }
+        (
+            payouts[0],
+            payouts[1],
+            payouts[2],
+            payouts[3]
+        ) = getRewardsPayouts(
+            true,
+            false,
+            true,
+            _splits,
+            _scale,
+            _splits,
+            _scale
+        );
+        balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
         uint256 toBnftPrincipal;
