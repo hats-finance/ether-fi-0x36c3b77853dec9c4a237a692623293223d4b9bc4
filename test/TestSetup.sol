@@ -1,6 +1,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
+
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
@@ -17,6 +19,7 @@ import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
 import "../src/weEth.sol";
+import "../src/meEth.sol";
 import "../src/ScoreManager.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
@@ -81,6 +84,8 @@ contract TestSetup is Test {
 
     weEth public weEthImplementation;
     weEth public weEthInstance;
+
+    meETH public meEthInstance;
 
     ClaimReceiverPool public claimReceiverPoolImplementation;
     ClaimReceiverPool public claimReceiverPoolInstance;
@@ -230,6 +235,8 @@ contract TestSetup is Test {
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
         weEthInstance = weEth(address(weETHProxy));
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
+
+        meEthInstance = new meETH(address(eETHInstance), address(liquidityPoolInstance));
 
         // Setup dependencies
         _merkleSetup();
