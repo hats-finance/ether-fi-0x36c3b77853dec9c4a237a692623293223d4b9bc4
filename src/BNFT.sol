@@ -42,9 +42,9 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //ERC721 function being overidden to make it soulbound
     function _beforeTokenTransfer(
         address from,
-        address to,
-        uint256 firstTokenId,
-        uint256 batchSize
+        address, // to
+        uint256, // firstTokenId
+        uint256  // batchSize
     ) internal virtual override(ERC721Upgradeable ){
         require(from == address(0), "Err: token is SOUL BOUND");
     }

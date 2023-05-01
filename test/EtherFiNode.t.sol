@@ -545,7 +545,6 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 nodeOperatorBalance = address(nodeOperator).balance;
             uint256 treasuryBalance = address(treasuryInstance).balance;
-            uint256 danBalance = address(dan).balance;
             uint256 bnftStakerBalance = address(staker).balance;
 
             (
@@ -564,7 +563,6 @@ contract EtherFiNodeTest is TestSetup {
             vm.warp(block.timestamp + (1 + 6 * 28 * 86400));
             uint256 nodeOperatorBalance = address(nodeOperator).balance;
             uint256 treasuryBalance = address(treasuryInstance).balance;
-            uint256 danBalance = address(dan).balance;
             uint256 bnftStakerBalance = address(staker).balance;
 
             (
@@ -800,6 +798,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.prank(owner);
         uint256 nodeBalance = address(etherfiNode).balance;
         (bool sent, ) = address(etherfiNode).call{value: 5 ether}("");
+        require(sent, "Failed to send eth");
         assertEq(address(etherfiNode).balance, nodeBalance + 5 ether);
     }
 
@@ -808,7 +807,6 @@ contract EtherFiNodeTest is TestSetup {
         uint32[] memory exitTimestamps = new uint32[](1);
 
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         vm.prank(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
@@ -826,7 +824,6 @@ contract EtherFiNodeTest is TestSetup {
         uint32[] memory exitTimestamps = new uint32[](1);
 
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         vm.prank(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);

@@ -143,12 +143,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 staked;
         uint256 boosted;
         uint256 totalShares = eETH.totalShares();
-        uint256 totalEapScores = totalEapScores();
+        uint256 totalScores = totalEapScores();
         if (totalShares > 0) {
             staked = (getTotalPooledEther() * eETH.shares(_user)) / totalShares;
         }
-        if (totalEapScores > 0) {
-            boosted = (accruedEapRewards * eapScore(_user)) / totalEapScores;
+        if (totalScores > 0) {
+            boosted = (accruedEapRewards * eapScore(_user)) / totalScores;
         }
         return staked + boosted;
     }
@@ -243,7 +243,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _sharesForDepositAmount(uint256 _depositAmount) internal returns (uint256) {
+    function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;
         if (totalPooledEther == 0) {
             return 0;
