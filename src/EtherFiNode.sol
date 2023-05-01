@@ -356,7 +356,7 @@ contract EtherFiNode is IEtherFiNode {
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
-        if (balance > 32 ether) {
+        if (balance > 32 ether - vestedAuctionRewards) {
             (
                 payouts[0],
                 payouts[1],
