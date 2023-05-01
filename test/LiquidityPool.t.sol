@@ -118,11 +118,11 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_LiquidityPoolBatchDepositWithBidIds() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        bytes32[] memory _aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
+            _aliceProof,
             _ipfsHash,
             5
         );
@@ -230,11 +230,11 @@ contract LiquidityPoolTest is TestSetup {
     }
     
     function test_LiquidityPoolBatchRegisterValidators() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        bytes32[] memory aliceExitProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
+            aliceExitProof,
             _ipfsHash,
             5
         );
