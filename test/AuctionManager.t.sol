@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import "safe-tools/SafeTestTools.sol";
 
 contract AuctionManagerTest is TestSetup {
     event BidCreated(
@@ -37,6 +38,11 @@ contract AuctionManagerTest is TestSetup {
         assertEq(auctionInstance.maxBidAmount(), 5 ether);
         assertEq(auctionInstance.numberOfActiveBids(), 0);
         assertTrue(auctionInstance.whitelistEnabled());
+    }
+
+    function test_ownerCanBeGnosisSafe() public {
+        vm.prank(owner);
+        auctionImplementation.transferOwnership(address(0x0));
     }
 
     function test_ReEnterAuctionManagerFailsIfNotCorrectCaller() public {

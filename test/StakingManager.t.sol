@@ -30,7 +30,7 @@ contract StakingManagerTest is TestSetup {
         stakingManagerImplementation.initialize(address(auctionInstance));
     }
 
-    function test_fake() public {
+    function test_fake() view public {
         console.logBytes32(_getDepositRoot());
     }
 

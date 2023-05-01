@@ -64,7 +64,6 @@ contract SmallScenariosTest is TestSetup {
             alice
         );
 
-        uint256 chadPoints = earlyAdopterPoolInstance.calculateUserPoints(chad);
         uint256 danPoints = earlyAdopterPoolInstance.calculateUserPoints(dan);
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
@@ -267,7 +266,6 @@ contract SmallScenariosTest is TestSetup {
 
         //-------------------------------------------------------------------------------------------------------------------------------
 
-        uint256 gregBalanceBeforeStaking = greg.balance;
         bytes32[] memory gregProof = merkle.getProof(whiteListedAddresses, 8);
 
         startHoax(greg);

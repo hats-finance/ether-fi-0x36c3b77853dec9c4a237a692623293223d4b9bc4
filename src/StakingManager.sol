@@ -371,12 +371,10 @@ contract StakingManager is
             "Incorrect phase"
         );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
-        address staker = bidIdToStaker[_validatorId];
 
-        
         bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
             .getWithdrawalCredentials(_validatorId);
-        
+
         // Deposit to the Beacon Chain
         depositContractEth2.deposit{value: stakeAmount}(
             _depositData.publicKey,
@@ -384,7 +382,7 @@ contract StakingManager is
             _depositData.signature,
             _depositData.depositDataRoot
         );
-    
+
 
         nodesManagerIntefaceInstance.incrementNumberOfValidators(1);
         nodesManagerIntefaceInstance.setEtherFiNodePhase(

@@ -243,7 +243,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _sharesForDepositAmount(uint256 _depositAmount) internal returns (uint256) {
+    function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;
         if (totalPooledEther == 0) {
             return 0;
