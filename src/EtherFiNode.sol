@@ -80,6 +80,10 @@ contract EtherFiNode is IEtherFiNode {
         exitTimestamp = _exitTimestamp;
     }
 
+    function markBeingSlahsed() external onlyEtherFiNodeManagerContract {
+        phase = VALIDATOR_PHASE.BEING_SLASHED;
+    }
+
     function receiveVestedRewardsForStakers()
         external
         payable

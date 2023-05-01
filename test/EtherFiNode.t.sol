@@ -364,6 +364,33 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert(
             "etherfi node contract's balance is above 8 ETH. You should exit the node."
         );
+        managerInstance.partialWithdraw(bidId[0], true, true, true);        
+    }
+
+    function test_partialWithdrawFails() public {
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
+        address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
+
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
+            .vestedAuctionRewards();
+        assertEq(
+            vestedAuctionFeeRewardsForStakers,
+            address(etherfiNode).balance
+        );
+
+        vm.deal(etherfiNode, 4 ether + vestedAuctionFeeRewardsForStakers);
+
+        vm.expectRevert(
+            "Ownable: caller is not the owner"
+        );
+        managerInstance.markBeingSlahsed(bidId);
+
+        hoax(owner);
+        managerInstance.markBeingSlahsed(bidId);
+        vm.expectRevert(
+            "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
+        );
         managerInstance.partialWithdraw(bidId[0], true, true, true);
     }
 
