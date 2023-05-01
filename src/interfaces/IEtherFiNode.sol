@@ -9,7 +9,8 @@ interface IEtherFiNode {
         STAKE_DEPOSITED,
         LIVE,
         EXITED,
-        CANCELLED
+        CANCELLED,
+        BEING_SLASHED
     }
 
     // VIEW functions
@@ -81,6 +82,8 @@ interface IEtherFiNode {
     function setExitRequestTimestamp() external;
 
     function markExited(uint32 _exitTimestamp) external;
+
+    function markBeingSlahsed() external;
 
     function receiveVestedRewardsForStakers() external payable;
 
