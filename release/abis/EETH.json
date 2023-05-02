@@ -130,12 +130,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "owner",
+        "name": "_owner",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "spender",
+        "name": "_spender",
         "type": "address"
       }
     ],
@@ -154,12 +154,36 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "spender",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "allowances",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_spender",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "_amount",
         "type": "uint256"
       }
     ],
@@ -178,7 +202,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "account",
+        "name": "_user",
         "type": "address"
       }
     ],
@@ -197,16 +221,16 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_account",
+        "name": "_user",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_amount",
+        "name": "_share",
         "type": "uint256"
       }
     ],
-    "name": "burn",
+    "name": "burnShares",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -221,31 +245,7 @@
         "type": "uint8"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "spender",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "subtractedValue",
-        "type": "uint256"
-      }
-    ],
-    "name": "decreaseAllowance",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -259,30 +259,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "spender",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "addedValue",
-        "type": "uint256"
-      }
-    ],
-    "name": "increaseAllowance",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -303,7 +279,7 @@
     "name": "liquidityPool",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "contract ILiquidityPool",
         "name": "",
         "type": "address"
       }
@@ -315,16 +291,16 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_account",
+        "name": "_user",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_amount",
+        "name": "_share",
         "type": "uint256"
       }
     ],
-    "name": "mint",
+    "name": "mintShares",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -339,7 +315,7 @@
         "type": "string"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -376,6 +352,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "shares",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "symbol",
     "outputs": [
@@ -383,6 +378,19 @@
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalShares",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -405,12 +413,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "to",
+        "name": "_recipient",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "_amount",
         "type": "uint256"
       }
     ],
@@ -429,17 +437,17 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "from",
+        "name": "_sender",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "to",
+        "name": "_recipient",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "amount",
+        "name": "_amount",
         "type": "uint256"
       }
     ],
