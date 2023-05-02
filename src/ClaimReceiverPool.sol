@@ -184,7 +184,7 @@ contract ClaimReceiverPool is
     }
 
     /// @notice Updates the merkle root
-    /// @dev merkleroot gets generated in JS offline and sent to the contract
+    /// @dev merkleroot Fetches generated in JS offline and sent to the contract
     /// @param _newMerkle new merkle root to be used for bidding
     function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
         bytes32 oldMerkle = merkleRoot;

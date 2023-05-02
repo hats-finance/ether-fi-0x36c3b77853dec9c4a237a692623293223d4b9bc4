@@ -92,7 +92,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
 
     /// @notice Fetches the number of keys the user has, used or un-used
     /// @param _user the user to fetch the data for
-    /// @return TotalKeys the number of keys the user has
+    /// @return totalKeys The number of keys the user has
     function getUserTotalKeys(
         address _user
     ) external view returns (uint64 totalKeys) {
@@ -114,7 +114,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     /// @notice Fetches if the user is whitelisted
     /// @dev Used in the auction contract to verify when a user bids that they are indeed whitelisted
     /// @param _user the user to fetch the data for
-    /// @return Whitelisted bool value if they are whitelisted or not
+    /// @return whitelisted Bool value if they are whitelisted or not
     function isWhitelisted(
         address _user
     ) public view returns (bool whitelisted) {
