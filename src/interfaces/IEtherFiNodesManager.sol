@@ -126,7 +126,7 @@ interface IEtherFiNodesManager {
 
     function setEtherFiNodeLocalRevenueIndex(
         uint256 _validatorId,
-        uint256 _localRevenueIndex
+        uint128 _localRevenueIndex
     ) external payable;
 
     function sendExitRequest(uint256 _validatorId) external;

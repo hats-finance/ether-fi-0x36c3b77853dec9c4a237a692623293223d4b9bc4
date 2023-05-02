@@ -20,7 +20,7 @@ interface IEtherFiNode {
         view
         returns (string memory);
 
-    function localRevenueIndex() external view returns (uint256);
+    function localRevenueIndex() external view returns (uint128);
 
     function stakingStartTimestamp() external view returns (uint32);
 
@@ -76,7 +76,7 @@ interface IEtherFiNode {
         string calldata _ipfs
     ) external;
 
-    function setLocalRevenueIndex(uint256 _localRevenueIndex) external payable;
+    function setLocalRevenueIndex(uint128 _localRevenueIndex) external payable;
 
     function setExitRequestTimestamp() external;
 

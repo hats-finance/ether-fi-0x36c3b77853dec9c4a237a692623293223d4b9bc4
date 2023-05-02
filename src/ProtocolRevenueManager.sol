@@ -94,7 +94,7 @@ contract ProtocolRevenueManager is
         address etherfiNode = etherFiNodesManager.etherfiNodeAddress(
             _validatorId
         );
-        uint256 globalIndexlocal = globalRevenueIndex;
+        uint128 globalIndexlocal = uint128(globalRevenueIndex);
         globalRevenueIndex +=
             amountToProtocol /
             etherFiNodesManager.numberOfValidators();
@@ -120,7 +120,7 @@ contract ProtocolRevenueManager is
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
         etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(
             _validatorId,
-            globalRevenueIndex
+            uint128(globalRevenueIndex)
         );
         return amount;
     }

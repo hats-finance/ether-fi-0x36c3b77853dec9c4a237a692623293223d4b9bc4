@@ -490,7 +490,7 @@ contract EtherFiNodesManager is
     /// @param _localRevenueIndex renevue index to be set
     function setEtherFiNodeLocalRevenueIndex(
         uint256 _validatorId,
-        uint256 _localRevenueIndex
+        uint128 _localRevenueIndex
     ) external payable onlyProtocolRevenueManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setLocalRevenueIndex{value: msg.value}(

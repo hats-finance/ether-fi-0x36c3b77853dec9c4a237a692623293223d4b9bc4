@@ -10,12 +10,12 @@ contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
     // TODO: reduce the size of these varaibles
-    uint256 public localRevenueIndex;
+    uint128 public localRevenueIndex;
     uint256 public vestedAuctionRewards;
-    string public ipfsHashForEncryptedValidatorKey;
     uint32 public exitRequestTimestamp;
     uint32 public exitTimestamp;
     uint32 public stakingStartTimestamp;
+    string public ipfsHashForEncryptedValidatorKey;
     VALIDATOR_PHASE public phase;
 
     //--------------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     function setLocalRevenueIndex(
-        uint256 _localRevenueIndex
+        uint128 _localRevenueIndex
     ) external payable onlyEtherFiNodeManagerContract {
         localRevenueIndex = _localRevenueIndex;
     }
