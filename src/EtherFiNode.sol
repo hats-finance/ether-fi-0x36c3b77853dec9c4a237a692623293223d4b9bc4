@@ -10,8 +10,8 @@ contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
     // TODO: reduce the size of these varaibles
-    uint128 public localRevenueIndex;
     uint256 public vestedAuctionRewards;
+    uint128 public localRevenueIndex;
     uint32 public exitRequestTimestamp;
     uint32 public exitTimestamp;
     uint32 public stakingStartTimestamp;

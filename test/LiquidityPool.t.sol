@@ -302,8 +302,6 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_ProcessNodeExit() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
             aliceProof,
