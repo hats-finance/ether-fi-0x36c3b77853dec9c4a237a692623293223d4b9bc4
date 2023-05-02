@@ -28,7 +28,7 @@ contract EtherFiNode is IEtherFiNode {
     function initialize(address _etherFiNodesManager) public {
         require(stakingStartTimestamp == 0, "already initialised");
         require(_etherFiNodesManager != address(0), "No zero addresses");
-        stakingStartTimestamp = uint32(block.timestamp);
+        stakingStartTimestamp = uint64(block.timestamp);
         etherFiNodesManager = _etherFiNodesManager;
     }
 
