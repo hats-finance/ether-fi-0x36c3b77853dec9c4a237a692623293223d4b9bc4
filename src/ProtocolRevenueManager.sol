@@ -41,27 +41,6 @@ contract ProtocolRevenueManager is
         _disableInitializers();
     }
 
-    function initialize() external initializer {
-        __Pausable_init();
-        __Ownable_init();
-        __UUPSUpgradeable_init();
-        __ReentrancyGuard_init();
-
-        globalRevenueIndex = 1;
-        vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested
-        auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
-    }
-
-    //Pauses the contract
-    function pauseContract() external onlyOwner {
-        _pause();
-    }
-
-    //Unpauses the contract
-    function unPauseContract() external onlyOwner {
-        _unpause();
-    }
-
     /// @notice All of the received Ether is shared to all validators! Cool!
     receive() external payable {
         uint256 numberOfValidators = etherFiNodesManager.numberOfValidators();
@@ -74,8 +53,20 @@ contract ProtocolRevenueManager is
             numberOfValidators;
     }
 
-    /// @notice add the revenue from the auction fee paid by the node operator for the corresponding validator
-    /// @param _validatorId the validator ID
+    /// @notice initialize to set variables on deployment
+    function initialize() external initializer {
+        __Pausable_init();
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
+
+        globalRevenueIndex = 1;
+        vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested
+        auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
+    }
+
+    /// @notice Add the revenue from the auction fee paid by the node operator for the corresponding validator
+    /// @param _validatorId The validator ID
     function addAuctionRevenue(
         uint256 _validatorId
     ) external payable onlyAuctionManager nonReentrant {
@@ -108,8 +99,8 @@ contract ProtocolRevenueManager is
         }();
     }
 
-    /// @notice Distribute the accrued rewards to the validator
-    /// @param _validatorId id of the validator
+    /// @notice Distribute the accrued auction rewards to the validator
+    /// @param _validatorId ID of the validator
     function distributeAuctionRevenue(
         uint256 _validatorId
     ) external onlyEtherFiNodesManager nonReentrant returns (uint256) {
@@ -125,9 +116,23 @@ contract ProtocolRevenueManager is
         return amount;
     }
 
+    //Pauses the contract
+    function pauseContract() external onlyOwner {
+        _pause();
+    }
+
+    //Unpauses the contract
+    function unPauseContract() external onlyOwner {
+        _unpause();
+    }
+
+    //--------------------------------------------------------------------------------------
+    //-----------------------------------  SETTERS   ---------------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @notice Instantiates the interface of the node manager for integration
     /// @dev Set manually due to cirular dependencies
-    /// @param _etherFiNodesManager etherfi node manager address to set
+    /// @param _etherFiNodesManager Etherfi node manager address to set
     function setEtherFiNodesManagerAddress(
         address _etherFiNodesManager
     ) external onlyOwner {
@@ -139,7 +144,7 @@ contract ProtocolRevenueManager is
 
     /// @notice Instantiates the interface of the auction manager for integration
     /// @dev Set manually due to cirular dependencies
-    /// @param _auctionManager auction manager address to set
+    /// @param _auctionManager Auction manager address to set
     function setAuctionManagerAddress(
         address _auctionManager
     ) external onlyOwner {
@@ -148,16 +153,16 @@ contract ProtocolRevenueManager is
         auctionManager = IAuctionManager(_auctionManager);
     }
 
-    /// @notice set the auction reward vesting period
-    /// @param _periodInDays vesting period in days
+    /// @notice Set the auction reward vesting period
+    /// @param _periodInDays Vesting period in days
     function setAuctionRewardVestingPeriod(
         uint128 _periodInDays
     ) external onlyOwner {
         auctionFeeVestingPeriodForStakersInDays = _periodInDays;
     }
 
-    /// @notice set the auction reward split for stakers
-    /// @param _split vesting period in days
+    /// @notice Set the auction reward split for stakers
+    /// @param _split The split amount for stakers to receive from auction rewards
     function setAuctionRewardSplitForStakers(
         uint128 _split
     ) external onlyOwner {
@@ -178,7 +183,7 @@ contract ProtocolRevenueManager is
     //--------------------------------------------------------------------------------------
 
     /// @notice Compute the accrued rewards for a validator
-    /// @param _validatorId id of the validator
+    /// @param _validatorId ID of the validator
     function getAccruedAuctionRevenueRewards(
         uint256 _validatorId
     ) public view returns (uint256) {
@@ -198,6 +203,8 @@ contract ProtocolRevenueManager is
         return amount;
     }
 
+    /// @notice Fetches the address of the implementation contract currently being used by the proxy
+    /// @return the address of the currently used implementation contract
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
