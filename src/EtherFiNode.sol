@@ -5,6 +5,7 @@ import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
@@ -479,7 +480,14 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     function implementation() external view returns (address) {
-        return address(this);
+        bytes32 slot = bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1);
+        address implementation;
+        assembly {
+            implementation := sload(slot)
+        }
+
+        IBeacon beacon = IBeacon(implementation);
+        return beacon.implementation();
     }
 
     //--------------------------------------------------------------------------------------
