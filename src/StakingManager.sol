@@ -82,10 +82,10 @@ contract StakingManager is
         _disableInitializers();
     }
 
-    /// @notice initialize to set variables on deployment
+    /// @notice Initialize to set variables on deployment
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
-    /// @dev AuctionManager contract must be deployed first
-    /// @param _auctionAddress the address of the auction contract for interaction
+    /// @dev AuctionManager Contract must be deployed first
+    /// @param _auctionAddress The address of the auction contract for interaction
     function initialize(address _auctionAddress) external initializer {
         require(_auctionAddress != address(0), "No zero addresses");
          
@@ -164,8 +164,10 @@ contract StakingManager is
 
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @param _validatorId id of the validator to register
-    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    /// @dev Called from the staking manager for general solo stakes
+    /// @param _depositRoot The fetched root of the Beacon Chain
+    /// @param _validatorId ID of the validator to register
+    /// @param _depositData Data structure to hold all data needed for depositing to the beacon chain
     /// however, instead of the validator key, it will include the IPFS hash
     /// containing the validator key encrypted by the corresponding node operator's public key
     function registerValidator(
@@ -176,6 +178,13 @@ contract StakingManager is
         return _registerValidator(_validatorId, msg.sender, msg.sender, _depositData);
     }
 
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
+    /// @dev Called from LP where T / BNFT holders can be different
+    /// @param _depositRoot The fetched root of the Beacon Chain
+    /// @param _validatorId ID of the validator to register
+    /// @param _bNftRecipient The recipient of the BNFT
+    /// @param _tNftRecipient The recipient of the TNFT
+    /// @param _depositData Data structure to hold all data needed for depositing to the beacon chain
     function registerValidator(
         bytes32 _depositRoot,
         uint256 _validatorId,
@@ -186,9 +195,10 @@ contract StakingManager is
         return _registerValidator(_validatorId, _bNftRecipient, _tNftRecipient, _depositData);
     }
 
-    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @param _validatorId id of the validator to register
-    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    /// @notice Batch creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
+    /// @param _depositRoot The fetched root of the Beacon Chain
+    /// @param _validatorId Array of IDs of the validator to register
+    /// @param _depositData Array of data structures to hold all data needed for depositing to the beacon chain
     function batchRegisterValidators(
         bytes32 _depositRoot,
         uint256[] calldata _validatorId,
@@ -203,8 +213,11 @@ contract StakingManager is
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @param _validatorId id of the validator to register
-    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    /// @param _depositRoot The fetched root of the Beacon Chain
+    /// @param _validatorId Array of IDs of the validator to register
+    /// @param _bNftRecipient Array of BNFT recipients
+    /// @param _tNftRecipient Array of TNFT recipients
+    /// @param _depositData Array of data structures to hold all data needed for depositing to the beacon chain
     function batchRegisterValidators(
         bytes32 _depositRoot,
         uint256[] calldata _validatorId,
@@ -222,7 +235,7 @@ contract StakingManager is
 
     /// @notice Cancels a users stake
     /// @dev Only allowed to be cancelled before step 2 of the depositing process
-    /// @param _validatorId the ID of the validator deposit to cancel
+    /// @param _validatorId The ID of the validator deposit to cancel
     function cancelDeposit(
         uint256 _validatorId
     ) public whenNotPaused nonReentrant {
@@ -256,7 +269,7 @@ contract StakingManager is
 
     /// @notice Sets the EtherFi node manager contract
     /// @dev Set manually due to circular dependency
-    /// @param _nodesManagerAddress aaddress of the manager contract being set
+    /// @param _nodesManagerAddress Address of the manager contract being set
     function setEtherFiNodesManagerAddress(
         address _nodesManagerAddress
     ) public onlyOwner {
@@ -269,7 +282,7 @@ contract StakingManager is
 
     /// @notice Sets the Liquidity pool contract address
     /// @dev Set manually due to circular dependency
-    /// @param _liquidityPoolAddress aaddress of the liquidity pool contract being set
+    /// @param _liquidityPoolAddress Address of the liquidity pool contract being set
     function setLiquidityPoolAddress(
         address _liquidityPoolAddress
     ) public onlyOwner {
@@ -279,13 +292,15 @@ contract StakingManager is
     }
 
     /// @notice Sets the max number of deposits allowed at a time
-    /// @param _newMaxBatchDepositSize the max number of deposits allowed
+    /// @param _newMaxBatchDepositSize The max number of deposits allowed
     function setMaxBatchDepositSize(
         uint128 _newMaxBatchDepositSize
     ) public onlyOwner {
         maxBatchDepositSize = _newMaxBatchDepositSize;
     }
 
+    /// @notice Sets the new etherfi node implementation contract
+    /// @param _etherFiNodeImplementationContract The new address of the etherfi node
     function registerEtherFiNodeImplementationContract(
         address _etherFiNodeImplementationContract
     ) public onlyOwner {
@@ -295,18 +310,24 @@ contract StakingManager is
         upgradableBeacon = new UpgradeableBeacon(implementationContract);      
     }
 
+    /// @notice Instantiates the TNFT interface
+    /// @param _tnftAddress Address of the TNFT contract
     function registerTNFTContract(address _tnftAddress) public onlyOwner {
         require(address(TNFTInterfaceInstance) == address(0), "Address already set");
         require(_tnftAddress != address(0), "No zero addresses");
         TNFTInterfaceInstance = ITNFT(_tnftAddress);
     }
 
+    /// @notice Instantiates the BNFT interface
+    /// @param _bnftAddress Address of the BNFT contract
     function registerBNFTContract(address _bnftAddress) public onlyOwner {
         require(address(BNFTInterfaceInstance) == address(0), "Address already set");
         require(_bnftAddress != address(0), "No zero addresses");
         BNFTInterfaceInstance = IBNFT(_bnftAddress);
     }
 
+    /// @notice Upgrades the etherfi node
+    /// @param _newImplementation The new address of the etherfi node
     function upgradeEtherFiNode(address _newImplementation) public onlyOwner {
         require(_newImplementation != address(0), "No zero addresses");
         upgradableBeacon.upgradeTo(_newImplementation);
@@ -328,9 +349,9 @@ contract StakingManager is
     }
 
     /// @notice Updates the merkle root whitelists have been updated
-    /// @dev merkleroot Fetches generated in JS offline and sent to the contract
-    /// @dev used in the staking manager and LP
-    /// @param _newMerkle new merkle root to be used for staking
+    /// @dev Merkleroot Fetches generated in JS offline and sent to the contract
+    /// @dev Used in the staking manager and LP
+    /// @param _newMerkle New merkle root to be used for staking
     function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
         bytes32 oldMerkle = merkleRoot;
         merkleRoot = _newMerkle;
@@ -353,10 +374,10 @@ contract StakingManager is
     //--------------------------------------------------------------------------------------
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @param _validatorId id of the validator to register
-    /// @param _bNftRecipient the address to receive the minted B-NFT
-    /// @param _tNftRecipient the address to receive the minted T-NFT
-    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
+    /// @param _validatorId ID of the validator to register
+    /// @param _bNftRecipient The address to receive the minted B-NFT
+    /// @param _tNftRecipient The address to receive the minted T-NFT
+    /// @param _depositData Data structure to hold all data needed for depositing to the beacon chain
     /// however, instead of the validator key, it will include the IPFS hash
     /// containing the validator key encrypted by the corresponding node operator's public key
     function _registerValidator(
@@ -414,7 +435,7 @@ contract StakingManager is
     }
 
     /// @notice Update the state of the contract now that a deposit has been made
-    /// @param _bidId the bid that won the right to the deposit
+    /// @param _bidId The bid that won the right to the deposit
     function _processDeposit(uint256 _bidId) internal {
         bidIdToStaker[_bidId] = msg.sender;
 
@@ -428,6 +449,8 @@ contract StakingManager is
         emit StakeDeposit(msg.sender, _bidId, etherfiNode);
     }
 
+    /// @notice Deploys the new etherfi node
+    /// @param _validatorId The ID of the validator to be registered
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
         BeaconProxy proxy = new BeaconProxy(address(upgradableBeacon), "");
         EtherFiNode node = EtherFiNode(payable(proxy));
@@ -458,10 +481,14 @@ contract StakingManager is
     //------------------------------------  GETTERS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Fetches the address of the implementation contract currently being used by the proxy
+    /// @return the address of the currently used implementation contract
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
 
+    /// @notice Fetches the address of the implementation contract currently being used by the beacon proxy
+    /// @return the address of the currently used implementation contract
     function implementation() public view override returns (address) {
         return upgradableBeacon.implementation();
     }

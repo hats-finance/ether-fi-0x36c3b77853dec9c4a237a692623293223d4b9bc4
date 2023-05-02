@@ -63,7 +63,7 @@ contract AuctionManager is
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice initialize to set variables on deployment
+    /// @notice Initialize to set variables on deployment
     function initialize(
         address _nodeOperatorManagerContract
     ) external initializer {

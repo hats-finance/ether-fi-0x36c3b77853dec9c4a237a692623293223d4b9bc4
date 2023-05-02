@@ -53,7 +53,7 @@ contract ProtocolRevenueManager is
             numberOfValidators;
     }
 
-    /// @notice initialize to set variables on deployment
+    /// @notice Initialize to set variables on deployment
     function initialize() external initializer {
         __Pausable_init();
         __Ownable_init();
