@@ -371,8 +371,6 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_partialWithdrawFails() public {
-        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
-        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
         address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)

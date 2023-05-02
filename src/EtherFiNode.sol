@@ -466,12 +466,6 @@ contract EtherFiNode is IEtherFiNode {
         return (operator, tnft, bnft, treasury);
     }
 
-    /// @notice Fetches the address of the implementation contract currently being used by the proxy
-    /// @return the address of the currently used implementation contract
-    function implementation() external view returns (address) {
-        return address(this);
-    }
-
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
     //--------------------------------------------------------------------------------------
