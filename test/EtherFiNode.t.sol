@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
 import "../src/EtherFiNode.sol";
+import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
 contract EtherFiNodeTest is TestSetup {
 
@@ -1012,5 +1013,9 @@ contract EtherFiNodeTest is TestSetup {
 
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
         assertEq(nonExitPenalty, 0 ether);
+    }
+
+    function test_ImplementationContract() public {
+        assertEq(safeInstance.implementation(), address(node));
     }
 }
