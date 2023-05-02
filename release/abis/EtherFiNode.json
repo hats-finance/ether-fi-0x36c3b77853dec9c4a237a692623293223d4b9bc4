@@ -492,6 +492,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "markBeingSlahsed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint32",
