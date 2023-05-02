@@ -8,13 +8,11 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
-
-    // TODO: reduce the size of these varaibles
     uint256 public vestedAuctionRewards;
     uint128 public localRevenueIndex;
     uint32 public exitRequestTimestamp;
     uint32 public exitTimestamp;
-    uint32 public stakingStartTimestamp;
+    uint64 public stakingStartTimestamp;
     string public ipfsHashForEncryptedValidatorKey;
     VALIDATOR_PHASE public phase;
 
@@ -24,7 +22,7 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
-        stakingStartTimestamp = type(uint32).max;
+        stakingStartTimestamp = type(uint64).max;
     }
 
     function initialize(address _etherFiNodesManager) public {
@@ -435,7 +433,7 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     function _getDaysPassedSince(
-        uint32 _startTimestamp,
+        uint64 _startTimestamp,
         uint32 _endTimestamp
     ) internal pure returns (uint256) {
         if (_endTimestamp <= _startTimestamp) {

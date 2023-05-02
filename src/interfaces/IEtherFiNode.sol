@@ -22,7 +22,7 @@ interface IEtherFiNode {
 
     function localRevenueIndex() external view returns (uint128);
 
-    function stakingStartTimestamp() external view returns (uint32);
+    function stakingStartTimestamp() external view returns (uint64);
 
     function exitRequestTimestamp() external view returns (uint32);
 
