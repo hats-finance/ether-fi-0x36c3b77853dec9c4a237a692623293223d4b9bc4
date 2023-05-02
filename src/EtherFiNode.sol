@@ -27,23 +27,23 @@ contract EtherFiNode is IEtherFiNode {
         stakingStartTimestamp = type(uint32).max;
     }
 
-    function initialize(address _etherFiNodesManager) public {
-        require(stakingStartTimestamp == 0, "already initialised");
-        require(_etherFiNodesManager != address(0), "No zero addresses");
-        stakingStartTimestamp = uint32(block.timestamp);
-        etherFiNodesManager = _etherFiNodesManager;
-    }
-
-    //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-    //--------------------------------------------------------------------------------------
-
     /// @notice Based on the sources where they come from, the staking rewards are split into
     ///  - those from the execution layer: transaction fees and MEV
     ///  - those from the consensus layer: Pstaking rewards for attesting the state of the chain, 
     ///    proposing a new block, or being selected in a validator sync committe
     ///  To receive the rewards from the execution layer, it should have 'receive()' function.
     receive() external payable {}
+
+    function initialize(address _etherFiNodesManager) public {
+        require(stakingStartTimestamp == 0, "already initialised");
+        require(_etherFiNodesManager != address(0), "No zero addresses");
+        stakingStartTimestamp = uint32(block.timestamp);
+        etherFiNodesManager = _etherFiNodesManager;
+    }    
+
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  SETTER   --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
@@ -85,6 +85,10 @@ contract EtherFiNode is IEtherFiNode {
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
     }
+
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
 
     /// @notice Sets and receives the value of the auction rewards to be vested
     /// @dev This value is half of the bid value of the bid which was matched with the stake
