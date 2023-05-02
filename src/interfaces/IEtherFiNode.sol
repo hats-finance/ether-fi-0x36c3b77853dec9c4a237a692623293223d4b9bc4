@@ -6,10 +6,12 @@ import "./IEtherFiNodesManager.sol";
 interface IEtherFiNode {
     //The state of the validator
     enum VALIDATOR_PHASE {
+        NOT_INITIALIZED,
         STAKE_DEPOSITED,
         LIVE,
         EXITED,
-        CANCELLED
+        CANCELLED,
+        BEING_SLASHED
     }
 
     // VIEW functions
@@ -81,6 +83,8 @@ interface IEtherFiNode {
     function setExitRequestTimestamp() external;
 
     function markExited(uint32 _exitTimestamp) external;
+
+    function markBeingSlahsed() external;
 
     function receiveVestedRewardsForStakers() external payable;
 
