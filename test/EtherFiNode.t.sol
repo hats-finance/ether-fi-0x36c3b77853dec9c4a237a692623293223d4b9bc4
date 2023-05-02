@@ -13,6 +13,8 @@ contract EtherFiNodeTest is TestSetup {
        
         setUpTests();
 
+        assertTrue(node.phase() == IEtherFiNode.VALIDATOR_PHASE.NOT_INITIALIZED);
+
         vm.expectRevert("already initialised");
         vm.prank(owner);
         node.initialize(address(managerInstance));

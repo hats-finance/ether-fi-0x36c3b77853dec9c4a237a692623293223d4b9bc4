@@ -6,6 +6,7 @@ import "./IEtherFiNodesManager.sol";
 interface IEtherFiNode {
     //The state of the validator
     enum VALIDATOR_PHASE {
+        NOT_INITIALIZED,
         STAKE_DEPOSITED,
         LIVE,
         EXITED,
