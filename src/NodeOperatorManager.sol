@@ -40,6 +40,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         uint64 _totalKeys
     ) public {
         require(!registered[msg.sender], "Already registered");
+        require(_totalKeys > 0, "Cannot register with 0 keys");
         
         KeyData memory keyData = KeyData({
             totalKeys: _totalKeys,
