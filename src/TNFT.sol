@@ -35,7 +35,8 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     /// @dev Only through the staking contratc and not by an EOA
     /// @param _reciever receiver of the NFT
     /// @param _validatorId the ID of the NFT
-    function mint(address _reciever, uint256 _validatorId) external onlyStakingManager {
+    function mint(address _reciever, uint256 _validatorId) external {
+        require(msg.sender == stakingManagerAddress, "Only staking manager contract");
         _mint(_reciever, _validatorId);
     }
 
@@ -53,14 +54,5 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
-    }
-
-    //--------------------------------------------------------------------------------------
-    //------------------------------------  MODIFIERS  -------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    modifier onlyStakingManager() {
-        require(msg.sender == stakingManagerAddress, "Only staking manager contract");
-        _;
     }
 }
