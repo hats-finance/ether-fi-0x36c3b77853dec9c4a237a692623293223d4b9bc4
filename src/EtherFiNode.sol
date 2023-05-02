@@ -5,6 +5,7 @@ import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
@@ -80,6 +81,10 @@ contract EtherFiNode is IEtherFiNode {
         exitTimestamp = _exitTimestamp;
     }
 
+    function markBeingSlahsed() external onlyEtherFiNodeManagerContract {
+        phase = VALIDATOR_PHASE.BEING_SLASHED;
+    }
+
     function receiveVestedRewardsForStakers()
         external
         payable
@@ -115,13 +120,18 @@ contract EtherFiNode is IEtherFiNode {
         address _bnftHolder,
         uint256 _bnftAmount
     ) external onlyEtherFiNodeManagerContract {
-        (bool sent, ) = _treasury.call{value: _treasuryAmount}("");
-        require(sent, "Failed to send Ether");
+        // the recipients of the funds must be able to receive the fund
+        // For example, if it is a smart contract, 
+        // they should implement either recieve() or fallback() properly
+        // It's designed to prevent malicious actors from pausing the withdrawals
+        bool sent;
         (sent, ) = payable(_operator).call{value: _operatorAmount}("");
-        require(sent, "Failed to send Ether");
+        _treasuryAmount += (!sent) ? _operatorAmount : 0;
         (sent, ) = payable(_tnftHolder).call{value: _tnftAmount}("");
-        require(sent, "Failed to send Ether");
+        _treasuryAmount += (!sent) ? _tnftAmount : 0;
         (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");
+        _treasuryAmount += (!sent) ? _bnftAmount : 0;
+        (sent, ) = _treasury.call{value: _treasuryAmount}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -351,23 +361,21 @@ contract EtherFiNode is IEtherFiNode {
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
-        if (balance > 32 ether) {
-            (
-                payouts[0],
-                payouts[1],
-                payouts[2],
-                payouts[3]
-            ) = getRewardsPayouts(
-                true,
-                false,
-                true,
-                _splits,
-                _scale,
-                _splits,
-                _scale
-            );
-            balance = 32 ether;
-        }
+        (
+            payouts[0],
+            payouts[1],
+            payouts[2],
+            payouts[3]
+        ) = getRewardsPayouts(
+            true,
+            false,
+            true,
+            _splits,
+            _scale,
+            _splits,
+            _scale
+        );
+        balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
         uint256 toBnftPrincipal;
@@ -472,7 +480,14 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     function implementation() external view returns (address) {
-        return address(this);
+        bytes32 slot = bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1);
+        address implementation;
+        assembly {
+            implementation := sload(slot)
+        }
+
+        IBeacon beacon = IBeacon(implementation);
+        return beacon.implementation();
     }
 
     //--------------------------------------------------------------------------------------

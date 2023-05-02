@@ -218,6 +218,11 @@ contract EtherFiNodesManager is
             balance < 8 ether,
             "etherfi node contract's balance is above 8 ETH. You should exit the node."
         );
+        require(
+            IEtherFiNode(etherfiNode).phase() !=
+                IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED,
+            "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
+        );
         
         // Retrieve all possible rewards: {Staking, Protocol} rewards and the vested auction fee reward
         (
@@ -299,6 +304,11 @@ contract EtherFiNodesManager is
             require(
                 payable(etherfiNode).balance < 8 ether,
                 "etherfi node contract's balance is above 8 ETH. You should exit the node."
+            );
+            require(
+                IEtherFiNode(etherfiNode).phase() !=
+                    IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED,
+                "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
             );
 
             (
@@ -395,6 +405,14 @@ contract EtherFiNodesManager is
     function fullWithdrawBatch(uint256[] calldata _validatorIds) external whenNotPaused {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             fullWithdraw(_validatorIds[i]);
+        }
+    }
+
+    function markBeingSlahsed(uint256[] calldata _validatorIds) external whenNotPaused onlyOwner {
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            address etherfiNode = etherfiNodeAddress[_validatorIds[i]];
+            // Mark BEING_SLASHED
+            IEtherFiNode(etherfiNode).markBeingSlahsed();
         }
     }
 
