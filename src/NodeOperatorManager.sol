@@ -60,7 +60,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
 
     /// @notice Fetches the next key they have available to use
     /// @param _user the user to fetch the key for
-    /// @return the ipfs index available for the validator
+    /// @return The ipfs index available for the validator
     function fetchNextKeyIndex(
         address _user
     ) external onlyAuctionManagerContract returns (uint64) {
@@ -77,7 +77,7 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     }
 
     /// @notice Updates the merkle root whitelists have been updated
-    /// @dev merkleroot gets generated in JS offline and sent to the contract
+    /// @dev Merkleroot Fetches generated in JS offline and sent to the contract
     /// @param _newMerkle new merkle root to be used for bidding
     function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
         bytes32 oldMerkle = merkleRoot;
@@ -90,16 +90,16 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //-----------------------------------  GETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice gets the number of keys the user has, used or un-used
+    /// @notice Fetches the number of keys the user has, used or un-used
     /// @param _user the user to fetch the data for
-    /// @return totalKeys the number of keys the user has
+    /// @return TotalKeys the number of keys the user has
     function getUserTotalKeys(
         address _user
     ) external view returns (uint64 totalKeys) {
         totalKeys = addressToOperatorData[_user].totalKeys;
     }
 
-    /// @notice gets the number of keys the user has left to use
+    /// @notice Fetches the number of keys the user has left to use
     /// @param _user the user to fetch the data for
     /// @return numKeysRemaining the number of keys the user has remaining
     function getNumKeysRemaining(
@@ -111,10 +111,10 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
             keyData.totalKeys - keyData.keysUsed;
     }
 
-    /// @notice gets if the user is whitelisted
-    /// @dev used in the auction contract to verify when a user bids that they are indeed whitelisted
+    /// @notice Fetches if the user is whitelisted
+    /// @dev Used in the auction contract to verify when a user bids that they are indeed whitelisted
     /// @param _user the user to fetch the data for
-    /// @return whitelisted bool value if they are whitelisted or not
+    /// @return Whitelisted bool value if they are whitelisted or not
     function isWhitelisted(
         address _user
     ) public view returns (bool whitelisted) {

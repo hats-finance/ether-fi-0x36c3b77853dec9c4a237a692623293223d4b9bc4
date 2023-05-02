@@ -328,7 +328,7 @@ contract StakingManager is
     }
 
     /// @notice Updates the merkle root whitelists have been updated
-    /// @dev merkleroot gets generated in JS offline and sent to the contract
+    /// @dev merkleroot Fetches generated in JS offline and sent to the contract
     /// @dev used in the staking manager and LP
     /// @param _newMerkle new merkle root to be used for staking
     function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
@@ -441,7 +441,7 @@ contract StakingManager is
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake
-    /// @dev Gets called internally from cancelStakingManager or when the time runs out for calling registerValidator
+    /// @dev called internally from cancelStakingManager or when the time runs out for calling registerValidator
     /// @param _depositOwner address of the user being refunded
     /// @param _amount the amount to refund the depositor
     function _refundDeposit(address _depositOwner, uint256 _amount) internal {
