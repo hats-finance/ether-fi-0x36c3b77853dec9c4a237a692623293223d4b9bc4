@@ -35,6 +35,11 @@ contract RegulationsManager is
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+    
     /// @notice initializes contract
     function initialize() external initializer {
         __Pausable_init();
