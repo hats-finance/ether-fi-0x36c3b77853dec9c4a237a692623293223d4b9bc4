@@ -50,5 +50,5 @@ If you currently do not have a .env file, and only a .example.env, perform the f
 Once all contracts have been deployed and dependencies set up, we will need to update the merkle roots. 
 
 1. Generate the merkle tree for the Node Operators and call the updateMerkleRoot function in the Node Operator Manager to set the root.
-2. Gnerate the merkle tree for stakers who are whitelisted and call the updateMerkleRoot function in the Staking Manager to set the root.
+2. Generate the merkle tree for stakers who are whitelisted and call the updateMerkleRoot function in the Staking Manager to set the root.
 
