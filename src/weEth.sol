@@ -22,6 +22,11 @@ contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(address _liquidityPool, address _eEth) external initializer {
         require(_liquidityPool != address(0), "No zero addresses");
         require(_eEth != address(0), "No zero addresses");

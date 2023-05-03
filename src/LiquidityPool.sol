@@ -50,6 +50,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     receive() external payable {
         require(accruedStakingRewards >= msg.value, "Update the accrued rewards first");
         accruedStakingRewards -= msg.value;

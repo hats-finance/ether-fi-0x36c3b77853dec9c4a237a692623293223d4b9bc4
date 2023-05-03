@@ -168,6 +168,9 @@ contract TestSetup is Test {
         scoreManagerInstance.initialize();
 
         regulationsManagerImplementation = new RegulationsManager();
+        vm.expectRevert("Initializable: contract is already initialized");
+        regulationsManagerImplementation.initialize();
+        
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
         regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
         regulationsManagerInstance.initialize();
@@ -212,19 +215,17 @@ contract TestSetup is Test {
         );
 
         liquidityPoolImplementation = new LiquidityPool();
-        liquidityPoolProxy = new UUPSProxy(
-            address(liquidityPoolImplementation),
-            ""
-        );
-        liquidityPoolInstance = LiquidityPool(
-            payable(address(liquidityPoolProxy))
-        );
+        vm.expectRevert("Initializable: contract is already initialized");
+        liquidityPoolImplementation.initialize(address(regulationsManagerInstance));
 
-        vm.expectRevert("No zero addresses");
-        liquidityPoolInstance.initialize(address(0));
+        liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
+        liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
 
         eETHImplementation = new EETH();
+        vm.expectRevert("Initializable: contract is already initialized");
+        eETHImplementation.initialize(payable(address(liquidityPoolInstance)));
+
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
         eETHInstance = EETH(address(eETHProxy));
 
@@ -233,6 +234,9 @@ contract TestSetup is Test {
         eETHInstance.initialize(payable(address(liquidityPoolInstance)));
 
         weEthImplementation = new weEth();
+        vm.expectRevert("Initializable: contract is already initialized");
+        weEthImplementation.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
+
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
         weEthInstance = weEth(address(weETHProxy));
         vm.expectRevert("No zero addresses");
