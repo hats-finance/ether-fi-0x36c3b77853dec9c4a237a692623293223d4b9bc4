@@ -53,6 +53,8 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
     }
 
     function initialize(address _liquidityPool) external initializer {
+        require(_liquidityPool != address(0), "No zero addresses");
+        
         __UUPSUpgradeable_init();
         __Ownable_init();
         liquidityPool = ILiquidityPool(_liquidityPool);

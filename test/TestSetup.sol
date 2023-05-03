@@ -228,6 +228,9 @@ contract TestSetup is Test {
 
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
         eETHInstance = EETH(address(eETHProxy));
+
+        vm.expectRevert("No zero addresses");
+        eETHInstance.initialize(payable(address(0)));
         eETHInstance.initialize(payable(address(liquidityPoolInstance)));
 
         weEthImplementation = new weEth();
@@ -236,6 +239,10 @@ contract TestSetup is Test {
 
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
         weEthInstance = weEth(address(weETHProxy));
+        vm.expectRevert("No zero addresses");
+        weEthInstance.initialize(address(0), address(eETHInstance));
+        vm.expectRevert("No zero addresses");
+        weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(0));
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
         // Setup dependencies

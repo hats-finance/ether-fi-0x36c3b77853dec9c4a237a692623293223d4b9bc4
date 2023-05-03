@@ -61,6 +61,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function initialize(address _regulationsManager) external initializer {
+        require(_regulationsManager != address(0), "No zero addresses");
+        
         __Ownable_init();
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
@@ -219,6 +221,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @notice sets the contract address for eETH
     /// @param _eETH address of eETH contract
     function setTokenAddress(address _eETH) external onlyOwner {
+        require(_eETH != address(0), "No zero addresses");
         eETH = IEETH(_eETH);
         emit TokenAddressChanged(_eETH);
     }
