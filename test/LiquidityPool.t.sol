@@ -401,4 +401,21 @@ contract LiquidityPoolTest is TestSetup {
         assertFalse(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.accruedSlashingPenalties(), 0 ether);
     }
+
+    function test_SettersFailOnZeroAddress() public {
+        vm.startPrank(owner);
+        vm.expectRevert("No zero addresses");
+        liquidityPoolInstance.setTokenAddress(address(0));
+
+        vm.expectRevert("No zero addresses");
+        liquidityPoolInstance.setScoreManager(address(0));
+
+        vm.expectRevert("No zero addresses");
+        liquidityPoolInstance.setStakingManager(address(0));
+
+        vm.expectRevert("No zero addresses");
+        liquidityPoolInstance.setEtherFiNodesManager(address(0));
+
+        vm.stopPrank();
+    }
 }
