@@ -10,10 +10,13 @@ contract DeployPatch1 is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        address stakingManagerProxyAddress = vm.envAddress("stakingManagerProxyAddress");
+        address eth2DepositContractAddress = vm.envAddress("eth2DepositContractAddress");
 
-        address stakingManagerProxyAddress = 0x25e821b7197B146F7713C3b89B6A4D83516B912d;
-        address eth2DepositContractAddress = 0x00000000219ab540356cBB839Cbe05303d7705Fa;
+        require(stakingManagerProxyAddress == 0x25e821b7197B146F7713C3b89B6A4D83516B912d, "wrong address");
+        require(stakingManagerProxyAddress == 0x00000000219ab540356cBB839Cbe05303d7705Fa, "wrong address");
+
+        vm.startBroadcast(deployerPrivateKey);
 
         StakingManager stakingManagerInstance = StakingManager(stakingManagerProxyAddress);
         StakingManagerV2 stakingManagerV2Implementation = new StakingManagerV2();
