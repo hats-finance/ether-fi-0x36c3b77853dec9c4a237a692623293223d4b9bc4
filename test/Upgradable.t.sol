@@ -308,7 +308,7 @@ contract UpgradeTest is TestSetup {
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
-        stakingManagerV2Instance.initialize(address(auctionInstance));
+        stakingManagerV2Instance.initialize(address(auctionInstance), depositContractEth2Address);
 
         assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
         assertEq(stakingManagerV2Instance.isUpgraded(), true);

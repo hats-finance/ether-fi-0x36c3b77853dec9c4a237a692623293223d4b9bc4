@@ -97,6 +97,8 @@ contract DeployEtherFiSuiteScript is Script {
         address weEth;
     }
 
+    address depositContractEth2Address = 0x00000000219ab540356cBB839Cbe05303d7705Fa;
+
     suiteAddresses suiteAddressesStruct;
 
     function run() external {
@@ -115,7 +117,7 @@ contract DeployEtherFiSuiteScript is Script {
         stakingManagerImplementation = new StakingManager();
         stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation),"");
         stakingManager = StakingManager(address(stakingManagerProxy));
-        stakingManager.initialize(address(auctionManager));
+        stakingManager.initialize(address(auctionManager), depositContractEth2Address);
 
         BNFTImplementation = new BNFT();
         BNFTProxy = new UUPSProxy(address(BNFTImplementation),"");

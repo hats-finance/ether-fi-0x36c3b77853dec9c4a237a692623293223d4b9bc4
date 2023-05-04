@@ -115,6 +115,8 @@ contract TestSetup is Test {
     address henry = vm.addr(8);
     address liquidityPool = vm.addr(9);
 
+    address depositContractEth2Address = 0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b;
+
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
 
@@ -133,7 +135,7 @@ contract TestSetup is Test {
         stakingManagerImplementation = new StakingManager();
         stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation), "");
         stakingManagerInstance = StakingManager(address(stakingManagerProxy));
-        stakingManagerInstance.initialize(address(auctionInstance));
+        stakingManagerInstance.initialize(address(auctionInstance), depositContractEth2Address);
 
         TNFTImplementation = new TNFT();
         TNFTProxy = new UUPSProxy(address(TNFTImplementation), "");

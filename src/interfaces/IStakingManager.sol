@@ -13,7 +13,7 @@ interface IStakingManager {
     function merkleRoot() external view returns (bytes32);
     function whitelistEnabled() external view returns (bool);
 
-    function initialize(address _auctionAddress) external;
+    function initialize(address _auctionAddress, address _depositContractEth2Address) external;
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
     function setLiquidityPoolAddress(address _liquidityPoolAddress) external;
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof) external payable returns (uint256[] memory);
