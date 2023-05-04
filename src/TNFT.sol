@@ -21,6 +21,7 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
         _disableInitializers();
     }
 
+    /// @notice initialize to set variables on deployment
     function initialize(address _stakingManagerAddress) initializer external {
         require(_stakingManagerAddress != address(0), "No zero addresses");
         
@@ -33,8 +34,8 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
 
     /// @notice Mints NFT to required user
     /// @dev Only through the staking contratc and not by an EOA
-    /// @param _reciever receiver of the NFT
-    /// @param _validatorId the ID of the NFT
+    /// @param _reciever Receiver of the NFT
+    /// @param _validatorId The ID of the NFT
     function mint(address _reciever, uint256 _validatorId) external onlyStakingManager {
         _mint(_reciever, _validatorId);
     }
@@ -51,6 +52,8 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Fetches the address of the implementation contract currently being used by the proxy
+    /// @return the address of the currently used implementation contract
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }

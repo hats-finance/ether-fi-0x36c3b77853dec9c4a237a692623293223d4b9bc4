@@ -63,7 +63,7 @@ contract AuctionManager is
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice initialize to set variables on deployment
+    /// @notice Initialize to set variables on deployment
     function initialize(
         address _nodeOperatorManagerContract
     ) external initializer {
@@ -164,6 +164,9 @@ contract AuctionManager is
         return bidIdArray;
     }
 
+    /// @notice Cancels bids in a batch by calling the 'cancelBid' function multiple times
+    /// @dev Calls an internal function to perform the cancel
+    /// @param _bidIds the ID's of the bids to cancel
     function cancelBidBatch(uint256[] calldata _bidIds) external whenNotPaused {
         for (uint256 i = 0; i < _bidIds.length; i++) {
             _cancelBid(_bidIds[i]);
@@ -171,13 +174,13 @@ contract AuctionManager is
     }
 
     /// @notice Cancels a specified bid by de-activating it
-    /// @dev Require the bid to exist and be active
+    /// @dev Calls an internal function to perform the cancel
     /// @param _bidId the ID of the bid to cancel
     function cancelBid(uint256 _bidId) public whenNotPaused {
         _cancelBid(_bidId);
     }
 
-    /// @notice Updates a bid winning bids details
+    /// @notice Updates the details of the bid which has been used in a stake match
     /// @dev Called by batchDepositWithBidIds() in StakingManager.sol
     /// @param _bidId the ID of the bid being removed from the auction (since it has been selected)
     function updateSelectedBidInformation(
@@ -211,14 +214,14 @@ contract AuctionManager is
         protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
     }
 
-    /// @notice Disables the bid whitelist
+    /// @notice Disables the whitelisting phase of the bidding
     /// @dev Allows both regular users and whitelisted users to bid
     function disableWhitelist() public onlyOwner {
         whitelistEnabled = false;
         emit WhitelistDisabled(whitelistEnabled);
     }
 
-    /// @notice Enables the bid whitelist
+    /// @notice Enables the whitelisting phase of the bidding
     /// @dev Only users who are on a whitelist can bid
     function enableWhitelist() public onlyOwner {
         whitelistEnabled = true;
@@ -266,8 +269,8 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
 
     /// @notice Fetches the address of the user who placed a bid for a specific bid ID
-    /// @dev Needed for registerValidator() function in Staking Contract
-    /// @return the user who placed the bid
+    /// @dev Needed for registerValidator() function in Staking Contract as well as function in the EtherFiNodeManager.sol
+    /// @return the address of the user who placed (owns) the bid
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
     }
@@ -279,6 +282,8 @@ contract AuctionManager is
         return bids[_bidId].isActive;
     }
 
+    /// @notice Fetches the address of the implementation contract currently being used by the proxy
+    /// @return the address of the currently used implementation contract
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
@@ -288,9 +293,9 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
 
     /// @notice Sets an instance of the protocol revenue manager
-    /// @dev Needed to process an auction fee
-    /// @param _protocolRevenueManager the addres of the protocol manager
     /// @notice Performed this way due to circular dependencies
+    /// @dev Needed to process an auction fee
+    /// @param _protocolRevenueManager the address of the protocol manager
     function setProtocolRevenueManager(
         address _protocolRevenueManager
     ) external onlyOwner {
@@ -301,7 +306,7 @@ contract AuctionManager is
         );
     }
 
-    /// @notice Sets the stakingManagerContractAddress address in the current contract
+    /// @notice Sets the staking managers contract address in the current contract
     /// @param _stakingManagerContractAddress new stakingManagerContract address
     function setStakingManagerContractAddress(
         address _stakingManagerContractAddress
@@ -311,7 +316,7 @@ contract AuctionManager is
         stakingManagerContractAddress = _stakingManagerContractAddress;
     }
 
-    /// @notice Updates the minimum bid price
+    /// @notice Updates the minimum bid price for a non-whitelisted bidder
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint64 _newMinBidAmount) external onlyOwner {
         require(_newMinBidAmount < maxBidAmount, "Min bid exceeds max bid");
@@ -319,7 +324,7 @@ contract AuctionManager is
         minBidAmount = _newMinBidAmount;
     }
 
-    /// @notice Updates the maximum bid price
+    /// @notice Updates the maximum bid price for both whitelisted and non-whitelisted bidders
     /// @param _newMaxBidAmount the new amount to set the maximum bid price as
     function setMaxBidPrice(uint64 _newMaxBidAmount) external onlyOwner {
         require(_newMaxBidAmount > minBidAmount, "Min bid exceeds max bid");

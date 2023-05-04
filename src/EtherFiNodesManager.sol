@@ -62,11 +62,16 @@ contract EtherFiNodesManager is
         _disableInitializers();
     }
 
+    receive() external payable {}
+
     /// @dev Sets the revenue splits on deployment
     /// @dev AuctionManager, treasury and deposit contracts must be deployed first
-    /// @param _treasuryContract the address of the treasury contract for interaction
-    /// @param _auctionContract the address of the auction contract for interaction
-    /// @param _stakingManagerContract the address of the deposit contract for interaction
+    /// @param _treasuryContract The address of the treasury contract for interaction
+    /// @param _auctionContract The address of the auction contract for interaction
+    /// @param _stakingManagerContract The address of the staking contract for interaction
+    /// @param _tnftContract The address of the TNFT contract for interaction
+    /// @param _bnftContract The address of the BNFT contract for interaction
+    /// @param _protocolRevenueManagerContract The address of the protocols revenue manager contract for interaction
     function initialize(
         address _treasuryContract,
         address _auctionContract,
@@ -132,11 +137,10 @@ contract EtherFiNodesManager is
         );
     }
 
-    receive() external payable {}
 
-    /// @notice Sets the validator ID for the EtherFiNode contract
-    /// @param _validatorId id of the validator associated to the node
-    /// @param _address address of the EtherFiNode contract
+    /// @notice Registers the validator ID for the EtherFiNode contract
+    /// @param _validatorId ID of the validator associated to the node
+    /// @param _address Address of the EtherFiNode contract
     function registerEtherFiNode(
         uint256 _validatorId,
         address _address
@@ -148,8 +152,8 @@ contract EtherFiNodesManager is
         etherfiNodeAddress[_validatorId] = _address;
     }
 
-    /// @notice UnSet the EtherFiNode contract for the validator ID
-    /// @param _validatorId id of the validator associated
+    /// @notice Unset the EtherFiNode contract for the validator ID
+    /// @param _validatorId ID of the validator associated
     function unregisterEtherFiNode(
         uint256 _validatorId
     ) public onlyStakingManagerContract {
@@ -160,7 +164,8 @@ contract EtherFiNodesManager is
         etherfiNodeAddress[_validatorId] = address(0);
     }
 
-    /// @notice send the request to exit the validator node
+    /// @notice Send the request to exit the validator node
+    /// @param _validatorId ID of the validator associated
     function sendExitRequest(uint256 _validatorId) public whenNotPaused {
         require(
             msg.sender == tnftInstance.ownerOf(_validatorId),
@@ -176,7 +181,8 @@ contract EtherFiNodesManager is
         emit NodeExitRequested(_validatorId);
     }
 
-    /// @notice send the request to exit the validator node
+    /// @notice Send the request to exit multiple nodes
+    /// @param _validatorIds IDs of the validators associated
     function batchSendExitRequest(uint256[] calldata _validatorIds) external whenNotPaused {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             sendExitRequest(_validatorIds[i]);
@@ -184,8 +190,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Once the node's exit is observed, the protocol calls this function to process their exits.
-    /// @param _validatorIds the list of validators which exited
-    /// @param _exitTimestamps the list of exit timestamps of the validators
+    /// @param _validatorIds The list of validators which exited
+    /// @param _exitTimestamps The list of exit timestamps of the validators
     function processNodeExit(
         uint256[] calldata _validatorIds,
         uint32[] calldata _exitTimestamps
@@ -204,8 +210,8 @@ contract EtherFiNodesManager is
         }
     }
 
-    /// @notice process the rewards skimming
-    /// @param _validatorId the validator Id
+    /// @notice Process the rewards skimming
+    /// @param _validatorId The validator Id
     function partialWithdraw(
         uint256 _validatorId,
         bool _stakingRewards,
@@ -261,8 +267,11 @@ contract EtherFiNodesManager is
         );
     }
 
-    /// @notice batch-process the rewards skimming
-    /// @param _validatorIds a list of the validator Ids
+    /// @notice Batch-process the rewards skimming
+    /// @param _validatorIds A list of the validator Ids
+    /// @param _stakingRewards A bool value to indictae whether or not to include the staking rewards
+    /// @param _protocolRewards A bool value to indictae whether or not to include the protocol rewards
+    /// @param _vestedAuctionFee A bool value to indictae whether or not to include the auction fee rewards
     function partialWithdrawBatch(
         uint256[] calldata _validatorIds,
         bool _stakingRewards,
@@ -279,7 +288,12 @@ contract EtherFiNodesManager is
         }
     }
 
-    /// @notice batch-process the rewards skimming for the validator nodes belonging to the same operator
+    /// @notice Batch-process the rewards skimming for the validator nodes belonging to the same operator
+    /// @param _operator The address of the operator to withdraw from
+    /// @param _validatorIds The ID's of the validators to be withdrawn from
+    /// @param _stakingRewards A bool value to indictae whether or not to include the staking rewards
+    /// @param _protocolRewards A bool value to indictae whether or not to include the protocol rewards
+    /// @param _vestedAuctionFee A bool value to indictae whether or not to include the auction fee rewards
     function partialWithdrawBatchGroupByOperator(
         address _operator,
         uint256[] memory _validatorIds,
@@ -360,10 +374,10 @@ contract EtherFiNodesManager is
     }
 
     /// @notice process the full withdrawal
-    /// @param _validatorId the validator Id
-    /// this fullWithdrawal is allowed only after it's marked as EXITED
-    /// EtherFi will be monitoring the status of the validator nodes and mark them EXITED if they do;
-    /// it is a point of centralization in Phase 1
+    /// @dev This fullWithdrawal is allowed only after it's marked as EXITED.
+    /// @dev EtherFi will be monitoring the status of the validator nodes and mark them EXITED if they do;
+    /// @dev It is a point of centralization in Phase 1
+    /// @param _validatorId the validator Id to withdraw from
     function fullWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused{
         address etherfiNode = etherfiNodeAddress[_validatorId];
         require(
@@ -400,8 +414,8 @@ contract EtherFiNodesManager is
         );
     }
 
-    /// @notice process the full withdrawal
-    /// @param _validatorIds the validator Ids
+    /// @notice Process the full withdrawal fopr multiple validators
+    /// @param _validatorIds The validator Ids
     function fullWithdrawBatch(uint256[] calldata _validatorIds) external whenNotPaused {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             fullWithdraw(_validatorIds[i]);
@@ -422,10 +436,10 @@ contract EtherFiNodesManager is
 
     /// @notice Sets the staking rewards split
     /// @notice Splits must add up to the SCALE of 1_000_000
-    /// @param _treasury the split going to the treasury
-    /// @param _nodeOperator the split going to the nodeOperator
-    /// @param _tnft the split going to the tnft holder
-    /// @param _bnft the split going to the bnft holder
+    /// @param _treasury The split going to the treasury
+    /// @param _nodeOperator The split going to the nodeOperator
+    /// @param _tnft The split going to the tnft holder
+    /// @param _bnft The split going to the bnft holder
     function setStakingRewardsSplit(
         uint64 _treasury,
         uint64 _nodeOperator,
@@ -444,10 +458,10 @@ contract EtherFiNodesManager is
 
     /// @notice Sets the protocol rewards split
     /// @notice Splits must add up to the SCALE of 1_000_000
-    /// @param _treasury the split going to the treasury
-    /// @param _nodeOperator the split going to the nodeOperator
-    /// @param _tnft the split going to the tnft holder
-    /// @param _bnft the split going to the bnft holder
+    /// @param _treasury The split going to the treasury
+    /// @param _nodeOperator The split going to the nodeOperator
+    /// @param _tnft The split going to the tnft holder
+    /// @param _bnft The split going to the bnft holder
     function setProtocolRewardsSplit(
         uint64 _treasury,
         uint64 _nodeOperator,
@@ -465,7 +479,7 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Sets the Non Exit Penalty Principal amount
-    /// @param _nonExitPenaltyPrincipal the new principal amount
+    /// @param _nonExitPenaltyPrincipal The new principal amount
     function setNonExitPenaltyPrincipal (
         uint64 _nonExitPenaltyPrincipal
     ) public onlyOwner {
@@ -473,7 +487,7 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Sets the Non Exit Penalty Daily Rate amount
-    /// @param _nonExitPenaltyDailyRate the new non exit daily rate
+    /// @param _nonExitPenaltyDailyRate The new non exit daily rate
     function setNonExitPenaltyDailyRate(
         uint64 _nonExitPenaltyDailyRate
     ) public onlyOwner {
@@ -482,8 +496,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Sets the phase of the validator
-    /// @param _validatorId id of the validator associated to this etherfi node
-    /// @param _phase phase of the validator
+    /// @param _validatorId ID of the validator associated to this etherfi node
+    /// @param _phase Phase of the validator
     function setEtherFiNodePhase(
         uint256 _validatorId,
         IEtherFiNode.VALIDATOR_PHASE _phase
@@ -493,8 +507,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Sets the ipfs hash of the validator's encrypted private key
-    /// @param _validatorId id of the validator associated to this etherfi node
-    /// @param _ipfs ipfs hash
+    /// @param _validatorId ID of the validator associated to this etherfi node
+    /// @param _ipfs IPFS hash
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(
         uint256 _validatorId,
         string calldata _ipfs
@@ -504,8 +518,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Sets the local revenue index for a specific node
-    /// @param _validatorId id of the validator associated to this etherfi node
-    /// @param _localRevenueIndex renevue index to be set
+    /// @param _validatorId ID of the validator associated to this etherfi node
+    /// @param _localRevenueIndex Renevue index to be set
     function setEtherFiNodeLocalRevenueIndex(
         uint256 _validatorId,
         uint256 _localRevenueIndex
@@ -517,7 +531,7 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Increments the number of validators by a certain amount
-    /// @param _count how many new validators to increment by
+    /// @param _count The amount of new validators to increment by
     function incrementNumberOfValidators(
         uint64 _count
     ) external onlyStakingManagerContract {
@@ -542,8 +556,8 @@ contract EtherFiNodesManager is
     ///         - mark it EXITED
     ///         - distribute the protocol (auction) revenue
     ///         - stop sharing the protocol revenue; by setting their local revenue index to '0'
-    /// @param _validatorId the validator ID
-    /// @param _exitTimestamp the exit timestamp
+    /// @param _validatorId The validator ID
+    /// @param _exitTimestamp The exit timestamp
     function _processNodeExit(
         uint256 _validatorId,
         uint32 _exitTimestamp
@@ -600,9 +614,9 @@ contract EtherFiNodesManager is
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Fecthes the phase a specific node is in
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return validatorPhase the phase the node is in
+    /// @notice Fetches the phase a specific node is in
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @return validatorPhase The phase the node is in
     function phase(
         uint256 _validatorId
     ) public view returns (IEtherFiNode.VALIDATOR_PHASE validatorPhase) {
@@ -610,9 +624,9 @@ contract EtherFiNodesManager is
         validatorPhase = IEtherFiNode(etherfiNode).phase();
     }
 
-    /// @notice Fecthes the ipfs hash for the encrypted key data from a specific node
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the ifs hash associated to the node
+    /// @notice Fetches the ipfs hash for the encrypted key data from a specific node
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @return The ifs hash associated to the node
     function ipfsHashForEncryptedValidatorKey(
         uint256 _validatorId
     ) external view returns (string memory) {
@@ -621,8 +635,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Fetches the local revenue index of a specific node
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the local revenue index for the node
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @return The local revenue index for the node
     function localRevenueIndex(
         uint256 _validatorId
     ) external view returns (uint256) {
@@ -631,8 +645,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Fetches the vested auction rewards of a specific node
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the vested auction rewards for the node
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @return The vested auction rewards for the node
     function vestedAuctionRewards(
         uint256 _validatorId
     ) external view returns (uint256) {
@@ -641,8 +655,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Generates withdraw credentials for a validator
-    /// @param _address associated with the validator for the withdraw credentials
-    /// @return the generated withdraw key for the node
+    /// @param _address Associated with the validator for the withdraw credentials
+    /// @return The generated withdraw key for the node
     function generateWithdrawalCredentials(
         address _address
     ) public pure returns (bytes memory) {   
@@ -650,8 +664,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Fetches the withdraw credentials for a specific node
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the generated withdraw key for the node
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @return The generated withdraw key for the node
     function getWithdrawalCredentials(
         uint256 _validatorId
     ) external view returns (bytes memory) {
@@ -661,8 +675,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Fetches if the node has an exit request
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return bool value based on if an exit request has been sent
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @return Bool value based on if an exit request has been sent
     function isExitRequested(
         uint256 _validatorId
     ) external view returns (bool) {
@@ -671,9 +685,9 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Fetches the nodes non exit penalty amount
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @param _endTimestamp timestamp for calculation
-    /// @return the amount of the penalty
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @param _endTimestamp Timestamp for calculation
+    /// @return The amount of the penalty
     function getNonExitPenalty(
         uint256 _validatorId,
         uint32 _endTimestamp
@@ -688,8 +702,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Fetches the staking rewards payout for a node
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the payout for staking rewards
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @return The payout for staking rewards
     function getStakingRewardsPayouts(
         uint256 _validatorId
     ) public view returns (uint256, uint256, uint256, uint256) {
@@ -702,11 +716,11 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Fetches the total rewards payout for the node for specific revenues
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @param _stakingRewards if it should include staking rewards
-    /// @param _protocolRewards if it should include protocol rewards
-    /// @param _vestedAuctionFee if it should include the vested auction rewards
-    /// @return the payout for total rewards for the node
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @param _stakingRewards A bool value to indictae whether or not to include the staking rewards
+    /// @param _protocolRewards A bool value to indictae whether or not to include the protocol rewards
+    /// @param _vestedAuctionFee A bool value to indictae whether or not to include the auction fee rewards
+    /// @return The payout for total rewards for the node
     function getRewardsPayouts(
         uint256 _validatorId,
         bool _stakingRewards,
@@ -727,8 +741,8 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Fetches the full withdraw payouts
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the payout for full withdraws
+    /// @param _validatorId ID of the validator associated to etherfi node
+    /// @return The payout for full withdraws
     function getFullWithdrawalPayouts(
         uint256 _validatorId
     ) public view returns (uint256, uint256, uint256, uint256) {
@@ -742,10 +756,14 @@ contract EtherFiNodesManager is
             );
     }
 
+    /// @notice Fetches if the specified validator has been exited
+    /// @return The bool value representing if the validator has been exited
     function isExited(uint256 _validatorId) public view returns (bool) {
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
     }
 
+    /// @notice Fetches the address of the implementation contract currently being used by the proxy
+    /// @return The address of the currently used implementation contract
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
