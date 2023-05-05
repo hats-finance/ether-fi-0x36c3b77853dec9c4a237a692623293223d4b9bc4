@@ -118,7 +118,7 @@ contract StakingManager is
         returns (uint256[] memory)
     {
         if(whitelistEnabled) {
-            require(MerkleProofUpgradeable.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(msg.sender))), "User not whitelisted");
+            require(msg.sender == owner(), "User not whitelisted");
         }
 
         require(_candidateBidIds.length > 0, "No bid Ids provided");

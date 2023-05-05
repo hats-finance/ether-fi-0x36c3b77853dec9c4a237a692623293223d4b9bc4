@@ -284,6 +284,19 @@ contract UpgradeTest is TestSetup {
     }
 
     function test_CanUpgradeStakingManager() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 3);
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(proof, _ipfsHash, 5);
+
+        startHoax(alice);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+
+        vm.stopPrank();      
+        
         assertEq(stakingManagerInstance.getImplementation(), address(stakingManagerImplementation));
 
         vm.prank(owner);
@@ -314,6 +327,13 @@ contract UpgradeTest is TestSetup {
         
         // State is maintained
         assertEq(stakingManagerV2Instance.maxBatchDepositSize(), 25);
+
+        vm.prank(owner);
+        stakingManagerV2Instance.enableWhitelist();
+
+        hoax(alice);
+        vm.expectRevert("User not whitelisted");
+        stakingManagerV2Instance.batchDepositWithBidIds{value: 32 ether}(bidId, proof);
 
         assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b));
         vm.prank(owner);
