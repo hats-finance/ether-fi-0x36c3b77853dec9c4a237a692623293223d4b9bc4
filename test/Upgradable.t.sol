@@ -284,6 +284,19 @@ contract UpgradeTest is TestSetup {
     }
 
     function test_CanUpgradeStakingManager() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 3);
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(proof, _ipfsHash, 5);
+
+        startHoax(alice);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+
+        vm.stopPrank();      
+        
         assertEq(stakingManagerInstance.getImplementation(), address(stakingManagerImplementation));
 
         vm.prank(owner);
