@@ -291,6 +291,11 @@ contract UpgradeTest is TestSetup {
 
         StakingManagerV2 stakingManagerV2Implementation = new StakingManagerV2();
 
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        stakingManagerV2Implementation.initialize(address(auctionInstance));
+
+
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(alice);
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
