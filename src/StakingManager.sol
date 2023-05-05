@@ -489,9 +489,6 @@ contract StakingManager is
 
 
 contract StakingManagerV2 is StakingManager {
-    function isUpgraded() public view returns(bool){
-        return true;
-    }
 
     function registerEth2DepositContract(address _address) public onlyOwner {
         require(_address != address(0), "No zero addresses");

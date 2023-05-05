@@ -305,7 +305,7 @@ contract UpgradeTest is TestSetup {
         stakingManagerV2Instance.initialize(address(auctionInstance));
 
         assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
-        assertEq(stakingManagerV2Instance.isUpgraded(), true);
+        // assertEq(stakingManagerV2Instance.isUpgraded(), true);
         
         // State is maintained
         assertEq(stakingManagerV2Instance.maxBatchDepositSize(), 25);
