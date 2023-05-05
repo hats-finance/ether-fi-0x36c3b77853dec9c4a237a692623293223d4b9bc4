@@ -85,13 +85,14 @@ contract ScoreManager is
     /// @notice creates a new type of score
     /// @param _type the bytes value type being added
     function addNewScoreType(bytes memory _type) external onlyOwner returns (uint256) {
-        scoreTypes[numberOfTypes] = _type;
-        typeIds[_type] = numberOfTypes;
+        uint256 numberOfTypes_ = numberOfTypes;
+        scoreTypes[numberOfTypes_] = _type;
+        typeIds[_type] = numberOfTypes_;
 
-        emit NewTypeAdded(numberOfTypes, _type);
+        emit NewTypeAdded(numberOfTypes_, _type);
 
         numberOfTypes++;
-        return numberOfTypes - 1;
+        return numberOfTypes_;
     }
 
     //--------------------------------------------------------------------------------------
