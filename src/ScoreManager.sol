@@ -37,7 +37,7 @@ contract ScoreManager is
     //--------------------------------------------------------------------------------------
 
     event ScoreSet(address indexed user, uint256 score_typeID, uint256 score);
-    event NewTypeAdded(uint256 Id, bytes ScoreType);
+    event NewTypeAdded(uint256 id, bytes scoreType);
 
 
     //--------------------------------------------------------------------------------------
