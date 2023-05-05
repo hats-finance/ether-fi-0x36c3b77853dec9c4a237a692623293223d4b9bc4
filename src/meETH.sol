@@ -18,10 +18,11 @@ contract meETH is IERC20Upgradeable {
     mapping (address => mapping (address => uint256)) public allowances;
     mapping (address => UserDeposit) public _userDeposits;
     mapping (address => UserData) public _userData;
+    uint32 public genesisTimestamp; // the timestamp when the meETH contract was deployed
 
     struct UserDeposit {
         uint128 amounts;
-        uint128 sacrificedAmounts;
+        uint128 amountStakedForPoints;
     }
 
     struct UserData {
@@ -30,12 +31,9 @@ contract meETH is IERC20Upgradeable {
         uint40 pointsSnapshot;
         uint40 curTierPoints;
         uint40 nextTierPoints;
-        uint8 tier;
+        uint8  tier;
     }
 
-
-    // total score snapshot
-    uint256 public genesisTimestamp;
 
     // points growth rate
     uint256 public pointsBoostFactor = 100; // +100% points if staking rewards are sacrificed
@@ -51,7 +49,7 @@ contract meETH is IERC20Upgradeable {
 
     struct TierData {
         uint96 rewardsGlobalIndex;
-        uint96 sacrificedAmount; // 
+        uint96 amountStakedForPoints;
         uint40 minimumPoints;
         uint24 weight;
     }
@@ -65,7 +63,7 @@ contract meETH is IERC20Upgradeable {
     constructor(address _eEthAddress, address _liquidityPoolAddress) {
         eETH = IEETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
-        genesisTimestamp = block.timestamp;
+        genesisTimestamp = uint32(block.timestamp);
     }
 
     /**
@@ -90,6 +88,18 @@ contract meETH is IERC20Upgradeable {
         return 18;
     }
 
+    function totalShares() public view returns (uint256) {
+        uint256 sum = 0;
+        for (uint256 i = 0; i < tierDeposits.length; i++) {
+            sum += uint256(tierDeposits[i].shares);
+        }
+        return sum;
+    }
+
+    function totalSupply() public view returns (uint256) {
+        return liquidityPool.amountForShare(totalShares());
+    }
+
     function wrap(uint256 _amount) external {
         require(_amount > 0, "You cannot wrap 0 eETH");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
@@ -111,7 +121,8 @@ contract meETH is IERC20Upgradeable {
 
     function unwrap(uint256 _amount) external {
         require(_amount > 0, "You cannot unwrap 0 meETH");
-        require(_userDeposits[msg.sender].amounts >= _amount, "Not enough balance");
+        uint256 unwrappableBalance = balanceOf(msg.sender) - _userDeposits[msg.sender].amountStakedForPoints;
+        require(unwrappableBalance >= _amount, "Not enough balance to unwrap");
 
         updatePoints(msg.sender);
         claimStakingRewards(msg.sender);
@@ -125,40 +136,33 @@ contract meETH is IERC20Upgradeable {
         eETH.transferFrom(address(this), msg.sender, _amount);
     }
 
-    function sacrificeRewardsForPoints(uint256 _amount) external {
-        require(_userDeposits[msg.sender].amounts >= _amount, "Not enough balance");
-
-        console.log("sacrificeRewardsForPoints", _amount);
+    function stakeForPoints(uint256 _amount) external {
+        require(_userDeposits[msg.sender].amounts >= _amount, "Not enough balance to stake for points");
 
         updatePoints(msg.sender);
         claimStakingRewards(msg.sender);
 
-        _sacrificeUserDeposit(msg.sender, _amount);
+        _stakeForPoints(msg.sender, _amount);
     }
 
-    function untrade(uint256 _amount) external {
-        console.log("untrade", _amount);
-        require(_userDeposits[msg.sender].sacrificedAmounts >= _amount, "Not enough balance sacrificed");
+    function unstakeForPoints(uint256 _amount) external {
+        require(_userDeposits[msg.sender].amountStakedForPoints >= _amount, "Not enough balance staked");
 
         updatePoints(msg.sender);
         claimStakingRewards(msg.sender);
 
-        _unSacrificeUserDeposit(msg.sender, _amount);
+        _unstakeForPoints(msg.sender, _amount);
     }
 
     function balanceOf(address _account) public view override(IERC20Upgradeable) returns (uint256) {
         uint256 tier = tierOf(_account);
         uint96[] memory globalIndex = calculateGlobalIndex();
 
-        console.log("balanceOf ...", tier, globalIndex[tier], _userData[_account].rewardsLocalIndex);
-
         uint256 amount = _userDeposits[_account].amounts;
         uint256 rewards = (globalIndex[tier] - _userData[_account].rewardsLocalIndex) * amount / 1 ether;
-        uint256 sacrificedAmount = _userDeposits[_account].sacrificedAmounts;
+        uint256 amountStakedForPoints = _userDeposits[_account].amountStakedForPoints;
 
-        console.log("balanceOf", _userDeposits[_account].amounts, rewards, _userDeposits[_account].sacrificedAmounts);
-
-        return amount + rewards + sacrificedAmount;
+        return amount + rewards + amountStakedForPoints;
     }
 
     function updateTier(address _account) public {
@@ -176,24 +180,22 @@ contract meETH is IERC20Upgradeable {
     }
 
     function removeFromTier(address _account, uint8 _tier) public {
-        require(tierOf(_account) == _tier, "wrong tier");
-        console.log("removeFromTier(..., ", _tier);
+        require(tierOf(_account) == _tier, "the account does not belong to the specified tier");
 
         uint256 amount = _userDeposits[_account].amounts;
         uint256 share = liquidityPool.sharesForAmount(amount);
 
-        uint256 sacrificedAmount = _userDeposits[msg.sender].sacrificedAmounts;
-        tierData[_tier].sacrificedAmount -= uint96(sacrificedAmount);
+        uint256 amountStakedForPoints = _userDeposits[msg.sender].amountStakedForPoints;
+        tierData[_tier].amountStakedForPoints -= uint96(amountStakedForPoints);
         _decrementTierDeposit(_tier, amount, share);
     }
 
     function addToTier(address _account, uint8 _tier) public {
-        console.log("addToTier(..., ", _tier);
-        uint256 sacrificedAmount = _userDeposits[msg.sender].sacrificedAmounts;
+        uint256 amountStakedForPoints = _userDeposits[msg.sender].amountStakedForPoints;
         uint256 amount = _userDeposits[_account].amounts;
         uint256 share = liquidityPool.sharesForAmount(amount);
 
-        tierData[_tier].sacrificedAmount += uint96(sacrificedAmount);
+        tierData[_tier].amountStakedForPoints += uint96(amountStakedForPoints);
         _incrementTierDeposit(_tier, amount, share);
 
         _userData[_account].rewardsLocalIndex = calculateGlobalIndex()[_tier];
@@ -206,14 +208,11 @@ contract meETH is IERC20Upgradeable {
         uint96[] memory globalIndex = new uint96[](tierDeposits.length);
         uint256[] memory weightedTierRewards = new uint256[](tierDeposits.length);
 
-        console.log("calculateGlobalIndex 1");
-
         // tierRewards = amountForShare(totalShares[tier]) - totalAmount[tier];
         // weightedTierRewards = weights[tier] * tierTotalRewards;
         // rescaledTierRewards = weightedTierRewards * Sum(tierRewards) / Sum(weightedTierRewards)
         // balance = amount + rescaledTierRewards * _userDeposits[_account].amounts / totalAmountsPerTier[tier];
         for (uint256 i = 0; i < weightedTierRewards.length; i++) {
-            console.log("- ", liquidityPool.amountForShare(tierDeposits[i].shares), tierDeposits[i].amounts);
             uint256 tierRewards = liquidityPool.amountForShare(tierDeposits[i].shares) - tierDeposits[i].amounts;
             uint256 weightedTierReward = tierData[i].weight * tierRewards;
 
@@ -224,23 +223,18 @@ contract meETH is IERC20Upgradeable {
             sumWeightedTierRewards += weightedTierReward;
         }
 
-        console.log("calculateGlobalIndex 2");
-
         if (sumWeightedTierRewards > 0) {
             for (uint256 i = 0; i < weightedTierRewards.length; i++) {
-                uint256 amountsEligibleForRewards = tierDeposits[i].amounts - tierData[i].sacrificedAmount;
+                uint256 amountsEligibleForRewards = tierDeposits[i].amounts - tierData[i].amountStakedForPoints;
                 if (amountsEligibleForRewards > 0) {
                     uint256 rescaledTierRewards = weightedTierRewards[i] * sumTierRewards / sumWeightedTierRewards;
-                    uint256 index = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
-                    require(uint256(globalIndex[i]) + uint256(index) <= type(uint96).max, "overflow");
-                    globalIndex[i] += uint96(index);
-                    console.log("- ", i, globalIndex[i]);
-                    
+                    uint256 delta = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
+                    require(uint256(globalIndex[i]) + uint256(delta) <= type(uint96).max, "overflow");
+                    globalIndex[i] += uint96(delta);                    
                 }
             }
         }
 
-        console.log("calculateGlobalIndex 3");
         return globalIndex;
     }
 
@@ -251,12 +245,12 @@ contract meETH is IERC20Upgradeable {
         if (curTier != newTier) {
             uint256 amount = _userDeposits[_account].amounts;
             uint256 share = liquidityPool.sharesForAmount(amount);
-            uint256 sacrificedAmount = _userDeposits[_account].sacrificedAmounts;
+            uint256 amountStakedForPoints = _userDeposits[_account].amountStakedForPoints;
 
-            tierData[curTier].sacrificedAmount -= uint96(sacrificedAmount);
+            tierData[curTier].amountStakedForPoints -= uint96(amountStakedForPoints);
             _decrementTierDeposit(curTier, amount, share);
 
-            tierData[newTier].sacrificedAmount += uint96(sacrificedAmount);
+            tierData[newTier].amountStakedForPoints += uint96(amountStakedForPoints);
             _incrementTierDeposit(newTier, amount, share);
 
             _userData[_account].rewardsLocalIndex = tierData[newTier].rewardsGlobalIndex;
@@ -284,7 +278,8 @@ contract meETH is IERC20Upgradeable {
     // and updates the account's score snapshot accordingly.
     // It also accumulates the user's points earned for the next tier, and updates their tier points snapshot accordingly.
     function updatePoints(address _account) public {
-        if (_userData[_account].pointsSnapshotTime == block.timestamp) {
+        uint256 userPointsSnapshotTimestamp = _userData[_account].pointsSnapshotTime;
+        if (userPointsSnapshotTimestamp == block.timestamp) {
             return;
         }
 
@@ -292,14 +287,14 @@ contract meETH is IERC20Upgradeable {
         uint256 tierSnapshotTimestamp = currentTierSnapshotTimestamp();
 
         // Calculate the points earned by the account for the current and next tiers
-        if (_userData[_account].pointsSnapshotTime < tierSnapshotTimestamp - 28 days) {
+        if (userPointsSnapshotTimestamp < tierSnapshotTimestamp - 28 days) {
             _userData[_account].curTierPoints = _pointsEarning(_account, tierSnapshotTimestamp - 28 days, tierSnapshotTimestamp);
             _userData[_account].nextTierPoints = _pointsEarning(_account, tierSnapshotTimestamp, block.timestamp);
-        } else if (_userData[_account].pointsSnapshotTime < tierSnapshotTimestamp) {
-            _userData[_account].curTierPoints = _userData[_account].nextTierPoints + _pointsEarning(_account, _userData[_account].pointsSnapshotTime, tierSnapshotTimestamp);
+        } else if (userPointsSnapshotTimestamp < tierSnapshotTimestamp) {
+            _userData[_account].curTierPoints = _userData[_account].nextTierPoints + _pointsEarning(_account, userPointsSnapshotTimestamp, tierSnapshotTimestamp);
             _userData[_account].nextTierPoints = _pointsEarning(_account, tierSnapshotTimestamp, block.timestamp);
         } else {
-            _userData[_account].nextTierPoints += _pointsEarning(_account, _userData[_account].pointsSnapshotTime, block.timestamp);
+            _userData[_account].nextTierPoints += _pointsEarning(_account, userPointsSnapshotTimestamp, block.timestamp);
         }
 
         // Update the user's score snapshot
@@ -311,14 +306,15 @@ contract meETH is IERC20Upgradeable {
     // It takes into account the account's points earned since the previous tier snapshot,
     // as well as any points earned during the current tier snapshot period.
     function getPointsEarningsDuringLastMembershipPeriod(address _account) public view returns (uint256) {
+        uint256 userPointsSnapshotTimestamp = _userData[_account].pointsSnapshotTime;
         // Get the timestamp for the current tier snapshot
         uint256 tierSnapshotTimestamp = currentTierSnapshotTimestamp();
 
         // Calculate the points earned by the account for the current tier
-        if (_userData[_account].pointsSnapshotTime < tierSnapshotTimestamp - 28 days) {
+        if (userPointsSnapshotTimestamp < tierSnapshotTimestamp - 28 days) {
             return _pointsEarning(_account, tierSnapshotTimestamp - 28 days, tierSnapshotTimestamp);
-        } else if (_userData[_account].pointsSnapshotTime < tierSnapshotTimestamp) {
-            return _userData[_account].nextTierPoints + _pointsEarning(_account, _userData[_account].pointsSnapshotTime, tierSnapshotTimestamp);
+        } else if (userPointsSnapshotTimestamp < tierSnapshotTimestamp) {
+            return _userData[_account].nextTierPoints + _pointsEarning(_account, userPointsSnapshotTimestamp, tierSnapshotTimestamp);
         } else {
             return _userData[_account].curTierPoints;
         }
@@ -349,11 +345,11 @@ contract meETH is IERC20Upgradeable {
         uint256 checkpointTime = _since;
         uint256 balance = _userDeposits[_account].amounts;
 
-        if (balance == 0 && _userDeposits[_account].sacrificedAmounts == 0) {
+        if (balance == 0 && _userDeposits[_account].amountStakedForPoints == 0) {
             return 0;
         }
 
-        uint256 effectiveBalanceForEarningPoints = balance + ((100 + pointsBoostFactor) * _userDeposits[_account].sacrificedAmounts) / 100;
+        uint256 effectiveBalanceForEarningPoints = balance + ((100 + pointsBoostFactor) * _userDeposits[_account].amountStakedForPoints) / 100;
 
         for (uint256 i = 0; i < pointGrowthRates.length; i++) {
             if (checkpointTime < pointGrowthRateUpdateTimes[i] && pointGrowthRateUpdateTimes[i] <= _until) {
@@ -365,9 +361,9 @@ contract meETH is IERC20Upgradeable {
             earning += effectiveBalanceForEarningPoints * (_until - checkpointTime) * pointsGrowthRate;
         }
 
-        // 0.001 ether   meETH earns 1     wei   point per day
-        // == 1  ether   meETH earns 1     kwei  point per day
-        // == 1  Million meETH earns 1     gwei  point per day
+        // 0.001 ether   meETH earns 1     wei   points per day
+        // == 1  ether   meETH earns 1     kwei  points per day
+        // == 1  Million meETH earns 1     gwei  points per day
         earning = (earning / 1 days) / 0.001 ether;
 
         // type(uint40).max == 2^40 - 1 ~= 4 * (10 ** 12) == 1000 gwei
@@ -388,9 +384,6 @@ contract meETH is IERC20Upgradeable {
 
         uint256 tier = tierOf(_account);
         uint256 amount = (tierData[tier].rewardsGlobalIndex - _userData[_account].rewardsLocalIndex) * _userDeposits[_account].amounts / 1 ether;
-
-        console.log("claimStakingRewards ...", tierData[tier].rewardsGlobalIndex, _userData[_account].rewardsLocalIndex, amount);
-
         _incrementUserDeposit(_account, amount, 0);
         _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
@@ -405,14 +398,6 @@ contract meETH is IERC20Upgradeable {
         return tierId - 1;
     }
 
-    function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external returns (uint256) {
-        require(tierDeposits.length < type(uint8).max, "Cannot add more new tier");
-        // rewardsGlobalIndexPerTier.push(0);
-        tierDeposits.push(TierDeposit(0, 0));
-        tierData.push(TierData(0, 0, _minimumPointsRequirement, _weight));
-        return tierDeposits.length - 1;
-    }
-
     function secondsTillNextSnapshot() public view returns (uint256) {
         uint256 nextSnapshotTimestampp = currentTierSnapshotTimestamp() + 4 * 7 * 24 * 3600;
         return nextSnapshotTimestampp - block.timestamp;
@@ -425,8 +410,7 @@ contract meETH is IERC20Upgradeable {
     } 
 
     function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
-        _transfer(msg.sender, _recipient, _amount);
-        return true;
+        revert("Transfer of meETH is not allowed");
     }
 
     function allowance(address _owner, address _spender) external view returns (uint256) {
@@ -439,24 +423,15 @@ contract meETH is IERC20Upgradeable {
     }
 
     function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
-        uint256 currentAllowance = allowances[_sender][msg.sender];
-        require(currentAllowance >= _amount, "TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
-
-        _transfer(_sender, _recipient, _amount);
-        _approve(_sender, msg.sender, currentAllowance - _amount);
-        return true;
+        revert("Transfer of meETH is not allowed");
     }
 
-    function totalShares() public view returns (uint256) {
-        uint256 sum = 0;
-        for (uint256 i = 0; i < tierDeposits.length; i++) {
-            sum += uint256(tierDeposits[i].shares);
-        }
-        return sum;
-    }
-
-    function totalSupply() public view returns (uint256) {
-        return liquidityPool.amountForShare(totalShares());
+    function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external returns (uint256) {
+        require(tierDeposits.length < type(uint8).max, "Cannot add more new tier");
+        // rewardsGlobalIndexPerTier.push(0);
+        tierDeposits.push(TierDeposit(0, 0));
+        tierData.push(TierData(0, 0, _minimumPointsRequirement, _weight));
+        return tierDeposits.length - 1;
     }
 
     //--------------------------------------------------------------------------------------
@@ -465,7 +440,6 @@ contract meETH is IERC20Upgradeable {
 
     function _mint(address _account, uint256 _amount) public {
         require(_account != address(0), "MINT_TO_THE_ZERO_ADDRESS");
-        console.log("_mint", _amount);
         uint256 share = liquidityPool.sharesForAmount(_amount);
         uint256 tier = tierOf(msg.sender);
         
@@ -475,22 +449,11 @@ contract meETH is IERC20Upgradeable {
 
     function _burn(address _account, uint256 _amount) public {
         require(_userDeposits[_account].amounts >= _amount, "Not enough Balance");
-        console.log("_burn", _amount);
         uint256 share = liquidityPool.sharesForAmount(_amount);
         uint256 tier = tierOf(msg.sender);
 
         _decrementUserDeposit(_account, _amount, 0);
         _decrementTierDeposit(tier, _amount, share);
-    }
-
-    function _transfer(address _sender, address _recipient, uint256 _amount) internal {
-        require(_sender != address(0), "TRANSFER_FROM_THE_ZERO_ADDRESS");
-        require(_recipient != address(0), "TRANSFER_TO_THE_ZERO_ADDRESS");
-        require(_amount <= _userDeposits[_sender].amounts, "TRANSFER_AMOUNT_EXCEEDS_BALANCE");
-
-        _decrementUserDeposit(_sender, _amount, 0);
-        _incrementUserDeposit(_recipient, _amount, 0);
-        emit Transfer(_sender, _recipient, _amount);
     }
 
     function _approve(address _owner, address _spender, uint256 _amount) internal {
@@ -501,28 +464,28 @@ contract meETH is IERC20Upgradeable {
         emit Approval(_owner, _spender, _amount);
     }
 
-    function _sacrificeUserDeposit(address _account, uint256 _amount) internal {
+    function _stakeForPoints(address _account, uint256 _amount) internal {
         uint256 tier = tierOf(msg.sender);
-        tierData[tier].sacrificedAmount += uint96(_amount);        
-        _userDeposits[_account].sacrificedAmounts += uint128(_amount);
+        tierData[tier].amountStakedForPoints += uint96(_amount);        
+        _userDeposits[_account].amountStakedForPoints += uint128(_amount);
         _userDeposits[_account].amounts -= uint128(_amount);
     }
 
-    function _unSacrificeUserDeposit(address _account, uint256 _amount) internal {
+    function _unstakeForPoints(address _account, uint256 _amount) internal {
         uint256 tier = tierOf(msg.sender);
-        tierData[tier].sacrificedAmount -= uint96(_amount);        
-        _userDeposits[_account].sacrificedAmounts -= uint128(_amount);
+        tierData[tier].amountStakedForPoints -= uint96(_amount);        
+        _userDeposits[_account].amountStakedForPoints -= uint128(_amount);
         _userDeposits[_account].amounts += uint128(_amount);
     }
 
-    function _incrementUserDeposit(address _account, uint256 _amount, uint256 _sacrificedAmounts) internal {
+    function _incrementUserDeposit(address _account, uint256 _amount, uint256 _amountStakedForPoints) internal {
         _userDeposits[_account].amounts += uint128(_amount);
-        _userDeposits[_account].sacrificedAmounts += uint128(_sacrificedAmounts);
+        _userDeposits[_account].amountStakedForPoints += uint128(_amountStakedForPoints);
     }
 
-    function _decrementUserDeposit(address _account, uint256 _amount, uint256 _sacrificedAmounts) internal {
+    function _decrementUserDeposit(address _account, uint256 _amount, uint256 _amountStakedForPoints) internal {
         _userDeposits[_account].amounts -= uint128(_amount);
-        _userDeposits[_account].sacrificedAmounts -= uint128(_sacrificedAmounts);
+        _userDeposits[_account].amountStakedForPoints -= uint128(_amountStakedForPoints);
     }
 
     function _incrementTierDeposit(uint256 _tier, uint256 _amount, uint256 _share) internal {
