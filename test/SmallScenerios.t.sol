@@ -5,6 +5,8 @@ import "./TestSetup.sol";
 
 contract SmallScenariosTest is TestSetup {
     uint256[] public slippageArray;
+    bytes32[] public aliceProof;
+    bytes32[] public bobProof;
 
     function setUp() public {
         setUpTests();
@@ -14,6 +16,119 @@ contract SmallScenariosTest is TestSetup {
         slippageArray[1] = 90;
         slippageArray[2] = 90;
         slippageArray[3] = 90;
+
+        aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        bobProof = merkle.getProof(whiteListedAddresses, 4);
+    }
+    
+    /*
+    Alice and Bob both deposit into the liquidity pool.
+    Alice keeps her eETH to earn rebasing rewards.
+    Bob wraps his eETH into weETH to use in other DeFi applications.
+    Once Rewards are distrubuted, Bob decides to unwrap his weETH back to eETH.
+    */ 
+    function test_EEthWeTHLpScenarios() public {
+        
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
+
+        /// Theres 10 ETH in the pool to start with. 
+        vm.deal(address(liquidityPoolInstance), 10 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.totalSupply(), 10 ether);
+
+        /// Alice confirms she is not a US or Canadian citizen and deposits 10 ETH into the pool.
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
+        assertEq(eETHInstance.totalSupply(), 20 ether);
+
+        /// Alice is the first depositer so she gets 100% of shares
+        assertEq(eETHInstance.shares(alice), 10 ether);
+        assertEq(eETHInstance.totalShares(), 10 ether);
+
+        /// Alice total claimable Ether is 20 ETH because she gets 100% of the rewards as she is the only LP.
+        /// (20 * 10) / 10
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
+
+        /// Bob then comes along, confirms his elegibility and deposits 5 ETH into the pool.
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 25 ether);
+        assertEq(eETHInstance.totalSupply(), 25 ether);
+
+        /// Bob then recieves shares in the LP according to the below formula
+        // Bob Shares = (5 * 10) / (25 - 5) = 2,5
+        assertEq(eETHInstance.shares(bob), 2.5 ether);
+        assertEq(eETHInstance.totalShares(), 12.5 ether);
+
+        /// Claimable balance of ether is calculated using 
+        // (Total_Pooled_Eth * User_Shares) / Total_Shares
+
+        // Bob claimable Ether
+        /// (25 * 2,5) / 12,5 = 5 ether
+
+        //ALice Claimable Ether
+        /// (25 * 10) / 12,5 = 20 ether
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5 ether);
+
+        assertEq(eETHInstance.balanceOf(alice), 20 ether);
+        assertEq(eETHInstance.balanceOf(bob), 5 ether);
+
+        // Staking Rewards sent to liquidity pool
+        /// vm.deal sets the balance of whoever its called on
+        /// In this case 10 ether is added as reward 
+        vm.deal(address(liquidityPoolInstance), 35 ether);
+        
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 35 ether);
+        assertEq(eETHInstance.totalSupply(), 35 ether);
+
+        // Bob claimable Ether
+        /// (35 * 2,5) / 12,5 = 7 ether
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 7 ether);
+
+        // Alice Claimable Ether
+        /// (35 * 10) / 12,5 = 20 ether
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 28 ether);
+
+        assertEq(eETHInstance.balanceOf(alice), 28 ether);
+        assertEq(eETHInstance.balanceOf(bob), 7 ether);
+
+        /// Bob then wraps his eETH to weETH because he wants to stake it in a 3rd party dapp
+         startHoax(bob);
+
+        //Approve the wrapped eth contract to spend Bob's eEth
+        eETHInstance.approve(address(weEthInstance), 7 ether);
+        weEthInstance.wrap(7 ether);
+
+        // Bob gets his eETH share amount as weETH
+        assertEq(weEthInstance.balanceOf(bob), 2.5 ether);
+
+        // Another round of rewards enter the LP
+        vm.deal(address(liquidityPoolInstance), 40 ether);
+
+        /// Bob's weETH balance remains the same as weETH is non rebasing.
+        /// Alice's eETH increases with the rebase.
+        assertEq(weEthInstance.balanceOf(bob), 2.5 ether);
+        assertEq(eETHInstance.balanceOf(alice), 32 ether);
+        
+        /// Bob then unwraps his weETH and sees his eETH balance has increased from the rebase
+        weEthInstance.unwrap(weEthInstance.balanceOf(bob));
+        assertEq(eETHInstance.balanceOf(bob), 8 ether);
+
+        /// bob then withdraws his 8 ETH from the pool
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 8 ether);
+        uint256 bobETHBalBefore = bob.balance;
+        liquidityPoolInstance.withdraw(8 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 0 ether);
+        assertEq(bob.balance, bobETHBalBefore + 8 ether);
+
     }
 
     /*----- EAP MIGRATION SCENARIO -----*/
