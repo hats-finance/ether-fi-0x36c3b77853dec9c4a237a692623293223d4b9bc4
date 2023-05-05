@@ -37,12 +37,6 @@ contract ProtocolRevenueManagerV2 is ProtocolRevenueManager {
     }
 }
 
-contract StakingManagerV2 is StakingManager {
-    function isUpgraded() public view returns(bool){
-        return true;
-    }
-}
-
 contract EtherFiNodeV2 is EtherFiNode {
     function isUpgraded() public view returns(bool){
         return true;
@@ -297,6 +291,11 @@ contract UpgradeTest is TestSetup {
 
         StakingManagerV2 stakingManagerV2Implementation = new StakingManagerV2();
 
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        stakingManagerV2Implementation.initialize(address(auctionInstance));
+
+
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(alice);
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
@@ -311,10 +310,15 @@ contract UpgradeTest is TestSetup {
         stakingManagerV2Instance.initialize(address(auctionInstance));
 
         assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
-        assertEq(stakingManagerV2Instance.isUpgraded(), true);
+        // assertEq(stakingManagerV2Instance.isUpgraded(), true);
         
         // State is maintained
         assertEq(stakingManagerV2Instance.maxBatchDepositSize(), 25);
+
+        assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b));
+        vm.prank(owner);
+        stakingManagerV2Instance.registerEth2DepositContract(address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
+        assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
     }
 
     function test_canUpgradeEtherFiNode() public {

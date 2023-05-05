@@ -486,3 +486,11 @@ contract StakingManager is
         _;
     }
 }
+
+
+contract StakingManagerV2 is StakingManager {
+    function registerEth2DepositContract(address _address) public onlyOwner {
+        require(_address != address(0), "No zero addresses");
+        depositContractEth2 = IDepositContract(_address);
+    }
+}
