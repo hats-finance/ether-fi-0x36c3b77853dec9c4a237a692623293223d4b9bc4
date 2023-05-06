@@ -24,7 +24,7 @@ contract DeployPatch1 is Script {
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
         StakingManagerV2 stakingManagerV2Instance = StakingManagerV2(stakingManagerProxyAddress);
 
-        stakingManagerV2Instance.registerEth2DepositContract(0x00000000219ab540356cBB839Cbe05303d7705Fa);
+        stakingManagerV2Instance.registerEth2DepositContract(eth2DepositContractAddress);
 
         vm.stopBroadcast();
     }
