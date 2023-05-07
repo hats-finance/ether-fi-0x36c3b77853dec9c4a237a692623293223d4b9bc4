@@ -14,6 +14,7 @@ import "./interfaces/IEETH.sol";
 import "./interfaces/IScoreManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
+import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -28,14 +29,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     mapping(uint256 => bool) public validators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
-    uint256 public accruedEapRewards;           // total amounts of accrued EAP rewards
     uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
 
     uint64 public numValidators;
 
     bytes32[] private merkleProof;
 
-    uint256[40] __gap;
+    uint256[41] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -148,20 +148,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
         uint256 staked;
-        uint256 boosted;
         uint256 totalShares = eETH.totalShares();
-        uint256 totalEapScores = totalEapScores();
         if (totalShares > 0) {
             staked = (getTotalPooledEther() * eETH.shares(_user)) / totalShares;
         }
-        if (totalEapScores > 0) {
-            boosted = (accruedEapRewards * eapScore(_user)) / totalEapScores;
-        }
-        return staked + boosted;
+        return staked;
     }
 
     function getTotalPooledEther() public view returns (uint256) {
-        return (32 ether * numValidators) + accruedStakingRewards + address(this).balance - (accruedSlashingPenalties + accruedEapRewards);
+        return (32 ether * numValidators) + accruedStakingRewards + address(this).balance - (accruedSlashingPenalties);
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
@@ -181,13 +176,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return (_share * getTotalPooledEther()) / eETH.totalShares();
     }
 
-    function totalEapScores() public view returns (uint256) {
-        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        uint256 totalScore = scoreManager.totalScores(typeId);
-        return totalScore;
-    }
-
-    // TODO: add the modifier for 'onlyCRP'
+    // TODO: This function will be deprecated, meETH points system will replace with it
     function setEapScore(address _user, uint256 _score) public {
         uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
         uint256 totalScore = scoreManager.totalScores(typeId);
@@ -200,11 +189,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
         uint256 score = scoreManager.scores(typeId, _user);
         return score;
-    }
-
-    /// @notice ether.fi protocol will send the ETH as the rewards for EAP users
-    function accrueEapRewards() external payable onlyOwner {
-        accruedEapRewards += msg.value;
     }
 
     /// @notice ether.fi protocol will update the accrued staking rewards for rebasing

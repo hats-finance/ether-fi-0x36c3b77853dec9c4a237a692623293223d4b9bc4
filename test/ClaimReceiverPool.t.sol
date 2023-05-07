@@ -99,21 +99,6 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.expectRevert("Already Deposited");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
         vm.stopPrank();
-
-        vm.deal(owner, 100 ether);
-        vm.prank(owner);
-        liquidityPoolInstance.accrueEapRewards{value: 1 ether}();
-        assertEq(
-            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
-            0.2 ether + 1 ether
-        );
-
-        vm.prank(owner);
-        liquidityPoolInstance.accrueEapRewards{value: 10 ether}();
-        assertEq(
-            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
-            0.2 ether + 1 ether + 10 ether
-        );
     }
 
     function test_SetLPAddressFailsIfZeroAddress() public {
@@ -126,36 +111,5 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.prank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
-    }
-
-
-    function test_EapRewardsWorksCorrectly() public {
-        bytes32[] memory bobProof = merkle.getProof(dataForVerification, 3);
-        bytes32[] memory danProof = merkle.getProof(dataForVerification, 4);
-
-        vm.deal(bob, 0.1 ether);
-        vm.deal(dan, 0.1 ether);
-
-        vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-
-        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 400, bobProof, slippageArray);
-        vm.stopPrank();
-
-        vm.startPrank(dan);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-
-        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 800, danProof, slippageArray);
-        vm.stopPrank();
-
-        assertEq(eETHInstance.balanceOf(bob), 0.1 ether);
-        assertEq(eETHInstance.balanceOf(dan), 0.1 ether);
-
-        vm.deal(owner, 100 ether);
-        vm.prank(owner);
-        liquidityPoolInstance.accrueEapRewards{value: 3 ether}();
-
-        assertEq(eETHInstance.balanceOf(bob), 0.1 ether + 1 ether);
-        assertEq(eETHInstance.balanceOf(dan), 0.1 ether + 2 ether);
     }
 }
