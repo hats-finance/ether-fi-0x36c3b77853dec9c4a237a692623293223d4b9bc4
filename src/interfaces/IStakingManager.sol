@@ -10,6 +10,7 @@ interface IStakingManager {
     }
 
     function bidIdToStaker(uint256 id) external view returns (address);
+    function verifyWhitelisted(address _address, bytes32[] calldata _merkleProof) external view;
     function merkleRoot() external view returns (bytes32);
     function whitelistEnabled() external view returns (bool);
 

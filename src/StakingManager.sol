@@ -117,9 +117,7 @@ contract StakingManager is
         nonReentrant
         returns (uint256[] memory)
     {
-        if(whitelistEnabled) {
-            require(MerkleProofUpgradeable.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(msg.sender))), "User not whitelisted");
-        }
+        verifyWhitelisted(msg.sender, _merkleProof);
 
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
@@ -320,6 +318,13 @@ contract StakingManager is
         merkleRoot = _newMerkle;
 
         emit MerkleUpdated(oldMerkle, _newMerkle);
+    }
+
+    function verifyWhitelisted(address _address, bytes32[] calldata _merkleProof) public view {
+        if (whitelistEnabled) {
+            bool verified = MerkleProofUpgradeable.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(_address)));
+            require(verified, "User is not whitelisted");
+        }
     }
 
     //Pauses the contract

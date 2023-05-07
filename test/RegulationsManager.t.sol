@@ -31,7 +31,7 @@ contract RegulationsManagerTest is TestSetup {
         regulationsManagerInstance.removeFromWhitelist(bob);
 
         vm.prank(alice);
-        vm.expectRevert("User not whitelisted");
+        vm.expectRevert("User is not whitelisted");
         regulationsManagerInstance.removeFromWhitelist(alice);
 
         vm.startPrank(owner);

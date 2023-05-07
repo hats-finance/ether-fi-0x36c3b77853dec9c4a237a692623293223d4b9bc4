@@ -27,7 +27,7 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(owner);
         stakingManagerInstance.enableWhitelist();
-        vm.expectRevert("User not permitted to stake");
+        vm.expectRevert("User is not whitelisted");
         liquidityPoolInstance.deposit{value: 1 ether}(alice, bobProof);
         stakingManagerInstance.disableWhitelist();
         vm.stopPrank();
