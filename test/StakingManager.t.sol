@@ -68,7 +68,7 @@ contract StakingManagerTest is TestSetup {
 
         startHoax(owner);
         stakingManagerInstance.enableWhitelist();
-        vm.expectRevert("User not whitelisted");
+        vm.expectRevert("User is not whitelisted");
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
             proof
