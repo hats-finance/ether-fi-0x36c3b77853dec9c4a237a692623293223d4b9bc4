@@ -346,8 +346,8 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
         require(phase == VALIDATOR_PHASE.EXITED, "validator node is not exited");
+        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
