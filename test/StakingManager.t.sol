@@ -844,6 +844,9 @@ contract StakingManagerTest is TestSetup {
         vm.prank(owner);
         vm.expectRevert("Not deposit owner");
         stakingManagerInstance.cancelDeposit(bidId[0]);
+
+        vm.expectRevert("Not deposit owner");
+        stakingManagerInstance.batchCancelDeposit(bidId);
     }
 
     function test_cancelDepositFailsIfDepositDoesNotExist() public {
@@ -911,6 +914,9 @@ contract StakingManagerTest is TestSetup {
 
         vm.expectRevert("Incorrect phase");
         stakingManagerInstance.cancelDeposit(bidId[0]);
+
+        vm.expectRevert("Incorrect phase");
+        stakingManagerInstance.batchCancelDeposit(bidId);
     }
 
     function cancelDepositFailsIfContractPaused() public {
@@ -987,7 +993,7 @@ contract StakingManagerTest is TestSetup {
         assertEq(auctionInstance.numberOfActiveBids(), 2);
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
-        stakingManagerInstance.cancelDeposit(bidId2[0]);
+        stakingManagerInstance.batchCancelDeposit(bidId2);
         assertEq(managerInstance.etherfiNodeAddress(bidId2[0]), address(0));
         assertEq(stakingManagerInstance.bidIdToStaker(bidId2[0]), address(0));
         assertTrue(
