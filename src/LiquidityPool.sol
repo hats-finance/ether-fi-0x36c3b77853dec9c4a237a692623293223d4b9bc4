@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 import "../src/interfaces/IStakingManager.sol";
-import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNodesManager.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradeable.sol";
