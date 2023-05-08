@@ -7,6 +7,7 @@ contract SmallScenariosTest is TestSetup {
     uint256[] public slippageArray;
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
+    bytes32[] public chadProof;
 
     function setUp() public {
         setUpTests();
@@ -19,6 +20,7 @@ contract SmallScenariosTest is TestSetup {
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
+        chadProof = merkle.getProof(whiteListedAddresses, 5);
     }
     
     /*
@@ -28,13 +30,17 @@ contract SmallScenariosTest is TestSetup {
     Once Rewards are distrubuted, Bob decides to unwrap his weETH back to eETH.
     */ 
     function test_EEthWeTHLpScenarios() public {
+        // bids for later rollup
+        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
+
+        startHoax(bob);
+        nodeOperatorManagerInstance.registerNodeOperator(bobProof, _ipfsHash, 40);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(5, 0.2 ether);
+        vm.stopPrank();
+
+        //-------------------------------------------------------------------------------------------------------------------------------
         
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
-
-        /// Theres 10 ETH in the pool to start with. 
-        vm.deal(address(liquidityPoolInstance), 10 ether);
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
-        assertEq(eETHInstance.totalSupply(), 10 ether);
 
         /// Alice confirms she is not a US or Canadian citizen and deposits 10 ETH into the pool.
         startHoax(alice);
@@ -42,16 +48,16 @@ contract SmallScenariosTest is TestSetup {
         liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
         vm.stopPrank();
 
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
-        assertEq(eETHInstance.totalSupply(), 20 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.totalSupply(), 10 ether);
 
         /// Alice is the first depositer so she gets 100% of shares
         assertEq(eETHInstance.shares(alice), 10 ether);
         assertEq(eETHInstance.totalShares(), 10 ether);
 
-        /// Alice total claimable Ether is 20 ETH because she gets 100% of the rewards as she is the only LP.
-        /// (20 * 10) / 10
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
+        /// Alice total claimable Ether is 10 ETH because she gets 100% of the rewards as she is the only LP.
+        /// (10 * 10) / 10
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10 ether);
 
         /// Bob then comes along, confirms his elegibility and deposits 5 ETH into the pool.
         startHoax(bob);
@@ -59,76 +65,179 @@ contract SmallScenariosTest is TestSetup {
         liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
         vm.stopPrank();
 
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 25 ether);
-        assertEq(eETHInstance.totalSupply(), 25 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 15 ether);
+        assertEq(eETHInstance.totalSupply(), 15 ether);
 
         /// Bob then recieves shares in the LP according to the below formula
-        // Bob Shares = (5 * 10) / (25 - 5) = 2,5
-        assertEq(eETHInstance.shares(bob), 2.5 ether);
-        assertEq(eETHInstance.totalShares(), 12.5 ether);
+        // Bob Shares = (5 * 10) / (15 - 5) = 5
+        assertEq(eETHInstance.shares(bob), 5 ether);
+        assertEq(eETHInstance.totalShares(), 15 ether);
 
         /// Claimable balance of ether is calculated using 
         // (Total_Pooled_Eth * User_Shares) / Total_Shares
 
         // Bob claimable Ether
-        /// (25 * 2,5) / 12,5 = 5 ether
+        /// (15 * 5) / 15 = 5 ether
 
         //ALice Claimable Ether
-        /// (25 * 10) / 12,5 = 20 ether
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
+        /// (15 * 10) / 15 = 0 ether
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5 ether);
 
-        assertEq(eETHInstance.balanceOf(alice), 20 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
         assertEq(eETHInstance.balanceOf(bob), 5 ether);
 
         // Staking Rewards sent to liquidity pool
         /// vm.deal sets the balance of whoever its called on
         /// In this case 10 ether is added as reward 
-        vm.deal(address(liquidityPoolInstance), 35 ether);
+        vm.deal(address(liquidityPoolInstance), 25 ether);
         
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 35 ether);
-        assertEq(eETHInstance.totalSupply(), 35 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 25 ether);
+        assertEq(eETHInstance.totalSupply(), 25 ether);
 
         // Bob claimable Ether
-        /// (35 * 2,5) / 12,5 = 7 ether
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 7 ether);
+        /// (25 * 5) / 15 = 8.333333333333333333 ether
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 8.333333333333333333 ether);
 
         // Alice Claimable Ether
-        /// (35 * 10) / 12,5 = 20 ether
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 28 ether);
-
-        assertEq(eETHInstance.balanceOf(alice), 28 ether);
-        assertEq(eETHInstance.balanceOf(bob), 7 ether);
+        /// (25 * 10) / 15 = 16.666666666666666666 ether
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 16.666666666666666666 ether);
+    
+        assertEq(eETHInstance.balanceOf(alice), 16.666666666666666666 ether);
+        assertEq(eETHInstance.balanceOf(bob), 8.333333333333333333 ether);
 
         /// Bob then wraps his eETH to weETH because he wants to stake it in a 3rd party dapp
          startHoax(bob);
 
         //Approve the wrapped eth contract to spend Bob's eEth
-        eETHInstance.approve(address(weEthInstance), 7 ether);
-        weEthInstance.wrap(7 ether);
+        eETHInstance.approve(address(weEthInstance), 9 ether);
+        weEthInstance.wrap(8.333333333333333333 ether);
 
-        // Bob gets his eETH share amount as weETH
-        assertEq(weEthInstance.balanceOf(bob), 2.5 ether);
-
+        // // Bob gets his eETH share amount as weETH
+        assertEq(weEthInstance.balanceOf(bob), 4.999999999999999999 ether);
+        
         // Another round of rewards enter the LP
-        vm.deal(address(liquidityPoolInstance), 40 ether);
+        vm.deal(address(liquidityPoolInstance), 30 ether);
 
         /// Bob's weETH balance remains the same as weETH is non rebasing.
         /// Alice's eETH increases with the rebase.
-        assertEq(weEthInstance.balanceOf(bob), 2.5 ether);
-        assertEq(eETHInstance.balanceOf(alice), 32 ether);
+        assertEq(weEthInstance.balanceOf(bob), 4.999999999999999999 ether);
+        assertEq(eETHInstance.balanceOf(alice), 20 ether);
         
         /// Bob then unwraps his weETH and sees his eETH balance has increased from the rebase
         weEthInstance.unwrap(weEthInstance.balanceOf(bob));
-        assertEq(eETHInstance.balanceOf(bob), 8 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
 
         /// bob then withdraws his 8 ETH from the pool
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 8 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 10 ether);
         uint256 bobETHBalBefore = bob.balance;
-        liquidityPoolInstance.withdraw(8 ether);
+        liquidityPoolInstance.withdraw(10 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 0 ether);
-        assertEq(bob.balance, bobETHBalBefore + 8 ether);
+        assertEq(bob.balance, bobETHBalBefore + 10 ether);
 
+        vm.stopPrank();
+
+        /// Chad deposits 16 ether into Pool
+        startHoax(chad);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        liquidityPoolInstance.deposit{value: 16 ether}(chad, chadProof);
+        vm.stopPrank();
+
+        // Chad's 16 ether plus Alice's 20 ether
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 36 ether);
+
+        // EtherFi rolls up 32 ether into a vlaidator and mints the associated NFT's
+        startHoax(owner);
+        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 4 ether);
+        assertEq(address(stakingManagerInstance).balance, 32 ether);
+
+        // Generate Deposit Data
+        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](1);
+        address etherFiNode = managerInstance.etherfiNodeAddress(processedBidIds[0]);
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
+
+        depositDataArray[0] = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
+        // Register the Validator
+        liquidityPoolInstance.batchRegisterValidators(_getDepositRoot(), processedBidIds, depositDataArray);
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.numValidators(), 1);
+        assertEq(address(stakingManagerInstance).balance, 0 ether);
+
+        // Check NFT's are minted corrctly
+        assertEq(TNFTInstance.ownerOf(processedBidIds[0]), address(liquidityPoolInstance));
+        assertEq(BNFTInstance.ownerOf(processedBidIds[0]), owner);
+
+        /// 1 ETH OF REWARDS COME IN
+        vm.deal(address(liquidityPoolInstance), 5 ether);
+
+        // Alice and Chad's deposits rebase 
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20.555555555555555555 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 16.444444444444444444 ether);
+
+        /// Chad has a claimable balance of 16.4 ETH but the Pool only has a balance of 5 ETH.
+        /// EtherFi should make sure that there is sufficient liquidity in the pool to allow for withdrawals
+        vm.expectRevert("Not enough ETH in the liquidity pool");
+        vm.prank(chad);
+        liquidityPoolInstance.withdraw(16 ether);
+        
+        // EtherFi deposits a validatos worth (32 ETH) into the pool to allow for users to withdraw
+        hoax(owner);
+        address(liquidityPoolInstance).call{value: 32 ether}("");
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 37 ether);
+
+        // EtherFi sends an exit request for a node to be exited to reclaim the 32 etehr sent to the pool for withdrawals
+        vm.startPrank(owner);
+        liquidityPoolInstance.sendExitRequests(processedBidIds);
+
+        /// Node exit takes a few days...
+        skip(2 days);
+
+        /// EtherFi procceses the node exit and withdraws rewards.
+        // Liquidity Pool is the TNFT holder so will get the TNFT rewards
+        // EtherFi will get the BNFT Rewards
+        // Bob will get the Operator rewards
+
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = uint32(block.timestamp);
+
+        uint256 poolBalBefore = address(liquidityPoolInstance).balance;
+        uint256 ownerBalBefore = owner.balance;
+        uint256 bobBalBefore = bob.balance;
+        uint256 treasuryBalBefore = address(treasuryInstance).balance;
+
+        (uint256 toOperator, uint256 toTNFT, uint256 toBNFT, uint256 toTreasury) = managerInstance.getRewardsPayouts(processedBidIds[0], true, false, true);
+
+        managerInstance.processNodeExit(processedBidIds, exitTimestamps);
+        vm.stopPrank();
+
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        assertEq(address(liquidityPoolInstance).balance, poolBalBefore + toTNFT);
+        assertEq(owner.balance, ownerBalBefore + toBNFT);
+        assertEq(bob.balance, bobBalBefore + toOperator);
+        assertEq(address(treasuryInstance).balance, treasuryBalBefore + toTreasury);
+
+        // EtherFi delists the node from the Pool
+        uint256[] memory slashingPenalties = new uint256[](1);
+        slashingPenalties[0] = 0;
+
+        vm.prank(owner);
+        liquidityPoolInstance.processNodeExit(processedBidIds, slashingPenalties);
+        assertEq(liquidityPoolInstance.numValidators(), 0);
     }
 
     /*----- EAP MIGRATION SCENARIO -----*/
