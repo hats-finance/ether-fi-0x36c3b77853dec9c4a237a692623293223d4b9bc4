@@ -48,6 +48,7 @@ contract TestSetup is Test {
     UUPSProxy public scoreManagerProxy;
     UUPSProxy public regulationsManagerProxy;
     UUPSProxy public weETHProxy;
+    UUPSProxy public meETHProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -87,6 +88,7 @@ contract TestSetup is Test {
     weEth public weEthImplementation;
     weEth public weEthInstance;
 
+    meETH public meEthImplementation;
     meETH public meEthInstance;
 
     ClaimReceiverPool public claimReceiverPoolImplementation;
@@ -251,8 +253,10 @@ contract TestSetup is Test {
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(0));
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
-        meEthInstance = new meETH(address(eETHInstance), address(liquidityPoolInstance), address(claimReceiverPoolInstance));
-        claimReceiverPoolInstance.setMeEth(address(meEthInstance));
+        meEthImplementation = new meETH();
+        meETHProxy = new UUPSProxy(address(meEthImplementation), "");
+        meEthInstance = meETH(address(meETHProxy));
+        meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(claimReceiverPoolInstance));
 
         // Setup dependencies
         _merkleSetup();
@@ -274,6 +278,7 @@ contract TestSetup is Test {
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
 
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
+        claimReceiverPoolInstance.setMeEth(address(meEthInstance));
 
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));

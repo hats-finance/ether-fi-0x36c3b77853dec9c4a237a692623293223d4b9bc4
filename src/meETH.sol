@@ -3,6 +3,9 @@ pragma solidity 0.8.13;
 
 
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 import "./interfaces/IEETH.sol";
 import "./interfaces/IMEETH.sol";
@@ -12,8 +15,7 @@ import "./interfaces/IClaimReceiverPool.sol";
 import "forge-std/console.sol";
 
 
-contract meETH is IERC20Upgradeable, IMEETH {
-    // eETH contract address
+contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgradeable, IMEETH {
     IEETH public eETH;
     ILiquidityPool public liquidityPool;
     IClaimReceiverPool public claimReceiverPool;
@@ -39,9 +41,9 @@ contract meETH is IERC20Upgradeable, IMEETH {
 
 
     // points growth rate
-    uint256 public pointsBoostFactor = 100; // +100% points if staking rewards are sacrificed
-    uint256 public pointsBurnRateForUnWrap = 100; // 100% of the points proportional to the amount being unwraped
-    uint256 public pointsGrowthRate = 1;
+    uint256 public pointsBoostFactor; // +100% points if staking rewards are sacrificed
+    uint256 public pointsBurnRateForUnWrap; // 100% of the points proportional to the amount being unwraped
+    uint256 public pointsGrowthRate;
     uint256[] public pointGrowthRates; 
     uint256[] public pointGrowthRateUpdateTimes; 
 
@@ -63,11 +65,27 @@ contract meETH is IERC20Upgradeable, IMEETH {
     uint96[] public rewardsGlobalIndexPerTier;
     uint256   public rewardsGlobalIndexTime;
 
-    constructor(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress) external initializer {
+        require(_eEthAddress != address(0), "No zero addresses");
+        require(_liquidityPoolAddress != address(0), "No zero addresses");
+        require(_claimReceiverPoolAddress != address(0), "No zero addresses");
+        
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+
         eETH = IEETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
         claimReceiverPool = IClaimReceiverPool(_claimReceiverPoolAddress);
         genesisTimestamp = uint32(block.timestamp);
+
+        pointsBoostFactor = 100;
+        pointsBurnRateForUnWrap = 100;
+        pointsGrowthRate = 1;
     }
 
     function name() public pure returns (string memory) {
@@ -98,11 +116,6 @@ contract meETH is IERC20Upgradeable, IMEETH {
         require(_amount > 0, "You cannot wrap 0 eETH");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
-        // if the user is new to meETH, add him to the tier 0
-        if (_userData[msg.sender].pointsSnapshot == 0) {
-            addToTier(msg.sender, 0);
-        }
-
         updatePoints(msg.sender);
         claimStakingRewards(msg.sender);
 
@@ -121,7 +134,7 @@ contract meETH is IERC20Upgradeable, IMEETH {
         updatePoints(msg.sender);
         claimStakingRewards(msg.sender);
 
-        degradeToLowerTier(msg.sender);
+        _applyUnwrapPenalty(msg.sender);
 
         // burn meETH
         _burn(msg.sender, _amount);
@@ -135,11 +148,7 @@ contract meETH is IERC20Upgradeable, IMEETH {
         require(amount > 0, "You cannot wrap 0 ETH");
         require(msg.sender == address(claimReceiverPool), "Only CRP can call it");
 
-        uint8 tier = tierForPoints(_points);
-        UserData storage userData = _userData[_account];
-        userData.pointsSnapshot = _points;
-        userData.pointsSnapshotTime = uint32(block.timestamp);
-        userData.tier = tier;
+        _initializeEarlyAdopterPoolUserPoints(_account, _points);
         
         // mint eETH
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
@@ -147,7 +156,9 @@ contract meETH is IERC20Upgradeable, IMEETH {
         // mint meETH to user
         _mint(_account, amount);
 
-        userData.rewardsLocalIndex = calculateGlobalIndex()[tier];
+        _updateGlobalIndex();
+        uint8 tier = tierOf(_account);
+        _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
     function stakeForPoints(uint256 _amount) external {
@@ -189,31 +200,7 @@ contract meETH is IERC20Upgradeable, IMEETH {
         updatePoints(_account);
         claimStakingRewards(_account);
 
-        removeFromTier(_account, oldTier);
-        addToTier(_account, newTier);
-    }
-
-    function removeFromTier(address _account, uint8 _tier) public {
-        require(tierOf(_account) == _tier, "the account does not belong to the specified tier");
-
-        uint256 amount = _userDeposits[_account].amounts;
-        uint256 share = liquidityPool.sharesForAmount(amount);
-
-        uint256 amountStakedForPoints = _userDeposits[msg.sender].amountStakedForPoints;
-        tierData[_tier].amountStakedForPoints -= uint96(amountStakedForPoints);
-        _decrementTierDeposit(_tier, amount, share);
-    }
-
-    function addToTier(address _account, uint8 _tier) public {
-        uint256 amountStakedForPoints = _userDeposits[msg.sender].amountStakedForPoints;
-        uint256 amount = _userDeposits[_account].amounts;
-        uint256 share = liquidityPool.sharesForAmount(amount);
-
-        tierData[_tier].amountStakedForPoints += uint96(amountStakedForPoints);
-        _incrementTierDeposit(_tier, amount, share);
-
-        _userData[_account].rewardsLocalIndex = calculateGlobalIndex()[_tier];
-        _userData[_account].tier = _tier;
+        _updateTier(_account, oldTier, newTier);
     }
 
     function calculateGlobalIndex() public view returns (uint96[] memory) {
@@ -222,10 +209,6 @@ contract meETH is IERC20Upgradeable, IMEETH {
         uint96[] memory globalIndex = new uint96[](tierDeposits.length);
         uint256[] memory weightedTierRewards = new uint256[](tierDeposits.length);
 
-        // tierRewards = amountForShare(totalShares[tier]) - totalAmount[tier];
-        // weightedTierRewards = weights[tier] * tierTotalRewards;
-        // rescaledTierRewards = weightedTierRewards * Sum(tierRewards) / Sum(weightedTierRewards)
-        // balance = amount + rescaledTierRewards * _userDeposits[_account].amounts / totalAmountsPerTier[tier];
         for (uint256 i = 0; i < weightedTierRewards.length; i++) {
             uint256 tierRewards = liquidityPool.amountForShare(tierDeposits[i].shares) - tierDeposits[i].amounts;
             uint256 weightedTierReward = tierData[i].weight * tierRewards;
@@ -252,26 +235,6 @@ contract meETH is IERC20Upgradeable, IMEETH {
         return globalIndex;
     }
 
-    function degradeToLowerTier(address _account) public {
-        uint8 curTier = tierOf(_account);
-        uint8 newTier = (curTier >= 1) ? curTier - 1 : 0;
-
-        if (curTier != newTier) {
-            uint256 amount = _userDeposits[_account].amounts;
-            uint256 share = liquidityPool.sharesForAmount(amount);
-            uint256 amountStakedForPoints = _userDeposits[_account].amountStakedForPoints;
-
-            tierData[curTier].amountStakedForPoints -= uint96(amountStakedForPoints);
-            _decrementTierDeposit(curTier, amount, share);
-
-            tierData[newTier].amountStakedForPoints += uint96(amountStakedForPoints);
-            _incrementTierDeposit(newTier, amount, share);
-
-            _userData[_account].rewardsLocalIndex = tierData[newTier].rewardsGlobalIndex;
-            _userData[_account].tier = newTier;
-        }
-    }
-
     function _updateGlobalIndex() internal {
         if (rewardsGlobalIndexTime == block.timestamp) {
             return;
@@ -294,6 +257,10 @@ contract meETH is IERC20Upgradeable, IMEETH {
     function updatePoints(address _account) public {
         uint256 userPointsSnapshotTimestamp = _userData[_account].pointsSnapshotTime;
         if (userPointsSnapshotTimestamp == block.timestamp) {
+            return;
+        }
+        if (userPointsSnapshotTimestamp == 0) {
+            _userData[_account].pointsSnapshotTime = uint32(block.timestamp);
             return;
         }
 
@@ -409,12 +376,7 @@ contract meETH is IERC20Upgradeable, IMEETH {
 
     function claimableTier(address _account) public view returns (uint8) {
         uint40 pointsEarned = getPointsEarningsDuringLastMembershipPeriod(_account);
-
-        uint8 tierId = 0;
-        while (tierId < tierDeposits.length && pointsEarned >= tierData[tierId].minimumPoints) {
-            tierId++;
-        }
-        return tierId - 1;
+        return tierForPoints(pointsEarned);
     }
 
     function tierForPoints(uint40 _points) public view returns (uint8) {
@@ -459,6 +421,14 @@ contract meETH is IERC20Upgradeable, IMEETH {
         tierDeposits.push(TierDeposit(0, 0));
         tierData.push(TierData(0, 0, _minimumPointsRequirement, _weight));
         return tierDeposits.length - 1;
+    }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
+    
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------
@@ -523,5 +493,52 @@ contract meETH is IERC20Upgradeable, IMEETH {
     function _decrementTierDeposit(uint256 _tier, uint256 _amount, uint256 _share) internal {
         tierDeposits[_tier].shares -= uint128(_share);
         tierDeposits[_tier].amounts -= uint128(_amount);
+    }
+
+    function _initializeEarlyAdopterPoolUserPoints(address _account, uint40 _points) internal {
+        UserData storage userData = _userData[_account];
+        require(userData.pointsSnapshotTime == 0, "already initialized");
+        userData.pointsSnapshot += _points;
+        userData.pointsSnapshotTime = uint32(block.timestamp);
+        userData.tier = tierForPoints(userData.pointsSnapshot);
+    }
+
+    function _addToTier(address _account, uint8 _tier) internal {
+        uint256 amountStakedForPoints = _userDeposits[msg.sender].amountStakedForPoints;
+        uint256 amount = _userDeposits[_account].amounts;
+        uint256 share = liquidityPool.sharesForAmount(amount);
+
+        tierData[_tier].amountStakedForPoints += uint96(amountStakedForPoints);
+        _incrementTierDeposit(_tier, amount, share);
+
+        _userData[_account].rewardsLocalIndex = calculateGlobalIndex()[_tier];
+        _userData[_account].tier = _tier;
+    }
+
+    function _updateTier(address _account, uint8 _curTier, uint8 _newTier) internal {
+        require(tierOf(_account) == _curTier, "the account does not belong to the specified tier");
+        if (_curTier == _newTier) {
+            return;
+        }
+
+        uint256 amount = _userDeposits[_account].amounts;
+        uint256 share = liquidityPool.sharesForAmount(amount);
+        uint256 amountStakedForPoints = _userDeposits[_account].amountStakedForPoints;
+
+        tierData[_curTier].amountStakedForPoints -= uint96(amountStakedForPoints);
+        _decrementTierDeposit(_curTier, amount, share);
+
+        tierData[_newTier].amountStakedForPoints += uint96(amountStakedForPoints);
+        _incrementTierDeposit(_newTier, amount, share);
+
+        _userData[_account].rewardsLocalIndex = tierData[_newTier].rewardsGlobalIndex;
+        _userData[_account].tier = _newTier;
+    }
+
+    // Degrade the user's tier to the lower one
+    function _applyUnwrapPenalty(address _account) internal {
+        uint8 curTier = tierOf(_account);
+        uint8 newTier = (curTier >= 1) ? curTier - 1 : 0;
+        _updateTier(_account, curTier, newTier);
     }
 }
