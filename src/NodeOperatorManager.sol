@@ -63,9 +63,8 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         });
 
         addressToOperatorData[msg.sender] = keyData;
-
-        _verifyWhitelistedAddress(msg.sender, _merkleProof);
         registered[msg.sender] = true;
+        
         emit OperatorRegistered(
             keyData.totalKeys,
             keyData.keysUsed,
@@ -168,20 +167,6 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
-
-    function _verifyWhitelistedAddress(
-        address _user,
-        bytes32[] calldata _merkleProof
-    ) internal returns (bool whitelisted) {
-        whitelisted = MerkleProof.verify(
-            _merkleProof,
-            merkleRoot,
-            keccak256(abi.encodePacked(_user))
-        );
-        if (whitelisted) {
-            whitelistedAddresses[_user] = true;
-        }
-    }
 
     function _authorizeUpgrade(
         address newImplementation
