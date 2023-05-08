@@ -168,14 +168,12 @@ contract SmallScenariosTest is TestSetup {
 
         vm.prank(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
-            bobProof,
             _ipfsHash,
             40
         );
 
         vm.prank(chad);
         nodeOperatorManagerInstance.registerNodeOperator(
-            chadProof,
             _ipfsHash,
             10
         );

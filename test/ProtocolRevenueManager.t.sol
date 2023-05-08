@@ -34,15 +34,12 @@ contract ProtocolRevenueManagerTest is TestSetup {
             address(auctionInstance)
         );
 
-        proof = merkle.getProof(whiteListedAddresses, 0);
-        aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(proof, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
         vm.stopPrank();
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );

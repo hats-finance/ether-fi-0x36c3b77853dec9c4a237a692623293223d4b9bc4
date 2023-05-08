@@ -24,7 +24,6 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     //--------------------------------------------------------------------------------------
 
     address public auctionManagerContractAddress;
-    bytes32 public merkleRoot;
 
     // user address => OperaterData Struct
     mapping(address => KeyData) public addressToOperatorData;
@@ -48,11 +47,9 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     }
 
     /// @notice Registers a user as a operator to allow them to bid
-    /// @param _merkleProof the proof verifying they are whitelisted
     /// @param _ipfsHash location of all IPFS data stored for operator
     /// @param _totalKeys The number of keys they have available, relates to how many validators they can run
     function registerNodeOperator(
-        bytes32[] calldata _merkleProof,
         bytes memory _ipfsHash,
         uint64 _totalKeys
     ) public {
@@ -92,19 +89,9 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         return ipfsIndex;
     }
 
-    /// @notice Updates the merkle root whitelists have been updated
-    /// @dev merkleroot gets generated in JS offline and sent to the contract
-    /// @param _newMerkle new merkle root to be used for bidding
-    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
-        bytes32 oldMerkle = merkleRoot;
-        merkleRoot = _newMerkle;
-
-        emit MerkleUpdated(oldMerkle, _newMerkle);
-    }
-
     /// @notice Adds an address to the whitelist
     /// @param _address Address of the user to add
-    function addToWhitelist(address _address) external onlOwner {
+    function addToWhitelist(address _address) external onlyOwner {
         whitelistedAddresses[_address] = true;
 
         emit AddedToWhitelist(_address);
@@ -112,7 +99,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
 
     /// @notice Removed an address from the whitelist
     /// @param _address Address of the user to remove
-    function removeFromWhitelist(address _address) external onlOwner {
+    function removeFromWhitelist(address _address) external onlyOwner {
         whitelistedAddresses[_address] = false;
 
         emit RemovedFromWhitelist(_address);

@@ -16,10 +16,9 @@ contract BNFTTest is TestSetup {
     }
 
     function test_Mint() public {
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             5
         );
@@ -71,7 +70,6 @@ contract BNFTTest is TestSetup {
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             5
         );

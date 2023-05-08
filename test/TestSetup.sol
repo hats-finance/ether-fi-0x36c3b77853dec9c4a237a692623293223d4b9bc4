@@ -46,6 +46,7 @@ contract TestSetup is Test {
     UUPSProxy public scoreManagerProxy;
     UUPSProxy public regulationsManagerProxy;
     UUPSProxy public weETHProxy;
+    UUPSProxy public nodeOperatorManagerProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -90,9 +91,11 @@ contract TestSetup is Test {
     ClaimReceiverPool public claimReceiverPoolImplementation;
     ClaimReceiverPool public claimReceiverPoolInstance;
 
+    NodeOperatorManager public nodeOperatorManagerImplementation;
+    NodeOperatorManager public nodeOperatorManagerInstance;
+
     EtherFiNode public node;
     Treasury public treasuryInstance;
-    NodeOperatorManager public nodeOperatorManagerInstance;
     
     Merkle merkle;
     bytes32 root;
@@ -128,7 +131,11 @@ contract TestSetup is Test {
 
         // Deploy Contracts and Proxies
         treasuryInstance = new Treasury();
-        nodeOperatorManagerInstance = new NodeOperatorManager();
+
+        nodeOperatorManagerImplementation = new NodeOperatorManager();
+        nodeOperatorManagerProxy = new UUPSProxy(address(nodeOperatorManagerImplementation), "");
+        nodeOperatorManagerInstance = NodeOperatorManager(address(nodeOperatorManagerProxy));
+        nodeOperatorManagerInstance.initialize();
 
         auctionImplementation = new AuctionManager();
         auctionManagerProxy = new UUPSProxy(address(auctionImplementation), "");
@@ -253,11 +260,11 @@ contract TestSetup is Test {
         meEthInstance = new meETH(address(eETHInstance), address(liquidityPoolInstance));
 
         // Setup dependencies
+        _setUpNodeOperatorWhitelist();
         _merkleSetup();
         _merkleSetupMigration();
         _merkleSetupMigration2();
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
 
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
         auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
@@ -328,6 +335,19 @@ contract TestSetup is Test {
         liquidityPoolInstance.setMerkleProof(merkle.getProof(whiteListedAddresses, 9));
         stakingManagerInstance.updateMerkleRoot(root);
 
+    }
+
+    function _setUpNodeOperatorWhitelist() internal {
+        nodeOperatorManagerInstance.addToWhitelist(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.addToWhitelist(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        nodeOperatorManagerInstance.addToWhitelist(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+        nodeOperatorManagerInstance.addToWhitelist(alice);
+        nodeOperatorManagerInstance.addToWhitelist(bob);
+        nodeOperatorManagerInstance.addToWhitelist(chad);
+        nodeOperatorManagerInstance.addToWhitelist(dan);
+        nodeOperatorManagerInstance.addToWhitelist(elvis);
+        nodeOperatorManagerInstance.addToWhitelist(greg);
+        nodeOperatorManagerInstance.addToWhitelist(address(liquidityPoolInstance));
     }
 
     function _merkleSetupMigration() internal {

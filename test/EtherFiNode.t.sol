@@ -20,11 +20,9 @@ contract EtherFiNodeTest is TestSetup {
         vm.prank(owner);
         node.initialize(address(managerInstance));
 
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             5
         );
@@ -139,14 +137,12 @@ contract EtherFiNodeTest is TestSetup {
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             5
         );
 
         vm.prank(chad);
         nodeOperatorManagerInstance.registerNodeOperator(
-            chadProof,
             aliceIPFSHash,
             5
         );

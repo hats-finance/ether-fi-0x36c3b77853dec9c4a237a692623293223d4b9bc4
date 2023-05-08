@@ -18,37 +18,30 @@ contract LargeScenariosTest is TestSetup {
 
         /// Register Node Operators
         bytes32[] memory emptyProof = new bytes32[](0);
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
-        bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
         bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
         bytes32[] memory elvisProof = merkle.getProof(whiteListedAddresses, 7);
         bytes32[] memory gregProof = merkle.getProof(whiteListedAddresses, 8);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             IPFS_Hash,
             1000
         );
 
         vm.prank(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
-            bobProof,
             IPFS_Hash,
             4000
         );
 
         vm.prank(chad);
         nodeOperatorManagerInstance.registerNodeOperator(
-            chadProof,
             IPFS_Hash,
             6000
         );
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            emptyProof,
             IPFS_Hash,
             100
         );
@@ -70,7 +63,7 @@ contract LargeScenariosTest is TestSetup {
         }(100, 0.005 ether);
         assertEq(chadBidIds.length, 100);
         vm.expectRevert("Only whitelisted addresses");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        hoax(henry);
         auctionInstance.createBid{value: 0.5 ether}(100, 0.005 ether);
 
         assertEq(address(auctionInstance).balance, 0.65 ether);
