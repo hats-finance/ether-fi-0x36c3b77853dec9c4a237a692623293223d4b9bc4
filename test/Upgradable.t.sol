@@ -55,6 +55,12 @@ contract ScoreManagerV2 is ScoreManager {
     }
 }
 
+contract NodeOperatorManagerV2 is NodeOperatorManager {
+    function isUpgraded() public view returns(bool){
+        return true;
+    }
+}
+
 contract UpgradeTest is TestSetup {
 
     AuctionManagerV2 public auctionManagerV2Instance;
@@ -65,6 +71,7 @@ contract UpgradeTest is TestSetup {
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
     ProtocolRevenueManagerV2 public protocolRevenueManagerV2Instance;
     StakingManagerV2 public stakingManagerV2Instance;
+    NodeOperatorManagerV2 public nodeOperatorManagerV2Instance;
 
     uint256[] public slippageArray;
    
@@ -384,5 +391,36 @@ contract UpgradeTest is TestSetup {
 
         assertEq(safe1V2.isUpgraded(), true);
         assertEq(safe2V2.isUpgraded(), true);
+    }
+
+    function test_CanUpgradeNodeOperatorManager() public {
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        
+        assertEq(nodeOperatorManagerInstance.getImplementation(), address(nodeOperatorManagerImplementation));
+
+        NodeOperatorManagerV2 nodeOperatorManagerV2Implementation = new NodeOperatorManagerV2();
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        nodeOperatorManagerV2Implementation.initialize();
+
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        nodeOperatorManagerInstance.upgradeTo(address(nodeOperatorManagerV2Implementation));
+
+        vm.prank(owner);
+        nodeOperatorManagerInstance.upgradeTo(address(nodeOperatorManagerV2Implementation));
+
+        nodeOperatorManagerV2Instance = NodeOperatorManagerV2(address(nodeOperatorManagerProxy));
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        nodeOperatorManagerV2Instance.initialize();
+
+        assertEq(nodeOperatorManagerV2Instance.getImplementation(), address(nodeOperatorManagerV2Implementation));
+        assertEq(nodeOperatorManagerV2Instance.isUpgraded(), true);
     }
 }

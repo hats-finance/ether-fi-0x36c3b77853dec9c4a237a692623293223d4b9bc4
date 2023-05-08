@@ -14,8 +14,19 @@ contract NodeOperatorManagerTest is TestSetup {
     }
 
     function test_RegisterNodeOperator() public {
+        vm.startPrank(owner);
+        nodeOperatorManagerInstance.pauseContract();
+
+        vm.expectRevert("Pausable: paused");
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceIPFS_Hash,
+            uint64(10)
+        );
+        nodeOperatorManagerInstance.unPauseContract();
+        vm.stopPrank();
+
         vm.startPrank(alice);
-        assertEq(nodeOperatorManagerInstance.registered(alice), false);
+
         nodeOperatorManagerInstance.registerNodeOperator(
             aliceIPFS_Hash,
             uint64(10)
@@ -31,12 +42,48 @@ contract NodeOperatorManagerTest is TestSetup {
         assertEq(keysUsed, 0);
 
         assertEq(nodeOperatorManagerInstance.registered(alice), true);
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(alice), true);
 
         vm.expectRevert("Already registered");
         nodeOperatorManagerInstance.registerNodeOperator(
             aliceIPFS_Hash,
             uint64(10)
         );
+    }
+
+    function test_CanAddAddressToWhitelist() public {
+        vm.startPrank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceIPFS_Hash,
+            uint64(10)
+        );
+        
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(henry), false);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        nodeOperatorManagerInstance.addToWhitelist(henry);
+
+        vm.stopPrank();
+
+        vm.prank(owner);
+        nodeOperatorManagerInstance.addToWhitelist(henry);
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(henry), true);
+    }
+
+    function test_CanRemoveAddressFromWhitelist() public {
+        vm.startPrank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceIPFS_Hash,
+            uint64(10)
+        );
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        nodeOperatorManagerInstance.removeFromWhitelist(alice);
+        vm.stopPrank();
+
+        vm.prank(owner);
+        nodeOperatorManagerInstance.removeFromWhitelist(alice);
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(alice), false);
     }
 
     function test_EventOperatorRegistered() public {

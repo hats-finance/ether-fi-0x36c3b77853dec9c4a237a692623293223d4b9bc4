@@ -52,7 +52,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     function registerNodeOperator(
         bytes memory _ipfsHash,
         uint64 _totalKeys
-    ) public {
+    ) public whenNotPaused {
         require(!registered[msg.sender], "Already registered");
         
         KeyData memory keyData = KeyData({
