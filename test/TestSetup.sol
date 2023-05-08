@@ -276,7 +276,6 @@ contract TestSetup is Test {
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
 
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
-        liquidityPoolInstance.setScoreManager(address(scoreManagerInstance));
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMeEth(address(meEthInstance));

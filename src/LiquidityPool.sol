@@ -11,7 +11,6 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 import "./interfaces/IEETH.sol";
-import "./interfaces/IScoreManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMEETH.sol";
@@ -23,7 +22,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
 
     IEETH public eETH; 
-    IScoreManager public scoreManager;
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
@@ -80,7 +78,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager.verifyWhitelisted(_user, _merkleProof);
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
         require(_recipient == msg.sender || isDepositToInternalContract(_recipient), "");
-        
+
         uint256 share = _sharesForDepositAmount(msg.value);
         if (share == 0) {
             share = msg.value;
@@ -180,21 +178,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return (_share * getTotalPooledEther()) / eETH.totalShares();
     }
 
-    // TODO: This function will be deprecated, meETH points system will replace with it
-    function setEapScore(address _user, uint256 _score) public {
-        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        uint256 totalScore = scoreManager.totalScores(typeId);
-        totalScore -= eapScore(_user);
-        totalScore += _score;
-        scoreManager.setScore(typeId, _user, _score);
-    }
-
-    function eapScore(address _user) public view returns (uint256) {
-        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        uint256 score = scoreManager.scores(typeId, _user);
-        return score;
-    }
-
     /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
     function setAccruedStakingReards(uint256 _amount) external onlyOwner {
         accruedStakingRewards = _amount;
@@ -212,11 +195,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(_eETH != address(0), "No zero addresses");
         eETH = IEETH(_eETH);
         emit TokenAddressChanged(_eETH);
-    }
-
-    function setScoreManager(address _address) external onlyOwner {
-        require(_address != address(0), "No zero addresses");
-        scoreManager = IScoreManager(_address);
     }
 
     function setStakingManager(address _address) external onlyOwner {

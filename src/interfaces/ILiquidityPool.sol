@@ -2,8 +2,6 @@
 pragma solidity 0.8.13;
 
 interface ILiquidityPool {
-
-    function setEapScore(address _user, uint256 _score) external;
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable;
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) external payable;
 
@@ -11,6 +9,4 @@ interface ILiquidityPool {
     function getTotalEtherClaimOf(address _user) external view returns (uint256);
     function sharesForAmount(uint256 _amount) external view returns (uint256);
     function amountForShare(uint256 _share) external view returns (uint256);
-
-    function setScoreManager(address _address) external;
 }
