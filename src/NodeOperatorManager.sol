@@ -4,9 +4,12 @@ pragma solidity 0.8.13;
 import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract NodeOperatorManager is INodeOperatorManager, Ownable {
+contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgradeable, PausableUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -29,6 +32,18 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice initializes contract
+    function initialize() external initializer {
+        __Pausable_init();
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+    }
 
     /// @notice Registers a user as a operator to allow them to bid
     /// @param _merkleProof the proof verifying they are whitelisted
@@ -86,6 +101,16 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         emit MerkleUpdated(oldMerkle, _newMerkle);
     }
 
+    //Pauses the contract
+    function pauseContract() external onlyOwner {
+        _pause();
+    }
+
+    //Unpauses the contract
+    function unPauseContract() external onlyOwner {
+        _unpause();
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  GETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -121,6 +146,10 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
         whitelisted = whitelistedAddresses[_user];
     }
 
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  SETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -153,6 +182,10 @@ contract NodeOperatorManager is INodeOperatorManager, Ownable {
             whitelistedAddresses[_user] = true;
         }
     }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
