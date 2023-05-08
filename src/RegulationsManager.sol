@@ -21,7 +21,7 @@ contract RegulationsManager is
 
     uint32 public whitelistVersion;
 
-    uint256[47] __gap;
+    uint256[7] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -66,7 +66,7 @@ contract RegulationsManager is
         );
         require(
             isEligible[whitelistVersion][_user] == true,
-            "User not whitelisted"
+            "User is not whitelisted"
         );
 
         isEligible[whitelistVersion][_user] = false;
