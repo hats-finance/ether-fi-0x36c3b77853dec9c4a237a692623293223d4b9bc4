@@ -8,8 +8,6 @@ contract meEthTest is TestSetup {
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
 
-    uint256 constant public kwei = 10 ** 3;
-
     function setUp() public {
         setUpTests();
         vm.startPrank(alice);
@@ -29,14 +27,6 @@ contract meEthTest is TestSetup {
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
-
-        vm.startPrank(owner);
-        for (uint256 i = 0; i < 5 ; i++) {
-            uint40 minimumPointsRequirement = uint40(i * 14 * 1 * kwei);
-            uint24 weight = uint24(i + 1);
-            meEthInstance.addNewTier(minimumPointsRequirement, weight);
-        }
-        vm.stopPrank();
     }
 
     function test_HowPointsGrow() public {

@@ -5,15 +5,18 @@ pragma solidity 0.8.13;
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 
 import "./interfaces/IEETH.sol";
+import "./interfaces/IMEETH.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IClaimReceiverPool.sol";
 
 import "forge-std/console.sol";
 
 
-contract meETH is IERC20Upgradeable {
+contract meETH is IERC20Upgradeable, IMEETH {
     // eETH contract address
     IEETH public eETH;
     ILiquidityPool public liquidityPool;
+    IClaimReceiverPool public claimReceiverPool;
 
     mapping (address => mapping (address => uint256)) public allowances;
     mapping (address => UserDeposit) public _userDeposits;
@@ -60,30 +63,21 @@ contract meETH is IERC20Upgradeable {
     uint96[] public rewardsGlobalIndexPerTier;
     uint256   public rewardsGlobalIndexTime;
 
-    constructor(address _eEthAddress, address _liquidityPoolAddress) {
+    constructor(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress) {
         eETH = IEETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+        claimReceiverPool = IClaimReceiverPool(_claimReceiverPoolAddress);
         genesisTimestamp = uint32(block.timestamp);
     }
 
-    /**
-     * @return the name of the token.
-     */
     function name() public pure returns (string memory) {
         return "meETH token";
     }
 
-    /**
-     * @return the symbol of the token, usually a shorter version of the
-     * name.
-     */
     function symbol() public pure returns (string memory) {
         return "meETH";
     }
 
-    /**
-     * @return the number of decimals for getting user representation of a token amount.
-     */
     function decimals() public pure returns (uint8) {
         return 18;
     }
@@ -96,7 +90,7 @@ contract meETH is IERC20Upgradeable {
         return sum;
     }
 
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() public view override(IERC20Upgradeable, IMEETH) returns (uint256) {
         return liquidityPool.amountForShare(totalShares());
     }
 
@@ -136,6 +130,26 @@ contract meETH is IERC20Upgradeable {
         eETH.transferFrom(address(this), msg.sender, _amount);
     }
 
+    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
+        uint256 amount = msg.value;
+        require(amount > 0, "You cannot wrap 0 ETH");
+        require(msg.sender == address(claimReceiverPool), "Only CRP can call it");
+
+        // mint eETH
+        liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
+
+        uint8 tier = tierForPoints(_points);
+        UserData storage userData = _userData[_account];
+        userData.tier = tier;
+
+        // mint meETH to user
+        _mint(_account, amount);
+
+        userData.pointsSnapshot = _points;
+        userData.pointsSnapshotTime = uint32(block.timestamp);
+        userData.rewardsLocalIndex = calculateGlobalIndex()[tier];
+    }
+
     function stakeForPoints(uint256 _amount) external {
         require(_userDeposits[msg.sender].amounts >= _amount, "Not enough balance to stake for points");
 
@@ -154,7 +168,7 @@ contract meETH is IERC20Upgradeable {
         _unstakeForPoints(msg.sender, _amount);
     }
 
-    function balanceOf(address _account) public view override(IERC20Upgradeable) returns (uint256) {
+    function balanceOf(address _account) public view override(IERC20Upgradeable, IMEETH) returns (uint256) {
         uint256 tier = tierOf(_account);
         uint96[] memory globalIndex = calculateGlobalIndex();
 
@@ -305,7 +319,7 @@ contract meETH is IERC20Upgradeable {
     // This function calculates the points earned by the account for the current tier.
     // It takes into account the account's points earned since the previous tier snapshot,
     // as well as any points earned during the current tier snapshot period.
-    function getPointsEarningsDuringLastMembershipPeriod(address _account) public view returns (uint256) {
+    function getPointsEarningsDuringLastMembershipPeriod(address _account) public view returns (uint40) {
         uint256 userPointsSnapshotTimestamp = _userData[_account].pointsSnapshotTime;
         // Get the timestamp for the current tier snapshot
         uint256 tierSnapshotTimestamp = currentTierSnapshotTimestamp();
@@ -329,6 +343,7 @@ contract meETH is IERC20Upgradeable {
     function pointOf(address _account) public view returns (uint40) {
         uint40 points = _userData[_account].pointsSnapshot;
         uint40 pointsEarning = _pointsEarning(_account, _userData[_account].pointsSnapshotTime, block.timestamp);
+
         uint40 total = 0;
         if (uint256(points) + uint256(pointsEarning) >= type(uint40).max) {
             total = type(uint40).max;
@@ -336,6 +351,10 @@ contract meETH is IERC20Upgradeable {
             total = points + pointsEarning;
         }
         return total;
+    }
+
+    function pointsSnapshotTimeOf(address _account) external view returns (uint32) {
+        return _userData[_account].pointsSnapshotTime;
     }
 
     // Compute the points earnings of a user between [since, until) 
@@ -389,10 +408,18 @@ contract meETH is IERC20Upgradeable {
     }
 
     function claimableTier(address _account) public view returns (uint8) {
-        uint256 pointsEarned = getPointsEarningsDuringLastMembershipPeriod(_account);
+        uint40 pointsEarned = getPointsEarningsDuringLastMembershipPeriod(_account);
 
         uint8 tierId = 0;
         while (tierId < tierDeposits.length && pointsEarned >= tierData[tierId].minimumPoints) {
+            tierId++;
+        }
+        return tierId - 1;
+    }
+
+    function tierForPoints(uint40 _points) public view returns (uint8) {
+        uint8 tierId = 0;
+        while (tierId < tierDeposits.length && _points >= tierData[tierId].minimumPoints) {
             tierId++;
         }
         return tierId - 1;
@@ -409,7 +436,7 @@ contract meETH is IERC20Upgradeable {
         return genesisTimestamp + i * monthInSeconds;
     } 
 
-    function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
+    function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable, IMEETH) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
 
@@ -422,7 +449,7 @@ contract meETH is IERC20Upgradeable {
         return true;
     }
 
-    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
+    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IERC20Upgradeable, IMEETH) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
 

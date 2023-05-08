@@ -14,6 +14,7 @@ import "./interfaces/IEETH.sol";
 import "./interfaces/IScoreManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
+import "./interfaces/IMEETH.sol";
 
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
@@ -26,6 +27,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
+    IMEETH public meEth;
 
     mapping(uint256 => bool) public validators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
@@ -68,19 +70,24 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         regulationsManager = IRegulationsManager(_regulationsManager);
     }
 
+    function deposit(address _user, bytes32[] calldata _merkleProof) public payable {
+        deposit(_user, _user, _merkleProof);
+    }
+
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
+    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
         stakingManager.verifyWhitelisted(_user, _merkleProof);
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
+        require(_recipient == msg.sender || isDepositToInternalContract(_recipient), "");
+        
         uint256 share = _sharesForDepositAmount(msg.value);
-
         if (share == 0) {
             share = msg.value;
         }
-        eETH.mintShares(_user, share);
+        eETH.mintShares(_recipient, share);
 
-        emit Deposit(_user, msg.value);
+        emit Deposit(_recipient, msg.value);
     }
 
     /// @notice withdraw from pool
@@ -226,11 +233,22 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
-
-
+    function setMeEth(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        meEth = IMEETH(_address);
+    }
+    
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function isDepositToInternalContract(address _address) internal view returns (bool) {
+        bool verified = false;
+        if (_address == address(meEth)) {
+            verified = true;
+        }
+        return verified;
+    }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;
