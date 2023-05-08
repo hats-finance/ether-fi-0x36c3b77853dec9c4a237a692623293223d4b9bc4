@@ -16,6 +16,8 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
 
     event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
+    event AddedToWhitelist(address userAddress);
+    event RemovedFromWhitelist(address userAddress);
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -98,6 +100,22 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         merkleRoot = _newMerkle;
 
         emit MerkleUpdated(oldMerkle, _newMerkle);
+    }
+
+    /// @notice Adds an address to the whitelist
+    /// @param _address Address of the user to add
+    function addToWhitelist(address _address) external onlOwner {
+        whitelistedAddresses[_address] = true;
+
+        emit AddedToWhitelist(_address);
+    }
+
+    /// @notice Removed an address from the whitelist
+    /// @param _address Address of the user to remove
+    function removeFromWhitelist(address _address) external onlOwner {
+        whitelistedAddresses[_address] = false;
+
+        emit RemovedFromWhitelist(_address);
     }
 
     //Pauses the contract
