@@ -422,7 +422,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         revert("Transfer of meETH is not allowed");
     }
 
-    function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external returns (uint256) {
+    function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external onlyOwner returns (uint256) {
         require(tierDeposits.length < type(uint8).max, "Cannot add more new tier");
         // rewardsGlobalIndexPerTier.push(0);
         tierDeposits.push(TierDeposit(0, 0));
@@ -442,7 +442,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _mint(address _account, uint256 _amount) public {
+    function _mint(address _account, uint256 _amount) internal {
         require(_account != address(0), "MINT_TO_THE_ZERO_ADDRESS");
         uint256 share = liquidityPool.sharesForAmount(_amount);
         uint256 tier = tierOf(msg.sender);
@@ -451,7 +451,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         _incrementTierDeposit(tier, _amount, share);
     }
 
-    function _burn(address _account, uint256 _amount) public {
+    function _burn(address _account, uint256 _amount) internal {
         require(_userDeposits[_account].amounts >= _amount, "Not enough Balance");
         uint256 share = liquidityPool.sharesForAmount(_amount);
         uint256 tier = tierOf(msg.sender);
