@@ -8,6 +8,7 @@ contract SmallScenariosTest is TestSetup {
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
     bytes32[] public chadProof;
+    bytes32[] public ownerProof;
 
     function setUp() public {
         setUpTests();
@@ -21,17 +22,28 @@ contract SmallScenariosTest is TestSetup {
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
         chadProof = merkle.getProof(whiteListedAddresses, 5);
+        ownerProof = merkle.getProof(whiteListedAddresses, 10);
     }
     
     /*
-    Alice and Bob both deposit into the liquidity pool.
+    Alice, Bob and Chad all deposit into the liquidity pool.
     Alice keeps her eETH to earn rebasing rewards.
     Bob wraps his eETH into weETH to use in other DeFi applications.
     Once Rewards are distrubuted, Bob decides to unwrap his weETH back to eETH.
+    Bob withdraws his ETH from the pool.
+    Chad deposits 16 ETH
+    There's more the 32 eth in the pool so EtherFi rolls it up into a validator.
+    Chad then wants to withdraw his 16 ETH but there is < Chad's balance in the pool.
+    EtherFi deposits their own ETH to keep the pool solvent and allow withdrawals.
+    EtherFi requests an exit for the TNFT that was minted.
+    Once the nodes exit is observed, EtherFi processes the node's exit from the EtherFiNodesManager
+    Rewards are distributed
+    Alice's balance rebases from the rewards sent to the TNFT holder, which is the liquidity pool
+    
     */ 
     function test_EEthWeTHLpScenarios() public {
         // bids for later rollup
-        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
+        bobProof = merkle.getProof(whiteListedAddresses, 4);
 
         startHoax(bob);
         nodeOperatorManagerInstance.registerNodeOperator(bobProof, _ipfsHash, 40);
@@ -197,7 +209,8 @@ contract SmallScenariosTest is TestSetup {
         
         // EtherFi deposits a validatos worth (32 ETH) into the pool to allow for users to withdraw
         hoax(owner);
-        address(liquidityPoolInstance).call{value: 32 ether}("");
+        ownerProof = merkle.getProof(whiteListedAddresses, 10);
+        liquidityPoolInstance.deposit{value: 32 ether}(owner, ownerProof);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 37 ether);
 
         // EtherFi sends an exit request for a node to be exited to reclaim the 32 etehr sent to the pool for withdrawals
@@ -238,6 +251,8 @@ contract SmallScenariosTest is TestSetup {
         vm.prank(owner);
         liquidityPoolInstance.processNodeExit(processedBidIds, slashingPenalties);
         assertEq(liquidityPoolInstance.numValidators(), 0);
+        console.logUint(eETHInstance.balanceOf(alice));
+        // assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 27.77777777777777777 ether);
     }
 
     /*----- EAP MIGRATION SCENARIO -----*/
