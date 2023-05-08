@@ -510,18 +510,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.tier = tierForPoints(userData.pointsSnapshot);
     }
 
-    function _addToTier(address _account, uint8 _tier) internal {
-        uint256 amountStakedForPoints = _userDeposits[msg.sender].amountStakedForPoints;
-        uint256 amount = _userDeposits[_account].amounts;
-        uint256 share = liquidityPool.sharesForAmount(amount);
-
-        tierData[_tier].amountStakedForPoints += uint96(amountStakedForPoints);
-        _incrementTierDeposit(_tier, amount, share);
-
-        _userData[_account].rewardsLocalIndex = calculateGlobalIndex()[_tier];
-        _userData[_account].tier = _tier;
-    }
-
     function _updateTier(address _account, uint8 _curTier, uint8 _newTier) internal {
         require(tierOf(_account) == _curTier, "the account does not belong to the specified tier");
         if (_curTier == _newTier) {
