@@ -53,20 +53,20 @@ contract meEthTest is TestSetup {
         skip(1 days);
         assertEq(meEthInstance.pointOf(alice), 2 * kwei);
 
-        // // Alice unwraps 1 meETH to 1eETH
-        // meEthInstance.unwrap(1 ether);
-        // assertEq(meEthInstance.pointOf(alice), 2 * kwei);
+        // Alice unwraps 1 meETH to 1eETH
+        meEthInstance.unwrap(1 ether);
+        assertEq(meEthInstance.pointOf(alice), 2 * kwei);
 
-        // // Alice keeps earnings points with the remaining 1 meETH
-        // skip(1 days);
-        // assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei);
-        // skip(1 days);
-        // assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei * 2);
+        // Alice keeps earnings points with the remaining 1 meETH
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei);
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei * 2);
 
-        // // Alice unwraps the whole remaining meETH, but the points remain the same
-        // meEthInstance.unwrap(1 ether);
-        // assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei * 2);
-        // vm.stopPrank();
+        // Alice unwraps the whole remaining meETH, but the points remain the same
+        meEthInstance.unwrap(1 ether);
+        assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei * 2);
+        vm.stopPrank();
     }
 
     function test_MaximumPoints() public {
