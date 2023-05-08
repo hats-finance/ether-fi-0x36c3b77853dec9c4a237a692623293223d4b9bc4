@@ -135,18 +135,18 @@ contract meETH is IERC20Upgradeable, IMEETH {
         require(amount > 0, "You cannot wrap 0 ETH");
         require(msg.sender == address(claimReceiverPool), "Only CRP can call it");
 
-        // mint eETH
-        liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
-
         uint8 tier = tierForPoints(_points);
         UserData storage userData = _userData[_account];
+        userData.pointsSnapshot = _points;
+        userData.pointsSnapshotTime = uint32(block.timestamp);
         userData.tier = tier;
+        
+        // mint eETH
+        liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
 
         // mint meETH to user
         _mint(_account, amount);
 
-        userData.pointsSnapshot = _points;
-        userData.pointsSnapshotTime = uint32(block.timestamp);
         userData.rewardsLocalIndex = calculateGlobalIndex()[tier];
     }
 

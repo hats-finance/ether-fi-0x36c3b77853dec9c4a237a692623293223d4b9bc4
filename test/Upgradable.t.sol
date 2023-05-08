@@ -134,7 +134,6 @@ contract UpgradeTest is TestSetup {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManagerInstance),
             address(regulationsManagerInstance)
         );
         assertEq(claimReceiverPoolV2Instance.getImplementation(), address(claimReceiverV2Implementation));

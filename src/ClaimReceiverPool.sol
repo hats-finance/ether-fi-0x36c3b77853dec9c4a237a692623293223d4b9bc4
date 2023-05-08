@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 pragma abicoder v2;
 
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
@@ -11,12 +12,12 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+
 import "./interfaces/IWeth.sol";
 import "./interfaces/IMEETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IRegulationsManager.sol";
-import "./interfaces/IScoreManager.sol";
-import "forge-std/console.sol";
+
 
 contract ClaimReceiverPool is
     Initializable,
@@ -55,7 +56,6 @@ contract ClaimReceiverPool is
     IWETH public constant wethContract = IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
     ILiquidityPool public liquidityPool;
-    IScoreManager public scoreManager;
     IRegulationsManager public regulationsManager;
     IMEETH public meEth;
 
@@ -84,14 +84,12 @@ contract ClaimReceiverPool is
         address _wstEth,
         address _sfrxEth,
         address _cbEth,
-        address _scoreManager,
         address _regulationsManager
     ) external initializer {
         require(_rEth  != address(0), "No zero addresses");
         require(_wstEth != address(0), "No zero addresses");
         require(_sfrxEth != address(0), "No zero addresses");
         require(_cbEth != address(0), "No zero addresses");
-        require(_scoreManager != address(0), "No zero addresses");
         require(_regulationsManager != address(0), "No zero addresses");
 
         rETH = _rEth;
@@ -99,7 +97,6 @@ contract ClaimReceiverPool is
         sfrxETH = _sfrxEth;
         cbETH = _cbEth;
 
-        scoreManager = IScoreManager(_scoreManager);
         regulationsManager = IRegulationsManager(_regulationsManager);
 
         __Pausable_init();

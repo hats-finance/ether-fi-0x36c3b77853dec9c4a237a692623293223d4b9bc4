@@ -40,7 +40,6 @@ contract ClaimReceiverPoolTest is TestSetup {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManagerInstance),
             address(regulationsManagerInstance));
     }
 
