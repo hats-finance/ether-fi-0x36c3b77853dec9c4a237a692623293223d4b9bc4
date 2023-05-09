@@ -178,7 +178,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
-    function setAccruedStakingReards(uint256 _amount) external onlyOwner {
+    function setAccruedStakingRewards(uint256 _amount) external onlyOwner {
         accruedStakingRewards = _amount;
     }
 
