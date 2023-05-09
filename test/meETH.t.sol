@@ -301,4 +301,30 @@ contract meEthTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_BurnMeETHForETH() public {
+        vm.deal(alice, 2 ether);
+
+        vm.startPrank(alice);
+
+        assertEq(alice.balance, 2 ether);
+        // Alice deposits 2 ETH and mints 2 eETH.
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        assertEq(meEthInstance.balanceOf(alice), 0 ether);
+
+        // Alice mints 2 meETH by wrapping 2 eETH starts earning points
+        meEthInstance.wrap(2 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+        assertEq(meEthInstance.balanceOf(alice), 2 ether);
+
+        // Alice burns meETH directly for ETH
+        meEthInstance.burnMeETHForETH(1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+        assertEq(meEthInstance.balanceOf(alice), 1 ether);
+        assertEq(alice.balance, 1 ether);
+
+        vm.expectRevert("Not enough ETH in the liquidity pool");
+        meEthInstance.burnMeETHForETH(5 ether);
+    }
+
 }
