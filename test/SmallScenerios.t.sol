@@ -28,8 +28,8 @@ contract SmallScenariosTest is TestSetup {
     Chad then wants to withdraw his 17 ETH but there is < Chad's balance in the pool.
     EtherFi deposits their own ETH to keep the pool solvent and allow withdrawals.
     EtherFi requests an exit for the TNFT that was minted.
-    Once the nodes exit is observed, EtherFi processes the node's exit from the EtherFiNodesManager
-    Rewards are distributed
+    Once the nodes exit is observed, EtherFi processes the node's exit from the EtherFiNodesManager.
+    Rewards are distributed.
     
     */ 
     function test_EEthWeTHLpScenarios() public {
