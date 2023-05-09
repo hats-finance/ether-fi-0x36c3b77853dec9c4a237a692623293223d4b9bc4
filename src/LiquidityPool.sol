@@ -31,10 +31,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
 
     uint64 public numValidators;
+    bool public liquidStakingOpened;
 
     bytes32[] private merkleProof;
 
-    uint256[41] __gap;
+    uint256[21] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -44,6 +45,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event TokenAddressChanged(address indexed newAddress);
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, uint256 amount);
+    event LiquadStakingOpened();
+    event LiquadStakingClosed();
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -65,6 +68,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         __Ownable_init();
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
+        liquidStakingOpened = false;
     }
 
     function deposit(address _user, bytes32[] calldata _merkleProof) public payable {
@@ -73,7 +77,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
+    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
         stakingManager.verifyWhitelisted(_user, _merkleProof);
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
         require(_recipient == msg.sender || isDepositToInternalContract(_recipient), "");
@@ -91,7 +95,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to user
     /// @param _amount the amount to withdraw from contract
     /// TODO WARNING! This implementation does not take into consideration the score
-    function withdraw(uint256 _amount) external payable {
+    function withdraw(uint256 _amount) external payable whenLiquidStakingOpen {
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
         require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
 
@@ -139,12 +143,26 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         accruedSlashingPenalties -= totalSlashingPenalties;
     }
 
-    // Send the exit reqeusts as the T-NFT holder
+    // @notice Send the exit reqeusts as the T-NFT holder
     function sendExitRequests(uint256[] calldata _validatorIds) public onlyOwner {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             nodesManager.sendExitRequest(validatorId);
         }
+    }
+
+    // @notice Allow interactions with the eEth token
+    function openLiquadStaking() external onlyOwner {
+        liquidStakingOpened = true;
+
+        emit LiquadStakingOpened();
+    }
+
+    // @notice Disallow interactions with the eEth token
+    function closeLiquadStaking() external onlyOwner {
+        liquidStakingOpened = false;
+
+        emit LiquadStakingClosed();
     }
 
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
@@ -250,4 +268,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
+
+    modifier whenLiquidStakingOpen() {
+        require(liquidStakingOpened, "Liquid staking functions are closed");
+        _;
+    }
 }
