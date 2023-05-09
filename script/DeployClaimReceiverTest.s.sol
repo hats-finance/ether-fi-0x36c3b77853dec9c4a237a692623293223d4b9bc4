@@ -74,7 +74,6 @@ contract DeployClaimReceiverTestScript is Script {
             address(wstETH),
             address(sfrxETH),
             address(cbETH),
-            address(scoreManagerInstance),
             address(regulationsManagerInstance)
         );
 

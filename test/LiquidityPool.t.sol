@@ -406,10 +406,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(owner);
         vm.expectRevert("No zero addresses");
         liquidityPoolInstance.setTokenAddress(address(0));
-
-        vm.expectRevert("No zero addresses");
-        liquidityPoolInstance.setScoreManager(address(0));
-
+        
         vm.expectRevert("No zero addresses");
         liquidityPoolInstance.setStakingManager(address(0));
 

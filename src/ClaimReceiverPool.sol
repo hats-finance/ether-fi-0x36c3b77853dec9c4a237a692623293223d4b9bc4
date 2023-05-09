@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 pragma abicoder v2;
 
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
@@ -11,10 +12,12 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+
 import "./interfaces/IWeth.sol";
+import "./interfaces/IMEETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IRegulationsManager.sol";
-import "./interfaces/IScoreManager.sol";
+
 
 contract ClaimReceiverPool is
     Initializable,
@@ -46,27 +49,25 @@ contract ClaimReceiverPool is
 
     bytes32 public merkleRoot;
 
-    uint256[44] public __gap;
-
     //SwapRouter but Testnet, although address is actually the same
-    ISwapRouter public constant router =
-        ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    ISwapRouter public constant router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
     //Goerli Weth address used for unwrapping ERC20 Weth
-    IWETH public constant wethContract =
-        IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
+    IWETH public constant wethContract = IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
 
     ILiquidityPool public liquidityPool;
-    IScoreManager public scoreManager;
     IRegulationsManager public regulationsManager;
-    
+    IMEETH public meEth;
+
+    uint256[4] public __gap;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
     event TransferCompleted();
     event MerkleUpdated(bytes32, bytes32);
-    event FundsMigrated(address user, uint256 amount, uint256 points);
+    event FundsMigrated(address user, uint256 amount, uint256 eapPoints, uint40 loyaltyPoints);
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -83,15 +84,12 @@ contract ClaimReceiverPool is
         address _wstEth,
         address _sfrxEth,
         address _cbEth,
-        address _scoreManager,
         address _regulationsManager
     ) external initializer {
-        
-        require(_rEth != address(0), "No zero addresses");
+        require(_rEth  != address(0), "No zero addresses");
         require(_wstEth != address(0), "No zero addresses");
         require(_sfrxEth != address(0), "No zero addresses");
         require(_cbEth != address(0), "No zero addresses");
-        require(_scoreManager != address(0), "No zero addresses");
         require(_regulationsManager != address(0), "No zero addresses");
 
         rETH = _rEth;
@@ -99,7 +97,6 @@ contract ClaimReceiverPool is
         sfrxETH = _sfrxEth;
         cbETH = _cbEth;
 
-        scoreManager = IScoreManager(_scoreManager);
         regulationsManager = IRegulationsManager(_regulationsManager);
 
         __Pausable_init();
@@ -112,10 +109,7 @@ contract ClaimReceiverPool is
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    receive() external payable {}
-
-    /// @notice Allows user to deposit into the conversion pool
-    /// @notice Transfers users ether to function in the LP
+    /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
     /// @dev The deposit amount must be the same as what they deposited into the EAP
     /// @param _rEthBal balance of the token to be sent in
     /// @param _wstEthBal balance of the token to be sent in
@@ -123,6 +117,7 @@ contract ClaimReceiverPool is
     /// @param _cbEthBal balance of the token to be sent in
     /// @param _points points of the user
     /// @param _merkleProof array of hashes forming the merkle proof for the user
+    /// @param _slippageLimit slippage limit in basis points
     function deposit(
         uint256 _rEthBal,
         uint256 _wstEthBal,
@@ -130,66 +125,57 @@ contract ClaimReceiverPool is
         uint256 _cbEthBal,
         uint256 _points,
         bytes32[] calldata _merkleProof,
-        uint256[] calldata _slippageBasisPoints
+        uint256 _slippageLimit
     ) external payable whenNotPaused {
-        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
-        require(
-            _verifyValues(
-                msg.sender,
-                msg.value,
-                _rEthBal,
-                _wstEthBal,
-                _sfrxEthBal,
-                _cbEthBal,
-                _points,
-                _merkleProof
-            ),
-            "Verification failed"
-        );
-        uint256 scoreTypeId = scoreManager.typeIds("Early Adopter Pool");
-        require(scoreManager.scores(scoreTypeId, msg.sender) == 0, "Already Deposited");
         require(_points > 0, "You don't have any point to claim");
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
+        require(meEth.pointsSnapshotTimeOf(msg.sender) == 0, "Already Deposited");
+        _verifyEapUserData(msg.sender, msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof);
 
         uint256 _ethAmount = 0;
         _ethAmount += msg.value;
-        _ethAmount += _swapERC20ForETH(rETH, _rEthBal, _slippageBasisPoints[0]);
-        _ethAmount += _swapERC20ForETH(wstETH, _wstEthBal, _slippageBasisPoints[1]);
-        _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal, _slippageBasisPoints[2]);
-        _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal, _slippageBasisPoints[3]);
+        _ethAmount += _swapERC20ForETH(rETH, _rEthBal, _slippageLimit);
+        _ethAmount += _swapERC20ForETH(wstETH, _wstEthBal, _slippageLimit);
+        _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal, _slippageLimit);
+        _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal, _slippageLimit);
 
-        liquidityPool.setEapScore(msg.sender, _points);
-        liquidityPool.deposit{value: _ethAmount}(msg.sender, _merkleProof);
+        uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_points);
+        meEth.wrapEthForEap{value: _ethAmount}(msg.sender, loyaltyPoints, _merkleProof);
 
-        emit FundsMigrated(msg.sender, _ethAmount, _points);
+        emit FundsMigrated(msg.sender, _ethAmount, _points, loyaltyPoints);
     }
 
-    /// @notice Sets the liquidity pool instance
-    /// @dev Only owner can call it and should only be called once unless LP address changes
-    /// @param _liquidityPoolAddress the address of the liquidity pool
-    function setLiquidityPool(
-        address _liquidityPoolAddress
-    ) external onlyOwner {
-        require(_liquidityPoolAddress != address(0), "Cannot be address zero");
-        liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+    function convertEapPointsToLoyaltyPoints(uint256 _points) public view returns (uint40) {
+        uint256 points = (_points * 1e14 / 1000) / 1 days / 0.001 ether;
+        if (points >= type(uint40).max) {
+            points = type(uint40).max;
+        }
+        return uint40(points);
     }
 
-    //Pauses the contract
+    function setLiquidityPool(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        liquidityPool = ILiquidityPool(_address);
+    }
+
+    function setMeEth(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        meEth = IMEETH(_address);
+    }
+
     function pauseContract() external onlyOwner {
         _pause();
     }
 
-    //Unpauses the contract
     function unPauseContract() external onlyOwner {
         _unpause();
     }
 
     /// @notice Updates the merkle root
-    /// @dev merkleroot gets generated in JS offline and sent to the contract
-    /// @param _newMerkle new merkle root to be used for bidding
+    /// @param _newMerkle new merkle root used to verify the EAP user data (deposits, points)
     function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
         bytes32 oldMerkle = merkleRoot;
         merkleRoot = _newMerkle;
-
         emit MerkleUpdated(oldMerkle, _newMerkle);
     }
 
@@ -201,9 +187,9 @@ contract ClaimReceiverPool is
     //--------------------------------  INTERNAL FUNCTIONS  --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _verifyValues(
+    function _verifyEapUserData(
         address _user,
-        uint256 _etherBalance,
+        uint256 _ethBal,
         uint256 _rEthBal,
         uint256 _wstEthBal,
         uint256 _sfrxEthBal,
@@ -211,22 +197,9 @@ contract ClaimReceiverPool is
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) internal view returns (bool) {
-        return
-            MerkleProof.verify(
-                _merkleProof,
-                merkleRoot,
-                keccak256(
-                    abi.encodePacked(
-                        _user,
-                        _etherBalance,
-                        _rEthBal,
-                        _wstEthBal,
-                        _sfrxEthBal,
-                        _cbEthBal,
-                        _points
-                    )
-                )
-            );
+        bytes32 leaf = keccak256(abi.encodePacked(_user, _ethBal, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points));
+        bool verified = MerkleProof.verify(_merkleProof, merkleRoot, leaf);
+        require(verified, "Verification failed");
     }
 
     function _swapERC20ForETH(address _token, uint256 _amount, uint256 _slippageBasisPoints) internal returns (uint256) {
@@ -242,12 +215,10 @@ contract ClaimReceiverPool is
     function _swapExactInputSingle(
         uint256 _amountIn,
         address _tokenIn,
-        uint256 _slippageBasisPoints
+        uint256 _slippageLimit
     ) internal returns (uint256 amountOut) {
         IERC20(_tokenIn).approve(address(router), _amountIn);
-
-        uint256 minimumAmountAfterSlippage = _amountIn - (_amountIn * _slippageBasisPoints) / 10_000;
-
+        uint256 minimumAmountAfterSlippage = _amountIn - (_amountIn * _slippageLimit) / 10_000;
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
                 tokenIn: _tokenIn,
@@ -259,7 +230,6 @@ contract ClaimReceiverPool is
                 amountOutMinimum: minimumAmountAfterSlippage,
                 sqrtPriceLimitX96: 0
             });
-
         amountOut = router.exactInputSingle(params);
     }
 

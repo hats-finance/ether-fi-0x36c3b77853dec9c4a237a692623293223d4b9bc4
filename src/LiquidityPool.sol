@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 import "../src/interfaces/IStakingManager.sol";
-import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNodesManager.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradeable.sol";
@@ -11,9 +10,9 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 import "./interfaces/IEETH.sol";
-import "./interfaces/IScoreManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
+import "./interfaces/IMEETH.sol";
 
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
@@ -22,10 +21,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
 
     IEETH public eETH; 
-    IScoreManager public scoreManager;
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
+    IMEETH public meEth;
 
     mapping(uint256 => bool) public validators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
@@ -68,19 +67,24 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         regulationsManager = IRegulationsManager(_regulationsManager);
     }
 
+    function deposit(address _user, bytes32[] calldata _merkleProof) public payable {
+        deposit(_user, _user, _merkleProof);
+    }
+
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
+    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
         stakingManager.verifyWhitelisted(_user, _merkleProof);
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
-        uint256 share = _sharesForDepositAmount(msg.value);
+        require(_recipient == msg.sender || isDepositToInternalContract(_recipient), "");
 
+        uint256 share = _sharesForDepositAmount(msg.value);
         if (share == 0) {
             share = msg.value;
         }
-        eETH.mintShares(_user, share);
+        eETH.mintShares(_recipient, share);
 
-        emit Deposit(_user, msg.value);
+        emit Deposit(_recipient, msg.value);
     }
 
     /// @notice withdraw from pool
@@ -173,21 +177,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return (_share * getTotalPooledEther()) / eETH.totalShares();
     }
 
-    // TODO: This function will be deprecated, meETH points system will replace with it
-    function setEapScore(address _user, uint256 _score) public {
-        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        uint256 totalScore = scoreManager.totalScores(typeId);
-        totalScore -= eapScore(_user);
-        totalScore += _score;
-        scoreManager.setScore(typeId, _user, _score);
-    }
-
-    function eapScore(address _user) public view returns (uint256) {
-        uint256 typeId = scoreManager.typeIds("Early Adopter Pool");
-        uint256 score = scoreManager.scores(typeId, _user);
-        return score;
-    }
-
     /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
     function setAccruedStakingReards(uint256 _amount) external onlyOwner {
         accruedStakingRewards = _amount;
@@ -207,11 +196,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit TokenAddressChanged(_eETH);
     }
 
-    function setScoreManager(address _address) external onlyOwner {
-        require(_address != address(0), "No zero addresses");
-        scoreManager = IScoreManager(_address);
-    }
-
     function setStakingManager(address _address) external onlyOwner {
         require(_address != address(0), "No zero addresses");
         stakingManager = IStakingManager(_address);
@@ -226,11 +210,22 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
-
-
+    function setMeEth(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        meEth = IMEETH(_address);
+    }
+    
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function isDepositToInternalContract(address _address) internal view returns (bool) {
+        bool verified = false;
+        if (_address == address(meEth)) {
+            verified = true;
+        }
+        return verified;
+    }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;

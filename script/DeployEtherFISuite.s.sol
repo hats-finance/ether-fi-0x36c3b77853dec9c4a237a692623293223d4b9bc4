@@ -179,7 +179,6 @@ contract DeployEtherFiSuiteScript is Script {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManager),
             address(regulationsManagerInstance)
         );
 
@@ -216,7 +215,6 @@ contract DeployEtherFiSuiteScript is Script {
         claimReceiverPool.setLiquidityPool(address(liquidityPool));
 
         liquidityPool.setTokenAddress(address(eETH));
-        liquidityPool.setScoreManager(address(scoreManager));
         liquidityPool.setStakingManager(address(stakingManager));
         liquidityPool.setEtherFiNodesManager(address(etherFiNodesManager));
 
