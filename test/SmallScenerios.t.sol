@@ -21,18 +21,15 @@ contract SmallScenariosTest is TestSetup {
     
     /*
     Alice, Bob and Chad all deposit into the liquidity pool.
-    Alice keeps her eETH to earn rebasing rewards.
+    Alice and Chad keep their eETH to earn rebasing rewards.
     Bob wraps his eETH into weETH to use in other DeFi applications.
     Once Rewards are distrubuted, Bob decides to unwrap his weETH back to eETH.
-    Bob withdraws his ETH from the pool.
-    Chad deposits 16 ETH
     There's more the 32 eth in the pool so EtherFi rolls it up into a validator.
-    Chad then wants to withdraw his 16 ETH but there is < Chad's balance in the pool.
+    Chad then wants to withdraw his 17 ETH but there is < Chad's balance in the pool.
     EtherFi deposits their own ETH to keep the pool solvent and allow withdrawals.
     EtherFi requests an exit for the TNFT that was minted.
     Once the nodes exit is observed, EtherFi processes the node's exit from the EtherFiNodesManager
     Rewards are distributed
-    Alice's balance rebases from the rewards sent to the TNFT holder, which is the liquidity pool
     
     */ 
     function test_EEthWeTHLpScenarios() public {
