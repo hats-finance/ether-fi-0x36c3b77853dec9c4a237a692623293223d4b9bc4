@@ -12,6 +12,8 @@ interface IMEETH {
     function pointOf(address _account) external view returns (uint40);
     function pointsSnapshotTimeOf(address _account) external view returns (uint32);
 
+    function tierForPoints(uint40 _points) external view returns (uint8);
+
     function transferFrom(address _sender, address _recipient, uint256 _amount) external returns (bool);
     function transfer(address _recipient, uint256 _amount) external returns (bool);
 }

@@ -92,6 +92,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         // Check if the staker starts earning points
         skip(1 days);
         assertEq(meEthInstance.pointOf(staker), points + 2 * kwei / 10); // 0.2 kwei
+        assertEq(claimReceiverPoolInstance.getClaimableTier(eapPoints), meEthInstance.tierForPoints(points));
 
         vm.expectRevert("Already Deposited");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);
