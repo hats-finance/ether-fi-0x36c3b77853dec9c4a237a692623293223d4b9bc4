@@ -89,7 +89,7 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         return allowances[_owner][_spender];
     }
 
-    function approve(address _spender, uint256 _amount) external returns (bool) {
+    function approve(address _spender, uint256 _amount) external override(IEETH, IERC20Upgradeable) returns (bool) {
         _approve(msg.sender, _spender, _amount);
         return true;
     }

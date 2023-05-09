@@ -37,12 +37,6 @@ contract ProtocolRevenueManagerV2 is ProtocolRevenueManager {
     }
 }
 
-contract StakingManagerV2 is StakingManager {
-    function isUpgraded() public view returns(bool){
-        return true;
-    }
-}
-
 contract EtherFiNodeV2 is EtherFiNode {
     function isUpgraded() public view returns(bool){
         return true;
@@ -71,17 +65,9 @@ contract UpgradeTest is TestSetup {
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
     ProtocolRevenueManagerV2 public protocolRevenueManagerV2Instance;
     StakingManagerV2 public stakingManagerV2Instance;
-
-    uint256[] public slippageArray;
    
     function setUp() public {
         setUpTests();
-
-        slippageArray = new uint256[](4);
-        slippageArray[0] = 90;
-        slippageArray[1] = 90;
-        slippageArray[2] = 90;
-        slippageArray[3] = 90;
     }
 
     function test_CanUpgradeAuctionManager() public {
@@ -129,7 +115,7 @@ contract UpgradeTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
         assertEq(claimReceiverPoolInstance.getImplementation(), address(claimReceiverPoolImplementation));
@@ -148,7 +134,6 @@ contract UpgradeTest is TestSetup {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManagerInstance),
             address(regulationsManagerInstance)
         );
         assertEq(claimReceiverPoolV2Instance.getImplementation(), address(claimReceiverV2Implementation));
@@ -165,7 +150,7 @@ contract UpgradeTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);
 
         assertEq(scoreManagerInstance.getImplementation(), address(scoreManagerImplementation));
 
@@ -290,12 +275,30 @@ contract UpgradeTest is TestSetup {
     }
 
     function test_CanUpgradeStakingManager() public {
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 3);
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(proof, _ipfsHash, 5);
+
+        startHoax(alice);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+
+        vm.stopPrank();      
+        
         assertEq(stakingManagerInstance.getImplementation(), address(stakingManagerImplementation));
 
         vm.prank(owner);
         stakingManagerInstance.setMaxBatchDepositSize(uint128(25));
 
         StakingManagerV2 stakingManagerV2Implementation = new StakingManagerV2();
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        stakingManagerV2Implementation.initialize(address(auctionInstance));
+
 
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(alice);
@@ -311,10 +314,15 @@ contract UpgradeTest is TestSetup {
         stakingManagerV2Instance.initialize(address(auctionInstance));
 
         assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
-        assertEq(stakingManagerV2Instance.isUpgraded(), true);
+        // assertEq(stakingManagerV2Instance.isUpgraded(), true);
         
         // State is maintained
         assertEq(stakingManagerV2Instance.maxBatchDepositSize(), 25);
+
+        assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b));
+        vm.prank(owner);
+        stakingManagerV2Instance.registerEth2DepositContract(address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
+        assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
     }
 
     function test_canUpgradeEtherFiNode() public {

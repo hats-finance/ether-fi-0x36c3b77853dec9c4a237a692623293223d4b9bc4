@@ -183,9 +183,11 @@ contract AuctionManager is
     function updateSelectedBidInformation(
         uint256 _bidId
     ) public onlyStakingManagerContract {
-        require(bids[_bidId].isActive, "The bid is not active");
+        Bid storage bid = bids[_bidId];
 
-        bids[_bidId].isActive = false;
+        require(bid.isActive, "The bid is not active");
+
+        bid.isActive = false;
         numberOfActiveBids--;
     }
 
@@ -194,9 +196,10 @@ contract AuctionManager is
     function reEnterAuction(
         uint256 _bidId
     ) external onlyStakingManagerContract {
-        require(!bids[_bidId].isActive, "Bid already active");
+        Bid storage bid = bids[_bidId];
+        require(!bid.isActive, "Bid already active");
         //Reactivate the bid
-        bids[_bidId].isActive = true;
+        bid.isActive = true;
         numberOfActiveBids++;
         emit BidReEnteredAuction(_bidId);
     }

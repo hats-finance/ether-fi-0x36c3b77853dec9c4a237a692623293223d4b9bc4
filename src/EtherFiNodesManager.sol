@@ -367,10 +367,6 @@ contract EtherFiNodesManager is
     function fullWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused{
         address etherfiNode = etherfiNodeAddress[_validatorId];
         require(
-            address(etherfiNode).balance >= 16 ether,
-            "not enough balance for full withdrawal"
-        );
-        require(
             IEtherFiNode(etherfiNode).phase() ==
                 IEtherFiNode.VALIDATOR_PHASE.EXITED,
             "validator node is not exited"

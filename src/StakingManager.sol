@@ -117,9 +117,7 @@ contract StakingManager is
         nonReentrant
         returns (uint256[] memory)
     {
-        if(whitelistEnabled) {
-            require(MerkleProofUpgradeable.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(msg.sender))), "User not whitelisted");
-        }
+        verifyWhitelisted(msg.sender, _merkleProof);
 
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
@@ -220,38 +218,22 @@ contract StakingManager is
         }  
     }
 
-    /// @notice Cancels a users stake
-    /// @dev Only allowed to be cancelled before step 2 of the depositing process
+    /// @notice Cancels a user's deposits
+    /// @param _validatorIds the IDs of the validators deposits to cancel
+    function batchCancelDeposit(
+        uint256[] calldata _validatorIds
+    ) public whenNotPaused nonReentrant {
+        for (uint256 x; x < _validatorIds.length; ++x) {
+            _cancelDeposit(_validatorIds[x]);    
+        }  
+    }
+
+    /// @notice Cancels a user's deposit
     /// @param _validatorId the ID of the validator deposit to cancel
     function cancelDeposit(
         uint256 _validatorId
     ) public whenNotPaused nonReentrant {
-        require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
-        require(
-            nodesManagerIntefaceInstance.phase(_validatorId) ==
-                IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
-            "Incorrect phase"
-        );
-
-        bidIdToStaker[_validatorId] = address(0);
-
-        // Mark Canceled
-        nodesManagerIntefaceInstance.setEtherFiNodePhase(
-            _validatorId,
-            IEtherFiNode.VALIDATOR_PHASE.CANCELLED
-        );
-
-        // Unset the pointers
-        nodesManagerIntefaceInstance.unregisterEtherFiNode(_validatorId);
-
-        //Call function in auction contract to re-initiate the bid that won
-        //Send in the bid ID to be re-initiated
-        auctionInterfaceInstance.reEnterAuction(_validatorId);
-        _refundDeposit(msg.sender, stakeAmount);
-
-        emit DepositCancelled(_validatorId);
-
-        require(bidIdToStaker[_validatorId] == address(0), "Bid already cancelled");
+        _cancelDeposit(_validatorId);
     }
 
     /// @notice Sets the EtherFi node manager contract
@@ -336,6 +318,13 @@ contract StakingManager is
         merkleRoot = _newMerkle;
 
         emit MerkleUpdated(oldMerkle, _newMerkle);
+    }
+
+    function verifyWhitelisted(address _address, bytes32[] calldata _merkleProof) public view {
+        if (whitelistEnabled) {
+            bool verified = MerkleProofUpgradeable.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(_address)));
+            require(verified, "User is not whitelisted");
+        }
     }
 
     //Pauses the contract
@@ -430,6 +419,39 @@ contract StakingManager is
         emit StakeDeposit(msg.sender, _bidId, etherfiNode);
     }
 
+    /// @notice Cancels a users stake
+    /// @param _validatorId the ID of the validator deposit to cancel
+    function _cancelDeposit(
+        uint256 _validatorId
+    ) internal {
+        require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
+        require(
+            nodesManagerIntefaceInstance.phase(_validatorId) ==
+                IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED,
+            "Incorrect phase"
+        );
+
+        bidIdToStaker[_validatorId] = address(0);
+
+        // Mark Canceled
+        nodesManagerIntefaceInstance.setEtherFiNodePhase(
+            _validatorId,
+            IEtherFiNode.VALIDATOR_PHASE.CANCELLED
+        );
+
+        // Unset the pointers
+        nodesManagerIntefaceInstance.unregisterEtherFiNode(_validatorId);
+
+        //Call function in auction contract to re-initiate the bid that won
+        //Send in the bid ID to be re-initiated
+        auctionInterfaceInstance.reEnterAuction(_validatorId);
+        _refundDeposit(msg.sender, stakeAmount);
+
+        emit DepositCancelled(_validatorId);
+
+        require(bidIdToStaker[_validatorId] == address(0), "Bid already cancelled");
+    }
+
     function createEtherfiNode(uint256 _validatorId) private returns (address) {
         BeaconProxy proxy = new BeaconProxy(address(upgradableBeacon), "");
         EtherFiNode node = EtherFiNode(payable(proxy));
@@ -484,5 +506,13 @@ contract StakingManager is
         bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
         require(_depositRoot == onchainDepositRoot, "deposit root changed");
         _;
+    }
+}
+
+
+contract StakingManagerV2 is StakingManager {
+    function registerEth2DepositContract(address _address) public onlyOwner {
+        require(_address != address(0), "No zero addresses");
+        depositContractEth2 = IDepositContract(_address);
     }
 }

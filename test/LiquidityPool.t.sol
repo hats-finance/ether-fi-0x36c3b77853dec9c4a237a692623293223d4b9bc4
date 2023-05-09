@@ -27,7 +27,7 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(owner);
         stakingManagerInstance.enableWhitelist();
-        vm.expectRevert("User not permitted to stake");
+        vm.expectRevert("User is not whitelisted");
         liquidityPoolInstance.deposit{value: 1 ether}(alice, bobProof);
         stakingManagerInstance.disableWhitelist();
         vm.stopPrank();
@@ -406,10 +406,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(owner);
         vm.expectRevert("No zero addresses");
         liquidityPoolInstance.setTokenAddress(address(0));
-
-        vm.expectRevert("No zero addresses");
-        liquidityPoolInstance.setScoreManager(address(0));
-
+        
         vm.expectRevert("No zero addresses");
         liquidityPoolInstance.setStakingManager(address(0));
 

@@ -14,22 +14,13 @@ contract ClaimReceiverPoolTest is TestSetup {
     address constant WETH = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
     address constant DAI = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
 
-    uint256[] public slippageArray;
-
     IWETH private weth = IWETH(WETH);
     IERC20 private dai = IERC20(DAI);
 
     EarlyAdopterPool public adopterPool;
 
     function setUp() public {
-        
         setUpTests();
-
-        slippageArray = new uint256[](4);
-        slippageArray[0] = 90;
-        slippageArray[1] = 90;
-        slippageArray[2] = 90;
-        slippageArray[3] = 90;
 
         vm.startPrank(owner);
         adopterPool = new EarlyAdopterPool(
@@ -49,7 +40,6 @@ contract ClaimReceiverPoolTest is TestSetup {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManagerInstance),
             address(regulationsManagerInstance));
     }
 
@@ -62,58 +52,50 @@ contract ClaimReceiverPoolTest is TestSetup {
         regulationsManagerInstance.confirmEligibility("Hash_Example");
 
         vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1, slippageArray);
+        claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1, slippageLimit);
         vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0.3 ether}(0, 0, 0, 0, 652, proof2, slippageArray);
+        claimReceiverPoolInstance.deposit{value: 0.3 ether}(0, 0, 0, 0, 652, proof2, slippageLimit);
         vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3, slippageArray);
+        claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3, slippageLimit);
     }
 
     function test_MigrateWorksCorrectly() public {
+        address staker = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
 
         vm.prank(owner);
 
-        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 0);
+        assertEq(scoreManagerInstance.scores(0, staker), 0);
         assertEq(scoreManagerInstance.totalScores(0), 0);
 
-        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),0);
+        assertEq(scoreManagerInstance.scores(0, staker),0);
         assertEq(scoreManagerInstance.totalScores(0), 0);
 
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        startHoax(staker);
+        uint256 eapPoints = 652_000_000_000;
         vm.expectRevert("User is not whitelisted");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0.2 ether);
-        assertEq(
-            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
-            0.2 ether
-        );
-        assertEq(scoreManagerInstance.scores(0, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931), 652);
+        assertEq(eETHInstance.balanceOf(staker), 0 ether);
+        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 0.2 ether);
+        assertEq(meEthInstance.balanceOf(staker), 0.2 ether);
 
+        uint40 points = claimReceiverPoolInstance.convertEapPointsToLoyaltyPoints(eapPoints);
+        assertEq(meEthInstance.pointOf(staker), points);
+        assertEq(meEthInstance.pointsSnapshotTimeOf(staker), uint32(block.timestamp));
+
+        // Check if the staker starts earning points
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(staker), points + 2 * kwei / 10); // 0.2 kwei
 
         vm.expectRevert("Already Deposited");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
+        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);
         vm.stopPrank();
-
-        vm.deal(owner, 100 ether);
-        vm.prank(owner);
-        liquidityPoolInstance.accrueEapRewards{value: 1 ether}();
-        assertEq(
-            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
-            0.2 ether + 1 ether
-        );
-
-        vm.prank(owner);
-        liquidityPoolInstance.accrueEapRewards{value: 10 ether}();
-        assertEq(
-            eETHInstance.balanceOf(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931),
-            0.2 ether + 1 ether + 10 ether
-        );
     }
 
     function test_SetLPAddressFailsIfZeroAddress() public {
@@ -126,36 +108,5 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.prank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
-    }
-
-
-    function test_EapRewardsWorksCorrectly() public {
-        bytes32[] memory bobProof = merkle.getProof(dataForVerification, 3);
-        bytes32[] memory danProof = merkle.getProof(dataForVerification, 4);
-
-        vm.deal(bob, 0.1 ether);
-        vm.deal(dan, 0.1 ether);
-
-        vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-
-        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 400, bobProof, slippageArray);
-        vm.stopPrank();
-
-        vm.startPrank(dan);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-
-        claimReceiverPoolInstance.deposit{value: 0.1 ether}(0, 0, 0, 0, 800, danProof, slippageArray);
-        vm.stopPrank();
-
-        assertEq(eETHInstance.balanceOf(bob), 0.1 ether);
-        assertEq(eETHInstance.balanceOf(dan), 0.1 ether);
-
-        vm.deal(owner, 100 ether);
-        vm.prank(owner);
-        liquidityPoolInstance.accrueEapRewards{value: 3 ether}();
-
-        assertEq(eETHInstance.balanceOf(bob), 0.1 ether + 1 ether);
-        assertEq(eETHInstance.balanceOf(dan), 0.1 ether + 2 ether);
     }
 }
