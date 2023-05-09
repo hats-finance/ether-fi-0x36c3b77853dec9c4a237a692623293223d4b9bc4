@@ -143,7 +143,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         eETH.transferFrom(address(this), msg.sender, _amount);
     }
 
-    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable whenLiquidStakingOpen {
+    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
         uint256 amount = msg.value;
         require(amount > 0, "You cannot wrap 0 ETH");
         require(msg.sender == address(claimReceiverPool), "Only CRP can call it");

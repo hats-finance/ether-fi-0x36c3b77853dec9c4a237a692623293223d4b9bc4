@@ -301,4 +301,32 @@ contract meEthTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_LiquadStakingAccessControl() public {
+        vm.deal(alice, 2 ether);
+        vm.deal(bob, 2 ether);
+
+        // Both Alice and Bob mint 2 meETH.
+        vm.prank(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+
+        vm.prank(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        meEthInstance.wrap(2 ether);
+
+        vm.prank(owner);
+        liquidityPoolInstance.openLiquadStaking();
+
+        vm.prank(alice);
+        meEthInstance.wrap(2 ether);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+
+        vm.prank(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        meEthInstance.unwrap(2 ether);
+    }
 }
