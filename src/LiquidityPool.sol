@@ -89,6 +89,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit Deposit(_recipient, msg.value);
     }
 
+    // A user deposits ETH and mints meETH
+    function depositForMeEth(address _user, bytes32[] calldata _merkleProof) public payable {
+        stakingManager.verifyWhitelisted(_user, _merkleProof);
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
+
+        meEth.wrapEth{value: msg.value}(_user, _merkleProof);
+    }
+
     /// @notice withdraw from pool
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to user
     /// @param _amount the amount to withdraw from contract

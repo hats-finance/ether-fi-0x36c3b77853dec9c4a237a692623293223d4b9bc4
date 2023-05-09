@@ -112,7 +112,7 @@ contract meEthTest is TestSetup {
         vm.deal(alice, 10 ether);
 
         vm.startPrank(alice);
-        // Alice deposits 10 ETH and mints 1 eETH.
+        // Alice deposits 10 ETH and mints 10 eETH.
         liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
 
         // Alice wraps 1 eETH to 1 meEth
@@ -361,5 +361,42 @@ contract meEthTest is TestSetup {
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
         meEthInstance.unwrap(2 ether);
+    }
+    function test_depositForMeEth() public {
+        vm.deal(alice, 10 ether);
+
+        vm.startPrank(alice);
+
+        // Alice deposits 10 ETH and mints 10 meETH.
+        liquidityPoolInstance.depositForMeEth{value: 10 ether}(alice, aliceProof);
+
+        // 10 ETH to the LP
+        // 10 eETH to the meEth contract
+        // 10 meETH to Alice
+        assertEq(address(liquidityPoolInstance).balance, 10 ether);
+        assertEq(address(eETHInstance).balance, 0 ether);
+        assertEq(address(meEthInstance).balance, 0 ether);
+        assertEq(address(alice).balance, 0 ether);
+        
+        assertEq(eETHInstance.balanceOf(address(liquidityPoolInstance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(address(eETHInstance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+
+        assertEq(meEthInstance.balanceOf(address(liquidityPoolInstance)), 0 ether);
+        assertEq(meEthInstance.balanceOf(address(eETHInstance)), 0 ether);
+        assertEq(meEthInstance.balanceOf(address(meEthInstance)), 0 ether);
+        assertEq(meEthInstance.balanceOf(alice), 10 ether);
+    
+        // Check the points grow properly
+        assertEq(meEthInstance.pointOf(alice), 0);
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(alice), 1 * 10 * kwei);
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(alice), 2 * 10 * kwei);
+        meEthInstance.updatePoints(alice);
+        assertEq(meEthInstance.pointOf(alice), 2 * 10 * kwei);
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(alice), 3 * 10 * kwei);
     }
 }
