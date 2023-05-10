@@ -31,7 +31,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
 
     uint64 public numValidators;
-    bool public liquidStakingOpened;
+    bool public eEthliquidStakingOpened;
 
     bytes32[] private merkleProof;
 
@@ -66,7 +66,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         __Ownable_init();
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
-        liquidStakingOpened = false;
+        eEthliquidStakingOpened = false;
     }
 
     function deposit(address _user, bytes32[] calldata _merkleProof) public payable {
@@ -151,12 +151,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     // @notice Allow interactions with the eEth token
     function openLiquadStaking() external onlyOwner {
-        liquidStakingOpened = true;
+        eEthliquidStakingOpened = true;
     }
 
     // @notice Disallow interactions with the eEth token
     function closeLiquadStaking() external onlyOwner {
-        liquidStakingOpened = false;
+        eEthliquidStakingOpened = false;
     }
 
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
@@ -264,7 +264,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
 
     modifier whenLiquidStakingOpen() {
-        require(liquidStakingOpened, "Liquid staking functions are closed");
+        require(eEthliquidStakingOpened, "Liquid staking functions are closed");
         _;
     }
 }

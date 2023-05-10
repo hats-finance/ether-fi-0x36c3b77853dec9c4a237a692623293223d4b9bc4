@@ -542,7 +542,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     //--------------------------------------------------------------------------------------
 
     modifier whenLiquidStakingOpen() {
-        require(liquidityPool.liquidStakingOpened(), "Liquid staking functions are closed");
+        require(liquidityPool.eEthliquidStakingOpened(), "Liquid staking functions are closed");
         _;
     }
 }
