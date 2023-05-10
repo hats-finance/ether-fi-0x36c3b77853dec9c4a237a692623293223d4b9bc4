@@ -45,8 +45,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event TokenAddressChanged(address indexed newAddress);
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, uint256 amount);
-    event LiquadStakingOpened();
-    event LiquadStakingClosed();
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -154,15 +152,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // @notice Allow interactions with the eEth token
     function openLiquadStaking() external onlyOwner {
         liquidStakingOpened = true;
-
-        emit LiquadStakingOpened();
     }
 
     // @notice Disallow interactions with the eEth token
     function closeLiquadStaking() external onlyOwner {
         liquidStakingOpened = false;
-
-        emit LiquadStakingClosed();
     }
 
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
