@@ -7,7 +7,7 @@ import "../src/interfaces/ILiquidityPool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract AuctionManagerV2 is AuctionManager {
+contract AuctionManagerV2Test is AuctionManager {
     function isUpgraded() public view returns(bool){
         return true;
     }
@@ -63,7 +63,7 @@ contract NodeOperatorManagerV2 is NodeOperatorManager {
 
 contract UpgradeTest is TestSetup {
 
-    AuctionManagerV2 public auctionManagerV2Instance;
+    AuctionManagerV2Test public auctionManagerV2Instance;
     ScoreManagerV2 public scoreManagerV2Instance;
     ClaimReceiverPoolV2 public claimReceiverPoolV2Instance;
     BNFTV2 public BNFTV2Instance;
@@ -102,12 +102,12 @@ contract UpgradeTest is TestSetup {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(auctionInstance.getImplementation(), address(auctionImplementation));
 
-        AuctionManagerV2 auctionManagerV2Implementation = new AuctionManagerV2();
+        AuctionManagerV2Test auctionManagerV2Implementation = new AuctionManagerV2Test();
 
         vm.prank(owner);
         auctionInstance.upgradeTo(address(auctionManagerV2Implementation));
 
-        auctionManagerV2Instance = AuctionManagerV2(address(auctionManagerProxy));
+        auctionManagerV2Instance = AuctionManagerV2Test(address(auctionManagerProxy));
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);

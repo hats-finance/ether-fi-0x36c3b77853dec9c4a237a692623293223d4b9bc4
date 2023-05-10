@@ -3,11 +3,14 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "../src/NodeOperatorManager.sol";
+import "../src/AuctionManager.sol";
 import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployNodeOperatorManagerScript is Script {
     using Strings for string;
+        
+    address auctionManagerProxyAddress = vm.envAddress("AUCTION_MANAGER_PROXY_ADDRESS");
 
     UUPSProxy public nodeOperatorManagerProxy;
 
@@ -24,8 +27,14 @@ contract DeployNodeOperatorManagerScript is Script {
         nodeOperatorManagerInstance = NodeOperatorManager(address(nodeOperatorManagerProxy));
         nodeOperatorManagerInstance.initialize();
 
-        //TODO: Need to call a set NOM address function in the auction manager
-        
+        AuctionManager auctionManagerInstance = AuctionManager(auctionManagerProxyAddress);
+        AuctionManagerV2 auctionManagerV2Implementation = new AuctionManagerV2();
+
+        auctionManagerInstance.upgradeTo(address(auctionManagerV2Implementation));
+        AuctionManagerV2 auctionManagerV2Instance = AuctionManagerV2(auctionManagerProxyAddress);
+
+        auctionManagerV2Instance.updateNodeOperatorManager(address(nodeOperatorManagerInstance));    
+            
         vm.stopBroadcast();
     }
 }
