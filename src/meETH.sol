@@ -148,7 +148,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         emit MEETHBurnt(msg.sender, _amount);
     }
 
-    function wrapEth(address _account, bytes32[] calldata _merkleProof) external payable onlyLiquidityPool {
+    function wrapEth(address _account, bytes32[] calldata _merkleProof) external payable {
         uint256 amount = msg.value;
         require(amount > 0, "You cannot wrap 0 ETH");
 

@@ -362,13 +362,13 @@ contract meEthTest is TestSetup {
         vm.expectRevert("Liquid staking functions are closed");
         meEthInstance.unwrap(2 ether);
     }
-    function test_depositForMeEth() public {
+    function test_wrapEth() public {
         vm.deal(alice, 10 ether);
 
         vm.startPrank(alice);
 
         // Alice deposits 10 ETH and mints 10 meETH.
-        liquidityPoolInstance.depositForMeEth{value: 10 ether}(alice, aliceProof);
+        meEthInstance.wrapEth{value: 10 ether}(alice, aliceProof);
 
         // 10 ETH to the LP
         // 10 eETH to the meEth contract
