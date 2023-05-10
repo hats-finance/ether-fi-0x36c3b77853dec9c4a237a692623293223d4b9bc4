@@ -47,15 +47,12 @@ contract RewardsSkimmingTest is TestSetup {
         _setUpStakerMerkle();
 
         vm.startPrank(owner);
-        nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
         stakingManagerInstance.updateMerkleRoot(rootStakers);
-
-        bytes32[] memory proof = merkle.getProof(newWhiteListedAddresses, 1);
+        nodeOperatorManagerInstance.addToWhitelist(operators[0]);
         vm.stopPrank();
 
         startHoax(operators[0]);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             1000
         );

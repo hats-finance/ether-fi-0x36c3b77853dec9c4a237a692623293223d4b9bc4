@@ -43,7 +43,6 @@ contract AuctionManagerTest is TestSetup {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             5
         );
@@ -67,9 +66,9 @@ contract AuctionManagerTest is TestSetup {
 
     function test_ReEnterAuctionManagerFailsIfBidAlreadyActive() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
+
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             5
         );
@@ -105,7 +104,6 @@ contract AuctionManagerTest is TestSetup {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             5
         );
@@ -180,32 +178,25 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_createBidWorks() public {
-        bytes32[] memory emptyProof = new bytes32[](0);
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );
 
         vm.prank(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
-            bobProof,
             _ipfsHash,
             5
         );
 
-        vm.prank(chad);
+        vm.prank(henry);
         nodeOperatorManagerInstance.registerNodeOperator(
-            emptyProof,
             _ipfsHash,
             5
         );
 
-        assertFalse(nodeOperatorManagerInstance.isWhitelisted(chad));
+        assertFalse(nodeOperatorManagerInstance.isWhitelisted(henry));
         assertTrue(nodeOperatorManagerInstance.isWhitelisted(alice));
 
         hoax(alice);
@@ -243,7 +234,7 @@ contract AuctionManagerTest is TestSetup {
         assertTrue(auctionInstance.whitelistEnabled());
 
         vm.expectRevert("Only whitelisted addresses");
-        hoax(chad);
+        hoax(henry);
         auctionInstance.createBid{value: 0.01 ether}(1, 0.01 ether);
 
         assertEq(auctionInstance.numberOfActiveBids(), 5);
@@ -268,24 +259,24 @@ contract AuctionManagerTest is TestSetup {
 
         assertEq(auctionInstance.numberOfActiveBids(), 6);
 
-        // Chad cannot bid below the min bid amount because he was not whitelisted
+        // henry cannot bid below the min bid amount because he was not whitelisted
         vm.expectRevert("Incorrect bid value");
-        hoax(chad);
-        uint256[] memory chadBidIds = auctionInstance.createBid{
+        hoax(henry);
+        uint256[] memory henryBidIds = auctionInstance.createBid{
             value: 0.001 ether
         }(1, 0.001 ether);
 
-        hoax(chad);
-        chadBidIds = auctionInstance.createBid{value: 0.01 ether}(
+        hoax(henry);
+        henryBidIds = auctionInstance.createBid{value: 0.01 ether}(
             1,
             0.01 ether
         );
         (amount, ipfsIndex, bidderAddress, isActive) = auctionInstance.bids(
-            chadBidIds[0]
+            henryBidIds[0]
         );
         assertEq(amount, 0.01 ether);
         assertEq(ipfsIndex, 0);
-        assertEq(bidderAddress, chad);
+        assertEq(bidderAddress, henry);
         assertTrue(isActive);
 
         // Owner enables whitelist
@@ -293,7 +284,7 @@ contract AuctionManagerTest is TestSetup {
         auctionInstance.enableWhitelist();
 
         vm.expectRevert("Only whitelisted addresses");
-        hoax(chad);
+        hoax(henry);
         auctionInstance.createBid{value: 0.01 ether}(1, 0.01 ether);
 
         hoax(bob);
@@ -312,19 +303,14 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_CreateBidMinMaxAmounts() public {
-        bytes32[] memory emptyProof = new bytes32[](0);
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );
 
-        vm.prank(chad);
+        vm.prank(henry);
         nodeOperatorManagerInstance.registerNodeOperator(
-            emptyProof,
             _ipfsHash,
             5
         );
@@ -349,20 +335,17 @@ contract AuctionManagerTest is TestSetup {
         auctionInstance.createBid{value: 0.00001 ether}(1, 0.00001 ether);
 
         vm.expectRevert("Incorrect bid value");
-        hoax(chad);
+        hoax(henry);
         auctionInstance.createBid{value: 0.001 ether}(1, 0.001 ether);
 
         vm.expectRevert("Incorrect bid value");
-        hoax(chad);
+        hoax(henry);
         auctionInstance.createBid{value: 5.1 ether}(1, 5.1 ether);
     }
 
     function test_createBidFailsIfBidSizeIsLargerThanKeysRemaining() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             3
         );
@@ -388,11 +371,8 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_createBidFailsIfIPFSIndexMoreThanTotalKeys() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             1
         );
@@ -413,12 +393,8 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_createBidBatch() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
-
         startHoax(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             10
         );
@@ -482,7 +458,6 @@ contract AuctionManagerTest is TestSetup {
 
         startHoax(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
-            bobProof,
             aliceIPFSHash,
             10
         );
@@ -516,11 +491,8 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_createBidBatchFailsWithIncorrectValue() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
         hoax(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             10
         );
@@ -534,11 +506,8 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_CreateBidPauseable() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             5
         );
@@ -564,10 +533,8 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_CancelBidFailsWhenBidAlreadyInactive() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             aliceIPFSHash,
             5
         );
@@ -587,10 +554,8 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_CancelBidFailsWhenNotBidOwnerCalling() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             aliceIPFSHash,
             5
         );
@@ -610,36 +575,20 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_CancelBidWorksIfBidIsNotCurrentHighest() public {
-        bytes32[] memory proofAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofAddress2 = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
-        bytes32[] memory proofAddress3 = merkle.getProof(
-            whiteListedAddresses,
-            2
-        );
-
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proofAddress1,
             aliceIPFSHash,
             5
         );
 
         vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proofAddress2,
             aliceIPFSHash,
             5
         );
 
         vm.prank(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proofAddress3,
             aliceIPFSHash,
             5
         );
@@ -682,36 +631,20 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_PausableCancelBid() public {
-        bytes32[] memory proofAddress1 = merkle.getProof(
-            whiteListedAddresses,
-            0
-        );
-        bytes32[] memory proofAddress2 = merkle.getProof(
-            whiteListedAddresses,
-            1
-        );
-        bytes32[] memory proofAddress3 = merkle.getProof(
-            whiteListedAddresses,
-            2
-        );
-
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proofAddress1,
             _ipfsHash,
             5
         );
 
         vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proofAddress2,
             _ipfsHash,
             5
         );
 
         vm.prank(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proofAddress3,
             _ipfsHash,
             5
         );
@@ -753,10 +686,16 @@ contract AuctionManagerTest is TestSetup {
             whiteListedAddresses,
             0
         );
-
+        bytes32[] memory proofAddress2 = merkle.getProof(
+            whiteListedAddresses,
+            1
+        );
+        bytes32[] memory proofAddress3 = merkle.getProof(
+            whiteListedAddresses,
+            2
+        );
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proofAddress1,
             _ipfsHash,
             5
         );
@@ -846,11 +785,9 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_EventBidPlaced() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             5
         );
@@ -872,7 +809,6 @@ contract AuctionManagerTest is TestSetup {
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             5
         );
@@ -889,11 +825,9 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_EventBidCancelled() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             5
         );
