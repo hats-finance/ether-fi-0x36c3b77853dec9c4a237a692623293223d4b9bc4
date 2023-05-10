@@ -9,6 +9,7 @@ contract EtherFiNodeTest is TestSetup {
 
     uint256[] bidId;
     EtherFiNode safeInstance;
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
 
     function setUp() public {
        
@@ -20,11 +21,9 @@ contract EtherFiNodeTest is TestSetup {
         vm.prank(owner);
         node.initialize(address(managerInstance));
 
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             5
         );
@@ -65,7 +64,7 @@ contract EtherFiNodeTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidId[0], depositData);
         vm.stopPrank();
 
         assertTrue(
@@ -139,14 +138,12 @@ contract EtherFiNodeTest is TestSetup {
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFSHash,
             5
         );
 
         vm.prank(chad);
         nodeOperatorManagerInstance.registerNodeOperator(
-            chadProof,
             aliceIPFSHash,
             5
         );
@@ -206,7 +203,7 @@ contract EtherFiNodeTest is TestSetup {
             });
 
         startHoax(bob);
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId1[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidId1[0], depositData);
         vm.stopPrank();
 
         assertEq(
@@ -253,7 +250,7 @@ contract EtherFiNodeTest is TestSetup {
         
 
         startHoax(dan);
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId2[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidId2[0], depositData);
         vm.stopPrank();
 
         assertEq(

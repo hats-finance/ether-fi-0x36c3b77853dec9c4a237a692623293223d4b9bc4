@@ -404,6 +404,11 @@ contract StakingManager is
         );
     }
 
+    function registerEth2DepositContract(address _address) public onlyOwner {
+        require(_address != address(0), "No zero addresses");
+        depositContractEth2 = IDepositContract(_address);
+    }
+
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId the bid that won the right to the deposit
     function _processDeposit(uint256 _bidId) internal {
@@ -502,17 +507,12 @@ contract StakingManager is
         _;
     }
 
-    modifier verifyDepositState(bytes32 _depositRoot) {
-        bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
-        require(_depositRoot == onchainDepositRoot, "deposit root changed");
+   modifier verifyDepositState(bytes32 _depositRoot) {
+        // disable deposit root check if none provided
+        if (_depositRoot != 0x0000000000000000000000000000000000000000000000000000000000000000) {
+            bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
+            require(_depositRoot == onchainDepositRoot, "deposit root changed");
+        }
         _;
-    }
-}
-
-
-contract StakingManagerV2 is StakingManager {
-    function registerEth2DepositContract(address _address) public onlyOwner {
-        require(_address != address(0), "No zero addresses");
-        depositContractEth2 = IDepositContract(_address);
     }
 }

@@ -20,16 +20,16 @@ contract DeployPatch1 is Script {
         // require(stakingManagerProxyAddress == 0x25e821b7197B146F7713C3b89B6A4D83516B912d, "stakingManagerProxyAddress incorrect see .env");
         // require(eth2DepositContractAddress == 0x00000000219ab540356cBB839Cbe05303d7705Fa, "eth2DepositContractAddress incorrect see .env");
 
-        vm.startBroadcast(deployerPrivateKey);
+        // vm.startBroadcast(deployerPrivateKey);
 
-        StakingManager stakingManagerInstance = StakingManager(stakingManagerProxyAddress);
-        StakingManagerV2 stakingManagerV2Implementation = new StakingManagerV2();
+        // StakingManager stakingManagerInstance = StakingManager(stakingManagerProxyAddress);
+        // StakingManagerV2 stakingManagerV2Implementation = new StakingManagerV2();
 
-        stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
-        StakingManagerV2 stakingManagerV2Instance = StakingManagerV2(stakingManagerProxyAddress);
+        // stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
+        // StakingManagerV2 stakingManagerV2Instance = StakingManagerV2(stakingManagerProxyAddress);
 
-        stakingManagerV2Instance.registerEth2DepositContract(eth2DepositContractAddress);
+        // stakingManagerV2Instance.registerEth2DepositContract(eth2DepositContractAddress);
 
-        vm.stopBroadcast();
+        // vm.stopBroadcast();
     }
 }

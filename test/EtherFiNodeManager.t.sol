@@ -8,6 +8,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     address etherFiNode;
     uint256[] bidId;
     EtherFiNode safeInstance;
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
 
     function setUp() public {
         setUpTests();
@@ -26,7 +27,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
         
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(proof, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -63,7 +64,7 @@ contract EtherFiNodesManagerTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidId[0], depositData);
         vm.stopPrank();
 
         assertTrue(
@@ -196,10 +197,10 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_CreateEtherFiNode() public {
-         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );
@@ -220,7 +221,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );

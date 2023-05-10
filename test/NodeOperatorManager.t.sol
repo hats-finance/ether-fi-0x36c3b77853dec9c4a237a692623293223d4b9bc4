@@ -14,11 +14,20 @@ contract NodeOperatorManagerTest is TestSetup {
     }
 
     function test_RegisterNodeOperator() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        vm.startPrank(alice);
-        assertEq(nodeOperatorManagerInstance.registered(alice), false);
+        vm.startPrank(owner);
+        nodeOperatorManagerInstance.pauseContract();
+
+        vm.expectRevert("Pausable: paused");
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
+            aliceIPFS_Hash,
+            uint64(10)
+        );
+        nodeOperatorManagerInstance.unPauseContract();
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+
+        nodeOperatorManagerInstance.registerNodeOperator(
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -33,34 +42,63 @@ contract NodeOperatorManagerTest is TestSetup {
         assertEq(keysUsed, 0);
 
         assertEq(nodeOperatorManagerInstance.registered(alice), true);
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(alice), true);
 
         vm.expectRevert("Already registered");
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             aliceIPFS_Hash,
             uint64(10)
         );
     }
 
+    function test_CanAddAddressToWhitelist() public {
+        vm.startPrank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceIPFS_Hash,
+            uint64(10)
+        );
+        
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(henry), false);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        nodeOperatorManagerInstance.addToWhitelist(henry);
+
+        vm.stopPrank();
+
+        vm.prank(owner);
+        nodeOperatorManagerInstance.addToWhitelist(henry);
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(henry), true);
+    }
+
+    function test_CanRemoveAddressFromWhitelist() public {
+        vm.startPrank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceIPFS_Hash,
+            uint64(10)
+        );
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        nodeOperatorManagerInstance.removeFromWhitelist(alice);
+        vm.stopPrank();
+
+        vm.prank(owner);
+        nodeOperatorManagerInstance.removeFromWhitelist(alice);
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(alice), false);
+    }
+
     function test_EventOperatorRegistered() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.expectEmit(false, false, false, true);
         emit OperatorRegistered(10, 0, aliceIPFS_Hash);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             aliceIPFS_Hash,
             10
         );
     }
 
     function test_FetchNextKeyIndex() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -81,7 +119,6 @@ contract NodeOperatorManagerTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             aliceIPFS_Hash,
             1
         );
@@ -92,54 +129,6 @@ contract NodeOperatorManagerTest is TestSetup {
         vm.expectRevert("Only auction manager contract function");
         vm.prank(alice);
         nodeOperatorManagerInstance.fetchNextKeyIndex(alice);
-    }
-
-    function test_UpdatingMerkle() public {
-        assertEq(nodeOperatorManagerInstance.merkleRoot(), root);
-
-        whiteListedAddresses.push(
-            keccak256(
-                abi.encodePacked(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098)
-            )
-        );
-
-        bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
-        
-        vm.prank(owner);
-        nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
-
-        bytes32[] memory proofForAddress4 = merkle.getProof(
-            whiteListedAddresses,
-            10
-        );
-
-        assertEq(nodeOperatorManagerInstance.merkleRoot(), newRoot);
-
-        vm.prank(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        nodeOperatorManagerInstance.registerNodeOperator(
-            proofForAddress4,
-            _ipfsHash,
-            5
-        );
-
-        hoax(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098);
-        auctionInstance.createBid{value: 0.01 ether}(1, 0.01 ether);
-        assertEq(auctionInstance.numberOfActiveBids(), 1);
-    }
-
-    function test_UpdatingMerkleFailsIfNotOwner() public {
-        assertEq(nodeOperatorManagerInstance.merkleRoot(), root);
-
-        whiteListedAddresses.push(
-            keccak256(
-                abi.encodePacked(0x48809A2e8D921790C0B8b977Bbb58c5DbfC7f098)
-            )
-        );
-
-        bytes32 newRoot = merkle.getRoot(whiteListedAddresses);
-        vm.prank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
-        nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
     }
 
     function test_CanOnlySetAddressesOnce() public {
