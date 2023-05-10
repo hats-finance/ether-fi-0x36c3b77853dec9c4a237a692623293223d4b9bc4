@@ -28,6 +28,8 @@ import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 
 contract TestSetup is Test {
+    uint256 constant public kwei = 10 ** 3;
+    uint256 public slippageLimit = 50;
 
     TestERC20 public rETH;
     TestERC20 public wstETH;
@@ -47,6 +49,7 @@ contract TestSetup is Test {
     UUPSProxy public regulationsManagerProxy;
     UUPSProxy public weETHProxy;
     UUPSProxy public nodeOperatorManagerProxy;
+    UUPSProxy public meETHProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -86,6 +89,7 @@ contract TestSetup is Test {
     weEth public weEthImplementation;
     weEth public weEthInstance;
 
+    meETH public meEthImplementation;
     meETH public meEthInstance;
 
     ClaimReceiverPool public claimReceiverPoolImplementation;
@@ -222,7 +226,6 @@ contract TestSetup is Test {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(scoreManagerInstance),
             address(regulationsManagerInstance)
         );
 
@@ -257,7 +260,10 @@ contract TestSetup is Test {
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(0));
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
-        meEthInstance = new meETH(address(eETHInstance), address(liquidityPoolInstance));
+        meEthImplementation = new meETH();
+        meETHProxy = new UUPSProxy(address(meEthImplementation), "");
+        meEthInstance = meETH(address(meETHProxy));
+        meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(claimReceiverPoolInstance));
 
         // Setup dependencies
         _setUpNodeOperatorWhitelist();
@@ -279,11 +285,13 @@ contract TestSetup is Test {
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
 
         claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
+        claimReceiverPoolInstance.setMeEth(address(meEthInstance));
 
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
-        liquidityPoolInstance.setScoreManager(address(scoreManagerInstance));
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
+        liquidityPoolInstance.setMeEth(address(meEthInstance));
+        liquidityPoolInstance.openLiquadStaking();
 
         scoreManagerInstance.setCallerStatus(address(liquidityPoolInstance), true);
         scoreManagerInstance.addNewScoreType("Early Adopter Pool");
@@ -294,6 +302,8 @@ contract TestSetup is Test {
         bytes memory pub_key1 = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
         bytes memory signature1 = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
         depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b);
+
+        _initializeMembershipTiers();
 
         vm.stopPrank();
     }
@@ -334,7 +344,14 @@ contract TestSetup is Test {
         root = merkle.getRoot(whiteListedAddresses);
         liquidityPoolInstance.setMerkleProof(merkle.getProof(whiteListedAddresses, 9));
         stakingManagerInstance.updateMerkleRoot(root);
+    }
 
+    function _initializeMembershipTiers() internal {
+        for (uint256 i = 0; i < 5 ; i++) {
+            uint40 minimumPointsRequirement = uint40(i * 14 * 1 * kwei);
+            uint24 weight = uint24(i + 1);
+            meEthInstance.addNewTier(minimumPointsRequirement, weight);
+        }
     }
 
     function _setUpNodeOperatorWhitelist() internal {
@@ -374,7 +391,7 @@ contract TestSetup is Test {
                     uint256(0),
                     uint256(0),
                     uint256(0),
-                    uint256(652)
+                    uint256(652_000_000_000)
                 )
             )
         );
@@ -432,7 +449,7 @@ contract TestSetup is Test {
                     uint256(0),
                     uint256(0),
                     uint256(0),
-                    uint256(103680)
+                    uint256(103680 * 1e9)
                 )
             )
         );

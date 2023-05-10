@@ -200,7 +200,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.setAccruedStakingReards(2 ether);
+        liquidityPoolInstance.setAccruedStakingRewards(2 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
@@ -399,10 +399,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(owner);
         vm.expectRevert("No zero addresses");
         liquidityPoolInstance.setTokenAddress(address(0));
-
-        vm.expectRevert("No zero addresses");
-        liquidityPoolInstance.setScoreManager(address(0));
-
+        
         vm.expectRevert("No zero addresses");
         liquidityPoolInstance.setStakingManager(address(0));
 
@@ -410,5 +407,34 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setEtherFiNodesManager(address(0));
 
         vm.stopPrank();
+    }
+
+    function test_LiquadStakingAccessControl() public {
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+
+        hoax(alice);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+
+        vm.prank(owner);
+        stakingManagerInstance.enableWhitelist();
+
+        hoax(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.openLiquadStaking();
+
+        hoax(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+        
+        hoax(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        liquidityPoolInstance.withdraw(1 ether);
     }
 }

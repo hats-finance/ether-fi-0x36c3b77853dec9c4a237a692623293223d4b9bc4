@@ -4,16 +4,8 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 
 contract SmallScenariosTest is TestSetup {
-    uint256[] public slippageArray;
-
     function setUp() public {
         setUpTests();
-
-        slippageArray = new uint256[](4);
-        slippageArray[0] = 90;
-        slippageArray[1] = 90;
-        slippageArray[2] = 90;
-        slippageArray[3] = 90;
     }
 
     /*----- EAP MIGRATION SCENARIO -----*/
@@ -57,12 +49,8 @@ contract SmallScenariosTest is TestSetup {
         vm.stopPrank();
 
         /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
-        // Alice's Points are 100224
+        // Alice's Points are 103680 * 1e9 
         // Bob's points are 136850
-
-        uint256 alicePoints = earlyAdopterPoolInstance.calculateUserPoints(
-            alice
-        );
 
         uint256 chadPoints = earlyAdopterPoolInstance.calculateUserPoints(chad);
         uint256 danPoints = earlyAdopterPoolInstance.calculateUserPoints(dan);
@@ -93,22 +81,22 @@ contract SmallScenariosTest is TestSetup {
             0,
             0,
             0,
-            103680,
+            103680 * 1e9,
             aliceProof,
-            slippageArray
+            slippageLimit
         );
         vm.stopPrank();
 
         assertEq(address(claimReceiverPoolInstance).balance, 0);
         assertEq(address(liquidityPoolInstance).balance, 1 ether);
 
-        // Check that Alice has received eETH
-        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        // Check that Alice has received meETH
+        assertEq(meEthInstance.balanceOf(alice), 1 ether);
 
         // Check that scores are recorded in Score Manager
         assertEq(
             scoreManagerInstance.scores(0, alice),
-            alicePoints
+            0
         );
 
 
@@ -125,7 +113,7 @@ contract SmallScenariosTest is TestSetup {
             eapBalanceBeforeWithdrawal - 2 ether
         );
 
-        // Dan withdraws and does not deposit but gets special approval from ether.Fi to set his score in the score manager
+        // Dan withdraws and does not deposit
         uint256 danBalanceBeforeWithdrawal = dan.balance;
         eapBalanceBeforeWithdrawal = address(earlyAdopterPoolInstance).balance;
         vm.prank(dan);
@@ -135,22 +123,6 @@ contract SmallScenariosTest is TestSetup {
             address(earlyAdopterPoolInstance).balance,
             eapBalanceBeforeWithdrawal - 1 ether
         );
-
-        // ether.Fi approves dan to set his score
-        vm.prank(owner);
-        scoreManagerInstance.setCallerStatus(dan, true);
-
-        vm.prank(dan);
-        scoreManagerInstance.setScore(
-            0,
-            dan,
-            danPoints
-        );
-        assertEq(
-            scoreManagerInstance.scores(0, dan),
-            danPoints
-        );
-
     }
 
     /*------ AUCTION / STAKER FLOW ------*/

@@ -8,8 +8,6 @@ contract meEthTest is TestSetup {
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
 
-    uint256 constant public kwei = 10 ** 3;
-
     function setUp() public {
         setUpTests();
         vm.startPrank(alice);
@@ -29,14 +27,6 @@ contract meEthTest is TestSetup {
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
-
-        vm.startPrank(owner);
-        for (uint256 i = 0; i < 5 ; i++) {
-            uint40 minimumPointsRequirement = uint40(i * 14 * 1 * kwei);
-            uint24 weight = uint24(i + 1);
-            meEthInstance.addNewTier(minimumPointsRequirement, weight);
-        }
-        vm.stopPrank();
     }
 
     function test_HowPointsGrow() public {
@@ -179,7 +169,7 @@ contract meEthTest is TestSetup {
 
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingReards(0.5 ether);
+        liquidityPoolInstance.setAccruedStakingRewards(0.5 ether);
         vm.stopPrank();
 
         // Check the blanace of Alice updated by the rebasing
@@ -211,7 +201,7 @@ contract meEthTest is TestSetup {
 
         // More Staking rewards 1 ETH into LP
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingReards(0.5 ether + 1 ether);
+        liquidityPoolInstance.setAccruedStakingRewards(0.5 ether + 1 ether);
         vm.stopPrank();
 
         // Alice belongs to the tier 1 with the weight 2
@@ -259,7 +249,7 @@ contract meEthTest is TestSetup {
         
         // Now, eETH is rebased with the staking rewards 1 eETH
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingReards(1 ether);
+        liquidityPoolInstance.setAccruedStakingRewards(1 ether);
         vm.stopPrank();
 
         // Alice's 1 meETH does not earn any rewards
@@ -311,4 +301,32 @@ contract meEthTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_LiquadStakingAccessControl() public {
+        vm.deal(alice, 2 ether);
+        vm.deal(bob, 2 ether);
+
+        // Both Alice and Bob mint 2 meETH.
+        vm.prank(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+
+        vm.prank(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        meEthInstance.wrap(2 ether);
+
+        vm.prank(owner);
+        liquidityPoolInstance.openLiquadStaking();
+
+        vm.prank(alice);
+        meEthInstance.wrap(2 ether);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+
+        vm.prank(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        meEthInstance.unwrap(2 ether);
+    }
 }
