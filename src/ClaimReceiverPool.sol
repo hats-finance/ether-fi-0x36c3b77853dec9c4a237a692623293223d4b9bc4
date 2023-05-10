@@ -32,7 +32,7 @@ contract ClaimReceiverPool is
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    uint24 public constant poolFee = 3_000;
+    uint24 public poolFee;
 
     // Mainnet Addresses
     // address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
@@ -41,7 +41,7 @@ contract ClaimReceiverPool is
     // address private immutable cbETH = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
 
     //Testnet addresses
-    address private immutable wEth = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
+    address private wEth;
     address private rETH;
     address private wstETH;
     address private sfrxETH;
@@ -50,10 +50,10 @@ contract ClaimReceiverPool is
     bytes32 public merkleRoot;
 
     //SwapRouter but Testnet, although address is actually the same
-    ISwapRouter public constant router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    ISwapRouter public router;
 
     //Goerli Weth address used for unwrapping ERC20 Weth
-    IWETH public constant wethContract = IWETH(0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6);
+    IWETH public wethContract;
 
     ILiquidityPool public liquidityPool;
     IRegulationsManager public regulationsManager;
@@ -84,7 +84,9 @@ contract ClaimReceiverPool is
         address _wstEth,
         address _sfrxEth,
         address _cbEth,
-        address _regulationsManager
+        address _regulationsManager,
+        address _wethContract,
+        address _uniswapRouter
     ) external initializer {
         require(_rEth  != address(0), "No zero addresses");
         require(_wstEth != address(0), "No zero addresses");
@@ -98,7 +100,11 @@ contract ClaimReceiverPool is
         cbETH = _cbEth;
 
         regulationsManager = IRegulationsManager(_regulationsManager);
-
+        router = ISwapRouter(_uniswapRouter);
+        wethContract = IWETH(_wethContract);
+        wEth = _wethContract;
+        poolFee = 3_000;
+        
         __Pausable_init();
         __Ownable_init();
         __UUPSUpgradeable_init();
