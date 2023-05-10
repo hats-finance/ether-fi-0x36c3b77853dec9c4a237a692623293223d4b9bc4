@@ -39,13 +39,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint8  tier;
     }
 
-
-    // points growth rate
     uint256 public pointsBoostFactor; // +100% points if staking rewards are sacrificed
-    uint256 public pointsBurnRateForUnWrap; // 100% of the points proportional to the amount being unwraped
     uint256 public pointsGrowthRate;
-    uint256[] public pointGrowthRates; 
-    uint256[] public pointGrowthRateUpdateTimes; 
 
     struct TierDeposit {
         uint128 shares;
@@ -84,7 +79,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         genesisTimestamp = uint32(block.timestamp);
 
         pointsBoostFactor = 100;
-        pointsBurnRateForUnWrap = 100;
         pointsGrowthRate = 1;
     }
 
@@ -306,8 +300,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     
     function updatePointsGrowthRate(uint256 newPointsGrowthRate) public {
         pointsGrowthRate = newPointsGrowthRate;
-        pointGrowthRates.push(newPointsGrowthRate);
-        pointGrowthRateUpdateTimes.push(block.timestamp);
     }
 
     function pointOf(address _account) public view returns (uint40) {
@@ -331,27 +323,14 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     // Compute the points earnings of a user between [since, until) 
     // Assuming the user's balance didn't change in between [since, until)
     function _pointsEarning(address _account, uint256 _since, uint256 _until) internal view returns (uint40) {
-        uint256 earning = 0;
-        uint256 checkpointTime = _since;
-
         UserDeposit storage userDeposit = _userDeposits[_account];
-        uint256 balance = userDeposit.amounts;
-
-        if (balance == 0 && userDeposit.amountStakedForPoints == 0) {
+        if (userDeposit.amounts == 0 && userDeposit.amountStakedForPoints == 0) {
             return 0;
         }
 
-        uint256 effectiveBalanceForEarningPoints = balance + ((100 + pointsBoostFactor) * userDeposit.amountStakedForPoints) / 100;
-
-        for (uint256 i = 0; i < pointGrowthRates.length; i++) {
-            if (checkpointTime < pointGrowthRateUpdateTimes[i] && pointGrowthRateUpdateTimes[i] <= _until) {
-                earning += effectiveBalanceForEarningPoints * (pointGrowthRateUpdateTimes[i] - checkpointTime) * pointGrowthRates[i];
-                checkpointTime = pointGrowthRateUpdateTimes[i];
-            }
-        }
-        if (_until > checkpointTime) {
-            earning += effectiveBalanceForEarningPoints * (_until - checkpointTime) * pointsGrowthRate;
-        }
+        uint256 elapsed = _until - _since;
+        uint256 effectiveBalanceForEarningPoints = userDeposit.amounts + ((100 + pointsBoostFactor) * userDeposit.amountStakedForPoints) / 100;
+        uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate;
 
         // 0.001 ether   meETH earns 1     wei   points per day
         // == 1  ether   meETH earns 1     kwei  points per day
