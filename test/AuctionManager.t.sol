@@ -137,7 +137,7 @@ contract AuctionManagerTest is TestSetup {
         assertEq(selectedBidId, 1);
         assertEq(isBid1Active, false);
 
-        stakingManagerInstance.cancelDeposit(bidId1[0]);
+        stakingManagerInstance.batchCancelDeposit(bidId1);
 
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
@@ -773,6 +773,9 @@ contract AuctionManagerTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory processedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bid1Ids, proofAddress1);
+        
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
@@ -782,7 +785,7 @@ contract AuctionManagerTest is TestSetup {
             32 ether
         );
 
-        IStakingManager.DepositData memory depositData = IStakingManager
+        depositDataArray[0] = IStakingManager
             .DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -791,7 +794,7 @@ contract AuctionManagerTest is TestSetup {
             });
 
 
-        stakingManagerInstance.registerValidator(_getDepositRoot(), processedBidIds[0], depositData);
+        stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), processedBidIds, depositDataArray);
 
         assertEq(etherFiNode.balance, 0.5 ether);
     }
@@ -885,7 +888,7 @@ contract AuctionManagerTest is TestSetup {
 
         vm.expectEmit(true, false, false, true);
         emit BidReEnteredAuction(bidIds[0]);
-        stakingManagerInstance.cancelDeposit(bidIds[0]);
+        stakingManagerInstance.batchCancelDeposit(bidIds);
     }
 
     function test_EventBidCancelled() public {

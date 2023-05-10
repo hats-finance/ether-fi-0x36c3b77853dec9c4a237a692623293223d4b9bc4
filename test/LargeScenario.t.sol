@@ -113,7 +113,7 @@ contract LargeScenariosTest is TestSetup {
         // Elvis cancels a deposit
         vm.prank(elvis);
         balanceBefore = elvis.balance;
-        stakingManagerInstance.cancelDeposit(elvisProcessedBidIds[0]);
+        stakingManagerInstance.batchCancelDeposit(elvisProcessedBidIds);
         assertTrue(auctionInstance.isBidActive(elvisProcessedBidIds[0]));
         assertEq(address(stakingManagerInstance).balance, 320 ether - 32 ether);
         assertEq(elvis.balance, balanceBefore + 32 ether);
@@ -136,6 +136,10 @@ contract LargeScenariosTest is TestSetup {
             .batchDepositWithBidIds{value: 32 ether}(bobBidIds, gregProof);
         assertEq(gregProcessedBidIds.length, 1);
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
+
         /// Register Validators
         // generate deposit data
         bytes32 root = depGen.generateDepositRoot(
@@ -144,7 +148,7 @@ contract LargeScenariosTest is TestSetup {
             managerInstance.generateWithdrawalCredentials(danNode),
             32 ether
         );
-        IStakingManager.DepositData memory depositData = IStakingManager
+        depositDataArray[0] = IStakingManager
             .DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -156,10 +160,10 @@ contract LargeScenariosTest is TestSetup {
         assertEq(staker, dan);
 
         startHoax(dan);
-        stakingManagerInstance.registerValidator(
+        stakingManagerInstance.batchRegisterValidators(
             _getDepositRoot(),
-            danProcessedBidIds[0],
-            depositData
+            danProcessedBidIds,
+            depositDataArray
         );
         vm.stopPrank();
 
@@ -187,7 +191,7 @@ contract LargeScenariosTest is TestSetup {
         /// Elvis batch registers validators
         // Generate Elvis's deposit data
         IStakingManager.DepositData[]
-            memory depositDataArray = new IStakingManager.DepositData[](
+            memory depositDataArray2 = new IStakingManager.DepositData[](
                 newElvisProcessedBidIds.length
             );
 
@@ -221,7 +225,7 @@ contract LargeScenariosTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(
             _getDepositRoot(),
             newElvisProcessedBidIds,
-            depositDataArray
+            depositDataArray2
         );
         vm.stopPrank();
 
@@ -258,13 +262,16 @@ contract LargeScenariosTest is TestSetup {
             gregProcessedBidIds[0]
         );
 
+        IStakingManager.DepositData[]
+            memory depositDataArray3 = new IStakingManager.DepositData[](1);
+
         root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(gregNode),
             32 ether
         );
-        depositData = IStakingManager.DepositData({
+        depositDataArray3[0] = IStakingManager.DepositData({
             publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             depositDataRoot: root,
@@ -272,10 +279,10 @@ contract LargeScenariosTest is TestSetup {
         });
 
         startHoax(greg);
-        stakingManagerInstance.registerValidator(
+        stakingManagerInstance.batchRegisterValidators(
             _getDepositRoot(),
-            gregProcessedBidIds[0],
-            depositData
+            gregProcessedBidIds,
+            depositDataArray3
         );
         vm.stopPrank();
 

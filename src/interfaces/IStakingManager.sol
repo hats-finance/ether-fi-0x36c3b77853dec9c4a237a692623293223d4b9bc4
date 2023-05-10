@@ -19,11 +19,7 @@ interface IStakingManager {
     function setLiquidityPoolAddress(address _liquidityPoolAddress) external;
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof) external payable returns (uint256[] memory);
 
-    function cancelDeposit(uint256 _validatorId) external;
-
-    function registerValidator(bytes32 _depositRoot, uint256 _validatorId, DepositData calldata _depositData) external;
-        
-    function registerValidator(bytes32 _depositRoot, uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData) external;
+    function batchCancelDeposit(uint256[] calldata _validatorIds) external;
 
     function batchRegisterValidators(bytes32 _depositRoot, uint256[] calldata _validatorId, DepositData[] calldata _depositData) external;
 

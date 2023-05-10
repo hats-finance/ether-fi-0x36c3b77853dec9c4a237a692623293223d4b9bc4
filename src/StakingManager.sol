@@ -160,30 +160,6 @@ contract StakingManager is
         return processedBidIds;
     }
 
-
-    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @param _validatorId id of the validator to register
-    /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
-    /// however, instead of the validator key, it will include the IPFS hash
-    /// containing the validator key encrypted by the corresponding node operator's public key
-    function registerValidator(
-        bytes32 _depositRoot,
-        uint256 _validatorId,
-        DepositData calldata _depositData
-    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {        
-        return _registerValidator(_validatorId, msg.sender, msg.sender, _depositData);
-    }
-
-    function registerValidator(
-        bytes32 _depositRoot,
-        uint256 _validatorId,
-        address _bNftRecipient, 
-        address _tNftRecipient,
-        DepositData calldata _depositData
-    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {        
-        return _registerValidator(_validatorId, _bNftRecipient, _tNftRecipient, _depositData);
-    }
-
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId id of the validator to register
     /// @param _depositData data structure to hold all data needed for depositing to the beacon chain
@@ -226,14 +202,6 @@ contract StakingManager is
         for (uint256 x; x < _validatorIds.length; ++x) {
             _cancelDeposit(_validatorIds[x]);    
         }  
-    }
-
-    /// @notice Cancels a user's deposit
-    /// @param _validatorId the ID of the validator deposit to cancel
-    function cancelDeposit(
-        uint256 _validatorId
-    ) public whenNotPaused nonReentrant {
-        _cancelDeposit(_validatorId);
     }
 
     /// @notice Sets the EtherFi node manager contract
