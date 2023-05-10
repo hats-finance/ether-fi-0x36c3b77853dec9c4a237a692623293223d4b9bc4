@@ -5,6 +5,8 @@ import "./TestSetup.sol";
 
 contract TnftTest is TestSetup {
 
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
     function setUp() public {
         setUpTests();
 
@@ -61,7 +63,7 @@ contract TnftTest is TestSetup {
             });
 
         startHoax(alice);
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIds[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidIds[0], depositData);
         vm.stopPrank();
 
         assertEq(TNFTInstance.ownerOf(1), alice);

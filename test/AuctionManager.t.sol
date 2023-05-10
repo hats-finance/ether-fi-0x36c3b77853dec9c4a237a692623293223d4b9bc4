@@ -14,6 +14,8 @@ contract AuctionManagerTest is TestSetup {
     event BidReEnteredAuction(uint256 indexed bidId);
     event Received(address indexed sender, uint256 value);
 
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
     function setUp() public {
         setUpTests();
     }
@@ -791,7 +793,7 @@ contract AuctionManagerTest is TestSetup {
             });
 
 
-        stakingManagerInstance.registerValidator(_getDepositRoot(), processedBidIds[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, processedBidIds[0], depositData);
 
         assertEq(etherFiNode.balance, 0.5 ether);
     }
