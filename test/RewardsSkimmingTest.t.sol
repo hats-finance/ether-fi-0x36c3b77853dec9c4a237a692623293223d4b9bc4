@@ -25,6 +25,8 @@ contract RewardsSkimmingTest is TestSetup {
     bytes32[] public newWhiteListedAddresses;
     bytes32[] public stakerWhitelistedAddresses;
 
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
     function setUp() public {
         num_operators = 1; // should be 1
         num_stakers = 32;
@@ -47,15 +49,12 @@ contract RewardsSkimmingTest is TestSetup {
         _setUpStakerMerkle();
 
         vm.startPrank(owner);
-        nodeOperatorManagerInstance.updateMerkleRoot(newRoot);
         stakingManagerInstance.updateMerkleRoot(rootStakers);
-
-        bytes32[] memory proof = merkle.getProof(newWhiteListedAddresses, 1);
+        nodeOperatorManagerInstance.addToWhitelist(operators[0]);
         vm.stopPrank();
 
         startHoax(operators[0]);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             1000
         );
@@ -94,7 +93,7 @@ contract RewardsSkimmingTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-            stakingManagerInstance.registerValidator(_getDepositRoot(), validatorIds[i], depositDataArray[i]);
+            stakingManagerInstance.registerValidator(zeroRoot, validatorIds[i], depositDataArray[i]);
             vm.stopPrank();
         }
 

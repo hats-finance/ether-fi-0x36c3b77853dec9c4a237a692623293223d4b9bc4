@@ -7,6 +7,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
         
     bytes32[] public proof;
     bytes32[] public aliceProof;
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
     
     function setUp() public {
         setUpTests();
@@ -34,15 +35,12 @@ contract ProtocolRevenueManagerTest is TestSetup {
             address(auctionInstance)
         );
 
-        proof = merkle.getProof(whiteListedAddresses, 0);
-        aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(proof, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
         vm.stopPrank();
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );
@@ -81,21 +79,21 @@ contract ProtocolRevenueManagerTest is TestSetup {
     function test_Receive() public {
         vm.expectRevert("No Active Validator");
         startHoax(alice);
-        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
-
+        (bool sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+        assertTrue(sent);
         uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
             1,
             1 ether
         );
 
         vm.expectRevert("No Active Validator");
-        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
-
+        (sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+        assertTrue(sent);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, aliceProof);
 
         vm.expectRevert("No Active Validator");
-        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
-
+        (sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+        assertTrue(sent);
         assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
@@ -113,7 +111,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
         stakingManagerInstance.registerValidator(
-            _getDepositRoot(),
+            zeroRoot,
             bidIds[0],
             depositData
         );
@@ -123,8 +121,8 @@ contract ProtocolRevenueManagerTest is TestSetup {
             500000000000000001
         );
 
-        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
-
+        (sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+        assertTrue(sent);
         assertEq(
             protocolRevenueManagerInstance.globalRevenueIndex(),
             1500000000000000001
@@ -154,7 +152,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             ipfsHashForEncryptedValidatorKey: "test_ipfs"
         });
         stakingManagerInstance.registerValidator(
-            _getDepositRoot(),
+            zeroRoot,
             bidId[0],
             depositData
         );
@@ -164,7 +162,8 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1750000000000000001
         );
 
-        address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+        (sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");
+        assertTrue(sent);
         vm.stopPrank();
 
         assertEq(
@@ -197,7 +196,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
         stakingManagerInstance.registerValidator(
-            _getDepositRoot(),
+            zeroRoot,
             bidId[0],
             depositData
         );
@@ -232,7 +231,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             ipfsHashForEncryptedValidatorKey: "test_ipfs"
         });
         stakingManagerInstance.registerValidator(
-            _getDepositRoot(),
+            zeroRoot,
             bidIds2[0],
             depositData
         );
@@ -295,7 +294,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
         stakingManagerInstance.registerValidator(
-            _getDepositRoot(),
+            zeroRoot,
             bidId[0],
             depositData
         );

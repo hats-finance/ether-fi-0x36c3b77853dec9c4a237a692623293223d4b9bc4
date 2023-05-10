@@ -358,3 +358,11 @@ contract AuctionManager is
         _;
     }
 }
+
+contract AuctionManagerV2 is AuctionManager {
+    function updateNodeOperatorManager(address _address) external onlyOwner {
+        nodeOperatorManagerInterface = INodeOperatorManager(
+            _address
+        );
+    }
+}

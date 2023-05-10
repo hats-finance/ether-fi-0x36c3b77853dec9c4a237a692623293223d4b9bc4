@@ -171,7 +171,7 @@ contract meEthTest is TestSetup {
 
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingReards(0.5 ether);
+        liquidityPoolInstance.setAccruedStakingRewards(0.5 ether);
         vm.stopPrank();
 
         // Check the blanace of Alice updated by the rebasing
@@ -203,7 +203,7 @@ contract meEthTest is TestSetup {
 
         // More Staking rewards 1 ETH into LP
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingReards(0.5 ether + 1 ether);
+        liquidityPoolInstance.setAccruedStakingRewards(0.5 ether + 1 ether);
         vm.stopPrank();
 
         // Alice belongs to the tier 1 with the weight 2
@@ -251,7 +251,7 @@ contract meEthTest is TestSetup {
         
         // Now, eETH is rebased with the staking rewards 1 eETH
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingReards(1 ether);
+        liquidityPoolInstance.setAccruedStakingRewards(1 ether);
         vm.stopPrank();
 
         // Alice's 1 meETH does not earn any rewards
@@ -334,4 +334,32 @@ contract meEthTest is TestSetup {
         liquidityPoolInstance.withdraw(alice, 1 ether);
     }
 
+    function test_LiquadStakingAccessControl() public {
+        vm.deal(alice, 2 ether);
+        vm.deal(bob, 2 ether);
+
+        // Both Alice and Bob mint 2 meETH.
+        vm.prank(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+
+        vm.prank(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        meEthInstance.wrap(2 ether);
+
+        vm.prank(owner);
+        liquidityPoolInstance.openLiquadStaking();
+
+        vm.prank(alice);
+        meEthInstance.wrap(2 ether);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+
+        vm.prank(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        meEthInstance.unwrap(2 ether);
+    }
 }
