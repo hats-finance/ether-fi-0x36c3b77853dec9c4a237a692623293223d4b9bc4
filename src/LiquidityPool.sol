@@ -98,6 +98,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// TODO WARNING! This implementation does not take into consideration the score
     function withdraw(address _recipient, uint256 _amount) public payable {
         require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
+        require(eETH.balanceOf(_recipient) >= _amount, "Not enough eETH");
 
         uint256 share = sharesForAmount(_amount);
         eETH.burnShares(_recipient, share);

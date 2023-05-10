@@ -329,6 +329,9 @@ contract meEthTest is TestSetup {
 
         vm.expectRevert("Not enough ETH in the liquidity pool");
         meEthInstance.burnMeETHForETH(5 ether);
+
+        vm.expectRevert("Not enough eETH");
+        liquidityPoolInstance.withdraw(alice, 1 ether);
     }
 
 }
