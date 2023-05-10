@@ -70,7 +70,7 @@ contract UpgradeTest is TestSetup {
     TNFTV2 public TNFTV2Instance;
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
     ProtocolRevenueManagerV2 public protocolRevenueManagerV2Instance;
-    StakingManagerV2 public stakingManagerV2Instance;
+    StakingManager public stakingManagerV2Instance;
     NodeOperatorManagerV2 public nodeOperatorManagerV2Instance;
 
     uint256[] public slippageArray;
@@ -302,7 +302,7 @@ contract UpgradeTest is TestSetup {
         vm.prank(owner);
         stakingManagerInstance.setMaxBatchDepositSize(uint128(25));
 
-        StakingManagerV2 stakingManagerV2Implementation = new StakingManagerV2();
+        StakingManager stakingManagerV2Implementation = new StakingManager();
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
@@ -316,7 +316,7 @@ contract UpgradeTest is TestSetup {
         vm.prank(owner);
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
 
-        stakingManagerV2Instance = StakingManagerV2(address(stakingManagerProxy));
+        stakingManagerV2Instance = StakingManager(address(stakingManagerProxy));
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);

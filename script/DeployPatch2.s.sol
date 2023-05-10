@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "../src/StakingManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeployPatch2 is Script {
+contract DeployPatchV3 is Script {
     using Strings for string;
 
     struct UpgradeAddresses {
