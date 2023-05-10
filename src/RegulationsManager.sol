@@ -78,10 +78,10 @@ contract RegulationsManager is
 
     /// @notice resets the whitelist by incrementing the iteration
     /// @dev happens when there is an update to the blacklisted country list
-    function resetWhitelist(bytes32 _versionHash) external onlyOwner {
+    function resetWhitelist(bytes32 _newVersionHash) external onlyOwner {
         whitelistVersion++;
 
-        correctVersionHash[whitelistVersion] = _versionHash;
+        correctVersionHash[whitelistVersion] = _newVersionHash;
 
         emit whitelistVersionIncreased(whitelistVersion);
     }
