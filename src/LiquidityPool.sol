@@ -93,17 +93,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to user
     /// @param _amount the amount to withdraw from contract
     /// TODO WARNING! This implementation does not take into consideration the score
-    function withdraw(uint256 _amount) external payable whenLiquidStakingOpen {
-        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
+    function withdraw(address _recipient, uint256 _amount) public whenLiquidStakingOpen {
         require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
+        require(eETH.balanceOf(_recipient) >= _amount, "Not enough eETH");
 
         uint256 share = sharesForAmount(_amount);
-        eETH.burnShares(msg.sender, share);
+        eETH.burnShares(_recipient, share);
 
-        (bool sent, ) = msg.sender.call{value: _amount}("");
+        (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "Failed to send Ether");
         
-        emit Withdraw(msg.sender, msg.value);
+        emit Withdraw(_recipient, _amount);
     }
 
     function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds) public onlyOwner returns (uint256[] memory) {

@@ -20,6 +20,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     ILiquidityPool public liquidityPool;
     IClaimReceiverPool public claimReceiverPool;
 
+    event MEETHBurnt(address indexed _recipient, uint256 _amount);
+
     mapping (address => mapping (address => uint256)) public allowances;
     mapping (address => UserDeposit) public _userDeposits;
     mapping (address => UserData) public _userData;
@@ -120,7 +122,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         _mint(msg.sender, _amount);
     }
 
-    function unwrap(uint256 _amount) external whenLiquidStakingOpen {
+    function unwrap(uint256 _amount) public whenLiquidStakingOpen {
         require(_amount > 0, "You cannot unwrap 0 meETH");
         uint256 unwrappableBalance = balanceOf(msg.sender) - _userDeposits[msg.sender].amountStakedForPoints;
         require(unwrappableBalance >= _amount, "Not enough balance to unwrap");
@@ -135,6 +137,15 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         // transfer eETH from meETH contract to user
         eETH.transferFrom(address(this), msg.sender, _amount);
+    }
+
+    function burnMeETHForETH(uint256 _amount) external {
+        require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
+        unwrap(_amount);
+
+        liquidityPool.withdraw(msg.sender, _amount);
+
+        emit MEETHBurnt(msg.sender, _amount);
     }
 
     function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
