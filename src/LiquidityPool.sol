@@ -87,11 +87,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit Deposit(_recipient, msg.value);
     }
 
-    function withdraw(uint256 _amount) public {
-        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
-        withdraw(msg.sender, _amount);
-    }
-
     /// @notice withdraw from pool
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to user
     /// @param _amount the amount to withdraw from contract

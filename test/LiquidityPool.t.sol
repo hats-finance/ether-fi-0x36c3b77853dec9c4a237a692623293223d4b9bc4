@@ -81,22 +81,23 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(alice, 2 ether);
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(alice.balance, 2 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(bob, 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 0);
         assertEq(bob.balance, 3 ether);
         vm.stopPrank();
     }
 
     function test_WithdrawLiquidityPoolFails() public {
+        vm.deal(address(liquidityPoolInstance), 3 ether);
         startHoax(alice);
         vm.expectRevert("Not enough eETH");
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(alice, 2 ether);
     }
 
     function test_WithdrawFailsNotInitializedToken() public {
@@ -104,7 +105,7 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(alice);
         vm.expectRevert();
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(alice, 2 ether);
     }
 
     function test_StakingManagerFailsNotInitializedToken() public {
