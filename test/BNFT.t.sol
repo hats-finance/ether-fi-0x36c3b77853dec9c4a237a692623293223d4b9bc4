@@ -4,7 +4,9 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 
 contract BNFTTest is TestSetup {
-   
+
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
    function setUp() public {
         setUpTests();
     }
@@ -52,7 +54,7 @@ contract BNFTTest is TestSetup {
 
 
         startHoax(alice);
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIds[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidIds[0], depositData);
         vm.stopPrank();
 
         assertEq(BNFTInstance.ownerOf(1), alice);
@@ -102,7 +104,7 @@ contract BNFTTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidIdArray[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidIdArray[0], depositData);
 
         vm.expectRevert("Err: token is SOUL BOUND");
         BNFTInstance.transferFrom(

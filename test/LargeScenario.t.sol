@@ -5,6 +5,7 @@ import "./TestSetup.sol";
 
 contract LargeScenariosTest is TestSetup {
     bytes IPFS_Hash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
 
     function setUp() public {
         setUpTests();
@@ -150,7 +151,7 @@ contract LargeScenariosTest is TestSetup {
 
         startHoax(dan);
         stakingManagerInstance.registerValidator(
-            _getDepositRoot(),
+            zeroRoot,
             danProcessedBidIds[0],
             depositData
         );
@@ -266,7 +267,7 @@ contract LargeScenariosTest is TestSetup {
 
         startHoax(greg);
         stakingManagerInstance.registerValidator(
-            _getDepositRoot(),
+            zeroRoot,
             gregProcessedBidIds[0],
             depositData
         );

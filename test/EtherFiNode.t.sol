@@ -9,6 +9,7 @@ contract EtherFiNodeTest is TestSetup {
 
     uint256[] bidId;
     EtherFiNode safeInstance;
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
 
     function setUp() public {
        
@@ -63,7 +64,7 @@ contract EtherFiNodeTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidId[0], depositData);
         vm.stopPrank();
 
         assertTrue(
@@ -202,7 +203,7 @@ contract EtherFiNodeTest is TestSetup {
             });
 
         startHoax(bob);
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId1[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidId1[0], depositData);
         vm.stopPrank();
 
         assertEq(
@@ -249,7 +250,7 @@ contract EtherFiNodeTest is TestSetup {
         
 
         startHoax(dan);
-        stakingManagerInstance.registerValidator(_getDepositRoot(), bidId2[0], depositData);
+        stakingManagerInstance.registerValidator(zeroRoot, bidId2[0], depositData);
         vm.stopPrank();
 
         assertEq(
