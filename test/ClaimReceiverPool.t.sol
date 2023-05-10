@@ -23,6 +23,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         setUpTests();
 
         vm.startPrank(owner);
+        
         adopterPool = new EarlyAdopterPool(
             address(rETH),
             address(wstETH),

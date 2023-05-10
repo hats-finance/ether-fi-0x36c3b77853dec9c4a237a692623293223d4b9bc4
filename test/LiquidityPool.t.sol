@@ -415,4 +415,33 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.stopPrank();
     }
+
+    function test_LiquadStakingAccessControl() public {
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+
+        hoax(alice);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+
+        vm.prank(owner);
+        stakingManagerInstance.enableWhitelist();
+
+        hoax(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.openLiquadStaking();
+
+        hoax(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+        
+        hoax(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        liquidityPoolInstance.withdraw(1 ether);
+    }
 }

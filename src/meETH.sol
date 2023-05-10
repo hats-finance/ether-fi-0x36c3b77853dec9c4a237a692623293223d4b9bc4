@@ -112,7 +112,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return liquidityPool.amountForShare(totalShares());
     }
 
-    function wrap(uint256 _amount) external {
+    function wrap(uint256 _amount) external whenLiquidStakingOpen {
         require(_amount > 0, "You cannot wrap 0 eETH");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
@@ -126,7 +126,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         _mint(msg.sender, _amount);
     }
 
-    function unwrap(uint256 _amount) external {
+    function unwrap(uint256 _amount) external whenLiquidStakingOpen {
         require(_amount > 0, "You cannot unwrap 0 meETH");
         uint256 unwrappableBalance = balanceOf(msg.sender) - _userDeposits[msg.sender].amountStakedForPoints;
         require(unwrappableBalance >= _amount, "Not enough balance to unwrap");
@@ -535,5 +535,14 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint8 curTier = tierOf(_account);
         uint8 newTier = (curTier >= 1) ? curTier - 1 : 0;
         _updateTier(_account, curTier, newTier);
+    }
+
+    //--------------------------------------------------------------------------------------
+    //-----------------------------------  MODIFIERS  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    modifier whenLiquidStakingOpen() {
+        require(liquidityPool.eEthliquidStakingOpened(), "Liquid staking functions are closed");
+        _;
     }
 }
