@@ -20,12 +20,16 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     ILiquidityPool public liquidityPool;
     IClaimReceiverPool public claimReceiverPool;
 
-    event MEETHBurnt(address indexed _recipient, uint256 _amount);
-
     mapping (address => mapping (address => uint256)) public allowances;
     mapping (address => UserDeposit) public _userDeposits;
     mapping (address => UserData) public _userData;
-    uint32 public genesisTimestamp; // the timestamp when the meETH contract was deployed
+    TierDeposit[] public tierDeposits;
+    TierData[] public tierData;
+    uint96[] public rewardsGlobalIndexPerTier;
+    uint32   public rewardsGlobalIndexTime;
+    uint32   public genesisTimestamp; // the timestamp when the meETH contract was deployed
+    uint16   public pointsBoostFactor; // +100% points if staking rewards are sacrificed
+    uint16   public pointsGrowthRate;
 
     struct UserDeposit {
         uint128 amounts;
@@ -41,9 +45,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint8  tier;
     }
 
-    uint256 public pointsBoostFactor; // +100% points if staking rewards are sacrificed
-    uint256 public pointsGrowthRate;
-
     struct TierDeposit {
         uint128 shares;
         uint128 amounts;        
@@ -55,12 +56,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint40 minimumPoints;
         uint24 weight;
     }
-
-    TierDeposit[] public tierDeposits;
-    TierData[] public tierData;
-
-    uint96[] public rewardsGlobalIndexPerTier;
-    uint256   public rewardsGlobalIndexTime;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -91,10 +86,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         updatePoints(msg.sender);
         claimStakingRewards(msg.sender);
 
-        // transfer eETH from user to meETH contract
         eETH.transferFrom(msg.sender, address(this), _amount);
-
-        // mint meETH to user
         _mint(msg.sender, _amount);
     }
 
@@ -104,27 +96,20 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         updatePoints(_account);
         claimStakingRewards(_account);
-        
-        // deposit ETH to the LP
-        // mint eETH to meETH
+
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
 
-        // mint meETH to user
         _mint(_account, amount);
     }
 
     function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable onlyClaimReceiverPool {
         uint256 amount = msg.value;
         require(amount > 0, "You cannot wrap 0 ETH");
-
         _initializeEarlyAdopterPoolUserPoints(_account, _points);
         
-        // mint eETH
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
 
-        // mint meETH to user
         _mint(_account, amount);
-
         _updateGlobalIndex();
         uint8 tier = tierOf(_account);
         _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
@@ -139,11 +124,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         claimStakingRewards(msg.sender);
 
         _applyUnwrapPenalty(msg.sender);
-
-        // burn meETH
         _burn(msg.sender, _amount);
 
-        // transfer eETH from meETH contract to user
         eETH.transferFrom(address(this), msg.sender, _amount);
     }
 
@@ -152,8 +134,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         unwrapForEEth(_amount);
 
         liquidityPool.withdraw(msg.sender, _amount);
-
-        emit MEETHBurnt(msg.sender, _amount);
     }
 
     function stakeForPoints(uint256 _amount) external {
@@ -221,8 +201,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
        userData.pointsSnapshotTime = uint32(block.timestamp);
     }
 
-    function updatePointsGrowthRate(uint256 newPointsGrowthRate) public {
-        pointsGrowthRate = newPointsGrowthRate;
+    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public {
+        pointsBoostFactor = _newPointsBoostFactor;
     }
 
     function claimStakingRewards(address _account) public {
@@ -406,7 +386,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
             tierDeposits[i].amounts = uint128(amounts);
             tierData[i].rewardsGlobalIndex = globalIndex[i];
         }
-        rewardsGlobalIndexTime = block.timestamp;
+        rewardsGlobalIndexTime = uint32(block.timestamp);
     }
 
     // Degrade the user's tier to the lower one
@@ -465,7 +445,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function tierOf(address _user) public view returns (uint8) {
         return _userData[_user].tier;
     }
-    
+
     // This function calculates the points earned by the account for the current tier.
     // It takes into account the account's points earned since the previous tier snapshot,
     // as well as any points earned during the current tier snapshot period.

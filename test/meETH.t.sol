@@ -320,8 +320,6 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.balanceOf(alice), 2 ether);
 
         // Alice burns meETH directly for ETH
-        vm.expectEmit(true, false, false, true);
-        emit MEETHBurnt(alice, 1 ether);
         meEthInstance.unwrapForEth(1 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(meEthInstance.balanceOf(alice), 1 ether);
