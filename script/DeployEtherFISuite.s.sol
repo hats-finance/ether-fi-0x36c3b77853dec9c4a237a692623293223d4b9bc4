@@ -23,6 +23,9 @@ import "../test/TestERC20.sol";
 contract DeployEtherFiSuiteScript is Script {
     using Strings for string;
 
+    bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
+
+
     /*---- Storage variables ----*/
 
     TestERC20 public rETH;
@@ -226,7 +229,8 @@ contract DeployEtherFiSuiteScript is Script {
         weEthInstance.initialize(payable(address(liquidityPool)), address(eETH));
 
         scoreManager.setCallerStatus(address(liquidityPool), true);
-
+        regulationsManagerInstance.resetWhitelist(initialHash);
+        
         vm.stopBroadcast();
 
         suiteAddressesStruct = suiteAddresses({
