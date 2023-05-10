@@ -87,7 +87,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit Deposit(_recipient, msg.value);
     }
 
-    function withdraw(uint256 _amount) public payable {
+    function withdraw(uint256 _amount) public {
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
         withdraw(msg.sender, _amount);
     }
@@ -96,7 +96,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to user
     /// @param _amount the amount to withdraw from contract
     /// TODO WARNING! This implementation does not take into consideration the score
-    function withdraw(address _recipient, uint256 _amount) public payable {
+    function withdraw(address _recipient, uint256 _amount) public {
         require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(_recipient) >= _amount, "Not enough eETH");
 
@@ -106,7 +106,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "Failed to send Ether");
         
-        emit Withdraw(_recipient, msg.value);
+        emit Withdraw(_recipient, _amount);
     }
 
     function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds) public onlyOwner returns (uint256[] memory) {
