@@ -145,12 +145,17 @@ contract ClaimReceiverPool is
         emit FundsMigrated(msg.sender, _ethAmount, _points, loyaltyPoints);
     }
 
-    function convertEapPointsToLoyaltyPoints(uint256 _points) public view returns (uint40) {
-        uint256 points = (_points * 1e14 / 1000) / 1 days / 0.001 ether;
+    function convertEapPointsToLoyaltyPoints(uint256 _eapPoints) public view returns (uint40) {
+        uint256 points = (_eapPoints * 1e14 / 1000) / 1 days / 0.001 ether;
         if (points >= type(uint40).max) {
             points = type(uint40).max;
         }
         return uint40(points);
+    }
+
+    function getClaimableTier(uint256 _eapPoints) public view returns (uint8) {
+        uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_eapPoints);
+        return meEth.tierForPoints(loyaltyPoints);
     }
 
     function setLiquidityPool(address _address) external onlyOwner {
