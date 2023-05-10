@@ -18,7 +18,6 @@ contract RegulationsManager is
 {
     mapping(uint32 => mapping(address => bool)) public isEligible;
     mapping(address => bytes32) public declarationHashes;
-    mapping(uint256 => bytes32) public correctVersionHash;
 
     uint32 public whitelistVersion;
 
@@ -51,9 +50,8 @@ contract RegulationsManager is
 
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
     function confirmEligibility(bytes32 _hash) external whenNotPaused {
-        require(correctVersionHash[whitelistVersion] == _hash, "Incorrect hash");
         isEligible[whitelistVersion][msg.sender] = true;
-        declarationHashes[msg.sender] = keccak256(abi.encodePacked(_hash, msg.sender));
+        declarationHashes[msg.sender] = _hash;
 
         emit EligibilityConfirmed(whitelistVersion, _hash, msg.sender);
     }
@@ -78,10 +76,8 @@ contract RegulationsManager is
 
     /// @notice resets the whitelist by incrementing the iteration
     /// @dev happens when there is an update to the blacklisted country list
-    function resetWhitelist(bytes32 _newVersionHash) external onlyOwner {
+    function resetWhitelist() external onlyOwner {
         whitelistVersion++;
-
-        correctVersionHash[whitelistVersion] = _newVersionHash;
 
         emit whitelistVersionIncreased(whitelistVersion);
     }
