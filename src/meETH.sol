@@ -448,6 +448,24 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return amount + rewards + amountStakedForPoints;
     }
 
+    function pointOf(address _account) public view returns (uint40) {
+        UserData storage userData = _userData[_account];
+        uint40 points = userData.pointsSnapshot;
+        uint40 pointsEarning = _pointsEarning(_account, userData.pointsSnapshotTime, block.timestamp);
+
+        uint40 total = 0;
+        if (uint256(points) + uint256(pointsEarning) >= type(uint40).max) {
+            total = type(uint40).max;
+        } else {
+            total = points + pointsEarning;
+        }
+        return total;
+    }
+
+    function tierOf(address _user) public view returns (uint8) {
+        return _userData[_user].tier;
+    }
+    
     // This function calculates the points earned by the account for the current tier.
     // It takes into account the account's points earned since the previous tier snapshot,
     // as well as any points earned during the current tier snapshot period.
@@ -499,26 +517,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return globalIndex;
     }
 
-    function pointOf(address _account) public view returns (uint40) {
-        UserData storage userData = _userData[_account];
-        uint40 points = userData.pointsSnapshot;
-        uint40 pointsEarning = _pointsEarning(_account, userData.pointsSnapshotTime, block.timestamp);
-
-        uint40 total = 0;
-        if (uint256(points) + uint256(pointsEarning) >= type(uint40).max) {
-            total = type(uint40).max;
-        } else {
-            total = points + pointsEarning;
-        }
-        return total;
-    }
-
     function pointsSnapshotTimeOf(address _account) external view returns (uint32) {
         return _userData[_account].pointsSnapshotTime;
-    }
-
-    function tierOf(address _user) public view returns (uint8) {
-        return _userData[_user].tier;
     }
 
     function claimableTier(address _account) public view returns (uint8) {
