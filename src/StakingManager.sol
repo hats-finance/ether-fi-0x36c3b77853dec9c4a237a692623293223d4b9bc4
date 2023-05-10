@@ -506,8 +506,11 @@ contract StakingManager is
     }
 
     modifier verifyDepositState(bytes32 _depositRoot) {
-        bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
-        require(_depositRoot == onchainDepositRoot, "deposit root changed");
+        // disable deposit root check if none provided
+        if (_depositRoot != 0x0000000000000000000000000000000000000000000000000000000000000000) {
+            bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
+            require(_depositRoot == onchainDepositRoot, "deposit root changed");
+        }
         _;
     }
 }
