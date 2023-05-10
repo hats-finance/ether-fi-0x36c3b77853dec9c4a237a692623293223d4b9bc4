@@ -148,10 +148,24 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         emit MEETHBurnt(msg.sender, _amount);
     }
 
-    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
+    function wrapEth(address _account, bytes32[] calldata _merkleProof) external payable {
         uint256 amount = msg.value;
         require(amount > 0, "You cannot wrap 0 ETH");
-        require(msg.sender == address(claimReceiverPool), "Only CRP can call it");
+
+        updatePoints(_account);
+        claimStakingRewards(_account);
+        
+        // deposit ETH to the LP
+        // mint eETH to meETH
+        liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
+
+        // mint meETH to user
+        _mint(_account, amount);
+    }
+
+    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable onlyClaimReceiverPool {
+        uint256 amount = msg.value;
+        require(amount > 0, "You cannot wrap 0 ETH");
 
         _initializeEarlyAdopterPoolUserPoints(_account, _points);
         
@@ -555,5 +569,18 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         require(liquidityPool.eEthliquidStakingOpened(), "Liquid staking functions are closed");
         _;
     }
+
+    //-----------------------------------  MODIFIERS  --------------------------------------
+
+    modifier onlyLiquidityPool() {
+        require(msg.sender == address(liquidityPool), "Caller muat be the liquidity pool contract");
+        _;
+    }
+
+    modifier onlyClaimReceiverPool() {
+        require(msg.sender == address(claimReceiverPool), "Caller muat be the claim receiver pool contract");
+        _;
+    }
+
 
 }
