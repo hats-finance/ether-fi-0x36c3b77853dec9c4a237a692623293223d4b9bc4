@@ -93,15 +93,7 @@ contract SmallScenariosTest is TestSetup {
         // Check that Alice has received meETH
         assertEq(meEthInstance.balanceOf(alice), 1 ether);
 
-        // Check that scores are recorded in Score Manager
-        assertEq(
-            scoreManagerInstance.scores(0, alice),
-            0
-        );
-
-
         // Chad withdraws and does not deposit
-        // If he does not deposit his points will not be stored in the score manager
         uint256 chadBalanceBeforeWithdrawal = chad.balance;
         uint256 eapBalanceBeforeWithdrawal = address(earlyAdopterPoolInstance)
             .balance;
