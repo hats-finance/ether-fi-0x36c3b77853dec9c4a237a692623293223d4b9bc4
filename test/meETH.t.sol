@@ -296,17 +296,11 @@ contract meEthTest is TestSetup {
 
     function test_unwrapForEth() public {
         vm.deal(alice, 2 ether);
+        assertEq(alice.balance, 2 ether);
 
         vm.startPrank(alice);
-
-        assertEq(alice.balance, 2 ether);
-        // Alice deposits 2 ETH and mints 2 eETH.
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
-        assertEq(eETHInstance.balanceOf(alice), 2 ether);
-        assertEq(meEthInstance.balanceOf(alice), 0 ether);
-
-        // Alice mints 2 meETH by wrapping 2 eETH starts earning points
-        meEthInstance.wrapEEth(2 ether);
+        // Alice mints 2 meETH by wrapping 2 ETH starts earning points
+        meEthInstance.wrapEth{value: 2 ether}(alice, aliceProof);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(meEthInstance.balanceOf(alice), 2 ether);
 
