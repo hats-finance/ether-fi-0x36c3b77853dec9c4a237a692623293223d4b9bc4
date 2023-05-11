@@ -82,6 +82,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         pointsBoostFactor = 100;
         pointsGrowthRate = 1;
+
+        eETH.approve(address(this), type(uint256).max);
     }
 
     function name() public pure returns (string memory) {
@@ -152,7 +154,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint256 amount = msg.value;
         require(amount > 0, "You cannot wrap 0 ETH");
 
-        updatePoints(_account);
+        updatePoints(msg.sender);
         claimStakingRewards(_account);
         
         // deposit ETH to the LP
