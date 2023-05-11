@@ -81,7 +81,7 @@ contract RegulationsManager is
     function initializeNewWhitelist(bytes32 _versionHash) external onlyOwner {
         whitelistVersion++;
 
-        correctVersionHash[whitelistVersion] = _versionHash;
+        correctVersionHash[whitelistVersion] = _newVersionHash;
 
         emit whitelistVersionIncreased(whitelistVersion);
     }
