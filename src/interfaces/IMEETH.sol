@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 interface IMEETH {
 
+    function wrapEth(address _account, bytes32[] calldata _merkleProof) external payable;
     function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable;
 
     function totalSupply() external view returns (uint256);

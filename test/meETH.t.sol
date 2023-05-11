@@ -8,6 +8,8 @@ contract meEthTest is TestSetup {
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
 
+    event MEETHBurnt(address indexed _recipient, uint256 _amount);
+
     function setUp() public {
         setUpTests();
         vm.startPrank(alice);
@@ -110,7 +112,7 @@ contract meEthTest is TestSetup {
         vm.deal(alice, 10 ether);
 
         vm.startPrank(alice);
-        // Alice deposits 10 ETH and mints 1 eETH.
+        // Alice deposits 10 ETH and mints 10 eETH.
         liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
 
         // Alice wraps 1 eETH to 1 meEth
@@ -301,6 +303,37 @@ contract meEthTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_BurnMeETHForETH() public {
+        vm.deal(alice, 2 ether);
+
+        vm.startPrank(alice);
+
+        assertEq(alice.balance, 2 ether);
+        // Alice deposits 2 ETH and mints 2 eETH.
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        assertEq(meEthInstance.balanceOf(alice), 0 ether);
+
+        // Alice mints 2 meETH by wrapping 2 eETH starts earning points
+        meEthInstance.wrap(2 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+        assertEq(meEthInstance.balanceOf(alice), 2 ether);
+
+        // Alice burns meETH directly for ETH
+        vm.expectEmit(true, false, false, true);
+        emit MEETHBurnt(alice, 1 ether);
+        meEthInstance.burnMeETHForETH(1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+        assertEq(meEthInstance.balanceOf(alice), 1 ether);
+        assertEq(alice.balance, 1 ether);
+
+        vm.expectRevert("Not enough ETH in the liquidity pool");
+        meEthInstance.burnMeETHForETH(5 ether);
+
+        vm.expectRevert("Not enough eETH");
+        liquidityPoolInstance.withdraw(alice, 1 ether);
+    }
+
     function test_LiquadStakingAccessControl() public {
         vm.deal(alice, 2 ether);
         vm.deal(bob, 2 ether);
@@ -328,5 +361,42 @@ contract meEthTest is TestSetup {
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
         meEthInstance.unwrap(2 ether);
+    }
+    function test_wrapEth() public {
+        vm.deal(alice, 10 ether);
+
+        vm.startPrank(alice);
+
+        // Alice deposits 10 ETH and mints 10 meETH.
+        meEthInstance.wrapEth{value: 10 ether}(alice, aliceProof);
+
+        // 10 ETH to the LP
+        // 10 eETH to the meEth contract
+        // 10 meETH to Alice
+        assertEq(address(liquidityPoolInstance).balance, 10 ether);
+        assertEq(address(eETHInstance).balance, 0 ether);
+        assertEq(address(meEthInstance).balance, 0 ether);
+        assertEq(address(alice).balance, 0 ether);
+        
+        assertEq(eETHInstance.balanceOf(address(liquidityPoolInstance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(address(eETHInstance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+
+        assertEq(meEthInstance.balanceOf(address(liquidityPoolInstance)), 0 ether);
+        assertEq(meEthInstance.balanceOf(address(eETHInstance)), 0 ether);
+        assertEq(meEthInstance.balanceOf(address(meEthInstance)), 0 ether);
+        assertEq(meEthInstance.balanceOf(alice), 10 ether);
+    
+        // Check the points grow properly
+        assertEq(meEthInstance.pointOf(alice), 0);
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(alice), 1 * 10 * kwei);
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(alice), 2 * 10 * kwei);
+        meEthInstance.updatePoints(alice);
+        assertEq(meEthInstance.pointOf(alice), 2 * 10 * kwei);
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(alice), 3 * 10 * kwei);
     }
 }

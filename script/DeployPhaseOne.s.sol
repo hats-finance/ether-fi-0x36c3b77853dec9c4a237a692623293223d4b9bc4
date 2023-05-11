@@ -10,7 +10,6 @@ import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/StakingManager.sol";
-import "../src/ScoreManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -26,7 +25,6 @@ contract DeployPhaseOne is Script {
     UUPSProxy public protocolRevenueManagerProxy;
     UUPSProxy public TNFTProxy;
     UUPSProxy public BNFTProxy;
-    UUPSProxy public scoreManagerProxy;
 
     BNFT public BNFTImplementation;
     BNFT public BNFTInstance;
@@ -46,9 +44,6 @@ contract DeployPhaseOne is Script {
     EtherFiNodesManager public etherFiNodesManagerImplementation;
     EtherFiNodesManager public etherFiNodesManager;
 
-    ScoreManager public scoreManagerImplementation;
-    ScoreManager public scoreManager;
-
     struct suiteAddresses {
         address treasury;
         address nodeOperatorManager;
@@ -59,7 +54,6 @@ contract DeployPhaseOne is Script {
         address etherFiNodesManager;
         address protocolRevenueManager;
         address etherFiNode;
-        address scoreManager;
     }
 
     suiteAddresses suiteAddressesStruct;
@@ -109,11 +103,6 @@ contract DeployPhaseOne is Script {
             address(protocolRevenueManager)
         );
 
-        scoreManagerImplementation = new ScoreManager();
-        scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
-        scoreManager = ScoreManager(address(scoreManagerProxy));
-        scoreManager.initialize();
-
         EtherFiNode etherFiNode = new EtherFiNode();
 
         // Setup dependencies
@@ -130,8 +119,6 @@ contract DeployPhaseOne is Script {
         stakingManager.registerTNFTContract(address(TNFTInstance));
         stakingManager.registerBNFTContract(address(BNFTInstance));
 
-        scoreManager.addNewScoreType("Early Adopter Pool");
-
         vm.stopBroadcast();
 
         suiteAddressesStruct = suiteAddresses({
@@ -143,8 +130,7 @@ contract DeployPhaseOne is Script {
             BNFT: address(BNFTInstance),
             etherFiNodesManager: address(etherFiNodesManager),
             protocolRevenueManager: address(protocolRevenueManager),
-            etherFiNode: address(etherFiNode),
-            scoreManager: address(scoreManager)
+            etherFiNode: address(etherFiNode)
         });
 
         writeSuiteVersionFile();
@@ -205,9 +191,7 @@ contract DeployPhaseOne is Script {
                     "\nEtherFi Node Manager: ",
                     Strings.toHexString(suiteAddressesStruct.etherFiNodesManager),
                     "\nProtocol Revenue Manager: ",
-                    Strings.toHexString(suiteAddressesStruct.protocolRevenueManager),
-                    "\nScore Manager: ",
-                    Strings.toHexString(suiteAddressesStruct.scoreManager)
+                    Strings.toHexString(suiteAddressesStruct.protocolRevenueManager)
                 )
             )
         );
