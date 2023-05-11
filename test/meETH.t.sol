@@ -50,7 +50,7 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.pointOf(alice), 2 * kwei);
 
         // Alice unwraps 1 meETH to 1 ETH
-        meEthInstance.burnMeETHForETH(1 ether);
+        meEthInstance.unwrapForEth(1 ether);
         assertEq(meEthInstance.pointOf(alice), 2 * kwei);
         assertEq(meEthInstance.balanceOf(alice), 1 ether);
         assertEq(address(liquidityPoolInstance).balance, 1 ether);
@@ -63,7 +63,7 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei * 2);
 
         // Alice unwraps the whole remaining meETH, but the points remain the same
-        meEthInstance.burnMeETHForETH(1 ether);
+        meEthInstance.unwrapForEth(1 ether);
         assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei * 2);
         assertEq(meEthInstance.balanceOf(alice), 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
@@ -143,7 +143,7 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.tierOf(alice), 2);
 
         // Alice unwraps 0.5 meETH (which is 50% of her meETH holdings)
-        meEthInstance.burnMeETHForETH(0.5 ether);
+        meEthInstance.unwrapForEth(0.5 ether);
 
         // The points didn't get penalized by unwrapping
         // But the tier get downgraded from Tier 2 to Tier 1
@@ -256,16 +256,14 @@ contract meEthTest is TestSetup {
         vm.startPrank(alice);
         meEthInstance.unstakeForPoints(1 ether);
         vm.stopPrank();
-
-        // burnMeETHForETH WONT WORK HERE BECAUSE THERE IS NOT ENOUGH LIQUIDITY IN THE POOL TO RETURN REWARDS + PRINCIPAL
         
         // Alice and Bob unwrap their whole amounts of meETH to eETH
         vm.startPrank(alice);
-        meEthInstance.burnMeETHForETH(2.333333333333333330 ether);
+        meEthInstance.unwrapForEth(2.333333333333333330 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        meEthInstance.burnMeETHForETH(2.666666666666666660 ether);
+        meEthInstance.unwrapForEth(2.666666666666666660 ether);
         vm.stopPrank();
 
         assertEq(alice.balance, 2.333333333333333330 ether);
@@ -296,7 +294,7 @@ contract meEthTest is TestSetup {
         vm.stopPrank();
     }
 
-    function test_BurnMeETHForETH() public {
+    function test_unwrapForEth() public {
         vm.deal(alice, 2 ether);
 
         vm.startPrank(alice);
@@ -308,20 +306,18 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.balanceOf(alice), 0 ether);
 
         // Alice mints 2 meETH by wrapping 2 eETH starts earning points
-        meEthInstance.wrap(2 ether);
+        meEthInstance.wrapEEth(2 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(meEthInstance.balanceOf(alice), 2 ether);
 
         // Alice burns meETH directly for ETH
-        vm.expectEmit(true, false, false, true);
-        emit MEETHBurnt(alice, 1 ether);
-        meEthInstance.burnMeETHForETH(1 ether);
+        meEthInstance.unwrapForEth(1 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(meEthInstance.balanceOf(alice), 1 ether);
         assertEq(alice.balance, 1 ether);
 
         vm.expectRevert("Not enough ETH in the liquidity pool");
-        meEthInstance.burnMeETHForETH(5 ether);
+        meEthInstance.unwrapForEth(5 ether);
 
         vm.expectRevert("Not enough eETH");
         liquidityPoolInstance.withdraw(alice, 1 ether);
@@ -340,20 +336,20 @@ contract meEthTest is TestSetup {
 
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
-        meEthInstance.wrap(2 ether);
+        meEthInstance.wrapEEth(2 ether);
 
         vm.prank(owner);
         liquidityPoolInstance.openLiquadStaking();
 
         vm.prank(alice);
-        meEthInstance.wrap(2 ether);
+        meEthInstance.wrapEEth(2 ether);
 
         vm.prank(owner);
         liquidityPoolInstance.closeLiquadStaking();
 
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
-        meEthInstance.unwrap(2 ether);
+        meEthInstance.unwrapForEEth(2 ether);
     }
     function test_wrapEth() public {
         vm.deal(alice, 10 ether);

@@ -4,7 +4,6 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 import "../src/interfaces/IStakingManager.sol";
-import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
 import "../src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
@@ -20,7 +19,6 @@ import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
 import "../src/weEth.sol";
 import "../src/meEth.sol";
-import "../src/ScoreManager.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
@@ -45,7 +43,6 @@ contract TestSetup is Test {
     UUPSProxy public claimReceiverPoolProxy;
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public eETHProxy;
-    UUPSProxy public scoreManagerProxy;
     UUPSProxy public regulationsManagerProxy;
     UUPSProxy public weETHProxy;
     UUPSProxy public nodeOperatorManagerProxy;
@@ -65,9 +62,6 @@ contract TestSetup is Test {
 
     EtherFiNodesManager public managerInstance;
     EtherFiNodesManager public managerImplementation;
-
-    ScoreManager public scoreManagerInstance;
-    ScoreManager public scoreManagerImplementation;
 
     RegulationsManager public regulationsManagerInstance;
     RegulationsManager public regulationsManagerImplementation;
@@ -177,11 +171,6 @@ contract TestSetup is Test {
             address(BNFTInstance),
             address(protocolRevenueManagerInstance)
         );
-
-        scoreManagerImplementation = new ScoreManager();
-        scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
-        scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
-        scoreManagerInstance.initialize();
 
         regulationsManagerImplementation = new RegulationsManager();
         vm.expectRevert("Initializable: contract is already initialized");
@@ -294,9 +283,6 @@ contract TestSetup is Test {
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMeEth(address(meEthInstance));
         liquidityPoolInstance.openLiquadStaking();
-
-        scoreManagerInstance.setCallerStatus(address(liquidityPoolInstance), true);
-        scoreManagerInstance.addNewScoreType("Early Adopter Pool");
 
         depGen = new DepositDataGeneration();
 

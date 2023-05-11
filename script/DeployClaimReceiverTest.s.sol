@@ -6,7 +6,6 @@ import "forge-std/console.sol";
 import "../test/TestERC20.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/ClaimReceiverPool.sol";
-import "../src/ScoreManager.sol";
 import "../src/RegulationsManager.sol";
 import "../lib/murky/src/Merkle.sol";
 import "../src/UUPSProxy.sol";
@@ -23,14 +22,10 @@ contract DeployClaimReceiverTestScript is Script {
     ClaimReceiverPool public claimReceiverPoolImplementation;
     ClaimReceiverPool public claimReceiverPoolInstance;
 
-    ScoreManager public scoreManagerInstance;
-    ScoreManager public scoreManagerImplementation;
-
     RegulationsManager public regulationsManagerInstance;
     RegulationsManager public regulationsManagerImplementation;
 
     UUPSProxy public claimReceiverPoolProxy;
-    UUPSProxy public scoreManagerProxy;
     UUPSProxy public regulationsManagerProxy;
 
     addresses addressStruct;
@@ -43,11 +38,6 @@ contract DeployClaimReceiverTestScript is Script {
         TestERC20 wstETH = new TestERC20("Test wrapped stake Eth", "twstETH");
         TestERC20 sfrxETH = new TestERC20("Test staked frax Eth", "tsfrxETH");
         TestERC20 cbETH = new TestERC20("Test coinbase Eth", "tcbETH");
-
-        scoreManagerImplementation = new ScoreManager();
-        scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
-        scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
-        scoreManagerInstance.initialize();
 
         regulationsManagerImplementation = new RegulationsManager();
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
