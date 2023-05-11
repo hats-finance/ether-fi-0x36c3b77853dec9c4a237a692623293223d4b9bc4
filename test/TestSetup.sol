@@ -296,6 +296,8 @@ contract TestSetup is Test {
         scoreManagerInstance.setCallerStatus(address(liquidityPoolInstance), true);
         scoreManagerInstance.addNewScoreType("Early Adopter Pool");
 
+        regulationsManagerInstance.initializeNewWhitelist("USA, CANADA");
+
         depGen = new DepositDataGeneration();
 
         bytes32 deposit_data_root1 = 0x9120ef13437690c401c436a3e454aa08c438eb5908279b0a49dee167fde30399;

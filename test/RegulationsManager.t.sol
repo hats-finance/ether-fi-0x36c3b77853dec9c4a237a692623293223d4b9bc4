@@ -7,11 +7,6 @@ contract RegulationsManagerTest is TestSetup {
 
     function setUp() public {
         setUpTests();
-
-        vm.prank(owner);
-        regulationsManagerInstance.resetWhitelist("USA, CANADA");
-
-
     }
 
     function test_ConfirmEligibilityWorks() public {
@@ -71,10 +66,10 @@ contract RegulationsManagerTest is TestSetup {
         assertEq(regulationsManagerInstance.isEligible(1, bob), false);
     }
 
-    function test_ResetWhitelistWorks() public {
+    function test_initializeNewWhitelistWorks() public {
         vm.startPrank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
-        regulationsManagerInstance.resetWhitelist("USA, CANADA");
+        regulationsManagerInstance.initializeNewWhitelist("USA, CANADA");
 
         assertEq(regulationsManagerInstance.whitelistVersion(), 1);
 
@@ -84,7 +79,7 @@ contract RegulationsManagerTest is TestSetup {
         assertEq(regulationsManagerInstance.isEligible(1, alice), true);
 
         vm.prank(owner);
-        regulationsManagerInstance.resetWhitelist("USA, CANADA, FRANCE");
+        regulationsManagerInstance.initializeNewWhitelist("USA, CANADA, FRANCE");
 
         assertEq(regulationsManagerInstance.whitelistVersion(), 2);
         assertEq(regulationsManagerInstance.isEligible(regulationsManagerInstance.whitelistVersion(), alice), false);

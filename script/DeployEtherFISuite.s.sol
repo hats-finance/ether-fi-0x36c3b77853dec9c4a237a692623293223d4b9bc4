@@ -227,7 +227,7 @@ contract DeployEtherFiSuiteScript is Script {
         weEthInstance.initialize(payable(address(liquidityPool)), address(eETH));
 
         scoreManager.setCallerStatus(address(liquidityPool), true);
-        regulationsManagerInstance.resetWhitelist(initialHash);
+        regulationsManagerInstance.initializeNewWhitelist(initialHash);
         
         vm.stopBroadcast();
 

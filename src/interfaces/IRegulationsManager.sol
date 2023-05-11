@@ -8,7 +8,7 @@ interface IRegulationsManager {
 
     function removeFromWhitelist(address _user) external;
 
-    function resetWhitelist(bytes32 _versionHash) external;
+    function initializeNewWhitelist(bytes32 _versionHash) external;
 
     function isEligible(uint32 _whitelistVersion, address _user) external view returns (bool);
 

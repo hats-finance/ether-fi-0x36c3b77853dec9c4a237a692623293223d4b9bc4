@@ -23,7 +23,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         hoax(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
 
         startHoax(owner);
         stakingManagerInstance.enableWhitelist();
@@ -47,7 +47,7 @@ contract LiquidityPoolTest is TestSetup {
 
     function test_StakingManagerLiquidityFails() public {
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
 
         vm.startPrank(owner);
         vm.expectRevert();
@@ -57,7 +57,7 @@ contract LiquidityPoolTest is TestSetup {
     function test_WithdrawLiquidityPoolSuccess() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -66,7 +66,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -111,7 +111,7 @@ contract LiquidityPoolTest is TestSetup {
         LiquidityPool liquidityPoolNoToken = new LiquidityPool();
 
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         vm.deal(alice, 3 ether);
         vm.expectRevert();
         liquidityPoolNoToken.deposit{value: 2 ether}(alice, aliceProof);
@@ -151,7 +151,7 @@ contract LiquidityPoolTest is TestSetup {
     function test_WithdrawLiquidityPoolSlashingPenalties() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -160,7 +160,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -181,7 +181,7 @@ contract LiquidityPoolTest is TestSetup {
     function test_WithdrawLiquidityPoolAccrueStakingRewardsWithoutPartialWithdrawal() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -190,7 +190,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -199,7 +199,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.setAccruedStakingRewards(2 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
@@ -239,7 +239,7 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(bidIds.length, 2);
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 64 ether}(bob, bobProof);
         vm.stopPrank();
 
@@ -308,7 +308,7 @@ contract LiquidityPoolTest is TestSetup {
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 64 ether}(bob, bobProof);
         vm.stopPrank();
 
@@ -415,7 +415,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.closeLiquadStaking();
 
         hoax(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
 
         vm.prank(owner);
         stakingManagerInstance.enableWhitelist();
