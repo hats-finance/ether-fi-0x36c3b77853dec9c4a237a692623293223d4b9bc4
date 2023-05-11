@@ -8,7 +8,6 @@ import "../src/EtherFiNodesManager.sol";
 import "../src/EtherFiNode.sol";
 import "../src/ProtocolRevenueManager.sol";
 import "../src/StakingManager.sol";
-import "../src/ScoreManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/LiquidityPool.sol";
 import "../src/ClaimReceiverPool.sol";
@@ -38,7 +37,6 @@ contract DeployEtherFiSuiteScript is Script {
     UUPSProxy public BNFTProxy;
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public eETHProxy;
-    UUPSProxy public scoreManagerProxy;
     UUPSProxy public claimReceiverPoolProxy;
     UUPSProxy public regulationsManagerProxy;
     UUPSProxy public weETHProxy;
@@ -70,9 +68,6 @@ contract DeployEtherFiSuiteScript is Script {
     EETH public eETHImplementation;
     EETH public eETH;
 
-    ScoreManager public scoreManagerImplementation;
-    ScoreManager public scoreManager;
-
     RegulationsManager public regulationsManagerInstance;
     RegulationsManager public regulationsManagerImplementation;
 
@@ -89,7 +84,6 @@ contract DeployEtherFiSuiteScript is Script {
         address etherFiNodesManager;
         address protocolRevenueManager;
         address etherFiNode;
-        address scoreManager;
         address regulationsManager;
         address claimReceiverPool;
         address liquidityPool;
@@ -143,11 +137,6 @@ contract DeployEtherFiSuiteScript is Script {
             address(BNFTInstance),
             address(protocolRevenueManager)
         );
-
-        scoreManagerImplementation = new ScoreManager();
-        scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
-        scoreManager = ScoreManager(address(scoreManagerProxy));
-        scoreManager.initialize();
 
         regulationsManagerImplementation = new RegulationsManager();
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
@@ -225,8 +214,6 @@ contract DeployEtherFiSuiteScript is Script {
         weEthInstance = weEth(address(weETHProxy));
         weEthInstance.initialize(payable(address(liquidityPool)), address(eETH));
 
-        scoreManager.setCallerStatus(address(liquidityPool), true);
-
         vm.stopBroadcast();
 
         suiteAddressesStruct = suiteAddresses({
@@ -239,7 +226,6 @@ contract DeployEtherFiSuiteScript is Script {
             etherFiNodesManager: address(etherFiNodesManager),
             protocolRevenueManager: address(protocolRevenueManager),
             etherFiNode: address(etherFiNode),
-            scoreManager: address(scoreManager),
             regulationsManager: address(regulationsManagerInstance),
             claimReceiverPool: address(claimReceiverPool),
             liquidityPool: address(liquidityPool),
@@ -342,8 +328,6 @@ contract DeployEtherFiSuiteScript is Script {
             string(
                 abi.encodePacked(
                     Strings.toString(version),
-                    "\nScore Manager: ",
-                    Strings.toHexString(suiteAddressesStruct.scoreManager),
                     "\nRegulations Manager: ",
                     Strings.toHexString(suiteAddressesStruct.regulationsManager),
                     "\nClaim Receiver Pool: ",
