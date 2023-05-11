@@ -7,6 +7,7 @@ contract meEthTest is TestSetup {
 
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
+    bytes32[] public ownerProof;
 
     event MEETHBurnt(address indexed _recipient, uint256 _amount);
 
@@ -24,6 +25,7 @@ contract meEthTest is TestSetup {
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
+        ownerProof = merkle.getProof(whiteListedAddresses, 10);
     }
 
     function test_HowPointsGrow() public {
@@ -238,8 +240,11 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.pointOf(bob),   2 * kwei);
         
         // Now, eETH is rebased with the staking rewards 1 eETH
-        vm.startPrank(owner);
+        startHoax(owner);
         liquidityPoolInstance.setAccruedStakingRewards(1 ether);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        liquidityPoolInstance.deposit{value: 1 ether}(owner, ownerProof);
+        assertEq(address(liquidityPoolInstance).balance, 5 ether);
         vm.stopPrank();
 
         // Alice's 1 meETH does not earn any rewards
@@ -256,17 +261,17 @@ contract meEthTest is TestSetup {
         
         // Alice and Bob unwrap their whole amounts of meETH to eETH
         vm.startPrank(alice);
-        meEthInstance.unwrap(1 ether + 1 ether + 1 ether * 1 / uint256(3));
+        meEthInstance.burnMeETHForETH(2.333333333333333330 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        meEthInstance.unwrap(2 ether + 1 ether * 2 / uint256(3));
+        meEthInstance.burnMeETHForETH(2.666666666666666660 ether);
         vm.stopPrank();
 
-        assertEq(eETHInstance.balanceOf(alice), 1 ether + 1 ether + 1 ether * 1 / uint256(3) - 1);
-        assertEq(meEthInstance.balanceOf(alice), 0);
-        assertEq(eETHInstance.balanceOf(bob), 2 ether + 1 ether * 2 / uint256(3) - 1);
-        assertEq(meEthInstance.balanceOf(bob), 0);
+        assertEq(alice.balance, 2.333333333333333330 ether);
+        assertEq(bob.balance, 2.666666666666666660 ether);
+        assertEq(meEthInstance.balanceOf(alice), 0.000000000000000003 ether);
+        assertEq(meEthInstance.balanceOf(bob), 0.000000000000000006 ether);
     }
 
     function test_transferFails() public {

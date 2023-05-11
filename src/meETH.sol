@@ -154,7 +154,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint256 amount = msg.value;
         require(amount > 0, "You cannot wrap 0 ETH");
 
-        updatePoints(msg.sender);
+        updatePoints(_account);
         claimStakingRewards(_account);
         
         // deposit ETH to the LP
