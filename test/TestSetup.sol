@@ -343,7 +343,7 @@ contract TestSetup is Test {
 
         whiteListedAddresses.push(keccak256(abi.encodePacked(address(liquidityPoolInstance))));
 
-        whiteListedAddresses.push(keccak256(abi.encodePacked(address(owner))));
+        whiteListedAddresses.push(keccak256(abi.encodePacked(owner)));
 
         root = merkle.getRoot(whiteListedAddresses);
         liquidityPoolInstance.setMerkleProof(merkle.getProof(whiteListedAddresses, 9));

@@ -151,14 +151,7 @@ contract SmallScenariosTest is TestSetup {
         
         startHoax(owner);
         liquidityPoolInstance.setAccruedStakingRewards(1 ether);
-        (bool sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
-        assertTrue(sent);
         vm.stopPrank();
-
-        assertEq(address(liquidityPoolInstance).balance, 1 ether);
-
-        // Accrued Staking Rewards go to 0 because they have been equally distributed to pool members
-        assertEq(liquidityPoolInstance.accruedStakingRewards(), 0 ether);
 
         // Total pooled ETH = 32 ETH in the validator + 1 ETH Staking rewards
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 33 ether);
@@ -176,25 +169,24 @@ contract SmallScenariosTest is TestSetup {
         /// Chad wnats to withdraw his ETH from the pool.
         /// He has a claimable balance of 17.53125 ETH but the Pool only has a balance of 0.0453125 ETH.
         /// EtherFi should make sure that there is sufficient liquidity in the pool to allow for withdrawals
-        assertEq(address(liquidityPoolInstance).balance, 1 ether);
         vm.expectRevert("Not enough ETH in the liquidity pool");
         vm.prank(chad);
         liquidityPoolInstance.withdraw(chad, 17.53125 ether);
         
-        // EtherFi deposits a validators worth (32 ETH) into the pool to allow for users to withdraw
+        // EtherFi deposits a validators worth (32 ETH) into the pool to allow users to withdraw
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
-        // 32 ETH + previous Accrued Staking Rewards
-        liquidityPoolInstance.setAccruedStakingRewards(32.9546875 ether);
-        (sent, ) = address(liquidityPoolInstance).call{value: 32 ether}("");
-        assertEq(sent, true);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        liquidityPoolInstance.deposit{value: 32 ether}(owner, ownerProof);
         vm.stopPrank();
         
-        // If Chad withdraws here he would be able to claim 34.53125 ether which is double what he is supposed to be able to claim! 
-        // He should only be allowed to withdraw after etherFi has exited a node.
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 35.038427734375 ether);
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 65.9546875 ether);
-        assertEq(address(liquidityPoolInstance).balance, 33 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 17.53125 ether);
+        // Chad withdraws 
+        vm.prank(chad);
+        liquidityPoolInstance.withdraw(chad, 17.53125 ether);
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 47.46875 ether);
+        assertEq(address(liquidityPoolInstance).balance, 14.46875 ether);
 
         // EtherFi sends an exit request for a node to be exited to reclaim the 32 ether sent to the pool for withdrawals
         {
@@ -235,11 +227,15 @@ contract SmallScenariosTest is TestSetup {
 
         vm.prank(owner);
         liquidityPoolInstance.processNodeExit(processedBidIds, slashingPenalties);
+
+        // 32 ETH enters the pool from the exited validator
+        vm.deal(address(liquidityPoolInstance), address(liquidityPoolInstance).balance + 32 ether);
+
         assertEq(liquidityPoolInstance.numValidators(), 0);
         
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.61083984375 ether);
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.305419921875 ether);
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 18.038427734375 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.312499999999999999 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.156249999999999999 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 0.000000000000000001 ether);
 
         /// ANOTHER VALIDATOR IS CREATED.
         startHoax(dan);
@@ -278,12 +274,12 @@ contract SmallScenariosTest is TestSetup {
         vm.startPrank(owner);
 
         assertEq(address(treasuryInstance).balance, 0 ether);
-        assertEq(liquidityPoolInstance.accruedStakingRewards(), 0.9546875 ether);
-        assertEq(address(liquidityPoolInstance).balance, 33 ether);
+        assertEq(liquidityPoolInstance.accruedStakingRewards(), 1 ether);
+        assertEq(address(liquidityPoolInstance).balance, 46.46875 ether);
         managerInstance.partialWithdraw(processedBidIds2[0], true, true, true);
-        assertEq(address(liquidityPoolInstance).balance, 33.0453125 ether);
+        assertEq(address(liquidityPoolInstance).balance, 46.5140625 ether);
         assertEq(address(treasuryInstance).balance, 0.025 ether);
-        assertEq(liquidityPoolInstance.accruedStakingRewards(), 0.909375 ether);
+        assertEq(liquidityPoolInstance.accruedStakingRewards(), 0.9546875 ether);
 
         vm.stopPrank();
     }
