@@ -28,8 +28,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     uint96[] public rewardsGlobalIndexPerTier;
     uint32   public rewardsGlobalIndexTime;
     uint32   public genesisTimestamp; // the timestamp when the meETH contract was deployed
-    uint16   public pointsBoostFactor; // +100% points if staking rewards are sacrificed
-    uint16   public pointsGrowthRate;
+    uint16   public pointsBoostFactor; // +X % points if staking rewards are sacrificed
+    uint16   public pointsGrowthRate; // (X / 100) kwei points earnigs per 1 meETH per day
 
     struct UserDeposit {
         uint128 amounts;
@@ -76,7 +76,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         genesisTimestamp = uint32(block.timestamp);
 
         pointsBoostFactor = 100;
-        pointsGrowthRate = 1;
+        pointsGrowthRate = 100;
     }
 
     function wrapEEth(uint256 _amount) external whenLiquidStakingOpen {
@@ -201,8 +201,12 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
        userData.pointsSnapshotTime = uint32(block.timestamp);
     }
 
-    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public {
+    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyOwner {
         pointsBoostFactor = _newPointsBoostFactor;
+    }
+
+    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public onlyOwner {
+        pointsGrowthRate = _newPointsGrowthRate;
     }
 
     function claimStakingRewards(address _account) public {
@@ -357,7 +361,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         uint256 elapsed = _until - _since;
         uint256 effectiveBalanceForEarningPoints = userDeposit.amounts + ((100 + pointsBoostFactor) * userDeposit.amountStakedForPoints) / 100;
-        uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate;
+        uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate / 100;
 
         // 0.001 ether   meETH earns 1     wei   points per day
         // == 1  ether   meETH earns 1     kwei  points per day
