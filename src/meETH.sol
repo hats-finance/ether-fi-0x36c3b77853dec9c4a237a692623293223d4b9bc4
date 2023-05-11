@@ -201,11 +201,11 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
        userData.pointsSnapshotTime = uint32(block.timestamp);
     }
 
-    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public {
+    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyOwner {
         pointsBoostFactor = _newPointsBoostFactor;
     }
 
-    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public {
+    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public onlyOwner {
         pointsGrowthRate = _newPointsGrowthRate;
     }
 
