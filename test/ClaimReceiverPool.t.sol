@@ -23,6 +23,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         setUpTests();
 
         vm.startPrank(owner);
+        
         adopterPool = new EarlyAdopterPool(
             address(rETH),
             address(wstETH),
@@ -40,7 +41,10 @@ contract ClaimReceiverPoolTest is TestSetup {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(regulationsManagerInstance));
+            address(regulationsManagerInstance),
+            0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6,
+            0xE592427A0AEce92De3Edee1F18E0157C05861564
+        );
     }
 
     function test_DepositFailsWithIncorrectMerkle() public {
@@ -92,6 +96,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         // Check if the staker starts earning points
         skip(1 days);
         assertEq(meEthInstance.pointOf(staker), points + 2 * kwei / 10); // 0.2 kwei
+        assertEq(claimReceiverPoolInstance.getClaimableTier(eapPoints), meEthInstance.tierForPoints(points));
 
         vm.expectRevert("Already Deposited");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);

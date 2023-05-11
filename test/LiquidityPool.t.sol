@@ -81,22 +81,23 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(alice, 2 ether);
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(alice.balance, 2 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(bob, 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 0);
         assertEq(bob.balance, 3 ether);
         vm.stopPrank();
     }
 
     function test_WithdrawLiquidityPoolFails() public {
+        vm.deal(address(liquidityPoolInstance), 3 ether);
         startHoax(alice);
         vm.expectRevert("Not enough eETH");
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(alice, 2 ether);
     }
 
     function test_WithdrawFailsNotInitializedToken() public {
@@ -104,7 +105,7 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(alice);
         vm.expectRevert();
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(alice, 2 ether);
     }
 
     function test_StakingManagerFailsNotInitializedToken() public {
@@ -118,11 +119,8 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_LiquidityPoolBatchDepositWithBidIds() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );
@@ -203,7 +201,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
         regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.setAccruedStakingReards(2 ether);
+        liquidityPoolInstance.setAccruedStakingRewards(2 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
@@ -230,11 +228,9 @@ contract LiquidityPoolTest is TestSetup {
     }
     
     function test_LiquidityPoolBatchRegisterValidators() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );
@@ -302,11 +298,9 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_ProcessNodeExit() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );
@@ -414,5 +408,34 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setEtherFiNodesManager(address(0));
 
         vm.stopPrank();
+    }
+
+    function test_LiquadStakingAccessControl() public {
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+
+        hoax(alice);
+        regulationsManagerInstance.confirmEligibility("Hash_Example");
+
+        vm.prank(owner);
+        stakingManagerInstance.enableWhitelist();
+
+        hoax(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.openLiquadStaking();
+
+        hoax(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeLiquadStaking();
+        
+        hoax(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        liquidityPoolInstance.withdraw(alice, 1 ether);
     }
 }
