@@ -275,7 +275,7 @@ contract SmallScenariosTest is TestSetup {
         /// ETHER.FI DOES A PARTIAL WITHDRAW ONCE A MONTH TO DISTRIBUTE AUCTION AND PROTOCOL FEES.
         skip(4 weeks);
 
-        vm.prank(owner);
+        vm.startPrank(owner);
 
         assertEq(address(treasuryInstance).balance, 0 ether);
         assertEq(liquidityPoolInstance.accruedStakingRewards(), 0.9546875 ether);
@@ -284,9 +284,8 @@ contract SmallScenariosTest is TestSetup {
         assertEq(address(liquidityPoolInstance).balance, 33.0453125 ether);
         assertEq(address(treasuryInstance).balance, 0.025 ether);
         assertEq(liquidityPoolInstance.accruedStakingRewards(), 0.909375 ether);
-        
-        
 
+        vm.stopPrank();
     }
 
     /*----- EAP MIGRATION SCENARIO -----*/
