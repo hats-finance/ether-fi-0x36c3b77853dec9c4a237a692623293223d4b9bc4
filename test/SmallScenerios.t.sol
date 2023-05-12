@@ -49,7 +49,7 @@ contract SmallScenariosTest is TestSetup {
 
         /// Alice confirms she is not a US or Canadian citizen and deposits 10 ETH into the pool.
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
         vm.stopPrank();
 
@@ -61,10 +61,10 @@ contract SmallScenariosTest is TestSetup {
 
         /// Bob then comes along, confirms he is not a US or Canadian citizen and deposits 5 ETH into the pool.
         startHoax(bob);
-        vm.expectRevert("User is not whitelisted");
-        liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
+        vm.expectRevert("Incorrect hash");
+        regulationsManagerInstance.confirmEligibility("INCORRECT HASH");
 
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
         vm.stopPrank();
 
@@ -102,7 +102,7 @@ contract SmallScenariosTest is TestSetup {
 
         /// Chad confirms he is not a US or Canadian citizen and deposits 17 ether into Pool
         startHoax(chad);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 17 ether}(chad, chadProof);
         vm.stopPrank();
 
@@ -176,7 +176,7 @@ contract SmallScenariosTest is TestSetup {
         // EtherFi deposits a validators worth (32 ETH) into the pool to allow users to withdraw
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 32 ether}(owner, ownerProof);
         vm.stopPrank();
         
@@ -239,7 +239,7 @@ contract SmallScenariosTest is TestSetup {
 
         /// ANOTHER VALIDATOR IS CREATED.
         startHoax(dan);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 32 ether}(dan, danProof);
         vm.stopPrank();
 

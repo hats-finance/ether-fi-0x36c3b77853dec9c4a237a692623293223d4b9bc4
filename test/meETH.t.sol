@@ -257,7 +257,7 @@ contract meEthTest is TestSetup {
         // Now, eETH is rebased with the staking rewards 1 eETH
         startHoax(owner);
         liquidityPoolInstance.setAccruedStakingRewards(1 ether);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         liquidityPoolInstance.deposit{value: 1 ether}(owner, ownerProof);
         assertEq(address(liquidityPoolInstance).balance, 5 ether);
         vm.stopPrank();

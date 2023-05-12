@@ -357,6 +357,7 @@ contract TestSetup is Test {
         nodeOperatorManagerInstance.addToWhitelist(elvis);
         nodeOperatorManagerInstance.addToWhitelist(greg);
         nodeOperatorManagerInstance.addToWhitelist(address(liquidityPoolInstance));
+        nodeOperatorManagerInstance.addToWhitelist(owner);
     }
 
     function _merkleSetupMigration() internal {
