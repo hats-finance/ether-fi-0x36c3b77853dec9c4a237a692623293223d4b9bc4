@@ -11,8 +11,8 @@ import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/LiquidityPool.sol";
 import "../src/ClaimReceiverPool.sol";
-import "../src/eETH.sol";
-import "../src/weETH.sol";
+import "../src/EETH.sol";
+import "../src/WeETH.sol";
 import "../src/RegulationsManager.sol";
 import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -47,8 +47,8 @@ contract DeployEtherFiSuiteScript is Script {
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
 
-    weETH public weEthImplementation;
-    weETH public weEthInstance;
+    WeETH public weEthImplementation;
+    WeETH public weEthInstance;
 
     AuctionManager public auctionManagerImplementation;
     AuctionManager public auctionManager;
@@ -65,8 +65,8 @@ contract DeployEtherFiSuiteScript is Script {
     LiquidityPool public liquidityPoolImplementation;
     LiquidityPool public liquidityPool;
 
-    eETH public eETHImplementation;
-    eETH public eETHInstance;
+    EETH public eETHImplementation;
+    EETH public eETHInstance;
 
     RegulationsManager public regulationsManagerInstance;
     RegulationsManager public regulationsManagerImplementation;
@@ -183,9 +183,9 @@ contract DeployEtherFiSuiteScript is Script {
         );
         liquidityPool.initialize(address(regulationsManagerInstance));
 
-        eETHImplementation = new eETH();
+        eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
-        eETHInstance = eETH(address(eETHProxy));
+        eETHInstance = EETH(address(eETHProxy));
         eETHInstance.initialize(payable(address(liquidityPool)));
         
         // Setup dependencies
@@ -209,9 +209,9 @@ contract DeployEtherFiSuiteScript is Script {
         liquidityPool.setStakingManager(address(stakingManager));
         liquidityPool.setEtherFiNodesManager(address(etherFiNodesManager));
 
-        weEthImplementation = new weETH();
+        weEthImplementation = new WeETH();
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
-        weEthInstance = weETH(address(weETHProxy));
+        weEthInstance = WeETH(address(weETHProxy));
         weEthInstance.initialize(payable(address(liquidityPool)), address(eETHInstance));
 
         vm.stopBroadcast();

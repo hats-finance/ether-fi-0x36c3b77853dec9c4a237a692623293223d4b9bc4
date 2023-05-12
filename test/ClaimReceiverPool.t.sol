@@ -13,7 +13,7 @@ contract ClaimReceiverPoolTest is TestSetup {
     address constant WETH = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
     address constant DAI = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
 
-    IwETH private weth = IwETH(WETH);
+    IWETH private weth = IWETH(WETH);
     IERC20 private dai = IERC20(DAI);
 
     EarlyAdopterPool public adopterPool;

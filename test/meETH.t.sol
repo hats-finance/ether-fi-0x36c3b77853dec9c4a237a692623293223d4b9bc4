@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
 
-contract meETHTest is TestSetup {
+contract MeETHTest is TestSetup {
 
     bytes32[] public aliceProof;
     bytes32[] public bobProof;

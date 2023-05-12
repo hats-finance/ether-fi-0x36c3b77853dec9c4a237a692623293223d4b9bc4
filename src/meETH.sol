@@ -15,7 +15,7 @@ import "./interfaces/IClaimReceiverPool.sol";
 import "forge-std/console.sol";
 
 
-contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
+contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
     IClaimReceiverPool public claimReceiverPool;
@@ -65,15 +65,15 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     receive() external payable {}
 
 
-    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress) external initializer {
-        require(_eEthAddress != address(0), "No zero addresses");
+    function initialize(address _eETHAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress) external initializer {
+        require(_eETHAddress != address(0), "No zero addresses");
         require(_liquidityPoolAddress != address(0), "No zero addresses");
         require(_claimReceiverPoolAddress != address(0), "No zero addresses");
         
         __Ownable_init();
         __UUPSUpgradeable_init();
 
-        eETH = IeETH(_eEthAddress);
+        eETH = IeETH(_eETHAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
         claimReceiverPool = IClaimReceiverPool(_claimReceiverPoolAddress);
         genesisTimestamp = uint32(block.timestamp);
