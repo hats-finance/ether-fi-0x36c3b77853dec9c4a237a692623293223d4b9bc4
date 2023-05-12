@@ -215,10 +215,13 @@ contract meEthTest is TestSetup {
         vm.startPrank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
         meEthInstance.updatePointsGrowthRate(12345);
+        vm.expectRevert("Ownable: caller is not the owner");
+        meEthInstance.updatePointsBoostFactor(12345);
         vm.stopPrank();
 
         vm.startPrank(owner);
         meEthInstance.updatePointsGrowthRate(12345);
+        meEthInstance.updatePointsBoostFactor(12345);
         vm.stopPrank();
     }
 

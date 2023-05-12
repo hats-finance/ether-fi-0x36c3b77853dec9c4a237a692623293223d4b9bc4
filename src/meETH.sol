@@ -470,11 +470,12 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint256 userPointsSnapshotTimestamp = userData.pointsSnapshotTime;
         // Get the timestamp for the recent tier snapshot
         uint256 tierSnapshotTimestamp = recentTierSnapshotTimestamp();
+        int256 timeBetweenSnapshots = int256(tierSnapshotTimestamp) - int256(userPointsSnapshotTimestamp);
 
         // Calculate the points earned by the account for the current tier
-        if (userPointsSnapshotTimestamp < tierSnapshotTimestamp - 28 days) {
+        if (timeBetweenSnapshots > 28 days) {
             return _pointsEarning(_account, tierSnapshotTimestamp - 28 days, tierSnapshotTimestamp);
-        } else if (userPointsSnapshotTimestamp < tierSnapshotTimestamp) {
+        } else if (timeBetweenSnapshots > 0) {
             return userData.nextTierPoints + _pointsEarning(_account, userPointsSnapshotTimestamp, tierSnapshotTimestamp);
         } else {
             return userData.curTierPoints;
