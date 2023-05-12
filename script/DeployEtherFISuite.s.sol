@@ -22,6 +22,9 @@ import "../test/TestERC20.sol";
 contract DeployEtherFiSuiteScript is Script {
     using Strings for string;
 
+    bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
+
+
     /*---- Storage variables ----*/
 
     TestERC20 public rETH;
