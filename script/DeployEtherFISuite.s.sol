@@ -214,6 +214,8 @@ contract DeployEtherFiSuiteScript is Script {
         weEthInstance = weEth(address(weETHProxy));
         weEthInstance.initialize(payable(address(liquidityPool)), address(eETH));
 
+        regulationsManagerInstance.initializeNewWhitelist(initialHash);
+        
         vm.stopBroadcast();
 
         suiteAddressesStruct = suiteAddresses({

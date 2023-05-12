@@ -14,12 +14,12 @@ contract meEthTest is TestSetup {
     function setUp() public {
         setUpTests();
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         eETHInstance.approve(address(meEthInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         eETHInstance.approve(address(meEthInstance), 1_000_000_000 ether);
         vm.stopPrank();
 

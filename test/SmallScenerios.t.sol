@@ -351,7 +351,7 @@ contract SmallScenariosTest is TestSetup {
             0
         );
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         claimReceiverPoolInstance.deposit{value: 1 ether}(
             0,
             0,
