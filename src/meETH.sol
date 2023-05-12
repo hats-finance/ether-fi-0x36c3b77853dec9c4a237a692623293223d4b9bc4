@@ -7,16 +7,16 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-import "./interfaces/IEETH.sol";
-import "./interfaces/IMEETH.sol";
+import "./interfaces/IeETH.sol";
+import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IClaimReceiverPool.sol";
 
 import "forge-std/console.sol";
 
 
-contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgradeable, IMEETH {
-    IEETH public eETH;
+contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
+    IeETH public eETH;
     ILiquidityPool public liquidityPool;
     IClaimReceiverPool public claimReceiverPool;
 
@@ -73,7 +73,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         __Ownable_init();
         __UUPSUpgradeable_init();
 
-        eETH = IEETH(_eEthAddress);
+        eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
         claimReceiverPool = IClaimReceiverPool(_claimReceiverPoolAddress);
         genesisTimestamp = uint32(block.timestamp);
@@ -230,7 +230,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
-    function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable, IMEETH) returns (bool) {
+    function transfer(address _recipient, uint256 _amount) external pure override(IERC20Upgradeable, ImeETH) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
 
@@ -239,7 +239,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return true;
     }
 
-    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IERC20Upgradeable, IMEETH) returns (bool) {
+    function transferFrom(address _sender, address _recipient, uint256 _amount) external pure override(IERC20Upgradeable, ImeETH) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
 
@@ -427,11 +427,11 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return sum;
     }
 
-    function totalSupply() public view override(IERC20Upgradeable, IMEETH) returns (uint256) {
+    function totalSupply() public view override(IERC20Upgradeable, ImeETH) returns (uint256) {
         return liquidityPool.amountForShare(totalShares());
     }
 
-    function balanceOf(address _account) public view override(IERC20Upgradeable, IMEETH) returns (uint256) {
+    function balanceOf(address _account) public view override(IERC20Upgradeable, ImeETH) returns (uint256) {
         UserData storage userData = _userData[_account];
         UserDeposit storage userDeposit = _userDeposits[_account];
         uint96[] memory globalIndex = calculateGlobalIndex();

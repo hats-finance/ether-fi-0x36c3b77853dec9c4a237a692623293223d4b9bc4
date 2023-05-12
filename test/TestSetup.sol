@@ -16,9 +16,9 @@ import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
-import "../src/EETH.sol";
-import "../src/weEth.sol";
-import "../src/meEth.sol";
+import "../src/eETH.sol";
+import "../src/weETH.sol";
+import "../src/meETH.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
@@ -77,11 +77,11 @@ contract TestSetup is Test {
     LiquidityPool public liquidityPoolImplementation;
     LiquidityPool public liquidityPoolInstance;
     
-    EETH public eETHImplementation;
-    EETH public eETHInstance;
+    eETH public eETHImplementation;
+    eETH public eETHInstance;
 
-    weEth public weEthImplementation;
-    weEth public weEthInstance;
+    weETH public weEthImplementation;
+    weETH public weEthInstance;
 
     meETH public meEthImplementation;
     meETH public meEthInstance;
@@ -228,23 +228,23 @@ contract TestSetup is Test {
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
 
-        eETHImplementation = new EETH();
+        eETHImplementation = new eETH();
         vm.expectRevert("Initializable: contract is already initialized");
         eETHImplementation.initialize(payable(address(liquidityPoolInstance)));
 
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
-        eETHInstance = EETH(address(eETHProxy));
+        eETHInstance = eETH(address(eETHProxy));
 
         vm.expectRevert("No zero addresses");
         eETHInstance.initialize(payable(address(0)));
         eETHInstance.initialize(payable(address(liquidityPoolInstance)));
 
-        weEthImplementation = new weEth();
+        weEthImplementation = new weETH();
         vm.expectRevert("Initializable: contract is already initialized");
         weEthImplementation.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
-        weEthInstance = weEth(address(weETHProxy));
+        weEthInstance = weETH(address(weETHProxy));
         vm.expectRevert("No zero addresses");
         weEthInstance.initialize(address(0), address(eETHInstance));
         vm.expectRevert("No zero addresses");

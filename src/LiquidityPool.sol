@@ -9,10 +9,10 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
-import "./interfaces/IEETH.sol";
+import "./interfaces/IeETH.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
-import "./interfaces/IMEETH.sol";
+import "./interfaces/ImeETH.sol";
 
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
@@ -20,11 +20,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IEETH public eETH; 
+    IeETH public eETH; 
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
-    IMEETH public meEth;
+    ImeETH public meEth;
 
     mapping(uint256 => bool) public validators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
@@ -204,7 +204,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param _eETH address of eETH contract
     function setTokenAddress(address _eETH) external onlyOwner {
         require(_eETH != address(0), "No zero addresses");
-        eETH = IEETH(_eETH);
+        eETH = IeETH(_eETH);
         emit TokenAddressChanged(_eETH);
     }
 
@@ -224,7 +224,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function setMeEth(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
-        meEth = IMEETH(_address);
+        meEth = ImeETH(_address);
     }
     
     //--------------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return verified;
     }
 
-    function _sharesForDepositAmount(uint256 _depositAmount) internal returns (uint256) {
+    function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;
         if (totalPooledEther == 0) {
             return 0;

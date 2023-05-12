@@ -11,8 +11,8 @@ import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/LiquidityPool.sol";
 import "../src/ClaimReceiverPool.sol";
-import "../src/EETH.sol";
-import "../src/weEth.sol";
+import "../src/eETH.sol";
+import "../src/weETH.sol";
 import "../src/RegulationsManager.sol";
 import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -47,8 +47,8 @@ contract DeployEtherFiSuiteScript is Script {
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
 
-    weEth public weEthImplementation;
-    weEth public weEthInstance;
+    weETH public weEthImplementation;
+    weETH public weEthInstance;
 
     AuctionManager public auctionManagerImplementation;
     AuctionManager public auctionManager;
@@ -65,8 +65,8 @@ contract DeployEtherFiSuiteScript is Script {
     LiquidityPool public liquidityPoolImplementation;
     LiquidityPool public liquidityPool;
 
-    EETH public eETHImplementation;
-    EETH public eETH;
+    eETH public eETHImplementation;
+    eETH public eETHInstance;
 
     RegulationsManager public regulationsManagerInstance;
     RegulationsManager public regulationsManagerImplementation;
@@ -183,10 +183,10 @@ contract DeployEtherFiSuiteScript is Script {
         );
         liquidityPool.initialize(address(regulationsManagerInstance));
 
-        eETHImplementation = new EETH();
+        eETHImplementation = new eETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
-        eETH = EETH(address(eETHProxy));
-        eETH.initialize(payable(address(liquidityPool)));
+        eETHInstance = eETH(address(eETHProxy));
+        eETHInstance.initialize(payable(address(liquidityPool)));
         
         // Setup dependencies
         nodeOperatorManager.setAuctionContractAddress(address(auctionManager));
@@ -205,14 +205,14 @@ contract DeployEtherFiSuiteScript is Script {
 
         claimReceiverPool.setLiquidityPool(address(liquidityPool));
 
-        liquidityPool.setTokenAddress(address(eETH));
+        liquidityPool.setTokenAddress(address(eETHInstance));
         liquidityPool.setStakingManager(address(stakingManager));
         liquidityPool.setEtherFiNodesManager(address(etherFiNodesManager));
 
-        weEthImplementation = new weEth();
+        weEthImplementation = new weETH();
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
-        weEthInstance = weEth(address(weETHProxy));
-        weEthInstance.initialize(payable(address(liquidityPool)), address(eETH));
+        weEthInstance = weETH(address(weETHProxy));
+        weEthInstance.initialize(payable(address(liquidityPool)), address(eETHInstance));
 
         vm.stopBroadcast();
 
@@ -229,7 +229,7 @@ contract DeployEtherFiSuiteScript is Script {
             regulationsManager: address(regulationsManagerInstance),
             claimReceiverPool: address(claimReceiverPool),
             liquidityPool: address(liquidityPool),
-            eETH: address(eETH),
+            eETH: address(eETHInstance),
             weEth: address(weEthInstance)
         });
 

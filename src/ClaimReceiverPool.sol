@@ -13,8 +13,8 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-import "./interfaces/IWeth.sol";
-import "./interfaces/IMEETH.sol";
+import "./interfaces/IwETH.sol";
+import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IRegulationsManager.sol";
 
@@ -53,11 +53,11 @@ contract ClaimReceiverPool is
     ISwapRouter public router;
 
     //Goerli Weth address used for unwrapping ERC20 Weth
-    IWETH public wethContract;
+    IwETH public wethContract;
 
     ILiquidityPool public liquidityPool;
     IRegulationsManager public regulationsManager;
-    IMEETH public meEth;
+    ImeETH public meEth;
 
     uint256[4] public __gap;
 
@@ -100,7 +100,7 @@ contract ClaimReceiverPool is
 
         regulationsManager = IRegulationsManager(_regulationsManager);
         router = ISwapRouter(_uniswapRouter);
-        wethContract = IWETH(_wethContract);
+        wethContract = IwETH(_wethContract);
         wEth = _wethContract;
         poolFee = 3_000;
         
@@ -170,7 +170,7 @@ contract ClaimReceiverPool is
 
     function setMeEth(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
-        meEth = IMEETH(_address);
+        meEth = ImeETH(_address);
     }
 
     function pauseContract() external onlyOwner {

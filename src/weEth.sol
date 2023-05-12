@@ -5,15 +5,15 @@ import "@openzeppelin-upgradeable/contracts/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
-import "./interfaces/IEETH.sol";
+import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
+contract weETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IEETH public eEth;
+    IeETH public eEth;
     ILiquidityPool public liquidityPool;
 
     uint256[48] __gap;
@@ -35,7 +35,7 @@ contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
         __ERC20Permit_init("EtherFi wrapped ETH");
         __UUPSUpgradeable_init();
         __Ownable_init();
-        eEth = IEETH(_eEth);
+        eEth = IeETH(_eEth);
         liquidityPool = ILiquidityPool(_liquidityPool);
     }
 
