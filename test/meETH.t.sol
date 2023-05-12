@@ -397,4 +397,26 @@ contract meEthTest is TestSetup {
         skip(1 days);
         assertEq(meEthInstance.pointOf(alice), 3 * 10 * kwei);
     }
+
+    function test_UpdatingPointsGrowthRate() public {
+        vm.deal(alice, 1 ether);
+
+        vm.startPrank(alice);
+        // Alice mints 1 meETH by wrapping 1 eETH starts earning points
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        meEthInstance.wrapEEth(1 ether);
+        vm.stopPrank();
+
+        // Alice earns 1 kwei per day by holding 1 meETH
+        skip(1 days);
+        assertEq(meEthInstance.pointOf(alice), 1 * kwei);
+
+        vm.startPrank(owner);
+        // The points growth rate decreased to 50 from 100
+        meEthInstance.updatePointsGrowthRate(50);
+        vm.stopPrank();
+
+        assertEq(meEthInstance.pointOf(alice), 1 * kwei / 2);
+    }
+
 }
