@@ -31,6 +31,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     uint16   public pointsBoostFactor; // +X % points if staking rewards are sacrificed
     uint16   public pointsGrowthRate; // (X / 100) kwei points earnigs per 1 meETH per day
 
+    uint256[18] __gap;
+
     struct UserDeposit {
         uint128 amounts;
         uint128 amountStakedForPoints;
