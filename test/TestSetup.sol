@@ -282,7 +282,9 @@ contract TestSetup is Test {
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMeETH(address(meEthInstance));
-        liquidityPoolInstance.openLiquadStaking();
+        liquidityPoolInstance.openLiquidStaking();
+
+        regulationsManagerInstance.initializeNewWhitelist("USA, CANADA");
 
         depGen = new DepositDataGeneration();
 

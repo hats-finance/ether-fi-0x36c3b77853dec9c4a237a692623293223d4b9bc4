@@ -13,16 +13,16 @@ contract RegulationsManagerTest is TestSetup {
         vm.startPrank(owner);
         regulationsManagerInstance.pauseContract();
         vm.expectRevert("Pausable: paused");
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         regulationsManagerInstance.unPauseContract();
         vm.stopPrank();
 
-        assertEq(regulationsManagerInstance.isEligible(0, alice), false);
+        assertEq(regulationsManagerInstance.isEligible(1, alice), false);
         
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
 
-        assertEq(regulationsManagerInstance.isEligible(0, alice), true);
+        assertEq(regulationsManagerInstance.isEligible(1, alice), true);
     }
 
     function test_RemoveFromWhitelistWorks() public {
@@ -42,43 +42,43 @@ contract RegulationsManagerTest is TestSetup {
         vm.stopPrank();
 
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
 
 
-        assertEq(regulationsManagerInstance.isEligible(0, alice), true);
+        assertEq(regulationsManagerInstance.isEligible(1, alice), true);
 
         vm.prank(owner);
         regulationsManagerInstance.removeFromWhitelist(alice);
 
-        assertEq(regulationsManagerInstance.isEligible(0, alice), false);
+        assertEq(regulationsManagerInstance.isEligible(1, alice), false);
 
         vm.prank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
 
-        assertEq(regulationsManagerInstance.isEligible(0, bob), true);
+        assertEq(regulationsManagerInstance.isEligible(1, bob), true);
 
         vm.prank(bob);
         regulationsManagerInstance.removeFromWhitelist(bob);
 
-        assertEq(regulationsManagerInstance.isEligible(0, bob), false);
+        assertEq(regulationsManagerInstance.isEligible(1, bob), false);
     }
 
-    function test_ResetWhitelistWorks() public {
+    function test_initializeNewWhitelistWorks() public {
         vm.startPrank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
-        regulationsManagerInstance.resetWhitelist();
-
-        assertEq(regulationsManagerInstance.whitelistVersion(), 0);
-
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-        vm.stopPrank();
-
-        assertEq(regulationsManagerInstance.isEligible(0, alice), true);
-
-        vm.prank(owner);
-        regulationsManagerInstance.resetWhitelist();
+        regulationsManagerInstance.initializeNewWhitelist("USA, CANADA");
 
         assertEq(regulationsManagerInstance.whitelistVersion(), 1);
+
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        vm.stopPrank();
+
+        assertEq(regulationsManagerInstance.isEligible(1, alice), true);
+
+        vm.prank(owner);
+        regulationsManagerInstance.initializeNewWhitelist("USA, CANADA, FRANCE");
+
+        assertEq(regulationsManagerInstance.whitelistVersion(), 2);
         assertEq(regulationsManagerInstance.isEligible(regulationsManagerInstance.whitelistVersion(), alice), false);
     }
 }

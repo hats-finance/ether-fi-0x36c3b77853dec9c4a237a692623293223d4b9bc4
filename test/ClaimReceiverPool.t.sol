@@ -52,7 +52,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
 
         vm.expectRevert("Verification failed");
         claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1, slippageLimit);
@@ -71,7 +71,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.expectRevert("User is not whitelisted");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility("USA, CANADA");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
@@ -81,12 +81,12 @@ contract ClaimReceiverPoolTest is TestSetup {
         assertEq(meEthInstance.balanceOf(staker), 0.2 ether);
 
         uint40 points = claimReceiverPoolInstance.convertEapPointsToLoyaltyPoints(eapPoints);
-        assertEq(meEthInstance.pointOf(staker), points);
+        assertEq(meEthInstance.pointsOf(staker), points);
         assertEq(meEthInstance.pointsSnapshotTimeOf(staker), uint32(block.timestamp));
 
         // Check if the staker starts earning points
         skip(1 days);
-        assertEq(meEthInstance.pointOf(staker), points + 2 * kwei / 10); // 0.2 kwei
+        assertEq(meEthInstance.pointsOf(staker), points + 2 * kwei / 10); // 0.2 kwei
         assertEq(claimReceiverPoolInstance.getClaimableTier(eapPoints), meEthInstance.tierForPoints(points));
 
         vm.expectRevert("Already Deposited");
