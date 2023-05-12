@@ -218,6 +218,18 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.balanceOf(bob), 2 ether + bobRescaledRewards - 2); // some rounding errors
     }
 
+    function test_OwnerPermissions() public {
+        vm.deal(alice, 1000 ether);
+        vm.startPrank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        meEthInstance.updatePointsGrowthRate(12345);
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        meEthInstance.updatePointsGrowthRate(12345);
+        vm.stopPrank();
+    }
+
     function test_SacrificeRewardsForPoints() public {
         vm.deal(alice, 2 ether);
         vm.deal(bob, 2 ether);

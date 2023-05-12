@@ -310,7 +310,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         }
     }
 
-    function updatePointsGrowthRate(uint256 newPointsGrowthRate) public {
+    function updatePointsGrowthRate(uint256 newPointsGrowthRate) onlyOwner public {
         pointsGrowthRate = newPointsGrowthRate;
     }
 
