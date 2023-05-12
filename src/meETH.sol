@@ -62,6 +62,9 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         _disableInitializers();
     }
 
+    receive() external payable {}
+
+
     function initialize(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress) external initializer {
         require(_eEthAddress != address(0), "No zero addresses");
         require(_liquidityPoolAddress != address(0), "No zero addresses");
@@ -131,9 +134,17 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function unwrapForEth(uint256 _amount) external {
         require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
-        unwrapForEEth(_amount);
 
-        liquidityPool.withdraw(msg.sender, _amount);
+        updatePoints(msg.sender);
+        claimStakingRewards(msg.sender);
+
+        _applyUnwrapPenalty(msg.sender);
+
+        _burn(msg.sender, _amount);
+        liquidityPool.withdraw(address(this), _amount);
+
+        (bool sent, ) = address(msg.sender).call{value: _amount}("");
+        require(sent, "Failed to send Ether");
     }
 
     function stakeForPoints(uint256 _amount) external {

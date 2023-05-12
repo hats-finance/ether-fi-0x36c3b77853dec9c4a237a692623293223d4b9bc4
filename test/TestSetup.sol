@@ -253,7 +253,7 @@ contract TestSetup is Test {
 
         meEthImplementation = new meETH();
         meETHProxy = new UUPSProxy(address(meEthImplementation), "");
-        meEthInstance = meETH(address(meETHProxy));
+        meEthInstance = meETH(payable(meETHProxy));
         meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(claimReceiverPoolInstance));
 
         // Setup dependencies
