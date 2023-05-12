@@ -49,12 +49,6 @@ contract ClaimReceiverPoolV2 is ClaimReceiverPool {
     }
 }
 
-contract ScoreManagerV2 is ScoreManager {
-    function isUpgraded() public view returns(bool){
-        return true;
-    }
-}
-
 contract NodeOperatorManagerV2 is NodeOperatorManager {
     function isUpgraded() public view returns(bool){
         return true;
@@ -64,7 +58,6 @@ contract NodeOperatorManagerV2 is NodeOperatorManager {
 contract UpgradeTest is TestSetup {
 
     AuctionManagerV2Test public auctionManagerV2Instance;
-    ScoreManagerV2 public scoreManagerV2Instance;
     ClaimReceiverPoolV2 public claimReceiverPoolV2Instance;
     BNFTV2 public BNFTV2Instance;
     TNFTV2 public TNFTV2Instance;
@@ -143,41 +136,14 @@ contract UpgradeTest is TestSetup {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(regulationsManagerInstance)
+            address(regulationsManagerInstance),
+            0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6,
+            0xE592427A0AEce92De3Edee1F18E0157C05861564
         );
         assertEq(claimReceiverPoolV2Instance.getImplementation(), address(claimReceiverV2Implementation));
 
         // Check that state is maintained
         assertEq(claimReceiverPoolV2Instance.isUpgraded(), true);
-    }
-
-    function test_CanUpgradeScoreManager() public {
-        bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
-
-        vm.prank(owner);
-        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);
-
-        assertEq(scoreManagerInstance.getImplementation(), address(scoreManagerImplementation));
-
-        ScoreManagerV2 scoreManagerV2Implementation = new ScoreManagerV2();
-        vm.stopPrank();
-        
-        vm.prank(owner);
-        scoreManagerInstance.upgradeTo(address(scoreManagerV2Implementation));
-        scoreManagerV2Instance = ScoreManagerV2(address(scoreManagerProxy));
-
-        vm.expectRevert("Initializable: contract is already initialized");
-        vm.startPrank(owner);
-        scoreManagerV2Instance.initialize();
-
-        assertEq(scoreManagerV2Instance.getImplementation(), address(scoreManagerV2Implementation));
-
-        // Check that state is maintained
-        assertEq(scoreManagerV2Instance.isUpgraded(), true);
     }
 
     function test_CanUpgradeBNFT() public {

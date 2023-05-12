@@ -9,10 +9,6 @@ import "./interfaces/IEETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
 contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
-    //--------------------------------------------------------------------------------------
-    //---------------------------------  STATE-VARIABLES  ----------------------------------
-    //--------------------------------------------------------------------------------------
-
     ILiquidityPool public liquidityPool;
 
     uint256 public totalShares;
@@ -21,36 +17,8 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
 
     uint256[46] __gap;
 
-    //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-    //--------------------------------------------------------------------------------------
-
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    /**
-     * @return the name of the token.
-     */
-    function name() public pure returns (string memory) {
-        return "ether.fi ETH";
-    }
-
-    /**
-     * @return the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public pure returns (string memory) {
-        return "eETH";
-    }
-
-    /**
-     * @return the number of decimals for getting user representation of a token amount.
-     */
-    function decimals() public pure returns (uint8) {
-        return 18;
-    }
+    // [STATE-CHANGING FUNCTIONS]
+    constructor() { _disableInitializers(); }
 
     function initialize(address _liquidityPool) external initializer {
         require(_liquidityPool != address(0), "No zero addresses");
@@ -68,16 +36,6 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
     function burnShares(address _user, uint256 _share) external onlyPoolContract {
         shares[_user] -= _share;
         totalShares -= _share;
-    }
-
-    // IERC20 functions
-
-    function totalSupply() public view returns (uint256) {
-        return liquidityPool.getTotalPooledEther();
-    }
-
-    function balanceOf(address _user) public view override(IEETH, IERC20Upgradeable) returns (uint256) {
-        return liquidityPool.getTotalEtherClaimOf(_user);
     }
 
     function transfer(address _recipient, uint256 _amount) external override(IEETH, IERC20Upgradeable) returns (bool) {
@@ -103,10 +61,7 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         return true;
     }
 
-    //--------------------------------------------------------------------------------------
-    //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
-    //--------------------------------------------------------------------------------------
-
+    // [INTERNAL FUNCTIONS] 
     function _transfer(address _sender, address _recipient, uint256 _amount) internal {
         uint256 _sharesToTransfer = liquidityPool.sharesForAmount(_amount);
         _transferShares(_sender, _recipient, _sharesToTransfer);
@@ -134,18 +89,24 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         address newImplementation
     ) internal override onlyOwner {}
 
-    //--------------------------------------------------------------------------------------
-    //------------------------------------  GETTERS  ---------------------------------------
-    //--------------------------------------------------------------------------------------
+    // [GETTERS]
+    function name() public pure returns (string memory) { return "ether.fi ETH"; }
+    function symbol() public pure returns (string memory) { return "eETH"; }
+    function decimals() public pure returns (uint8) { return 18; }
+
+    function totalSupply() public view returns (uint256) {
+        return liquidityPool.getTotalPooledEther();
+    }
+
+    function balanceOf(address _user) public view override(IEETH, IERC20Upgradeable) returns (uint256) {
+        return liquidityPool.getTotalEtherClaimOf(_user);
+    }
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
 
-    //--------------------------------------------------------------------------------------
-    //-----------------------------------  MODIFIERS  --------------------------------------
-    //--------------------------------------------------------------------------------------
-
+    // [MODIFIERS]
     modifier onlyPoolContract() {
         require(msg.sender == address(liquidityPool), "Only pool contract function");
         _;

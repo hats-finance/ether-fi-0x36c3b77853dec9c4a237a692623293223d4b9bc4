@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 import "./TestSetup.sol";
-import "../src/interfaces/IScoreManager.sol";
 
 contract ClaimReceiverPoolTest is TestSetup {
     //goerli addresses
@@ -41,7 +40,10 @@ contract ClaimReceiverPoolTest is TestSetup {
             address(wstETH),
             address(sfrxEth),
             address(cbEth),
-            address(regulationsManagerInstance));
+            address(regulationsManagerInstance),
+            0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6,
+            0xE592427A0AEce92De3Edee1F18E0157C05861564
+        );
     }
 
     function test_DepositFailsWithIncorrectMerkle() public {
@@ -63,15 +65,7 @@ contract ClaimReceiverPoolTest is TestSetup {
     function test_MigrateWorksCorrectly() public {
         address staker = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
-
-        vm.prank(owner);
-
-        assertEq(scoreManagerInstance.scores(0, staker), 0);
-        assertEq(scoreManagerInstance.totalScores(0), 0);
-
-        assertEq(scoreManagerInstance.scores(0, staker),0);
-        assertEq(scoreManagerInstance.totalScores(0), 0);
-
+        
         startHoax(staker);
         uint256 eapPoints = 652_000_000_000;
         vm.expectRevert("User is not whitelisted");
