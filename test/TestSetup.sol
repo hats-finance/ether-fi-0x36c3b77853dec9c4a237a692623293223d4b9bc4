@@ -281,7 +281,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
-        liquidityPoolInstance.setMeEth(address(meEthInstance));
+        liquidityPoolInstance.setMeETH(address(meEthInstance));
         liquidityPoolInstance.openLiquadStaking();
 
         depGen = new DepositDataGeneration();

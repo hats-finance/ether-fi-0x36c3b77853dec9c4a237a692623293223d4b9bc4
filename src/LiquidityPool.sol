@@ -24,7 +24,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
-    ImeETH public meEth;
+    ImeETH public meETH;
 
     mapping(uint256 => bool) public validators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
@@ -222,9 +222,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
-    function setMeEth(address _address) external onlyOwner {
+    function setMeETH(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
-        meEth = ImeETH(_address);
+        meETH = ImeETH(_address);
     }
     
     //--------------------------------------------------------------------------------------
@@ -233,7 +233,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function isDepositToInternalContract(address _address) internal view returns (bool) {
         bool verified = false;
-        if (_address == address(meEth)) {
+        if (_address == address(meETH)) {
             verified = true;
         }
         return verified;
