@@ -291,7 +291,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMeEth(address(meEthInstance));
-        liquidityPoolInstance.openLiquadStaking();
+        liquidityPoolInstance.openLiquidStaking();
 
         scoreManagerInstance.setCallerStatus(address(liquidityPoolInstance), true);
         scoreManagerInstance.addNewScoreType("Early Adopter Pool");

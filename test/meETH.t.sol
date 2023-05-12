@@ -346,7 +346,7 @@ contract meEthTest is TestSetup {
         liquidityPoolInstance.withdraw(alice, 1 ether);
     }
 
-    function test_LiquadStakingAccessControl() public {
+    function test_LiquidStakingAccessControl() public {
         vm.deal(alice, 2 ether);
         vm.deal(bob, 2 ether);
 
@@ -355,20 +355,20 @@ contract meEthTest is TestSetup {
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
 
         vm.prank(owner);
-        liquidityPoolInstance.closeLiquadStaking();
+        liquidityPoolInstance.closeLiquidStaking();
 
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
         meEthInstance.wrap(2 ether);
 
         vm.prank(owner);
-        liquidityPoolInstance.openLiquadStaking();
+        liquidityPoolInstance.openLiquidStaking();
 
         vm.prank(alice);
         meEthInstance.wrap(2 ether);
 
         vm.prank(owner);
-        liquidityPoolInstance.closeLiquadStaking();
+        liquidityPoolInstance.closeLiquidStaking();
 
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
