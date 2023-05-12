@@ -387,9 +387,8 @@ contract meEthTest is TestSetup {
         vm.deal(alice, 1 ether);
 
         vm.startPrank(alice);
-        // Alice mints 1 meETH by wrapping 1 eETH starts earning points
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
-        meEthInstance.wrapEEth(1 ether);
+        // Alice mints 1 meETH by wrapping 1 ETH starts earning points
+        meEthInstance.wrapEth{value: 1 ether}(alice, aliceProof);
         vm.stopPrank();
 
         // Alice earns 1 kwei per day by holding 1 meETH
