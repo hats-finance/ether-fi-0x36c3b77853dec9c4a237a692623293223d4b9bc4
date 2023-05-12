@@ -65,7 +65,6 @@ contract ClaimReceiverPool is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event TransferCompleted();
     event MerkleUpdated(bytes32, bytes32);
     event FundsMigrated(address user, uint256 amount, uint256 eapPoints, uint40 loyaltyPoints);
 
@@ -244,7 +243,5 @@ contract ClaimReceiverPool is
         amountOut = router.exactInputSingle(params);
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }
