@@ -52,7 +52,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.expectRevert("Verification failed");
         claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1, slippageLimit);
@@ -71,7 +71,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.expectRevert("User is not whitelisted");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
