@@ -410,10 +410,10 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
     }
 
-    function test_LiquadStakingAccessControl() public {
+    function test_LiquidStakingAccessControl() public {
 
         vm.prank(owner);
-        liquidityPoolInstance.closeLiquadStaking();
+        liquidityPoolInstance.closeLiquidStaking();
 
         hoax(alice);
         regulationsManagerInstance.confirmEligibility("USA, CANADA");
@@ -426,13 +426,13 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
 
         vm.prank(owner);
-        liquidityPoolInstance.openLiquadStaking();
+        liquidityPoolInstance.openLiquidStaking();
 
         hoax(alice);
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
 
         vm.prank(owner);
-        liquidityPoolInstance.closeLiquadStaking();
+        liquidityPoolInstance.closeLiquidStaking();
         
         hoax(alice);
         vm.expectRevert("Liquid staking functions are closed");

@@ -184,7 +184,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     // It also accumulates the user's points earned for the next tier, and updates their tier points snapshot accordingly.
     function updatePoints(address _account) public {
         UserData storage userData = _userData[_account];
-        uint256 userPointsSnapshotTimestamp =userData.pointsSnapshotTime;
+        uint256 userPointsSnapshotTimestamp = userData.pointsSnapshotTime;
         if (userPointsSnapshotTimestamp == block.timestamp) {
             return;
         }
@@ -195,20 +195,21 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         // Get the timestamp for the current tier snapshot
         uint256 tierSnapshotTimestamp = recentTierSnapshotTimestamp();
+        int256 timeBetweenSnapshots = int256(tierSnapshotTimestamp) - int256(userPointsSnapshotTimestamp);
 
         // Calculate the points earned by the account for the current and next tiers
-        if (userPointsSnapshotTimestamp < tierSnapshotTimestamp - 28 days) {
+        if (timeBetweenSnapshots > 28 days) {
            userData.curTierPoints = _pointsEarning(_account, tierSnapshotTimestamp - 28 days, tierSnapshotTimestamp);
            userData.nextTierPoints = _pointsEarning(_account, tierSnapshotTimestamp, block.timestamp);
-        } else if (userPointsSnapshotTimestamp < tierSnapshotTimestamp) {
-           userData.curTierPoints =userData.nextTierPoints + _pointsEarning(_account, userPointsSnapshotTimestamp, tierSnapshotTimestamp);
+        } else if (timeBetweenSnapshots > 0) {
+           userData.curTierPoints = userData.nextTierPoints + _pointsEarning(_account, userPointsSnapshotTimestamp, tierSnapshotTimestamp);
            userData.nextTierPoints = _pointsEarning(_account, tierSnapshotTimestamp, block.timestamp);
         } else {
            userData.nextTierPoints += _pointsEarning(_account, userPointsSnapshotTimestamp, block.timestamp);
         }
 
         // Update the user's score snapshot
-       userData.pointsSnapshot = pointOf(_account);
+       userData.pointsSnapshot = pointsOf(_account);
        userData.pointsSnapshotTime = uint32(block.timestamp);
     }
 
@@ -257,7 +258,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         require(_account != address(0), "MINT_TO_THE_ZERO_ADDRESS");
         uint256 share = liquidityPool.sharesForAmount(_amount);
         uint256 tier = tierOf(msg.sender);
-        
+
         _incrementUserDeposit(_account, _amount, 0);
         _incrementTierDeposit(tier, _amount, share);
     }
@@ -443,7 +444,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return amount + rewards + amountStakedForPoints;
     }
 
-    function pointOf(address _account) public view returns (uint40) {
+    function pointsOf(address _account) public view returns (uint40) {
         UserData storage userData = _userData[_account];
         uint40 points = userData.pointsSnapshot;
         uint40 pointsEarning = _pointsEarning(_account, userData.pointsSnapshotTime, block.timestamp);
@@ -469,11 +470,12 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint256 userPointsSnapshotTimestamp = userData.pointsSnapshotTime;
         // Get the timestamp for the recent tier snapshot
         uint256 tierSnapshotTimestamp = recentTierSnapshotTimestamp();
+        int256 timeBetweenSnapshots = int256(tierSnapshotTimestamp) - int256(userPointsSnapshotTimestamp);
 
         // Calculate the points earned by the account for the current tier
-        if (userPointsSnapshotTimestamp < tierSnapshotTimestamp - 28 days) {
+        if (timeBetweenSnapshots > 28 days) {
             return _pointsEarning(_account, tierSnapshotTimestamp - 28 days, tierSnapshotTimestamp);
-        } else if (userPointsSnapshotTimestamp < tierSnapshotTimestamp) {
+        } else if (timeBetweenSnapshots > 0) {
             return userData.nextTierPoints + _pointsEarning(_account, userPointsSnapshotTimestamp, tierSnapshotTimestamp);
         } else {
             return userData.curTierPoints;

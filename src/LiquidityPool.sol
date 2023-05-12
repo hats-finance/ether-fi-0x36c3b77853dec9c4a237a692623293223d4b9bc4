@@ -150,12 +150,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     // @notice Allow interactions with the eEth token
-    function openLiquadStaking() external onlyOwner {
+    function openLiquidStaking() external onlyOwner {
         eEthliquidStakingOpened = true;
     }
 
     // @notice Disallow interactions with the eEth token
-    function closeLiquadStaking() external onlyOwner {
+    function closeLiquidStaking() external onlyOwner {
         eEthliquidStakingOpened = false;
     }
 
