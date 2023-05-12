@@ -9,7 +9,7 @@ interface IMEETH {
     function totalShares() external view returns (uint256);
 
     function balanceOf(address _user) external view returns (uint256);
-    function pointOf(address _account) external view returns (uint40);
+    function pointsOf(address _account) external view returns (uint40);
     function pointsSnapshotTimeOf(address _account) external view returns (uint32);
 
     function tierForPoints(uint40 _points) external view returns (uint8);

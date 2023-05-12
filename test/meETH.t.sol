@@ -49,25 +49,25 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.balanceOf(alice), 2 ether);
 
         // Alice's points start from 0
-        assertEq(meEthInstance.pointOf(alice), 0);
+        assertEq(meEthInstance.pointsOf(alice), 0);
 
         // Alice's points grow...
         skip(1 days);
-        assertEq(meEthInstance.pointOf(alice), 2 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 2 * kwei);
 
         // Alice unwraps 1 meETH to 1eETH
         meEthInstance.unwrap(1 ether);
-        assertEq(meEthInstance.pointOf(alice), 2 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 2 * kwei);
 
         // Alice keeps earnings points with the remaining 1 meETH
         skip(1 days);
-        assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 2 * kwei + 1 * kwei);
         skip(1 days);
-        assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei * 2);
+        assertEq(meEthInstance.pointsOf(alice), 2 * kwei + 1 * kwei * 2);
 
         // Alice unwraps the whole remaining meETH, but the points remain the same
         meEthInstance.unwrap(1 ether);
-        assertEq(meEthInstance.pointOf(alice), 2 * kwei + 1 * kwei * 2);
+        assertEq(meEthInstance.pointsOf(alice), 2 * kwei + 1 * kwei * 2);
         vm.stopPrank();
     }
 
@@ -82,23 +82,23 @@ contract meEthTest is TestSetup {
         // (1 gwei = 10^9)
         // Alice earns 1 gwei points a day
         skip(1 days);
-        assertEq(meEthInstance.pointOf(alice), 1 gwei);
+        assertEq(meEthInstance.pointsOf(alice), 1 gwei);
 
         // Alice earns 1000 gwei points for 1000 days (~= 3 years)
         // Note taht 1000 gwei = 10 ** 12 gwei
         skip(999 days);
-        assertEq(meEthInstance.pointOf(alice), 1000 gwei);
+        assertEq(meEthInstance.pointsOf(alice), 1000 gwei);
 
         // However, the points' maximum value is (2^40 - 1) and do not grow further
         // This is practically large enough, I believe
         skip(1000 days);
-        assertEq(meEthInstance.pointOf(alice), type(uint40).max);
+        assertEq(meEthInstance.pointsOf(alice), type(uint40).max);
 
         skip(1000 days);
-        assertEq(meEthInstance.pointOf(alice), type(uint40).max);
+        assertEq(meEthInstance.pointsOf(alice), type(uint40).max);
 
         skip(1000 days);
-        assertEq(meEthInstance.pointOf(alice), type(uint40).max);
+        assertEq(meEthInstance.pointsOf(alice), type(uint40).max);
 
         vm.stopPrank();
     }
@@ -118,7 +118,7 @@ contract meEthTest is TestSetup {
         // Alice wraps 1 eETH to 1 meEth
         meEthInstance.wrap(1 ether);
 
-        assertEq(meEthInstance.pointOf(alice), 0);
+        assertEq(meEthInstance.pointsOf(alice), 0);
         assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 0);
         assertEq(meEthInstance.claimableTier(alice), 0);
 
@@ -126,7 +126,7 @@ contract meEthTest is TestSetup {
         // But, the earned points are not eligible for the membership tier during that period
         // Those points will become eligible to claim the tier during the next period
         skip(27 days);
-        assertEq(meEthInstance.pointOf(alice), 27 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 27 * kwei);
         assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 0);
         assertEq(meEthInstance.claimableTier(alice), 0);
         assertEq(meEthInstance.tierOf(alice), 0);
@@ -135,7 +135,7 @@ contract meEthTest is TestSetup {
         // Now, after a month (= 28 days), Alice's earned points are eligible for the membership tier
         // Alice's claimable tier is 2 while the current tier is still 0
         skip(1 days);
-        assertEq(meEthInstance.pointOf(alice), 28 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 28 * kwei);
         assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 28 * kwei);
         assertEq(meEthInstance.claimableTier(alice), 2);
         assertEq(meEthInstance.tierOf(alice), 0);
@@ -151,7 +151,7 @@ contract meEthTest is TestSetup {
 
         // The points didn't get penalized by unwrapping
         // But the tier get downgraded from Tier 2 to Tier 1
-        assertEq(meEthInstance.pointOf(alice), 28 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 28 * kwei);
         assertEq(meEthInstance.tierOf(alice), 1);
     }
 
@@ -179,7 +179,7 @@ contract meEthTest is TestSetup {
 
         skip(28 days);
         // points earnings are based on the initial deposit; not on the rewards
-        assertEq(meEthInstance.pointOf(alice), 28 * 0.5 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 28 * 0.5 * kwei);
         assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 28 * 0.5 * kwei);
         assertEq(meEthInstance.claimableTier(alice), 1);
         assertEq(meEthInstance.tierOf(alice), 0);
@@ -246,8 +246,8 @@ contract meEthTest is TestSetup {
         // Alice's 1 meETH earns 1 kwei points a day
         // Alice's 1 meETH staked for points earns 2 kwei points a day (which is twice larger)
         skip(1 days);
-        assertEq(meEthInstance.pointOf(alice), 1 * kwei + 2 * kwei);
-        assertEq(meEthInstance.pointOf(bob),   2 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 1 * kwei + 2 * kwei);
+        assertEq(meEthInstance.pointsOf(bob),   2 * kwei);
         
         // Now, eETH is rebased with the staking rewards 1 eETH
         vm.startPrank(owner);

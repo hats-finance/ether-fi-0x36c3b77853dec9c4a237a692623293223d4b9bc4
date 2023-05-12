@@ -87,12 +87,12 @@ contract ClaimReceiverPoolTest is TestSetup {
         assertEq(meEthInstance.balanceOf(staker), 0.2 ether);
 
         uint40 points = claimReceiverPoolInstance.convertEapPointsToLoyaltyPoints(eapPoints);
-        assertEq(meEthInstance.pointOf(staker), points);
+        assertEq(meEthInstance.pointsOf(staker), points);
         assertEq(meEthInstance.pointsSnapshotTimeOf(staker), uint32(block.timestamp));
 
         // Check if the staker starts earning points
         skip(1 days);
-        assertEq(meEthInstance.pointOf(staker), points + 2 * kwei / 10); // 0.2 kwei
+        assertEq(meEthInstance.pointsOf(staker), points + 2 * kwei / 10); // 0.2 kwei
         assertEq(claimReceiverPoolInstance.getClaimableTier(eapPoints), meEthInstance.tierForPoints(points));
 
         vm.expectRevert("Already Deposited");

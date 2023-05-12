@@ -263,7 +263,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     // It also accumulates the user's points earned for the next tier, and updates their tier points snapshot accordingly.
     function updatePoints(address _account) public {
         UserData storage userData = _userData[_account];
-        uint256 userPointsSnapshotTimestamp =userData.pointsSnapshotTime;
+        uint256 userPointsSnapshotTimestamp = userData.pointsSnapshotTime;
         if (userPointsSnapshotTimestamp == block.timestamp) {
             return;
         }
@@ -280,14 +280,14 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
            userData.curTierPoints = _pointsEarning(_account, tierSnapshotTimestamp - 28 days, tierSnapshotTimestamp);
            userData.nextTierPoints = _pointsEarning(_account, tierSnapshotTimestamp, block.timestamp);
         } else if (userPointsSnapshotTimestamp < tierSnapshotTimestamp) {
-           userData.curTierPoints =userData.nextTierPoints + _pointsEarning(_account, userPointsSnapshotTimestamp, tierSnapshotTimestamp);
+           userData.curTierPoints = userData.nextTierPoints + _pointsEarning(_account, userPointsSnapshotTimestamp, tierSnapshotTimestamp);
            userData.nextTierPoints = _pointsEarning(_account, tierSnapshotTimestamp, block.timestamp);
         } else {
            userData.nextTierPoints += _pointsEarning(_account, userPointsSnapshotTimestamp, block.timestamp);
         }
 
         // Update the user's score snapshot
-       userData.pointsSnapshot = pointOf(_account);
+       userData.pointsSnapshot = pointsOf(_account);
        userData.pointsSnapshotTime = uint32(block.timestamp);
     }
 
@@ -314,7 +314,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         pointsGrowthRate = newPointsGrowthRate;
     }
 
-    function pointOf(address _account) public view returns (uint40) {
+    function pointsOf(address _account) public view returns (uint40) {
         UserData storage userData = _userData[_account];
         uint40 points = userData.pointsSnapshot;
         uint40 pointsEarning = _pointsEarning(_account, userData.pointsSnapshotTime, block.timestamp);
@@ -386,8 +386,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     }
 
     function secondsTillNextSnapshot() public view returns (uint256) {
-        uint256 nextSnapshotTimestampp = recentTierSnapshotTimestamp() + 4 * 7 * 24 * 3600;
-        return nextSnapshotTimestampp - block.timestamp;
+        uint256 nextSnapshotTimestamp = recentTierSnapshotTimestamp() + 4 * 7 * 24 * 3600;
+        return nextSnapshotTimestamp - block.timestamp;
     }
 
     function recentTierSnapshotTimestamp() public view returns (uint256) {
