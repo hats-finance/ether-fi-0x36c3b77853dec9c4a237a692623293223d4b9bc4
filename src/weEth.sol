@@ -16,7 +16,7 @@ contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
     IEETH public eEth;
     ILiquidityPool public liquidityPool;
 
-    uint256[48] __gap;
+    uint256[9] __gap;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
