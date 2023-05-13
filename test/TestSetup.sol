@@ -336,8 +336,11 @@ contract TestSetup is Test {
         whiteListedAddresses.push(keccak256(abi.encodePacked(owner)));
 
         root = merkle.getRoot(whiteListedAddresses);
-        liquidityPoolInstance.setMerkleProof(merkle.getProof(whiteListedAddresses, 9));
         stakingManagerInstance.updateMerkleRoot(root);
+    }
+
+    function getWhitelistMerkleProof(uint256 index) internal returns (bytes32[] memory) {
+        return merkle.getProof(whiteListedAddresses, index);
     }
 
     function _initializeMembershipTiers() internal {

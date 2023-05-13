@@ -27,13 +27,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IMEETH public meEth;
 
     mapping(uint256 => bool) public validators;
+    uint256 public numValidators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
     uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
-
-    uint256 public numValidators;
     bool public eEthliquidStakingOpened;
-
-    bytes32[] private merkleProof;
 
     uint256[21] __gap;
 
@@ -41,8 +38,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event Received(address indexed sender, uint256 value);
-    event TokenAddressChanged(address indexed newAddress);
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, uint256 amount);
 
@@ -92,7 +87,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @notice withdraw from pool
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to user
     /// @param _amount the amount to withdraw from contract
-    /// TODO WARNING! This implementation does not take into consideration the score
     function withdraw(address _recipient, uint256 _amount) public whenLiquidStakingOpen {
         require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(_recipient) >= _amount, "Not enough eETH");
@@ -106,10 +100,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit Withdraw(_recipient, _amount);
     }
 
-    function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds) public onlyOwner returns (uint256[] memory) {
+    function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof) public onlyOwner returns (uint256[] memory) {
         uint256 amount = 32 ether * _numDeposits;
         require(address(this).balance >= amount, "Not enough balance");
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, merkleProof);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, _merkleProof);
 
         return newValidators;
     }
@@ -205,16 +199,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function setTokenAddress(address _eETH) external onlyOwner {
         require(_eETH != address(0), "No zero addresses");
         eETH = IEETH(_eETH);
-        emit TokenAddressChanged(_eETH);
     }
 
     function setStakingManager(address _address) external onlyOwner {
         require(_address != address(0), "No zero addresses");
         stakingManager = IStakingManager(_address);
-    }
-
-    function setMerkleProof(bytes32[] calldata _merkleProof) public onlyOwner {
-        merkleProof = _merkleProof;
     }
 
     function setEtherFiNodesManager(address _nodeManager) public onlyOwner {

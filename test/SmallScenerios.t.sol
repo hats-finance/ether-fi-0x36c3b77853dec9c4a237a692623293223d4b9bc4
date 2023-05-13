@@ -111,7 +111,7 @@ contract SmallScenariosTest is TestSetup {
 
         // EtherFi rolls up 32 ether into a vlaidator and mints the associated NFT's
         startHoax(owner);
-        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
+        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds, getWhitelistMerkleProof(9));
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
         assertEq(address(stakingManagerInstance).balance, 32 ether);
@@ -244,7 +244,7 @@ contract SmallScenariosTest is TestSetup {
         vm.stopPrank();
 
         startHoax(owner);
-        uint256[] memory processedBidIds2 = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
+        uint256[] memory processedBidIds2 = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds, getWhitelistMerkleProof(9));
 
         // Generate Deposit Data
         IStakingManager.DepositData[] memory depositDataArray2 = new IStakingManager.DepositData[](1);
