@@ -77,7 +77,7 @@ contract EETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
         vm.stopPrank();
 
@@ -93,7 +93,7 @@ contract EETHTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
         vm.stopPrank();
 
@@ -137,7 +137,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferWithAmount() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
         vm.stopPrank();
 
@@ -171,7 +171,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferWithZero() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
         vm.stopPrank();
 
@@ -223,7 +223,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferFromWithAmount() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
         vm.stopPrank();
 
@@ -255,7 +255,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferFromWithZero() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
         vm.stopPrank();
 
