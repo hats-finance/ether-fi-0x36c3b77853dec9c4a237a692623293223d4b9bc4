@@ -13,14 +13,14 @@ contract RegulationsManagerTest is TestSetup {
         vm.startPrank(owner);
         regulationsManagerInstance.pauseContract();
         vm.expectRevert("Pausable: paused");
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         regulationsManagerInstance.unPauseContract();
         vm.stopPrank();
 
         assertEq(regulationsManagerInstance.isEligible(1, alice), false);
         
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         assertEq(regulationsManagerInstance.isEligible(1, alice), true);
     }
@@ -42,7 +42,7 @@ contract RegulationsManagerTest is TestSetup {
         vm.stopPrank();
 
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
 
         assertEq(regulationsManagerInstance.isEligible(1, alice), true);
@@ -53,7 +53,7 @@ contract RegulationsManagerTest is TestSetup {
         assertEq(regulationsManagerInstance.isEligible(1, alice), false);
 
         vm.prank(bob);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         assertEq(regulationsManagerInstance.isEligible(1, bob), true);
 
@@ -66,11 +66,11 @@ contract RegulationsManagerTest is TestSetup {
     function test_initializeNewWhitelistWorks() public {
         vm.startPrank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
-        regulationsManagerInstance.initializeNewWhitelist("USA, CANADA");
+        regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
 
         assertEq(regulationsManagerInstance.whitelistVersion(), 1);
 
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         vm.stopPrank();
 
         assertEq(regulationsManagerInstance.isEligible(1, alice), true);

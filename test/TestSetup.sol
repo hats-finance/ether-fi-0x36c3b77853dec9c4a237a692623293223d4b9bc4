@@ -104,6 +104,8 @@ contract TestSetup is Test {
     Merkle merkleMigration2;
     bytes32 rootMigration2;
 
+    bytes32 termsAndConditionsHash = keccak256("TERMS AND CONDITIONS");
+
     bytes32[] public whiteListedAddresses;
     bytes32[] public dataForVerification;
     bytes32[] public dataForVerification2;
@@ -284,7 +286,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setMeEth(address(meEthInstance));
         liquidityPoolInstance.openLiquidStaking();
 
-        regulationsManagerInstance.initializeNewWhitelist("USA, CANADA");
+        regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
 
         depGen = new DepositDataGeneration();
 
@@ -357,6 +359,7 @@ contract TestSetup is Test {
         nodeOperatorManagerInstance.addToWhitelist(elvis);
         nodeOperatorManagerInstance.addToWhitelist(greg);
         nodeOperatorManagerInstance.addToWhitelist(address(liquidityPoolInstance));
+        nodeOperatorManagerInstance.addToWhitelist(owner);
     }
 
     function _merkleSetupMigration() internal {

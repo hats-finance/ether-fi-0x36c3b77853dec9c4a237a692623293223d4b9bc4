@@ -14,12 +14,12 @@ contract meEthTest is TestSetup {
     function setUp() public {
         setUpTests();
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         eETHInstance.approve(address(meEthInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         eETHInstance.approve(address(meEthInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
@@ -257,7 +257,7 @@ contract meEthTest is TestSetup {
         // Now, eETH is rebased with the staking rewards 1 eETH
         startHoax(owner);
         liquidityPoolInstance.setAccruedStakingRewards(1 ether);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(owner, ownerProof);
         assertEq(address(liquidityPoolInstance).balance, 5 ether);
         vm.stopPrank();
