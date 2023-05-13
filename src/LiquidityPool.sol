@@ -30,7 +30,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
     uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
 
-    uint64 public numValidators;
+    uint256 public numValidators;
     bool public eEthliquidStakingOpened;
 
     bytes32[] private merkleProof;
@@ -62,7 +62,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function initialize(address _regulationsManager) external initializer {
         require(_regulationsManager != address(0), "No zero addresses");
-        
+
         __Ownable_init();
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
@@ -102,7 +102,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "Failed to send Ether");
-        
+
         emit Withdraw(_recipient, _amount);
     }
 
@@ -115,17 +115,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function batchRegisterValidators(
-        bytes32 _depositRoot, 
+        bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData
-        ) public onlyOwner 
-    {  
+        ) public onlyOwner
+    {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             validators[validatorId] = true;
         }
-        numValidators += uint64(_validatorIds.length);
+        numValidators += _validatorIds.length;
     }
 
     // After the nodes are exited, delist them from the liquidity pool
@@ -137,7 +137,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             validators[validatorId] = false;
             totalSlashingPenalties += _slashingPenalties[i];
         }
-        numValidators -= uint64(_validatorIds.length);
+        numValidators -= _validatorIds.length;
         accruedSlashingPenalties -= totalSlashingPenalties;
     }
 
@@ -174,7 +174,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther();
-       
+
         if (totalPooledEther == 0) {
             return 0;
         }
@@ -186,7 +186,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (totalShares == 0) {
             return 0;
         }
-        return (_share * getTotalPooledEther()) / eETH.totalShares();
+        return (_share * getTotalPooledEther()) / totalShares;
     }
 
     /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
@@ -232,11 +232,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
 
     function isDepositToInternalContract(address _address) internal view returns (bool) {
-        bool verified = false;
-        if (_address == address(meEth)) {
-            verified = true;
-        }
-        return verified;
+        return _address == address(meEth);
     }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal returns (uint256) {
