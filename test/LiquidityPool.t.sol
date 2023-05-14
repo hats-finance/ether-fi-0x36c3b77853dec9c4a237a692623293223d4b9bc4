@@ -226,7 +226,7 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
-        vm.expectRevert("Update the accrued rewards first");
+        vm.expectRevert("Update the accrued ethers first");
         (sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
         assertEq(liquidityPoolInstance.accruedEther(), 0 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);

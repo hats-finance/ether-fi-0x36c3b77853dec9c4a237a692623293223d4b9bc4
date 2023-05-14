@@ -231,55 +231,6 @@ contract SmallScenariosTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.333333333333333333 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.166666666666666665 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 0.000000000000000001 ether);
-
-        if (false) {
-            /// ANOTHER VALIDATOR IS CREATED.
-            startHoax(dan);
-            regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-            liquidityPoolInstance.deposit{value: 32 ether}(dan, danProof);
-            vm.stopPrank();
-
-            startHoax(owner);
-            uint256[] memory processedBidIds2 = liquidityPoolInstance.batchDepositWithBidIds{value: 2 ether}(1, bidIds, getWhitelistMerkleProof(9));
-
-            // Generate Deposit Data
-            IStakingManager.DepositData[] memory depositDataArray2 = new IStakingManager.DepositData[](1);
-            etherFiNode = managerInstance.etherfiNodeAddress(processedBidIds2[0]);
-            root = depGen.generateDepositRoot(
-                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-                hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-                managerInstance.generateWithdrawalCredentials(etherFiNode),
-                32 ether
-            );
-
-            depositDataArray2[0] = IStakingManager
-                .DepositData({
-                    publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-                    signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-                    depositDataRoot: root,
-                    ipfsHashForEncryptedValidatorKey: "test_ipfs"
-                });
-
-            // Register the Validator
-            liquidityPoolInstance.batchRegisterValidators(_getDepositRoot(), processedBidIds2, depositDataArray2);
-            vm.stopPrank();
-
-            /// ETHER.FI DOES A PARTIAL WITHDRAW ONCE A MONTH TO DISTRIBUTE AUCTION AND PROTOCOL FEES.
-            skip(4 weeks);
-
-            vm.startPrank(owner);
-
-            assertEq(address(treasuryInstance).balance, 0 ether);
-            assertEq(liquidityPoolInstance.accruedEther(), 1 ether);
-            assertEq(address(liquidityPoolInstance).balance, 46.46875 ether);
-            managerInstance.partialWithdraw(processedBidIds2[0], true, true, true);
-            assertEq(address(liquidityPoolInstance).balance, 46.5140625 ether);
-            assertEq(address(treasuryInstance).balance, 0.025 ether);
-            assertEq(liquidityPoolInstance.accruedEther(), 0.9546875 ether);
-
-            vm.stopPrank();
-        }
-        
     }
 
     /*----- EAP MIGRATION SCENARIO -----*/

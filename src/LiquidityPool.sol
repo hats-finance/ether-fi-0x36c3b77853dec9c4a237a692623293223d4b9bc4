@@ -51,7 +51,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     receive() external payable {
-        require(accruedEther >= msg.value, "Update the accrued rewards first");
+        require(accruedEther >= msg.value, "Update the accrued ethers first");
         accruedEther -= msg.value;
     }
 
