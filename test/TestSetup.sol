@@ -284,7 +284,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMeEth(address(meEthInstance));
-        liquidityPoolInstance.openLiquidStaking();
+        liquidityPoolInstance.openEEthLiquidStaking();
 
         regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
 

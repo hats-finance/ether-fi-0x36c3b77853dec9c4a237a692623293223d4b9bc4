@@ -73,7 +73,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
         stakingManager.verifyWhitelisted(_user, _merkleProof);
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
-        require(_recipient == msg.sender || isDepositToInternalContract(_recipient), "");
+        require(_recipient == msg.sender || _recipient == address(meEth), "Wrong Recipient");
 
         uint256 share = _sharesForDepositAmount(msg.value);
         if (share == 0) {
@@ -106,8 +106,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32[] calldata _merkleProof
         ) payable public onlyOwner returns (uint256[] memory) {
         require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
+        require(address(this).balance >= 32 ether * _numDeposits, "Not enough balance");
+        
         uint256 amount = 32 ether * _numDeposits;
-        require(address(this).balance >= amount, "Not enough balance");
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, _merkleProof);
 
         uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
@@ -162,12 +163,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     // @notice Allow interactions with the eEth token
-    function openLiquidStaking() external onlyOwner {
+    function openEEthLiquidStaking() external onlyOwner {
         eEthliquidStakingOpened = true;
     }
 
     // @notice Disallow interactions with the eEth token
-    function closeLiquidStaking() external onlyOwner {
+    function closeEEthLiquidStaking() external onlyOwner {
         eEthliquidStakingOpened = false;
     }
 
@@ -186,7 +187,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther();
-
         if (totalPooledEther == 0) {
             return 0;
         }
@@ -238,10 +238,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function isDepositToInternalContract(address _address) internal view returns (bool) {
-        return _address == address(meEth);
-    }
-
     function _sharesForDepositAmount(uint256 _depositAmount) internal returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;
         if (totalPooledEther == 0) {
@@ -250,17 +246,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return (_depositAmount * eETH.totalShares()) / totalPooledEther;
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
-    }
+    function getImplementation() external view returns (address) {return _getImplementation();}
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------

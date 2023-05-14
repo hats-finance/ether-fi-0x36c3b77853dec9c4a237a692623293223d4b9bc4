@@ -233,7 +233,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
-    function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable, IMEETH) returns (bool) {
+    function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
 
@@ -242,7 +242,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return true;
     }
 
-    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IERC20Upgradeable, IMEETH) returns (bool) {
+    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
 
@@ -396,7 +396,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
             return;
         }
 
-        uint96[] memory globalIndex = calculateGlobalIndex();
+        uint96[] memory globalIndex = _calculateGlobalIndex();
 
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             uint256 shares = uint256(tierDeposits[i].shares);
@@ -405,6 +405,38 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
             tierData[i].rewardsGlobalIndex = globalIndex[i];
         }
         rewardsGlobalIndexTime = uint32(block.timestamp);
+    }
+
+    function _calculateGlobalIndex() internal view returns (uint96[] memory) {
+        uint256 sumTierRewards = 0;
+        uint256 sumWeightedTierRewards = 0;
+        uint96[] memory globalIndex = new uint96[](tierDeposits.length);
+        uint256[] memory weightedTierRewards = new uint256[](tierDeposits.length);
+
+        for (uint256 i = 0; i < weightedTierRewards.length; i++) {
+            uint256 tierRewards = liquidityPool.amountForShare(tierDeposits[i].shares) - tierDeposits[i].amounts;
+            uint256 weightedTierReward = tierData[i].weight * tierRewards;
+
+            weightedTierRewards[i] = weightedTierReward;
+            globalIndex[i] = tierData[i].rewardsGlobalIndex;
+
+            sumTierRewards += tierRewards;
+            sumWeightedTierRewards += weightedTierReward;
+        }
+
+        if (sumWeightedTierRewards > 0) {
+            for (uint256 i = 0; i < weightedTierRewards.length; i++) {
+                uint256 amountsEligibleForRewards = tierDeposits[i].amounts - tierData[i].amountStakedForPoints;
+                if (amountsEligibleForRewards > 0) {
+                    uint256 rescaledTierRewards = weightedTierRewards[i] * sumTierRewards / sumWeightedTierRewards;
+                    uint256 delta = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
+                    require(uint256(globalIndex[i]) + uint256(delta) <= type(uint96).max, "overflow");
+                    globalIndex[i] += uint96(delta);                    
+                }
+            }
+        }
+
+        return globalIndex;
     }
 
     // Degrade the user's tier to the lower one
@@ -437,7 +469,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function balanceOf(address _account) public view override(IERC20Upgradeable, IMEETH) returns (uint256) {
         UserData storage userData = _userData[_account];
         UserDeposit storage userDeposit = _userDeposits[_account];
-        uint96[] memory globalIndex = calculateGlobalIndex();
+        uint96[] memory globalIndex = _calculateGlobalIndex();
 
         uint256 amount = userDeposit.amounts;
         uint256 rewards = (globalIndex[userData.tier] - userData.rewardsLocalIndex) * amount / 1 ether;
@@ -484,38 +516,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         }
     }
 
-    function calculateGlobalIndex() public view returns (uint96[] memory) {
-        uint256 sumTierRewards = 0;
-        uint256 sumWeightedTierRewards = 0;
-        uint96[] memory globalIndex = new uint96[](tierDeposits.length);
-        uint256[] memory weightedTierRewards = new uint256[](tierDeposits.length);
-
-        for (uint256 i = 0; i < weightedTierRewards.length; i++) {
-            uint256 tierRewards = liquidityPool.amountForShare(tierDeposits[i].shares) - tierDeposits[i].amounts;
-            uint256 weightedTierReward = tierData[i].weight * tierRewards;
-
-            weightedTierRewards[i] = weightedTierReward;
-            globalIndex[i] = tierData[i].rewardsGlobalIndex;
-
-            sumTierRewards += tierRewards;
-            sumWeightedTierRewards += weightedTierReward;
-        }
-
-        if (sumWeightedTierRewards > 0) {
-            for (uint256 i = 0; i < weightedTierRewards.length; i++) {
-                uint256 amountsEligibleForRewards = tierDeposits[i].amounts - tierData[i].amountStakedForPoints;
-                if (amountsEligibleForRewards > 0) {
-                    uint256 rescaledTierRewards = weightedTierRewards[i] * sumTierRewards / sumWeightedTierRewards;
-                    uint256 delta = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
-                    require(uint256(globalIndex[i]) + uint256(delta) <= type(uint96).max, "overflow");
-                    globalIndex[i] += uint96(delta);                    
-                }
-            }
-        }
-
-        return globalIndex;
-    }
-
     function pointsSnapshotTimeOf(address _account) external view returns (uint32) {
         return _userData[_account].pointsSnapshotTime;
     }
@@ -539,7 +539,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return genesisTimestamp + i * monthInSeconds;
     }
 
-    function allowance(address _owner, address _spender) external view returns (uint256) {
+    function allowance(address _owner, address _spender) external view override(IERC20Upgradeable, IMEETH) returns (uint256) {
         return allowances[_owner][_spender];
     }
 
