@@ -431,6 +431,38 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return globalIndex;
     }
 
+    function _calculateGlobalIndex() internal view returns (uint96[] memory) {
+        uint256 sumTierRewards = 0;
+        uint256 sumWeightedTierRewards = 0;
+        uint96[] memory globalIndex = new uint96[](tierDeposits.length);
+        uint256[] memory weightedTierRewards = new uint256[](tierDeposits.length);
+
+        for (uint256 i = 0; i < weightedTierRewards.length; i++) {
+            uint256 tierRewards = liquidityPool.amountForShare(tierDeposits[i].shares) - tierDeposits[i].amounts;
+            uint256 weightedTierReward = tierData[i].weight * tierRewards;
+
+            weightedTierRewards[i] = weightedTierReward;
+            globalIndex[i] = tierData[i].rewardsGlobalIndex;
+
+            sumTierRewards += tierRewards;
+            sumWeightedTierRewards += weightedTierReward;
+        }
+
+        if (sumWeightedTierRewards > 0) {
+            for (uint256 i = 0; i < weightedTierRewards.length; i++) {
+                uint256 amountsEligibleForRewards = tierDeposits[i].amounts - tierData[i].amountStakedForPoints;
+                if (amountsEligibleForRewards > 0) {
+                    uint256 rescaledTierRewards = weightedTierRewards[i] * sumTierRewards / sumWeightedTierRewards;
+                    uint256 delta = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
+                    require(uint256(globalIndex[i]) + uint256(delta) <= type(uint96).max, "overflow");
+                    globalIndex[i] += uint96(delta);                    
+                }
+            }
+        }
+
+        return globalIndex;
+    }
+
     // Degrade the user's tier to the lower one
     function _applyUnwrapPenalty(address _account) internal {
         uint8 curTier = tierOf(_account);
