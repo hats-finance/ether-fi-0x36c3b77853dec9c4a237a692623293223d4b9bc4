@@ -29,7 +29,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     mapping(uint256 => bool) public validators;
     uint256 public numValidators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
-    uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
+    uint256 public accruedEther;                // total amounts of accrued ethers rewards + exited principals
     bool public eEthliquidStakingOpened;
 
     uint256[21] __gap;
@@ -51,8 +51,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     receive() external payable {
-        require(accruedStakingRewards >= msg.value, "Update the accrued rewards first");
-        accruedStakingRewards -= msg.value;
+        require(accruedEther >= msg.value, "Update the accrued rewards first");
+        accruedEther -= msg.value;
     }
 
     function initialize(address _regulationsManager) external initializer {
@@ -100,10 +100,19 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit Withdraw(_recipient, _amount);
     }
 
-    function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof) public onlyOwner returns (uint256[] memory) {
+    function batchDepositWithBidIds(
+        uint256 _numDeposits, 
+        uint256[] calldata _candidateBidIds, 
+        bytes32[] calldata _merkleProof
+        ) payable public onlyOwner returns (uint256[] memory) {
+        require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
         uint256 amount = 32 ether * _numDeposits;
         require(address(this).balance >= amount, "Not enough balance");
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, _merkleProof);
+
+        uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
+        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+        require(sent, "Failed to send Ether");
 
         return newValidators;
     }
@@ -125,14 +134,23 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // After the nodes are exited, delist them from the liquidity pool
     function processNodeExit(uint256[] calldata _validatorIds, uint256[] calldata _slashingPenalties) public onlyOwner {
         uint256 totalSlashingPenalties = 0;
+        uint256 totalPrincipals = 0;
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
+            uint256 slashingPenalty = _slashingPenalties[i];
             require(nodesManager.phase(validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED, "Incorrect Phase");
+            (, uint256 toTnft, uint256 toBnft,) = nodesManager.getFullWithdrawalPayouts(validatorId);
+
             validators[validatorId] = false;
             totalSlashingPenalties += _slashingPenalties[i];
+            totalPrincipals += (toTnft >= 30 ether) ? 30 ether : toTnft;
         }
+
         numValidators -= _validatorIds.length;
+        accruedEther += totalPrincipals;
         accruedSlashingPenalties -= totalSlashingPenalties;
+
+        nodesManager.fullWithdrawBatch(_validatorIds);
     }
 
     // @notice Send the exit reqeusts as the T-NFT holder
@@ -163,7 +181,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function getTotalPooledEther() public view returns (uint256) {
-        return (32 ether * numValidators) + accruedStakingRewards + address(this).balance - (accruedSlashingPenalties);
+        return (30 ether * numValidators) + accruedEther + address(this).balance - (accruedSlashingPenalties);
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
@@ -184,8 +202,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
-    function setAccruedStakingRewards(uint256 _amount) external onlyOwner {
-        accruedStakingRewards = _amount;
+    function setAccruedEther(uint256 _amount) external onlyOwner {
+        accruedEther = _amount;
     }
 
     /// @notice ether.fi protocol will be monitoring the status of validator nodes
