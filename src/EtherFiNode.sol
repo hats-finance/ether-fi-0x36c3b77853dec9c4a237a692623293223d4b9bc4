@@ -85,6 +85,10 @@ contract EtherFiNode is IEtherFiNode {
         phase = VALIDATOR_PHASE.BEING_SLASHED;
     }
 
+    function markFullyWithdrawn() external onlyEtherFiNodeManagerContract {
+        phase = VALIDATOR_PHASE.FULLY_WITHDRAWN;
+    }
+
     function receiveVestedRewardsForStakers()
         external
         payable

@@ -103,15 +103,16 @@ contract SmallScenariosTest is TestSetup {
         /// Chad confirms he is not a US or Canadian citizen and deposits 17 ether into Pool
         startHoax(chad);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 17 ether}(chad, chadProof);
+        liquidityPoolInstance.deposit{value: 15 ether}(chad, chadProof);
         vm.stopPrank();
 
-        // Chad's 17ETH + Alice's 10ETH + Bob's 5ETH
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 32 ether);
+        // Chad's 15 ETH + Alice's 10ETH + Bob's 5ETH
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
 
         // EtherFi rolls up 32 ether into a vlaidator and mints the associated NFT's
+        vm.deal(owner, 4 ether);
         startHoax(owner);
-        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds, getWhitelistMerkleProof(9));
+        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositWithBidIds{value: 2 ether}(1, bidIds, getWhitelistMerkleProof(9));
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
         assertEq(address(stakingManagerInstance).balance, 32 ether);
@@ -150,43 +151,48 @@ contract SmallScenariosTest is TestSetup {
         skip(1 days);
         
         startHoax(owner);
-        liquidityPoolInstance.setAccruedStakingRewards(1 ether);
+        liquidityPoolInstance.setAccruedEther(1 ether);
         vm.stopPrank();
 
-        // Total pooled ETH = 32 ETH in the validator + 1 ETH Staking rewards
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 33 ether);
+        // Total pooled ETH = 30 ETH in the validator + 1 ETH Staking rewards
+        // - Alice's 10 ETH -> 10 + 1 * (10/30) ETH = 10.33333
+        // - Bob's   5 ETH ->  5 + 1 * (5/30) ETH = 5.16666
+        // - Chad's 15 ETH -> 15 + 1 * (15/30) ETH = 15.5
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether);
         
         // Alice and Chad's deposits rebase 
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.3125 ether);
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 17.53125 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.333333333333333333 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 15.500000000000000000 ether);
 
         // Bob unwraps his weETH to see his rebasing rewards 
         assertEq(weEthInstance.balanceOf(bob), 5 ether);
         vm.prank(bob);
         weEthInstance.unwrap(5 ether);
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.15625 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.166666666666666665 ether);
         
         /// Chad wnats to withdraw his ETH from the pool.
-        /// He has a claimable balance of 17.53125 ETH but the Pool only has a balance of 0.0453125 ETH.
+        /// He has a claimable balance of 15.5 ETH but the Pool only has a balance of 0.0453125 ETH.
         /// EtherFi should make sure that there is sufficient liquidity in the pool to allow for withdrawals
         vm.expectRevert("Not enough ETH in the liquidity pool");
         vm.prank(chad);
-        liquidityPoolInstance.withdraw(chad, 17.53125 ether);
+        liquidityPoolInstance.withdraw(chad, 15.5 ether);
         
         // EtherFi deposits a validators worth (32 ETH) into the pool to allow users to withdraw
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 32 ether}(owner, ownerProof);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether + 32 ether);
         vm.stopPrank();
         
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 17.53125 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 15.5 ether);
         // Chad withdraws 
         vm.prank(chad);
-        liquidityPoolInstance.withdraw(chad, 17.53125 ether);
+        liquidityPoolInstance.withdraw(chad, 15.5 ether);
 
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 47.46875 ether);
-        assertEq(address(liquidityPoolInstance).balance, 14.46875 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 47.5 ether); // 63 - 15.5 = 47.5
+        assertEq(address(liquidityPoolInstance).balance, 16.5 ether); // 32 - 15.5 = 16.5
 
         // EtherFi sends an exit request for a node to be exited to reclaim the 32 ether sent to the pool for withdrawals
         {
@@ -194,47 +200,36 @@ contract SmallScenariosTest is TestSetup {
             liquidityPoolInstance.sendExitRequests(processedBidIds);
 
             /// Node exit takes a few days...
-            skip(2 days);
+            skip(10 days);
 
-            /// EtherFi procceses the node exit and withdraws rewards.
-            // Liquidity Pool is the TNFT holder so will get the TNFT rewards
-            // EtherFi will get the BNFT Rewards
-            // Bob will get the Operator rewards
+            // The node contract receives the ETH (principal + rewards) from the beacon chian
+            address node = managerInstance.etherfiNodeAddress(processedBidIds[0]);
+            uint256 totalStakingRewardsForOneEtherRewardsForTnft = 1 ether * uint256(100 * 32) / uint256(90 * 29);
+            vm.deal(address(node), address(node).balance + 32 ether + totalStakingRewardsForOneEtherRewardsForTnft);
 
+            // ether.fi procceses the node exit.
             uint32[] memory exitTimestamps = new uint32[](1);
             exitTimestamps[0] = uint32(block.timestamp);
-
-            uint256 poolBalBefore = address(liquidityPoolInstance).balance;
-            uint256 ownerBalBefore = owner.balance;
-            uint256 bobBalBefore = bob.balance;
-            uint256 treasuryBalBefore = address(treasuryInstance).balance;
-
-            (uint256 toOperator, uint256 toTNFT, uint256 toBNFT, uint256 toTreasury) = managerInstance.getRewardsPayouts(processedBidIds[0], true, false, true);
-
             managerInstance.processNodeExit(processedBidIds, exitTimestamps);
-            vm.stopPrank();
 
-            assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
-            assertEq(address(liquidityPoolInstance).balance, poolBalBefore + toTNFT);
-            assertEq(owner.balance, ownerBalBefore + toBNFT);
-            assertEq(bob.balance, bobBalBefore + toOperator);
-            assertEq(address(treasuryInstance).balance, treasuryBalBefore + toTreasury);
+            (uint256 toOperator, uint256 toTNFT, uint256 toBNFT, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(processedBidIds[0]);
+            assertEq(toTNFT, 30 ether + 1 ether - 1);
+
+            vm.stopPrank();
         }
 
-        // EtherFi delists the node from the Pool
+        vm.prank(owner);
+
+        // ether.fi process the node exit from the LP
         uint256[] memory slashingPenalties = new uint256[](1);
         slashingPenalties[0] = 0;
 
-        vm.prank(owner);
+        // (30 ETH + @ ETH) enters the pool from the ether.fi node contract
         liquidityPoolInstance.processNodeExit(processedBidIds, slashingPenalties);
 
-        // 32 ETH enters the pool from the exited validator
-        vm.deal(address(liquidityPoolInstance), address(liquidityPoolInstance).balance + 32 ether);
-
         assertEq(liquidityPoolInstance.numValidators(), 0);
-        
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.312499999999999999 ether);
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.156249999999999999 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.333333333333333333 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.166666666666666665 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 0.000000000000000001 ether);
     }
 

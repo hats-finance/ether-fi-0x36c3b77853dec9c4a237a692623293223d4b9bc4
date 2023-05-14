@@ -6,6 +6,8 @@ interface ILiquidityPool {
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) external payable;
     function withdraw(address _recipient, uint256 _amount) external payable;
 
+    function processNodeExit(uint256[] calldata _validatorIds, uint256[] calldata _slashingPenalties) external;
+
     function getTotalPooledEther() external view returns (uint256);
     function getTotalEtherClaimOf(address _user) external view returns (uint256);
     function sharesForAmount(uint256 _amount) external view returns (uint256);

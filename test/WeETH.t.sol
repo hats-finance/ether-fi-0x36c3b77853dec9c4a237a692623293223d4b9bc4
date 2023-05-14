@@ -140,7 +140,7 @@ contract WethETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingRewards(10 ether);
+        liquidityPoolInstance.setAccruedEther(10 ether);
         vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -166,7 +166,7 @@ contract WethETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingRewards(50 ether);
+        liquidityPoolInstance.setAccruedEther(50 ether);
         vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
