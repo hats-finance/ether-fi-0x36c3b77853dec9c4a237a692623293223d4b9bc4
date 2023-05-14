@@ -341,20 +341,20 @@ contract MeETHTest is TestSetup {
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
 
         vm.prank(owner);
-        liquidityPoolInstance.closeLiquidStaking();
+        liquidityPoolInstance.closeEEthLiquidStaking();
 
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
         meEthInstance.wrapEEth(2 ether);
 
         vm.prank(owner);
-        liquidityPoolInstance.openLiquidStaking();
+        liquidityPoolInstance.openEEthLiquidStaking();
 
         vm.prank(alice);
         meEthInstance.wrapEEth(2 ether);
 
         vm.prank(owner);
-        liquidityPoolInstance.closeLiquidStaking();
+        liquidityPoolInstance.closeEEthLiquidStaking();
 
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
