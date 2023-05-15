@@ -284,7 +284,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMeETH(address(meEthInstance));
-        liquidityPoolInstance.openLiquidStaking();
+        liquidityPoolInstance.openEEthLiquidStaking();
 
         regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
 
@@ -345,7 +345,7 @@ contract TestSetup is Test {
 
     function _initializeMembershipTiers() internal {
         for (uint256 i = 0; i < 5 ; i++) {
-            uint40 minimumPointsRequirement = uint40(i * 14 * 1 * kwei);
+            uint40 minimumPointsRequirement = uint40(i * 14);
             uint24 weight = uint24(i + 1);
             meEthInstance.addNewTier(minimumPointsRequirement, weight);
         }
