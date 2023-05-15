@@ -25,10 +25,9 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     mapping (address => UserData) public _userData;
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
-    uint32   public rewardsGlobalIndexTime;
     uint32   public genesisTime; // the timestamp when the meETH contract was deployed
-    uint16   public pointsBoostFactor; // +X % points if staking rewards are sacrificed
-    uint16   public pointsGrowthRate; // (X / 100) kwei points earnigs per 1 meETH per day
+    uint16   public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
+    uint16   public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
 
     uint256[23] __gap;
 
@@ -78,8 +77,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         claimReceiverPool = IClaimReceiverPool(_claimReceiverPoolAddress);
         genesisTime = uint32(block.timestamp);
 
-        pointsBoostFactor = 100;
-        pointsGrowthRate = 100;
+        pointsBoostFactor = 10000;
+        pointsGrowthRate = 10000;
     }
 
     function wrapEEth(uint256 _amount) external isEEthStakingOpen {
@@ -190,7 +189,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
             return;
         }
         if (userPointsSnapshotTimestamp == 0) {
-           userData.pointsSnapshotTime = uint32(block.timestamp);
+            userData.pointsSnapshotTime = uint32(block.timestamp);
             return;
         }
 
@@ -373,8 +372,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         }
 
         uint256 elapsed = _until - _since;
-        uint256 effectiveBalanceForEarningPoints = userDeposit.amounts + ((100 + pointsBoostFactor) * userDeposit.amountStakedForPoints) / 100;
-        uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate / 100;
+        uint256 effectiveBalanceForEarningPoints = userDeposit.amounts + ((10000 + pointsBoostFactor) * userDeposit.amountStakedForPoints) / 10000;
+        uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate / 10000;
 
         // 0.001 ether   meETH earns 1     wei   points per day
         // == 1  ether   meETH earns 1     kwei  points per day
@@ -391,19 +390,13 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     }
 
     function _updateGlobalIndex() internal {
-        if (rewardsGlobalIndexTime == block.timestamp) {
-            return;
-        }
-
         uint96[] memory globalIndex = _calculateGlobalIndex();
-
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             uint256 shares = uint256(tierDeposits[i].shares);
             uint256 amounts = liquidityPool.amountForShare(shares);
             tierDeposits[i].amounts = uint128(amounts);
             tierData[i].rewardsGlobalIndex = globalIndex[i];
         }
-        rewardsGlobalIndexTime = uint32(block.timestamp);
     }
 
     function _calculateGlobalIndex() internal view returns (uint96[] memory) {
