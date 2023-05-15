@@ -101,7 +101,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         claimStakingRewards(_account);
 
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
-
         _mint(_account, amount);
     }
 
@@ -114,9 +113,9 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         _initializeEarlyAdopterPoolUserPoints(_account, _points, amount);
         
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
-
         _mint(_account, amount);
         _updateGlobalIndex();
+
         uint8 tier = tierOf(_account);
         _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
@@ -142,10 +141,9 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         claimStakingRewards(msg.sender);
 
         _applyUnwrapPenalty(msg.sender);
-
         _burn(msg.sender, _amount);
-        liquidityPool.withdraw(address(this), _amount);
 
+        liquidityPool.withdraw(address(this), _amount);
         (bool sent, ) = address(msg.sender).call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
