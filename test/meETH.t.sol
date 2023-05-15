@@ -137,9 +137,9 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.tierOf(alice), 0);
 
         // Alice sees that she can claim her tier 2, which is higher than her current tier 0
-        // By calling 'updateTier', Alice's tier gets upgraded to the tier 2
+        // By calling 'claimTier', Alice's tier gets upgraded to the tier 2
         assertEq(meEthInstance.claimableTier(alice), 2);
-        meEthInstance.updateTier(alice);
+        meEthInstance.claimTier(alice);
         assertEq(meEthInstance.tierOf(alice), 2);
 
         // Alice unwraps 0.5 meETH (which is 50% of her meETH holdings)
@@ -179,7 +179,7 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.claimableTier(alice), 1);
         assertEq(meEthInstance.tierOf(alice), 0);
 
-        meEthInstance.updateTier(alice);
+        meEthInstance.claimTier(alice);
         assertEq(meEthInstance.tierOf(alice), 1);
         assertEq(meEthInstance.balanceOf(alice), 1 ether);
 
@@ -395,7 +395,7 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.pointsOf(alice), 1 * 10 * kwei);
         skip(1 days);
         assertEq(meEthInstance.pointsOf(alice), 2 * 10 * kwei);
-        meEthInstance.takePointsSnapshot(alice);
+        meEthInstance.claimPoints(alice);
         assertEq(meEthInstance.pointsOf(alice), 2 * 10 * kwei);
         skip(1 days);
         assertEq(meEthInstance.pointsOf(alice), 3 * 10 * kwei);
