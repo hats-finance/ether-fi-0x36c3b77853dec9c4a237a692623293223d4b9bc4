@@ -154,6 +154,8 @@ contract MeETHTest is TestSetup {
     function test_StakingRewards() public {
         vm.deal(alice, 0.5 ether);
 
+        skip(14 days);
+
         vm.startPrank(alice);
         // Alice deposits 0.5 ETH and mints 0.5 eETH.
         meEthInstance.wrapEth{value: 0.5 ether}(alice, aliceProof);
@@ -170,10 +172,10 @@ contract MeETHTest is TestSetup {
         // Check the blanace of Alice updated by the rebasing
         assertEq(meEthInstance.balanceOf(alice), 0.5 ether + 0.5 ether);
 
-        skip(28 days);
+        skip(14 days);
         // points earnings are based on the initial deposit; not on the rewards
-        assertEq(meEthInstance.pointsOf(alice), 28 * 0.5 * kwei);
-        assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 28 * 0.5 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 14 * 0.5 * kwei);
+        assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 14 * 0.5 * kwei);
         assertEq(meEthInstance.claimableTier(alice), 1);
         assertEq(meEthInstance.tierOf(alice), 0);
 
