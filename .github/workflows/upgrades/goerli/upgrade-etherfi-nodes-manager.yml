@@ -1,4 +1,4 @@
-name: upgrade-auction-manager
+name: upgrade-etherfi-nodes-manager
 
 on: workflow_dispatch
 
@@ -37,9 +37,9 @@ jobs:
         with:
           cmd: bash script/extractABI.sh
 
-      - name: Upgrade Auction Manager Contract
-        run: make update-goerli-auction-manager
-        id: update-goerli-auction-manager
+      - name: Upgrade Etherfi Nodes Manager Contract
+        run: make upgrade-goerli-etherfi-nodes-manager
+        id: upgrade-goerli-etherfi-nodes-manager
 
       - name: Get date
         id: get-date
