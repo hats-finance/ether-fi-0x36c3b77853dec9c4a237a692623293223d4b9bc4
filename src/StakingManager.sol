@@ -66,6 +66,7 @@ contract StakingManager is
         address indexed bNftOwner,
         address indexed tNftOwner,
         uint256 validatorId,
+        address etherfiNodeContractAddress,
         bytes validatorPubKey,
         string ipfsHashForEncryptedValidatorKey
     );
@@ -399,6 +400,7 @@ contract StakingManager is
             _bNftRecipient,
             _tNftRecipient,
             _validatorId,
+            nodesManagerIntefaceInstance.etherfiNodeAddress(_validatorId),
             _depositData.publicKey,
             _depositData.ipfsHashForEncryptedValidatorKey
         );
