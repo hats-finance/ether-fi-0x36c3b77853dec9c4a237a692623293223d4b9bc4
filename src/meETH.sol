@@ -54,7 +54,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     struct TierData {
         uint96 rewardsGlobalIndex;
         uint96 amountStakedForPoints;
-        uint40 minimumPoints;
+        uint40 minPointsPerDepositAmount;
         uint24 weight;
     }
 
@@ -64,7 +64,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     }
 
     receive() external payable {}
-
 
     function initialize(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress) external initializer {
         require(_eEthAddress != address(0), "No zero addresses");
@@ -83,7 +82,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         pointsGrowthRate = 100;
     }
 
-    function wrapEEth(uint256 _amount) external whenLiquidStakingOpen {
+    function wrapEEth(uint256 _amount) external isEEthStakingOpen {
         require(_amount > 0, "You cannot wrap 0 eETH");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
@@ -95,8 +94,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     }
 
     function wrapEth(address _account, bytes32[] calldata _merkleProof) external payable {
+        require(msg.value > 0, "You cannot wrap 0 ETH");
         uint256 amount = msg.value;
-        require(amount > 0, "You cannot wrap 0 ETH");
 
         updatePoints(_account);
         claimStakingRewards(_account);
@@ -106,10 +105,13 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         _mint(_account, amount);
     }
 
-    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable onlyClaimReceiverPool {
+    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
+        require(msg.sender == address(claimReceiverPool), "Caller muat be the claim receiver pool contract");
+        require(msg.value > 0, "You cannot wrap 0 ETH");
+        require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
+
         uint256 amount = msg.value;
-        require(amount > 0, "You cannot wrap 0 ETH");
-        _initializeEarlyAdopterPoolUserPoints(_account, _points);
+        _initializeEarlyAdopterPoolUserPoints(_account, _points, amount);
         
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
 
@@ -119,7 +121,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
-    function unwrapForEEth(uint256 _amount) public whenLiquidStakingOpen {
+    function unwrapForEEth(uint256 _amount) public isEEthStakingOpen {
         require(_amount > 0, "You cannot unwrap 0 meETH");
         uint256 unwrappableBalance = balanceOf(msg.sender) - _userDeposits[msg.sender].amountStakedForPoints;
         require(unwrappableBalance >= _amount, "Not enough balance to unwrap");
@@ -245,10 +247,10 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         revert("Transfer of meETH is not allowed");
     }
 
-    function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external onlyOwner returns (uint256) {
+    function addNewTier(uint40 _minPointsPerDepositAmount, uint24 _weight) external onlyOwner returns (uint256) {
         require(tierDeposits.length < type(uint8).max, "Cannot add more new tier");
         tierDeposits.push(TierDeposit(0, 0));
-        tierData.push(TierData(0, 0, _minimumPointsRequirement, _weight));
+        tierData.push(TierData(0, 0, _minPointsPerDepositAmount, _weight));
         return tierDeposits.length - 1;
     }
 
@@ -335,12 +337,13 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         );
     }
 
-    function _initializeEarlyAdopterPoolUserPoints(address _account, uint40 _points) internal {
+    function _initializeEarlyAdopterPoolUserPoints(address _account, uint40 _points, uint256 _amount) internal {
         UserData storage userData = _userData[_account];
         require(userData.pointsSnapshotTime == 0, "already initialized");
-        userData.pointsSnapshot += _points;
+        userData.pointsSnapshot = _points;
         userData.pointsSnapshotTime = uint32(block.timestamp);
-        userData.tier = tierForPoints(userData.pointsSnapshot);
+        uint40 userPointsPerDepositAmount = calculatePointsPerDepositAmount(_points, _amount);
+        userData.tier = tierForPointsPerDepositAmount(userPointsPerDepositAmount);
     }
 
     function _updateTier(address _account, uint8 _curTier, uint8 _newTier) internal {
@@ -490,6 +493,10 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return total;
     }
 
+    function pointsSnapshotTimeOf(address _account) public view returns (uint32) {
+        return _userData[_account].pointsSnapshotTime;
+    }
+
     function tierOf(address _user) public view returns (uint8) {
         return _userData[_user].tier;
     }
@@ -514,21 +521,26 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         }
     }
 
-    function pointsSnapshotTimeOf(address _account) external view returns (uint32) {
-        return _userData[_account].pointsSnapshotTime;
-    }
-
     function claimableTier(address _account) public view returns (uint8) {
+        UserDeposit memory deposit = _userDeposits[_account];
+        uint256 userTotalDeposit = uint256(deposit.amounts + deposit.amountStakedForPoints);
         uint40 pointsEarned = getPointsEarningsDuringLastMembershipPeriod(_account);
-        return tierForPoints(pointsEarned);
+        uint40 userPointsPerDepositAmount = calculatePointsPerDepositAmount(pointsEarned, userTotalDeposit);
+        return tierForPointsPerDepositAmount(userPointsPerDepositAmount);
     }
 
-    function tierForPoints(uint40 _points) public view returns (uint8) {
+    function tierForPointsPerDepositAmount(uint40 _pointsPerDepositAmount) public view returns (uint8) {
         uint8 tierId = 0;
-        while (tierId < tierDeposits.length && _points >= tierData[tierId].minimumPoints) {
+        while (tierId < tierDeposits.length && _pointsPerDepositAmount >= tierData[tierId].minPointsPerDepositAmount) {
             tierId++;
         }
         return tierId - 1;
+    }
+
+    function calculatePointsPerDepositAmount(uint40 _points, uint256 _amount) public view returns (uint40) {
+        uint256 userTotalDepositScaled = _amount / (1 ether / 1000);
+        uint40 userPointsPerDepositAmount = uint40(_points / userTotalDepositScaled); // points earned per 0.001 ether
+        return userPointsPerDepositAmount;
     }
 
     function recentTierSnapshotTimestamp() public view returns (uint256) {
@@ -547,7 +559,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     //-----------------------------------  MODIFIERS  --------------------------------------
 
-    modifier whenLiquidStakingOpen() {
+    modifier isEEthStakingOpen() {
         require(liquidityPool.eEthliquidStakingOpened(), "Liquid staking functions are closed");
         _;
     }
@@ -556,11 +568,5 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         require(msg.sender == address(liquidityPool), "Caller muat be the liquidity pool contract");
         _;
     }
-
-    modifier onlyClaimReceiverPool() {
-        require(msg.sender == address(claimReceiverPool), "Caller muat be the claim receiver pool contract");
-        _;
-    }
-
 
 }

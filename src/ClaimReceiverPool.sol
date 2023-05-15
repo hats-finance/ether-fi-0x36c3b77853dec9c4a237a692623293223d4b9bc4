@@ -134,7 +134,6 @@ contract ClaimReceiverPool is
     ) external payable whenNotPaused {
         require(_points > 0, "You don't have any point to claim");
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
-        require(meEth.pointsSnapshotTimeOf(msg.sender) == 0, "Already Deposited");
         _verifyEapUserData(msg.sender, msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof);
 
         uint256 _ethAmount = 0;
@@ -156,11 +155,6 @@ contract ClaimReceiverPool is
             points = type(uint40).max;
         }
         return uint40(points);
-    }
-
-    function getClaimableTier(uint256 _eapPoints) public view returns (uint8) {
-        uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_eapPoints);
-        return meEth.tierForPoints(loyaltyPoints);
     }
 
     function setLiquidityPool(address _address) external onlyOwner {
