@@ -86,7 +86,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         require(_amount > 0, "You cannot wrap 0 eETH");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
-        takePointsSnapshot(msg.sender);
+        claimPoints(msg.sender);
         claimStakingRewards(msg.sender);
 
         eETH.transferFrom(msg.sender, address(this), _amount);
@@ -97,7 +97,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         require(msg.value > 0, "You cannot wrap 0 ETH");
         uint256 amount = msg.value;
 
-        takePointsSnapshot(_account);
+        claimPoints(_account);
         claimStakingRewards(_account);
 
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
@@ -126,7 +126,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint256 unwrappableBalance = balanceOf(msg.sender) - _userDeposits[msg.sender].amountStakedForPoints;
         require(unwrappableBalance >= _amount, "Not enough balance to unwrap");
 
-        takePointsSnapshot(msg.sender);
+        claimPoints(msg.sender);
         claimStakingRewards(msg.sender);
 
         _applyUnwrapPenalty(msg.sender);
@@ -138,7 +138,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function unwrapForEth(uint256 _amount) external {
         require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
 
-        takePointsSnapshot(msg.sender);
+        claimPoints(msg.sender);
         claimStakingRewards(msg.sender);
 
         _applyUnwrapPenalty(msg.sender);
@@ -153,7 +153,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function stakeForPoints(uint256 _amount) external {
         require(_userDeposits[msg.sender].amounts >= _amount, "Not enough balance to stake for points");
 
-        takePointsSnapshot(msg.sender);
+        claimPoints(msg.sender);
         claimStakingRewards(msg.sender);
 
         _stakeForPoints(msg.sender, _amount);
@@ -162,30 +162,30 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function unstakeForPoints(uint256 _amount) external {
         require(_userDeposits[msg.sender].amountStakedForPoints >= _amount, "Not enough balance staked");
 
-        takePointsSnapshot(msg.sender);
+        claimPoints(msg.sender);
         claimStakingRewards(msg.sender);
 
         _unstakeForPoints(msg.sender, _amount);
     }
 
-    function updateTier(address _account) public {
+    function claimTier(address _account) public {
         uint8 oldTier = tierOf(_account);
         uint8 newTier = claimableTier(_account);
         if (oldTier == newTier) {
             return;
         }
 
-        takePointsSnapshot(_account);
+        claimPoints(_account);
         claimStakingRewards(_account);
 
-        _updateTier(_account, oldTier, newTier);
+        _claimTier(_account, oldTier, newTier);
     }
 
     // This function updates the score of the given account based on their recent activity.
     // Specifically, it calculates the points earned by the account since their last point update,
     // and updates the account's score snapshot accordingly.
     // It also accumulates the user's points earned for the next tier, and updates their tier points snapshot accordingly.
-    function takePointsSnapshot(address _account) public {
+    function claimPoints(address _account) public {
         UserData storage userData = _userData[_account];
         uint256 userPointsSnapshotTimestamp = userData.pointsSnapshotTime;
         if (userPointsSnapshotTimestamp == block.timestamp) {
@@ -346,7 +346,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.tier = tierForPointsPerDepositAmount(userPointsPerDepositAmount);
     }
 
-    function _updateTier(address _account, uint8 _curTier, uint8 _newTier) internal {
+    function _claimTier(address _account, uint8 _curTier, uint8 _newTier) internal {
         require(tierOf(_account) == _curTier, "the account does not belong to the specified tier");
         if (_curTier == _newTier) {
             return;
@@ -444,7 +444,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function _applyUnwrapPenalty(address _account) internal {
         uint8 curTier = tierOf(_account);
         uint8 newTier = (curTier >= 1) ? curTier - 1 : 0;
-        _updateTier(_account, curTier, newTier);
+        _claimTier(_account, curTier, newTier);
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
