@@ -221,7 +221,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
 
     function isDepositToInternalContract(address _address) internal view returns (bool) {
-        return _address == address(meETH);
+        bool verified = false;
+        if (_address == address(meETH)) {
+            verified = true;
+        }
+        return verified;
     }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
