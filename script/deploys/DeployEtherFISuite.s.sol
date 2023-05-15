@@ -2,22 +2,22 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../src/Treasury.sol";
-import "../src/NodeOperatorManager.sol";
-import "../src/EtherFiNodesManager.sol";
-import "../src/EtherFiNode.sol";
-import "../src/ProtocolRevenueManager.sol";
-import "../src/StakingManager.sol";
-import "../src/AuctionManager.sol";
-import "../src/LiquidityPool.sol";
-import "../src/ClaimReceiverPool.sol";
-import "../src/EETH.sol";
-import "../src/weEth.sol";
-import "../src/RegulationsManager.sol";
-import "../src/UUPSProxy.sol";
+import "../../src/Treasury.sol";
+import "../../src/NodeOperatorManager.sol";
+import "../../src/EtherFiNodesManager.sol";
+import "../../src/EtherFiNode.sol";
+import "../../src/ProtocolRevenueManager.sol";
+import "../../src/StakingManager.sol";
+import "../../src/AuctionManager.sol";
+import "../../src/LiquidityPool.sol";
+import "../../src/ClaimReceiverPool.sol";
+import "../../src/EETH.sol";
+import "../../src/weEth.sol";
+import "../../src/RegulationsManager.sol";
+import "../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "../test/TestERC20.sol";
+import "../../test/TestERC20.sol";
 
 contract DeployEtherFiSuiteScript is Script {
     using Strings for string;

@@ -3,12 +3,12 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../test/TestERC20.sol";
-import "../src/EarlyAdopterPool.sol";
-import "../src/ClaimReceiverPool.sol";
-import "../src/RegulationsManager.sol";
-import "../lib/murky/src/Merkle.sol";
-import "../src/UUPSProxy.sol";
+import "../../test/TestERC20.sol";
+import "../../src/EarlyAdopterPool.sol";
+import "../../src/ClaimReceiverPool.sol";
+import "../../src/RegulationsManager.sol";
+import "../../lib/murky/src/Merkle.sol";
+import "../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployClaimReceiverTestScript is Script {

@@ -2,16 +2,16 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../src/Treasury.sol";
-import "../src/NodeOperatorManager.sol";
-import "../src/EtherFiNodesManager.sol";
-import "../src/EtherFiNode.sol";
-import "../src/BNFT.sol";
-import "../src/TNFT.sol";
-import "../src/ProtocolRevenueManager.sol";
-import "../src/StakingManager.sol";
-import "../src/AuctionManager.sol";
-import "../src/UUPSProxy.sol";
+import "../../src/Treasury.sol";
+import "../../src/NodeOperatorManager.sol";
+import "../../src/EtherFiNodesManager.sol";
+import "../../src/EtherFiNode.sol";
+import "../../src/BNFT.sol";
+import "../../src/TNFT.sol";
+import "../../src/ProtocolRevenueManager.sol";
+import "../../src/StakingManager.sol";
+import "../../src/AuctionManager.sol";
+import "../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployPhaseOne is Script {
