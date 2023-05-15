@@ -395,7 +395,7 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.pointsOf(alice), 1 * 10 * kwei);
         skip(1 days);
         assertEq(meEthInstance.pointsOf(alice), 2 * 10 * kwei);
-        meEthInstance.updatePoints(alice);
+        meEthInstance.takePointsSnapshot(alice);
         assertEq(meEthInstance.pointsOf(alice), 2 * 10 * kwei);
         skip(1 days);
         assertEq(meEthInstance.pointsOf(alice), 3 * 10 * kwei);

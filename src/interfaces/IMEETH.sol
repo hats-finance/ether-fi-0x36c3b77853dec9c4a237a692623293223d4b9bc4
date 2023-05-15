@@ -24,7 +24,7 @@ interface IMEETH {
     function unstakeForPoints(uint256 _amount) external;
 
     function updateTier(address _account) external;
-    function updatePoints(address _account) external;
+    function takePointsSnapshot(address _account) external;
     function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;
     function claimStakingRewards(address _account) external;
     
