@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
-import "../src/interfaces/IwETH.sol";
+import "../src/interfaces/IWETH.sol";
 import "../src/interfaces/ILiquidityPool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "../lib/murky/src/Merkle.sol";

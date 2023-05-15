@@ -9,10 +9,10 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
-import "./interfaces/IeETH.sol";
+import "./interfaces/IEETH.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
-import "./interfaces/ImeETH.sol";
+import "./interfaces/IMEETH.sol";
 
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
@@ -73,7 +73,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
         stakingManager.verifyWhitelisted(_user, _merkleProof);
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
-        require(_recipient == msg.sender || _recipient == address(meEth), "Wrong Recipient");
+        require(_recipient == msg.sender || _recipient == address(meETH), "Wrong Recipient");
 
         uint256 share = _sharesForDepositAmount(msg.value);
         if (share == 0) {
