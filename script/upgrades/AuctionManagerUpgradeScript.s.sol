@@ -21,6 +21,8 @@ contract AuctionManagerUpgrade is Script {
 
         // mainnet
         require(AuctionManagerProxyAddress == 0x00C452aFFee3a17d9Cecc1Bcd2B8d5C7635C4CB9, "AuctionManagerProxyAddress incorrect see .env");
+        //goerli
+        //require(AuctionManagerProxyAddress == 0x2461Daac4cae03B817Bf4561d30F52327Fd2d193, "AuctionManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -34,7 +36,7 @@ contract AuctionManagerUpgrade is Script {
 
         criticalAddresses = CriticalAddresses({
             auctionManagerProxy: AuctionManagerProxyAddress,
-            auctionManagerImplementation: address(AuctionManagerV2Instance)
+            auctionManagerImplementation: address(AuctionManagerV2Implementation)
         });
 
         writeUpgradeVersionFile();
