@@ -25,9 +25,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     mapping (address => UserData) public _userData;
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
-    uint96[] public rewardsGlobalIndexPerTier;
     uint32   public rewardsGlobalIndexTime;
-    uint32   public genesisTimestamp; // the timestamp when the meETH contract was deployed
+    uint32   public genesisTime; // the timestamp when the meETH contract was deployed
     uint16   public pointsBoostFactor; // +X % points if staking rewards are sacrificed
     uint16   public pointsGrowthRate; // (X / 100) kwei points earnigs per 1 meETH per day
 
@@ -78,7 +77,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         eETH = IEETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
         claimReceiverPool = IClaimReceiverPool(_claimReceiverPoolAddress);
-        genesisTimestamp = uint32(block.timestamp);
+        genesisTime = uint32(block.timestamp);
 
         pointsBoostFactor = 100;
         pointsGrowthRate = 100;
@@ -248,7 +247,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external onlyOwner returns (uint256) {
         require(tierDeposits.length < type(uint8).max, "Cannot add more new tier");
-        // rewardsGlobalIndexPerTier.push(0);
         tierDeposits.push(TierDeposit(0, 0));
         tierData.push(TierData(0, 0, _minimumPointsRequirement, _weight));
         return tierDeposits.length - 1;
@@ -535,8 +533,8 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function recentTierSnapshotTimestamp() public view returns (uint256) {
         uint256 monthInSeconds = 4 * 7 * 24 * 3600;
-        uint256 i = (block.timestamp - genesisTimestamp) / monthInSeconds;
-        return genesisTimestamp + i * monthInSeconds;
+        uint256 i = (block.timestamp - genesisTime) / monthInSeconds;
+        return genesisTime + i * monthInSeconds;
     }
 
     function allowance(address _owner, address _spender) external view override(IERC20Upgradeable, IMEETH) returns (uint256) {
