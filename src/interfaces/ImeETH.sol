@@ -23,7 +23,13 @@ interface ImeETH {
     function stakeForPoints(uint256 _amount) external;
     function unstakeForPoints(uint256 _amount) external;
 
+<<<<<<< HEAD:src/interfaces/ImeETH.sol
     function claimPoints(address _account) external;
+=======
+    function updateTier(address _account) external;
+    function takePointsSnapshot(address _account) external;
+    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;
+>>>>>>> d61a52d (updatePoints -> takePointsSnapshot):src/interfaces/IMEETH.sol
     function claimStakingRewards(address _account) external;
     function claimTier(address _account) external;
 

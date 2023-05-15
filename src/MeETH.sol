@@ -86,7 +86,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         require(_amount > 0, "You cannot wrap 0 eETH");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
-        updatePoints(msg.sender);
+        takePointsSnapshot(msg.sender);
         claimStakingRewards(msg.sender);
 
         eETH.transferFrom(msg.sender, address(this), _amount);
@@ -97,7 +97,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         require(msg.value > 0, "You cannot wrap 0 ETH");
         uint256 amount = msg.value;
 
-        updatePoints(_account);
+        takePointsSnapshot(_account);
         claimStakingRewards(_account);
 
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
@@ -126,7 +126,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint256 unwrappableBalance = balanceOf(msg.sender) - _userDeposits[msg.sender].amountStakedForPoints;
         require(unwrappableBalance >= _amount, "Not enough balance to unwrap");
 
-        updatePoints(msg.sender);
+        takePointsSnapshot(msg.sender);
         claimStakingRewards(msg.sender);
 
         _applyUnwrapPenalty(msg.sender);
@@ -138,7 +138,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function unwrapForEth(uint256 _amount) external {
         require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
 
-        updatePoints(msg.sender);
+        takePointsSnapshot(msg.sender);
         claimStakingRewards(msg.sender);
 
         _applyUnwrapPenalty(msg.sender);
@@ -153,7 +153,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function stakeForPoints(uint256 _amount) external {
         require(_userDeposits[msg.sender].amounts >= _amount, "Not enough balance to stake for points");
 
-        updatePoints(msg.sender);
+        takePointsSnapshot(msg.sender);
         claimStakingRewards(msg.sender);
 
         _stakeForPoints(msg.sender, _amount);
@@ -162,7 +162,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function unstakeForPoints(uint256 _amount) external {
         require(_userDeposits[msg.sender].amountStakedForPoints >= _amount, "Not enough balance staked");
 
-        updatePoints(msg.sender);
+        takePointsSnapshot(msg.sender);
         claimStakingRewards(msg.sender);
 
         _unstakeForPoints(msg.sender, _amount);
@@ -175,7 +175,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
             return;
         }
 
-        updatePoints(_account);
+        takePointsSnapshot(_account);
         claimStakingRewards(_account);
 
         _updateTier(_account, oldTier, newTier);
@@ -185,7 +185,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     // Specifically, it calculates the points earned by the account since their last point update,
     // and updates the account's score snapshot accordingly.
     // It also accumulates the user's points earned for the next tier, and updates their tier points snapshot accordingly.
-    function updatePoints(address _account) public {
+    function takePointsSnapshot(address _account) public {
         UserData storage userData = _userData[_account];
         uint256 userPointsSnapshotTimestamp = userData.pointsSnapshotTime;
         if (userPointsSnapshotTimestamp == block.timestamp) {
