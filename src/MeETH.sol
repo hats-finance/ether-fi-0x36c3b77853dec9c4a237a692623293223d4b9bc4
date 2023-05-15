@@ -25,7 +25,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     mapping (address => UserData) public _userData;
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
-    uint32   public rewardsGlobalIndexTime;
     uint32   public genesisTime; // the timestamp when the meETH contract was deployed
     uint16   public pointsBoostFactor; // +X % points if staking rewards are sacrificed
     uint16   public pointsGrowthRate; // (X / 100) kwei points earnigs per 1 meETH per day
@@ -190,7 +189,7 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
             return;
         }
         if (userPointsSnapshotTimestamp == 0) {
-           userData.pointsSnapshotTime = uint32(block.timestamp);
+            userData.pointsSnapshotTime = uint32(block.timestamp);
             return;
         }
 
@@ -391,19 +390,13 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     }
 
     function _updateGlobalIndex() internal {
-        if (rewardsGlobalIndexTime == block.timestamp) {
-            return;
-        }
-
         uint96[] memory globalIndex = _calculateGlobalIndex();
-
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             uint256 shares = uint256(tierDeposits[i].shares);
             uint256 amounts = liquidityPool.amountForShare(shares);
             tierDeposits[i].amounts = uint128(amounts);
             tierData[i].rewardsGlobalIndex = globalIndex[i];
         }
-        rewardsGlobalIndexTime = uint32(block.timestamp);
     }
 
     function _calculateGlobalIndex() internal view returns (uint96[] memory) {
