@@ -116,7 +116,7 @@ contract UpgradeTest is TestSetup {
         claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);

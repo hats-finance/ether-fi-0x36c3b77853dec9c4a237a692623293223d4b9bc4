@@ -8,14 +8,14 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract eETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
+contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
     ILiquidityPool public liquidityPool;
 
     uint256 public totalShares;
     mapping (address => uint256) public shares;
     mapping (address => mapping (address => uint256)) public allowances;
 
-    uint256[46] __gap;
+    uint256[22] __gap;
 
     // [STATE-CHANGING FUNCTIONS]
     constructor() { _disableInitializers(); }

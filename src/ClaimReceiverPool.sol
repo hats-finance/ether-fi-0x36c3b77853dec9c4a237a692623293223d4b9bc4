@@ -53,7 +53,7 @@ contract ClaimReceiverPool is
     ISwapRouter public router;
 
     //Goerli Weth address used for unwrapping ERC20 Weth
-    IwETH public wethContract;
+    IWETH public wethContract;
 
     ILiquidityPool public liquidityPool;
     IRegulationsManager public regulationsManager;
@@ -100,7 +100,7 @@ contract ClaimReceiverPool is
 
         regulationsManager = IRegulationsManager(_regulationsManager);
         router = ISwapRouter(_uniswapRouter);
-        wethContract = IwETH(_wethContract);
+        wethContract = IWETH(_wethContract);
         wEth = _wethContract;
         poolFee = 3_000;
         

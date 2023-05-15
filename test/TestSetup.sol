@@ -16,9 +16,9 @@ import "../src/TNFT.sol";
 import "../src/Treasury.sol";
 import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
-import "../src/eETH.sol";
-import "../src/weETH.sol";
-import "../src/meETH.sol";
+import "../src/EETH.sol";
+import "../src/WeETH.sol";
+import "../src/MeETH.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
@@ -77,14 +77,14 @@ contract TestSetup is Test {
     LiquidityPool public liquidityPoolImplementation;
     LiquidityPool public liquidityPoolInstance;
     
-    eETH public eETHImplementation;
-    eETH public eETHInstance;
+    EETH public eETHImplementation;
+    EETH public eETHInstance;
 
-    weETH public weEthImplementation;
-    weETH public weEthInstance;
+    WeETH public weEthImplementation;
+    WeETH public weEthInstance;
 
-    meETH public meEthImplementation;
-    meETH public meEthInstance;
+    MeETH public meEthImplementation;
+    MeETH public meEthInstance;
 
     ClaimReceiverPool public claimReceiverPoolImplementation;
     ClaimReceiverPool public claimReceiverPoolInstance;
@@ -103,6 +103,8 @@ contract TestSetup is Test {
 
     Merkle merkleMigration2;
     bytes32 rootMigration2;
+
+    bytes32 termsAndConditionsHash = keccak256("TERMS AND CONDITIONS");
 
     bytes32[] public whiteListedAddresses;
     bytes32[] public dataForVerification;
@@ -228,32 +230,32 @@ contract TestSetup is Test {
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
 
-        eETHImplementation = new eETH();
+        eETHImplementation = new EETH();
         vm.expectRevert("Initializable: contract is already initialized");
         eETHImplementation.initialize(payable(address(liquidityPoolInstance)));
 
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
-        eETHInstance = eETH(address(eETHProxy));
+        eETHInstance = EETH(address(eETHProxy));
 
         vm.expectRevert("No zero addresses");
         eETHInstance.initialize(payable(address(0)));
         eETHInstance.initialize(payable(address(liquidityPoolInstance)));
 
-        weEthImplementation = new weETH();
+        weEthImplementation = new WeETH();
         vm.expectRevert("Initializable: contract is already initialized");
         weEthImplementation.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
-        weEthInstance = weETH(address(weETHProxy));
+        weEthInstance = WeETH(address(weETHProxy));
         vm.expectRevert("No zero addresses");
         weEthInstance.initialize(address(0), address(eETHInstance));
         vm.expectRevert("No zero addresses");
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(0));
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
-        meEthImplementation = new meETH();
+        meEthImplementation = new MeETH();
         meETHProxy = new UUPSProxy(address(meEthImplementation), "");
-        meEthInstance = meETH(payable(meETHProxy));
+        meEthInstance = MeETH(payable(meETHProxy));
         meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(claimReceiverPoolInstance));
 
         // Setup dependencies
@@ -281,8 +283,10 @@ contract TestSetup is Test {
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
-        liquidityPoolInstance.setMeEth(address(meEthInstance));
-        liquidityPoolInstance.openLiquadStaking();
+        liquidityPoolInstance.setMeETH(address(meEthInstance));
+        liquidityPoolInstance.openLiquidStaking();
+
+        regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
 
         depGen = new DepositDataGeneration();
 
@@ -332,8 +336,11 @@ contract TestSetup is Test {
         whiteListedAddresses.push(keccak256(abi.encodePacked(owner)));
 
         root = merkle.getRoot(whiteListedAddresses);
-        liquidityPoolInstance.setMerkleProof(merkle.getProof(whiteListedAddresses, 9));
         stakingManagerInstance.updateMerkleRoot(root);
+    }
+
+    function getWhitelistMerkleProof(uint256 index) internal returns (bytes32[] memory) {
+        return merkle.getProof(whiteListedAddresses, index);
     }
 
     function _initializeMembershipTiers() internal {
@@ -355,6 +362,7 @@ contract TestSetup is Test {
         nodeOperatorManagerInstance.addToWhitelist(elvis);
         nodeOperatorManagerInstance.addToWhitelist(greg);
         nodeOperatorManagerInstance.addToWhitelist(address(liquidityPoolInstance));
+        nodeOperatorManagerInstance.addToWhitelist(owner);
     }
 
     function _merkleSetupMigration() internal {

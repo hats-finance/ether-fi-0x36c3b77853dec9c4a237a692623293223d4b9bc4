@@ -15,7 +15,7 @@ interface ImeETH {
     function totalShares() external view returns (uint256);
 
     function balanceOf(address _user) external view returns (uint256);
-    function pointOf(address _account) external view returns (uint40);
+    function pointsOf(address _account) external view returns (uint40);
     function tierOf(address _user) external view returns (uint8);
 
     function recentTierSnapshotTimestamp() external view returns (uint256);

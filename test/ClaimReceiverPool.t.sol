@@ -13,7 +13,7 @@ contract ClaimReceiverPoolTest is TestSetup {
     address constant WETH = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
     address constant DAI = 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
 
-    IwETH private weth = IwETH(WETH);
+    IWETH private weth = IWETH(WETH);
     IERC20 private dai = IERC20(DAI);
 
     EarlyAdopterPool public adopterPool;
@@ -52,7 +52,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.expectRevert("Verification failed");
         claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1, slippageLimit);
@@ -71,7 +71,7 @@ contract ClaimReceiverPoolTest is TestSetup {
         vm.expectRevert("User is not whitelisted");
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
@@ -81,12 +81,12 @@ contract ClaimReceiverPoolTest is TestSetup {
         assertEq(meEthInstance.balanceOf(staker), 0.2 ether);
 
         uint40 points = claimReceiverPoolInstance.convertEapPointsToLoyaltyPoints(eapPoints);
-        assertEq(meEthInstance.pointOf(staker), points);
+        assertEq(meEthInstance.pointsOf(staker), points);
         assertEq(meEthInstance.pointsSnapshotTimeOf(staker), uint32(block.timestamp));
 
         // Check if the staker starts earning points
         skip(1 days);
-        assertEq(meEthInstance.pointOf(staker), points + 2 * kwei / 10); // 0.2 kwei
+        assertEq(meEthInstance.pointsOf(staker), points + 2 * kwei / 10); // 0.2 kwei
         assertEq(claimReceiverPoolInstance.getClaimableTier(eapPoints), meEthInstance.tierForPoints(points));
 
         vm.expectRevert("Already Deposited");
