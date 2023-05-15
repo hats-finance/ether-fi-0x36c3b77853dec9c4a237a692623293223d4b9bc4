@@ -137,9 +137,9 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.tierOf(alice), 0);
 
         // Alice sees that she can claim her tier 2, which is higher than her current tier 0
-        // By calling 'updateTier', Alice's tier gets upgraded to the tier 2
+        // By calling 'claimTier', Alice's tier gets upgraded to the tier 2
         assertEq(meEthInstance.claimableTier(alice), 2);
-        meEthInstance.updateTier(alice);
+        meEthInstance.claimTier(alice);
         assertEq(meEthInstance.tierOf(alice), 2);
 
         // Alice unwraps 0.5 meETH (which is 50% of her meETH holdings)
@@ -153,6 +153,8 @@ contract meEthTest is TestSetup {
 
     function test_StakingRewards() public {
         vm.deal(alice, 0.5 ether);
+
+        skip(14 days);
 
         vm.startPrank(alice);
         // Alice deposits 0.5 ETH and mints 0.5 eETH.
@@ -170,14 +172,14 @@ contract meEthTest is TestSetup {
         // Check the blanace of Alice updated by the rebasing
         assertEq(meEthInstance.balanceOf(alice), 0.5 ether + 0.5 ether);
 
-        skip(28 days);
+        skip(14 days);
         // points earnings are based on the initial deposit; not on the rewards
-        assertEq(meEthInstance.pointsOf(alice), 28 * 0.5 * kwei);
-        assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 28 * 0.5 * kwei);
+        assertEq(meEthInstance.pointsOf(alice), 14 * 0.5 * kwei);
+        assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 14 * 0.5 * kwei);
         assertEq(meEthInstance.claimableTier(alice), 1);
         assertEq(meEthInstance.tierOf(alice), 0);
 
-        meEthInstance.updateTier(alice);
+        meEthInstance.claimTier(alice);
         assertEq(meEthInstance.tierOf(alice), 1);
         assertEq(meEthInstance.balanceOf(alice), 1 ether);
 
@@ -393,7 +395,7 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.pointsOf(alice), 1 * 10 * kwei);
         skip(1 days);
         assertEq(meEthInstance.pointsOf(alice), 2 * 10 * kwei);
-        meEthInstance.updatePoints(alice);
+        meEthInstance.claimPoints(alice);
         assertEq(meEthInstance.pointsOf(alice), 2 * 10 * kwei);
         skip(1 days);
         assertEq(meEthInstance.pointsOf(alice), 3 * 10 * kwei);
@@ -412,8 +414,8 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.pointsOf(alice), 1 * kwei);
 
         vm.startPrank(owner);
-        // The points growth rate decreased to 50 from 100
-        meEthInstance.updatePointsGrowthRate(50);
+        // The points growth rate decreased to 5000 from 10000
+        meEthInstance.updatePointsGrowthRate(5000);
         vm.stopPrank();
 
         assertEq(meEthInstance.pointsOf(alice), 1 * kwei / 2);
