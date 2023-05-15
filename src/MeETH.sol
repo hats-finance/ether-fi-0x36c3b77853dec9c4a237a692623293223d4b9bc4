@@ -7,8 +7,8 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-import "./interfaces/IEETH.sol";
-import "./interfaces/IMEETH.sol";
+import "./interfaces/IeETH.sol";
+import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IClaimReceiverPool.sol";
 

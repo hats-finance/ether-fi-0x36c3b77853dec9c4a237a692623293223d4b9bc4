@@ -5,7 +5,7 @@ import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
-import "./interfaces/IEETH.sol";
+import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
 contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
