@@ -5,10 +5,10 @@ import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
-import "./interfaces/IEETH.sol";
+import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
+contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
     ILiquidityPool public liquidityPool;
 
     uint256 public totalShares;
@@ -38,7 +38,7 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         totalShares -= _share;
     }
 
-    function transfer(address _recipient, uint256 _amount) external override(IEETH, IERC20Upgradeable) returns (bool) {
+    function transfer(address _recipient, uint256 _amount) external override(IeETH, IERC20Upgradeable) returns (bool) {
         _transfer(msg.sender, _recipient, _amount);
         return true;
     }
@@ -47,12 +47,12 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         return allowances[_owner][_spender];
     }
 
-    function approve(address _spender, uint256 _amount) external override(IEETH, IERC20Upgradeable) returns (bool) {
+    function approve(address _spender, uint256 _amount) external override(IeETH, IERC20Upgradeable) returns (bool) {
         _approve(msg.sender, _spender, _amount);
         return true;
     }
 
-    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IEETH, IERC20Upgradeable) returns (bool) {
+    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IeETH, IERC20Upgradeable) returns (bool) {
         uint256 currentAllowance = allowances[_sender][msg.sender];
         require(currentAllowance >= _amount, "TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
 
@@ -98,7 +98,7 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         return liquidityPool.getTotalPooledEther();
     }
 
-    function balanceOf(address _user) public view override(IEETH, IERC20Upgradeable) returns (uint256) {
+    function balanceOf(address _user) public view override(IeETH, IERC20Upgradeable) returns (uint256) {
         return liquidityPool.getTotalEtherClaimOf(_user);
     }
 
