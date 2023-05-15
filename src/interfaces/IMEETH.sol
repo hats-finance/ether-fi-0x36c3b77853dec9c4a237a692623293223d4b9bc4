@@ -23,10 +23,10 @@ interface ImeETH {
     function stakeForPoints(uint256 _amount) external;
     function unstakeForPoints(uint256 _amount) external;
 
-    function updateTier(address _account) external;
-    function takePointsSnapshot(address _account) external;
-    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;
+    function claimPoints(address _account) external;
     function claimStakingRewards(address _account) external;
-    
+    function claimTier(address _account) external;
+
+    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;    
     function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external returns (uint256);
 }
