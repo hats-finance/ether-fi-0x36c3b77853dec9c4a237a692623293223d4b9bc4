@@ -216,14 +216,6 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
        userData.pointsSnapshotTime = uint32(block.timestamp);
     }
 
-    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyOwner {
-        pointsBoostFactor = _newPointsBoostFactor;
-    }
-
-    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public onlyOwner {
-        pointsGrowthRate = _newPointsGrowthRate;
-    }
-
     function claimStakingRewards(address _account) public {
         _updateGlobalIndex();
 
@@ -245,6 +237,14 @@ contract meETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
         revert("Transfer of meETH is not allowed");
+    }
+
+    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyOwner {
+        pointsBoostFactor = _newPointsBoostFactor;
+    }
+
+    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public onlyOwner {
+        pointsGrowthRate = _newPointsGrowthRate;
     }
 
     function addNewTier(uint40 _minPointsPerDepositAmount, uint24 _weight) external onlyOwner returns (uint256) {

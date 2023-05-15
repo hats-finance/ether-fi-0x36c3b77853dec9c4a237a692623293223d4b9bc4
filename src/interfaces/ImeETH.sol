@@ -41,7 +41,12 @@ interface ImeETH {
     function claimStakingRewards(address _account) external;
     function claimTier(address _account) external;
 
+<<<<<<< HEAD:src/interfaces/ImeETH.sol
     function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;    
 >>>>>>> f3aae34 (rename some functions):src/interfaces/IMEETH.sol
+=======
+    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;
+    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) external;  
+>>>>>>> 99ea99f (update interface):src/interfaces/IMEETH.sol
     function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external returns (uint256);
 }
