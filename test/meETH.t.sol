@@ -414,8 +414,8 @@ contract meEthTest is TestSetup {
         assertEq(meEthInstance.pointsOf(alice), 1 * kwei);
 
         vm.startPrank(owner);
-        // The points growth rate decreased to 50 from 100
-        meEthInstance.updatePointsGrowthRate(50);
+        // The points growth rate decreased to 5000 from 10000
+        meEthInstance.updatePointsGrowthRate(5000);
         vm.stopPrank();
 
         assertEq(meEthInstance.pointsOf(alice), 1 * kwei / 2);
