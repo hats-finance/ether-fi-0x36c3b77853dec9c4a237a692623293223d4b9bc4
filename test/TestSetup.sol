@@ -113,8 +113,10 @@ contract TestSetup is Test {
     IStakingManager.DepositData public test_data;
     IStakingManager.DepositData public test_data_2;
 
+    uint256 alicePrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+
     address owner = vm.addr(1);
-    address alice = vm.addr(2);
+    address alice = vm.addr(alicePrivateKey);
     address bob = vm.addr(3);
     address chad = vm.addr(4);
     address dan = vm.addr(5);

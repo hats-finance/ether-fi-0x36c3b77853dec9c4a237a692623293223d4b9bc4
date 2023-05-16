@@ -106,8 +106,8 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         bytes32 message = _prefixed(keccak256(abi.encodePacked(msg.sender, ":", _originalDeposit)));
 
-        require(_recoverSigner(message, _signature) == eapSigner, "InvalidSignature");
-        require(msg.value >= _originalDeposit, "InvalidDepositAmount");
+        require(_recoverSigner(message, _signature) == eapSigner, "Invalid Signature");
+        require(msg.value >= _originalDeposit, "Invalid DepositAmount");
 
         uint256 ethAmount = msg.value;
 

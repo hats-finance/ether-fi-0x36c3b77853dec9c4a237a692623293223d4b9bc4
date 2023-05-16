@@ -8,10 +8,7 @@ contract MeETHTest is TestSetup {
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
     bytes32[] public ownerProof;
-    bytes32[] public testProof;
-
-    uint256 signerPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
-    address signer = vm.addr(signerPrivateKey);
+    bytes32[] public emptyProof;
 
     uint256 testPK = 0xA11CE;
     address testSigner = vm.addr(testPK);
@@ -446,19 +443,64 @@ contract MeETHTest is TestSetup {
     }
 
     function test_EapRollover() public {
-        uint256 depositAmount = 10 ether;
-        bytes32 digest = keccak256(abi.encodePacked(depositAmount));
+        vm.prank(owner);
+        meEthInstance.setEapSigner(bob);
+
         //setUp signature
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPrivateKey, digest);
-        bytes memory depositorSignature = (abi.encodePacked(v,r,s));
+        uint256 depositAmount = 10 ether;
+        bytes32 digest = _prefixed(keccak256(abi.encodePacked(alice,":", depositAmount)));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePrivateKey, digest);
+        bytes memory depositorSignature = (abi.encodePacked(r, s, v));
+
+        vm.deal(alice, 15 ether);
+        vm.startPrank(alice);
+        vm.expectRevert("Invalid Signature");
+        meEthInstance.eapRollover{value: 10 ether}(10 ether, depositorSignature, 1000000 * kwei, aliceProof);
+        vm.stopPrank();
+
+        vm.prank(owner);
+        meEthInstance.setEapSigner(alice);
+        
+        //setUp signature
+        depositAmount = 10 ether;
+        digest = _prefixed(keccak256(abi.encodePacked(alice,":", depositAmount)));
+        (v, r, s) = vm.sign(alicePrivateKey, digest);
+
+        address signer = ecrecover(digest, v, r, s);
+        assertEq(signer, alice);
+
+        depositorSignature = (abi.encodePacked(r, s, v));
         
         vm.deal(alice, 15 ether);
         vm.startPrank(alice);
-        meEthInstance.eapRollover{value: 10 ether}(10 ether, depositorSignature, 0, testProof);
+
+        vm.expectRevert("You don't have any points to claim");
+        meEthInstance.eapRollover{value: 10 ether}(10 ether, depositorSignature, 0, aliceProof);
+
+        vm.expectRevert("Invalid DepositAmount");
+        meEthInstance.eapRollover{value: 9 ether}(10 ether, depositorSignature, 1000000 * kwei, aliceProof);
+
+        assertFalse(stakingManagerInstance.whitelistEnabled());
+        meEthInstance.eapRollover{value: 10 ether}(10 ether, depositorSignature, 1000000 * kwei, emptyProof);
+        vm.stopPrank();
 
         assertEq(alice.balance, 5 ether);
         assertEq(meEthInstance.balanceOf(alice), 10 ether);
         assertEq(address(liquidityPoolInstance).balance, 10 ether);
+
+        assertEq(meEthInstance.pointsOf(alice), 1);
+        assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 0);
+        assertEq(meEthInstance.claimableTier(alice), 0);
+
+        skip(28 days);
+        assertEq(meEthInstance.pointsOf(alice), (280 * kwei) + 1);
+        assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 280 * kwei);
+        assertEq(meEthInstance.claimableTier(alice), 2);
+        assertEq(meEthInstance.tierOf(alice), 0);
+    }
+
+    function _prefixed(bytes32 hash) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
     }
 
 }
