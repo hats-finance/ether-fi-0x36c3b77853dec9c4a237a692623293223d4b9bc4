@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
@@ -13,53 +12,34 @@ import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IRegulationsManager.sol";
 
-import "forge-std/console.sol";
-
-
 contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
+
+    //--------------------------------------------------------------------------------------
+    //---------------------------------  STATE-VARIABLES  ----------------------------------
+    //--------------------------------------------------------------------------------------
+
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
     IRegulationsManager public regulationsManager;
 
+    bytes32 public merkleRoot;
+
+    uint32 public genesisTime; // the timestamp when the meETH contract was deployed
+    uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
+    uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
+
     mapping (address => mapping (address => uint256)) public allowances;
     mapping (address => UserDeposit) public _userDeposits;
     mapping (address => UserData) public _userData;
+
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
-    uint32   public genesisTime; // the timestamp when the meETH contract was deployed
-    uint16   public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
-    uint16   public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
-
-    bytes32 public merkleRoot;
-
     uint256[23] __gap;
-
-    struct UserDeposit {
-        uint128 amounts;
-        uint128 amountStakedForPoints;
-    }
-
-    struct UserData {
-        uint96 rewardsLocalIndex;
-        uint32 pointsSnapshotTime;
-        uint40 pointsSnapshot;
-        uint40 curTierPoints;
-        uint40 nextTierPoints;
-        uint8  tier;
-    }
-
-    struct TierDeposit {
-        uint128 shares;
-        uint128 amounts;        
-    }
-
-    struct TierData {
-        uint96 rewardsGlobalIndex;
-        uint96 amountStakedForPoints;
-        uint40 minPointsPerDepositAmount;
-        uint24 weight;
-    }
     
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  EVENTS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+
     event FundsMigrated(address user, uint256 amount, uint256 eapPoints, uint40 loyaltyPoints);
     event MerkleUpdated(bytes32, bytes32);
 
@@ -70,6 +50,10 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     }
 
     receive() external payable {}
+
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
 
     function initialize(address _eEthAddress, address _liquidityPoolAddress, address _regulationsManager) external initializer {
         require(_eEthAddress != address(0), "No zero addresses");
@@ -294,8 +278,10 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         emit MerkleUpdated(oldMerkle, _newMerkle);
     }
 
-    //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
-
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
+    
     function _mint(address _account, uint256 _amount) internal {
         require(_account != address(0), "MINT_TO_THE_ZERO_ADDRESS");
         uint256 share = liquidityPool.sharesForAmount(_amount);
@@ -494,7 +480,9 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    //------------------------------------  GETTERS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  GETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     function name() public pure returns (string memory) { return "meETH token"; }
     function symbol() public pure returns (string memory) { return "meETH"; }
@@ -602,7 +590,9 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return _getImplementation();
     }
 
+    //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     modifier isEEthStakingOpen() {
         require(liquidityPool.eEthliquidStakingOpened(), "Liquid staking functions are closed");
