@@ -11,6 +11,7 @@ import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IClaimReceiverPool.sol";
+import "./interfaces/IRegulationsManager.sol";
 
 import "forge-std/console.sol";
 
@@ -19,6 +20,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
     IClaimReceiverPool public claimReceiverPool;
+    IRegulationsManager public regulationsManager;
 
     mapping (address => mapping (address => uint256)) public allowances;
     mapping (address => UserDeposit) public _userDeposits;
@@ -57,6 +59,8 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint24 weight;
     }
 
+    event FundsMigrated(address user, uint256 amount, uint256 eapPoints, uint40 loyaltyPoints);
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -64,21 +68,42 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     receive() external payable {}
 
-    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress) external initializer {
+    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress,  address _regulationsManagerAddress) external initializer {
         require(_eEthAddress != address(0), "No zero addresses");
         require(_liquidityPoolAddress != address(0), "No zero addresses");
         require(_claimReceiverPoolAddress != address(0), "No zero addresses");
-        
+        require(_regulationsManagerAddress != address(0), "No zero addresses");
+
         __Ownable_init();
         __UUPSUpgradeable_init();
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
         claimReceiverPool = IClaimReceiverPool(_claimReceiverPoolAddress);
+        regulationsManager = IRegulationsManager(_regulationsManagerAddress);
         genesisTime = uint32(block.timestamp);
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
+    }
+
+    /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
+    /// @dev The deposit amount must be the same as what they deposited into the EAP
+    /// @param _points points of the user
+    /// @param _merkleProof array of hashes forming the merkle proof for the user
+    function deposit(
+        uint256 _points,
+        bytes32[] calldata _merkleProof
+    ) external payable {
+        require(_points > 0, "You don't have any point to claim");
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
+
+        uint256 ethAmount = msg.value;
+
+        uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_points);
+        _wrapEthForEap(msg.sender, ethAmount, loyaltyPoints, _merkleProof);
+
+        emit FundsMigrated(msg.sender, ethAmount, _points, loyaltyPoints);
     }
 
     function wrapEEth(uint256 _amount) external isEEthStakingOpen {
@@ -101,22 +126,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
         _mint(_account, amount);
-    }
-
-    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
-        require(msg.sender == address(claimReceiverPool), "Caller muat be the claim receiver pool contract");
-        require(msg.value > 0, "You cannot wrap 0 ETH");
-        require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
-
-        uint256 amount = msg.value;
-        _initializeEarlyAdopterPoolUserPoints(_account, _points, amount);
-        
-        liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
-        _mint(_account, amount);
-        _updateGlobalIndex();
-
-        uint8 tier = tierOf(_account);
-        _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
     function unwrapForEEth(uint256 _amount) public isEEthStakingOpen {
@@ -349,6 +358,21 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.pointsSnapshotTime = uint32(block.timestamp);
         uint40 userPointsPerDepositAmount = calculatePointsPerDepositAmount(_points, _amount);
         userData.tier = tierForPointsPerDepositAmount(userPointsPerDepositAmount);
+    }
+
+    function _wrapEthForEap(address _account, uint256 _ethAmount, uint40 _points, bytes32[] calldata _merkleProof) internal {
+        require(msg.sender == address(claimReceiverPool), "Caller muat be the claim receiver pool contract");
+        require(_ethAmount > 0, "You cannot wrap 0 ETH");
+        require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
+
+        _initializeEarlyAdopterPoolUserPoints(_account, _points, _ethAmount);
+        
+        liquidityPool.deposit{value: _ethAmount}(_account, address(this), _merkleProof);
+        _mint(_account, _ethAmount);
+        _updateGlobalIndex();
+
+        uint8 tier = tierOf(_account);
+        _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
     function _claimTier(address _account, uint8 _curTier, uint8 _newTier) internal {

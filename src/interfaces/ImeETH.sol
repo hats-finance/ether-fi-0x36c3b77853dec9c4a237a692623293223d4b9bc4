@@ -14,10 +14,10 @@ interface ImeETH {
     function tierForPointsPerDepositAmount(uint40 _points) external view returns (uint8);
     function recentTierSnapshotTimestamp() external view returns (uint256);
     function allowance(address _owner, address _spender) external view returns (uint256);
-
+    
+    function deposit(uint256 _points, bytes32[] calldata _merkleProof) external payable;
     function wrapEEth(uint256 _amount) external;
     function wrapEth(address _account, bytes32[] calldata _merkleProof) external payable;
-    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable;
     function unwrapForEEth(uint256 _amount) external;
     function unwrapForEth(uint256 _amount) external;
     function stakeForPoints(uint256 _amount) external;
