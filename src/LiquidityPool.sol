@@ -9,10 +9,10 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
-import "./interfaces/IEETH.sol";
+import "./interfaces/IeETH.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
-import "./interfaces/IMEETH.sol";
+import "./interfaces/ImeETH.sol";
 
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
@@ -20,20 +20,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IEETH public eETH; 
+    IeETH public eETH; 
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
-    IMEETH public meEth;
+    ImeETH public meETH;
 
     mapping(uint256 => bool) public validators;
+    uint256 public numValidators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
-    uint256 public accruedStakingRewards;       // total amounts of accrued staking rewards beyond the principals
-
-    uint64 public numValidators;
+    uint256 public accruedEther;                // total amounts of accrued ethers rewards + exited principals
     bool public eEthliquidStakingOpened;
-
-    bytes32[] private merkleProof;
 
     uint256[21] __gap;
 
@@ -41,8 +38,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event Received(address indexed sender, uint256 value);
-    event TokenAddressChanged(address indexed newAddress);
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, uint256 amount);
 
@@ -56,13 +51,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     receive() external payable {
-        require(accruedStakingRewards >= msg.value, "Update the accrued rewards first");
-        accruedStakingRewards -= msg.value;
+        require(accruedEther >= msg.value, "Update the accrued ethers first");
+        accruedEther -= msg.value;
     }
 
     function initialize(address _regulationsManager) external initializer {
         require(_regulationsManager != address(0), "No zero addresses");
-        
+
         __Ownable_init();
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
@@ -78,7 +73,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
         stakingManager.verifyWhitelisted(_user, _merkleProof);
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
-        require(_recipient == msg.sender || isDepositToInternalContract(_recipient), "");
+        require(_recipient == msg.sender || _recipient == address(meETH), "Wrong Recipient");
 
         uint256 share = _sharesForDepositAmount(msg.value);
         if (share == 0) {
@@ -92,7 +87,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @notice withdraw from pool
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to user
     /// @param _amount the amount to withdraw from contract
-    /// TODO WARNING! This implementation does not take into consideration the score
     function withdraw(address _recipient, uint256 _amount) public whenLiquidStakingOpen {
         require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(_recipient) >= _amount, "Not enough eETH");
@@ -102,43 +96,62 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "Failed to send Ether");
-        
+
         emit Withdraw(_recipient, _amount);
     }
 
-    function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds) public onlyOwner returns (uint256[] memory) {
+    function batchDepositWithBidIds(
+        uint256 _numDeposits, 
+        uint256[] calldata _candidateBidIds, 
+        bytes32[] calldata _merkleProof
+        ) payable public onlyOwner returns (uint256[] memory) {
+        require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
+        require(address(this).balance >= 32 ether * _numDeposits, "Not enough balance");
+        
         uint256 amount = 32 ether * _numDeposits;
-        require(address(this).balance >= amount, "Not enough balance");
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, merkleProof);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, _merkleProof);
+
+        uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
+        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+        require(sent, "Failed to send Ether");
 
         return newValidators;
     }
 
     function batchRegisterValidators(
-        bytes32 _depositRoot, 
+        bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData
-        ) public onlyOwner 
-    {  
+        ) public onlyOwner
+    {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             validators[validatorId] = true;
         }
-        numValidators += uint64(_validatorIds.length);
+        numValidators += _validatorIds.length;
     }
 
     // After the nodes are exited, delist them from the liquidity pool
     function processNodeExit(uint256[] calldata _validatorIds, uint256[] calldata _slashingPenalties) public onlyOwner {
         uint256 totalSlashingPenalties = 0;
+        uint256 totalPrincipals = 0;
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
+            uint256 slashingPenalty = _slashingPenalties[i];
             require(nodesManager.phase(validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED, "Incorrect Phase");
+            (, uint256 toTnft, uint256 toBnft,) = nodesManager.getFullWithdrawalPayouts(validatorId);
+
             validators[validatorId] = false;
             totalSlashingPenalties += _slashingPenalties[i];
+            totalPrincipals += (toTnft >= 30 ether) ? 30 ether : toTnft;
         }
-        numValidators -= uint64(_validatorIds.length);
+
+        numValidators -= _validatorIds.length;
+        accruedEther += totalPrincipals;
         accruedSlashingPenalties -= totalSlashingPenalties;
+
+        nodesManager.fullWithdrawBatch(_validatorIds);
     }
 
     // @notice Send the exit reqeusts as the T-NFT holder
@@ -150,12 +163,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     // @notice Allow interactions with the eEth token
-    function openLiquidStaking() external onlyOwner {
+    function openEEthLiquidStaking() external onlyOwner {
         eEthliquidStakingOpened = true;
     }
 
     // @notice Disallow interactions with the eEth token
-    function closeLiquidStaking() external onlyOwner {
+    function closeEEthLiquidStaking() external onlyOwner {
         eEthliquidStakingOpened = false;
     }
 
@@ -169,12 +182,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function getTotalPooledEther() public view returns (uint256) {
-        return (32 ether * numValidators) + accruedStakingRewards + address(this).balance - (accruedSlashingPenalties);
+        return (30 ether * numValidators) + accruedEther + address(this).balance - (accruedSlashingPenalties);
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther();
-       
         if (totalPooledEther == 0) {
             return 0;
         }
@@ -186,12 +198,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (totalShares == 0) {
             return 0;
         }
-        return (_share * getTotalPooledEther()) / eETH.totalShares();
+        return (_share * getTotalPooledEther()) / totalShares;
     }
 
     /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
-    function setAccruedStakingRewards(uint256 _amount) external onlyOwner {
-        accruedStakingRewards = _amount;
+    function setAccruedEther(uint256 _amount) external onlyOwner {
+        accruedEther = _amount;
     }
 
     /// @notice ether.fi protocol will be monitoring the status of validator nodes
@@ -204,8 +216,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param _eETH address of eETH contract
     function setTokenAddress(address _eETH) external onlyOwner {
         require(_eETH != address(0), "No zero addresses");
-        eETH = IEETH(_eETH);
-        emit TokenAddressChanged(_eETH);
+        eETH = IeETH(_eETH);
     }
 
     function setStakingManager(address _address) external onlyOwner {
@@ -213,33 +224,21 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager = IStakingManager(_address);
     }
 
-    function setMerkleProof(bytes32[] calldata _merkleProof) public onlyOwner {
-        merkleProof = _merkleProof;
-    }
-
     function setEtherFiNodesManager(address _nodeManager) public onlyOwner {
         require(_nodeManager != address(0), "No zero addresses");
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
-    function setMeEth(address _address) external onlyOwner {
+    function setMeETH(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
-        meEth = IMEETH(_address);
+        meETH = ImeETH(_address);
     }
     
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function isDepositToInternalContract(address _address) internal view returns (bool) {
-        bool verified = false;
-        if (_address == address(meEth)) {
-            verified = true;
-        }
-        return verified;
-    }
-
-    function _sharesForDepositAmount(uint256 _depositAmount) internal returns (uint256) {
+    function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;
         if (totalPooledEther == 0) {
             return 0;
@@ -247,17 +246,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return (_depositAmount * eETH.totalShares()) / totalPooledEther;
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
-    }
+    function getImplementation() external view returns (address) {return _getImplementation();}
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------

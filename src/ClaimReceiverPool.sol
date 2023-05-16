@@ -13,8 +13,8 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-import "./interfaces/IWeth.sol";
-import "./interfaces/IMEETH.sol";
+import "./interfaces/IWETH.sol";
+import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IRegulationsManager.sol";
 
@@ -57,7 +57,7 @@ contract ClaimReceiverPool is
 
     ILiquidityPool public liquidityPool;
     IRegulationsManager public regulationsManager;
-    IMEETH public meEth;
+    ImeETH public meEth;
 
     uint256[4] public __gap;
 
@@ -134,7 +134,6 @@ contract ClaimReceiverPool is
     ) external payable whenNotPaused {
         require(_points > 0, "You don't have any point to claim");
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
-        require(meEth.pointsSnapshotTimeOf(msg.sender) == 0, "Already Deposited");
         _verifyEapUserData(msg.sender, msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof);
 
         uint256 _ethAmount = 0;
@@ -158,11 +157,6 @@ contract ClaimReceiverPool is
         return uint40(points);
     }
 
-    function getClaimableTier(uint256 _eapPoints) public view returns (uint8) {
-        uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_eapPoints);
-        return meEth.tierForPoints(loyaltyPoints);
-    }
-
     function setLiquidityPool(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         liquidityPool = ILiquidityPool(_address);
@@ -170,7 +164,7 @@ contract ClaimReceiverPool is
 
     function setMeEth(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
-        meEth = IMEETH(_address);
+        meEth = ImeETH(_address);
     }
 
     function pauseContract() external onlyOwner {
