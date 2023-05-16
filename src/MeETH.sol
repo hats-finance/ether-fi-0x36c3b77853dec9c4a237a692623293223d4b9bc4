@@ -101,6 +101,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
         _mint(_account, amount);
+        _claimTier(msg.sender);
     }
 
     function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
@@ -340,6 +341,12 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.pointsSnapshotTime = uint32(block.timestamp);
         uint40 userPointsPerDepositAmount = calculatePointsPerDepositAmount(_points, _amount);
         userData.tier = tierForPointsPerDepositAmount(userPointsPerDepositAmount);
+    }
+
+    function _claimTier(address _account) internal {
+        uint8 oldTier = tierOf(_account);
+        uint8 newTier = claimableTier(_account);
+        _claimTier(_account, oldTier, newTier);
     }
 
     function _claimTier(address _account, uint8 _curTier, uint8 _newTier) internal {
