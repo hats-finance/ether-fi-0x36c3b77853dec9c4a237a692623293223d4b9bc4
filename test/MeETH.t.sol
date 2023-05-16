@@ -129,26 +129,26 @@ contract MeETHTest is TestSetup {
 
         // <Second period begins>
         // Now, after a month (= 28 days), Alice's earned points are eligible for the membership tier
-        // Alice's claimable tier is 2 while the current tier is still 0
+        // Alice's claimable tier is 1 while the current tier is still 0
         skip(1 days);
         assertEq(meEthInstance.pointsOf(alice), 28 * kwei);
         assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 28 * kwei);
-        assertEq(meEthInstance.claimableTier(alice), 2);
+        assertEq(meEthInstance.claimableTier(alice), 1);
         assertEq(meEthInstance.tierOf(alice), 0);
 
-        // Alice sees that she can claim her tier 2, which is higher than her current tier 0
-        // By calling 'claimTier', Alice's tier gets upgraded to the tier 2
-        assertEq(meEthInstance.claimableTier(alice), 2);
+        // Alice sees that she can claim her tier 1, which is higher than her current tier 0
+        // By calling 'claimTier', Alice's tier gets upgraded to the tier 1
+        assertEq(meEthInstance.claimableTier(alice), 1);
         meEthInstance.claimTier(alice);
-        assertEq(meEthInstance.tierOf(alice), 2);
+        assertEq(meEthInstance.tierOf(alice), 1);
 
         // Alice unwraps 0.5 meETH (which is 50% of her meETH holdings)
         meEthInstance.unwrapForEth(0.5 ether);
 
         // The points didn't get penalized by unwrapping
-        // But the tier get downgraded from Tier 2 to Tier 1
+        // But the tier get downgraded from Tier 1 to Tier 0
         assertEq(meEthInstance.pointsOf(alice), 28 * kwei);
-        assertEq(meEthInstance.tierOf(alice), 1);
+        assertEq(meEthInstance.tierOf(alice), 0);
     }
 
     function test_StakingRewards() public {
@@ -429,6 +429,42 @@ contract MeETHTest is TestSetup {
         vm.stopPrank();
 
         assertEq(meEthInstance.pointsOf(alice), 1 * kwei / 2);
+    }
+
+    function test_TierUpgrades() public {
+        // Upgrade from Tier 0 to Tier 1 requires (14) points earnings during the last period
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(0, uint40(7)), 0);
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(0, uint40(14)), 1);
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(0, uint40(21)), 1);
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(0, uint40(28)), 1);
+
+        // Upgrade from Tier 0 to Tier 2 requires (14 + 28) points earnings during the last period
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(0, uint40(28 + 14 - 1)), 1); 
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(0, uint40(28 + 14)), 2); 
+
+        // Upgrade from Tier 1 to Tier 2 requires (28) points earnings during the last period
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(1, uint40(28 - 1)), 1); 
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(1, uint40(28)), 2); 
+
+        // Upgrade from Tier 2 to Tier 3 requires (42) points earnings during the last period
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(2, uint40(42 - 1)), 2); 
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(2, uint40(42)), 3); 
+
+        // Upgrade from Tier 0 to Tier 3 requires (14 + 28 + 42) points earnings during the last period
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(0, uint40(14 + 28 + 42 - 1)), 2); 
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(0, uint40(14 + 28 + 42)), 3); 
+
+        // To retain Tier 3, a user must have earned at least (42) points during the last period
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(3, uint40(42)), 3); 
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(3, uint40(42 - 1)), 2);
+
+        // To retain Tier 2, a user must have earned at least (28) points during the last period
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(3, uint40(28)), 2); 
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(3, uint40(28 - 1)), 1); 
+
+        // To retain Tier 1, a user must have earned at least (14) points during the last period
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(3, uint40(14)), 1); 
+        assertEq(meEthInstance.tierForPointsPerDepositAmount(3, uint40(14-1)), 0); 
     }
 
 }

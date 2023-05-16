@@ -11,7 +11,7 @@ interface ImeETH {
     function getPointsEarningsDuringLastMembershipPeriod(address _account) external view returns (uint40);
     function pointsSnapshotTimeOf(address _account) external view returns (uint32);
     function claimableTier(address _account) external view returns (uint8);
-    function tierForPointsPerDepositAmount(uint40 _points) external view returns (uint8);
+    function tierForPointsPerDepositAmount(uint8 _curTier, uint40 _points) external view returns (uint8);
     function recentTierSnapshotTimestamp() external view returns (uint256);
     function allowance(address _owner, address _spender) external view returns (uint256);
 

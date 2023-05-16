@@ -53,7 +53,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     struct TierData {
         uint96 rewardsGlobalIndex;
         uint96 amountStakedForPoints;
-        uint40 minPointsPerDepositAmount;
+        uint40 minPointsPerDepositAmount; // required points for the upgrade from the previous tier + min points to retain the tier
         uint24 weight;
     }
 
@@ -246,6 +246,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function addNewTier(uint40 _minPointsPerDepositAmount, uint24 _weight) external onlyOwner returns (uint256) {
         require(tierDeposits.length < type(uint8).max, "Cannot add more new tier");
+        require(tierDeposits.length != 0 || _minPointsPerDepositAmount == 0, "First tier must have zero points requirement");
         tierDeposits.push(TierDeposit(0, 0));
         tierData.push(TierData(0, 0, _minPointsPerDepositAmount, _weight));
         return tierDeposits.length - 1;
@@ -339,7 +340,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.pointsSnapshot = _points;
         userData.pointsSnapshotTime = uint32(block.timestamp);
         uint40 userPointsPerDepositAmount = calculatePointsPerDepositAmount(_points, _amount);
-        userData.tier = tierForPointsPerDepositAmount(userPointsPerDepositAmount);
+        userData.tier = tierForPointsPerDepositAmount(0, userPointsPerDepositAmount);
     }
 
     function _claimTier(address _account, uint8 _curTier, uint8 _newTier) internal {
@@ -537,18 +538,32 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function claimableTier(address _account) public view returns (uint8) {
         UserDeposit memory deposit = _userDeposits[_account];
+        UserData memory userData = _userData[_account];
         uint256 userTotalDeposit = uint256(deposit.amounts + deposit.amountStakedForPoints);
         uint40 pointsEarned = getPointsEarningsDuringLastMembershipPeriod(_account);
         uint40 userPointsPerDepositAmount = calculatePointsPerDepositAmount(pointsEarned, userTotalDeposit);
-        return tierForPointsPerDepositAmount(userPointsPerDepositAmount);
+        return tierForPointsPerDepositAmount(userData.tier, userPointsPerDepositAmount);
     }
 
-    function tierForPointsPerDepositAmount(uint40 _pointsPerDepositAmount) public view returns (uint8) {
-        uint8 tierId = 0;
-        while (tierId < tierDeposits.length && _pointsPerDepositAmount >= tierData[tierId].minPointsPerDepositAmount) {
-            tierId++;
+    // TODO: Improve math in this function
+    function tierForPointsPerDepositAmount(uint8 _curTier, uint40 _pointsPerDepositAmount) public view returns (uint8) {
+        bool shouldDowngrade = (_pointsPerDepositAmount < tierData[_curTier].minPointsPerDepositAmount);
+        
+        if (shouldDowngrade) {
+            uint8 tierId = _curTier;
+            while (tierId > 0 && _pointsPerDepositAmount < tierData[tierId].minPointsPerDepositAmount) {
+                tierId--;
+            }
+            return tierId;
+        } else {
+            uint8 tierId = _curTier + 1;
+            uint40 pointsSpendingOnTierUpgrade;
+            while (tierId < tierDeposits.length && _pointsPerDepositAmount >= pointsSpendingOnTierUpgrade + tierData[tierId].minPointsPerDepositAmount) {
+                pointsSpendingOnTierUpgrade += tierData[tierId].minPointsPerDepositAmount;
+                tierId++;
+            }
+            return tierId - 1;
         }
-        return tierId - 1;
     }
 
     function calculatePointsPerDepositAmount(uint40 _points, uint256 _amount) public view returns (uint40) {
