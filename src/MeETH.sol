@@ -101,7 +101,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
         _mint(_account, amount);
-        _claimTier(msg.sender);
+        _claimTier(_account);
     }
 
     function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
@@ -128,8 +128,9 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         claimPoints(msg.sender);
         claimStakingRewards(msg.sender);
 
-        _applyUnwrapPenalty(msg.sender);
+        uint256 prevAmount = _userDeposits[msg.sender].amounts;
         _burn(msg.sender, _amount);
+        _applyUnwrapPenaltyByDeductingPointsEarnings(msg.sender, prevAmount, _amount);
 
         eETH.transferFrom(address(this), msg.sender, _amount);
     }
@@ -140,8 +141,9 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         claimPoints(msg.sender);
         claimStakingRewards(msg.sender);
 
-        _applyUnwrapPenalty(msg.sender);
+        uint256 prevAmount = _userDeposits[msg.sender].amounts;
         _burn(msg.sender, _amount);
+        _applyUnwrapPenaltyByDeductingPointsEarnings(msg.sender, prevAmount, _amount);
 
         liquidityPool.withdraw(address(this), _amount);
         (bool sent, ) = address(msg.sender).call{value: _amount}("");
@@ -460,13 +462,13 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
         return (_a > _b) ? _b : _a;
-    } 
+    }
 
-    // Degrade the user's tier to the lower one
-    function _applyUnwrapPenalty(address _account) internal {
-        uint8 curTier = tierOf(_account);
-        uint8 newTier = (curTier >= 1) ? curTier - 1 : 0;
-        _claimTier(_account, curTier, newTier);
+    function _applyUnwrapPenaltyByDeductingPointsEarnings(address _account, uint256 _prevAmount, uint256 _burnAmount) internal {
+        UserData storage userData = _userData[_account];
+        userData.curTierPoints -= uint40(userData.curTierPoints * _burnAmount / _prevAmount);
+        userData.nextTierPoints -= uint40(userData.nextTierPoints * _burnAmount / _prevAmount);
+        _claimTier(_account);
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
@@ -560,7 +562,10 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function calculatePointsPerDepositAmount(uint40 _points, uint256 _amount) public view returns (uint40) {
         uint256 userTotalDepositScaled = _amount / (1 ether / 1000);
-        uint40 userPointsPerDepositAmount = uint40(_points / userTotalDepositScaled); // points earned per 0.001 ether
+        uint40 userPointsPerDepositAmount;
+        if (userTotalDepositScaled > 0) {
+            userPointsPerDepositAmount = uint40(_points / userTotalDepositScaled); // points earned per 0.001 ether
+        }
         return userPointsPerDepositAmount;
     }
 

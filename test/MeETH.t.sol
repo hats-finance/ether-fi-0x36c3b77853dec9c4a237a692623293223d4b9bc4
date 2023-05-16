@@ -145,10 +145,9 @@ contract MeETHTest is TestSetup {
         // Alice unwraps 0.5 meETH (which is 50% of her meETH holdings)
         meEthInstance.unwrapForEth(0.5 ether);
 
-        // The points didn't get penalized by unwrapping
-        // But the tier get downgraded from Tier 2 to Tier 1
+        // The points and tier didn't get penalized by unwrapping
         assertEq(meEthInstance.pointsOf(alice), 28 * kwei);
-        assertEq(meEthInstance.tierOf(alice), 1);
+        assertEq(meEthInstance.tierOf(alice), 2);
     }
 
     function test_StakingRewards() public {
