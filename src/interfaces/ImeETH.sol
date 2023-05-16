@@ -2,33 +2,6 @@
 pragma solidity 0.8.13;
 
 interface ImeETH {
-
-    struct UserDeposit {
-        uint128 amounts;
-        uint128 amountStakedForPoints;
-    }
-
-    struct UserData {
-        uint96 rewardsLocalIndex;
-        uint32 pointsSnapshotTime;
-        uint40 pointsSnapshot;
-        uint40 curTierPoints;
-        uint40 nextTierPoints;
-        uint8  tier;
-    }
-
-    struct TierDeposit {
-        uint128 shares;
-        uint128 amounts;        
-    }
-
-    struct TierData {
-        uint96 rewardsGlobalIndex;
-        uint96 amountStakedForPoints;
-        uint40 minPointsPerDepositAmount;
-        uint24 weight;
-    }
-
     function totalShares() external view returns (uint256);
     function totalSupply() external view returns (uint256);
     function balanceOf(address _account) external view returns (uint256);
@@ -43,7 +16,8 @@ interface ImeETH {
     function allowance(address _owner, address _spender) external view returns (uint256);
 
     function wrapEEth(uint256 _amount) external;
-    function wrapEth(address _account, uint256 _amount, bytes32[] calldata _merkleProof) external payable;
+    function wrapEth(address _account, bytes32[] calldata _merkleProof) external payable;
+    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable;
     function unwrapForEEth(uint256 _amount) external;
     function unwrapForEth(uint256 _amount) external;
     function stakeForPoints(uint256 _amount) external;

@@ -36,7 +36,7 @@ contract MeETHTest is TestSetup {
         vm.startPrank(alice);
 
         // Alice mints 2 meETH by wrapping 2 ETH starts earning points
-        meEthInstance.wrapEth{value: 2 ether}(alice, 2 ether, aliceProof);
+        meEthInstance.wrapEth{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 2 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
@@ -76,7 +76,7 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 1_000_000 ether);
 
         vm.startPrank(alice);
-        meEthInstance.wrapEth{value: 1_000_000 ether}(alice, 1_000_000 ether, aliceProof);
+        meEthInstance.wrapEth{value: 1_000_000 ether}(alice, aliceProof);
 
         // (1 gwei = 10^9)
         // Alice earns 1 gwei points a day
@@ -112,7 +112,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice deposits 10 ETH and mints 10 meETH.
-        meEthInstance.wrapEth{value: 1 ether}(alice, 1 ether, aliceProof);
+        meEthInstance.wrapEth{value: 1 ether}(alice, aliceProof);
 
         assertEq(meEthInstance.pointsOf(alice), 0);
         assertEq(meEthInstance.getPointsEarningsDuringLastMembershipPeriod(alice), 0);
@@ -151,233 +151,6 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.tierOf(alice), 1);
     }
 
-    function test_EapMigrationFailsIfIncorrectAmount() public {
-        /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
-
-        /*
-        Alice, Chad all deposit into the Early Adopter Pool
-        
-        -   Alice claims her funds after the snapshot has been taken. 
-            She then deposits her ETH into the MeETH and has her points allocated to her
-        
-        -   Chad withdraws his funds after the snapshot but does not deposit into the MeETH losing all his points.
-        */
-
-        // Acotrs deposit into EAP
-        startHoax(alice);
-        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
-        vm.stopPrank();
-
-        // PAUSE CONTRACTS AND GET READY FOR SNAPSHOT
-        vm.startPrank(owner);
-        earlyAdopterPoolInstance.pauseContract();
-        vm.stopPrank();
-
-        /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
-        // Alice's Points are 103680 * 1e9 
-        // Bob's points are 136850
-
-        /// MERKLE TREE GETS GENERATED AND UPDATED
-        vm.prank(owner);
-        meEthInstance.updateMerkleRoot(rootMigration2);
-
-        // Alice Withdraws
-        vm.startPrank(alice);
-        earlyAdopterPoolInstance.withdraw();
-        vm.stopPrank();
-
-        // Alice Deposits into MeETH and receives eETH in return
-        bytes32[] memory aliceProof = merkleMigration2.getProof(
-            dataForVerification2,
-            0
-        );
-        vm.deal(alice, 100 ether);
-        startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-
-        vm.expectRevert("Invalid deposit amount");
-        meEthInstance.eapDeposit{value: 0.5 ether}(
-            1 ether,
-            103680 * 1e9,
-            aliceProof
-        );
-    }
-
-    function test_EapMigrationFailsIfNotEligible() public {
-        /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
-
-        /*
-        Alice, Chad all deposit into the Early Adopter Pool
-        
-        -   Alice claims her funds after the snapshot has been taken. 
-            She then deposits her ETH into the MeETH and has her points allocated to her
-        
-        -   Chad withdraws his funds after the snapshot but does not deposit into the MeETH losing all his points.
-        */
-
-        // Acotrs deposit into EAP
-        startHoax(alice);
-        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
-        vm.stopPrank();
-
-        // PAUSE CONTRACTS AND GET READY FOR SNAPSHOT
-        vm.startPrank(owner);
-        earlyAdopterPoolInstance.pauseContract();
-        vm.stopPrank();
-
-        /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
-        // Alice's Points are 103680 * 1e9 
-        // Bob's points are 136850
-
-        /// MERKLE TREE GETS GENERATED AND UPDATED
-        vm.prank(owner);
-        meEthInstance.updateMerkleRoot(rootMigration2);
-
-        // Alice Withdraws
-        vm.startPrank(alice);
-        earlyAdopterPoolInstance.withdraw();
-        vm.stopPrank();
-
-        // Alice Deposits into MeETH and receives eETH in return
-        bytes32[] memory aliceProof = merkleMigration2.getProof(
-            dataForVerification2,
-            0
-        );
-        vm.deal(owner, 100 ether);
-        startHoax(owner);
-        vm.expectRevert("User is not whitelisted");
-        meEthInstance.eapDeposit{value: 2 ether}(
-            1 ether,
-            103680 * 1e9,
-            aliceProof
-        );
-    }
-
-    function test_EapMigrationFailsIfNoPointsToClaim() public {
-        /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
-
-        /*
-        Alice, Chad all deposit into the Early Adopter Pool
-        
-        -   Alice claims her funds after the snapshot has been taken. 
-            She then deposits her ETH into the MeETH and has her points allocated to her
-        
-        -   Chad withdraws his funds after the snapshot but does not deposit into the MeETH losing all his points.
-        */
-
-        // Acotrs deposit into EAP
-        startHoax(alice);
-        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
-        vm.stopPrank();
-
-        // PAUSE CONTRACTS AND GET READY FOR SNAPSHOT
-        vm.startPrank(owner);
-        earlyAdopterPoolInstance.pauseContract();
-        vm.stopPrank();
-
-        /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
-        // Alice's Points are 103680 * 1e9 
-        // Bob's points are 136850
-
-        /// MERKLE TREE GETS GENERATED AND UPDATED
-        vm.prank(owner);
-        meEthInstance.updateMerkleRoot(rootMigration2);
-
-        // Alice Withdraws
-        vm.startPrank(alice);
-        earlyAdopterPoolInstance.withdraw();
-        vm.stopPrank();
-
-        // Alice Deposits into MeETH and receives eETH in return
-        bytes32[] memory aliceProof = merkleMigration2.getProof(
-            dataForVerification2,
-            0
-        );
-        vm.deal(alice, 100 ether);
-        startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-
-        vm.expectRevert("You don't have any points to claim");
-        meEthInstance.eapDeposit{value: 2 ether}(
-            1 ether,
-            0,
-            aliceProof
-        );
-    }
-
-    function test_EapMigration() public {
-        /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
-
-        /*
-        Alice, Chad all deposit into the Early Adopter Pool
-        
-        -   Alice claims her funds after the snapshot has been taken. 
-            She then deposits her ETH into the MeETH and has her points allocated to her
-        
-        -   Chad withdraws his funds after the snapshot but does not deposit into the MeETH losing all his points.
-        */
-
-        // Acotrs deposit into EAP
-        startHoax(alice);
-        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
-        vm.stopPrank();
-
-        skip(3 days);
-
-        startHoax(chad);
-        earlyAdopterPoolInstance.depositEther{value: 2 ether}();
-        vm.stopPrank();
-
-        skip(1 days);
-
-        startHoax(dan);
-        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
-        vm.stopPrank();
-
-
-        skip(8 weeks);
-
-        // PAUSE CONTRACTS AND GET READY FOR SNAPSHOT
-        vm.startPrank(owner);
-        earlyAdopterPoolInstance.pauseContract();
-        vm.stopPrank();
-
-        /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
-        // Alice's Points are 103680 * 1e9 
-        // Bob's points are 136850
-
-        /// MERKLE TREE GETS GENERATED AND UPDATED
-        vm.prank(owner);
-        meEthInstance.updateMerkleRoot(rootMigration2);
-
-        // Alice Withdraws
-        vm.startPrank(alice);
-        earlyAdopterPoolInstance.withdraw();
-        vm.stopPrank();
-
-        // Alice Deposits into MeETH and receives eETH in return
-        bytes32[] memory aliceProof = merkleMigration2.getProof(
-            dataForVerification2,
-            0
-        );
-        vm.deal(alice, 100 ether);
-        startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        meEthInstance.eapDeposit{value: 2 ether}(
-            1 ether,
-            103680 * 1e9,
-            aliceProof
-        );
-        vm.stopPrank();
-
-        assertEq(address(meEthInstance).balance, 0 ether);
-        assertEq(address(liquidityPoolInstance).balance, 2 ether);
-
-        // Check that Alice has received meETH
-        assertEq(meEthInstance.balanceOf(alice), 2 ether);
-        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 2 ether);
-    }
-
     function test_StakingRewards() public {
         vm.deal(alice, 0.5 ether);
 
@@ -385,7 +158,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice deposits 0.5 ETH and mints 0.5 eETH.
-        meEthInstance.wrapEth{value: 0.5 ether}(alice, 0.5 ether, aliceProof);
+        meEthInstance.wrapEth{value: 0.5 ether}(alice, aliceProof);
         vm.stopPrank();
 
         // Check the balance
@@ -413,7 +186,7 @@ contract MeETHTest is TestSetup {
         // Bob in
         vm.deal(bob, 2 ether);
         vm.startPrank(bob);
-        meEthInstance.wrapEth{value: 2 ether}(bob, 2 ether, bobProof);
+        meEthInstance.wrapEth{value: 2 ether}(bob, bobProof);
         vm.stopPrank();
 
         // Alice belongs to the Tier 1, Bob belongs to the Tier 0
@@ -460,10 +233,10 @@ contract MeETHTest is TestSetup {
 
         // Both Alice and Bob mint 2 meETH.
         vm.startPrank(alice);
-        meEthInstance.wrapEth{value: 2 ether}(alice, 2 ether, aliceProof);
+        meEthInstance.wrapEth{value: 2 ether}(alice, aliceProof);
         vm.stopPrank();
         vm.startPrank(bob);
-        meEthInstance.wrapEth{value: 2 ether}(bob, 2 ether, bobProof);
+        meEthInstance.wrapEth{value: 2 ether}(bob, bobProof);
         vm.stopPrank();
 
         // Alice stakes 1 meETH to earn more points by sacrificing the staking rewards
@@ -522,10 +295,10 @@ contract MeETHTest is TestSetup {
 
         // Both Alice and Bob mint 2 meETH.
         vm.startPrank(alice);
-        meEthInstance.wrapEth{value: 2 ether}(alice, 2 ether, aliceProof);
+        meEthInstance.wrapEth{value: 2 ether}(alice, aliceProof);
         vm.stopPrank();
         vm.startPrank(bob);
-        meEthInstance.wrapEth{value: 2 ether}(bob, 2 ether, bobProof);
+        meEthInstance.wrapEth{value: 2 ether}(bob, bobProof);
         vm.stopPrank();
 
         // Alice sends 1 meETH to Bob, which fails.
@@ -544,7 +317,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints 2 meETH by wrapping 2 ETH starts earning points
-        meEthInstance.wrapEth{value: 2 ether}(alice, 2 ether, aliceProof);
+        meEthInstance.wrapEth{value: 2 ether}(alice, aliceProof);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(meEthInstance.balanceOf(alice), 2 ether);
 
@@ -596,7 +369,7 @@ contract MeETHTest is TestSetup {
         vm.startPrank(alice);
 
         // Alice deposits 10 ETH and mints 10 meETH.
-        meEthInstance.wrapEth{value: 10 ether}(alice, 10 ether, aliceProof);
+        meEthInstance.wrapEth{value: 10 ether}(alice, aliceProof);
 
         // 10 ETH to the LP
         // 10 eETH to the meEth contract
@@ -633,7 +406,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints 1 meETH by wrapping 1 ETH starts earning points
-        meEthInstance.wrapEth{value: 1 ether}(alice, 1 ether, aliceProof);
+        meEthInstance.wrapEth{value: 1 ether}(alice, aliceProof);
         vm.stopPrank();
 
         // Alice earns 1 kwei per day by holding 1 meETH
