@@ -273,12 +273,12 @@ contract MeETHTest is TestSetup {
     }
 
     function test_StakingRewards() public {
-        vm.deal(alice, 0.5 ether);
+        vm.deal(alice, 100 ether);
 
         skip(14 days);
 
         vm.startPrank(alice);
-        // Alice deposits 0.5 ETH and mints 0.5 eETH.
+        // Alice deposits 0.5 ETH and mints 0.5 meETH.
         meEthInstance.wrapEth{value: 0.5 ether}(alice, 0.5 ether, aliceProof);
         vm.stopPrank();
 
@@ -331,6 +331,16 @@ contract MeETHTest is TestSetup {
         uint256 bobRescaledRewards = bobWeightedRewards * sumRewards / sumWeightedRewards;
         assertEq(meEthInstance.balanceOf(alice), 1 ether + aliceRescaledRewards - 1); // some rounding errors
         assertEq(meEthInstance.balanceOf(bob), 2 ether + bobRescaledRewards - 2); // some rounding errors
+
+        // They claim the rewards
+        meEthInstance.claimStakingRewards(alice);
+        assertEq(meEthInstance.balanceOf(alice), 1 ether + aliceRescaledRewards - 1); // some rounding errors
+        meEthInstance.claimStakingRewards(bob);
+        assertEq(meEthInstance.balanceOf(bob), 2 ether + bobRescaledRewards - 2); // some rounding errors
+
+        // assertEq(meEthInstance.tierDepositAmount(meEthInstance.tierOf(alice)), meEthInstance.balanceOf(alice) - 2);
+        // assertEq(meEthInstance.tierDepositAmount(meEthInstance.tierOf(bob)), meEthInstance.balanceOf(bob) + 2);
+        assertEq(meEthInstance.totalSupply(), meEthInstance.balanceOf(alice) + meEthInstance.balanceOf(bob));
     }
 
     function test_OwnerPermissions() public {

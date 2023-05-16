@@ -118,10 +118,13 @@ contract TestSetup is Test {
     address henry = vm.addr(8);
     address liquidityPool = vm.addr(9);
 
+    address[] public actors;
+    uint256[] public whitelistIndices;
+
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
 
-    function setUpTests() public {
+    function setUpTests() internal {
         vm.startPrank(owner);
 
         // Deploy Contracts and Proxies
@@ -272,6 +275,8 @@ contract TestSetup is Test {
         _initializeMembershipTiers();
 
         vm.stopPrank();
+
+        _initializePeople();
     }
 
     function _merkleSetup() internal {
@@ -323,6 +328,23 @@ contract TestSetup is Test {
             uint24 weight = uint24(i + 1);
             meEthInstance.addNewTier(minimumPointsRequirement, weight);
         }
+    }
+
+    function _initializePeople() internal {
+        for (uint i = 1000; i < 1000 + 64; i++) {
+            address actor = vm.addr(i);
+            actors.push(actor);
+            whitelistIndices.push(whiteListedAddresses.length);
+            whiteListedAddresses.push(keccak256(abi.encodePacked(actor)));
+            vm.startPrank(actor);
+            regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+            vm.stopPrank();
+        }
+
+        vm.startPrank(owner);
+        root = merkle.getRoot(whiteListedAddresses);
+        stakingManagerInstance.updateMerkleRoot(root);
+        vm.stopPrank();
     }
 
     function _setUpNodeOperatorWhitelist() internal {
