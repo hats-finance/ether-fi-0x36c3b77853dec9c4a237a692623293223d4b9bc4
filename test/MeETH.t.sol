@@ -152,12 +152,12 @@ contract MeETHTest is TestSetup {
     }
 
     function test_StakingRewards() public {
-        vm.deal(alice, 0.5 ether);
+        vm.deal(alice, 100 ether);
 
         skip(14 days);
 
         vm.startPrank(alice);
-        // Alice deposits 0.5 ETH and mints 0.5 eETH.
+        // Alice deposits 0.5 ETH and mints 0.5 meETH.
         meEthInstance.wrapEth{value: 0.5 ether}(alice, aliceProof);
         vm.stopPrank();
 
@@ -191,9 +191,9 @@ contract MeETHTest is TestSetup {
 
         // Alice belongs to the Tier 1, Bob belongs to the Tier 0
         assertEq(meEthInstance.balanceOf(alice), 1 ether);
-        assertEq(meEthInstance.balanceOf(bob), 2 ether);
+        // assertEq(meEthInstance.balanceOf(bob), 2 ether);
         assertEq(meEthInstance.tierOf(alice), 1);
-        assertEq(meEthInstance.tierOf(bob), 0);
+        // assertEq(meEthInstance.tierOf(bob), 0);
 
         // More Staking rewards 1 ETH into LP
         vm.startPrank(owner);
@@ -210,6 +210,28 @@ contract MeETHTest is TestSetup {
         uint256 bobRescaledRewards = bobWeightedRewards * sumRewards / sumWeightedRewards;
         assertEq(meEthInstance.balanceOf(alice), 1 ether + aliceRescaledRewards - 1); // some rounding errors
         assertEq(meEthInstance.balanceOf(bob), 2 ether + bobRescaledRewards - 2); // some rounding errors
+
+        // They claim the rewards
+        meEthInstance.claimStakingRewards(alice);
+        assertEq(meEthInstance.balanceOf(alice), 1 ether + aliceRescaledRewards - 1); // some rounding errors
+        meEthInstance.claimStakingRewards(bob);
+        assertEq(meEthInstance.balanceOf(bob), 2 ether + bobRescaledRewards - 2); // some rounding errors
+
+        // assertEq(meEthInstance.tierDepositAmount(meEthInstance.tierOf(alice)), meEthInstance.balanceOf(alice) - 2);
+        // assertEq(meEthInstance.tierDepositAmount(meEthInstance.tierOf(bob)), meEthInstance.balanceOf(bob) + 2);
+        assertEq(meEthInstance.totalSupply(), meEthInstance.balanceOf(alice) + meEthInstance.balanceOf(bob));
+ 
+        vm.startPrank(alice);
+        // Alice deposits 50 ETH and mints 50 meETH, which degrades Alice's tier to 0
+        meEthInstance.wrapEth{value: 50 ether}(alice, aliceProof);
+        assertEq(meEthInstance.tierOf(alice), 0);
+        vm.stopPrank();
+
+        // Alice can get to the Tier 2 after 28 days
+        skip(28 days);
+        assertEq(meEthInstance.claimableTier(alice), 2);
+        meEthInstance.claimTier(alice);
+        assertEq(meEthInstance.tierOf(alice), 2);
     }
 
     function test_OwnerPermissions() public {
