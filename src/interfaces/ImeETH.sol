@@ -44,7 +44,6 @@ interface ImeETH {
 
     function wrapEEth(uint256 _amount) external;
     function wrapEth(address _account, uint256 _amount, bytes32[] calldata _merkleProof) external payable;
-    function wrapEthForEap(address _account, uint256 _ethAmount, uint40 _points, bytes32[] calldata _merkleProof) external;
     function unwrapForEEth(uint256 _amount) external;
     function unwrapForEth(uint256 _amount) external;
     function stakeForPoints(uint256 _amount) external;

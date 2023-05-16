@@ -90,7 +90,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_points);
 
-        wrapEthForEap(msg.sender, _ethAmount, loyaltyPoints, _merkleProof);
+        _wrapEthForEap(msg.sender, _ethAmount, loyaltyPoints, _merkleProof);
         wrapEth(msg.sender, msg.value - _ethAmount, _merkleProof);
 
         emit FundsMigrated(msg.sender, _ethAmount, _points, loyaltyPoints);
@@ -115,19 +115,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         liquidityPool.deposit{value: _amount}(_account, address(this), _merkleProof);
         _mint(_account, _amount);
-    }
-
-    function wrapEthForEap(address _account, uint256 _amount, uint40 _points, bytes32[] calldata _merkleProof) public {
-        require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
-
-        _initializeEarlyAdopterPoolUserPoints(_account, _points, _amount);
-        
-        liquidityPool.deposit{value: _amount}(_account, address(this), _merkleProof);
-        _mint(_account, _amount);
-        _updateGlobalIndex();
-
-        uint8 tier = tierOf(_account);
-        _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
     function unwrapForEEth(uint256 _amount) public isEEthStakingOpen {
@@ -476,6 +463,19 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         bytes32 leaf = keccak256(abi.encodePacked(_user, _ethBal, _points));
         bool verified = MerkleProof.verify(_merkleProof, merkleRoot, leaf);
         require(verified, "Verification failed");
+    }
+
+    function _wrapEthForEap(address _account, uint256 _amount, uint40 _points, bytes32[] calldata _merkleProof) internal {
+        require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
+
+        _initializeEarlyAdopterPoolUserPoints(_account, _points, _amount);
+        
+        liquidityPool.deposit{value: _amount}(_account, address(this), _merkleProof);
+        _mint(_account, _amount);
+        _updateGlobalIndex();
+
+        uint8 tier = tierOf(_account);
+        _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
