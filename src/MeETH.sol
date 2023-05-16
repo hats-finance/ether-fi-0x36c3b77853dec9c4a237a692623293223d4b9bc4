@@ -101,7 +101,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
         _mint(_account, amount);
-        _claimTier(_account);
     }
 
     function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
@@ -220,7 +219,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         UserData storage userData = _userData[_account];
         uint256 tier = userData.tier;
         uint256 amount = (tierData[tier].rewardsGlobalIndex - userData.rewardsLocalIndex) * _userDeposits[_account].amounts / 1 ether;
-        uint256 share = liquidityPool.sharesForAmount(amount);
         _incrementUserDeposit(_account, amount, 0);
         userData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
@@ -342,12 +340,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.pointsSnapshotTime = uint32(block.timestamp);
         uint40 userPointsPerDepositAmount = calculatePointsPerDepositAmount(_points, _amount);
         userData.tier = tierForPointsPerDepositAmount(userPointsPerDepositAmount);
-    }
-
-    function _claimTier(address _account) internal {
-        uint8 oldTier = tierOf(_account);
-        uint8 newTier = claimableTier(_account);
-        _claimTier(_account, oldTier, newTier);
     }
 
     function _claimTier(address _account, uint8 _curTier, uint8 _newTier) internal {
@@ -488,10 +480,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function totalSupply() public view override(IERC20Upgradeable, ImeETH) returns (uint256) {
         return liquidityPool.amountForShare(totalShares());
-    }
-
-    function numberOfTiers() public view returns (uint8) {
-        return uint8(tierDeposits.length);
     }
 
     function balanceOf(address _account) public view override(IERC20Upgradeable, ImeETH) returns (uint256) {

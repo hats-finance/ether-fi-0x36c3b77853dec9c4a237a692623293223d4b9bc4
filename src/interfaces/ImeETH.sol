@@ -4,7 +4,6 @@ pragma solidity 0.8.13;
 interface ImeETH {
     function totalShares() external view returns (uint256);
     function totalSupply() external view returns (uint256);
-    function numberOfTiers() external view returns (uint8);
     function balanceOf(address _account) external view returns (uint256);
     function pointsOf(address _account) external view returns (uint40);
     function tierOf(address _user) external view returns (uint8);

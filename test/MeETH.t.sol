@@ -220,18 +220,6 @@ contract MeETHTest is TestSetup {
         // assertEq(meEthInstance.tierDepositAmount(meEthInstance.tierOf(alice)), meEthInstance.balanceOf(alice) - 2);
         // assertEq(meEthInstance.tierDepositAmount(meEthInstance.tierOf(bob)), meEthInstance.balanceOf(bob) + 2);
         assertEq(meEthInstance.totalSupply(), meEthInstance.balanceOf(alice) + meEthInstance.balanceOf(bob));
- 
-        vm.startPrank(alice);
-        // Alice deposits 50 ETH and mints 50 meETH, which degrades Alice's tier to 0
-        meEthInstance.wrapEth{value: 50 ether}(alice, aliceProof);
-        assertEq(meEthInstance.tierOf(alice), 0);
-        vm.stopPrank();
-
-        // Alice can get to the Tier 2 after 28 days
-        skip(28 days);
-        assertEq(meEthInstance.claimableTier(alice), 2);
-        meEthInstance.claimTier(alice);
-        assertEq(meEthInstance.tierOf(alice), 2);
     }
 
     function test_OwnerPermissions() public {
