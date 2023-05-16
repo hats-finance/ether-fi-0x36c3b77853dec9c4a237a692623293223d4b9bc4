@@ -91,7 +91,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     /// @param _signature the signature of the user depositing into the contract
     /// @param _points points of the user
     /// @param _merkleProof array of hashes forming the merkle proof for the user to allow for deposit into the liquidity pool
-    function eapRollover(
+    function depositEapRollover(
         uint256 _originalDeposit,
         bytes memory _signature,
         uint256 _points,

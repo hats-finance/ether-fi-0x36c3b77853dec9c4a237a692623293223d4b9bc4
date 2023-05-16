@@ -442,7 +442,7 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.eapSigner(), alice);
     }
 
-    function test_EapRollover() public {
+    function test_DepositEapRollover() public {
         vm.prank(owner);
         meEthInstance.setEapSigner(bob);
 
@@ -455,7 +455,7 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 15 ether);
         vm.startPrank(alice);
         vm.expectRevert("Invalid Signature");
-        meEthInstance.eapRollover{value: 10 ether}(10 ether, depositorSignature, 1000000 * kwei, aliceProof);
+        meEthInstance.depositEapRollover{value: 10 ether}(10 ether, depositorSignature, 1000000 * kwei, aliceProof);
         vm.stopPrank();
 
         vm.prank(owner);
@@ -475,13 +475,13 @@ contract MeETHTest is TestSetup {
         vm.startPrank(alice);
 
         vm.expectRevert("You don't have any points to claim");
-        meEthInstance.eapRollover{value: 10 ether}(10 ether, depositorSignature, 0, aliceProof);
+        meEthInstance.depositEapRollover{value: 10 ether}(10 ether, depositorSignature, 0, aliceProof);
 
         vm.expectRevert("Invalid DepositAmount");
-        meEthInstance.eapRollover{value: 9 ether}(10 ether, depositorSignature, 1000000 * kwei, aliceProof);
+        meEthInstance.depositEapRollover{value: 9 ether}(10 ether, depositorSignature, 1000000 * kwei, aliceProof);
 
         assertFalse(stakingManagerInstance.whitelistEnabled());
-        meEthInstance.eapRollover{value: 10 ether}(10 ether, depositorSignature, 1000000 * kwei, emptyProof);
+        meEthInstance.depositEapRollover{value: 10 ether}(10 ether, depositorSignature, 1000000 * kwei, emptyProof);
         vm.stopPrank();
 
         assertEq(alice.balance, 5 ether);

@@ -15,7 +15,7 @@ interface ImeETH {
     function recentTierSnapshotTimestamp() external view returns (uint256);
     function allowance(address _owner, address _spender) external view returns (uint256);
     
-    function eapRollover(uint256 _originalDeposit, bytes memory _signature, uint256 _points, bytes32[] calldata _merkleProof) external payable;
+    function depositEapRollover(uint256 _originalDeposit, bytes memory _signature, uint256 _points, bytes32[] calldata _merkleProof) external payable;
     function wrapEEth(uint256 _amount) external;
     function wrapEth(address _account, bytes32[] calldata _merkleProof) external payable;
     function unwrapForEEth(uint256 _amount) external;
