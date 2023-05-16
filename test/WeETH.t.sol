@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
 
-contract WethETHTest is TestSetup {
+contract WeETHTest is TestSetup {
 
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
@@ -30,7 +30,7 @@ contract WethETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
         vm.stopPrank();
 
@@ -66,7 +66,7 @@ contract WethETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
         vm.stopPrank();
 
@@ -98,7 +98,7 @@ contract WethETHTest is TestSetup {
 
     function test_MultipleDepositsAndFunctionalityWorksCorrectly() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
         vm.stopPrank();
 
@@ -111,7 +111,7 @@ contract WethETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
         vm.stopPrank();
 
@@ -125,7 +125,7 @@ contract WethETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         startHoax(greg);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 35 ether}(greg, gregProof);
         vm.stopPrank();
 
@@ -140,7 +140,7 @@ contract WethETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingRewards(10 ether);
+        liquidityPoolInstance.setAccruedEther(10 ether);
         vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -166,7 +166,7 @@ contract WethETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedStakingRewards(50 ether);
+        liquidityPoolInstance.setAccruedEther(50 ether);
         vm.stopPrank();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -189,14 +189,14 @@ contract WethETHTest is TestSetup {
     function test_UnwrappingWithRewards() public {
         // Alice deposits into LP
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         vm.stopPrank();
 
         // Bob deposits into LP
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(bob, bobProof);
         assertEq(eETHInstance.balanceOf(bob), 1 ether);
         vm.stopPrank();

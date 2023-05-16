@@ -50,8 +50,8 @@ contract DeployEtherFiSuiteScript is Script {
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
 
-    weEth public weEthImplementation;
-    weEth public weEthInstance;
+    WeETH public weEthImplementation;
+    WeETH public weEthInstance;
 
     AuctionManager public auctionManagerImplementation;
     AuctionManager public auctionManager;
@@ -69,7 +69,7 @@ contract DeployEtherFiSuiteScript is Script {
     LiquidityPool public liquidityPool;
 
     EETH public eETHImplementation;
-    EETH public eETH;
+    EETH public eETHInstance;
 
     RegulationsManager public regulationsManagerInstance;
     RegulationsManager public regulationsManagerImplementation;
@@ -188,8 +188,8 @@ contract DeployEtherFiSuiteScript is Script {
 
         eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
-        eETH = EETH(address(eETHProxy));
-        eETH.initialize(payable(address(liquidityPool)));
+        eETHInstance = EETH(address(eETHProxy));
+        eETHInstance.initialize(payable(address(liquidityPool)));
         
         // Setup dependencies
         nodeOperatorManager.setAuctionContractAddress(address(auctionManager));
@@ -208,14 +208,14 @@ contract DeployEtherFiSuiteScript is Script {
 
         claimReceiverPool.setLiquidityPool(address(liquidityPool));
 
-        liquidityPool.setTokenAddress(address(eETH));
+        liquidityPool.setTokenAddress(address(eETHInstance));
         liquidityPool.setStakingManager(address(stakingManager));
         liquidityPool.setEtherFiNodesManager(address(etherFiNodesManager));
 
-        weEthImplementation = new weEth();
+        weEthImplementation = new WeETH();
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
-        weEthInstance = weEth(address(weETHProxy));
-        weEthInstance.initialize(payable(address(liquidityPool)), address(eETH));
+        weEthInstance = WeETH(address(weETHProxy));
+        weEthInstance.initialize(payable(address(liquidityPool)), address(eETHInstance));
 
         regulationsManagerInstance.initializeNewWhitelist(initialHash);
         
@@ -234,7 +234,7 @@ contract DeployEtherFiSuiteScript is Script {
             regulationsManager: address(regulationsManagerInstance),
             claimReceiverPool: address(claimReceiverPool),
             liquidityPool: address(liquidityPool),
-            eETH: address(eETH),
+            eETH: address(eETHInstance),
             weEth: address(weEthInstance)
         });
 

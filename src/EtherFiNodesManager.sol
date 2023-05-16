@@ -384,6 +384,8 @@ contract EtherFiNodesManager is
         address tnftHolder = tnftInstance.ownerOf(_validatorId);
         address bnftHolder = bnftInstance.ownerOf(_validatorId);
 
+        IEtherFiNode(etherfiNode).markFullyWithdrawn();
+
         IEtherFiNode(etherfiNode).withdrawFunds(
             treasuryContract,
             toTreasury,

@@ -3,7 +3,6 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "./interfaces/IRegulationsManager.sol";
@@ -13,7 +12,6 @@ contract RegulationsManager is
     Initializable,
     OwnableUpgradeable,
     PausableUpgradeable,
-    ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
     mapping(uint32 => mapping(address => bool)) public isEligible;
@@ -46,7 +44,6 @@ contract RegulationsManager is
         __Pausable_init();
         __Ownable_init();
         __UUPSUpgradeable_init();
-        __ReentrancyGuard_init();
     }
 
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country

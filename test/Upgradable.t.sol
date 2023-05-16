@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
-import "../src/interfaces/IWeth.sol";
+import "../src/interfaces/IWETH.sol";
 import "../src/interfaces/ILiquidityPool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "../lib/murky/src/Merkle.sol";
@@ -116,7 +116,7 @@ contract UpgradeTest is TestSetup {
         claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility("USA, CANADA");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);
 
         assertEq(address(claimReceiverPoolInstance).balance, 0 ether);

@@ -5,18 +5,18 @@ import "@openzeppelin-upgradeable/contracts/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
-import "./interfaces/IEETH.sol";
+import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
+contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IEETH public eEth;
+    IeETH public eETH;
     ILiquidityPool public liquidityPool;
 
-    uint256[48] __gap;
+    uint256[9] __gap;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -27,15 +27,15 @@ contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
         _disableInitializers();
     }
 
-    function initialize(address _liquidityPool, address _eEth) external initializer {
+    function initialize(address _liquidityPool, address _eETH) external initializer {
         require(_liquidityPool != address(0), "No zero addresses");
-        require(_eEth != address(0), "No zero addresses");
+        require(_eETH != address(0), "No zero addresses");
         
         __ERC20_init("EtherFi wrapped ETH", "weETH");
         __ERC20Permit_init("EtherFi wrapped ETH");
         __UUPSUpgradeable_init();
         __Ownable_init();
-        eEth = IEETH(_eEth);
+        eETH = IeETH(_eETH);
         liquidityPool = ILiquidityPool(_liquidityPool);
     }
 
@@ -46,19 +46,19 @@ contract weEth is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
         require(_eETHAmount > 0, "weETH: can't wrap zero eETH");
         uint256 weEthAmount = liquidityPool.sharesForAmount(_eETHAmount);
         _mint(msg.sender, weEthAmount);
-        eEth.transferFrom(msg.sender, address(this), _eETHAmount);
+        eETH.transferFrom(msg.sender, address(this), _eETHAmount);
         return weEthAmount;
     }
 
-    /// @notice Unwraps weEth
-    /// @param _weETHAmount the amount of weEth to unwrap
+    /// @notice Unwraps weETH
+    /// @param _weETHAmount the amount of weETH to unwrap
     /// @return returns the amount of eEth the user recieves
     function unwrap(uint256 _weETHAmount) external returns (uint256) {
         require(_weETHAmount > 0, "Cannot wrap a zero amount");
-        uint256 eEthAmount = liquidityPool.amountForShare(_weETHAmount);
+        uint256 eETHAmount = liquidityPool.amountForShare(_weETHAmount);
         _burn(msg.sender, _weETHAmount);
-        eEth.transfer(msg.sender, eEthAmount);
-        return eEthAmount;
+        eETH.transfer(msg.sender, eETHAmount);
+        return eETHAmount;
     }
 
     //--------------------------------------------------------------------------------------
