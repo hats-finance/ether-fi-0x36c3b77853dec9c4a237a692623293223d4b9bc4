@@ -395,15 +395,7 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.pointsOf(alice), 1 * 10 * kwei);
         skip(1 days);
         assertEq(meEthInstance.pointsOf(alice), 2 * 10 * kwei);
-<<<<<<< HEAD:test/MeETH.t.sol
-<<<<<<< HEAD:test/MeETH.t.sol
         meEthInstance.claimPoints(alice);
-=======
-        meEthInstance.takePointsSnapshot(alice);
->>>>>>> d61a52d (updatePoints -> takePointsSnapshot):test/meETH.t.sol
-=======
-        meEthInstance.claimPoints(alice);
->>>>>>> f3aae34 (rename some functions):test/meETH.t.sol
         assertEq(meEthInstance.pointsOf(alice), 2 * 10 * kwei);
         skip(1 days);
         assertEq(meEthInstance.pointsOf(alice), 3 * 10 * kwei);
