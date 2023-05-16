@@ -114,40 +114,31 @@ contract ClaimReceiverPool is
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
-    /// @dev The deposit amount must be the same as what they deposited into the EAP
-    /// @param _rEthBal balance of the token to be sent in
-    /// @param _wstEthBal balance of the token to be sent in
-    /// @param _sfrxEthBal balance of the token to be sent in
-    /// @param _cbEthBal balance of the token to be sent in
-    /// @param _points points of the user
-    /// @param _merkleProof array of hashes forming the merkle proof for the user
-    /// @param _slippageLimit slippage limit in basis points
-    function deposit(
-        uint256 _rEthBal,
-        uint256 _wstEthBal,
-        uint256 _sfrxEthBal,
-        uint256 _cbEthBal,
-        uint256 _points,
-        bytes32[] calldata _merkleProof,
-        uint256 _slippageLimit
-    ) external payable whenNotPaused {
-        require(_points > 0, "You don't have any point to claim");
-        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
-        _verifyEapUserData(msg.sender, msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof);
+    // function deposit(
+    //     uint256 _rEthBal,
+    //     uint256 _wstEthBal,
+    //     uint256 _sfrxEthBal,
+    //     uint256 _cbEthBal,
+    //     uint256 _points,
+    //     bytes32[] calldata _merkleProof,
+    //     uint256 _slippageLimit
+    // ) external payable whenNotPaused {
+    //     require(_points > 0, "You don't have any point to claim");
+    //     require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
+    //     _verifyEapUserData(msg.sender, msg.value, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points, _merkleProof);
 
-        uint256 _ethAmount = 0;
-        _ethAmount += msg.value;
-        _ethAmount += _swapERC20ForETH(rETH, _rEthBal, _slippageLimit);
-        _ethAmount += _swapERC20ForETH(wstETH, _wstEthBal, _slippageLimit);
-        _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal, _slippageLimit);
-        _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal, _slippageLimit);
+    //     uint256 _ethAmount = 0;
+    //     _ethAmount += msg.value;
+    //     _ethAmount += _swapERC20ForETH(rETH, _rEthBal, _slippageLimit);
+    //     _ethAmount += _swapERC20ForETH(wstETH, _wstEthBal, _slippageLimit);
+    //     _ethAmount += _swapERC20ForETH(sfrxETH, _sfrxEthBal, _slippageLimit);
+    //     _ethAmount += _swapERC20ForETH(cbETH, _cbEthBal, _slippageLimit);
 
-        uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_points);
-        meEth.wrapEthForEap{value: _ethAmount}(msg.sender, loyaltyPoints, _merkleProof);
+    //     uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_points);
+    //     meEth.wrapEthForEap{value: _ethAmount}(msg.sender, loyaltyPoints, _merkleProof);
 
-        emit FundsMigrated(msg.sender, _ethAmount, _points, loyaltyPoints);
-    }
+    //     emit FundsMigrated(msg.sender, _ethAmount, _points, loyaltyPoints);
+    // }
 
     function convertEapPointsToLoyaltyPoints(uint256 _eapPoints) public view returns (uint40) {
         uint256 points = (_eapPoints * 1e14 / 1000) / 1 days / 0.001 ether;

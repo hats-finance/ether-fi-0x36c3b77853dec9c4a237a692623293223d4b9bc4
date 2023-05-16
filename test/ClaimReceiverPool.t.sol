@@ -46,52 +46,52 @@ contract ClaimReceiverPoolTest is TestSetup {
         );
     }
 
-    function test_DepositFailsWithIncorrectMerkle() public {
-        bytes32[] memory proof1 = merkle.getProof(dataForVerification, 0);
-        bytes32[] memory proof2 = merkle.getProof(dataForVerification, 1);
-        bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
+    // function test_DepositFailsWithIncorrectMerkle() public {
+    //     bytes32[] memory proof1 = merkle.getProof(dataForVerification, 0);
+    //     bytes32[] memory proof2 = merkle.getProof(dataForVerification, 1);
+    //     bytes32[] memory proof3 = merkle.getProof(dataForVerification, 2);
 
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+    //     startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+    //     regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
-        vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1, slippageLimit);
-        vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0.3 ether}(0, 0, 0, 0, 652, proof2, slippageLimit);
-        vm.expectRevert("Verification failed");
-        claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3, slippageLimit);
-    }
+    //     vm.expectRevert("Verification failed");
+    //     claimReceiverPoolInstance.deposit{value: 0 ether}(10, 0, 0, 0, 400, proof1, slippageLimit);
+    //     vm.expectRevert("Verification failed");
+    //     claimReceiverPoolInstance.deposit{value: 0.3 ether}(0, 0, 0, 0, 652, proof2, slippageLimit);
+    //     vm.expectRevert("Verification failed");
+    //     claimReceiverPoolInstance.deposit{value: 0 ether}(0, 10, 0, 50, 400, proof3, slippageLimit);
+    // }
 
-    function test_MigrateWorksCorrectly() public {
-        address staker = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
-        bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
+    // function test_MigrateWorksCorrectly() public {
+    //     address staker = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+    //     bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
         
-        startHoax(staker);
-        uint256 eapPoints = 652_000_000_000;
-        vm.expectRevert("User is not whitelisted");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
+    //     startHoax(staker);
+    //     uint256 eapPoints = 652_000_000_000;
+    //     vm.expectRevert("User is not whitelisted");
+    //     claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
+    //     regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+    //     claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, eapPoints, proof1, slippageLimit);
 
-        assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
-        assertEq(address(liquidityPoolInstance).balance, 0.2 ether);
-        assertEq(eETHInstance.balanceOf(staker), 0 ether);
-        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 0.2 ether);
-        assertEq(meEthInstance.balanceOf(staker), 0.2 ether);
+    //     assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
+    //     assertEq(address(liquidityPoolInstance).balance, 0.2 ether);
+    //     assertEq(eETHInstance.balanceOf(staker), 0 ether);
+    //     assertEq(eETHInstance.balanceOf(address(meEthInstance)), 0.2 ether);
+    //     assertEq(meEthInstance.balanceOf(staker), 0.2 ether);
 
-        uint40 points = claimReceiverPoolInstance.convertEapPointsToLoyaltyPoints(eapPoints);
-        assertEq(meEthInstance.pointsOf(staker), points);
-        assertEq(meEthInstance.pointsSnapshotTimeOf(staker), uint32(block.timestamp));
+    //     uint40 points = claimReceiverPoolInstance.convertEapPointsToLoyaltyPoints(eapPoints);
+    //     assertEq(meEthInstance.pointsOf(staker), points);
+    //     assertEq(meEthInstance.pointsSnapshotTimeOf(staker), uint32(block.timestamp));
 
-        // Check if the staker starts earning points
-        skip(1 days);
-        assertEq(meEthInstance.pointsOf(staker), points + 2 * kwei / 10); // 0.2 kwei
+    //     // Check if the staker starts earning points
+    //     skip(1 days);
+    //     assertEq(meEthInstance.pointsOf(staker), points + 2 * kwei / 10); // 0.2 kwei
 
-        vm.expectRevert("Already Deposited");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);
-        vm.stopPrank();
-    }
+    //     vm.expectRevert("Already Deposited");
+    //     claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652_000_000_000, proof1, slippageLimit);
+    //     vm.stopPrank();
+    // }
 
     function test_SetLPAddressFailsIfZeroAddress() public {
         vm.prank(owner);

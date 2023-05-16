@@ -8,6 +8,13 @@ contract MeETHTest is TestSetup {
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
     bytes32[] public ownerProof;
+    bytes32[] public testProof;
+
+    uint256 signerPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+    address signer = vm.addr(signerPrivateKey);
+
+    uint256 testPK = 0xA11CE;
+    address testSigner = vm.addr(testPK);
 
     event MEETHBurnt(address indexed _recipient, uint256 _amount);
 
@@ -423,6 +430,35 @@ contract MeETHTest is TestSetup {
 
     function test_ConvertEapPointsToLoyaltyPoints() public {
         assertEq(meEthInstance.convertEapPointsToLoyaltyPoints(1000000 * kwei), 1);
+    }
+
+    function test_SetEapSigner() public {
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        meEthInstance.setEapSigner(alice);
+
+        assertEq(meEthInstance.eapSigner(), address(0));
+
+        vm.prank(owner);
+        meEthInstance.setEapSigner(alice);
+
+        assertEq(meEthInstance.eapSigner(), alice);
+    }
+
+    function test_EapRollover() public {
+        uint256 depositAmount = 10 ether;
+        bytes32 digest = keccak256(abi.encodePacked(depositAmount));
+        //setUp signature
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPrivateKey, digest);
+        bytes memory depositorSignature = (abi.encodePacked(v,r,s));
+        
+        vm.deal(alice, 15 ether);
+        vm.startPrank(alice);
+        meEthInstance.eapRollover{value: 10 ether}(10 ether, depositorSignature, 0, testProof);
+
+        assertEq(alice.balance, 5 ether);
+        assertEq(meEthInstance.balanceOf(alice), 10 ether);
+        assertEq(address(liquidityPoolInstance).balance, 10 ether);
     }
 
 }

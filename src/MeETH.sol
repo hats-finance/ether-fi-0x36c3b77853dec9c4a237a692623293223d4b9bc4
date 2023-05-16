@@ -31,6 +31,8 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     uint16   public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
     uint16   public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
 
+    address public eapSigner;
+
     uint256[23] __gap;
 
     struct UserDeposit {
@@ -89,14 +91,23 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
     /// @dev The deposit amount must be the same as what they deposited into the EAP
+    /// @param _originalDeposit the snapshotted amount that the user deposited into the EAP in ETH
+    /// @param _signature the signature of the user depositing into the contract
     /// @param _points points of the user
-    /// @param _merkleProof array of hashes forming the merkle proof for the user
-    function deposit(
+    /// @param _merkleProof array of hashes forming the merkle proof for the user to allow for deposit into the liquidity pool
+    function eapRollover(
+        uint256 _originalDeposit,
+        bytes memory _signature,
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable {
-        require(_points > 0, "You don't have any point to claim");
+        require(_points > 0, "You don't have any points to claim");
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
+
+        bytes32 message = _prefixed(keccak256(abi.encodePacked(msg.sender, ":", _originalDeposit)));
+
+        require(_recoverSigner(message, _signature) == eapSigner, "InvalidSignature");
+        require(msg.value >= _originalDeposit, "InvalidDepositAmount");
 
         uint256 ethAmount = msg.value;
 
@@ -268,6 +279,10 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return tierDeposits.length - 1;
     }
 
+    function setEapSigner(address _newSigner) external onlyOwner {
+        eapSigner = _newSigner;
+    }
+
     //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
 
     function _mint(address _account, uint256 _amount) internal {
@@ -361,7 +376,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     }
 
     function _wrapEthForEap(address _account, uint256 _ethAmount, uint40 _points, bytes32[] calldata _merkleProof) internal {
-        require(msg.sender == address(claimReceiverPool), "Caller muat be the claim receiver pool contract");
         require(_ethAmount > 0, "You cannot wrap 0 ETH");
         require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
 
@@ -468,6 +482,40 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         uint8 curTier = tierOf(_account);
         uint8 newTier = (curTier >= 1) ? curTier - 1 : 0;
         _claimTier(_account, curTier, newTier);
+    }
+
+    // signature methods.
+    function _splitSignature(bytes memory sig)
+        internal
+        pure
+        returns (uint8 v, bytes32 r, bytes32 s)
+    {
+        require(sig.length == 65);
+
+        assembly {
+            // first 32 bytes, after the length prefix.
+            r := mload(add(sig, 32))
+            // second 32 bytes.
+            s := mload(add(sig, 64))
+            // final byte (first byte of the next 32 bytes).
+            v := byte(0, mload(add(sig, 96)))
+        }
+
+        return (v, r, s);
+    }
+
+    function _recoverSigner(bytes32 message, bytes memory sig)
+        internal
+        pure
+        returns (address)
+    {
+        (uint8 v, bytes32 r, bytes32 s) = _splitSignature(sig);
+
+        return ecrecover(message, v, r, s);
+    }
+
+    function _prefixed(bytes32 hash) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
