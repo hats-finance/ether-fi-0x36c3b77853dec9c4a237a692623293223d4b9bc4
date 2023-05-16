@@ -421,4 +421,8 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.pointsOf(alice), 1 * kwei / 2);
     }
 
+    function test_ConvertEapPointsToLoyaltyPoints() public {
+        assertEq(meEthInstance.convertEapPointsToLoyaltyPoints(1000000 * kwei), 1);
+    }
+
 }

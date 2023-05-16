@@ -223,6 +223,14 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
+    function convertEapPointsToLoyaltyPoints(uint256 _eapPoints) public pure returns (uint40) {
+        uint256 points = (_eapPoints * 1e14 / 1000) / 1 days / 0.001 ether;
+        if (points >= type(uint40).max) {
+            points = type(uint40).max;
+        }
+        return uint40(points);
+    }
+
     function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
