@@ -191,9 +191,9 @@ contract MeETHTest is TestSetup {
 
         // Alice belongs to the Tier 1, Bob belongs to the Tier 0
         assertEq(meEthInstance.balanceOf(alice), 1 ether);
-        // assertEq(meEthInstance.balanceOf(bob), 2 ether);
+        assertEq(meEthInstance.balanceOf(bob), 2 ether);
         assertEq(meEthInstance.tierOf(alice), 1);
-        // assertEq(meEthInstance.tierOf(bob), 0);
+        assertEq(meEthInstance.tierOf(bob), 0);
 
         // More Staking rewards 1 ETH into LP
         vm.startPrank(owner);
