@@ -149,7 +149,7 @@ contract ClaimReceiverPool is
         emit FundsMigrated(msg.sender, _ethAmount, _points, loyaltyPoints);
     }
 
-    function convertEapPointsToLoyaltyPoints(uint256 _eapPoints) public view returns (uint40) {
+    function convertEapPointsToLoyaltyPoints(uint256 _eapPoints) public pure returns (uint40) {
         uint256 points = (_eapPoints * 1e14 / 1000) / 1 days / 0.001 ether;
         if (points >= type(uint40).max) {
             points = type(uint40).max;
@@ -200,9 +200,9 @@ contract ClaimReceiverPool is
         uint256 _cbEthBal,
         uint256 _points,
         bytes32[] calldata _merkleProof
-    ) internal view returns (bool) {
+    ) internal view returns (bool verified) {
         bytes32 leaf = keccak256(abi.encodePacked(_user, _ethBal, _rEthBal, _wstEthBal, _sfrxEthBal, _cbEthBal, _points));
-        bool verified = MerkleProof.verify(_merkleProof, merkleRoot, leaf);
+        verified = MerkleProof.verify(_merkleProof, merkleRoot, leaf);
         require(verified, "Verification failed");
     }
 

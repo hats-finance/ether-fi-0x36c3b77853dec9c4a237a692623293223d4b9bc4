@@ -479,12 +479,12 @@ contract EtherFiNode is IEtherFiNode {
 
     function implementation() external view returns (address) {
         bytes32 slot = bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1);
-        address implementation;
+        address implementationVariable;
         assembly {
-            implementation := sload(slot)
+            implementationVariable := sload(slot)
         }
 
-        IBeacon beacon = IBeacon(implementation);
+        IBeacon beacon = IBeacon(implementationVariable);
         return beacon.implementation();
     }
 

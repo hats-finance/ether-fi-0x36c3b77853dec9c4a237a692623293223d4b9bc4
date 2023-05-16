@@ -212,7 +212,7 @@ contract SmallScenariosTest is TestSetup {
             exitTimestamps[0] = uint32(block.timestamp);
             managerInstance.processNodeExit(processedBidIds, exitTimestamps);
 
-            (uint256 toOperator, uint256 toTNFT, uint256 toBNFT, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(processedBidIds[0]);
+            (, uint256 toTNFT,,) = managerInstance.getFullWithdrawalPayouts(processedBidIds[0]);
             assertEq(toTNFT, 30 ether + 1 ether - 1);
 
             vm.stopPrank();
@@ -277,9 +277,6 @@ contract SmallScenariosTest is TestSetup {
         // Alice's Points are 103680 * 1e9 
         // Bob's points are 136850
 
-        uint256 chadPoints = earlyAdopterPoolInstance.calculateUserPoints(chad);
-        uint256 danPoints = earlyAdopterPoolInstance.calculateUserPoints(dan);
-
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
         claimReceiverPoolInstance.updateMerkleRoot(rootMigration2);
@@ -295,7 +292,7 @@ contract SmallScenariosTest is TestSetup {
         vm.stopPrank();
 
         // Alice Deposits into the Claim Receiver Pool and receives eETH in return
-        bytes32[] memory aliceProof = merkleMigration2.getProof(
+        bytes32[] memory aliceProofCRP = merkleMigration2.getProof(
             dataForVerification2,
             0
         );
@@ -307,7 +304,7 @@ contract SmallScenariosTest is TestSetup {
             0,
             0,
             103680 * 1e9,
-            aliceProof,
+            aliceProofCRP,
             slippageLimit
         );
         vm.stopPrank();
@@ -352,9 +349,6 @@ contract SmallScenariosTest is TestSetup {
     // Greg - Stakes 5 times, should be matched with one of Chads and 4 of Bob bids
     // Greg - Registers 5 validators
     function test_AuctionToStakerFlow() public {
-        bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
-        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
-
         vm.prank(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -416,8 +410,6 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = chadBidIds[4];
 
-        bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
-
         startHoax(dan);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
@@ -454,7 +446,6 @@ contract SmallScenariosTest is TestSetup {
 
         //-------------------------------------------------------------------------------------------------------------------------------
 
-        uint256 gregBalanceBeforeStaking = greg.balance;
         bytes32[] memory gregProof = merkle.getProof(whiteListedAddresses, 8);
 
         startHoax(greg);

@@ -101,8 +101,6 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_WithdrawFailsNotInitializedToken() public {
-        LiquidityPool liquidityPoolNoToken = new LiquidityPool();
-
         startHoax(alice);
         vm.expectRevert();
         liquidityPoolInstance.withdraw(alice, 2 ether);
@@ -372,13 +370,6 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(owner);
         liquidityPoolInstance.sendExitRequests(newValidators);
-
-        address node1 = managerInstance.etherfiNodeAddress(newValidators[0]);
-        address node2 = managerInstance.etherfiNodeAddress(newValidators[1]);
-
-        EtherFiNode etherFiNode1 = EtherFiNode(payable(node1));
-        EtherFiNode etherFiNode2 = EtherFiNode(payable(node2));
-
 
         uint32[] memory exitRequestTimestamps = new uint32[](2);
         exitRequestTimestamps[0] = 1681351200; // Thu Apr 13 2023 02:00:00 UTC
