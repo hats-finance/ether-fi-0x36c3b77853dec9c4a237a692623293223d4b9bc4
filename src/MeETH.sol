@@ -106,8 +106,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_points);
 
-        //TODO: Maybe the difference between msg.value and _ethAmount should just be normally wrapped? Or sent to LP?
-        wrapEthForEap(msg.sender, msg.value, loyaltyPoints, _merkleProof);
+        wrapEthForEap(msg.sender, _ethAmount, loyaltyPoints, _merkleProof);
         wrapEth(msg.sender, msg.value - _ethAmount, _merkleProof);
 
         emit FundsMigrated(msg.sender, _ethAmount, _points, loyaltyPoints);

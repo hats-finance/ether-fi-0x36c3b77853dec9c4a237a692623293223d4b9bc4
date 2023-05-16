@@ -417,10 +417,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     alice,
                     uint256(1 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(103680 * 1e9)
                 )
             )
@@ -430,10 +426,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     bob,
                     uint256(2 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(141738)
                 )
             )
@@ -443,10 +435,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     chad,
                     uint256(2 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(139294)
                 )
             )
@@ -456,10 +444,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     dan,
                     uint256(1 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(96768)
                 )
             )
