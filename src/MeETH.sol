@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
-import "./interfaces/IClaimReceiverPool.sol";
 import "./interfaces/IRegulationsManager.sol";
 
 import "forge-std/console.sol";
@@ -20,7 +19,6 @@ import "forge-std/console.sol";
 contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
-    IClaimReceiverPool public claimReceiverPool;
     IRegulationsManager public regulationsManager;
 
     mapping (address => mapping (address => uint256)) public allowances;
@@ -110,6 +108,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         //TODO: Maybe the difference between msg.value and _ethAmount should just be normally wrapped? Or sent to LP?
         wrapEthForEap(msg.sender, msg.value, loyaltyPoints, _merkleProof);
+        wrapEth(msg.sender, msg.value - _ethAmount, _merkleProof);
 
         emit FundsMigrated(msg.sender, _ethAmount, _points, loyaltyPoints);
     }
@@ -125,19 +124,17 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         _mint(msg.sender, _amount);
     }
 
-    function wrapEth(address _account, bytes32[] calldata _merkleProof) public payable {
-        require(msg.value > 0, "You cannot wrap 0 ETH");
-        uint256 amount = msg.value;
+    function wrapEth(address _account, uint256 _amount, bytes32[] calldata _merkleProof) public payable {
+        require(_amount > 0, "You cannot wrap 0 ETH");
 
         claimPoints(_account);
         claimStakingRewards(_account);
 
-        liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
-        _mint(_account, amount);
+        liquidityPool.deposit{value: _amount}(_account, address(this), _merkleProof);
+        _mint(_account, _amount);
     }
 
     function wrapEthForEap(address _account, uint256 _amount, uint40 _points, bytes32[] calldata _merkleProof) public {
-        require(msg.sender == address(claimReceiverPool), "Caller muat be the claim receiver pool contract");
         require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
 
         _initializeEarlyAdopterPoolUserPoints(_account, _points, _amount);
