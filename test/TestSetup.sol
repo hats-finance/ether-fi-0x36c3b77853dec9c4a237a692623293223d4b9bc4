@@ -14,7 +14,6 @@ import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
-import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
 import "../src/WeETH.sol";
@@ -40,7 +39,6 @@ contract TestSetup is Test {
     UUPSProxy public protocolRevenueManagerProxy;
     UUPSProxy public TNFTProxy;
     UUPSProxy public BNFTProxy;
-    UUPSProxy public claimReceiverPoolProxy;
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public eETHProxy;
     UUPSProxy public regulationsManagerProxy;
@@ -85,9 +83,6 @@ contract TestSetup is Test {
 
     MeETH public meEthImplementation;
     MeETH public meEthInstance;
-
-    ClaimReceiverPool public claimReceiverPoolImplementation;
-    ClaimReceiverPool public claimReceiverPoolInstance;
 
     NodeOperatorManager public nodeOperatorManagerImplementation;
     NodeOperatorManager public nodeOperatorManagerInstance;
@@ -203,24 +198,6 @@ contract TestSetup is Test {
             address(sfrxEth),
             address(cbEth)
         );
-        
-        claimReceiverPoolImplementation = new ClaimReceiverPool();
-        claimReceiverPoolProxy = new UUPSProxy(
-            address(claimReceiverPoolImplementation),
-            ""
-        );
-        claimReceiverPoolInstance = ClaimReceiverPool(
-            payable(address(claimReceiverPoolProxy))
-        );
-        claimReceiverPoolInstance.initialize(
-            address(rETH),
-            address(wstETH),
-            address(sfrxEth),
-            address(cbEth),
-            address(regulationsManagerInstance),
-            0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6,
-            0xE592427A0AEce92De3Edee1F18E0157C05861564
-        );
 
         liquidityPoolImplementation = new LiquidityPool();
         vm.expectRevert("Initializable: contract is already initialized");
@@ -253,10 +230,12 @@ contract TestSetup is Test {
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(0));
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
+        regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
+
         meEthImplementation = new MeETH();
         meETHProxy = new UUPSProxy(address(meEthImplementation), "");
         meEthInstance = MeETH(payable(meETHProxy));
-        meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(claimReceiverPoolInstance));
+        meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(regulationsManagerInstance));
 
         // Setup dependencies
         _setUpNodeOperatorWhitelist();
@@ -277,16 +256,11 @@ contract TestSetup is Test {
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
 
-        claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
-        claimReceiverPoolInstance.setMeEth(address(meEthInstance));
-
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMeETH(address(meEthInstance));
         liquidityPoolInstance.openEEthLiquidStaking();
-
-        regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
 
         depGen = new DepositDataGeneration();
 
@@ -433,7 +407,7 @@ contract TestSetup is Test {
             )
         );
         rootMigration = merkleMigration.getRoot(dataForVerification);
-        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
+        meEthInstance.updateMerkleRoot(rootMigration);
     }
 
     function _merkleSetupMigration2() internal {
@@ -443,10 +417,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     alice,
                     uint256(1 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(103680 * 1e9)
                 )
             )
@@ -456,10 +426,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     bob,
                     uint256(2 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(141738)
                 )
             )
@@ -469,10 +435,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     chad,
                     uint256(2 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(139294)
                 )
             )
@@ -482,10 +444,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     dan,
                     uint256(1 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(96768)
                 )
             )
