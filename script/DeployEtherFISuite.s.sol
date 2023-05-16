@@ -10,7 +10,6 @@ import "../src/ProtocolRevenueManager.sol";
 import "../src/StakingManager.sol";
 import "../src/AuctionManager.sol";
 import "../src/LiquidityPool.sol";
-import "../src/ClaimReceiverPool.sol";
 import "../src/EETH.sol";
 import "../src/WeETH.sol";
 import "../src/RegulationsManager.sol";
@@ -40,7 +39,6 @@ contract DeployEtherFiSuiteScript is Script {
     UUPSProxy public BNFTProxy;
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public eETHProxy;
-    UUPSProxy public claimReceiverPoolProxy;
     UUPSProxy public regulationsManagerProxy;
     UUPSProxy public weETHProxy;
 
@@ -74,9 +72,6 @@ contract DeployEtherFiSuiteScript is Script {
     RegulationsManager public regulationsManagerInstance;
     RegulationsManager public regulationsManagerImplementation;
 
-    ClaimReceiverPool public claimReceiverPoolImplementation;
-    ClaimReceiverPool public claimReceiverPool;
-
     struct suiteAddresses {
         address treasury;
         address nodeOperatorManager;
@@ -88,7 +83,6 @@ contract DeployEtherFiSuiteScript is Script {
         address protocolRevenueManager;
         address etherFiNode;
         address regulationsManager;
-        address claimReceiverPool;
         address liquidityPool;
         address eETH;
         address weEth;
@@ -158,24 +152,6 @@ contract DeployEtherFiSuiteScript is Script {
         wstETH = new TestERC20("Coinbase ETH", "cbEth");
         sfrxEth = new TestERC20("Frax ETH", "sfrxEth");
 
-        claimReceiverPoolImplementation = new ClaimReceiverPool();
-        claimReceiverPoolProxy = new UUPSProxy(
-            address(claimReceiverPoolImplementation),
-            ""
-        );
-        claimReceiverPool = ClaimReceiverPool(
-            payable(address(claimReceiverPoolProxy))
-        );
-        claimReceiverPool.initialize(
-            address(rETH),
-            address(wstETH),
-            address(sfrxEth),
-            address(cbEth),
-            address(regulationsManagerInstance),
-            0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, // wrapped eth token
-            0xE592427A0AEce92De3Edee1F18E0157C05861564 // uniswap router
-        );
-
         liquidityPoolImplementation = new LiquidityPool();
         liquidityPoolProxy = new UUPSProxy(
             address(liquidityPoolImplementation),
@@ -206,8 +182,6 @@ contract DeployEtherFiSuiteScript is Script {
         stakingManager.registerTNFTContract(address(TNFTInstance));
         stakingManager.registerBNFTContract(address(BNFTInstance));
 
-        claimReceiverPool.setLiquidityPool(address(liquidityPool));
-
         liquidityPool.setTokenAddress(address(eETHInstance));
         liquidityPool.setStakingManager(address(stakingManager));
         liquidityPool.setEtherFiNodesManager(address(etherFiNodesManager));
@@ -232,7 +206,6 @@ contract DeployEtherFiSuiteScript is Script {
             protocolRevenueManager: address(protocolRevenueManager),
             etherFiNode: address(etherFiNode),
             regulationsManager: address(regulationsManagerInstance),
-            claimReceiverPool: address(claimReceiverPool),
             liquidityPool: address(liquidityPool),
             eETH: address(eETHInstance),
             weEth: address(weEthInstance)
@@ -335,8 +308,6 @@ contract DeployEtherFiSuiteScript is Script {
                     Strings.toString(version),
                     "\nRegulations Manager: ",
                     Strings.toHexString(suiteAddressesStruct.regulationsManager),
-                    "\nClaim Receiver Pool: ",
-                    Strings.toHexString(suiteAddressesStruct.claimReceiverPool),
                     "\nLiquidity Pool: ",
                     Strings.toHexString(suiteAddressesStruct.liquidityPool),
                     "\neETH: ",

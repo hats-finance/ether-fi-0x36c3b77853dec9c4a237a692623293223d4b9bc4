@@ -10,7 +10,6 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
-import "./interfaces/IClaimReceiverPool.sol";
 import "./interfaces/IRegulationsManager.sol";
 
 import "forge-std/console.sol";
@@ -19,7 +18,6 @@ import "forge-std/console.sol";
 contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
-    IClaimReceiverPool public claimReceiverPool;
     IRegulationsManager public regulationsManager;
 
     mapping (address => mapping (address => uint256)) public allowances;
@@ -70,10 +68,9 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     receive() external payable {}
 
-    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress,  address _regulationsManagerAddress) external initializer {
+    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _regulationsManagerAddress) external initializer {
         require(_eEthAddress != address(0), "No zero addresses");
         require(_liquidityPoolAddress != address(0), "No zero addresses");
-        require(_claimReceiverPoolAddress != address(0), "No zero addresses");
         require(_regulationsManagerAddress != address(0), "No zero addresses");
 
         __Ownable_init();
@@ -81,7 +78,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
-        claimReceiverPool = IClaimReceiverPool(_claimReceiverPoolAddress);
         regulationsManager = IRegulationsManager(_regulationsManagerAddress);
         genesisTime = uint32(block.timestamp);
 

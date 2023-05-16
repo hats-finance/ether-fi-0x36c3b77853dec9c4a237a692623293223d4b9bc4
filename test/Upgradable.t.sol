@@ -43,12 +43,6 @@ contract EtherFiNodeV2 is EtherFiNode {
     }
 }
 
-contract ClaimReceiverPoolV2 is ClaimReceiverPool {
-    function isUpgraded() public view returns(bool){
-        return true;
-    }
-}
-
 contract NodeOperatorManagerV2 is NodeOperatorManager {
     function isUpgraded() public view returns(bool){
         return true;
@@ -58,7 +52,6 @@ contract NodeOperatorManagerV2 is NodeOperatorManager {
 contract UpgradeTest is TestSetup {
 
     AuctionManagerV2Test public auctionManagerV2Instance;
-    ClaimReceiverPoolV2 public claimReceiverPoolV2Instance;
     BNFTV2 public BNFTV2Instance;
     TNFTV2 public TNFTV2Instance;
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
