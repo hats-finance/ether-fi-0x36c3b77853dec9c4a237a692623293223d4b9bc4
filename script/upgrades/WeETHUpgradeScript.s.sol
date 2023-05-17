@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/weEth.sol";
+import "../../src/WeETH.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract WeEthUpgrade is Script {
@@ -24,11 +24,11 @@ contract WeEthUpgrade is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        weEth weEthInstance = weEth(weEthProxyAddress);
-        weEth weEthV2Implementation = new weEth();
+        WeETH weEthInstance = WeETH(weEthProxyAddress);
+        WeETH weEthV2Implementation = new WeETH();
 
         weEthInstance.upgradeTo(address(weEthV2Implementation));
-        weEth weEthV2Instance = weEth(weEthProxyAddress);
+        WeETH weEthV2Instance = WeETH(weEthProxyAddress);
 
         vm.stopBroadcast();
         

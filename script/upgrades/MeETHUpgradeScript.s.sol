@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/meETH.sol";
+import "../../src/MeETH.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract MeETHUpgrade is Script {
@@ -24,11 +24,11 @@ contract MeETHUpgrade is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        meETH meETHInstance = meETH(payable(meETHProxyAddress));
-        meETH meETHV2Implementation = new meETH();
+        MeETH meETHInstance = MeETH(payable(meETHProxyAddress));
+        MeETH meETHV2Implementation = new MeETH();
 
         meETHInstance.upgradeTo(address(meETHV2Implementation));
-        meETH meETHV2Instance = meETH(payable(meETHProxyAddress));
+        MeETH meETHV2Instance = MeETH(payable(meETHProxyAddress));
 
         vm.stopBroadcast();
         
