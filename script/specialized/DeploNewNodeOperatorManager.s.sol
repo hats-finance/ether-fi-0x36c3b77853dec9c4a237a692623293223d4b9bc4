@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../src/NodeOperatorManager.sol";
-import "../src/AuctionManager.sol";
-import "../src/UUPSProxy.sol";
+import "../../src/NodeOperatorManager.sol";
+import "../../src/AuctionManager.sol";
+import "../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployNodeOperatorManagerScript is Script {

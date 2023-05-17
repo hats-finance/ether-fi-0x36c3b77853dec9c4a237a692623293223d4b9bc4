@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../src/StakingManager.sol";
+import "../../src/StakingManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployPatchV3 is Script {

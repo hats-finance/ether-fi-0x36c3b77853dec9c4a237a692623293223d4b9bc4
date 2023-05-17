@@ -2,34 +2,22 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../src/Treasury.sol";
-import "../src/NodeOperatorManager.sol";
-import "../src/EtherFiNodesManager.sol";
-import "../src/EtherFiNode.sol";
-import "../src/ProtocolRevenueManager.sol";
-import "../src/StakingManager.sol";
-import "../src/AuctionManager.sol";
-import "../src/LiquidityPool.sol";
-import "../src/EETH.sol";
-import "../src/WeETH.sol";
-import "../src/RegulationsManager.sol";
-import "../src/UUPSProxy.sol";
+import "../../src/Treasury.sol";
+import "../../src/NodeOperatorManager.sol";
+import "../../src/EtherFiNodesManager.sol";
+import "../../src/EtherFiNode.sol";
+import "../../src/BNFT.sol";
+import "../../src/TNFT.sol";
+import "../../src/ProtocolRevenueManager.sol";
+import "../../src/StakingManager.sol";
+import "../../src/AuctionManager.sol";
+import "../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "../test/TestERC20.sol";
-
-contract DeployEtherFiSuiteScript is Script {
+contract DeployPhaseOne is Script {
     using Strings for string;
 
-    bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
-
-
     /*---- Storage variables ----*/
-
-    TestERC20 public rETH;
-    TestERC20 public wstETH;
-    TestERC20 public sfrxEth;
-    TestERC20 public cbEth;
 
     UUPSProxy public auctionManagerProxy;
     UUPSProxy public stakingManagerProxy;
@@ -37,20 +25,12 @@ contract DeployEtherFiSuiteScript is Script {
     UUPSProxy public protocolRevenueManagerProxy;
     UUPSProxy public TNFTProxy;
     UUPSProxy public BNFTProxy;
-    UUPSProxy public liquidityPoolProxy;
-    UUPSProxy public eETHProxy;
-    UUPSProxy public claimReceiverPoolProxy;
-    UUPSProxy public regulationsManagerProxy;
-    UUPSProxy public weETHProxy;
 
     BNFT public BNFTImplementation;
     BNFT public BNFTInstance;
 
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
-
-    WeETH public weEthImplementation;
-    WeETH public weEthInstance;
 
     AuctionManager public auctionManagerImplementation;
     AuctionManager public auctionManager;
@@ -64,15 +44,6 @@ contract DeployEtherFiSuiteScript is Script {
     EtherFiNodesManager public etherFiNodesManagerImplementation;
     EtherFiNodesManager public etherFiNodesManager;
 
-    LiquidityPool public liquidityPoolImplementation;
-    LiquidityPool public liquidityPool;
-
-    EETH public eETHImplementation;
-    EETH public eETHInstance;
-
-    RegulationsManager public regulationsManagerInstance;
-    RegulationsManager public regulationsManagerImplementation;
-
     struct suiteAddresses {
         address treasury;
         address nodeOperatorManager;
@@ -83,10 +54,6 @@ contract DeployEtherFiSuiteScript is Script {
         address etherFiNodesManager;
         address protocolRevenueManager;
         address etherFiNode;
-        address regulationsManager;
-        address liquidityPool;
-        address eETH;
-        address weEth;
     }
 
     suiteAddresses suiteAddressesStruct;
@@ -136,38 +103,8 @@ contract DeployEtherFiSuiteScript is Script {
             address(protocolRevenueManager)
         );
 
-        regulationsManagerImplementation = new RegulationsManager();
-        regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
-        regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
-        regulationsManagerInstance.initialize();
-
         EtherFiNode etherFiNode = new EtherFiNode();
 
-        // Mainnet Addresses
-        // address private immutable rETH = 0xae78736Cd615f374D3085123A210448E74Fc6393;
-        // address private immutable wstETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
-        // address private immutable sfrxETH = 0xac3E018457B222d93114458476f3E3416Abbe38F;
-        // address private immutable cbETH = 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704;
-        rETH = new TestERC20("Rocket Pool ETH", "rETH");
-        cbEth = new TestERC20("Staked ETH", "wstETH");
-        wstETH = new TestERC20("Coinbase ETH", "cbEth");
-        sfrxEth = new TestERC20("Frax ETH", "sfrxEth");
-
-        liquidityPoolImplementation = new LiquidityPool();
-        liquidityPoolProxy = new UUPSProxy(
-            address(liquidityPoolImplementation),
-            ""
-        );
-        liquidityPool = LiquidityPool(
-            payable(address(liquidityPoolProxy))
-        );
-        liquidityPool.initialize(address(regulationsManagerInstance));
-
-        eETHImplementation = new EETH();
-        eETHProxy = new UUPSProxy(address(eETHImplementation), "");
-        eETHInstance = EETH(address(eETHProxy));
-        eETHInstance.initialize(payable(address(liquidityPool)));
-        
         // Setup dependencies
         nodeOperatorManager.setAuctionContractAddress(address(auctionManager));
 
@@ -178,22 +115,10 @@ contract DeployEtherFiSuiteScript is Script {
         protocolRevenueManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
 
         stakingManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
-        stakingManager.setLiquidityPoolAddress(address(liquidityPool));
         stakingManager.registerEtherFiNodeImplementationContract(address(etherFiNode));
         stakingManager.registerTNFTContract(address(TNFTInstance));
         stakingManager.registerBNFTContract(address(BNFTInstance));
 
-        liquidityPool.setTokenAddress(address(eETHInstance));
-        liquidityPool.setStakingManager(address(stakingManager));
-        liquidityPool.setEtherFiNodesManager(address(etherFiNodesManager));
-
-        weEthImplementation = new WeETH();
-        weETHProxy = new UUPSProxy(address(weEthImplementation), "");
-        weEthInstance = WeETH(address(weETHProxy));
-        weEthInstance.initialize(payable(address(liquidityPool)), address(eETHInstance));
-
-        regulationsManagerInstance.initializeNewWhitelist(initialHash);
-        
         vm.stopBroadcast();
 
         suiteAddressesStruct = suiteAddresses({
@@ -205,15 +130,11 @@ contract DeployEtherFiSuiteScript is Script {
             BNFT: address(BNFTInstance),
             etherFiNodesManager: address(etherFiNodesManager),
             protocolRevenueManager: address(protocolRevenueManager),
-            etherFiNode: address(etherFiNode),
-            regulationsManager: address(regulationsManagerInstance),
-            liquidityPool: address(liquidityPool),
-            eETH: address(eETHInstance),
-            weEth: address(weEthInstance)
+            etherFiNode: address(etherFiNode)
         });
 
         writeSuiteVersionFile();
-        writeLpVersionFile();
+        writeNFTVersionFile();
     }
 
     function _stringToUint(
@@ -234,7 +155,7 @@ contract DeployEtherFiSuiteScript is Script {
 
     function writeSuiteVersionFile() internal {
         // Read Current version
-        string memory versionString = vm.readLine("release/logs/EtherFiSuite/version.txt");
+        string memory versionString = vm.readLine("release/logs/PhaseOne/version.txt");
 
         // Cast string to uint256
         uint256 version = _stringToUint(versionString);
@@ -243,7 +164,7 @@ contract DeployEtherFiSuiteScript is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/EtherFiSuite/version.txt",
+            "release/logs/PhaseOne/version.txt",
             string(abi.encodePacked(Strings.toString(version)))
         );
 
@@ -251,7 +172,7 @@ contract DeployEtherFiSuiteScript is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/EtherFiSuite/",
+                    "release/logs/PhaseOne/",
                     Strings.toString(version),
                     ".release"
                 )
@@ -270,19 +191,15 @@ contract DeployEtherFiSuiteScript is Script {
                     "\nEtherFi Node Manager: ",
                     Strings.toHexString(suiteAddressesStruct.etherFiNodesManager),
                     "\nProtocol Revenue Manager: ",
-                    Strings.toHexString(suiteAddressesStruct.protocolRevenueManager),
-                    "\nTNFT: ",
-                    Strings.toHexString(suiteAddressesStruct.TNFT),
-                    "\nBNFT: ",
-                    Strings.toHexString(suiteAddressesStruct.BNFT)
+                    Strings.toHexString(suiteAddressesStruct.protocolRevenueManager)
                 )
             )
         );
     }
 
-    function writeLpVersionFile() internal {
+    function writeNFTVersionFile() internal {
         // Read Current version
-        string memory versionString = vm.readLine("release/logs/LiquidityPool/version.txt");
+        string memory versionString = vm.readLine("release/logs/PhaseOneNFTs/version.txt");
 
         // Cast string to uint256
         uint256 version = _stringToUint(versionString);
@@ -291,7 +208,7 @@ contract DeployEtherFiSuiteScript is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/LiquidityPool/version.txt",
+            "release/logs/PhaseOneNFTs/version.txt",
             string(abi.encodePacked(Strings.toString(version)))
         );
 
@@ -299,7 +216,7 @@ contract DeployEtherFiSuiteScript is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/LiquidityPool/",
+                    "release/logs/PhaseOneNFTs/",
                     Strings.toString(version),
                     ".release"
                 )
@@ -307,14 +224,10 @@ contract DeployEtherFiSuiteScript is Script {
             string(
                 abi.encodePacked(
                     Strings.toString(version),
-                    "\nRegulations Manager: ",
-                    Strings.toHexString(suiteAddressesStruct.regulationsManager),
-                    "\nLiquidity Pool: ",
-                    Strings.toHexString(suiteAddressesStruct.liquidityPool),
-                    "\neETH: ",
-                    Strings.toHexString(suiteAddressesStruct.eETH),
-                    "\nweETH: ",
-                    Strings.toHexString(suiteAddressesStruct.weEth)
+                    "\nTNFT: ",
+                    Strings.toHexString(suiteAddressesStruct.TNFT),
+                    "\nBNFT: ",
+                    Strings.toHexString(suiteAddressesStruct.BNFT)
                 )
             )
         );
