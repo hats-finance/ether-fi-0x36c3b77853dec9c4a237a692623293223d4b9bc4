@@ -1,4 +1,4 @@
-name: upgrade-staking-manager
+name: upgrade-auction-manager
 
 on: workflow_dispatch
 
@@ -31,15 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Generate ABIs
-        uses: sergeysova/jq-action@v2.3.0
-        id: extract-abi
-        with:
-          cmd: bash script/extractABI.sh
-
-      - name: Upgrade Staking Manager Contract
-        run: make upgrade-staking-manager
-        id: upgrade-staking-manager
+      - name: Upgrade Auction Manager Contract
+        run: make upgrade-auction-manager
+        id: upgrade-auction-manager
 
       - name: Get date
         id: get-date

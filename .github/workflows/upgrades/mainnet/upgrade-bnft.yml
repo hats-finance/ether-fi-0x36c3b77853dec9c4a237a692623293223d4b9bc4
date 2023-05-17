@@ -31,12 +31,6 @@ jobs:
         run: make test
         id: test
 
-      - name: Generate ABIs
-        uses: sergeysova/jq-action@v2.3.0
-        id: extract-abi
-        with:
-          cmd: bash script/extractABI.sh
-
       - name: Upgrade BNFT Contract
         run: make upgrade-bnft
         id: upgrade-bnft
