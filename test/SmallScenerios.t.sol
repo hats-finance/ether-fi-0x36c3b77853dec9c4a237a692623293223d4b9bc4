@@ -212,7 +212,7 @@ contract SmallScenariosTest is TestSetup {
             exitTimestamps[0] = uint32(block.timestamp);
             managerInstance.processNodeExit(processedBidIds, exitTimestamps);
 
-            (uint256 toOperator, uint256 toTNFT, uint256 toBNFT, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(processedBidIds[0]);
+            (, uint256 toTNFT,,) = managerInstance.getFullWithdrawalPayouts(processedBidIds[0]);
             assertEq(toTNFT, 30 ether + 1 ether - 1);
 
             vm.stopPrank();
@@ -233,8 +233,6 @@ contract SmallScenariosTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 0.000000000000000001 ether);
     }
 
-    /*----- EAP MIGRATION SCENARIO -----*/
-
     /*------ AUCTION / STAKER FLOW ------*/
 
     // Chad - Bids first with 5 bids of 0.2 ETH
@@ -245,9 +243,6 @@ contract SmallScenariosTest is TestSetup {
     // Greg - Stakes 5 times, should be matched with one of Chads and 4 of Bob bids
     // Greg - Registers 5 validators
     function test_AuctionToStakerFlow() public {
-        bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
-        bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
-
         vm.prank(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -309,8 +304,6 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = chadBidIds[4];
 
-        bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
-
         startHoax(dan);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
@@ -347,7 +340,6 @@ contract SmallScenariosTest is TestSetup {
 
         //-------------------------------------------------------------------------------------------------------------------------------
 
-        uint256 gregBalanceBeforeStaking = greg.balance;
         bytes32[] memory gregProof = merkle.getProof(whiteListedAddresses, 8);
 
         startHoax(greg);

@@ -18,7 +18,6 @@ contract LargeScenariosTest is TestSetup {
          */
 
         /// Register Node Operators
-        bytes32[] memory emptyProof = new bytes32[](0);
         bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
         bytes32[] memory elvisProof = merkle.getProof(whiteListedAddresses, 7);
         bytes32[] memory gregProof = merkle.getProof(whiteListedAddresses, 8);

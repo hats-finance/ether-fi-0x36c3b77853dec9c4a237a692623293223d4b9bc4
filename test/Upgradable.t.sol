@@ -8,43 +8,43 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "../lib/murky/src/Merkle.sol";
 
 contract AuctionManagerV2Test is AuctionManager {
-    function isUpgraded() public view returns(bool){
+    function isUpgraded() public pure returns(bool){
         return true;
     }
 }
 
 contract BNFTV2 is BNFT {
-    function isUpgraded() public view returns(bool){
+    function isUpgraded() public pure returns(bool){
         return true;
     }
 }
 
 contract TNFTV2 is TNFT {
-    function isUpgraded() public view returns(bool){
+    function isUpgraded() public pure returns(bool){
         return true;
     }
 }
 
 contract EtherFiNodesManagerV2 is EtherFiNodesManager {
-    function isUpgraded() public view returns(bool){
+    function isUpgraded() public pure returns(bool){
         return true;
     }
 }
 
 contract ProtocolRevenueManagerV2 is ProtocolRevenueManager {
-    function isUpgraded() public view returns(bool){
+    function isUpgraded() public pure returns(bool){
         return true;
     }
 }
 
 contract EtherFiNodeV2 is EtherFiNode {
-    function isUpgraded() public view returns(bool){
+    function isUpgraded() public pure returns(bool){
         return true;
     }
 }
 
 contract NodeOperatorManagerV2 is NodeOperatorManager {
-    function isUpgraded() public view returns(bool){
+    function isUpgraded() public pure returns(bool){
         return true;
     }
 }
@@ -67,8 +67,6 @@ contract UpgradeTest is TestSetup {
     }
 
     function test_CanUpgradeAuctionManager() public {
-
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -78,7 +76,7 @@ contract UpgradeTest is TestSetup {
         assertEq(auctionInstance.numberOfActiveBids(), 0);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+        auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(auctionInstance.getImplementation(), address(auctionImplementation));
@@ -205,13 +203,11 @@ contract UpgradeTest is TestSetup {
     }
 
     function test_CanUpgradeStakingManager() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 3);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(alice);
-        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+        auctionInstance.createBid{value: 0.1 ether}(
             1,
             0.1 ether
         );

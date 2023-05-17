@@ -361,8 +361,6 @@ contract StakingManager is
             "Incorrect phase"
         );
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
-        address staker = bidIdToStaker[_validatorId];
-
         
         bytes memory withdrawalCredentials = nodesManagerIntefaceInstance
             .getWithdrawalCredentials(_validatorId);

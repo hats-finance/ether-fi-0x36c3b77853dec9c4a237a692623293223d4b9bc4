@@ -138,7 +138,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 totalPrincipals = 0;
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
-            uint256 slashingPenalty = _slashingPenalties[i];
             require(nodesManager.phase(validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED, "Incorrect Phase");
             (, uint256 toTnft, uint256 toBnft,) = nodesManager.getFullWithdrawalPayouts(validatorId);
 
