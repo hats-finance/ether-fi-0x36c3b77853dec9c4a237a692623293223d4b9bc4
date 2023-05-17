@@ -1,61 +1,48 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
-import "./interfaces/IClaimReceiverPool.sol";
-
-import "forge-std/console.sol";
-
+import "./interfaces/IRegulationsManager.sol";
 
 contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
+
+    //--------------------------------------------------------------------------------------
+    //---------------------------------  STATE-VARIABLES  ----------------------------------
+    //--------------------------------------------------------------------------------------
+
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
-    IClaimReceiverPool public claimReceiverPool;
+    IRegulationsManager public regulationsManager;
+
+    bytes32 public merkleRoot;
+
+    uint32 public genesisTime; // the timestamp when the meETH contract was deployed
+    uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
+    uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
 
     mapping (address => mapping (address => uint256)) public allowances;
     mapping (address => UserDeposit) public _userDeposits;
     mapping (address => UserData) public _userData;
+
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
-    uint32   public genesisTime; // the timestamp when the meETH contract was deployed
-    uint16   public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
-    uint16   public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
-
     uint256[23] __gap;
+    
+    //--------------------------------------------------------------------------------------
+    //-------------------------------------  EVENTS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
 
-    struct UserDeposit {
-        uint128 amounts;
-        uint128 amountStakedForPoints;
-    }
+    event FundsMigrated(address user, uint256 amount, uint256 eapPoints, uint40 loyaltyPoints);
+    event MerkleUpdated(bytes32, bytes32);
 
-    struct UserData {
-        uint96 rewardsLocalIndex;
-        uint32 pointsSnapshotTime;
-        uint40 pointsSnapshot;
-        uint40 curTierPoints;
-        uint40 nextTierPoints;
-        uint8  tier;
-    }
-
-    struct TierDeposit {
-        uint128 shares;
-        uint128 amounts;        
-    }
-
-    struct TierData {
-        uint96 rewardsGlobalIndex;
-        uint96 amountStakedForPoints;
-        uint40 minPointsPerDepositAmount;
-        uint24 weight;
-    }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -64,21 +51,49 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     receive() external payable {}
 
-    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _claimReceiverPoolAddress) external initializer {
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _regulationsManager) external initializer {
         require(_eEthAddress != address(0), "No zero addresses");
         require(_liquidityPoolAddress != address(0), "No zero addresses");
-        require(_claimReceiverPoolAddress != address(0), "No zero addresses");
+        require(_regulationsManager != address(0), "No zero addresses");
         
         __Ownable_init();
         __UUPSUpgradeable_init();
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
-        claimReceiverPool = IClaimReceiverPool(_claimReceiverPoolAddress);
+        regulationsManager = IRegulationsManager(_regulationsManager);
+
         genesisTime = uint32(block.timestamp);
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
+    }
+
+    /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
+    /// @dev The deposit amount must be the same as what they deposited into the EAP
+    /// @param _points points of the user
+    /// @param _ethAmount minimum balance of the user
+    /// @param _merkleProof array of hashes forming the merkle proof for the user
+    function eapDeposit(
+        uint256 _ethAmount,
+        uint256 _points,
+        bytes32[] calldata _merkleProof
+    ) external payable {
+        require(_points > 0, "You don't have any points to claim");
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
+        require(msg.value >= _ethAmount, "Invalid deposit amount");
+        _verifyEapUserData(msg.sender, _ethAmount, _points, _merkleProof);
+
+        uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_points);
+
+        _wrapEthForEap(msg.sender, _ethAmount, loyaltyPoints, _merkleProof);
+        wrapEth(msg.sender, msg.value - _ethAmount, _merkleProof);
+
+        emit FundsMigrated(msg.sender, _ethAmount, _points, loyaltyPoints);
     }
 
     function wrapEEth(uint256 _amount) external isEEthStakingOpen {
@@ -92,31 +107,15 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         _mint(msg.sender, _amount);
     }
 
-    function wrapEth(address _account, bytes32[] calldata _merkleProof) external payable {
-        require(msg.value > 0, "You cannot wrap 0 ETH");
-        uint256 amount = msg.value;
+    function wrapEth(address _account, uint256 _amount, bytes32[] calldata _merkleProof) public payable {
+        require(_amount > 0, "You cannot wrap 0 ETH");
 
         claimPoints(_account);
         claimStakingRewards(_account);
-
-        liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
-        _mint(_account, amount);
-    }
-
-    function wrapEthForEap(address _account, uint40 _points, bytes32[] calldata _merkleProof) external payable {
-        require(msg.sender == address(claimReceiverPool), "Caller muat be the claim receiver pool contract");
-        require(msg.value > 0, "You cannot wrap 0 ETH");
-        require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
-
-        uint256 amount = msg.value;
-        _initializeEarlyAdopterPoolUserPoints(_account, _points, amount);
         
-        liquidityPool.deposit{value: amount}(_account, address(this), _merkleProof);
-        _mint(_account, amount);
-        _updateGlobalIndex();
-
-        uint8 tier = tierOf(_account);
-        _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
+        liquidityPool.deposit{value: _amount}(_account, address(this), _merkleProof);
+        _mint(_account, _amount);
+        _claimTier(_account);
     }
 
     function unwrapForEEth(uint256 _amount) public isEEthStakingOpen {
@@ -127,8 +126,9 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         claimPoints(msg.sender);
         claimStakingRewards(msg.sender);
 
-        _applyUnwrapPenalty(msg.sender);
+        uint256 prevAmount = _userDeposits[msg.sender].amounts;
         _burn(msg.sender, _amount);
+        _applyUnwrapPenaltyByDeductingPointsEarnings(msg.sender, prevAmount, _amount);
 
         eETH.transferFrom(address(this), msg.sender, _amount);
     }
@@ -139,8 +139,9 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         claimPoints(msg.sender);
         claimStakingRewards(msg.sender);
 
-        _applyUnwrapPenalty(msg.sender);
+        uint256 prevAmount = _userDeposits[msg.sender].amounts;
         _burn(msg.sender, _amount);
+        _applyUnwrapPenaltyByDeductingPointsEarnings(msg.sender, prevAmount, _amount);
 
         liquidityPool.withdraw(address(this), _amount);
         (bool sent, ) = address(msg.sender).call{value: _amount}("");
@@ -223,6 +224,14 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
+    function convertEapPointsToLoyaltyPoints(uint256 _eapPoints) public view returns (uint40) {
+        uint256 points = (_eapPoints * 1e14 / 1000) / 1 days / 0.001 ether;
+        if (points >= type(uint40).max) {
+            points = type(uint40).max;
+        }
+        return uint40(points);
+    }
+
     function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
@@ -251,12 +260,22 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return tierDeposits.length - 1;
     }
 
-    //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
+    /// @notice Updates the merkle root
+    /// @param _newMerkle new merkle root used to verify the EAP user data (deposits, points)
+    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
+        bytes32 oldMerkle = merkleRoot;
+        merkleRoot = _newMerkle;
+        emit MerkleUpdated(oldMerkle, _newMerkle);
+    }
 
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
+    
     function _mint(address _account, uint256 _amount) internal {
         require(_account != address(0), "MINT_TO_THE_ZERO_ADDRESS");
         uint256 share = liquidityPool.sharesForAmount(_amount);
-        uint256 tier = tierOf(msg.sender);
+        uint256 tier = tierOf(_account);
 
         _incrementUserDeposit(_account, _amount, 0);
         _incrementTierDeposit(tier, _amount, share);
@@ -265,7 +284,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function _burn(address _account, uint256 _amount) internal {
         require(_userDeposits[_account].amounts >= _amount, "Not enough Balance");
         uint256 share = liquidityPool.sharesForAmount(_amount);
-        uint256 tier = tierOf(msg.sender);
+        uint256 tier = tierOf(_account);
 
         _decrementUserDeposit(_account, _amount, 0);
         _decrementTierDeposit(tier, _amount, share);
@@ -323,7 +342,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
             deposit.shares + uint128(_shares),
             deposit.amounts + uint128(_amount)
         );
-
     }
 
     function _decrementTierDeposit(uint256 _tier, uint256 _amount, uint256 _shares) internal {
@@ -343,13 +361,19 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         userData.tier = tierForPointsPerDepositAmount(userPointsPerDepositAmount);
     }
 
+    function _claimTier(address _account) internal {
+        uint8 oldTier = tierOf(_account);
+        uint8 newTier = claimableTier(_account);
+        _claimTier(_account, oldTier, newTier);
+    }
+
     function _claimTier(address _account, uint8 _curTier, uint8 _newTier) internal {
         require(tierOf(_account) == _curTier, "the account does not belong to the specified tier");
         if (_curTier == _newTier) {
             return;
         }
 
-        uint256 amount = _userDeposits[_account].amounts;
+        uint256 amount = _min(_userDeposits[_account].amounts, tierDeposits[_curTier].amounts);
         uint256 share = liquidityPool.sharesForAmount(amount);
         uint256 amountStakedForPoints = _userDeposits[_account].amountStakedForPoints;
 
@@ -390,8 +414,9 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     }
 
     function _updateGlobalIndex() internal {
-        uint96[] memory globalIndex = _calculateGlobalIndex();
+        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = _calculateGlobalIndex();
         for (uint256 i = 0; i < tierDeposits.length; i++) {
+            tierDeposits[i].shares = adjustedShares[i];
             uint256 shares = uint256(tierDeposits[i].shares);
             uint256 amounts = liquidityPool.amountForShare(shares);
             tierDeposits[i].amounts = uint128(amounts);
@@ -399,21 +424,31 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         }
     }
 
-    function _calculateGlobalIndex() internal view returns (uint96[] memory) {
+    function _calculateGlobalIndex() internal view returns (uint96[] memory, uint128[] memory) {
         uint256 sumTierRewards = 0;
         uint256 sumWeightedTierRewards = 0;
         uint96[] memory globalIndex = new uint96[](tierDeposits.length);
+        uint128[] memory adjustedShares = new uint128[](tierDeposits.length);
         uint256[] memory weightedTierRewards = new uint256[](tierDeposits.length);
 
-        for (uint256 i = 0; i < weightedTierRewards.length; i++) {
-            uint256 tierRewards = liquidityPool.amountForShare(tierDeposits[i].shares) - tierDeposits[i].amounts;
-            uint256 weightedTierReward = tierData[i].weight * tierRewards;
-
+        for (uint256 i = 0; i < weightedTierRewards.length; i++) {            
+            uint256 tierRewards;
+            uint256 weightedTierReward;
+            
+            TierDeposit memory deposit = tierDeposits[i];
+            uint256 currentAmounts = liquidityPool.amountForShare(deposit.shares);
+            if (currentAmounts >= deposit.amounts) {
+                tierRewards = currentAmounts - deposit.amounts;
+                weightedTierReward = tierData[i].weight * tierRewards;
+            }
+            
             weightedTierRewards[i] = weightedTierReward;
             globalIndex[i] = tierData[i].rewardsGlobalIndex;
 
             sumTierRewards += tierRewards;
             sumWeightedTierRewards += weightedTierReward;
+
+            adjustedShares[i] = tierDeposits[i].shares;
         }
 
         if (sumWeightedTierRewards > 0) {
@@ -423,24 +458,64 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
                     uint256 rescaledTierRewards = weightedTierRewards[i] * sumTierRewards / sumWeightedTierRewards;
                     uint256 delta = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
                     require(uint256(globalIndex[i]) + uint256(delta) <= type(uint96).max, "overflow");
-                    globalIndex[i] += uint96(delta);                    
+                    globalIndex[i] += uint96(delta);
+                    
+                    uint256 rebasedAmounts = liquidityPool.amountForShare(tierDeposits[i].shares);
+                    uint256 previousAmounts = tierDeposits[i].amounts;
+                    
+                    uint256 accrued = rebasedAmounts - _min(rebasedAmounts, previousAmounts);
+                    if (accrued > rescaledTierRewards) {
+                        adjustedShares[i] -= uint128(liquidityPool.sharesForAmount(accrued - rescaledTierRewards));
+                    } else {
+                        adjustedShares[i] += uint128(liquidityPool.sharesForAmount(rescaledTierRewards - accrued));
+                    }
                 }
             }
         }
 
-        return globalIndex;
+        return (globalIndex, adjustedShares);
     }
 
-    // Degrade the user's tier to the lower one
-    function _applyUnwrapPenalty(address _account) internal {
-        uint8 curTier = tierOf(_account);
-        uint8 newTier = (curTier >= 1) ? curTier - 1 : 0;
-        _claimTier(_account, curTier, newTier);
+    function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
+        return (_a > _b) ? _b : _a;
+    }
+
+    function _applyUnwrapPenaltyByDeductingPointsEarnings(address _account, uint256 _prevAmount, uint256 _burnAmount) internal {
+        UserData storage userData = _userData[_account];
+        userData.curTierPoints -= uint40(userData.curTierPoints * _burnAmount / _prevAmount);
+        userData.nextTierPoints -= uint40(userData.nextTierPoints * _burnAmount / _prevAmount);
+        _claimTier(_account);
+    }
+
+    function _verifyEapUserData(
+        address _user,
+        uint256 _ethBal,
+        uint256 _points,
+        bytes32[] calldata _merkleProof
+    ) internal view returns (bool) {
+        bytes32 leaf = keccak256(abi.encodePacked(_user, _ethBal, _points));
+        bool verified = MerkleProof.verify(_merkleProof, merkleRoot, leaf);
+        require(verified, "Verification failed");
+    }
+
+    function _wrapEthForEap(address _account, uint256 _amount, uint40 _points, bytes32[] calldata _merkleProof) internal {
+        require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
+
+        _initializeEarlyAdopterPoolUserPoints(_account, _points, _amount);
+        
+        liquidityPool.deposit{value: _amount}(_account, address(this), _merkleProof);
+        _mint(_account, _amount);
+        _updateGlobalIndex();
+
+        uint8 tier = tierOf(_account);
+        _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    //------------------------------------  GETTERS  ---------------------------------------
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  GETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     function name() public pure returns (string memory) { return "meETH token"; }
     function symbol() public pure returns (string memory) { return "meETH"; }
@@ -461,8 +536,7 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     function balanceOf(address _account) public view override(IERC20Upgradeable, ImeETH) returns (uint256) {
         UserData storage userData = _userData[_account];
         UserDeposit storage userDeposit = _userDeposits[_account];
-        uint96[] memory globalIndex = _calculateGlobalIndex();
-
+        (uint96[] memory globalIndex, ) = _calculateGlobalIndex();
         uint256 amount = userDeposit.amounts;
         uint256 rewards = (globalIndex[userData.tier] - userData.rewardsLocalIndex) * amount / 1 ether;
         uint256 amountStakedForPoints = userDeposit.amountStakedForPoints;
@@ -530,7 +604,10 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function calculatePointsPerDepositAmount(uint40 _points, uint256 _amount) public view returns (uint40) {
         uint256 userTotalDepositScaled = _amount / (1 ether / 1000);
-        uint40 userPointsPerDepositAmount = uint40(_points / userTotalDepositScaled); // points earned per 0.001 ether
+        uint40 userPointsPerDepositAmount;
+        if (userTotalDepositScaled > 0) {
+            userPointsPerDepositAmount = uint40(_points / userTotalDepositScaled); // points earned per 0.001 ether
+        }
         return userPointsPerDepositAmount;
     }
 
@@ -548,7 +625,9 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return _getImplementation();
     }
 
+    //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     modifier isEEthStakingOpen() {
         require(liquidityPool.eEthliquidStakingOpened(), "Liquid staking functions are closed");

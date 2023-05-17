@@ -3,12 +3,11 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../../test/TestERC20.sol";
-import "../../src/EarlyAdopterPool.sol";
-import "../../src/ClaimReceiverPool.sol";
-import "../../src/RegulationsManager.sol";
-import "../../lib/murky/src/Merkle.sol";
-import "../../src/UUPSProxy.sol";
+import "../test/TestERC20.sol";
+import "../src/EarlyAdopterPool.sol";
+import "../src/RegulationsManager.sol";
+import "../lib/murky/src/Merkle.sol";
+import "../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployClaimReceiverTestScript is Script {
@@ -16,11 +15,7 @@ contract DeployClaimReceiverTestScript is Script {
 
     struct addresses {
         address earlyAdopterPool;
-        address receiverPool;
     }
-
-    ClaimReceiverPool public claimReceiverPoolImplementation;
-    ClaimReceiverPool public claimReceiverPoolInstance;
 
     RegulationsManager public regulationsManagerInstance;
     RegulationsManager public regulationsManagerImplementation;
@@ -51,31 +46,10 @@ contract DeployClaimReceiverTestScript is Script {
             address(cbETH)
         );
 
-        claimReceiverPoolImplementation = new ClaimReceiverPool();
-        claimReceiverPoolProxy = new UUPSProxy(
-            address(claimReceiverPoolImplementation),
-            ""
-        );
-        claimReceiverPoolInstance = ClaimReceiverPool(
-            payable(address(claimReceiverPoolProxy))
-        );
-
-        //NB: THESE ARE TEST ADDRESSES
-        claimReceiverPoolInstance.initialize(
-            address(rETH),
-            address(wstETH),
-            address(sfrxETH),
-            address(cbETH),
-            address(regulationsManagerInstance),
-            0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6, // wrapped eth token
-            0xE592427A0AEce92De3Edee1F18E0157C05861564 // uniswap router
-        );
-
         vm.stopBroadcast();
 
         addressStruct = addresses({
-            earlyAdopterPool: address(earlyAdopterPool),
-            receiverPool: address(claimReceiverPoolInstance)
+            earlyAdopterPool: address(earlyAdopterPool)
         });
 
         writeVersionFile();
@@ -128,9 +102,7 @@ contract DeployClaimReceiverTestScript is Script {
                 abi.encodePacked(
                     Strings.toString(version),
                     "\nEAP: ",
-                    Strings.toHexString(addressStruct.earlyAdopterPool),
-                    "\nReceiverPool: ",
-                    Strings.toHexString(addressStruct.receiverPool)
+                    Strings.toHexString(addressStruct.earlyAdopterPool)
                 )
             )
         );
