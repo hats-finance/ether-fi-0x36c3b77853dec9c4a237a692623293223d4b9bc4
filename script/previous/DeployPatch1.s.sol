@@ -9,7 +9,7 @@ contract DeployPatch1 is Script {
     using Strings for string;
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        //uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
         address eth2DepositContractAddress = vm.envAddress("ETH2_DEPOSIT_CONTRACT_ADDRESS");
 

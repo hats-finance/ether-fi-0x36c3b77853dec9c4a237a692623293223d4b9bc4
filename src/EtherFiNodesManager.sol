@@ -335,15 +335,17 @@ contract EtherFiNodesManager is
                 toOperator + toTnft + toBnft + toTreasury
             );
 
+            bool sent;
+
             tnftHolder = tnftInstance.ownerOf(_validatorId);
             bnftHolder = bnftInstance.ownerOf(_validatorId);
             if (tnftHolder == bnftHolder) {
-                (bool sent, ) = payable(tnftHolder).call{
+                (sent, ) = payable(tnftHolder).call{
                     value: toTnft + toBnft
                 }("");
                 require(sent, "Failed to send Ether");
             } else {
-                (bool sent, ) = payable(tnftHolder).call{value: toTnft}("");
+                (sent, ) = payable(tnftHolder).call{value: toTnft}("");
                 require(sent, "Failed to send Ether");
                 (sent, ) = payable(bnftHolder).call{value: toBnft}("");
                 require(sent, "Failed to send Ether");

@@ -131,8 +131,6 @@ contract EtherFiNodeTest is TestSetup {
             0.05 ether + 1
         );
 
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-        bytes32[] memory chadProof = merkle.getProof(whiteListedAddresses, 5);
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
         bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
 
@@ -368,8 +366,6 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_partialWithdrawFails() public {
-        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
-        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
         address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
@@ -568,7 +564,6 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 nodeOperatorBalance = address(nodeOperator).balance;
             uint256 treasuryBalance = address(treasuryInstance).balance;
-            uint256 danBalance = address(dan).balance;
             uint256 bnftStakerBalance = address(staker).balance;
 
             (
@@ -587,7 +582,6 @@ contract EtherFiNodeTest is TestSetup {
             vm.warp(block.timestamp + (1 + 6 * 28 * 86400));
             uint256 nodeOperatorBalance = address(nodeOperator).balance;
             uint256 treasuryBalance = address(treasuryInstance).balance;
-            uint256 danBalance = address(dan).balance;
             uint256 bnftStakerBalance = address(staker).balance;
 
             (
@@ -1026,7 +1020,6 @@ contract EtherFiNodeTest is TestSetup {
         uint32[] memory exitTimestamps = new uint32[](1);
 
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         vm.prank(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
@@ -1044,7 +1037,6 @@ contract EtherFiNodeTest is TestSetup {
         uint32[] memory exitTimestamps = new uint32[](1);
 
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         vm.prank(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);

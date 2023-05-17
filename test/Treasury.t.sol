@@ -13,12 +13,15 @@ contract TreasuryTest is TestSetup {
         assertEq(address(treasuryInstance).balance, 0);
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
+        require(sent, "Failed to send Ether");
+
         assertEq(address(treasuryInstance).balance, 0.5 ether);
     }
 
     function test_WithdrawFailsIfNotOwner() public {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
+        require(sent, "Failed to send Ether");
 
         vm.prank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
@@ -30,6 +33,8 @@ contract TreasuryTest is TestSetup {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
+        require(sent, "Failed to send Ether");
+
         assertEq(address(treasuryInstance).balance, 0.5 ether);
 
         vm.prank(owner);
@@ -48,6 +53,8 @@ contract TreasuryTest is TestSetup {
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 5 ether}("");
+        require(sent, "Failed to send Ether");
+
         assertEq(address(treasuryInstance).balance, 5 ether);
 
         vm.prank(owner);
