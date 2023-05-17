@@ -343,7 +343,7 @@ contract MeETHTest is TestSetup {
     
         vm.startPrank(alice);
         // Alice deposits 50 ETH and mints 50 meETH, which degrades Alice's tier to 0
-        meEthInstance.wrapEth{value: 50 ether}(alice, aliceProof);
+        meEthInstance.wrapEth{value: 50 ether}(alice, 50 ether, aliceProof);
         assertEq(meEthInstance.tierOf(alice), 0);
         vm.stopPrank();
 
