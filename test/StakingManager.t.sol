@@ -16,6 +16,7 @@ contract StakingManagerTest is TestSetup {
         address indexed bNftOwner,
         address indexed tNftOwner,
         uint256 validatorId,
+        address etherfiNodeContractAddress,
         bytes validatorPubKey,
         string ipfsHashForEncryptedValidatorKey
     );
@@ -1187,7 +1188,7 @@ contract StakingManagerTest is TestSetup {
 
 
         vm.expectEmit(true, true, true, true);
-        emit ValidatorRegistered(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, alice, bob, bidId1[0], hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c", "test_ipfs");
+        emit ValidatorRegistered(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, alice, bob, bidId1[0], etherFiNode, hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c", "test_ipfs");
         stakingManagerInstance.registerValidator(zeroRoot, bidId1[0], alice, bob, depositData);
         assertEq(BNFTInstance.ownerOf(bidId1[0]), alice);
         assertEq(TNFTInstance.ownerOf(bidId1[0]), bob);
