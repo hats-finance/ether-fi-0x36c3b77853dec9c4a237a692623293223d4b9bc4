@@ -2,38 +2,38 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/RegulationsManager.sol";
+import "../../../src/EtherFiNodesManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract RegulationsManagerUpgrade is Script {
+contract EtherFiNodesManagerUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address RegulationsManagerProxy;
-        address RegulationsManagerImplementation;
+        address EtherFiNodesManagerProxy;
+        address EtherFiNodesManagerImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address RegulationsManagerProxyAddress = vm.envAddress("REGULATIONS_MANAGER_PROXY_ADDRESS");
+        address EtherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
 
-        // mainnet
-        //require(RegulationsManagerProxyAddress ==, "RegulationsManagerProxyAddress incorrect see .env");
+        require(EtherFiNodesManagerProxyAddress == 0x8B71140AD2e5d1E7018d2a7f8a288BD3CD38916F, "EtherFiNodesManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        RegulationsManager RegulationsManagerInstance = RegulationsManager(RegulationsManagerProxyAddress);
-        RegulationsManager RegulationsManagerV2Implementation = new RegulationsManager();
+        EtherFiNodesManager EtherFiNodesManagerInstance = EtherFiNodesManager(payable(EtherFiNodesManagerProxyAddress));
+        EtherFiNodesManager EtherFiNodesManagerV2Implementation = new EtherFiNodesManager();
 
-        RegulationsManagerInstance.upgradeTo(address(RegulationsManagerV2Implementation));
-        RegulationsManager RegulationsManagerV2Instance = RegulationsManager(RegulationsManagerProxyAddress);
+        EtherFiNodesManagerInstance.upgradeTo(address(EtherFiNodesManagerV2Implementation));
+        EtherFiNodesManager EtherFiNodesManagerV2Instance = EtherFiNodesManager(payable(EtherFiNodesManagerProxyAddress));
 
         vm.stopBroadcast();
+   
         criticalAddresses = CriticalAddresses({
-            RegulationsManagerProxy: RegulationsManagerProxyAddress,
-            RegulationsManagerImplementation: address(RegulationsManagerV2Implementation)
+            EtherFiNodesManagerProxy: EtherFiNodesManagerProxyAddress,
+            EtherFiNodesManagerImplementation: address(EtherFiNodesManagerV2Implementation)
         });
 
     }
@@ -56,9 +56,9 @@ contract RegulationsManagerUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/RegulationsManager/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/EtherFiNodesManager/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -69,11 +69,11 @@ contract RegulationsManagerUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/RegulationsManager/version.txt",
+            "release/logs/Upgrades/goerli/EtherFiNodesManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/goerli/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -81,7 +81,7 @@ contract RegulationsManagerUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/RegulationsManager/",
+                    "release/logs/Upgrades/goerli/EtherFiNodesManager/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -90,9 +90,9 @@ contract RegulationsManagerUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.RegulationsManagerProxy),
+                    Strings.toHexString(criticalAddresses.EtherFiNodesManagerProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.RegulationsManagerImplementation),
+                    Strings.toHexString(criticalAddresses.EtherFiNodesManagerImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )

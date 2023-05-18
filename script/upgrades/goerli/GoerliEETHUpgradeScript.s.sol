@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/EETH.sol";
+import "../../../src/EETH.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract EETHUpgrade is Script {
@@ -19,7 +19,6 @@ contract EETHUpgrade is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address EETHProxyAddress = vm.envAddress("EETH_PROXY_ADDRESS");
 
-        // mainnet
         //require(EETHProxyAddress == , "EETHProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
@@ -57,9 +56,9 @@ contract EETHUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/EETH/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/EETH/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -70,11 +69,11 @@ contract EETHUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/mainnet/EETH/version.txt",
+            "release/logs/Upgrades/goerli/EETH/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/goerli/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -82,7 +81,7 @@ contract EETHUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/mainnet/EETH/",
+                    "release/logs/Upgrades/goerli/EETH/",
                     Strings.toString(localVersion),
                     ".release"
                 )

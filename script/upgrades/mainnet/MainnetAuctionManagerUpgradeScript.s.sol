@@ -2,40 +2,41 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/LiquidityPool.sol";
+import "../../../src/AuctionManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract LiquidityPoolUpgrade is Script {
+contract AuctionManagerUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address LiquidityPoolProxy;
-        address LiquidityPoolImplementation;
+        address auctionManagerProxy;
+        address auctionManagerImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address LiquidityPoolProxyAddress = vm.envAddress("LIQUIDITY_POOL_PROXY_ADDRESS");
+        address AuctionManagerProxyAddress = vm.envAddress("AUCTION_MANAGER_PROXY_ADDRESS");
 
-        // mainnet
-        //require(LiquidityPoolProxyAddress == , "LiquidityPoolProxyAddress incorrect see .env");
-
+        require(AuctionManagerProxyAddress == 0x00C452aFFee3a17d9Cecc1Bcd2B8d5C7635C4CB9, "AuctionManagerProxyAddress incorrect see .env");
+        
         vm.startBroadcast(deployerPrivateKey);
 
-        LiquidityPool LiquidityPoolInstance = LiquidityPool(payable(LiquidityPoolProxyAddress));
-        LiquidityPool LiquidityPoolV2Implementation = new LiquidityPool();
+        AuctionManager AuctionManagerInstance = AuctionManager(AuctionManagerProxyAddress);
+        AuctionManager AuctionManagerV2Implementation = new AuctionManager();
 
-        LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
-        LiquidityPool LiquidityPoolV2Instance = LiquidityPool(payable(LiquidityPoolProxyAddress));
+        AuctionManagerInstance.upgradeTo(address(AuctionManagerV2Implementation));
+        AuctionManager AuctionManagerV2Instance = AuctionManager(AuctionManagerProxyAddress);
 
         vm.stopBroadcast();
+
         criticalAddresses = CriticalAddresses({
-            LiquidityPoolProxy: LiquidityPoolProxyAddress,
-            LiquidityPoolImplementation: address(LiquidityPoolV2Implementation)
+            auctionManagerProxy: AuctionManagerProxyAddress,
+            auctionManagerImplementation: address(AuctionManagerV2Implementation)
         });
 
+        writeUpgradeVersionFile();
     }
 
     function _stringToUint(
@@ -56,9 +57,9 @@ contract LiquidityPoolUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/LiquidityPool/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/AuctionManager/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/mainnet/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -69,11 +70,11 @@ contract LiquidityPoolUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/LiquidityPool/version.txt",
+            "release/logs/Upgrades/mainnet/AuctionManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/mainnet/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -81,7 +82,7 @@ contract LiquidityPoolUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/LiquidityPool/",
+                    "release/logs/Upgrades/mainnet/AuctionManager/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -90,9 +91,9 @@ contract LiquidityPoolUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.LiquidityPoolProxy),
+                    Strings.toHexString(criticalAddresses.auctionManagerProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.LiquidityPoolImplementation),
+                    Strings.toHexString(criticalAddresses.auctionManagerImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )

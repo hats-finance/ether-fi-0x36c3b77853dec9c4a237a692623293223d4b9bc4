@@ -2,39 +2,39 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/TNFT.sol";
+import "../../../src/NodeOperatorManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract TNFTUpgrade is Script {
+contract NodeOperatorManagerUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address TNFTProxy;
-        address TNFTImplementation;
+        address NodeOperatorManagerProxy;
+        address NodeOperatorManagerImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address TNFTProxyAddress = vm.envAddress("TNFT_PROXY_ADDRESS");
+        address NodeOperatorManagerProxyAddress = vm.envAddress("NODE_OPERATOR_MANAGER_PROXY_ADDRESS");
 
         // mainnet
-        require(TNFTProxyAddress == 0x7B5ae07E2AF1C861BcC4736D23f5f66A61E0cA5e, "TNFTProxyAddress incorrect see .env");
+        //require(NodeOperatorManagerProxyAddress == , "NodeOperatorManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        TNFT TNFTInstance = TNFT(TNFTProxyAddress);
-        TNFT TNFTV2Implementation = new TNFT();
+        NodeOperatorManager NodeOperatorManagerInstance = NodeOperatorManager(NodeOperatorManagerProxyAddress);
+        NodeOperatorManager NodeOperatorManagerV2Implementation = new NodeOperatorManager();
 
-        TNFTInstance.upgradeTo(address(TNFTV2Implementation));
-        TNFT TNFTV2Instance = TNFT(TNFTProxyAddress);
+        NodeOperatorManagerInstance.upgradeTo(address(NodeOperatorManagerV2Implementation));
+        NodeOperatorManager NodeOperatorManagerV2Instance = NodeOperatorManager(NodeOperatorManagerProxyAddress);
 
         vm.stopBroadcast();
         
         criticalAddresses = CriticalAddresses({
-            TNFTProxy: TNFTProxyAddress,
-            TNFTImplementation: address(TNFTV2Implementation)
+            NodeOperatorManagerProxy: NodeOperatorManagerProxyAddress,
+            NodeOperatorManagerImplementation: address(NodeOperatorManagerV2Implementation)
         });
 
     }
@@ -57,9 +57,9 @@ contract TNFTUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/TNFT/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/NodeOperatorManager/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -70,11 +70,11 @@ contract TNFTUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/TNFT/version.txt",
+            "release/logs/Upgrades/goerli/NodeOperatorManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/goerli/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -82,7 +82,7 @@ contract TNFTUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/TNFT/",
+                    "release/logs/Upgrades/goerli/NodeOperatorManager/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -91,9 +91,9 @@ contract TNFTUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.TNFTProxy),
+                    Strings.toHexString(criticalAddresses.NodeOperatorManagerProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.TNFTImplementation),
+                    Strings.toHexString(criticalAddresses.NodeOperatorManagerImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )

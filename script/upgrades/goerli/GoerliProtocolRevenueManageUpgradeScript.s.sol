@@ -2,44 +2,40 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/AuctionManager.sol";
+import "../../../src/ProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract AuctionManagerUpgrade is Script {
+contract ProtocolRevenueManagerUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address auctionManagerProxy;
-        address auctionManagerImplementation;
+        address ProtocolRevenueManagerProxy;
+        address ProtocolRevenueManagerImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address AuctionManagerProxyAddress = vm.envAddress("AUCTION_MANAGER_PROXY_ADDRESS");
+        address ProtocolRevenueManagerProxyAddress = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
 
         // mainnet
-        require(AuctionManagerProxyAddress == 0x00C452aFFee3a17d9Cecc1Bcd2B8d5C7635C4CB9, "AuctionManagerProxyAddress incorrect see .env");
-        //goerli
-        //require(AuctionManagerProxyAddress == 0x2461Daac4cae03B817Bf4561d30F52327Fd2d193, "AuctionManagerProxyAddress incorrect see .env");
+        require(ProtocolRevenueManagerProxyAddress == 0xfE8A8FC74B2fdD3D745AbFc4940DD858BA60696c, "ProtocolRevenueManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        AuctionManager AuctionManagerInstance = AuctionManager(AuctionManagerProxyAddress);
-        AuctionManager AuctionManagerV2Implementation = new AuctionManager();
+        ProtocolRevenueManager ProtocolRevenueManagerInstance = ProtocolRevenueManager(payable(ProtocolRevenueManagerProxyAddress));
+        ProtocolRevenueManager ProtocolRevenueManagerV2Implementation = new ProtocolRevenueManager();
 
-        AuctionManagerInstance.upgradeTo(address(AuctionManagerV2Implementation));
-        AuctionManager AuctionManagerV2Instance = AuctionManager(AuctionManagerProxyAddress);
+        ProtocolRevenueManagerInstance.upgradeTo(address(ProtocolRevenueManagerV2Implementation));
+        ProtocolRevenueManager ProtocolRevenueManagerV2Instance = ProtocolRevenueManager(payable(ProtocolRevenueManagerProxyAddress));
 
         vm.stopBroadcast();
-
         criticalAddresses = CriticalAddresses({
-            auctionManagerProxy: AuctionManagerProxyAddress,
-            auctionManagerImplementation: address(AuctionManagerV2Implementation)
+            ProtocolRevenueManagerProxy: ProtocolRevenueManagerProxyAddress,
+            ProtocolRevenueManagerImplementation: address(ProtocolRevenueManagerV2Implementation)
         });
 
-        writeUpgradeVersionFile();
     }
 
     function _stringToUint(
@@ -60,9 +56,9 @@ contract AuctionManagerUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/AuctionManager/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/ProtocolRevenueManager/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -73,11 +69,11 @@ contract AuctionManagerUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/mainnet/AuctionManager/version.txt",
+            "release/logs/Upgrades/goerli/ProtocolRevenueManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/goerli/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -85,7 +81,7 @@ contract AuctionManagerUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/mainnet/AuctionManager/",
+                    "release/logs/Upgrades/goerli/ProtocolRevenueManager/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -94,9 +90,9 @@ contract AuctionManagerUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.auctionManagerProxy),
+                    Strings.toHexString(criticalAddresses.ProtocolRevenueManagerProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.auctionManagerImplementation),
+                    Strings.toHexString(criticalAddresses.ProtocolRevenueManagerImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )

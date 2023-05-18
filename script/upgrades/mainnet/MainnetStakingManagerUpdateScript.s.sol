@@ -2,39 +2,39 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/WeETH.sol";
+import "../../../src/StakingManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract WeEthUpgrade is Script {
+contract StakingManagerUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address WeETHProxy;
-        address WeETHImplementation;
+        address StakingManagerProxy;
+        address StakingManagerImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address weEthProxyAddress = vm.envAddress("WeETH_PROXY_ADDRESS");
+        address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
 
         // mainnet
-        //require(weEthProxyAddress == , "weEthProxyAddress incorrect see .env");
+        require(stakingManagerProxyAddress == 0x25e821b7197B146F7713C3b89B6A4D83516B912d, "stakingManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        WeETH weEthInstance = WeETH(weEthProxyAddress);
-        WeETH weEthV2Implementation = new WeETH();
+        StakingManager stakingManagerInstance = StakingManager(stakingManagerProxyAddress);
+        StakingManager stakingManagerV2Implementation = new StakingManager();
 
-        weEthInstance.upgradeTo(address(weEthV2Implementation));
-        WeETH weEthV2Instance = WeETH(weEthProxyAddress);
+        stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
+        StakingManager stakingManagerV2Instance = StakingManager(stakingManagerProxyAddress);
 
         vm.stopBroadcast();
         
         criticalAddresses = CriticalAddresses({
-            WeETHProxy: weEthProxyAddress,
-            WeETHImplementation: address(weEthV2Implementation)
+            StakingManagerProxy: stakingManagerProxyAddress,
+            StakingManagerImplementation: address(stakingManagerV2Implementation)
         });
 
     }
@@ -57,9 +57,9 @@ contract WeEthUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/WeETH/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/StakingManager/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/mainnet/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -70,11 +70,11 @@ contract WeEthUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/WeETH/version.txt",
+            "release/logs/Upgrades/mainnet/StakingManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/mainnet/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -82,7 +82,7 @@ contract WeEthUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/WeETH/",
+                    "release/logs/Upgrades/mainnet/StakingManager/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -91,9 +91,9 @@ contract WeEthUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.WeETHProxy),
+                    Strings.toHexString(criticalAddresses.StakingManagerProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.WeETHImplementation),
+                    Strings.toHexString(criticalAddresses.StakingManagerImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )

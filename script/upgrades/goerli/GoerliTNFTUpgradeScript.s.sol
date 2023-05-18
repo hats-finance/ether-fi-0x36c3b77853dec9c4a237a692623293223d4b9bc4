@@ -2,39 +2,39 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/BNFT.sol";
+import "../../../src/TNFT.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract BNFTUpgrade is Script {
+contract TNFTUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address BNFTProxy;
-        address BNFTImplementation;
+        address TNFTProxy;
+        address TNFTImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address BNFTProxyAddress = vm.envAddress("BNFT_PROXY_ADDRESS");
+        address TNFTProxyAddress = vm.envAddress("TNFT_PROXY_ADDRESS");
 
         // mainnet
-        require(BNFTProxyAddress == 0x6599861e55abd28b91dd9d86A826eC0cC8D72c2c, "BNFTProxyAddress incorrect see .env");
+        require(TNFTProxyAddress == 0x7B5ae07E2AF1C861BcC4736D23f5f66A61E0cA5e, "TNFTProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        BNFT BNFTInstance = BNFT(BNFTProxyAddress);
-        BNFT BNFTV2Implementation = new BNFT();
+        TNFT TNFTInstance = TNFT(TNFTProxyAddress);
+        TNFT TNFTV2Implementation = new TNFT();
 
-        BNFTInstance.upgradeTo(address(BNFTV2Implementation));
-        BNFT BNFTV2Instance = BNFT(BNFTProxyAddress);
+        TNFTInstance.upgradeTo(address(TNFTV2Implementation));
+        TNFT TNFTV2Instance = TNFT(TNFTProxyAddress);
 
         vm.stopBroadcast();
-
+        
         criticalAddresses = CriticalAddresses({
-            BNFTProxy: BNFTProxyAddress,
-            BNFTImplementation: address(BNFTV2Implementation)
+            TNFTProxy: TNFTProxyAddress,
+            TNFTImplementation: address(TNFTV2Implementation)
         });
 
     }
@@ -57,9 +57,9 @@ contract BNFTUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/BNFT/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/TNFT/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -70,11 +70,11 @@ contract BNFTUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/mainnet/BNFT/version.txt",
+            "release/logs/Upgrades/goerli/TNFT/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/goerli/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -82,7 +82,7 @@ contract BNFTUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/mainnet/BNFT/",
+                    "release/logs/Upgrades/goerli/TNFT/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -91,9 +91,9 @@ contract BNFTUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.BNFTProxy),
+                    Strings.toHexString(criticalAddresses.TNFTProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.BNFTImplementation),
+                    Strings.toHexString(criticalAddresses.TNFTImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )

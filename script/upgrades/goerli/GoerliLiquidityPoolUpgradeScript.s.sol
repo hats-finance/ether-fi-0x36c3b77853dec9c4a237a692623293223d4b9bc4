@@ -2,38 +2,37 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/ProtocolRevenueManager.sol";
+import "../../../src/LiquidityPool.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract ProtocolRevenueManagerUpgrade is Script {
+contract LiquidityPoolUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address ProtocolRevenueManagerProxy;
-        address ProtocolRevenueManagerImplementation;
+        address LiquidityPoolProxy;
+        address LiquidityPoolImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address ProtocolRevenueManagerProxyAddress = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
+        address LiquidityPoolProxyAddress = vm.envAddress("LIQUIDITY_POOL_PROXY_ADDRESS");
 
-        // mainnet
-        require(ProtocolRevenueManagerProxyAddress == 0xfE8A8FC74B2fdD3D745AbFc4940DD858BA60696c, "ProtocolRevenueManagerProxyAddress incorrect see .env");
+        //require(LiquidityPoolProxyAddress == , "LiquidityPoolProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        ProtocolRevenueManager ProtocolRevenueManagerInstance = ProtocolRevenueManager(payable(ProtocolRevenueManagerProxyAddress));
-        ProtocolRevenueManager ProtocolRevenueManagerV2Implementation = new ProtocolRevenueManager();
+        LiquidityPool LiquidityPoolInstance = LiquidityPool(payable(LiquidityPoolProxyAddress));
+        LiquidityPool LiquidityPoolV2Implementation = new LiquidityPool();
 
-        ProtocolRevenueManagerInstance.upgradeTo(address(ProtocolRevenueManagerV2Implementation));
-        ProtocolRevenueManager ProtocolRevenueManagerV2Instance = ProtocolRevenueManager(payable(ProtocolRevenueManagerProxyAddress));
+        LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
+        LiquidityPool LiquidityPoolV2Instance = LiquidityPool(payable(LiquidityPoolProxyAddress));
 
         vm.stopBroadcast();
         criticalAddresses = CriticalAddresses({
-            ProtocolRevenueManagerProxy: ProtocolRevenueManagerProxyAddress,
-            ProtocolRevenueManagerImplementation: address(ProtocolRevenueManagerV2Implementation)
+            LiquidityPoolProxy: LiquidityPoolProxyAddress,
+            LiquidityPoolImplementation: address(LiquidityPoolV2Implementation)
         });
 
     }
@@ -56,9 +55,9 @@ contract ProtocolRevenueManagerUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/ProtocolRevenueManager/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/LiquidityPool/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -69,11 +68,11 @@ contract ProtocolRevenueManagerUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/ProtocolRevenueManager/version.txt",
+            "release/logs/Upgrades/goerli/LiquidityPool/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/goerli/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -81,7 +80,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/ProtocolRevenueManager/",
+                    "release/logs/Upgrades/goerli/LiquidityPool/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -90,9 +89,9 @@ contract ProtocolRevenueManagerUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.ProtocolRevenueManagerProxy),
+                    Strings.toHexString(criticalAddresses.LiquidityPoolProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.ProtocolRevenueManagerImplementation),
+                    Strings.toHexString(criticalAddresses.LiquidityPoolImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )

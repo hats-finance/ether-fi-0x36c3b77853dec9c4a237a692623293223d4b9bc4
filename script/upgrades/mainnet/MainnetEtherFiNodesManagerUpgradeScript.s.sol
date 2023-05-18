@@ -2,39 +2,39 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/MeETH.sol";
+import "../../../src/EtherFiNodesManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract MeETHUpgrade is Script {
+contract EtherFiNodesManagerUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address MeETHProxy;
-        address MeETHImplementation;
+        address EtherFiNodesManagerProxy;
+        address EtherFiNodesManagerImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address meETHProxyAddress = vm.envAddress("MeETH_PROXY_ADDRESS");
+        address EtherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
 
         // mainnet
-        //require(meETHProxyAddress == , "meETHProxyAddress incorrect see .env");
+        require(EtherFiNodesManagerProxyAddress == 0x8B71140AD2e5d1E7018d2a7f8a288BD3CD38916F, "EtherFiNodesManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        MeETH meETHInstance = MeETH(payable(meETHProxyAddress));
-        MeETH meETHV2Implementation = new MeETH();
+        EtherFiNodesManager EtherFiNodesManagerInstance = EtherFiNodesManager(payable(EtherFiNodesManagerProxyAddress));
+        EtherFiNodesManager EtherFiNodesManagerV2Implementation = new EtherFiNodesManager();
 
-        meETHInstance.upgradeTo(address(meETHV2Implementation));
-        MeETH meETHV2Instance = MeETH(payable(meETHProxyAddress));
+        EtherFiNodesManagerInstance.upgradeTo(address(EtherFiNodesManagerV2Implementation));
+        EtherFiNodesManager EtherFiNodesManagerV2Instance = EtherFiNodesManager(payable(EtherFiNodesManagerProxyAddress));
 
         vm.stopBroadcast();
-        
+   
         criticalAddresses = CriticalAddresses({
-            MeETHProxy: meETHProxyAddress,
-            MeETHImplementation: address(meETHV2Implementation)
+            EtherFiNodesManagerProxy: EtherFiNodesManagerProxyAddress,
+            EtherFiNodesManagerImplementation: address(EtherFiNodesManagerV2Implementation)
         });
 
     }
@@ -57,7 +57,7 @@ contract MeETHUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/MeETH/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/EtherFiNodesManager/version.txt");
         // Read Global Current version
         string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
 
@@ -70,7 +70,7 @@ contract MeETHUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/MeETH/version.txt",
+            "release/logs/Upgrades/EtherFiNodesManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
@@ -82,7 +82,7 @@ contract MeETHUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/MeETH/",
+                    "release/logs/Upgrades/EtherFiNodesManager/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -91,9 +91,9 @@ contract MeETHUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.MeETHProxy),
+                    Strings.toHexString(criticalAddresses.EtherFiNodesManagerProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.MeETHImplementation),
+                    Strings.toHexString(criticalAddresses.EtherFiNodesManagerImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )

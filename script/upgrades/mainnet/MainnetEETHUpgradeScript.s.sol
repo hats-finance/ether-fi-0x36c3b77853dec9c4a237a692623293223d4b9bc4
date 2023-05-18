@@ -2,39 +2,38 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/NodeOperatorManager.sol";
+import "../../../src/EETH.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract NodeOperatorManagerUpgrade is Script {
+contract EETHUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address NodeOperatorManagerProxy;
-        address NodeOperatorManagerImplementation;
+        address EETHProxy;
+        address EETHImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address NodeOperatorManagerProxyAddress = vm.envAddress("NODE_OPERATOR_MANAGER_PROXY_ADDRESS");
+        address EETHProxyAddress = vm.envAddress("EETH_PROXY_ADDRESS");
 
-        // mainnet
-        //require(NodeOperatorManagerProxyAddress == , "NodeOperatorManagerProxyAddress incorrect see .env");
+        //require(EETHProxyAddress == , "EETHProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        NodeOperatorManager NodeOperatorManagerInstance = NodeOperatorManager(NodeOperatorManagerProxyAddress);
-        NodeOperatorManager NodeOperatorManagerV2Implementation = new NodeOperatorManager();
+        EETH EETHInstance = EETH(EETHProxyAddress);
+        EETH EETHV2Implementation = new EETH();
 
-        NodeOperatorManagerInstance.upgradeTo(address(NodeOperatorManagerV2Implementation));
-        NodeOperatorManager NodeOperatorManagerV2Instance = NodeOperatorManager(NodeOperatorManagerProxyAddress);
+        EETHInstance.upgradeTo(address(EETHV2Implementation));
+        EETH EETHV2Instance = EETH(EETHProxyAddress);
 
         vm.stopBroadcast();
-        
+
         criticalAddresses = CriticalAddresses({
-            NodeOperatorManagerProxy: NodeOperatorManagerProxyAddress,
-            NodeOperatorManagerImplementation: address(NodeOperatorManagerV2Implementation)
+            EETHProxy: EETHProxyAddress,
+            EETHImplementation: address(EETHV2Implementation)
         });
 
     }
@@ -57,9 +56,9 @@ contract NodeOperatorManagerUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/NodeOperatorManager/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/EETH/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/mainnet/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -70,11 +69,11 @@ contract NodeOperatorManagerUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/NodeOperatorManager/version.txt",
+            "release/logs/Upgrades/mainnet/EETH/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/mainnet/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -82,7 +81,7 @@ contract NodeOperatorManagerUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/NodeOperatorManager/",
+                    "release/logs/Upgrades/mainnet/EETH/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -91,9 +90,9 @@ contract NodeOperatorManagerUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.NodeOperatorManagerProxy),
+                    Strings.toHexString(criticalAddresses.EETHProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.NodeOperatorManagerImplementation),
+                    Strings.toHexString(criticalAddresses.EETHImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )

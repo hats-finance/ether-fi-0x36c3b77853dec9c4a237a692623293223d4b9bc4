@@ -2,39 +2,39 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/StakingManager.sol";
+import "../../../src/BNFT.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract StakingManagerUpgrade is Script {
+contract BNFTUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address StakingManagerProxy;
-        address StakingManagerImplementation;
+        address BNFTProxy;
+        address BNFTImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
+        address BNFTProxyAddress = vm.envAddress("BNFT_PROXY_ADDRESS");
 
         // mainnet
-        require(stakingManagerProxyAddress == 0x25e821b7197B146F7713C3b89B6A4D83516B912d, "stakingManagerProxyAddress incorrect see .env");
+        require(BNFTProxyAddress == 0x6599861e55abd28b91dd9d86A826eC0cC8D72c2c, "BNFTProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        StakingManager stakingManagerInstance = StakingManager(stakingManagerProxyAddress);
-        StakingManager stakingManagerV2Implementation = new StakingManager();
+        BNFT BNFTInstance = BNFT(BNFTProxyAddress);
+        BNFT BNFTV2Implementation = new BNFT();
 
-        stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
-        StakingManager stakingManagerV2Instance = StakingManager(stakingManagerProxyAddress);
+        BNFTInstance.upgradeTo(address(BNFTV2Implementation));
+        BNFT BNFTV2Instance = BNFT(BNFTProxyAddress);
 
         vm.stopBroadcast();
-        
+
         criticalAddresses = CriticalAddresses({
-            StakingManagerProxy: stakingManagerProxyAddress,
-            StakingManagerImplementation: address(stakingManagerV2Implementation)
+            BNFTProxy: BNFTProxyAddress,
+            BNFTImplementation: address(BNFTV2Implementation)
         });
 
     }
@@ -57,9 +57,9 @@ contract StakingManagerUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/StakingManager/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/BNFT/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/mainnet/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -70,11 +70,11 @@ contract StakingManagerUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/StakingManager/version.txt",
+            "release/logs/Upgrades/mainnet/BNFT/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/version.txt",
+            "release/logs/Upgrades/mainnet/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -82,7 +82,7 @@ contract StakingManagerUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/StakingManager/",
+                    "release/logs/Upgrades/mainnet/BNFT/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -91,9 +91,9 @@ contract StakingManagerUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.StakingManagerProxy),
+                    Strings.toHexString(criticalAddresses.BNFTProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.StakingManagerImplementation),
+                    Strings.toHexString(criticalAddresses.BNFTImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )
