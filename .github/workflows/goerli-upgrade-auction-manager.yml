@@ -1,4 +1,4 @@
-name: upgrade-meeth
+name: upgrade-goerli-auction-manager
 
 on: workflow_dispatch
 
@@ -31,9 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade MeETH Contract
-        run: make upgrade-goerli-meeth
-        id: upgrade-goerli-meeth
+      - name: Upgrade Auction Manager Contract
+        run: make upgrade-goerli-auction-manager
+        id: upgrade-goerli-auction-manager
 
       - name: Get date
         id: get-date

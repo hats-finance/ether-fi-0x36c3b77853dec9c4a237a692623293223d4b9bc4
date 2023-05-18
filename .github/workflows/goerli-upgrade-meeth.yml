@@ -1,4 +1,4 @@
-name: upgrade-weth
+name: upgrade-goerli-meeth
 
 on: workflow_dispatch
 
@@ -31,9 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade WETH Contract
-        run: make upgrade-goerli-weth
-        id: upgrade-goerli-weth
+      - name: Upgrade MeETH Contract
+        run: make upgrade-goerli-meeth
+        id: upgrade-goerli-meeth
 
       - name: Get date
         id: get-date

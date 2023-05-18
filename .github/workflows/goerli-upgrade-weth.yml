@@ -1,4 +1,4 @@
-name: upgrade-tnft
+name: upgrade-goerli-weth
 
 on: workflow_dispatch
 
@@ -31,9 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade TNFT Contract
-        run: make upgrade-goerli-tnft
-        id: upgrade-goerli-tnft
+      - name: Upgrade WETH Contract
+        run: make upgrade-goerli-weth
+        id: upgrade-goerli-weth
 
       - name: Get date
         id: get-date

@@ -57,7 +57,7 @@ contract BNFTUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/BNFT/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/BNFT/version.txt");
         // Read Global Current version
         string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
 
@@ -70,7 +70,7 @@ contract BNFTUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/BNFT/version.txt",
+            "release/logs/Upgrades/mainnet/BNFT/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
@@ -82,7 +82,7 @@ contract BNFTUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/BNFT/",
+                    "release/logs/Upgrades/mainnet/BNFT/",
                     Strings.toString(localVersion),
                     ".release"
                 )

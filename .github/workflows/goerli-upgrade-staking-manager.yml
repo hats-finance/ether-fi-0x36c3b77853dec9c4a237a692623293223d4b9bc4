@@ -1,4 +1,4 @@
-name: upgrade-eeth
+name: upgrade-goerli-staking-manager
 
 on: workflow_dispatch
 
@@ -31,9 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade EETH Contract
-        run: make upgrade-goerli-eeth
-        id: upgrade-goerli-eeth
+      - name: Upgrade Staking Manager Contract
+        run: make upgrade-goerli-staking-manager
+        id: upgrade-goerli-staking-manager
 
       - name: Get date
         id: get-date

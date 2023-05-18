@@ -1,4 +1,4 @@
-name: upgrade-regulations-manager
+name: upgrade-goerli-liquidity-pool
 
 on: workflow_dispatch
 
@@ -31,9 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade Regulations Manager Contract
-        run: make upgrade-goerli-regulations-manager
-        id: upgrade-goerli-regulations-manager
+      - name: Upgrade Liquidity Pool Contract
+        run: make upgrade-goerli-liquidity-pool
+        id: upgrade-goerli-liquidity-pool
 
       - name: Get date
         id: get-date

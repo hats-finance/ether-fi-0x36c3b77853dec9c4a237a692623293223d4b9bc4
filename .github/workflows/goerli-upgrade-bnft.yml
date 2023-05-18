@@ -1,4 +1,4 @@
-name: upgrade-auction-manager
+name: upgrade-goerli-bnft
 
 on: workflow_dispatch
 
@@ -31,9 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade Auction Manager Contract
-        run: make upgrade-goerli-auction-manager
-        id: upgrade-goerli-auction-manager
+      - name: Upgrade BNFT Contract
+        run: make upgrade-goerli-bnft
+        id: upgrade-goerli-bnft
 
       - name: Get date
         id: get-date

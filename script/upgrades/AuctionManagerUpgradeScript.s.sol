@@ -60,7 +60,7 @@ contract AuctionManagerUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/AuctionManager/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/AuctionManager/version.txt");
         // Read Global Current version
         string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
 
@@ -73,7 +73,7 @@ contract AuctionManagerUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/AuctionManager/version.txt",
+            "release/logs/Upgrades/mainnet/AuctionManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
@@ -85,7 +85,7 @@ contract AuctionManagerUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/AuctionManager/",
+                    "release/logs/Upgrades/mainnet/AuctionManager/",
                     Strings.toString(localVersion),
                     ".release"
                 )

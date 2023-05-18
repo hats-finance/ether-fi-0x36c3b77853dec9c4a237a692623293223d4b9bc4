@@ -1,4 +1,4 @@
-name: upgrade-node-operator-manager
+name: upgrade-goerli-node-operator-manager
 
 on: workflow_dispatch
 

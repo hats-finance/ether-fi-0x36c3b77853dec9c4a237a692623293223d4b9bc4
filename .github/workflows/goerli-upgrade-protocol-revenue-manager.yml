@@ -1,4 +1,4 @@
-name: upgrade-protocol-revenue-manager
+name: upgrade-goerli-protocol-revenue-manager
 
 on: workflow_dispatch
 

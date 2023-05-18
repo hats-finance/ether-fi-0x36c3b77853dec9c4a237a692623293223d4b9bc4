@@ -57,7 +57,7 @@ contract EETHUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/EETH/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/EETH/version.txt");
         // Read Global Current version
         string memory globalVersionString = vm.readLine("release/logs/Upgrades/version.txt");
 
@@ -70,7 +70,7 @@ contract EETHUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/EETH/version.txt",
+            "release/logs/Upgrades/mainnet/EETH/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
@@ -82,7 +82,7 @@ contract EETHUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/EETH/",
+                    "release/logs/Upgrades/mainnet/EETH/",
                     Strings.toString(localVersion),
                     ".release"
                 )

@@ -1,4 +1,4 @@
-name: upgrade-bnft
+name: upgrade-goerli-regulations-manager
 
 on: workflow_dispatch
 
@@ -31,9 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade BNFT Contract
-        run: make upgrade-goerli-bnft
-        id: upgrade-goerli-bnft
+      - name: Upgrade Regulations Manager Contract
+        run: make upgrade-goerli-regulations-manager
+        id: upgrade-goerli-regulations-manager
 
       - name: Get date
         id: get-date

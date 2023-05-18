@@ -1,4 +1,4 @@
-name: upgrade-etherfi-nodes-manager
+name: upgrade-goerli-etherfi-nodes-manager
 
 on: workflow_dispatch
 

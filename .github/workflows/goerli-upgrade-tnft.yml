@@ -1,4 +1,4 @@
-name: upgrade-liquidity-pool
+name: upgrade-goerli-tnft
 
 on: workflow_dispatch
 
@@ -31,9 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade Liquidity Pool Contract
-        run: make upgrade-goerli-liquidity-pool
-        id: upgrade-goerli-liquidity-pool
+      - name: Upgrade TNFT Contract
+        run: make upgrade-goerli-tnft
+        id: upgrade-goerli-tnft
 
       - name: Get date
         id: get-date
