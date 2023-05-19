@@ -215,8 +215,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
     }
 
     function claimStakingRewards(address _account) public {
-        _updateGlobalIndex();
-
         UserData storage userData = _userData[_account];
         uint256 tier = userData.tier;
         uint256 amount = (tierData[tier].rewardsGlobalIndex - userData.rewardsLocalIndex) * _userDeposits[_account].amounts / 1 ether;
@@ -251,6 +249,16 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
 
     function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public onlyOwner {
         pointsGrowthRate = _newPointsGrowthRate;
+    }
+
+    function distributeStakingRewards() external onlyOwner {
+        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = _calculateGlobalIndex();
+        for (uint256 i = 0; i < tierDeposits.length; i++) {
+            uint256 amounts = liquidityPool.amountForShare(adjustedShares[i]);
+            tierDeposits[i].shares = adjustedShares[i];
+            tierDeposits[i].amounts = uint128(amounts);
+            tierData[i].rewardsGlobalIndex = globalIndex[i];
+        }
     }
 
     function addNewTier(uint40 _minPointsPerDepositAmount, uint24 _weight) external onlyOwner returns (uint256) {
@@ -413,42 +421,26 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         return uint40(earning);
     }
 
-    function _updateGlobalIndex() internal {
-        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = _calculateGlobalIndex();
-        for (uint256 i = 0; i < tierDeposits.length; i++) {
-            tierDeposits[i].shares = adjustedShares[i];
-            uint256 shares = uint256(tierDeposits[i].shares);
-            uint256 amounts = liquidityPool.amountForShare(shares);
-            tierDeposits[i].amounts = uint128(amounts);
-            tierData[i].rewardsGlobalIndex = globalIndex[i];
-        }
-    }
-
     function _calculateGlobalIndex() internal view returns (uint96[] memory, uint128[] memory) {
-        uint256 sumTierRewards = 0;
-        uint256 sumWeightedTierRewards = 0;
         uint96[] memory globalIndex = new uint96[](tierDeposits.length);
         uint128[] memory adjustedShares = new uint128[](tierDeposits.length);
         uint256[] memory weightedTierRewards = new uint256[](tierDeposits.length);
-
-        for (uint256 i = 0; i < weightedTierRewards.length; i++) {            
-            uint256 tierRewards;
-            uint256 weightedTierReward;
-            
+        uint256[] memory tierRewards = new uint256[](tierDeposits.length);
+        uint256 sumTierRewards = 0;
+        uint256 sumWeightedTierRewards = 0;
+        
+        for (uint256 i = 0; i < weightedTierRewards.length; i++) {                        
             TierDeposit memory deposit = tierDeposits[i];
-            uint256 currentAmounts = liquidityPool.amountForShare(deposit.shares);
-            if (currentAmounts >= deposit.amounts) {
-                tierRewards = currentAmounts - deposit.amounts;
-                weightedTierReward = tierData[i].weight * tierRewards;
+            uint256 rebasedAmounts = liquidityPool.amountForShare(deposit.shares);
+            if (rebasedAmounts >= deposit.amounts) {
+                tierRewards[i] = rebasedAmounts - deposit.amounts;
+                weightedTierRewards[i] = tierData[i].weight * tierRewards[i];
             }
-            
-            weightedTierRewards[i] = weightedTierReward;
             globalIndex[i] = tierData[i].rewardsGlobalIndex;
-
-            sumTierRewards += tierRewards;
-            sumWeightedTierRewards += weightedTierReward;
-
             adjustedShares[i] = tierDeposits[i].shares;
+
+            sumTierRewards += tierRewards[i];
+            sumWeightedTierRewards += weightedTierRewards[i];
         }
 
         if (sumWeightedTierRewards > 0) {
@@ -459,15 +451,11 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
                     uint256 delta = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
                     require(uint256(globalIndex[i]) + uint256(delta) <= type(uint96).max, "overflow");
                     globalIndex[i] += uint96(delta);
-                    
-                    uint256 rebasedAmounts = liquidityPool.amountForShare(tierDeposits[i].shares);
-                    uint256 previousAmounts = tierDeposits[i].amounts;
-                    
-                    uint256 accrued = rebasedAmounts - _min(rebasedAmounts, previousAmounts);
-                    if (accrued > rescaledTierRewards) {
-                        adjustedShares[i] -= uint128(liquidityPool.sharesForAmount(accrued - rescaledTierRewards));
+                                        
+                    if (tierRewards[i] > rescaledTierRewards) {
+                        adjustedShares[i] -= uint128(liquidityPool.sharesForAmount(tierRewards[i] - rescaledTierRewards));
                     } else {
-                        adjustedShares[i] += uint128(liquidityPool.sharesForAmount(rescaledTierRewards - accrued));
+                        adjustedShares[i] += uint128(liquidityPool.sharesForAmount(rescaledTierRewards - tierRewards[i]));
                     }
                 }
             }
@@ -505,7 +493,6 @@ contract MeETH is IERC20Upgradeable, Initializable, OwnableUpgradeable, UUPSUpgr
         
         liquidityPool.deposit{value: _amount}(_account, address(this), _merkleProof);
         _mint(_account, _amount);
-        _updateGlobalIndex();
 
         uint8 tier = tierOf(_account);
         _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
