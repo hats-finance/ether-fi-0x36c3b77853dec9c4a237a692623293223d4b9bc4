@@ -964,7 +964,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256[] memory validatorIds = new uint256[](1);
         uint32[] memory exitTimestamps = new uint32[](2);
         startHoax(owner);
-        vm.expectRevert("_validatorIds.length != _exitTimestamps.length");
+        vm.expectRevert("Check params");
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
