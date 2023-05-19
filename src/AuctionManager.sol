@@ -42,15 +42,9 @@ contract AuctionManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event BidCreated(
-        address indexed bidder,
-        uint256 amountPerBid,
-        uint256[] bidIdArray,
-        uint64[] ipfsIndexArray
-    );
+    event BidCreated(address indexed bidder, uint256 amountPerBid, uint256[] bidIdArray, uint64[] ipfsIndexArray);
     event BidCancelled(uint256 indexed bidId);
     event BidReEnteredAuction(uint256 indexed bidId);
-    event Received(address indexed sender, uint256 value);
     event WhitelistDisabled(bool whitelistStatus);
     event WhitelistEnabled(bool whitelistStatus);
 
@@ -75,9 +69,7 @@ contract AuctionManager is
         numberOfBids = 1;
         whitelistEnabled = true;
 
-        nodeOperatorManagerInterface = INodeOperatorManager(
-            _nodeOperatorManagerContract
-        );
+        nodeOperatorManagerInterface = INodeOperatorManager(_nodeOperatorManagerContract);
 
         __Pausable_init();
         __Ownable_init();
@@ -124,22 +116,15 @@ contract AuctionManager is
                 );
             }
         }
-
-        uint64 keysRemaining = nodeOperatorManagerInterface.getNumKeysRemaining(
-            msg.sender
-        );
+        uint64 keysRemaining = nodeOperatorManagerInterface.getNumKeysRemaining(msg.sender);
         require(_bidSize <= keysRemaining, "Insufficient public keys");
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
         for (uint256 i = 0; i < _bidSize; i++) {
-            uint64 ipfsIndex = nodeOperatorManagerInterface.fetchNextKeyIndex(
-                msg.sender
-            );
-
-            uint256 bidId = numberOfBids;
-
+            uint64 ipfsIndex = nodeOperatorManagerInterface.fetchNextKeyIndex(msg.sender);
+            uint256 bidId = numberOfBids + i;
             bidIdArray[i] = bidId;
             ipfsIndexArray[i] = ipfsIndex;
 
@@ -150,17 +135,11 @@ contract AuctionManager is
                 bidderAddress: msg.sender,
                 isActive: true
             });
-
-            numberOfBids++;
         }
-
+        numberOfBids += _bidSize;
         numberOfActiveBids += _bidSize;
-        emit BidCreated(
-            msg.sender,
-            _bidAmountPerBid,
-            bidIdArray,
-            ipfsIndexArray
-        );
+
+        emit BidCreated(msg.sender, _bidAmountPerBid, bidIdArray, ipfsIndexArray);
         return bidIdArray;
     }
 
@@ -184,7 +163,6 @@ contract AuctionManager is
         uint256 _bidId
     ) public onlyStakingManagerContract {
         Bid storage bid = bids[_bidId];
-
         require(bid.isActive, "The bid is not active");
 
         bid.isActive = false;
@@ -198,7 +176,7 @@ contract AuctionManager is
     ) external onlyStakingManagerContract {
         Bid storage bid = bids[_bidId];
         require(!bid.isActive, "Bid already active");
-        //Reactivate the bid
+
         bid.isActive = true;
         numberOfActiveBids++;
         emit BidReEnteredAuction(_bidId);
@@ -243,9 +221,7 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
 
     function _cancelBid(uint256 _bidId) internal {
-
         Bid storage bid = bids[_bidId];
-
         require(bid.bidderAddress == msg.sender, "Invalid bid");
         require(bid.isActive, "Bid already cancelled");
 
@@ -260,9 +236,7 @@ contract AuctionManager is
         emit BidCancelled(_bidId);
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
@@ -343,18 +317,12 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
 
     modifier onlyStakingManagerContract() {
-        require(
-            msg.sender == stakingManagerContractAddress,
-            "Only staking manager contract function"
-        );
+        require(msg.sender == stakingManagerContractAddress, "Only staking manager contract function");
         _;
     }
 
     modifier onlyNodeOperatorManagerContract() {
-        require(
-            msg.sender == address(nodeOperatorManagerInterface),
-            "Only node operator key manager contract function"
-        );
+        require(msg.sender == address(nodeOperatorManagerInterface), "Only node operator key manager contract function");
         _;
     }
 }
