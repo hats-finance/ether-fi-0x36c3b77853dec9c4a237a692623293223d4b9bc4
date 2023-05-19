@@ -519,12 +519,7 @@ contract EtherFiNodesManager is
     /// @return the amount of the penalty
     function getNonExitPenalty(uint256 _validatorId, uint32 _endTimestamp) public view returns (uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        return
-            IEtherFiNode(etherfiNode).getNonExitPenalty(
-                nonExitPenaltyPrincipal,
-                nonExitPenaltyDailyRate,
-                _endTimestamp
-            );
+        return IEtherFiNode(etherfiNode).getNonExitPenalty(nonExitPenaltyPrincipal, nonExitPenaltyDailyRate, _endTimestamp);
     }
 
     /// @notice Fetches the staking rewards payout for a node
@@ -533,11 +528,7 @@ contract EtherFiNodesManager is
     function getStakingRewardsPayouts(uint256 _validatorId) 
         public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        return
-            IEtherFiNode(etherfiNode).getStakingRewardsPayouts(
-                stakingRewardsSplit,
-                SCALE
-            );
+        return IEtherFiNode(etherfiNode).getStakingRewardsPayouts( stakingRewardsSplit, SCALE);
     }
 
     /// @notice Fetches the total rewards payout for the node for specific revenues
@@ -555,13 +546,9 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return
             IEtherFiNode(etherfiNode).getRewardsPayouts(
-                _stakingRewards,
-                _protocolRewards,
-                _vestedAuctionFee,
-                stakingRewardsSplit,
-                SCALE,
-                protocolRewardsSplit,
-                SCALE
+                _stakingRewards, _protocolRewards, _vestedAuctionFee,
+                stakingRewardsSplit, SCALE,
+                protocolRewardsSplit, SCALE
             );
     }
 
@@ -573,10 +560,8 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return
             IEtherFiNode(etherfiNode).getFullWithdrawalPayouts(
-                stakingRewardsSplit,
-                SCALE,
-                nonExitPenaltyPrincipal,
-                nonExitPenaltyDailyRate
+                stakingRewardsSplit, SCALE,
+                nonExitPenaltyPrincipal, nonExitPenaltyDailyRate
             );
     }
 
@@ -593,26 +578,17 @@ contract EtherFiNodesManager is
     //--------------------------------------------------------------------------------------
 
     modifier onlyStakingManagerContract() {
-        require(
-            msg.sender == stakingManagerContract,
-            "Only staking manager contract function"
-        );
+        require(msg.sender == stakingManagerContract, "Only staking manager contract function");
         _;
     }
 
     modifier onlyProtocolRevenueManagerContract() {
-        require(
-            msg.sender == protocolRevenueManagerContract,
-            "Only protocol revenue manager contract function"
-        );
+        require(msg.sender == protocolRevenueManagerContract, "Only protocol revenue manager contract function");
         _;
     }
 
     modifier amountsEqualScale(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) {
-        require(
-            _treasury + _nodeOperator + _tnft + _bnft == SCALE,
-            "Amounts not equal to 1000000"
-        );
+        require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "Amounts not equal to 1000000");
         _;
     }
 }
