@@ -28,7 +28,7 @@ contract AuctionManager is
     uint256 public numberOfBids;
     uint256 public numberOfActiveBids;
 
-    INodeOperatorManager public nodeOperatorManagerInterface;
+    INodeOperatorManager public nodeOperatorManager;
     IProtocolRevenueManager public protocolRevenueManager;
 
     address public stakingManagerContractAddress;
@@ -69,7 +69,7 @@ contract AuctionManager is
         numberOfBids = 1;
         whitelistEnabled = true;
 
-        nodeOperatorManagerInterface = INodeOperatorManager(_nodeOperatorManagerContract);
+        nodeOperatorManager = INodeOperatorManager(_nodeOperatorManagerContract);
 
         __Pausable_init();
         __Ownable_init();
@@ -88,7 +88,7 @@ contract AuctionManager is
         require(_bidSize > 0, "Bid size is too small");
         if (whitelistEnabled) {
             require(
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender),
+                nodeOperatorManager.isWhitelisted(msg.sender),
                 "Only whitelisted addresses"
             );
             require(
@@ -99,7 +99,7 @@ contract AuctionManager is
             );
         } else {
             if (
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender)
+                nodeOperatorManager.isWhitelisted(msg.sender)
             ) {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
@@ -116,14 +116,14 @@ contract AuctionManager is
                 );
             }
         }
-        uint64 keysRemaining = nodeOperatorManagerInterface.getNumKeysRemaining(msg.sender);
+        uint64 keysRemaining = nodeOperatorManager.getNumKeysRemaining(msg.sender);
         require(_bidSize <= keysRemaining, "Insufficient public keys");
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
         for (uint256 i = 0; i < _bidSize; i++) {
-            uint64 ipfsIndex = nodeOperatorManagerInterface.fetchNextKeyIndex(msg.sender);
+            uint64 ipfsIndex = nodeOperatorManager.fetchNextKeyIndex(msg.sender);
             uint256 bidId = numberOfBids + i;
             bidIdArray[i] = bidId;
             ipfsIndexArray[i] = ipfsIndex;
@@ -322,14 +322,14 @@ contract AuctionManager is
     }
 
     modifier onlyNodeOperatorManagerContract() {
-        require(msg.sender == address(nodeOperatorManagerInterface), "Only node operator key manager contract function");
+        require(msg.sender == address(nodeOperatorManager), "Only node operator key manager contract function");
         _;
     }
 }
 
 contract AuctionManagerV2 is AuctionManager {
     function updateNodeOperatorManager(address _address) external onlyOwner {
-        nodeOperatorManagerInterface = INodeOperatorManager(
+        nodeOperatorManager = INodeOperatorManager(
             _address
         );
     }
