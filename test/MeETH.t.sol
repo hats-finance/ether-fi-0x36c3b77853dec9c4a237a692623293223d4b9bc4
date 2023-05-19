@@ -287,6 +287,7 @@ contract MeETHTest is TestSetup {
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(owner);
         liquidityPoolInstance.setAccruedEther(0.5 ether);
+        meEthInstance.distributeStakingRewards();
         vm.stopPrank();
 
         // Check the blanace of Alice updated by the rebasing
@@ -318,6 +319,7 @@ contract MeETHTest is TestSetup {
         // More Staking rewards 1 ETH into LP
         vm.startPrank(owner);
         liquidityPoolInstance.setAccruedEther(0.5 ether + 1 ether);
+        meEthInstance.distributeStakingRewards();
         vm.stopPrank();
 
         // Alice belongs to the tier 1 with the weight 2
@@ -401,6 +403,7 @@ contract MeETHTest is TestSetup {
         // Now, eETH is rebased with the staking rewards 1 eETH
         startHoax(owner);
         liquidityPoolInstance.setAccruedEther(1 ether);
+        meEthInstance.distributeStakingRewards();
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(owner, ownerProof);
         assertEq(address(liquidityPoolInstance).balance, 5 ether);

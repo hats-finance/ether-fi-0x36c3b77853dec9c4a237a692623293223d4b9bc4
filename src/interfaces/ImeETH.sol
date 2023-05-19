@@ -55,5 +55,6 @@ interface ImeETH {
 
     function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;
     function updatePointsGrowthRate(uint16 _newPointsGrowthRate) external;  
+    function distributeStakingRewards() external;
     function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external returns (uint256);
 }
