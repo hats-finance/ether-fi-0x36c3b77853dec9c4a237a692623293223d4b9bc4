@@ -47,19 +47,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint128 amount;
         uint128 amountStakedForPoints;
     }
-    mapping (address => UserDeposit) public _userDeposits;
+    mapping (uint256 => UserDeposit) public _userDeposits;
 
     struct TokenData {
         uint96 rewardsLocalIndex;
-        uint32 pointsSnapshotTime;
-        uint40 pointsSnapshot;
+        uint40 baseMembershipPoints;
+        uint32 membershipAccrualTimestamp;
         uint40 baseTierPoints;
+        uint32 tierAccrualTimestamp;
         uint8  tier;
-
-        // TODO(dave): inefficient. Will move this to separate data structure
-        uint32 accrualTimestamp;
-        uint128 depositAmount;
-        uint128 amountStakedForPoints;
     }
     mapping (uint256 => TokenData) public _tokenData;
 
@@ -73,9 +69,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
 
     uint256 public tierPointsPerMonth = 1000
-    function setTierPointsPerMonth(uint256 amount) external onlyOwner {
-        tierPointsPerMonth = amount;
-    }
 
 
     // TODO(dave): calculate new gap
@@ -88,21 +81,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     event FundsMigrated(address user, uint256 amount, uint256 eapPoints, uint40 loyaltyPoints);
     event MerkleUpdated(bytes32, bytes32);
 
-    event TransferSingle(
-        address indexed operator,
-        address indexed from,
-        address indexed to,
-        uint256 id,
-        uint256 amount
-    );
-
-    event TransferBatch(
-        address indexed operator,
-        address indexed from,
-        address indexed to,
-        uint256[] ids,
-        uint256[] amounts
-    );
+    event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount);
+    event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts);
 
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
     event URI(string value, uint256 indexed id);
@@ -119,16 +99,16 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
 
 
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
     receive() external payable {}
-
-    //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-    //--------------------------------------------------------------------------------------
 
     function initialize(address _eEthAddress, address _liquidityPoolAddress, address _regulationsManager) external initializer {
         require(_eEthAddress != address(0), "No zero addresses");
@@ -153,7 +133,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
         eETH.transferFrom(msg.sender, address(this), _amount);
-        return _mintLoyaltyNFT(msg.sender, _amount, 0);
+        return _mintLoyaltyNFT(msg.sender, _amount, 0, 0);
     }
 
     function wrapEth(address _account, uint256 _amount, bytes32[] calldata _merkleProof) public payable returns (uint256) {
@@ -161,15 +141,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         // TODO(dave): check if this reverts on failure
         liquidityPool.deposit{value: _amount}(_account, address(this), _merkleProof);
-        return _mintLoyaltyNFT(msg.sender, _amount, 0);
+        return _mintLoyaltyNFT(msg.sender, _amount, 0, 0);
     }
 
     function unwrapForEEth(uint256 tokenID, uint256 _amount) public isEEthStakingOpen {
         if (owners[tokenID] != msg.sender) revert OnlyTokenOwner();
         require(_amount > 0, "You cannot unwrap 0 meETH");
 
-        TokenData memory token = _tokenData[tokenID];
-        uint256 unwrappableBalance = token.depositAmount - token.amountStakedForPoints;
+        UserDeposit memory deposit = _userDeposits[tokenID];
+        uint256 unwrappableBalance = deposit.amount - deposit.amountStakedForPoints;
         require(unwrappableBalance >= _amount, "Not enough balance to unwrap");
 
         _applyWithdrawalPenalty(tokenID, _amount);
@@ -181,10 +161,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (owners[tokenID] != msg.sender) revert OnlyTokenOwner();
         require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
 
-        TokenData memory token = _tokenData[tokenID];
+        UserDeposit memory deposit = _userDeposits[tokenID];
 
         // TODO(dave): the original version did not have this check for vanilla ETH. Ask if that's intentional
-        uint256 unwrappableBalance = token.depositAmount - token.amountStakedForPoints;
+        uint256 unwrappableBalance = deposit.amount - deposit.amountStakedForPoints;
         require(unwrappableBalance >= _amount, "Not enough balance to unwrap");
 
         _applyWithdrawalPenalty(tokenID, _amount);
@@ -194,38 +174,54 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         require(sent, "Failed to send Ether");
     }
 
-    /// Start here tomorrow --------------------------------------------------
-    --------------------------------------------------
+    function stakeForPoints(uint256 tokenID, uint256 _amount) external {
+        if (owners[tokenID] != msg.sender) revert OnlyTokenOwner();
 
-    function stakeForPoints(uint256 _amount) external {
-        require(_userDeposits[msg.sender].amounts >= _amount, "Not enough balance to stake for points");
+        UserDeposit memory deposit = _userDeposits[tokenID];
+        require(deposit.amount >= _amount, "Not enough balance unstaked");
 
-        claimPoints(msg.sender);
-        claimStakingRewards(msg.sender);
+        claimMembershipPoints(tokenID);
 
-        _stakeForPoints(msg.sender, _amount);
+        TokenData memory token = _tokenData[tokenID];
+        tierData[token.tier].amountStakedForPoints += uint96(_amount);
+
+        _userDeposits[tokenID] = UserDeposit(
+            deposit.amount - uint128(_amount),
+            deposit.amountStakedForPoints + uint128(_amount)
+        );
     }
 
-    function unstakeForPoints(uint256 _amount) external {
-        require(_userDeposits[msg.sender].amountStakedForPoints >= _amount, "Not enough balance staked");
+    function unstakeForPoints(uint256 tokenID, uint256 _amount) external {
+        if (owners[tokenID] != msg.sender) revert OnlyTokenOwner();
 
-        claimPoints(msg.sender);
-        claimStakingRewards(msg.sender);
+        UserDeposit memory deposit = _userDeposits[tokenID];
+        require(deposit.amountStakedForPoints >= _amount, "Not enough balance staked");
 
-        _unstakeForPoints(msg.sender, _amount);
+        claimMembershipPoints(msg.sender);
+
+        TokenData memory token = _tokenData[tokenID];
+        tierData[token.tier].amountStakedForPoints -= uint96(_amount);
+
+        UserDeposit memory deposit = _userDeposits[tokenID];
+        _userDeposits[tokenID] = UserDeposit(
+            deposit.depositAmount + uint128(_amount),
+            deposit.amountStakedForPoints - uint128(_amount)
+        );
     }
 
 
-    function claimStakingRewards(address _account) public {
+    function claimStakingRewards(uint256 tokenID) public {
 
-        UserData storage userData = _userData[_account];
-        uint256 tier = userData.tier;
-        uint256 amount = (tierData[tier].rewardsGlobalIndex - userData.rewardsLocalIndex) * _userDeposits[_account].amounts / 1 ether;
-        _incrementUserDeposit(_account, amount, 0);
-        userData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
+        TokenData storage token = _tokenData[tokenID];
+        uint256 tier = token.tier;
+       // uint256 amount = (tierData[tier].rewardsGlobalIndex - userData.rewardsLocalIndex) * _userDeposits[_account].amounts / 1 ether;
+        uint256 amount = (tierData[tier].rewardsGlobalIndex - token.rewardsLocalIndex) * _userDeposits[_account].depositAmount / 1 ether;
+        _incrementUserDeposit(tokenID, amount, 0);
+        token.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
 
+    /*
     function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
@@ -238,6 +234,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
         revert("Transfer of meETH is not allowed");
     }
+    */
 
 
     //--------------------------------------------------------------------------------------
@@ -245,6 +242,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     //--------------------------------------------------------------------------------------
 
 
+    /*
     function _approve(address _owner, address _spender, uint256 _amount) internal {
         require(_owner != address(0), "APPROVE_FROM_ZERO_ADDRESS");
         require(_spender != address(0), "APPROVE_TO_ZERO_ADDRESS");
@@ -252,40 +250,21 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         allowances[_owner][_spender] = _amount;
         emit Approval(_owner, _spender, _amount);
     }
+    */
 
-    function _stakeForPoints(address _account, uint256 _amount) internal {
-        uint256 tier = tierOf(msg.sender);
-        tierData[tier].amountStakedForPoints += uint96(_amount);
 
-        UserDeposit memory deposit = _userDeposits[_account];
-        _userDeposits[_account] = UserDeposit(
-            deposit.amounts - uint128(_amount),
-            deposit.amountStakedForPoints + uint128(_amount)
-        );
-    }
-
-    function _unstakeForPoints(address _account, uint256 _amount) internal {
-        uint256 tier = tierOf(msg.sender);
-        tierData[tier].amountStakedForPoints -= uint96(_amount);        
-
-        UserDeposit memory deposit = _userDeposits[_account];
-        _userDeposits[_account] = UserDeposit(
-            deposit.amounts + uint128(_amount),
-            deposit.amountStakedForPoints - uint128(_amount)
-        );
-    }
-
-    function _incrementUserDeposit(address _account, uint256 _amount, uint256 _amountStakedForPoints) internal {
-        UserDeposit memory deposit = _userDeposits[_account];
-        _userDeposits[_account] = UserDeposit(
+    // TODO(dave): rename at end?
+    function _incrementUserDeposit(uint256 tokenID, uint256 _amount, uint256 _amountStakedForPoints) internal {
+        UserDeposit memory deposit = _userDeposits[tokenID];
+        _userDeposits[tokenID] = UserDeposit(
             deposit.amounts + uint128(_amount),
             deposit.amountStakedForPoints + uint128(_amountStakedForPoints)
         );
     }
 
-    function _decrementUserDeposit(address _account, uint256 _amount, uint256 _amountStakedForPoints) internal {
-        UserDeposit memory deposit = _userDeposits[_account];
-        _userDeposits[_account] = UserDeposit(
+    function _decrementUserDeposit(uint256 tokenID, uint256 _amount, uint256 _amountStakedForPoints) internal {
+        UserDeposit memory deposit = _userDeposits[tokenID];
+        _userDeposits[tokenID] = UserDeposit(
             deposit.amounts - uint128(_amount),
             deposit.amountStakedForPoints - uint128(_amountStakedForPoints)
         );
@@ -307,16 +286,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         );
     }
 
-    function _initializeEarlyAdopterPoolUserPoints(address _account, uint40 _points, uint256 _amount) internal {
-
-        UserData storage userData = _userData[_account];
-        require(userData.pointsSnapshotTime == 0, "already initialized");
-        userData.pointsSnapshot = _points;
-        userData.pointsSnapshotTime = uint32(block.timestamp);
-        uint40 userPointsPerDepositAmount = calculatePointsPerDepositAmount(_points, _amount);
-        userData.tier = tierForPointsPerDepositAmount(userPointsPerDepositAmount);
-    }
-
     function _calculateGlobalIndex() internal view returns (uint96[] memory, uint128[] memory) {
         uint96[] memory globalIndex = new uint96[](tierDeposits.length);
         uint128[] memory adjustedShares = new uint128[](tierDeposits.length);
@@ -324,8 +293,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint256[] memory tierRewards = new uint256[](tierDeposits.length);
         uint256 sumTierRewards = 0;
         uint256 sumWeightedTierRewards = 0;
-        
-        for (uint256 i = 0; i < weightedTierRewards.length; i++) {                        
+
+        for (uint256 i = 0; i < weightedTierRewards.length; i++) {
             TierDeposit memory deposit = tierDeposits[i];
             uint256 rebasedAmounts = liquidityPool.amountForShare(deposit.shares);
             if (rebasedAmounts >= deposit.amounts) {
@@ -427,26 +396,22 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     function _wrapEthForEap(address _account, uint256 _amount, uint40 _points, bytes32[] calldata _merkleProof) internal {
         require(pointsSnapshotTimeOf(_account) == 0, "Already Deposited");
 
-        /*
-        _initializeEarlyAdopterPoolUserPoints(_account, _points, _amount);
-
-        UserData storage userData = _userData[_account];
-        require(userData.pointsSnapshotTime == 0, "already initialized");
-        userData.pointsSnapshot = _points;
-        userData.pointsSnapshotTime = uint32(block.timestamp);
-        uint40 userPointsPerDepositAmount = calculatePointsPerDepositAmount(_points, _amount);
-        userData.tier = tierForPointsPerDepositAmount(userPointsPerDepositAmount);
-        */
 
         liquidityPool.deposit{value: _amount}(_account, address(this), _merkleProof);
 
         // TODO(dave): finalize mapping of existing point totals to initial tiers
-        uint8 baseTierPoints = _points / 1000; // made up formula
+        uint40 baseTierPoints = _points / 1000; // made up formula
+        uint8 tier = tierForPoints(baseTierPoints);
 
-        _mintLoyaltyNFT(_account, _amount, baseTierPoints);
+        // TODO(dave): optimize paramaters to mint function
+        uint256 tokenID = _mintLoyaltyNFT(_account, _amount, baseTierPoints);
 
-        uint8 tier = tierOf(_account);
-        _userData[_account].rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
+        TokenData storage token = _tokenData[tokenID];
+
+        // TODO(dave): optimize
+        token.tier = tier;
+        token.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
+        token.baseMembershipPoints = _points;
     }
 
     //--------------------------------------------------------------------------------------
@@ -502,9 +467,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
             return;
         }
 
-//        claimPoints(_account);
- //       claimStakingRewards(_account);
-
         uint256 amount = _min(_userDeposits[_account].amounts, tierDeposits[_curTier].amounts);
         uint256 share = liquidityPool.sharesForAmount(amount);
         uint256 amountStakedForPoints = _userDeposits[_account].amountStakedForPoints;
@@ -524,13 +486,13 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (owners[tokenID] != msg.sender) revert OnlyTokenOwner();
 
         TokenData storage token = _tokenData[_account];
-        if (token.pointsSnapshotTime == 0) {
+        if (token.membershipAccrualTimestamp == 0) {
             userData.pointsSnapshotTime = token.depositTimestamp;
         }
 
        // Update the user's score snapshot
-       token.pointsSnapshot += accruedMembershipPoints(tokenID, token.pointsSnapshotTime, block.timestamp);
-       userData.pointsSnapshotTime = uint32(block.timestamp);
+       token.baseMembershipPoints += accruedMembershipPoints(tokenID, token.membershipAccrualTimestamp, block.timestamp);
+       token.membershipAccrualTimestamp = uint32(block.timestamp);
     }
 
     // Compute the points earnings of a user between [since, until) 
@@ -559,13 +521,25 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         return uint40(earning);
     }
 
-    function _mintLoyaltyNFT(address to, uint256 ethAmount, baseTierPoints uint8) internal returns (uint256) {
+    function _mintLoyaltyNFT(
+        address to,
+        uint256 ethAmount,
+        uint40 startingTierPoints,
+        uint40 startingMembershipPoints,
+    ) internal returns (uint256) {
 
         uint256 tokenID = owners.length;
         owners.push(to);
 
-        // XXX
-        // TODO(dave): store other Token data
+        uint8 tier = tierForPoints(startingTierPoints);
+        _tokenData[tokenID] = TokenData(
+            tierData[tier].rewardsGlobalIndex, // rewardsLocalIndex
+            startingMembershipPoints,          // baseMembershipPoints
+            block.timestamp,                   // membershipAccrualTimestamp
+            startingTierPoints,                // baseTierPoints
+            block.timestamp,                   // tierAccrualTimestamp
+            tier                               // tier
+        )
 
         emit TransferSingle(msg.sender, address(0), to, tokenID, 1);
 
@@ -599,81 +573,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
 
-    /*
-    function tierOf(address _user) public view returns (uint8) {
-        return _userData[_user].tier;
-    }
-
-        function tierForPointsPerDepositAmount(uint40 _pointsPerDepositAmount) public view returns (uint8) {
--        uint8 tierId = 0;
--        while (tierId < tierDeposits.length && _pointsPerDepositAmount >= tierData[tierId].minPointsPerDepositAmount) {
--            tierId++;
--        }
--        return tierId - 1;
--    }
-
-    */
-
-    // TODO(dave): do I even need this. Or just return stored snapshot points?
-    function pointsOf(uint256 tokenID) public view returns (uint40) {
-        TokenData memory token = _tokenData[_account];
-        uint40 points = token.pointsSnapshot;
-        uint40 pointsEarning = _pointsEarning(token, token.pointsSnapshotTime, block.timestamp);
-
-        return uint40(_min(uint256(points)+uint256(pointsEarning), type(uint40).max));
-    }
-
-    /*
-    function pointsSnapshotTimeOf(address _account) public view returns (uint32) {
-        return _userData[_account].pointsSnapshotTime;
-    }
-    */
-
-
-    /*
-    // This function calculates the points earned by the account for the current tier.
-    // It takes into account the account's points earned since the previous tier snapshot,
-    // as well as any points earned during the current tier snapshot period.
-    function getPointsEarningsDuringLastMembershipPeriod(address _account) public view returns (uint40) {
-        UserData storage userData = _userData[_account];
-        uint256 userPointsSnapshotTimestamp = userData.pointsSnapshotTime;
-        // Get the timestamp for the recent tier snapshot
-        uint256 tierSnapshotTimestamp = recentTierSnapshotTimestamp();
-        int256 timeBetweenSnapshots = int256(tierSnapshotTimestamp) - int256(userPointsSnapshotTimestamp);
-
-        // Calculate the points earned by the account for the current tier
-        if (timeBetweenSnapshots > 28 days) {
-            return _pointsEarning(_account, tierSnapshotTimestamp - 28 days, tierSnapshotTimestamp);
-        } else if (timeBetweenSnapshots > 0) {
-            return userData.nextTierPoints + _pointsEarning(_account, userPointsSnapshotTimestamp, tierSnapshotTimestamp);
-        } else {
-            return userData.curTierPoints;
-        }
-    }
-    */
-
-
-   /*
-
-    function calculatePointsPerDepositAmount(uint40 _points, uint256 _amount) public view returns (uint40) {
-        uint256 userTotalDepositScaled = _amount / (1 ether / 1000);
-        uint40 userPointsPerDepositAmount;
-        if (userTotalDepositScaled > 0) {
-            userPointsPerDepositAmount = uint40(_points / userTotalDepositScaled); // points earned per 0.001 ether
-        }
-        return userPointsPerDepositAmount;
-    }
-    */
-
-
-    /*
-    function recentTierSnapshotTimestamp() public view returns (uint256) {
-        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
-        uint256 i = (block.timestamp - genesisTime) / monthInSeconds;
-        return genesisTime + i * monthInSeconds;
-    }
-    */
-
     function allowance(address _owner, address _spender) external view override(IERC20Upgradeable, ImeETH) returns (uint256) {
         return allowances[_owner][_spender];
     }
@@ -683,7 +582,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     //--------------------------------------------------------------------------------------
-    //-------------------------------------  METADATA  -------------------------------------
+    //---------------------------------- NFT METADATA --------------------------------------
     //--------------------------------------------------------------------------------------
 
     /// @notice ERC1155 Metadata URI
@@ -722,6 +621,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public onlyOwner {
         pointsGrowthRate = _newPointsGrowthRate;
+    }
+
+    function setTierPointsPerMonth(uint256 amount) external onlyOwner {
+        tierPointsPerMonth = amount;
     }
 
     function distributeStakingRewards() external onlyOwner {
