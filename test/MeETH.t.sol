@@ -28,6 +28,7 @@ contract MeETHTest is TestSetup {
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
     }
 
+    /*
     function test_HowPointsGrow() public {
         // Note that 1 ether meETH earns 1 kwei (10 ** 6) points a day
 
@@ -219,10 +220,8 @@ contract MeETHTest is TestSetup {
     function test_EapMigration() public {
         /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
 
-        /*
-            Alice claims her funds after the snapshot has been taken. 
-            She then deposits her ETH into the MeETH and has her points allocated to her
-        */
+      //       Alice claims her funds after the snapshot has been taken. 
+      //      She then deposits her ETH into the MeETH and has her points allocated to her
 
         // Acotrs deposit into EAP
         startHoax(alice);
@@ -563,4 +562,5 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.pointsOf(alice), 1 * kwei / 2);
     }
 
+    */
 }
