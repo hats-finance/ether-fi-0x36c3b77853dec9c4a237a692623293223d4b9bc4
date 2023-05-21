@@ -26,7 +26,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     uint32 public genesisTime; // the timestamp when the meETH contract was deployed
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
-    uint256 public tierPointsPerMonth;
+    uint40 public tierPointsPerMonth;
 
     mapping (address => mapping (address => uint256)) public allowances;
 
@@ -153,7 +153,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         uint256 shares = liquidityPool.sharesForAmount(_amount);
         _applyWithdrawalPenalty(tokenID, _amount);
-        _decrementUserDeposit(_amount, 0);
+        _decrementUserDeposit(tokenID, _amount, 0);
         _decrementTierDeposit(token.tier, _amount, shares);
 
         eETH.transferFrom(address(this), msg.sender, _amount);
@@ -164,7 +164,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
 
         UserDeposit memory deposit = _userDeposits[tokenID];
-        Token memory token = _tokenData[tokenID];
+        TokenData memory token = _tokenData[tokenID];
 
         // TODO(dave): the original version did not have this check for vanilla ETH. Ask if that's intentional
         uint256 unwrappableBalance = deposit.amount - deposit.amountStakedForPoints;
@@ -172,7 +172,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         uint256 shares = liquidityPool.sharesForAmount(_amount);
         _applyWithdrawalPenalty(tokenID, _amount);
-        _decrementUserDeposit(_amount, 0);
+        _decrementUserDeposit(tokenID, _amount, 0);
         _decrementTierDeposit(token.tier, _amount, shares);
 
         liquidityPool.withdraw(address(this), _amount);
@@ -280,14 +280,14 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         _tokenData[tokenID] = TokenData(
             tierData[tier].rewardsGlobalIndex, // rewardsLocalIndex
             startingMembershipPoints,          // baseMembershipPoints
-            block.timestamp,                   // membershipAccrualTimestamp
+            uint32(block.timestamp),           // membershipAccrualTimestamp
             startingTierPoints,                // baseTierPoints
-            block.timestamp,                   // tierAccrualTimestamp
+            uint32(block.timestamp),           // tierAccrualTimestamp
             tier                               // tier
         );
 
-        _incrementUserDeposit(ethAmount, 0);
         uint256 shares = liquidityPool.sharesForAmount(ethAmount);
+        _incrementUserDeposit(tokenID, ethAmount, 0);
         _incrementTierDeposit(tier, ethAmount, shares);
 
         emit TransferSingle(msg.sender, address(0), to, tokenID, 1);
@@ -346,8 +346,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         for (uint256 i = 0; i < weightedTierRewards.length; i++) {
             TierDeposit memory deposit = tierDeposits[i];
             uint256 rebasedAmounts = liquidityPool.amountForShare(deposit.shares);
-            if (rebasedAmounts >= deposit.amounts) {
-                tierRewards[i] = rebasedAmounts - deposit.amounts;
+            if (rebasedAmounts >= deposit.amount) {
+                tierRewards[i] = rebasedAmounts - deposit.amount;
                 weightedTierRewards[i] = tierData[i].weight * tierRewards[i];
             }
             globalIndex[i] = tierData[i].rewardsGlobalIndex;
@@ -359,7 +359,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         if (sumWeightedTierRewards > 0) {
             for (uint256 i = 0; i < weightedTierRewards.length; i++) {
-                uint256 amountsEligibleForRewards = tierDeposits[i].amounts - tierData[i].amountStakedForPoints;
+                uint256 amountsEligibleForRewards = tierDeposits[i].amount - tierData[i].amountStakedForPoints;
                 if (amountsEligibleForRewards > 0) {
                     uint256 rescaledTierRewards = weightedTierRewards[i] * sumTierRewards / sumWeightedTierRewards;
                     uint256 delta = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
@@ -409,18 +409,17 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
         // convert eap points to membership points
-        uint256 membershipPoints = uint40(_min(
+        uint40 membershipPoints = uint40(_min(
             (eapPoints * 1e14 / 1000) / 1 days / 0.001 ether,
-            type(uint40.max)
+            type(uint40).max
         ));
 
         // TODO(dave): finalize mapping of existing point totals to initial tiers
-        uint40 baseTierPoints = eapPoints / 1000; // made up formula
+        uint40 baseTierPoints = uint40(eapPoints / 1000); // made up formula. Implement real conversion
         uint8 tier = tierForPoints(baseTierPoints);
-        // TODO(dave): optimize paramaters to mint function
-        _mintLoyaltyNFT(msg.sender, msg.value, baseTierPoints, membershipPoints);
 
-        emit FundsMigrated(msg.sender, eapEthAmount, eapPoints, membershipPoints);
+        _mintLoyaltyNFT(msg.sender, uint128(msg.value), baseTierPoints, membershipPoints);
+        emit FundsMigrated(msg.sender, uint128(eapEthAmount), eapPoints, membershipPoints);
     }
 
 
@@ -446,20 +445,20 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     function claimableTier(uint256 tokenID) public view returns (uint8) {
         TokenData memory token = _tokenData[tokenID];
-        uint256 tierPoints = token.baseTierPoints + accruedTierPoints(tokenID);
+        uint40 tierPoints = token.baseTierPoints + accruedTierPoints(tokenID);
 
         return tierForPoints(tierPoints);
     }
 
-    function accruedTierPoints(uint256 tokenID) public view returns (uint256) {
+    function accruedTierPoints(uint256 tokenID) public view returns (uint40) {
         TokenData memory token = _tokenData[tokenID];
         uint256 monthInSeconds = 4 * 7 * 24 * 3600;
 
-        uint256 elapsedMonths = (block.timestamp - token.accrualTimestamp) / monthInSeconds;
-        return elapsedMonths * tierPointsPerMonth;
+        uint256 elapsedMonths = (uint32(block.timestamp) - token.membershipAccrualTimestamp) / monthInSeconds;
+        return uint40(elapsedMonths * tierPointsPerMonth);
     }
 
-    function tierForPoints(uint40 tierPoints) internal returns (uint8) {
+    function tierForPoints(uint40 tierPoints) internal view returns (uint8) {
         uint8 tierId = 0;
         while (tierId < tierData.length && tierPoints >= tierData[tierId].requiredTierPoints) {
             tierId++;
@@ -479,7 +478,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
             return;
         }
 
-        uint256 amount = _min(_userDeposits[tokenID].amounts, tierDeposits[oldTier].amounts);
+        uint256 amount = _min(_userDeposits[tokenID].amount, tierDeposits[oldTier].amount);
         uint256 shares = liquidityPool.sharesForAmount(amount);
         uint256 amountStakedForPoints = _userDeposits[tokenID].amountStakedForPoints;
 
@@ -588,7 +587,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         pointsGrowthRate = _newPointsGrowthRate;
     }
 
-    function setTierPointsPerMonth(uint256 amount) external onlyOwner {
+    function setTierPointsPerMonth(uint40 amount) external onlyOwner {
         tierPointsPerMonth = amount;
     }
 
@@ -597,7 +596,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             uint256 amounts = liquidityPool.amountForShare(adjustedShares[i]);
             tierDeposits[i].shares = adjustedShares[i];
-            tierDeposits[i].amounts = uint128(amounts);
+            tierDeposits[i].amount = uint128(amounts);
             tierData[i].rewardsGlobalIndex = globalIndex[i];
         }
     }
