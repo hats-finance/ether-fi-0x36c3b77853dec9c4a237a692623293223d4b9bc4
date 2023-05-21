@@ -5,6 +5,8 @@ interface ImeETH {
 
 
 
+    // TODO(dave): update
+    /*
     function totalShares() external view returns (uint256);
     function totalSupply() external view returns (uint256);
     function balanceOf(address _account) external view returns (uint256);
@@ -32,4 +34,5 @@ interface ImeETH {
     function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;
     function updatePointsGrowthRate(uint16 _newPointsGrowthRate) external;  
     function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external returns (uint256);
+    */
 }
