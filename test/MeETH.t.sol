@@ -501,4 +501,31 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 1 * kwei / 2);
     }
 
+    // ether.fi multi-sig can manually set the poitns of an NFT
+    function test_setPoints() public {
+        vm.deal(alice, 1 ether);
+
+        vm.startPrank(alice);
+        // Alice mints 1 meETH by wrapping 1 ETH starts earning points
+        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, aliceProof);
+        vm.stopPrank();
+
+        // Alice earns 1 kwei per day by holding 1 meETH
+        skip(1 days);
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 1 * kwei);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 24);
+
+        // owner manually sets Alice's tier
+        vm.startPrank(owner);
+        meEthInstance.setPoints(aliceToken, uint40(28 * kwei), uint40(24 * 28));
+        vm.stopPrank();
+
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 24 * 28);
+
+        assertEq(meEthInstance.claimableTier(aliceToken), 1);
+        meEthInstance.claimTier(aliceToken);
+        assertEq(meEthInstance.tierOf(aliceToken), 1);
+    }
+
 }
