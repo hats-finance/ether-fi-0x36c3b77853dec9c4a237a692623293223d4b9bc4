@@ -11,7 +11,7 @@ import "../../src/StakingManager.sol";
 import "../../src/AuctionManager.sol";
 import "../../src/LiquidityPool.sol";
 import "../../src/EETH.sol";
-import "../../src/weEth.sol";
+import "../../src/WeETH.sol";
 import "../../src/RegulationsManager.sol";
 import "../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
