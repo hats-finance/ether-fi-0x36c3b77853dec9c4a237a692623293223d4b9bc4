@@ -528,4 +528,30 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.tierOf(aliceToken), 1);
     }
 
+    function test_trade() public {
+        vm.deal(alice, 1 ether);
+
+        vm.startPrank(alice);
+        // Alice mints 1 meETH by wrapping 1 ETH starts earning points
+        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, aliceProof);
+        vm.stopPrank();
+
+        skip(28 days);
+        meEthInstance.claimTier(aliceToken);
+
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 28 * 24);
+        assertEq(meEthInstance.tierOf(aliceToken), 1);
+        assertEq(meEthInstance.balanceOf(alice, aliceToken), 1);
+        
+        vm.startPrank(alice);
+        meEthInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+        vm.stopPrank();
+
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 28 * 24);
+        assertEq(meEthInstance.tierOf(aliceToken), 1);
+        assertEq(meEthInstance.balanceOf(bob, aliceToken), 1);
+    }
+
 }
