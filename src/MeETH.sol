@@ -245,6 +245,13 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         return tierDeposits.length - 1;
     }
 
+    function setPoints(uint256 tokenID, uint40 loyaltyPoints, uint40 tierPoints) external onlyOwner {
+        TokenData storage token = _tokenData[tokenID];
+        token.baseLoyaltyPoints = loyaltyPoints;
+        token.baseTierPoints = tierPoints;
+        token.prevPointsAccrualTimestamp = uint32(block.timestamp);
+    }
+
     /// @notice Updates the merkle root
     /// @param _newMerkle new merkle root used to verify the EAP user data (deposits, points)
     function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
