@@ -267,21 +267,6 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         return uint40(points);
     }
 
-    /*
-    function transfer(address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
-        revert("Transfer of meETH is not allowed");
-    }
-
-    function approve(address _spender, uint256 _amount) external returns (bool) {
-        _approve(msg.sender, _spender, _amount);
-        return true;
-    }
-
-    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IERC20Upgradeable) returns (bool) {
-        revert("Transfer of meETH is not allowed");
-    }
-    */
-
     function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyOwner {
         pointsBoostFactor = _newPointsBoostFactor;
     }
@@ -353,16 +338,6 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         _decrementUserDeposit(tokenID, _amount, 0);
         _decrementTierDeposit(tier, _amount, share);
     }
-
-    /*
-    function _approve(address _owner, address _spender, uint256 _amount) internal {
-        require(_owner != address(0), "APPROVE_FROM_ZERO_ADDRESS");
-        require(_spender != address(0), "APPROVE_TO_ZERO_ADDRESS");
-
-        allowances[_owner][_spender] = _amount;
-        emit Approval(_owner, _spender, _amount);
-    }
-    */
 
     function _stakeForPoints(uint256 tokenID, uint256 _amount) internal {
         uint256 tier = tierOf(tokenID);
