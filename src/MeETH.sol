@@ -5,13 +5,14 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "solmate/tokens/ERC1155.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IRegulationsManager.sol";
 
-contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
+contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -57,7 +58,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     mapping (uint256 => UserDeposit) public _userDeposits;
     mapping (uint256 => UserData) public _userData;
 
-    address[] public tokenOwners;
+    uint256 nextMintID = 0;
 
     /// @dev base URI for all token metadata
     string private _metadataURI;
@@ -73,12 +74,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     event FundsMigrated(address indexed user, uint256 amount, uint256 eapPoints, uint40 loyaltyPoints);
     event MerkleUpdated(bytes32, bytes32);
-
-    event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount);
-    event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts);
-
-    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-    event URI(string value, uint256 indexed id);
 
     /// @dev ERC-4906 This event emits when the metadata of a token is changed.
     /// So that the third-party platforms such as NFT market could
@@ -182,7 +177,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     error OnlyTokenOwner();
 
     function unwrapForEEth(uint256 tokenID, uint256 _amount) public isEEthStakingOpen {
-        require(tokenOwners[tokenID] == msg.sender, "Only token owner");
+        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
         require(_amount > 0, "You cannot unwrap 0 meETH");
         UserDeposit memory deposit = _userDeposits[tokenID];
         uint256 unwrappableBalance = deposit.amounts - deposit.amountStakedForPoints;
@@ -199,7 +194,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     function unwrapForEth(uint256 tokenID, uint256 _amount) external {
-        require(tokenOwners[tokenID] == msg.sender, "Only token owner");
+        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
         require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
 
         claimPoints(tokenID);
@@ -215,7 +210,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     function stakeForPoints(uint256 tokenID, uint256 _amount) external {
-        require(tokenOwners[tokenID] == msg.sender, "Only token owner");
+        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
         require(_userDeposits[tokenID].amounts >= _amount, "Not enough balance to stake for points");
 
         claimPoints(tokenID);
@@ -225,7 +220,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     function unstakeForPoints(uint256 tokenID, uint256 _amount) external {
-        require(tokenOwners[tokenID] == msg.sender, "Only token owner");
+        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
         require(_userDeposits[tokenID].amountStakedForPoints >= _amount, "Not enough balance staked");
 
         claimPoints(tokenID);
@@ -352,8 +347,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     function _mintLoyaltyNFT(address to) internal returns (uint256) {
 
-        uint256 tokenID = tokenOwners.length;
-        tokenOwners.push(to);
+        uint256 tokenID = nextMintID++;
+        balanceOf[to][tokenID] = 1;
 
         emit TransferSingle(msg.sender, address(0), to, tokenID, 1);
 
@@ -602,9 +597,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
     */
 
-    function balanceOf(address account, uint256 tokenID) public view returns (uint256) {
-        return tokenOwners[tokenID] == account ? 1 : 0;
-    }
 
     function pointsOf(uint256 tokenID) public view returns (uint40) {
         UserData storage userData = _userData[tokenID];
@@ -683,6 +675,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         return _getImplementation();
     }
 
+
     //--------------------------------------------------------------------------------------
     //---------------------------------- NFT METADATA --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -690,7 +683,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @notice ERC1155 Metadata URI
     /// @param id token ID
     /// @dev https://eips.ethereum.org/EIPS/eip-1155#metadata
-    function uri(uint256 id) public view returns (string memory) {
+    function uri(uint256 id) public override view returns (string memory) {
         return _metadataURI;
     }
 
@@ -730,29 +723,3 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
 }
 
-/// @notice A generic interface for a contract which properly accepts ERC1155 tokens.
-/// @author Solmate (https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC1155.sol)
-abstract contract ERC1155TokenReceiver {
-    
-    // TODO(dave): move to separate file in interfaces folder
-
-    function onERC1155Received(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes calldata
-    ) external virtual returns (bytes4) {
-        return ERC1155TokenReceiver.onERC1155Received.selector;
-    }
-
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] calldata,
-        uint256[] calldata,
-        bytes calldata
-    ) external virtual returns (bytes4) {
-        return ERC1155TokenReceiver.onERC1155BatchReceived.selector;
-    }
-}
