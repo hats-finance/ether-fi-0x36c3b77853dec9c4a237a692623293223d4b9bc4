@@ -3,17 +3,16 @@ pragma solidity 0.8.13;
 
 interface ImeETH {
 
-    struct UserDeposit {
+    struct TokenDeposit {
         uint128 amounts;
         uint128 amountStakedForPoints;
     }
 
-    struct UserData {
+    struct TokenData {
         uint96 rewardsLocalIndex;
-        uint32 pointsSnapshotTime;
-        uint40 pointsSnapshot;
-        uint40 curTierPoints;
-        uint40 nextTierPoints;
+        uint40 baseLoyaltyPoints;
+        uint40 baseTierPoints;
+        uint32 prevPointsAccrualTimestamp;
         uint8  tier;
     }
 
@@ -25,7 +24,7 @@ interface ImeETH {
     struct TierData {
         uint96 rewardsGlobalIndex;
         uint96 amountStakedForPoints;
-        uint40 minPointsPerDepositAmount;
+        uint40 requiredTierPoints;
         uint24 weight;
     }
 
