@@ -28,32 +28,6 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
 
-    struct UserDeposit {
-        uint128 amounts;
-        uint128 amountStakedForPoints;
-    }
-
-    struct UserData {
-        uint96 rewardsLocalIndex;
-        uint32 pointsSnapshotTime;
-        uint40 pointsSnapshot;
-        uint40 curTierPoints;
-        uint40 nextTierPoints;
-        uint8  tier;
-    }
-
-    struct TierDeposit {
-        uint128 shares;
-        uint128 amounts;        
-    }
-
-    struct TierData {
-        uint96 rewardsGlobalIndex;
-        uint96 amountStakedForPoints;
-        uint40 minPointsPerDepositAmount;
-        uint24 weight;
-    }
-
     mapping (address => mapping (address => uint256)) public allowances;
     mapping (uint256 => UserDeposit) public _userDeposits;
     mapping (uint256 => UserData) public _userData;

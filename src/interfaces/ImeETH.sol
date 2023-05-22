@@ -3,6 +3,32 @@ pragma solidity 0.8.13;
 
 interface ImeETH {
 
+    struct UserDeposit {
+        uint128 amounts;
+        uint128 amountStakedForPoints;
+    }
+
+    struct UserData {
+        uint96 rewardsLocalIndex;
+        uint32 pointsSnapshotTime;
+        uint40 pointsSnapshot;
+        uint40 curTierPoints;
+        uint40 nextTierPoints;
+        uint8  tier;
+    }
+
+    struct TierDeposit {
+        uint128 shares;
+        uint128 amounts;
+    }
+
+    struct TierData {
+        uint96 rewardsGlobalIndex;
+        uint96 amountStakedForPoints;
+        uint40 minPointsPerDepositAmount;
+        uint24 weight;
+    }
+
     /*
 
     function totalShares() external view returns (uint256);
