@@ -10,7 +10,7 @@ interface ImeETH {
 
     struct TokenData {
         uint96 rewardsLocalIndex;
-        uint40 baseMembershipPoints;
+        uint40 baseLoyaltyPoints;
         uint40 baseTierPoints;
         uint32 prevPointsAccrualTimestamp;
         uint8  tier;

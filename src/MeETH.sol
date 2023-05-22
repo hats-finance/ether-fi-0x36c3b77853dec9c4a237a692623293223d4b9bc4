@@ -199,7 +199,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
     function claimPoints(uint256 tokenID) public {
         TokenData storage token = _tokenData[tokenID];
-        token.baseMembershipPoints += accruedLoyaltyPointsOf(tokenID);
+        token.baseLoyaltyPoints += accruedLoyaltyPointsOf(tokenID);
         token.baseTierPoints += accruedTierPointsOf(tokenID);
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
@@ -490,7 +490,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
     function loyaltyPointsOf(uint256 tokenID) public view returns (uint40) {
         TokenData memory tokenData = _tokenData[tokenID];
-        uint256 points = tokenData.baseMembershipPoints;
+        uint256 points = tokenData.baseLoyaltyPoints;
         uint256 pointsEarning = accruedLoyaltyPointsOf(tokenID);
         uint256 total = _min(points + pointsEarning, type(uint40).max);
         return uint40(total);
