@@ -19,8 +19,10 @@ contract ProtocolRevenueManager is
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
+    //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
-
+    //--------------------------------------------------------------------------------------
+    
     IEtherFiNodesManager public etherFiNodesManager;
     IAuctionManager public auctionManager;
 
@@ -30,8 +32,10 @@ contract ProtocolRevenueManager is
 
     uint256[46] public __gap;
 
+    //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-
+    //--------------------------------------------------------------------------------------
+    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -115,11 +119,15 @@ contract ProtocolRevenueManager is
     function pauseContract() external onlyOwner { _pause(); }
     function unPauseContract() external onlyOwner { _unpause(); }
 
+    //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
+    //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     /// @notice Compute the accrued rewards for a validator
     /// @param _validatorId id of the validator
@@ -137,7 +145,9 @@ contract ProtocolRevenueManager is
         return _getImplementation();
     }
 
+    //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     modifier onlyEtherFiNodesManager() {
         require(msg.sender == address(etherFiNodesManager), "Only etherFiNodesManager function");
