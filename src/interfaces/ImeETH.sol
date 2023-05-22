@@ -3,31 +3,32 @@ pragma solidity 0.8.13;
 
 interface ImeETH {
 
-    struct UserDeposit {
+    struct TokenDeposit {
         uint128 amounts;
         uint128 amountStakedForPoints;
     }
 
-    struct UserData {
+    struct TokenData {
         uint96 rewardsLocalIndex;
-        uint32 pointsSnapshotTime;
-        uint40 pointsSnapshot;
-        uint40 curTierPoints;
-        uint40 nextTierPoints;
+        uint40 baseLoyaltyPoints;
+        uint40 baseTierPoints;
+        uint32 prevPointsAccrualTimestamp;
         uint8  tier;
     }
 
     struct TierDeposit {
         uint128 shares;
-        uint128 amounts;        
+        uint128 amounts;
     }
 
     struct TierData {
         uint96 rewardsGlobalIndex;
         uint96 amountStakedForPoints;
-        uint40 minPointsPerDepositAmount;
+        uint40 requiredTierPoints;
         uint24 weight;
     }
+
+    /*
 
     function totalShares() external view returns (uint256);
     function totalSupply() external view returns (uint256);
@@ -57,4 +58,5 @@ interface ImeETH {
     function updatePointsGrowthRate(uint16 _newPointsGrowthRate) external;  
     function distributeStakingRewards() external;
     function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external returns (uint256);
+    */
 }

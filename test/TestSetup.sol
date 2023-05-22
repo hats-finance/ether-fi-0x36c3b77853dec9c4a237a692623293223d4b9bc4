@@ -323,10 +323,11 @@ contract TestSetup is Test {
     }
 
     function _initializeMembershipTiers() internal {
+        uint40 requiredPointsForTier = 0;
         for (uint256 i = 0; i < 5 ; i++) {
-            uint40 minimumPointsRequirement = uint40(i * 14);
+            requiredPointsForTier += uint40(28 * 24 * i);
             uint24 weight = uint24(i + 1);
-            meEthInstance.addNewTier(minimumPointsRequirement, weight);
+            meEthInstance.addNewTier(requiredPointsForTier, weight);
         }
     }
 
