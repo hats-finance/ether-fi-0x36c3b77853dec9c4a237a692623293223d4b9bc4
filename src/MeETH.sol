@@ -120,7 +120,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         require(msg.value >= minDepositWei, "Below minimum deposit");
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, 0);
+        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, 0, 0);
         return tokenID;
     }
 
