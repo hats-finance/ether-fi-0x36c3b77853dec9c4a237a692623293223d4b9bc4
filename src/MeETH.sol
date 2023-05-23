@@ -117,7 +117,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
     }
 
     function wrapEth(bytes32[] calldata _merkleProof) public payable returns (uint256) {
-        require(msg.value > minDepositWei, "Below minimum deposit");
+        require(msg.value >= minDepositWei, "Below minimum deposit");
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
         uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, 0);
@@ -125,7 +125,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
     }
 
     function wrapEEth(uint256 _amount) external isEEthStakingOpen returns (uint256) {
-        require(_amount > minDepositWei, "Below minimum deposit");
+        require(_amount >= minDepositWei, "Below minimum deposit");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
         eETH.transferFrom(msg.sender, address(this), _amount);
