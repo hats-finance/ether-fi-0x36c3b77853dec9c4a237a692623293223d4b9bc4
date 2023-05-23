@@ -5,14 +5,14 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "solmate/tokens/ERC1155.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC1155/ERC1155Upgradeable.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IRegulationsManager.sol";
 
-contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
+contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, ImeETH {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -70,13 +70,14 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _regulationsManager) external initializer {
+    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress, address _regulationsManager) external initializer {
         require(_eEthAddress != address(0), "No zero addresses");
         require(_liquidityPoolAddress != address(0), "No zero addresses");
         require(_regulationsManager != address(0), "No zero addresses");
 
         __Ownable_init();
         __UUPSUpgradeable_init();
+        __ERC1155_init(_newURI);
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
@@ -129,10 +130,8 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         return tokenID;
     }
 
-    error OnlyTokenOwner();
-
     function unwrapForEEth(uint256 tokenID, uint256 _amount) public isEEthStakingOpen {
-        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
         require(_amount > 0, "You cannot unwrap 0 meETH");
         TokenDeposit memory deposit = _tokenDeposits[tokenID];
         uint256 unwrappableBalance = deposit.amounts - deposit.amountStakedForPoints;
@@ -149,7 +148,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
     }
 
     function unwrapForEth(uint256 tokenID, uint256 _amount) external {
-        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
         require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
 
         claimPoints(tokenID);
@@ -165,7 +164,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
     }
 
     function stakeForPoints(uint256 tokenID, uint256 _amount) external {
-        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
         require(_tokenDeposits[tokenID].amounts >= _amount, "Not enough balance to stake for points");
 
         claimPoints(tokenID);
@@ -175,7 +174,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
     }
 
     function unstakeForPoints(uint256 tokenID, uint256 _amount) external {
-        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
         require(_tokenDeposits[tokenID].amountStakedForPoints >= _amount, "Not enough balance staked");
 
         claimPoints(tokenID);
@@ -266,7 +265,6 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
     function _mintMembershipNFT(address to, uint256 _amount, uint40 _points) internal returns (uint256) {
         uint256 tokenID = nextMintID++;
-        balanceOf[to][tokenID] = 1;
 
         uint8 tier = _tierForPoints(_points);
         TokenData storage tokenData = _tokenData[tokenID];
@@ -280,8 +278,8 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         require(
             to.code.length == 0
                 ? to != address(0)
-                : ERC1155TokenReceiver(to).onERC1155Received(to, address(0), tokenID, 1, "") ==
-                    ERC1155TokenReceiver.onERC1155Received.selector,
+                : IERC165Upgradeable(to).supportsInterface(type(IERC1155ReceiverUpgradeable).interfaceId) && 
+                IERC1155ReceiverUpgradeable(to).onERC1155Received.selector == bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")),
             "UNSAFE_RECIPIENT"
         );
 
