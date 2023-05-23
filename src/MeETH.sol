@@ -214,7 +214,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
     // EapPoints => (Loyalty Points, Tier Points)
     function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
-        uint256 loyaltyPoints = _min((_eapPoints * 1e14 / 1000) / 1 days / 0.001 ether, type(uint40).max);        
+        uint256 loyaltyPoints = _min(1e5 * _eapPoints / 1 days , type(uint40).max);        
         uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
         uint8 tierId = 0;
         while (tierId < requiredEapPointsPerEapDeposit.length 

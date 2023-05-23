@@ -528,5 +528,4 @@ contract MeETHTest is TestSetup {
         meEthInstance.claimTier(aliceToken);
         assertEq(meEthInstance.tierOf(aliceToken), 1);
     }
-
 }
