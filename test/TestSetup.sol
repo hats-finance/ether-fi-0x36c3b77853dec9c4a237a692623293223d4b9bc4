@@ -102,6 +102,8 @@ contract TestSetup is Test {
     Merkle merkleMigration2;
     bytes32 rootMigration2;
 
+    uint64[] public requiredEapPointsPerEapDeposit;
+
     bytes32 termsAndConditionsHash = keccak256("TERMS AND CONDITIONS");
 
     bytes32[] public whiteListedAddresses;
@@ -433,7 +435,11 @@ contract TestSetup is Test {
             )
         );
         rootMigration = merkleMigration.getRoot(dataForVerification);
-        meEthInstance.updateMerkleRoot(rootMigration);
+        requiredEapPointsPerEapDeposit.push(0);
+        requiredEapPointsPerEapDeposit.push(0); // we want all EAP users to be at least Silver
+        requiredEapPointsPerEapDeposit.push(100); 
+        requiredEapPointsPerEapDeposit.push(400); 
+        meEthInstance.setUpForEap(rootMigration, requiredEapPointsPerEapDeposit);
     }
 
     function _merkleSetupMigration2() internal {
@@ -474,7 +480,7 @@ contract TestSetup is Test {
                 )
             )
         );
-        
+
         rootMigration2 = merkleMigration2.getRoot(dataForVerification2);
     }
 

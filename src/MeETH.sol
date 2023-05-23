@@ -22,8 +22,6 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
     ILiquidityPool public liquidityPool;
     IRegulationsManager public regulationsManager;
 
-    bytes32 public merkleRoot;
-
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
 
@@ -35,6 +33,8 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
     /// @dev base URI for all token metadata
     string private _metadataURI;
 
+    bytes32 public eapMerkleRoot;
+    uint64[] public requiredEapPointsPerEapDeposit;
     mapping (address => bool) public _eapDepositProcessed;
 
     TierDeposit[] public tierDeposits;
@@ -105,8 +105,8 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         _eapDepositProcessed[msg.sender] = true;
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
-        uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_points);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, loyaltyPoints);
+        (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _ethAmount);
+        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, loyaltyPoints, tierPoints);
         emit FundsMigrated(msg.sender, tokenID, msg.value, _points, loyaltyPoints);
         return tokenID;
     }
@@ -116,7 +116,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
         eETH.transferFrom(msg.sender, address(this), _amount);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, _amount, 0);
+        uint256 tokenID = _mintMembershipNFT(msg.sender, _amount, 0, 0);
         return tokenID;
     }
 
@@ -125,7 +125,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         require(_amount >= msg.value, "Not enough deposit");
 
         liquidityPool.deposit{value: _amount}(msg.sender, address(this), _merkleProof);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, _amount, 0);
+        uint256 tokenID = _mintMembershipNFT(msg.sender, _amount, 0, 0);
         return tokenID;
     }
 
@@ -212,12 +212,18 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
-    function convertEapPointsToLoyaltyPoints(uint256 _eapPoints) public view returns (uint40) {
-        uint256 points = (_eapPoints * 1e14 / 1000) / 1 days / 0.001 ether;
-        if (points >= type(uint40).max) {
-            points = type(uint40).max;
+    // EapPoints => (Loyalty Points, Tier Points)
+    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
+        uint256 loyaltyPoints = _min((_eapPoints * 1e14 / 1000) / 1 days / 0.001 ether, type(uint40).max);        
+        uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
+        uint8 tierId = 0;
+        while (tierId < requiredEapPointsPerEapDeposit.length 
+                && eapPointsPerDeposit >= requiredEapPointsPerEapDeposit[tierId]) {
+            tierId++;
         }
-        return uint40(points);
+        tierId -= 1;
+        uint256 tierPoints = tierData[tierId].requiredTierPoints;
+        return (uint40(loyaltyPoints), uint40(tierPoints));
     }
 
     function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyOwner {
@@ -252,24 +258,28 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
 
-    /// @notice Updates the merkle root
-    /// @param _newMerkle new merkle root used to verify the EAP user data (deposits, points)
-    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
-        bytes32 oldMerkle = merkleRoot;
-        merkleRoot = _newMerkle;
-        emit MerkleUpdated(oldMerkle, _newMerkle);
+    /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
+    /// @param _newMerkleRoot new merkle root used to verify the EAP user data (deposits, points)
+    /// @param _requiredEapPointsPerEapDeposit required EAP points per deposit for each tier
+    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external onlyOwner {
+        bytes32 oldMerkleRoot = eapMerkleRoot;
+        eapMerkleRoot = _newMerkleRoot;
+        requiredEapPointsPerEapDeposit = _requiredEapPointsPerEapDeposit;
+        emit MerkleUpdated(oldMerkleRoot, _newMerkleRoot);
     }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _mintMembershipNFT(address to, uint256 _amount, uint40 _points) internal returns (uint256) {
+    function _mintMembershipNFT(address to, uint256 _amount, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
         uint256 tokenID = nextMintID++;
         balanceOf[to][tokenID] = 1;
 
-        uint8 tier = _tierForPoints(_points);
+        uint8 tier = _tierForPoints(_tierPoints);
         TokenData storage tokenData = _tokenData[tokenID];
+        tokenData.baseLoyaltyPoints = _loyaltyPoints;
+        tokenData.baseTierPoints = _tierPoints;
         tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
         tokenData.tier = tier;
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
@@ -474,7 +484,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         bytes32[] calldata _merkleProof
     ) internal view returns (bool) {
         bytes32 leaf = keccak256(abi.encodePacked(_user, _ethBal, _points));
-        bool verified = MerkleProof.verify(_merkleProof, merkleRoot, leaf);
+        bool verified = MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf);
         require(verified, "Verification failed");
     }
 

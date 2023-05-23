@@ -166,7 +166,7 @@ contract MeETHTest is TestSetup {
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
-        meEthInstance.updateMerkleRoot(rootMigration2);
+        meEthInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
         // Alice Withdraws
         vm.startPrank(alice);
@@ -210,7 +210,7 @@ contract MeETHTest is TestSetup {
         vm.stopPrank();
     }
 
-    function test_EapMigration() public {
+    function test_EapMigrationWorks() public {
         /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
 
         // Alice claims her funds after the snapshot has been taken. 
@@ -233,7 +233,7 @@ contract MeETHTest is TestSetup {
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
-        meEthInstance.updateMerkleRoot(rootMigration2);
+        meEthInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
         // Alice Withdraws
         vm.startPrank(alice);
@@ -260,6 +260,7 @@ contract MeETHTest is TestSetup {
 
         // Check that Alice has received meETH
         assertEq(meEthInstance.valueOf(tokenId), 2 ether);
+        assertEq(meEthInstance.tierOf(tokenId), 3); // Platinum
         assertEq(eETHInstance.balanceOf(address(meEthInstance)), 2 ether);
     }
 
