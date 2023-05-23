@@ -1025,7 +1025,7 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
 
         vm.prank(TNFTInstance.ownerOf(validatorIds[0]));
-        exitTimestamps[0] = uint32(block.timestamp) - 1000;
+        exitTimestamps[0] = uint32(block.timestamp);
 
         // T-NFT holder sends the exit request after the node is marked EXITED
         vm.expectRevert("validator node is not live");

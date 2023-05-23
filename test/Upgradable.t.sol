@@ -245,7 +245,7 @@ contract UpgradeTest is TestSetup {
         // State is maintained
         assertEq(stakingManagerV2Instance.maxBatchDepositSize(), 25);
 
-        assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b));
+        assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(depositContractEth2));
         vm.prank(owner);
         stakingManagerV2Instance.registerEth2DepositContract(address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
         assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0x00000000219ab540356cBB839Cbe05303d7705Fa));

@@ -375,6 +375,8 @@ contract LiquidityPoolTest is TestSetup {
         exitRequestTimestamps[0] = 1681351200; // Thu Apr 13 2023 02:00:00 UTC
         exitRequestTimestamps[1] = 1681075815; // Sun Apr 09 2023 21:30:15 UTC
 
+        vm.warp(1681351200 + 12 * 6);
+
         // Process the node exit via nodeManager
         vm.prank(owner);
         managerInstance.processNodeExit(newValidators, exitRequestTimestamps);
