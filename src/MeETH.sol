@@ -10,7 +10,6 @@ import "@openzeppelin-upgradeable/contracts/token/ERC1155/ERC1155Upgradeable.sol
 import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
-import "./interfaces/IRegulationsManager.sol";
 
 contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, ImeETH {
 
@@ -20,7 +19,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
-    IRegulationsManager public regulationsManager;
 
     bytes32 public merkleRoot;
 
@@ -30,7 +28,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     mapping (uint256 => TokenDeposit) public _tokenDeposits;
     mapping (uint256 => TokenData) public _tokenData;
 
-    uint256 nextMintID = 0;
+    uint256 nextMintID;
 
     /// @dev base URI for all token metadata
     string private _metadataURI;
@@ -70,10 +68,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress, address _regulationsManager) external initializer {
+    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress) external initializer {
         require(_eEthAddress != address(0), "No zero addresses");
         require(_liquidityPoolAddress != address(0), "No zero addresses");
-        require(_regulationsManager != address(0), "No zero addresses");
 
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -81,10 +78,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
-        regulationsManager = IRegulationsManager(_regulationsManager);
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
+        nextMintID = 0;
     }
 
     /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
@@ -98,7 +95,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         bytes32[] calldata _merkleProof
     ) external payable returns (uint256) {
         require(_points > 0, "You don't have any points to claim");
-        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), msg.sender), "User is not whitelisted");
         require(msg.value >= _ethAmount, "Invalid deposit amount");
         require(_eapDepositProcessed[msg.sender] == false, "You already made EAP deposit");
         _verifyEapUserData(msg.sender, _ethAmount, _points, _merkleProof);
@@ -271,8 +267,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
         tokenData.tier = tier;
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
-        _mint(tokenID, _amount);
-        
+        _mintInternal(tokenID, _amount);
+        _mint(to, tokenID, 1, "");
+
         emit TransferSingle(to, address(0), to, tokenID, 1);
 
         require(
@@ -286,7 +283,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         return tokenID;
     }
 
-    function _mint(uint256 tokenID, uint256 _amount) internal {
+    function _mintInternal(uint256 tokenID, uint256 _amount) internal {
         uint256 share = liquidityPool.sharesForAmount(_amount);
         uint256 tier = tierOf(tokenID);
 

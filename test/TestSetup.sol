@@ -241,7 +241,7 @@ contract TestSetup is Test {
         meEthImplementation = new MeETH();
         meETHProxy = new UUPSProxy(address(meEthImplementation), "");
         meEthInstance = MeETH(payable(meETHProxy));
-        meEthInstance.initialize("https:token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json", address(eETHInstance), address(liquidityPoolInstance), address(regulationsManagerInstance));
+        meEthInstance.initialize("https:token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json", address(eETHInstance), address(liquidityPoolInstance));
 
         // Setup dependencies
         _setUpNodeOperatorWhitelist();

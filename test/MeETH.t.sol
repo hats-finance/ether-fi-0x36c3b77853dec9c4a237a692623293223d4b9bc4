@@ -49,6 +49,8 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei);
         assertEq(meEthInstance.tierPointsOf(tokenId), 24);
 
+        console.log(meEthInstance.balanceOf(alice, 0));
+
         // Alice's NFT unwraps 1 meETH to 1 ETH
         meEthInstance.unwrapForEth(tokenId, 1 ether);
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei);
@@ -178,17 +180,6 @@ contract MeETHTest is TestSetup {
             dataForVerification2,
             0
         );
-
-        vm.deal(owner, 100 ether);
-        vm.startPrank(owner);
-        // EapDeposit failes if she is not eligible
-        vm.expectRevert("User is not whitelisted");
-        meEthInstance.eapDeposit{value: 2 ether}(
-            1 ether,
-            103680 * 1e9,
-            aliceProof
-        );
-        vm.stopPrank();
 
         // Alice confirms eligibility
         vm.startPrank(alice);
