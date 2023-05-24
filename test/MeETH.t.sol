@@ -378,13 +378,13 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 100 ether);
 
         vm.startPrank(alice);
-        uint256 aliceToken = meEthInstance.wrapEth{value: 10 ether}(aliceProof);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 8 ether}(aliceProof);
 
         // can't top up immediately
         vm.expectRevert("Already topped up this month");
         meEthInstance.topUpDepositWithEth(aliceToken, 1 ether, 0 ether, aliceProof);
 
-        skip(31 days);
+        skip(28 days);
 
         // can't top over more than 20%
         vm.expectRevert("Above maximum deposit");
@@ -395,17 +395,28 @@ contract MeETHTest is TestSetup {
         meEthInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 1 ether, 2 ether, aliceProof);
 
         // should succeed
-        meEthInstance.topUpDepositWithEth{value: 2 ether}(aliceToken, 1 ether, 1 ether, aliceProof);
+        meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
+        assertEq(meEthInstance.valueOf(aliceToken), 8 ether + 1 ether);
 
         // can't top up again immediately
         vm.expectRevert("Already topped up this month");
-        meEthInstance.topUpDepositWithEth{value: 2 ether}(aliceToken, 1 ether, 1 ether, aliceProof);
+        meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
 
-        skip(31 days);
+        skip(28 days);
 
         // deposit is larger so should be able to top up more
-        meEthInstance.topUpDepositWithEth{value: 2.1 ether}(aliceToken, 1 ether, 1.1 ether, aliceProof);
+        meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
+        assertEq(meEthInstance.valueOf(aliceToken), 9 ether + 1 ether);
 
+        skip(28 days);
+
+        // Alice's NFT has 10 ether in total. 
+        // among 10 ether, 1 ether is stake for points (sacrificing the staking rewards)
+        uint40 aliceTierPoints = meEthInstance.tierPointsOf(aliceToken);
+        uint40 aliceLoyaltyPoints = meEthInstance.loyaltyPointsOf(aliceToken);
+        skip(1 days);
+        assertEq(meEthInstance.tierPointsOf(aliceToken) - aliceTierPoints, 24 + 24 * uint256(1) / uint256(10));
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken) - aliceLoyaltyPoints, 9 * kwei + 1 * kwei * 2);
         vm.stopPrank();
     }
 
@@ -446,21 +457,22 @@ contract MeETHTest is TestSetup {
     }
 
     function test_SacrificeRewardsForPoints() public {
+        skip(28 days);
         vm.deal(alice, 2 ether);
         vm.deal(bob, 2 ether);
 
         // Both Alice and Bob mint 2 meETH.
+
+        // - Alice takes weird ways though 
+        //   and stakes 1 meETH to earn more points by sacrificing the staking rewards
         vm.startPrank(alice);
-        uint256 aliceToken = meEthInstance.wrapEth{value: 2 ether}(aliceProof);
-        vm.stopPrank();
-        vm.startPrank(bob);
-        uint256 bobToken = meEthInstance.wrapEth{value: 2 ether}(bobProof);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 1.8 ether}(aliceProof);
+        meEthInstance.stakeForPoints(aliceToken, 0.8 ether);
+        meEthInstance.topUpDepositWithEth{value: 0.2 ether}(aliceToken, 0, 0.2 ether, aliceProof);
         vm.stopPrank();
 
-        // Alice stakes 1 meETH to earn more points by sacrificing the staking rewards
-        vm.startPrank(alice);
-        //meEthInstance.updateDepositAllocation(aliceToken, 1 ether, 1 ether);
-        meEthInstance.stakeForPoints(aliceToken, 1 ether);
+        vm.startPrank(bob);
+        uint256 bobToken = meEthInstance.wrapEth{value: 2 ether}(bobProof);
         vm.stopPrank();
 
         // They have the same amounts of meETH and belong to the same tier
@@ -493,7 +505,6 @@ contract MeETHTest is TestSetup {
         // Alice unstakes the 1 meETH which she sacrificed for points
         vm.startPrank(alice);
         meEthInstance.unstakeForPoints(aliceToken, 1 ether);
-        //meEthInstance.updateDepositAllocation(aliceToken, 2 ether, 0);
         vm.stopPrank();
         
         // Alice and Bob unwrap their whole amounts of meETH to eETH

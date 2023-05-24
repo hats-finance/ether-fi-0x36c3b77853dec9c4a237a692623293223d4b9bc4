@@ -11,8 +11,6 @@ import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-import "forge-std/console.sol";
-
 contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, ImeETH {
 
     //--------------------------------------------------------------------------------------
@@ -151,7 +149,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
-        _incrementTokenDeposit(tokenID, amount, amountForPoints);
+        _mintInternal(tokenID, amount + amountForPoints);
+        _stakeForPoints(tokenID, amountForPoints);
         token.prevTopUpTimestamp = uint32(block.timestamp);
     }
 
@@ -174,8 +173,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         claimStakingRewards(tokenID);
 
         eETH.transferFrom(msg.sender, address(this), amount+amountForPoints);
-
-        _incrementTokenDeposit(tokenID, amount, amountForPoints);
+        
+        _mintInternal(tokenID, amount + amountForPoints);
+        _stakeForPoints(tokenID, amountForPoints);
         token.prevTopUpTimestamp = uint32(block.timestamp);
     }
 
@@ -375,27 +375,18 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         _decrementTierDeposit(tier, _amount, share);
     }
 
-
     function _stakeForPoints(uint256 tokenID, uint256 _amount) internal {
         uint256 tier = tierOf(tokenID);
         tierData[tier].amountStakedForPoints += uint96(_amount);
-
-        TokenDeposit memory deposit = _tokenDeposits[tokenID];
-        _tokenDeposits[tokenID] = TokenDeposit(
-            deposit.amounts - uint128(_amount),
-            deposit.amountStakedForPoints + uint128(_amount)
-        );
+        _incrementTokenDeposit(tokenID, 0, _amount);
+        _decrementTokenDeposit(tokenID, _amount, 0);
     }
 
     function _unstakeForPoints(uint256 tokenID, uint256 _amount) internal {
         uint256 tier = tierOf(tokenID);
         tierData[tier].amountStakedForPoints -= uint96(_amount);
-
-        TokenDeposit memory deposit = _tokenDeposits[tokenID];
-        _tokenDeposits[tokenID] = TokenDeposit(
-            deposit.amounts + uint128(_amount),
-            deposit.amountStakedForPoints - uint128(_amount)
-        );
+        _incrementTokenDeposit(tokenID, _amount, 0);
+        _decrementTokenDeposit(tokenID, 0, _amount);
     }
 
     function _incrementTokenDeposit(uint256 tokenID, uint256 _amount, uint256 _amountStakedForPoints) internal {
@@ -507,7 +498,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
                     uint256 delta = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
                     require(uint256(globalIndex[i]) + uint256(delta) <= type(uint96).max, "overflow");
                     globalIndex[i] += uint96(delta);
-                                        
                     if (tierRewards[i] > rescaledTierRewards) {
                         adjustedShares[i] -= uint128(liquidityPool.sharesForAmount(tierRewards[i] - rescaledTierRewards));
                     } else {
