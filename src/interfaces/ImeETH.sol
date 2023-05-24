@@ -69,6 +69,6 @@ interface ImeETH {
     function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256);
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
     function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external;
-    function setMinDepositWei(uint56 value) external;
-    function setMaxDepositTopUpPercent(uint8 percent) external;
+    function setMinDepositWei(uint56 _value) external;
+    function setMaxDepositTopUpPercent(uint8 _percent) external;
 }

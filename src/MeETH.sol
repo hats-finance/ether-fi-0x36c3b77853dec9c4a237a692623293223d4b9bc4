@@ -316,15 +316,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     }
 
     /// @notice Updates minimum valid deposit
-    /// @param value minimum deposit in wei
-    function setMinDepositWei(uint56 value) external onlyOwner {
-        minDepositGwei = value;
+    /// @param _value minimum deposit in wei
+    function setMinDepositWei(uint56 _value) external onlyOwner {
+        minDepositGwei = _value;
     }
 
     /// @notice Updates minimum valid deposit
-    /// @param percent integer percentage value
-    function setMaxDepositTopUpPercent(uint8 percent) external onlyOwner {
-        maxDepositTopUpPercent = percent;
+    /// @param _percent integer percentage value
+    function setMaxDepositTopUpPercent(uint8 _percent) external onlyOwner {
+        maxDepositTopUpPercent = _percent;
     }
 
     //--------------------------------------------------------------------------------------
