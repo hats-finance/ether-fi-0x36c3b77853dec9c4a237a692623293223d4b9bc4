@@ -23,11 +23,11 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         hoax(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         startHoax(owner);
         stakingManagerInstance.enableWhitelist();
-        vm.expectRevert("User not permitted to stake");
+        vm.expectRevert("User is not whitelisted");
         liquidityPoolInstance.deposit{value: 1 ether}(alice, bobProof);
         stakingManagerInstance.disableWhitelist();
         vm.stopPrank();
@@ -47,7 +47,7 @@ contract LiquidityPoolTest is TestSetup {
 
     function test_StakingManagerLiquidityFails() public {
         vm.prank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.startPrank(owner);
         vm.expectRevert();
@@ -57,7 +57,7 @@ contract LiquidityPoolTest is TestSetup {
     function test_WithdrawLiquidityPoolSuccess() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -66,7 +66,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -81,72 +81,80 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(alice, 2 ether);
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(alice.balance, 2 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(bob, 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 0);
         assertEq(bob.balance, 3 ether);
         vm.stopPrank();
     }
 
     function test_WithdrawLiquidityPoolFails() public {
+        vm.deal(address(liquidityPoolInstance), 3 ether);
         startHoax(alice);
         vm.expectRevert("Not enough eETH");
-        liquidityPoolInstance.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(alice, 2 ether);
     }
 
     function test_WithdrawFailsNotInitializedToken() public {
-        LiquidityPool liquidityPoolNoToken = new LiquidityPool();
-
         startHoax(alice);
         vm.expectRevert();
-        liquidityPoolNoToken.withdraw(2 ether);
+        liquidityPoolInstance.withdraw(alice, 2 ether);
     }
 
     function test_StakingManagerFailsNotInitializedToken() public {
         LiquidityPool liquidityPoolNoToken = new LiquidityPool();
 
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         vm.deal(alice, 3 ether);
         vm.expectRevert();
         liquidityPoolNoToken.deposit{value: 2 ether}(alice, aliceProof);
     }
 
     function test_LiquidityPoolBatchDepositWithBidIds() public {
-        bytes32[] memory _aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        vm.deal(alice, 3 ether);
+        vm.deal(owner, 4 ether);
 
-        vm.prank(alice);
+        vm.startPrank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            _aliceProof,
             _ipfsHash,
             5
         );
-
-        hoax(alice);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+        auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
         vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
-        liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
+        liquidityPoolInstance.batchDepositWithBidIds(1, bidIds, aliceProof);
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        bytes32[] memory proof = getWhitelistMerkleProof(9);
+
+        vm.expectRevert("B-NFT holder must deposit 2 ETH per validator");
+        liquidityPoolInstance.batchDepositWithBidIds(1, bidIds, proof);
 
         vm.expectRevert("Not enough balance");
-        vm.prank(owner);
-        liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
+        liquidityPoolInstance.batchDepositWithBidIds{value: 2 ether}(1, bidIds, proof);
 
-        vm.deal(address(liquidityPoolInstance), 35 ether);
-        assertEq(address(liquidityPoolInstance).balance, 35 ether);
+        vm.stopPrank();
+
+        vm.deal(address(liquidityPoolInstance), 70 ether);
 
         vm.startPrank(owner);
         stakingManagerInstance.enableWhitelist();
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds(1, bidIds);
+        uint256[] memory longBidIds = new uint256[](2);
+        longBidIds[0] = bidIds[0];
+        longBidIds[1] = bidIds[0];
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, longBidIds, proof);
 
-        assertEq(address(liquidityPoolInstance).balance, 3 ether);
+        assertEq(address(liquidityPoolInstance).balance, 70 ether + 2 ether - 32 ether);
         assertEq(address(stakingManagerInstance).balance, 32 ether);
+        assertEq(address(owner).balance, 2 ether);
         assertEq(newValidators.length, 1);
         assertEq(newValidators[0], 1);
     }
@@ -154,7 +162,7 @@ contract LiquidityPoolTest is TestSetup {
     function test_WithdrawLiquidityPoolSlashingPenalties() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -163,7 +171,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -184,7 +192,7 @@ contract LiquidityPoolTest is TestSetup {
     function test_WithdrawLiquidityPoolAccrueStakingRewardsWithoutPartialWithdrawal() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -193,7 +201,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
@@ -202,27 +210,27 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.setAccruedStakingReards(2 ether);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.setAccruedEther(2 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
-        assertEq(liquidityPoolInstance.accruedStakingRewards(), 2 ether);
+        assertEq(liquidityPoolInstance.accruedEther(), 2 ether);
         (bool sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
         assertEq(sent, true);
-        assertEq(liquidityPoolInstance.accruedStakingRewards(), 1 ether);
+        assertEq(liquidityPoolInstance.accruedEther(), 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
         (sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
         assertEq(sent, true);
-        assertEq(liquidityPoolInstance.accruedStakingRewards(), 0 ether);
+        assertEq(liquidityPoolInstance.accruedEther(), 0 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
-        vm.expectRevert("Update the accrued rewards first");
+        vm.expectRevert("Update the accrued ethers first");
         (sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
-        assertEq(liquidityPoolInstance.accruedStakingRewards(), 0 ether);
+        assertEq(liquidityPoolInstance.accruedEther(), 0 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
@@ -230,11 +238,10 @@ contract LiquidityPoolTest is TestSetup {
     }
     
     function test_LiquidityPoolBatchRegisterValidators() public {
-        bytes32[] memory aliceExitProof = merkle.getProof(whiteListedAddresses, 3);
+        vm.deal(owner, 100 ether);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceExitProof,
             _ipfsHash,
             5
         );
@@ -244,14 +251,15 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(bidIds.length, 2);
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-        liquidityPoolInstance.deposit{value: 64 ether}(bob, bobProof);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
         vm.stopPrank();
 
-        assertEq(address(liquidityPoolInstance).balance, 64 ether);
+        assertEq(address(liquidityPoolInstance).balance, 60 ether);
 
+        bytes32[] memory proof = getWhitelistMerkleProof(9);
         vm.prank(owner);
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds(2, bidIds);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
         assertEq(newValidators.length, 2);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
         assertEq(address(stakingManagerInstance).balance, 64 ether);
@@ -278,9 +286,6 @@ contract LiquidityPoolTest is TestSetup {
         }
 
         bytes32 depositRoot = _getDepositRoot();
-
-        assertFalse(liquidityPoolInstance.validators(newValidators[0]));
-        assertFalse(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.numValidators(), 0);
 
         vm.expectRevert("Ownable: caller is not the owner");
@@ -292,8 +297,6 @@ contract LiquidityPoolTest is TestSetup {
 
         assertEq(address(stakingManagerInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
-        assertTrue(liquidityPoolInstance.validators(newValidators[0]));
-        assertTrue(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.numValidators(), 2);
         assertEq(TNFTInstance.ownerOf(newValidators[0]), address(liquidityPoolInstance));
         assertEq(TNFTInstance.ownerOf(newValidators[1]), address(liquidityPoolInstance));
@@ -302,11 +305,10 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_ProcessNodeExit() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        vm.deal(owner, 100 ether);
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );
@@ -315,13 +317,14 @@ contract LiquidityPoolTest is TestSetup {
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 64 ether}(bob, bobProof);
         vm.stopPrank();
 
+        bytes32[] memory proof = getWhitelistMerkleProof(9);
 
         vm.prank(owner);
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds(2, bidIds);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](2);
@@ -371,6 +374,8 @@ contract LiquidityPoolTest is TestSetup {
         exitRequestTimestamps[0] = 1681351200; // Thu Apr 13 2023 02:00:00 UTC
         exitRequestTimestamps[1] = 1681075815; // Sun Apr 09 2023 21:30:15 UTC
 
+        vm.warp(1681351200 + 12 * 6);
+
         // Process the node exit via nodeManager
         vm.prank(owner);
         managerInstance.processNodeExit(newValidators, exitRequestTimestamps);
@@ -380,9 +385,6 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
 
         assertEq(liquidityPoolInstance.numValidators(), 2);
-        assertTrue(liquidityPoolInstance.validators(newValidators[0]));
-        assertTrue(liquidityPoolInstance.validators(newValidators[1]));
-
         assertEq(liquidityPoolInstance.accruedSlashingPenalties(), 1 ether);
         
         // Delist the node from the liquidity pool
@@ -390,8 +392,49 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
 
         assertEq(liquidityPoolInstance.numValidators(), 0);
-        assertFalse(liquidityPoolInstance.validators(newValidators[0]));
-        assertFalse(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.accruedSlashingPenalties(), 0 ether);
+    }
+
+    function test_SettersFailOnZeroAddress() public {
+        vm.startPrank(owner);
+        vm.expectRevert("No zero addresses");
+        liquidityPoolInstance.setTokenAddress(address(0));
+        
+        vm.expectRevert("No zero addresses");
+        liquidityPoolInstance.setStakingManager(address(0));
+
+        vm.expectRevert("No zero addresses");
+        liquidityPoolInstance.setEtherFiNodesManager(address(0));
+
+        vm.stopPrank();
+    }
+
+    function test_LiquidStakingAccessControl() public {
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeEEthLiquidStaking();
+
+        hoax(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        vm.prank(owner);
+        stakingManagerInstance.enableWhitelist();
+
+        hoax(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.openEEthLiquidStaking();
+
+        hoax(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        vm.prank(owner);
+        liquidityPoolInstance.closeEEthLiquidStaking();
+        
+        hoax(alice);
+        vm.expectRevert("Liquid staking functions are closed");
+        liquidityPoolInstance.withdraw(alice, 1 ether);
     }
 }

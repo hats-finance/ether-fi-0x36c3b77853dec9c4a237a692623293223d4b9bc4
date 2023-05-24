@@ -5,49 +5,24 @@ import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
-import "./interfaces/IEETH.sol";
+import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
-    //--------------------------------------------------------------------------------------
-    //---------------------------------  STATE-VARIABLES  ----------------------------------
-    //--------------------------------------------------------------------------------------
-
+contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
     ILiquidityPool public liquidityPool;
 
     uint256 public totalShares;
     mapping (address => uint256) public shares;
     mapping (address => mapping (address => uint256)) public allowances;
 
-    uint256[46] __gap;
+    uint256[22] __gap;
 
-    //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-    //--------------------------------------------------------------------------------------
-
-    /**
-     * @return the name of the token.
-     */
-    function name() public pure returns (string memory) {
-        return "ether.fi ETH";
-    }
-
-    /**
-     * @return the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public pure returns (string memory) {
-        return "eETH";
-    }
-
-    /**
-     * @return the number of decimals for getting user representation of a token amount.
-     */
-    function decimals() public pure returns (uint8) {
-        return 18;
-    }
+    // [STATE-CHANGING FUNCTIONS]
+    constructor() { _disableInitializers(); }
 
     function initialize(address _liquidityPool) external initializer {
+        require(_liquidityPool != address(0), "No zero addresses");
+        
         __UUPSUpgradeable_init();
         __Ownable_init();
         liquidityPool = ILiquidityPool(_liquidityPool);
@@ -63,17 +38,7 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         totalShares -= _share;
     }
 
-    // IERC20 functions
-
-    function totalSupply() public view returns (uint256) {
-        return liquidityPool.getTotalPooledEther();
-    }
-
-    function balanceOf(address _user) public view override(IEETH, IERC20Upgradeable) returns (uint256) {
-        return liquidityPool.getTotalEtherClaimOf(_user);
-    }
-
-    function transfer(address _recipient, uint256 _amount) external override(IEETH, IERC20Upgradeable) returns (bool) {
+    function transfer(address _recipient, uint256 _amount) external override(IeETH, IERC20Upgradeable) returns (bool) {
         _transfer(msg.sender, _recipient, _amount);
         return true;
     }
@@ -82,12 +47,12 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         return allowances[_owner][_spender];
     }
 
-    function approve(address _spender, uint256 _amount) external returns (bool) {
+    function approve(address _spender, uint256 _amount) external override(IeETH, IERC20Upgradeable) returns (bool) {
         _approve(msg.sender, _spender, _amount);
         return true;
     }
 
-    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IEETH, IERC20Upgradeable) returns (bool) {
+    function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IeETH, IERC20Upgradeable) returns (bool) {
         uint256 currentAllowance = allowances[_sender][msg.sender];
         require(currentAllowance >= _amount, "TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
 
@@ -96,10 +61,7 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         return true;
     }
 
-    //--------------------------------------------------------------------------------------
-    //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
-    //--------------------------------------------------------------------------------------
-
+    // [INTERNAL FUNCTIONS] 
     function _transfer(address _sender, address _recipient, uint256 _amount) internal {
         uint256 _sharesToTransfer = liquidityPool.sharesForAmount(_amount);
         _transferShares(_sender, _recipient, _sharesToTransfer);
@@ -127,18 +89,24 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IEETH {
         address newImplementation
     ) internal override onlyOwner {}
 
-    //--------------------------------------------------------------------------------------
-    //------------------------------------  GETTERS  ---------------------------------------
-    //--------------------------------------------------------------------------------------
+    // [GETTERS]
+    function name() public pure returns (string memory) { return "ether.fi ETH"; }
+    function symbol() public pure returns (string memory) { return "eETH"; }
+    function decimals() public pure returns (uint8) { return 18; }
+
+    function totalSupply() public view returns (uint256) {
+        return liquidityPool.getTotalPooledEther();
+    }
+
+    function balanceOf(address _user) public view override(IeETH, IERC20Upgradeable) returns (uint256) {
+        return liquidityPool.getTotalEtherClaimOf(_user);
+    }
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
 
-    //--------------------------------------------------------------------------------------
-    //-----------------------------------  MODIFIERS  --------------------------------------
-    //--------------------------------------------------------------------------------------
-
+    // [MODIFIERS]
     modifier onlyPoolContract() {
         require(msg.sender == address(liquidityPool), "Only pool contract function");
         _;
