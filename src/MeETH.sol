@@ -542,8 +542,8 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         uint40 degradeTierPenalty = curTierPoints - tierData[prevTier].requiredTierPoints;
 
         // point deduction if scaled proportional to withdrawal amount
-        uint256 ratio = (100 * _burnAmount) / _prevAmount;
-        uint40 scaledTierPointsPenalty = uint40((ratio * curTierPoints) / 100);
+        uint256 ratio = (10000 * _burnAmount) / _prevAmount;
+        uint40 scaledTierPointsPenalty = uint40((ratio * curTierPoints) / 10000);
 
         uint40 penalty = uint40(_max(degradeTierPenalty, scaledTierPointsPenalty));
 
