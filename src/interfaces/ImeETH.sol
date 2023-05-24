@@ -33,7 +33,7 @@ interface ImeETH {
     // State-changing functions
     function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress) external;
 
-    function wrapEthForEap(uint256 _amount, uint256 _amountForPoint, uint256 _ethAmount, uint256 _points, bytes32[] calldata _merkleProof) external payable returns (uint256);
+    function wrapEthForEap(uint256 _amount, uint256 _amountForPoint, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) external payable returns (uint256);
     function wrapEth(uint256 _amount, uint256 _amountForPoint, bytes32[] calldata _merkleProof) external payable returns (uint256);
     function wrapEEth(uint256 _amount, uint256 _amountForPoint) external returns (uint256);
 

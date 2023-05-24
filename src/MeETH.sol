@@ -90,26 +90,26 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @dev The deposit amount must be greater than or equal to what they deposited into the EAP
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
+    /// @param _snapshotEthAmount exact balance that the user has in the merkle snapshot
     /// @param _points EAP points that the user has in the merkle snapshot
-    /// @param _ethAmount exact balance that the user has in the merkle snapshot
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function wrapEthForEap(
         uint256 _amount,
         uint256 _amountForPoints,
-        uint256 _ethAmount,
+        uint256 _snapshotEthAmount,
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable returns (uint256) {
         require(_points > 0, "You don't have any points to claim");
-        require(msg.value >= _ethAmount, "Invalid deposit amount");
+        require(msg.value >= _snapshotEthAmount, "Invalid deposit amount");
         require(msg.value == _amount + _amountForPoints, "Invalid allocation");
         require(eapDepositProcessed[msg.sender] == false, "You already made EAP deposit");
-        _verifyEapUserData(msg.sender, _ethAmount, _points, _merkleProof);
+        _verifyEapUserData(msg.sender, _snapshotEthAmount, _points, _merkleProof);
 
         eapDepositProcessed[msg.sender] = true;
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
-        (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _ethAmount);
+        (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _snapshotEthAmount);
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value, loyaltyPoints, tierPoints);
         if (_amountForPoints > 0) {
             _stakeForPoints(tokenId, _amountForPoints);
