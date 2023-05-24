@@ -1,8 +1,9 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
+
 import "../src/interfaces/IStakingManager.sol";
-import "../src/interfaces/IScoreManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
 import "../src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
@@ -13,18 +14,20 @@ import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
-import "../src/ClaimReceiverPool.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
-import "../src/weEth.sol";
-import "../src/ScoreManager.sol";
+import "../src/WeETH.sol";
+import "../src/MeETH.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
+import "./DepositContract.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 
 contract TestSetup is Test {
+    uint256 constant public kwei = 10 ** 3;
+    uint256 public slippageLimit = 50;
 
     TestERC20 public rETH;
     TestERC20 public wstETH;
@@ -37,15 +40,17 @@ contract TestSetup is Test {
     UUPSProxy public protocolRevenueManagerProxy;
     UUPSProxy public TNFTProxy;
     UUPSProxy public BNFTProxy;
-    UUPSProxy public claimReceiverPoolProxy;
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public eETHProxy;
-    UUPSProxy public scoreManagerProxy;
     UUPSProxy public regulationsManagerProxy;
     UUPSProxy public weETHProxy;
+    UUPSProxy public nodeOperatorManagerProxy;
+    UUPSProxy public meETHProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
+
+    DepositContract public mockDepositContractEth2;
 
     StakingManager public stakingManagerInstance;
     StakingManager public stakingManagerImplementation;
@@ -58,9 +63,6 @@ contract TestSetup is Test {
 
     EtherFiNodesManager public managerInstance;
     EtherFiNodesManager public managerImplementation;
-
-    ScoreManager public scoreManagerInstance;
-    ScoreManager public scoreManagerImplementation;
 
     RegulationsManager public regulationsManagerInstance;
     RegulationsManager public regulationsManagerImplementation;
@@ -79,15 +81,17 @@ contract TestSetup is Test {
     EETH public eETHImplementation;
     EETH public eETHInstance;
 
-    weEth public weEthImplementation;
-    weEth public weEthInstance;
+    WeETH public weEthImplementation;
+    WeETH public weEthInstance;
 
-    ClaimReceiverPool public claimReceiverPoolImplementation;
-    ClaimReceiverPool public claimReceiverPoolInstance;
+    MeETH public meEthImplementation;
+    MeETH public meEthInstance;
+
+    NodeOperatorManager public nodeOperatorManagerImplementation;
+    NodeOperatorManager public nodeOperatorManagerInstance;
 
     EtherFiNode public node;
     Treasury public treasuryInstance;
-    NodeOperatorManager public nodeOperatorManagerInstance;
     
     Merkle merkle;
     bytes32 root;
@@ -97,6 +101,10 @@ contract TestSetup is Test {
 
     Merkle merkleMigration2;
     bytes32 rootMigration2;
+
+    uint64[] public requiredEapPointsPerEapDeposit;
+
+    bytes32 termsAndConditionsHash = keccak256("TERMS AND CONDITIONS");
 
     bytes32[] public whiteListedAddresses;
     bytes32[] public dataForVerification;
@@ -115,15 +123,22 @@ contract TestSetup is Test {
     address henry = vm.addr(8);
     address liquidityPool = vm.addr(9);
 
+    address[] public actors;
+    uint256[] public whitelistIndices;
+
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
 
-    function setUpTests() public {
+    function setUpTests() internal {
         vm.startPrank(owner);
 
         // Deploy Contracts and Proxies
         treasuryInstance = new Treasury();
-        nodeOperatorManagerInstance = new NodeOperatorManager();
+
+        nodeOperatorManagerImplementation = new NodeOperatorManager();
+        nodeOperatorManagerProxy = new UUPSProxy(address(nodeOperatorManagerImplementation), "");
+        nodeOperatorManagerInstance = NodeOperatorManager(address(nodeOperatorManagerProxy));
+        nodeOperatorManagerInstance.initialize();
 
         auctionImplementation = new AuctionManager();
         auctionManagerProxy = new UUPSProxy(address(auctionImplementation), "");
@@ -162,12 +177,10 @@ contract TestSetup is Test {
             address(protocolRevenueManagerInstance)
         );
 
-        scoreManagerImplementation = new ScoreManager();
-        scoreManagerProxy = new UUPSProxy(address(scoreManagerImplementation), "");
-        scoreManagerInstance = ScoreManager(address(scoreManagerProxy));
-        scoreManagerInstance.initialize();
-
         regulationsManagerImplementation = new RegulationsManager();
+        vm.expectRevert("Initializable: contract is already initialized");
+        regulationsManagerImplementation.initialize();
+        
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
         regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
         regulationsManagerInstance.initialize();
@@ -193,50 +206,51 @@ contract TestSetup is Test {
             address(sfrxEth),
             address(cbEth)
         );
-        
-        claimReceiverPoolImplementation = new ClaimReceiverPool();
-        claimReceiverPoolProxy = new UUPSProxy(
-            address(claimReceiverPoolImplementation),
-            ""
-        );
-        claimReceiverPoolInstance = ClaimReceiverPool(
-            payable(address(claimReceiverPoolProxy))
-        );
-        claimReceiverPoolInstance.initialize(
-            address(rETH),
-            address(wstETH),
-            address(sfrxEth),
-            address(cbEth),
-            address(scoreManagerInstance),
-            address(regulationsManagerInstance)
-        );
 
         liquidityPoolImplementation = new LiquidityPool();
-        liquidityPoolProxy = new UUPSProxy(
-            address(liquidityPoolImplementation),
-            ""
-        );
-        liquidityPoolInstance = LiquidityPool(
-            payable(address(liquidityPoolProxy))
-        );
+        vm.expectRevert("Initializable: contract is already initialized");
+        liquidityPoolImplementation.initialize(address(regulationsManagerInstance));
+
+        liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
+        liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
 
         eETHImplementation = new EETH();
+        vm.expectRevert("Initializable: contract is already initialized");
+        eETHImplementation.initialize(payable(address(liquidityPoolInstance)));
+
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");
         eETHInstance = EETH(address(eETHProxy));
+
+        vm.expectRevert("No zero addresses");
+        eETHInstance.initialize(payable(address(0)));
         eETHInstance.initialize(payable(address(liquidityPoolInstance)));
 
-        weEthImplementation = new weEth();
+        weEthImplementation = new WeETH();
+        vm.expectRevert("Initializable: contract is already initialized");
+        weEthImplementation.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
+
         weETHProxy = new UUPSProxy(address(weEthImplementation), "");
-        weEthInstance = weEth(address(weETHProxy));
+        weEthInstance = WeETH(address(weETHProxy));
+        vm.expectRevert("No zero addresses");
+        weEthInstance.initialize(address(0), address(eETHInstance));
+        vm.expectRevert("No zero addresses");
+        weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(0));
         weEthInstance.initialize(payable(address(liquidityPoolInstance)), address(eETHInstance));
 
+        regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
+
+        meEthImplementation = new MeETH();
+        meETHProxy = new UUPSProxy(address(meEthImplementation), "");
+        meEthInstance = MeETH(payable(meETHProxy));
+        meEthInstance.initialize("https:token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json", address(eETHInstance), address(liquidityPoolInstance));
+
         // Setup dependencies
+        _setUpNodeOperatorWhitelist();
         _merkleSetup();
         _merkleSetupMigration();
         _merkleSetupMigration2();
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
-        nodeOperatorManagerInstance.updateMerkleRoot(root);
 
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
         auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
@@ -250,24 +264,24 @@ contract TestSetup is Test {
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
 
-        claimReceiverPoolInstance.setLiquidityPool(address(liquidityPoolInstance));
-
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
-        liquidityPoolInstance.setScoreManager(address(scoreManagerInstance));
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
-
-        scoreManagerInstance.setCallerStatus(address(liquidityPoolInstance), true);
-        scoreManagerInstance.addNewScoreType("Early Adopter Pool");
+        liquidityPoolInstance.setMeETH(address(meEthInstance));
+        liquidityPoolInstance.openEEthLiquidStaking();
 
         depGen = new DepositDataGeneration();
+        mockDepositContractEth2 = new DepositContract();
 
-        // bytes32 deposit_data_root1 = 0x9120ef13437690c401c436a3e454aa08c438eb5908279b0a49dee167fde30399;
-        // bytes memory pub_key1 = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
-        // bytes memory signature1 = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
-        depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b);
+        // depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b); // Goerli testnet deposit contract
+        depositContractEth2 = IDepositContract(address(mockDepositContractEth2));
+        stakingManagerInstance.registerEth2DepositContract(address(mockDepositContractEth2));
+
+        _initializeMembershipTiers();
 
         vm.stopPrank();
+
+        _initializePeople();
     }
 
     function _merkleSetup() internal {
@@ -303,10 +317,54 @@ contract TestSetup is Test {
 
         whiteListedAddresses.push(keccak256(abi.encodePacked(address(liquidityPoolInstance))));
 
-        root = merkle.getRoot(whiteListedAddresses);
-        liquidityPoolInstance.setMerkleProof(merkle.getProof(whiteListedAddresses, 9));
-        stakingManagerInstance.updateMerkleRoot(root);
+        whiteListedAddresses.push(keccak256(abi.encodePacked(owner)));
 
+        root = merkle.getRoot(whiteListedAddresses);
+        stakingManagerInstance.updateMerkleRoot(root);
+    }
+
+    function getWhitelistMerkleProof(uint256 index) internal returns (bytes32[] memory) {
+        return merkle.getProof(whiteListedAddresses, index);
+    }
+
+    function _initializeMembershipTiers() internal {
+        uint40 requiredPointsForTier = 0;
+        for (uint256 i = 0; i < 5 ; i++) {
+            requiredPointsForTier += uint40(28 * 24 * i);
+            uint24 weight = uint24(i + 1);
+            meEthInstance.addNewTier(requiredPointsForTier, weight);
+        }
+    }
+
+    function _initializePeople() internal {
+        for (uint i = 1000; i < 1000 + 64; i++) {
+            address actor = vm.addr(i);
+            actors.push(actor);
+            whitelistIndices.push(whiteListedAddresses.length);
+            whiteListedAddresses.push(keccak256(abi.encodePacked(actor)));
+            vm.startPrank(actor);
+            regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+            vm.stopPrank();
+        }
+
+        vm.startPrank(owner);
+        root = merkle.getRoot(whiteListedAddresses);
+        stakingManagerInstance.updateMerkleRoot(root);
+        vm.stopPrank();
+    }
+
+    function _setUpNodeOperatorWhitelist() internal {
+        nodeOperatorManagerInstance.addToWhitelist(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.addToWhitelist(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
+        nodeOperatorManagerInstance.addToWhitelist(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
+        nodeOperatorManagerInstance.addToWhitelist(alice);
+        nodeOperatorManagerInstance.addToWhitelist(bob);
+        nodeOperatorManagerInstance.addToWhitelist(chad);
+        nodeOperatorManagerInstance.addToWhitelist(dan);
+        nodeOperatorManagerInstance.addToWhitelist(elvis);
+        nodeOperatorManagerInstance.addToWhitelist(greg);
+        nodeOperatorManagerInstance.addToWhitelist(address(liquidityPoolInstance));
+        nodeOperatorManagerInstance.addToWhitelist(owner);
     }
 
     function _merkleSetupMigration() internal {
@@ -333,7 +391,7 @@ contract TestSetup is Test {
                     uint256(0),
                     uint256(0),
                     uint256(0),
-                    uint256(652)
+                    uint256(652_000_000_000)
                 )
             )
         );
@@ -377,7 +435,11 @@ contract TestSetup is Test {
             )
         );
         rootMigration = merkleMigration.getRoot(dataForVerification);
-        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
+        requiredEapPointsPerEapDeposit.push(0);
+        requiredEapPointsPerEapDeposit.push(0); // we want all EAP users to be at least Silver
+        requiredEapPointsPerEapDeposit.push(100); 
+        requiredEapPointsPerEapDeposit.push(400); 
+        meEthInstance.setUpForEap(rootMigration, requiredEapPointsPerEapDeposit);
     }
 
     function _merkleSetupMigration2() internal {
@@ -387,10 +449,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     alice,
                     uint256(1 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(103680)
                 )
             )
@@ -400,10 +458,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     bob,
                     uint256(2 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(141738)
                 )
             )
@@ -413,10 +467,6 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     chad,
                     uint256(2 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(139294)
                 )
             )
@@ -426,21 +476,15 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     dan,
                     uint256(1 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
                     uint256(96768)
                 )
             )
         );
-        
+
         rootMigration2 = merkleMigration2.getRoot(dataForVerification2);
     }
 
-    
-
-    function _getDepositRoot() internal view returns (bytes32) {
+    function _getDepositRoot() internal returns (bytes32) {
         bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
         return onchainDepositRoot;
     }

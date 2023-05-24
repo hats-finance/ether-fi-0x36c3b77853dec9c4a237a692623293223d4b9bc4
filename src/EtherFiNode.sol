@@ -97,6 +97,10 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Sets and receives the value of the auction rewards to be vested
     /// @dev This value is half of the bid value of the bid which was matched with the stake
+    function markFullyWithdrawn() external onlyEtherFiNodeManagerContract {
+        phase = VALIDATOR_PHASE.FULLY_WITHDRAWN;
+    }
+
     function receiveVestedRewardsForStakers()
         external
         payable
@@ -245,10 +249,10 @@ contract EtherFiNode is IEtherFiNode {
         uint256 rewards = (balance > vestedAuctionRewards)
             ? balance - vestedAuctionRewards
             : 0;
-        
+
         if (rewards >= 32 ether) {
             rewards -= 32 ether;
-        } else if (rewards >= 8 ether) {
+        } else if (rewards >= 8 ether || phase == VALIDATOR_PHASE.EXITED) {
             // In a case of Slashing, without the Oracle, the exact staking rewards cannot be computed in this case
             // Assume no staking rewards in this case.
             return (0, 0, 0, 0);
@@ -365,35 +369,17 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
+        require(phase == VALIDATOR_PHASE.EXITED, "validator node is not exited");
         uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
-        require(
-            balance >= 16 ether,
-            "not enough balance for full withdrawal"
-        );
-        require(
-            phase == VALIDATOR_PHASE.EXITED,
-            "validator node is not exited"
-        );
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
-        (
-            payouts[0],
-            payouts[1],
-            payouts[2],
-            payouts[3]
-        ) = getRewardsPayouts(
-            true,
-            false,
-            true,
-            _splits,
-            _scale,
-            _splits,
-            _scale
-        );
+        (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(true, false, true,
+                                                                             _splits, _scale,
+                                                                             _splits, _scale);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
@@ -408,9 +394,14 @@ contract EtherFiNode is IEtherFiNode {
         } else if (balance > 25.5 ether) {
             // 25.5 ether < balance <= 26 ether
             toBnftPrincipal = 1.5 ether - (26 ether - balance);
-        } else {
+        } else if (balance > 16 ether) {
             // 16 ether <= balance <= 25.5 ether
             toBnftPrincipal = 1 ether;
+        } else {
+            // balance < 16 ether
+            // The T-NFT and B-NFT holder's principals decrease 
+            // starting from 15 ether and 1 ether respectively.
+            toBnftPrincipal = 625 * balance / 10_000;
         }
         toTnftPrincipal = balance - toBnftPrincipal;
         payouts[1] += toTnftPrincipal;
@@ -422,16 +413,23 @@ contract EtherFiNode is IEtherFiNode {
             _dailyPenalty,
             exitTimestamp
         );
-        payouts[2] -= bnftNonExitPenalty;
 
-        // While the NonExitPenalty keeps growing till 1 ether,
-        //  the incentive to the node operator stops growing at 0.5 ether
-        //  the rest goes to the treasury
-        if (bnftNonExitPenalty > 0.5 ether) {
-            payouts[0] += 0.5 ether;
-            payouts[3] += bnftNonExitPenalty - 0.5 ether;
+        if (payouts[2] > bnftNonExitPenalty) {
+            payouts[2] -= bnftNonExitPenalty;
+
+            // While the NonExitPenalty keeps growing till 1 ether,
+            //  the incentive to the node operator stops growing at 0.5 ether
+            //  the rest goes to the treasury
+            if (bnftNonExitPenalty > 0.5 ether) {
+                payouts[0] += 0.5 ether;
+                payouts[3] += bnftNonExitPenalty - 0.5 ether;
+            } else {
+                payouts[0] += bnftNonExitPenalty;
+            }
         } else {
-            payouts[0] += bnftNonExitPenalty;
+            // If the B-NFT lost the whole principal, incentivize the node operator to exit the node. 
+            payouts[0] += payouts[2];
+            payouts[2] = 0;
         }
 
         require(
@@ -513,12 +511,12 @@ contract EtherFiNode is IEtherFiNode {
 
     function implementation() external view returns (address) {
         bytes32 slot = bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1);
-        address implementation;
+        address implementationVariable;
         assembly {
-            implementation := sload(slot)
+            implementationVariable := sload(slot)
         }
 
-        IBeacon beacon = IBeacon(implementation);
+        IBeacon beacon = IBeacon(implementationVariable);
         return beacon.implementation();
     }
 

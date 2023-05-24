@@ -28,7 +28,7 @@ contract AuctionManager is
     uint256 public numberOfBids;
     uint256 public numberOfActiveBids;
 
-    INodeOperatorManager public nodeOperatorManagerInterface;
+    INodeOperatorManager public nodeOperatorManager;
     IProtocolRevenueManager public protocolRevenueManager;
 
     address public stakingManagerContractAddress;
@@ -42,15 +42,9 @@ contract AuctionManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event BidCreated(
-        address indexed bidder,
-        uint256 amountPerBid,
-        uint256[] bidIdArray,
-        uint64[] ipfsIndexArray
-    );
+    event BidCreated(address indexed bidder, uint256 amountPerBid, uint256[] bidIdArray, uint64[] ipfsIndexArray);
     event BidCancelled(uint256 indexed bidId);
     event BidReEnteredAuction(uint256 indexed bidId);
-    event Received(address indexed sender, uint256 value);
     event WhitelistDisabled(bool whitelistStatus);
     event WhitelistEnabled(bool whitelistStatus);
 
@@ -75,9 +69,7 @@ contract AuctionManager is
         numberOfBids = 1;
         whitelistEnabled = true;
 
-        nodeOperatorManagerInterface = INodeOperatorManager(
-            _nodeOperatorManagerContract
-        );
+        nodeOperatorManager = INodeOperatorManager(_nodeOperatorManagerContract);
 
         __Pausable_init();
         __Ownable_init();
@@ -96,7 +88,7 @@ contract AuctionManager is
         require(_bidSize > 0, "Bid size is too small");
         if (whitelistEnabled) {
             require(
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender),
+                nodeOperatorManager.isWhitelisted(msg.sender),
                 "Only whitelisted addresses"
             );
             require(
@@ -107,7 +99,7 @@ contract AuctionManager is
             );
         } else {
             if (
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender)
+                nodeOperatorManager.isWhitelisted(msg.sender)
             ) {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
@@ -124,22 +116,15 @@ contract AuctionManager is
                 );
             }
         }
-
-        uint64 keysRemaining = nodeOperatorManagerInterface.getNumKeysRemaining(
-            msg.sender
-        );
+        uint64 keysRemaining = nodeOperatorManager.getNumKeysRemaining(msg.sender);
         require(_bidSize <= keysRemaining, "Insufficient public keys");
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
         for (uint256 i = 0; i < _bidSize; i++) {
-            uint64 ipfsIndex = nodeOperatorManagerInterface.fetchNextKeyIndex(
-                msg.sender
-            );
-
-            uint256 bidId = numberOfBids;
-
+            uint64 ipfsIndex = nodeOperatorManager.fetchNextKeyIndex(msg.sender);
+            uint256 bidId = numberOfBids + i;
             bidIdArray[i] = bidId;
             ipfsIndexArray[i] = ipfsIndex;
 
@@ -150,17 +135,11 @@ contract AuctionManager is
                 bidderAddress: msg.sender,
                 isActive: true
             });
-
-            numberOfBids++;
         }
-
+        numberOfBids += _bidSize;
         numberOfActiveBids += _bidSize;
-        emit BidCreated(
-            msg.sender,
-            _bidAmountPerBid,
-            bidIdArray,
-            ipfsIndexArray
-        );
+
+        emit BidCreated(msg.sender, _bidAmountPerBid, bidIdArray, ipfsIndexArray);
         return bidIdArray;
     }
 
@@ -186,9 +165,10 @@ contract AuctionManager is
     function updateSelectedBidInformation(
         uint256 _bidId
     ) public onlyStakingManagerContract {
-        require(bids[_bidId].isActive, "The bid is not active");
+        Bid storage bid = bids[_bidId];
+        require(bid.isActive, "The bid is not active");
 
-        bids[_bidId].isActive = false;
+        bid.isActive = false;
         numberOfActiveBids--;
     }
 
@@ -197,9 +177,10 @@ contract AuctionManager is
     function reEnterAuction(
         uint256 _bidId
     ) external onlyStakingManagerContract {
-        require(!bids[_bidId].isActive, "Bid already active");
-        //Reactivate the bid
-        bids[_bidId].isActive = true;
+        Bid storage bid = bids[_bidId];
+        require(!bid.isActive, "Bid already active");
+
+        bid.isActive = true;
         numberOfActiveBids++;
         emit BidReEnteredAuction(_bidId);
     }
@@ -243,9 +224,7 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
 
     function _cancelBid(uint256 _bidId) internal {
-
         Bid storage bid = bids[_bidId];
-
         require(bid.bidderAddress == msg.sender, "Invalid bid");
         require(bid.isActive, "Bid already cancelled");
 
@@ -260,9 +239,7 @@ contract AuctionManager is
         emit BidCancelled(_bidId);
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
@@ -320,7 +297,7 @@ contract AuctionManager is
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint64 _newMinBidAmount) external onlyOwner {
         require(_newMinBidAmount < maxBidAmount, "Min bid exceeds max bid");
-        require(_newMinBidAmount > whitelistBidAmount, "Min bid less than whitelist bid amount");
+        require(_newMinBidAmount >= whitelistBidAmount, "Min bid less than whitelist bid amount");
         minBidAmount = _newMinBidAmount;
     }
 
@@ -345,18 +322,20 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
 
     modifier onlyStakingManagerContract() {
-        require(
-            msg.sender == stakingManagerContractAddress,
-            "Only staking manager contract function"
-        );
+        require(msg.sender == stakingManagerContractAddress, "Only staking manager contract function");
         _;
     }
 
     modifier onlyNodeOperatorManagerContract() {
-        require(
-            msg.sender == address(nodeOperatorManagerInterface),
-            "Only node operator key manager contract function"
-        );
+        require(msg.sender == address(nodeOperatorManager), "Only node operator key manager contract function");
         _;
+    }
+}
+
+contract AuctionManagerV2 is AuctionManager {
+    function updateNodeOperatorManager(address _address) external onlyOwner {
+        nodeOperatorManager = INodeOperatorManager(
+            _address
+        );
     }
 }
