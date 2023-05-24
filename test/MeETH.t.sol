@@ -38,8 +38,6 @@ contract MeETHTest is TestSetup {
         vm.prank(bob);
         uint256 bobToken = meEthInstance.wrapEth{value: 100 ether}(bobProof);
 
-
-
         // NFT's points start from 0
         assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 0);
         assertEq(meEthInstance.tierPointsOf(aliceToken), 0);
