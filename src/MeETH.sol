@@ -88,8 +88,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
     /// @dev The deposit amount must be greater than or equal to what they deposited into the EAP
-    /// @param _amount amount of eETH to earn staking rewards.
-    /// @param _amountForPoints amount of eth to boost earnings of {loyalty, tier} points
+    /// @param _amount amount of ETH to earn staking rewards.
+    /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _points EAP points that the user has in the merkle snapshot
     /// @param _ethAmount exact balance that the user has in the merkle snapshot
     /// @param _merkleProof array of hashes forming the merkle proof for the user
@@ -121,8 +121,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     /// @notice Wraps ETH into a meETH NFT.
     /// @dev This function allows users to wrap their ETH into meETH NFT.
-    /// @param _amount amount of eETH to earn staking rewards.
-    /// @param _amountForPoints amount of eth to boost earnings of {loyalty, tier} points
+    /// @param _amount amount of ETH to earn staking rewards.
+    /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof Array of hashes forming the merkle proof for the user.
     /// @return tokenId The ID of the minted meETH membership NFT.
     function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable returns (uint256) {
@@ -139,8 +139,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     /// @notice Wraps eETH into a meETH NFT.
     /// @dev This function allows users to wrap their eETH into a meETH NFT.
-    /// @param _amount amount of eETH to earn staking rewards.
-    /// @param _amountForPoints amount of eth to boost earnings of {loyalty, tier} points
+    /// @param _amount amount of ETH to earn staking rewards.
+    /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @return tokenId The ID of the minted meETH membership NFT.
     function wrapEEth(uint256 _amount, uint256 _amountForPoints) external isEEthStakingOpen returns (uint256) {
         require(_amount / 1 gwei >= minDepositGwei, "Below minimum deposit");
@@ -157,8 +157,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
     /// @dev Can only be done once per month
     /// @param _tokenId ID of NFT token
-    /// @param _amount amount of eETH to earn staking rewards.
-    /// @param _amountForPoints amount of eth to boost earnings of {loyalty, tier} points
+    /// @param _amount amount of ETH to earn staking rewards.
+    /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
         TokenData storage token = tokenData[_tokenId];
