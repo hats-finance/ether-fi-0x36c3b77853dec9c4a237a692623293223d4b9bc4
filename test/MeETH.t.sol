@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import "forge-std/console2.sol";
 
 contract MeETHTest is TestSetup {
 
@@ -28,6 +29,70 @@ contract MeETHTest is TestSetup {
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
     }
 
+    function test_withdrawalPenalty() public {
+        vm.deal(alice, 100 ether);
+        vm.deal(bob, 100 ether);
+
+        vm.prank(alice);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 100 ether}(aliceProof);
+        vm.prank(bob);
+        uint256 bobToken = meEthInstance.wrapEth{value: 100 ether}(bobProof);
+
+
+
+        // NFT's points start from 0
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 0);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 0);
+        assertEq(meEthInstance.loyaltyPointsOf(bobToken), 0);
+        assertEq(meEthInstance.tierPointsOf(bobToken), 0);
+
+        skip(100 days);
+
+        vm.prank(alice);
+        meEthInstance.claimTier(aliceToken);
+        vm.prank(bob);
+        meEthInstance.claimTier(bobToken);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 2400);
+        assertEq(meEthInstance.tierOf(aliceToken), 2);
+        assertEq(meEthInstance.tierPointsOf(bobToken), 2400);
+        assertEq(meEthInstance.tierOf(bobToken), 2);
+
+        console2.log(meEthInstance.tierPointsOf(aliceToken));
+        console2.log(meEthInstance.tierOf(aliceToken));
+        console2.log(meEthInstance.tierPointsOf(bobToken));
+        console2.log(meEthInstance.tierOf(bobToken));
+
+        vm.prank(alice);
+        meEthInstance.unwrapForEth(aliceToken, 1 ether);
+        vm.prank(bob);
+        meEthInstance.unwrapForEth(bobToken, 80 ether);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 28 * 24 * 1); // booted to start of previous tier == 672
+        assertEq(meEthInstance.tierOf(aliceToken), 1);
+
+        assertEq(meEthInstance.tierPointsOf(bobToken), 2400 * 200 / 1000); // 80% reduction == 20% remaining == 480
+        assertEq(meEthInstance.tierOf(bobToken), 0);
+        console2.log(meEthInstance.tierPointsOf(aliceToken));
+        console2.log(meEthInstance.tierOf(aliceToken));
+        console2.log(meEthInstance.tierPointsOf(bobToken));
+        console2.log(meEthInstance.tierOf(bobToken));
+
+        console2.log("--------------------------------");
+
+        (uint96 a0, uint96 b0, uint40 td0, uint24 z0) = meEthInstance.tierData(0);
+        (uint96 a1, uint96 b1, uint40 td1, uint24 z1) = meEthInstance.tierData(1);
+        (uint96 a2, uint96 b2, uint40 td2, uint24 z2) = meEthInstance.tierData(2);
+        (uint96 a3, uint96 b3, uint40 td3, uint24 z3) = meEthInstance.tierData(3);
+        console2.log(td0);
+        console2.log(td1);
+        console2.log(td2);
+        console2.log(td3);
+        //console2.log(meEthInstance.tierData[1][2]);
+        //console2.log(meEthInstance.tierData[2][2]);
+        //console2.log(meEthInstance.tierData(3)[2]);
+
+
+    }
+
     // Note that 1 ether meETH earns 1 kwei (10 ** 6) points a day
     function test_HowPointsGrow() public {
         vm.deal(alice, 2 ether);
@@ -52,7 +117,7 @@ contract MeETHTest is TestSetup {
         // Alice's NFT unwraps 1 meETH to 1 ETH
         meEthInstance.unwrapForEth(tokenId, 1 ether);
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei);
-        assertEq(meEthInstance.tierPointsOf(tokenId), 24 / 2);
+        assertEq(meEthInstance.tierPointsOf(tokenId), 0);
         assertEq(meEthInstance.valueOf(tokenId), 1 ether);
         assertEq(address(liquidityPoolInstance).balance, 1 ether);
         assertEq(alice.balance, 1 ether);
@@ -60,10 +125,10 @@ contract MeETHTest is TestSetup {
         // Alice's NFT keeps earnings points with the remaining 1 meETH
         skip(1 days);
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei + 1 * kwei);
-        assertEq(meEthInstance.tierPointsOf(tokenId), 24 / 2 + 24 * 1);
+        assertEq(meEthInstance.tierPointsOf(tokenId), 24 * 1);
         skip(1 days);
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei + 1 * kwei * 2);
-        assertEq(meEthInstance.tierPointsOf(tokenId), 24 / 2 + 24 * 2);
+        assertEq(meEthInstance.tierPointsOf(tokenId), 24 * 2);
 
         // Alice's NFT unwraps the whole remaining meETH, but the points remain the same
         meEthInstance.unwrapForEth(tokenId, 1 ether);

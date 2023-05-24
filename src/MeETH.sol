@@ -194,7 +194,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
         uint256 prevAmount = _tokenDeposits[tokenID].amounts;
         _burn(tokenID, _amount);
-        _applyUnwrapPenaltyByDeductingPointsEarnings(tokenID, prevAmount, _amount);
+        _applyUnwrapPenalty(tokenID, prevAmount, _amount);
 
         eETH.transferFrom(address(this), msg.sender, _amount);
     }
@@ -208,7 +208,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
         uint256 prevAmount = _tokenDeposits[tokenID].amounts;
         _burn(tokenID, _amount);
-        _applyUnwrapPenaltyByDeductingPointsEarnings(tokenID, prevAmount, _amount);
+        _applyUnwrapPenalty(tokenID, prevAmount, _amount);
 
         liquidityPool.withdraw(address(this), _amount);
         (bool sent, ) = address(msg.sender).call{value: _amount}("");
@@ -378,6 +378,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         _decrementTierDeposit(tier, _amount, share);
     }
 
+
     function _stakeForPoints(uint256 tokenID, uint256 _amount) internal {
         uint256 tier = tierOf(tokenID);
         tierData[tier].amountStakedForPoints += uint96(_amount);
@@ -391,7 +392,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
     function _unstakeForPoints(uint256 tokenID, uint256 _amount) internal {
         uint256 tier = tierOf(tokenID);
-        tierData[tier].amountStakedForPoints -= uint96(_amount);        
+        tierData[tier].amountStakedForPoints -= uint96(_amount);
 
         TokenDeposit memory deposit = _tokenDeposits[tokenID];
         _tokenDeposits[tokenID] = TokenDeposit(
@@ -526,9 +527,28 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         return (_a > _b) ? _b : _a;
     }
 
-    function _applyUnwrapPenaltyByDeductingPointsEarnings(uint256 tokenID, uint256 _prevAmount, uint256 _burnAmount) internal {
-        TokenData storage tokenData = _tokenData[tokenID];
-        tokenData.baseTierPoints -= uint40(tokenData.baseTierPoints * _burnAmount / _prevAmount);
+    function _max(uint256 _a, uint256 _b) internal pure returns (uint256) {
+        return (_a > _b) ? _a : _b;
+    }
+
+    // always lose at least a tier, possibly more depending on percentage of deposit withdrawn
+    function _applyUnwrapPenalty(uint256 tokenID, uint256 _prevAmount, uint256 _burnAmount) internal {
+
+        TokenData storage token = _tokenData[tokenID];
+        uint8 prevTier = token.tier > 0 ? token.tier - 1 : 0;
+        uint40 curTierPoints = tierPointsOf(tokenID);
+
+        // point deduction if we kick back to start of previous tier
+        uint40 degradeTierPenalty = curTierPoints - tierData[prevTier].requiredTierPoints;
+
+        // point deduction if scaled proportional to withdrawal amount
+        uint256 ratio = (100 * _burnAmount) / _prevAmount;
+        uint40 scaledTierPointsPenalty = uint40((ratio * curTierPoints) / 100);
+
+        uint40 penalty = uint40(_max(degradeTierPenalty, scaledTierPointsPenalty));
+
+        token.baseTierPoints -= penalty;
+        token.prevPointsAccrualTimestamp = uint32(block.timestamp);
         _claimTier(tokenID);
     }
 
