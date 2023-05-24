@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "../src/interfaces/IStakingManager.sol";
-import "../src/interfaces/IEtherFiNodesManager.sol";
+
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
+
+import "./interfaces/IStakingManager.sol";
+import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
@@ -26,7 +28,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IRegulationsManager public regulationsManager;
     ImeETH public meETH;
 
-    mapping(uint256 => bool) public validators;
     uint256 public numValidators;
     uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
     uint256 public accruedEther;                // total amounts of accrued ethers rewards + exited principals
@@ -140,10 +141,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         ) public onlyOwner
     {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
-        for (uint256 i = 0; i < _validatorIds.length; i++) {
-            uint256 validatorId = _validatorIds[i];
-            validators[validatorId] = true;
-        }
         numValidators += _validatorIds.length;
     }
 
@@ -156,7 +153,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             require(nodesManager.phase(validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED, "Incorrect Phase");
             (, uint256 toTnft, uint256 toBnft,) = nodesManager.getFullWithdrawalPayouts(validatorId);
 
-            validators[validatorId] = false;
             totalSlashingPenalties += _slashingPenalties[i];
             totalPrincipals += (toTnft >= 30 ether) ? 30 ether : toTnft;
         }
