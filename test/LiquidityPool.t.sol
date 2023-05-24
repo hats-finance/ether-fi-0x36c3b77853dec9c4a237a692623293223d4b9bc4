@@ -118,7 +118,7 @@ contract LiquidityPoolTest is TestSetup {
 
     function test_LiquidityPoolBatchDepositWithBidIds() public {
         vm.deal(alice, 3 ether);
-        vm.deal(owner, 3 ether);
+        vm.deal(owner, 4 ether);
 
         vm.startPrank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -126,6 +126,7 @@ contract LiquidityPoolTest is TestSetup {
             5
         );
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+        auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
         vm.expectRevert("Ownable: caller is not the owner");
         liquidityPoolInstance.batchDepositWithBidIds(1, bidIds, aliceProof);
@@ -142,15 +143,18 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.stopPrank();
 
-        vm.deal(address(liquidityPoolInstance), 35 ether);
-        assertEq(address(liquidityPoolInstance).balance, 35 ether);
+        vm.deal(address(liquidityPoolInstance), 70 ether);
 
         vm.startPrank(owner);
         stakingManagerInstance.enableWhitelist();
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 1 * 2 ether}(1, bidIds, proof);
+        uint256[] memory longBidIds = new uint256[](2);
+        longBidIds[0] = bidIds[0];
+        longBidIds[1] = bidIds[0];
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, longBidIds, proof);
 
-        assertEq(address(liquidityPoolInstance).balance, 5 ether);
+        assertEq(address(liquidityPoolInstance).balance, 70 ether + 2 ether - 32 ether);
         assertEq(address(stakingManagerInstance).balance, 32 ether);
+        assertEq(address(owner).balance, 2 ether);
         assertEq(newValidators.length, 1);
         assertEq(newValidators[0], 1);
     }

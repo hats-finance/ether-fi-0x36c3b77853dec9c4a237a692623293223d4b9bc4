@@ -51,6 +51,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     receive() external payable {
+        // Staking Manager can send ETH to LP without updating 'accruedEther'
+        // It occurs when the ETH sent to via 'batchDepositWithBidIds' is returned
+        if (msg.sender == address(stakingManager)) {
+            return;
+        }
+    
         require(accruedEther >= msg.value, "Update the accrued ethers first");
         accruedEther -= msg.value;
     }
@@ -100,6 +106,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit Withdraw(_recipient, _amount);
     }
 
+    /*
+     * During ether.fi's phase 1 roadmap,
+     * ether.fi's multi-sig will perform as a B-NFT holder which generates the validator keys and initiates the launch of validators
+     * - {batchDepositWithBidIds, batchRegisterValidators} are used to launch the validators
+     *  - ether.fi multi-sig should bring 2 ETH which is combined with 30 ETH from the liquidity pool to launch a validator
+     * - {processNodeExit, sendExitRequests} are used to perform operational tasks to manage the liquidity
+    */
+
+    /// @notice ether.fi multi-sig (Owner) brings 2 ETH which is combined with 30 ETH from the liquidity pool and deposits 32 ETH into StakingManager
     function batchDepositWithBidIds(
         uint256 _numDeposits, 
         uint256[] calldata _candidateBidIds, 
@@ -153,7 +168,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         nodesManager.fullWithdrawBatch(_validatorIds);
     }
 
-    // @notice Send the exit reqeusts as the T-NFT holder
+    /// @notice Send the exit reqeusts as the T-NFT holder
     function sendExitRequests(uint256[] calldata _validatorIds) public onlyOwner {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
@@ -161,43 +176,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         }
     }
 
-    // @notice Allow interactions with the eEth token
+    /// @notice Allow interactions with the eEth token
     function openEEthLiquidStaking() external onlyOwner {
         eEthliquidStakingOpened = true;
     }
 
-    // @notice Disallow interactions with the eEth token
+    /// @notice Disallow interactions with the eEth token
     function closeEEthLiquidStaking() external onlyOwner {
         eEthliquidStakingOpened = false;
-    }
-
-    function getTotalEtherClaimOf(address _user) external view returns (uint256) {
-        uint256 staked;
-        uint256 totalShares = eETH.totalShares();
-        if (totalShares > 0) {
-            staked = (getTotalPooledEther() * eETH.shares(_user)) / totalShares;
-        }
-        return staked;
-    }
-
-    function getTotalPooledEther() public view returns (uint256) {
-        return (30 ether * numValidators) + accruedEther + address(this).balance - (accruedSlashingPenalties);
-    }
-
-    function sharesForAmount(uint256 _amount) public view returns (uint256) {
-        uint256 totalPooledEther = getTotalPooledEther();
-        if (totalPooledEther == 0) {
-            return 0;
-        }
-        return (_amount * eETH.totalShares()) / totalPooledEther;
-    }
-
-    function amountForShare(uint256 _share) public view returns (uint256) {
-        uint256 totalShares = eETH.totalShares();
-        if (totalShares == 0) {
-            return 0;
-        }
-        return (_share * getTotalPooledEther()) / totalShares;
     }
 
     /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
@@ -250,6 +236,35 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------
     //--------------------------------------------------------------------------------------
+
+    function getTotalEtherClaimOf(address _user) external view returns (uint256) {
+        uint256 staked;
+        uint256 totalShares = eETH.totalShares();
+        if (totalShares > 0) {
+            staked = (getTotalPooledEther() * eETH.shares(_user)) / totalShares;
+        }
+        return staked;
+    }
+
+    function getTotalPooledEther() public view returns (uint256) {
+        return (30 ether * numValidators) + accruedEther + address(this).balance - (accruedSlashingPenalties);
+    }
+
+    function sharesForAmount(uint256 _amount) public view returns (uint256) {
+        uint256 totalPooledEther = getTotalPooledEther();
+        if (totalPooledEther == 0) {
+            return 0;
+        }
+        return (_amount * eETH.totalShares()) / totalPooledEther;
+    }
+
+    function amountForShare(uint256 _share) public view returns (uint256) {
+        uint256 totalShares = eETH.totalShares();
+        if (totalShares == 0) {
+            return 0;
+        }
+        return (_share * getTotalPooledEther()) / totalShares;
+    }
 
     function getImplementation() external view returns (address) {return _getImplementation();}
 
