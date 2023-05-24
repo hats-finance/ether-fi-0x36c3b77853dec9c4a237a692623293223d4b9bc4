@@ -51,7 +51,7 @@ interface ImeETH {
     function claimStakingRewards(uint256 _tokenId) external;
 
     // Getter functions
-    function valueOf(uint256 __tokenId) external view returns (uint256);
+    function valueOf(uint256 _tokenId) external view returns (uint256);
     function loyaltyPointsOf(uint256 _tokenId) external view returns (uint40);
     function tierPointsOf(uint256 _tokenId) external view returns (uint40);
     function tierOf(uint256 _tokenId) external view returns (uint8);
