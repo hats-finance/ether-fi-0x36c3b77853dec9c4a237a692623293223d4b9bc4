@@ -11,8 +11,6 @@ import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-import "forge-std/console.sol";
-
 contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, ImeETH {
 
     //--------------------------------------------------------------------------------------
@@ -22,31 +20,30 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
 
-    uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
-    uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
-    uint64 minDepositWei;
-    uint32 nextMintID;
-    uint8 maxDepositTopUpPercent;
-
-    mapping (uint256 => TokenDeposit) public _tokenDeposits;
-    mapping (uint256 => TokenData) public _tokenData;
-
-    /// @dev base URI for all token metadata
-    string private _metadataURI;
-
-    bytes32 public eapMerkleRoot;
-    uint64[] public requiredEapPointsPerEapDeposit;
-    mapping (address => bool) public _eapDepositProcessed;
-
+    mapping (uint256 => TokenDeposit) public tokenDeposits;
+    mapping (uint256 => TokenData) public tokenData;
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
+
+    mapping (address => bool) public eapDepositProcessed;
+    bytes32 public eapMerkleRoot;
+    uint64[] public requiredEapPointsPerEapDeposit;
+
+    uint32 public nextMintID;
+    uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
+    uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
+    uint56 public minDepositGwei;
+    uint8  public maxDepositTopUpPercent;
+
+    string private _metadataURI;    /// @dev base URI for all token metadata    
+
     uint256[23] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event FundsMigrated(address indexed user, uint256 tokenId, uint256 amount, uint256 eapPoints, uint40 loyaltyPoints);
+    event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
 
     /// @dev ERC-4906 This event emits when the metadata of a token is changed.
@@ -85,182 +82,238 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
         nextMintID = 0;
-        minDepositWei = 0.1 ether;
+        minDepositGwei = (0.1 ether / 1 gwei);
         maxDepositTopUpPercent = 20;
     }
 
     /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
     /// @dev The deposit amount must be greater than or equal to what they deposited into the EAP
-    /// @param _points points of the user
-    /// @param _ethAmount exact balance user has in the merkle snapshot
+    /// @param _amount amount of ETH to earn staking rewards.
+    /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
+    /// @param _snapshotEthAmount exact balance that the user has in the merkle snapshot
+    /// @param _points EAP points that the user has in the merkle snapshot
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function wrapEthForEap(
-        uint256 _ethAmount,
+        uint256 _amount,
+        uint256 _amountForPoints,
+        uint256 _snapshotEthAmount,
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable returns (uint256) {
         require(_points > 0, "You don't have any points to claim");
-        require(msg.value >= _ethAmount, "Invalid deposit amount");
-        require(_eapDepositProcessed[msg.sender] == false, "You already made EAP deposit");
-        _verifyEapUserData(msg.sender, _ethAmount, _points, _merkleProof);
+        require(msg.value >= _snapshotEthAmount, "Invalid deposit amount");
+        require(msg.value == _amount + _amountForPoints, "Invalid allocation");
+        require(eapDepositProcessed[msg.sender] == false, "You already made EAP deposit");
+        _verifyEapUserData(msg.sender, _snapshotEthAmount, _points, _merkleProof);
 
-        _eapDepositProcessed[msg.sender] = true;
+        eapDepositProcessed[msg.sender] = true;
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
-        (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _ethAmount);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, loyaltyPoints, tierPoints);
-        emit FundsMigrated(msg.sender, tokenID, msg.value, _points, loyaltyPoints);
-        return tokenID;
+        (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _snapshotEthAmount);
+        uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value, loyaltyPoints, tierPoints);
+        if (_amountForPoints > 0) {
+            _stakeForPoints(tokenId, _amountForPoints);
+        }
+
+        emit FundsMigrated(msg.sender, tokenId, msg.value, _points, loyaltyPoints, tierPoints);
+        return tokenId;
     }
 
-    function wrapEth(bytes32[] calldata _merkleProof) public payable returns (uint256) {
-        require(msg.value >= minDepositWei, "Below minimum deposit");
+    /// @notice Wraps ETH into a meETH NFT.
+    /// @dev This function allows users to wrap their ETH into meETH NFT.
+    /// @param _amount amount of ETH to earn staking rewards.
+    /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
+    /// @param _merkleProof Array of hashes forming the merkle proof for the user.
+    /// @return tokenId The ID of the minted meETH membership NFT.
+    function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable returns (uint256) {
+        require(msg.value / 1 gwei >= minDepositGwei, "Below minimum deposit");
+        require(msg.value == _amount + _amountForPoints, "Invalid allocation");
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, 0, 0);
-        return tokenID;
+        uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value, 0, 0);
+        if (_amountForPoints > 0) {
+            _stakeForPoints(tokenId, _amountForPoints);
+        }
+        return tokenId;
     }
 
-    function wrapEEth(uint256 _amount) external isEEthStakingOpen returns (uint256) {
-        require(_amount >= minDepositWei, "Below minimum deposit");
-        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
+    /// @notice Wraps eETH into a meETH NFT.
+    /// @dev This function allows users to wrap their eETH into a meETH NFT.
+    /// @param _amount amount of ETH to earn staking rewards.
+    /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
+    /// @return tokenId The ID of the minted meETH membership NFT.
+    function wrapEEth(uint256 _amount, uint256 _amountForPoints) external isEEthStakingOpen returns (uint256) {
+        require(_amount / 1 gwei >= minDepositGwei, "Below minimum deposit");
+        require(eETH.balanceOf(msg.sender) >= _amount + _amountForPoints, "Not enough balance");
 
-        eETH.transferFrom(msg.sender, address(this), _amount);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, _amount, 0, 0);
-        return tokenID;
+        eETH.transferFrom(msg.sender, address(this), _amount + _amountForPoints);
+        uint256 tokenId = _mintMembershipNFT(msg.sender, _amount + _amountForPoints, 0, 0);
+        if (_amountForPoints > 0) {
+            _stakeForPoints(tokenId, _amountForPoints);
+        }
+        return tokenId;
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
     /// @dev Can only be done once per month
-    /// @param tokenID ID of NFT token
-    /// @param amount amount of eth to increase effective balance by
-    /// @param amountForPoints amount of eth to increase balance earning increased loyalty rewards
+    /// @param _tokenId ID of NFT token
+    /// @param _amount amount of ETH to earn staking rewards.
+    /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof array of hashes forming the merkle proof for the user
-    function topUpDepositWithEth(uint256 tokenID, uint128 amount, uint128 amountForPoints, bytes32[] calldata _merkleProof) public payable {
-        TokenData storage token = _tokenData[tokenID];
-        TokenDeposit memory deposit = _tokenDeposits[tokenID];
-        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
+    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
+        TokenData storage token = tokenData[_tokenId];
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 monthInSeconds = 28 days;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
-        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
+        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
         require(msg.value <= maxDeposit, "Above maximum deposit");
-        require(msg.value == amount + amountForPoints, "Invalid allocation");
+        require(msg.value == _amount + _amountForPoints, "Invalid allocation");
 
-        claimPoints(tokenID);
-        claimStakingRewards(tokenID);
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
-        _incrementTokenDeposit(tokenID, amount, amountForPoints);
+        _deposit(_tokenId, _amount + _amountForPoints);
+        _stakeForPoints(_tokenId, _amountForPoints);
         token.prevTopUpTimestamp = uint32(block.timestamp);
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
     /// @dev Can only be done once per month
-    /// @param tokenID ID of NFT token
-    /// @param amount amount of eth to increase effective balance by
-    /// @param amountForPoints amount of eth to increase balance earning increased loyalty rewards
-    function topUpDepositWithEEth(uint256 tokenID, uint128 amount, uint128 amountForPoints) public {
-        TokenData storage token = _tokenData[tokenID];
-        TokenDeposit storage deposit = _tokenDeposits[tokenID];
-        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
+    /// @param _tokenId ID of NFT token
+    /// @param _amount amount of eth to increase effective balance by
+    /// @param _amountForPoints amount of eth to increase balance earning increased loyalty rewards
+    function topUpDepositWithEEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) public {
+        TokenData storage token = tokenData[_tokenId];
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 monthInSeconds = 28 days;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
-        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
+        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
-        require(eETH.balanceOf(msg.sender) >= amount + amountForPoints, "Not enough balance");
-        require(amount + amountForPoints <= maxDeposit, "Above maximum deposit");
+        require(eETH.balanceOf(msg.sender) >= _amount + _amountForPoints, "Not enough balance");
+        require(_amount + _amountForPoints <= maxDeposit, "Above maximum deposit");
 
-        claimPoints(tokenID);
-        claimStakingRewards(tokenID);
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
 
-        eETH.transferFrom(msg.sender, address(this), amount+amountForPoints);
-
-        _incrementTokenDeposit(tokenID, amount, amountForPoints);
+        eETH.transferFrom(msg.sender, address(this), _amount + _amountForPoints);
+        
+        _deposit(_tokenId, _amount + _amountForPoints);
+        _stakeForPoints(_tokenId, _amountForPoints);
         token.prevTopUpTimestamp = uint32(block.timestamp);
     }
 
-    function unwrapForEEth(uint256 tokenID, uint256 _amount) public isEEthStakingOpen {
-        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
+    /// @notice Unwraps meETH tokens for eETH.
+    /// @dev This function allows users to unwrap their meETH tokens and receive eETH in return.
+    /// @param _tokenId The ID of the meETH membership NFT to unwrap.
+    /// @param _amount The amount of meETH tokens to unwrap.
+    function unwrapForEEth(uint256 _tokenId, uint256 _amount) public isEEthStakingOpen {
+        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(_amount > 0, "You cannot unwrap 0 meETH");
-        TokenDeposit memory deposit = _tokenDeposits[tokenID];
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 unwrappableBalance = deposit.amounts - deposit.amountStakedForPoints;
         require(unwrappableBalance >= _amount, "Not enough balance to unwrap");
 
-        claimPoints(tokenID);
-        claimStakingRewards(tokenID);
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
 
-        uint256 prevAmount = _tokenDeposits[tokenID].amounts;
-        _burn(tokenID, _amount);
-        _applyUnwrapPenalty(tokenID, prevAmount, _amount);
+        uint256 prevAmount = tokenDeposits[_tokenId].amounts;
+        _withdraw(_tokenId, _amount);
+        _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         eETH.transferFrom(address(this), msg.sender, _amount);
     }
 
-    function unwrapForEth(uint256 tokenID, uint256 _amount) external {
-        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
+    /// @notice Unwraps meETH tokens for ETH.
+    /// @dev This function allows users to unwrap their meETH tokens and receive ETH in return.
+    /// @param _tokenId The ID of the meETH membership NFT to unwrap.
+    /// @param _amount The amount of meETH tokens to unwrap.
+    function unwrapForEth(uint256 _tokenId, uint256 _amount) external {
+        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
 
-        claimPoints(tokenID);
-        claimStakingRewards(tokenID);
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
 
-        uint256 prevAmount = _tokenDeposits[tokenID].amounts;
-        _burn(tokenID, _amount);
-        _applyUnwrapPenalty(tokenID, prevAmount, _amount);
+        uint256 prevAmount = tokenDeposits[_tokenId].amounts;
+        _withdraw(_tokenId, _amount);
+        _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         liquidityPool.withdraw(address(this), _amount);
         (bool sent, ) = address(msg.sender).call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
 
-    function stakeForPoints(uint256 tokenID, uint256 _amount) external {
-        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
-        require(_tokenDeposits[tokenID].amounts >= _amount, "Not enough balance to stake for points");
+    /// @notice Sacrifice the staking rewards and earn more points
+    /// @dev This function allows users to stake their ETH to earn membership points faster.
+    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _amount The amount of ETH which sacrifices its staking rewards to earn points faster
+    function stakeForPoints(uint256 _tokenId, uint256 _amount) external {
+        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(tokenDeposits[_tokenId].amounts >= _amount, "Not enough balance to stake for points");
 
-        claimPoints(tokenID);
-        claimStakingRewards(tokenID);
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
 
-        _stakeForPoints(tokenID, _amount);
+        _stakeForPoints(_tokenId, _amount);
     }
 
-    function unstakeForPoints(uint256 tokenID, uint256 _amount) external {
-        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
-        require(_tokenDeposits[tokenID].amountStakedForPoints >= _amount, "Not enough balance staked");
+    /// @notice Unstakes ETH.
+    /// @dev This function allows users to un-do 'stakeForPoints'
+    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _amount The amount of ETH to unstake for staking rewards.
+    function unstakeForPoints(uint256 _tokenId, uint256 _amount) external {
+        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(tokenDeposits[_tokenId].amountStakedForPoints >= _amount, "Not enough balance staked");
 
-        claimPoints(tokenID);
-        claimStakingRewards(tokenID);
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
 
-        _unstakeForPoints(tokenID, _amount);
+        _unstakeForPoints(_tokenId, _amount);
     }
 
-    function claimTier(uint256 tokenID) public {
-        uint8 oldTier = tierOf(tokenID);
-        uint8 newTier = claimableTier(tokenID);
+    /// @notice Claims the tier.
+    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @dev This function allows users to claim the rewards + a new tier, if eligible.
+    function claimTier(uint256 _tokenId) public {
+        uint8 oldTier = tierOf(_tokenId);
+        uint8 newTier = claimableTier(_tokenId);
         if (oldTier == newTier) {
             return;
         }
 
-        claimPoints(tokenID);
-        claimStakingRewards(tokenID);
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
 
-        _claimTier(tokenID, oldTier, newTier);
+        _claimTier(_tokenId, oldTier, newTier);
     }
 
-    function claimPoints(uint256 tokenID) public {
-        TokenData storage token = _tokenData[tokenID];
-        token.baseLoyaltyPoints = loyaltyPointsOf(tokenID);
-        token.baseTierPoints = tierPointsOf(tokenID);
+    /// @notice Claims the accrued membership {loyalty, tier} points.
+    /// @param _tokenId The ID of the meETH membership NFT.
+    function claimPoints(uint256 _tokenId) public {
+        TokenData storage token = tokenData[_tokenId];
+        token.baseLoyaltyPoints = loyaltyPointsOf(_tokenId);
+        token.baseTierPoints = tierPointsOf(_tokenId);
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
 
-    function claimStakingRewards(uint256 tokenID) public {
-        TokenData storage tokenData = _tokenData[tokenID];
+    /// @notice Claims the staking rewards for a specific meETH membership NFT.
+    /// @dev This function allows users to claim the staking rewards earned by a specific meETH membership NFT.
+    /// @param _tokenId The ID of the meETH membership NFT.
+    function claimStakingRewards(uint256 _tokenId) public {
+        TokenData storage tokenData = tokenData[_tokenId];
         uint256 tier = tokenData.tier;
-        uint256 amount = (tierData[tier].rewardsGlobalIndex - tokenData.rewardsLocalIndex) * _tokenDeposits[tokenID].amounts / 1 ether;
-        _incrementTokenDeposit(tokenID, amount, 0);
+        uint256 amount = (tierData[tier].rewardsGlobalIndex - tokenData.rewardsLocalIndex) * tokenDeposits[_tokenId].amounts / 1 ether;
+        _incrementTokenDeposit(_tokenId, amount, 0);
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
-    // EapPoints => (Loyalty Points, Tier Points)
+    /// @notice Converts meTokens points to EAP tokens.
+    /// @dev This function allows users to convert their EAP points to membership {loyalty, tier} tokens.
+    /// @param _eapPoints The amount of EAP points
+    /// @param _ethAmount The amount of ETH deposit in the EAP (or converted amounts for ERC20s)
     function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
         uint256 loyaltyPoints = _min(1e5 * _eapPoints / 1 days , type(uint40).max);        
         uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
@@ -282,6 +335,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         pointsGrowthRate = _newPointsGrowthRate;
     }
 
+    /// @notice Distributes staking rewards to eligible stakers.
+    /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
     function distributeStakingRewards() external onlyOwner {
         (uint96[] memory globalIndex, uint128[] memory adjustedShares) = _calculateGlobalIndex();
         for (uint256 i = 0; i < tierDeposits.length; i++) {
@@ -299,10 +354,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         return tierDeposits.length - 1;
     }
 
-    function setPoints(uint256 tokenID, uint40 loyaltyPoints, uint40 tierPoints) external onlyOwner {
-        TokenData storage token = _tokenData[tokenID];
-        token.baseLoyaltyPoints = loyaltyPoints;
-        token.baseTierPoints = tierPoints;
+    /// @notice Sets the points for a given Ethereum address.
+    /// @dev This function allows the contract owner to set the points for a specific Ethereum address.
+    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
+    /// @param _tierPoints The number of tier points to set for the specified NFT.
+    function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external onlyOwner {
+        TokenData storage token = tokenData[_tokenId];
+        token.baseLoyaltyPoints = _loyaltyPoints;
+        token.baseTierPoints = _tierPoints;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
 
@@ -317,35 +377,43 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     }
 
     /// @notice Updates minimum valid deposit
-    /// @param value minimum deposit in wei
-    function setMinDepositWei(uint64 value) external onlyOwner {
-        minDepositWei = value;
+    /// @param _value minimum deposit in wei
+    function setMinDepositWei(uint56 _value) external onlyOwner {
+        minDepositGwei = _value;
     }
 
     /// @notice Updates minimum valid deposit
-    /// @param percent integer percentage value
-    function setMaxDepositTopUpPercent(uint8 percent) external onlyOwner {
-        maxDepositTopUpPercent = percent;
+    /// @param _percent integer percentage value
+    function setMaxDepositTopUpPercent(uint8 _percent) external onlyOwner {
+        maxDepositTopUpPercent = _percent;
     }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
+    /**
+    * @dev Internal function to mint a new membership NFT.
+    * @param to The address of the recipient of the NFT.
+    * @param _amount The amount of ETH to be deposited into the contract.
+    * @param _loyaltyPoints The initial loyalty points for the NFT.
+    * @param _tierPoints The initial tier points for the NFT.
+    * @return tokenId The unique ID of the newly minted NFT.
+    */
     function _mintMembershipNFT(address to, uint256 _amount, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-        uint256 tokenID = nextMintID++;
+        uint256 tokenId = nextMintID++;
 
         uint8 tier = _tierForPoints(_tierPoints);
-        TokenData storage tokenData = _tokenData[tokenID];
+        TokenData storage tokenData = tokenData[tokenId];
         tokenData.baseLoyaltyPoints = _loyaltyPoints;
         tokenData.baseTierPoints = _tierPoints;
         tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
         tokenData.tier = tier;
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
-        _mintInternal(tokenID, _amount);
-        _mint(to, tokenID, 1, "");
+        _deposit(tokenId, _amount);
+        _mint(to, tokenId, 1, "");
 
-        emit TransferSingle(to, address(0), to, tokenID, 1);
+        emit TransferSingle(to, address(0), to, tokenId, 1);
 
         require(
             to.code.length == 0
@@ -355,60 +423,49 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
             "UNSAFE_RECIPIENT"
         );
 
-        return tokenID;
+        return tokenId;
     }
 
-    function _mintInternal(uint256 tokenID, uint256 _amount) internal {
+    function _deposit(uint256 _tokenId, uint256 _amount) internal {
         uint256 share = liquidityPool.sharesForAmount(_amount);
-        uint256 tier = tierOf(tokenID);
-
-        _incrementTokenDeposit(tokenID, _amount, 0);
+        uint256 tier = tierOf(_tokenId);
+        _incrementTokenDeposit(_tokenId, _amount, 0);
         _incrementTierDeposit(tier, _amount, share);
     }
 
-    function _burn(uint256 tokenID, uint256 _amount) internal {
-        require(_tokenDeposits[tokenID].amounts >= _amount, "Not enough Balance");
+    function _withdraw(uint256 _tokenId, uint256 _amount) internal {
+        require(tokenDeposits[_tokenId].amounts >= _amount, "Not enough Balance");
         uint256 share = liquidityPool.sharesForAmount(_amount);
-        uint256 tier = tierOf(tokenID);
-
-        _decrementTokenDeposit(tokenID, _amount, 0);
+        uint256 tier = tierOf(_tokenId);
+        _decrementTokenDeposit(_tokenId, _amount, 0);
         _decrementTierDeposit(tier, _amount, share);
     }
 
-
-    function _stakeForPoints(uint256 tokenID, uint256 _amount) internal {
-        uint256 tier = tierOf(tokenID);
+    function _stakeForPoints(uint256 _tokenId, uint256 _amount) internal {
+        uint256 tier = tierOf(_tokenId);
         tierData[tier].amountStakedForPoints += uint96(_amount);
-
-        TokenDeposit memory deposit = _tokenDeposits[tokenID];
-        _tokenDeposits[tokenID] = TokenDeposit(
-            deposit.amounts - uint128(_amount),
-            deposit.amountStakedForPoints + uint128(_amount)
-        );
+        _incrementTokenDeposit(_tokenId, 0, _amount);
+        _decrementTokenDeposit(_tokenId, _amount, 0);
     }
 
-    function _unstakeForPoints(uint256 tokenID, uint256 _amount) internal {
-        uint256 tier = tierOf(tokenID);
+    function _unstakeForPoints(uint256 _tokenId, uint256 _amount) internal {
+        uint256 tier = tierOf(_tokenId);
         tierData[tier].amountStakedForPoints -= uint96(_amount);
-
-        TokenDeposit memory deposit = _tokenDeposits[tokenID];
-        _tokenDeposits[tokenID] = TokenDeposit(
-            deposit.amounts + uint128(_amount),
-            deposit.amountStakedForPoints - uint128(_amount)
-        );
+        _incrementTokenDeposit(_tokenId, _amount, 0);
+        _decrementTokenDeposit(_tokenId, 0, _amount);
     }
 
-    function _incrementTokenDeposit(uint256 tokenID, uint256 _amount, uint256 _amountStakedForPoints) internal {
-        TokenDeposit memory deposit = _tokenDeposits[tokenID];
-        _tokenDeposits[tokenID] = TokenDeposit(
+    function _incrementTokenDeposit(uint256 _tokenId, uint256 _amount, uint256 _amountStakedForPoints) internal {
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        tokenDeposits[_tokenId] = TokenDeposit(
             deposit.amounts + uint128(_amount),
             deposit.amountStakedForPoints + uint128(_amountStakedForPoints)
         );
     }
 
-    function _decrementTokenDeposit(uint256 tokenID, uint256 _amount, uint256 _amountStakedForPoints) internal {
-        TokenDeposit memory deposit = _tokenDeposits[tokenID];
-        _tokenDeposits[tokenID] = TokenDeposit(
+    function _decrementTokenDeposit(uint256 _tokenId, uint256 _amount, uint256 _amountStakedForPoints) internal {
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        tokenDeposits[_tokenId] = TokenDeposit(
             deposit.amounts - uint128(_amount),
             deposit.amountStakedForPoints - uint128(_amountStakedForPoints)
         );
@@ -430,21 +487,21 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         );
     }
 
-    function _claimTier(uint256 tokenID) internal {
-        uint8 oldTier = tierOf(tokenID);
-        uint8 newTier = claimableTier(tokenID);
-        _claimTier(tokenID, oldTier, newTier);
+    function _claimTier(uint256 _tokenId) internal {
+        uint8 oldTier = tierOf(_tokenId);
+        uint8 newTier = claimableTier(_tokenId);
+        _claimTier(_tokenId, oldTier, newTier);
     }
 
-    function _claimTier(uint256 tokenID, uint8 _curTier, uint8 _newTier) internal {
-        require(tierOf(tokenID) == _curTier, "the account does not belong to the specified tier");
+    function _claimTier(uint256 _tokenId, uint8 _curTier, uint8 _newTier) internal {
+        require(tierOf(_tokenId) == _curTier, "the account does not belong to the specified tier");
         if (_curTier == _newTier) {
             return;
         }
 
-        uint256 amount = _min(_tokenDeposits[tokenID].amounts, tierDeposits[_curTier].amounts);
+        uint256 amount = _min(tokenDeposits[_tokenId].amounts, tierDeposits[_curTier].amounts);
         uint256 share = liquidityPool.sharesForAmount(amount);
-        uint256 amountStakedForPoints = _tokenDeposits[tokenID].amountStakedForPoints;
+        uint256 amountStakedForPoints = tokenDeposits[_tokenId].amountStakedForPoints;
 
         tierData[_curTier].amountStakedForPoints -= uint96(amountStakedForPoints);
         _decrementTierDeposit(_curTier, amount, share);
@@ -452,14 +509,14 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         tierData[_newTier].amountStakedForPoints += uint96(amountStakedForPoints);
         _incrementTierDeposit(_newTier, amount, share);
 
-        _tokenData[tokenID].rewardsLocalIndex = tierData[_newTier].rewardsGlobalIndex;
-        _tokenData[tokenID].tier = _newTier;
+        tokenData[_tokenId].rewardsLocalIndex = tierData[_newTier].rewardsGlobalIndex;
+        tokenData[_tokenId].tier = _newTier;
     }
 
     // Compute the points earnings of a user between [since, until) 
     // Assuming the user's balance didn't change in between [since, until)
-    function _membershipPointsEarning(uint256 tokenID, uint256 _since, uint256 _until) internal view returns (uint40) {
-        TokenDeposit storage tokenDeposit = _tokenDeposits[tokenID];
+    function _membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) internal view returns (uint40) {
+        TokenDeposit storage tokenDeposit = tokenDeposits[_tokenId];
         if (tokenDeposit.amounts == 0 && tokenDeposit.amountStakedForPoints == 0) {
             return 0;
         }
@@ -477,6 +534,23 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         return uint40(earning);
     }
 
+    /**
+    * @dev This function calculates the global index and adjusted shares for each tier used for reward distribution.
+    *
+    * The function performs the following steps:
+    * 1. Iterates over each tier, computing rebased amounts, tier rewards, weighted tier rewards.
+    * 2. Sums all the tier rewards and the weighted tier rewards.
+    * 3. If there are any weighted tier rewards, it iterates over each tier to perform the following actions:
+    *    a. Computes the amounts eligible for rewards.
+    *    b. If there are amounts eligible for rewards, 
+    *       it calculates rescaled tier rewards and updates the global index and adjusted shares for the tier.
+    *
+    * The rescaling of tier rewards is done based on the weight of each tier. 
+    *
+    * @notice This function essentially pools all the staking rewards across tiers and redistributes them propoertional to the tier weights
+    * @return globalIndex A uint96 array containing the updated global index for each tier.
+    * @return adjustedShares A uint128 array containing the updated shares for each tier reflecting the amount of staked ETH in the liquidity pool.
+    */
     function _calculateGlobalIndex() internal view returns (uint96[] memory, uint128[] memory) {
         uint96[] memory globalIndex = new uint96[](tierDeposits.length);
         uint128[] memory adjustedShares = new uint128[](tierDeposits.length);
@@ -507,7 +581,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
                     uint256 delta = 1 ether * rescaledTierRewards / amountsEligibleForRewards;
                     require(uint256(globalIndex[i]) + uint256(delta) <= type(uint96).max, "overflow");
                     globalIndex[i] += uint96(delta);
-                                        
                     if (tierRewards[i] > rescaledTierRewards) {
                         adjustedShares[i] -= uint128(liquidityPool.sharesForAmount(tierRewards[i] - rescaledTierRewards));
                     } else {
@@ -528,10 +601,13 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         return (_a > _b) ? _a : _b;
     }
 
-    // always lose at least a tier, possibly more depending on percentage of deposit withdrawn
-    function _applyUnwrapPenalty(uint256 tokenID, uint256 _prevAmount, uint256 _burnAmount) internal {
-
-        TokenData storage token = _tokenData[tokenID];
+    /// @notice Applies the unwrap penalty.
+    /// @dev Always lose at least a tier, possibly more depending on percentage of deposit withdrawn
+    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _prevAmount The amount of ETH that the NFT was holding
+    /// @param _withdrawalAmount The amount of ETH that is being withdrawn
+    function _applyUnwrapPenalty(uint256 _tokenId, uint256 _prevAmount, uint256 _withdrawalAmount) internal {
+        TokenData storage token = tokenData[_tokenId];
         uint8 prevTier = token.tier > 0 ? token.tier - 1 : 0;
         uint40 curTierPoints = token.baseTierPoints;
 
@@ -539,19 +615,20 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         uint40 degradeTierPenalty = curTierPoints - tierData[prevTier].requiredTierPoints;
 
         // point deduction if scaled proportional to withdrawal amount
-        uint256 ratio = (10000 * _burnAmount) / _prevAmount;
+        uint256 ratio = (10000 * _withdrawalAmount) / _prevAmount;
         uint40 scaledTierPointsPenalty = uint40((ratio * curTierPoints) / 10000);
 
         uint40 penalty = uint40(_max(degradeTierPenalty, scaledTierPointsPenalty));
 
         token.baseTierPoints -= penalty;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
-        _claimTier(tokenID);
+        _claimTier(_tokenId);
     }
 
-    function _tierForPoints(uint40 tierPoints) internal view returns (uint8) {
+    // Finds the corresponding for the tier points
+    function _tierForPoints(uint40 _tierPoints) internal view returns (uint8) {
         uint8 tierId = 0;
-        while (tierId < tierData.length && tierPoints >= tierData[tierId].requiredTierPoints) {
+        while (tierId < tierData.length && _tierPoints >= tierData[tierId].requiredTierPoints) {
             tierId++;
         }
         return tierId - 1;
@@ -576,8 +653,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     // it returns the value of a certain NFT interms of ETH amount
     function valueOf(uint256 _tokenId) public view returns (uint256) {
-        TokenData memory tokenData = _tokenData[_tokenId];
-        TokenDeposit memory tokenDeposit = _tokenDeposits[_tokenId];
+        TokenData memory tokenData = tokenData[_tokenId];
+        TokenDeposit memory tokenDeposit = tokenDeposits[_tokenId];
         (uint96[] memory globalIndex, ) = _calculateGlobalIndex();
         uint256 amount = tokenDeposit.amounts;
         uint256 rewards = (globalIndex[tokenData.tier] - tokenData.rewardsLocalIndex) * amount / 1 ether;
@@ -585,45 +662,44 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         return amount + rewards + amountStakedForPoints;
     }
 
-    function loyaltyPointsOf(uint256 tokenID) public view returns (uint40) {
-        TokenData memory tokenData = _tokenData[tokenID];
+    function loyaltyPointsOf(uint256 _tokenId) public view returns (uint40) {
+        TokenData memory tokenData = tokenData[_tokenId];
         uint256 points = tokenData.baseLoyaltyPoints;
-        uint256 pointsEarning = accruedLoyaltyPointsOf(tokenID);
+        uint256 pointsEarning = accruedLoyaltyPointsOf(_tokenId);
         uint256 total = _min(points + pointsEarning, type(uint40).max);
         return uint40(total);
     }
 
-    function tierPointsOf(uint256 tokenID) public view returns (uint40) {
-        TokenData memory tokenData = _tokenData[tokenID];
+    function tierPointsOf(uint256 _tokenId) public view returns (uint40) {
+        TokenData memory tokenData = tokenData[_tokenId];
         uint256 points = tokenData.baseTierPoints;
-        uint256 pointsEarning = accruedTierPointsOf(tokenID);
+        uint256 pointsEarning = accruedTierPointsOf(_tokenId);
         uint256 total = _min(points + pointsEarning, type(uint40).max);
         return uint40(total);
     }
 
-    function tierOf(uint256 tokenID) public view returns (uint8) {
-        return _tokenData[tokenID].tier;
+    function tierOf(uint256 _tokenId) public view returns (uint8) {
+        return tokenData[_tokenId].tier;
     }
     
-    function claimableTier(uint256 tokenID) public view returns (uint8) {
-        uint40 tierPoints = tierPointsOf(tokenID);
+    function claimableTier(uint256 _tokenId) public view returns (uint8) {
+        uint40 tierPoints = tierPointsOf(_tokenId);
         return _tierForPoints(tierPoints);
     }
 
-    function accruedLoyaltyPointsOf(uint256 tokenID) public view returns (uint40) {
-        TokenData memory token = _tokenData[tokenID];
-        return _membershipPointsEarning(tokenID, token.prevPointsAccrualTimestamp, block.timestamp);
+    function accruedLoyaltyPointsOf(uint256 _tokenId) public view returns (uint40) {
+        TokenData memory token = tokenData[_tokenId];
+        return _membershipPointsEarning(_tokenId, token.prevPointsAccrualTimestamp, block.timestamp);
     }
 
-    function accruedTierPointsOf(uint256 tokenID) public view returns (uint40) {
-        TokenDeposit memory tokenDeposit = _tokenDeposits[tokenID];
+    function accruedTierPointsOf(uint256 _tokenId) public view returns (uint40) {
+        TokenDeposit memory tokenDeposit = tokenDeposits[_tokenId];
         if (tokenDeposit.amounts == 0 && tokenDeposit.amountStakedForPoints == 0) {
             return 0;
         } 
-        TokenData memory tokenData = _tokenData[tokenID];
-        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
-        uint256 tierPointsPerMonth = 28 * 24; // 1 per an hour
-        uint256 earnedPoints = (uint32(block.timestamp) - tokenData.prevPointsAccrualTimestamp) * tierPointsPerMonth / monthInSeconds;
+        TokenData memory tokenData = tokenData[_tokenId];
+        uint256 tierPointsPerDay = 24; // 1 per an hour
+        uint256 earnedPoints = (uint32(block.timestamp) - tokenData.prevPointsAccrualTimestamp) * tierPointsPerDay / 1 days;
         uint256 effectiveBalanceForEarningPoints = tokenDeposit.amounts + ((10000 + pointsBoostFactor) * tokenDeposit.amountStakedForPoints) / 10000;
         earnedPoints = earnedPoints * effectiveBalanceForEarningPoints / (tokenDeposit.amounts + tokenDeposit.amountStakedForPoints);
         return uint40(earnedPoints);
