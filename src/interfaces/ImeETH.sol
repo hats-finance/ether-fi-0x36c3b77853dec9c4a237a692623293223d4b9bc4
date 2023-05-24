@@ -29,35 +29,45 @@ interface ImeETH {
         uint24 weight;
     }
 
-    /*
+    // State-changing functions
+    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress) external;
 
-    function totalShares() external view returns (uint256);
-    function totalSupply() external view returns (uint256);
-    function balanceOf(address _account) external view returns (uint256);
-    function pointsOf(address _account) external view returns (uint40);
-    function tierOf(address _user) external view returns (uint8);
-    function calculatePointsPerDepositAmount(uint40 _points, uint256 _amount) external view returns (uint40);
-    function getPointsEarningsDuringLastMembershipPeriod(address _account) external view returns (uint40);
-    function pointsSnapshotTimeOf(address _account) external view returns (uint32);
-    function claimableTier(address _account) external view returns (uint8);
-    function tierForPointsPerDepositAmount(uint40 _points) external view returns (uint8);
-    function recentTierSnapshotTimestamp() external view returns (uint256);
-    function allowance(address _owner, address _spender) external view returns (uint256);
+    function wrapEthForEap(uint256 _ethAmount, uint256 _points, bytes32[] calldata _merkleProof) external payable returns (uint256);
+    function wrapEth(bytes32[] calldata _merkleProof) external payable returns (uint256);
+    function wrapEEth(uint256 _amount) external returns (uint256);
 
-    function wrapEEth(uint256 _amount) external;
-    function wrapEth(address _account, uint256 _amount, bytes32[] calldata _merkleProof) external payable;
-    function unwrapForEEth(uint256 _amount) external;
-    function unwrapForEth(uint256 _amount) external;
-    function stakeForPoints(uint256 _amount) external;
-    function unstakeForPoints(uint256 _amount) external;
+    function topUpDepositWithEth(uint256 tokenID, uint128 amount, uint128 amountForPoints, bytes32[] calldata _merkleProof) external payable;
+    function topUpDepositWithEEth(uint256 tokenID, uint128 amount, uint128 amountForPoints) external;
 
-    function claimPoints(address _account) external;
-    function claimStakingRewards(address _account) external;
-    function claimTier(address _account) external;
+    function unwrapForEEth(uint256 tokenID, uint256 _amount) external;
+    function unwrapForEth(uint256 tokenID, uint256 _amount) external;
 
+    function stakeForPoints(uint256 tokenID, uint256 _amount) external;
+    function unstakeForPoints(uint256 tokenID, uint256 _amount) external;
+
+    function claimTier(uint256 tokenID) external;
+    function claimPoints(uint256 tokenID) external;
+    function claimStakingRewards(uint256 tokenID) external;
+
+    // Getter functions
+    function valueOf(uint256 _tokenId) external view returns (uint256);
+    function loyaltyPointsOf(uint256 tokenID) external view returns (uint40);
+    function tierPointsOf(uint256 tokenID) external view returns (uint40);
+    function tierOf(uint256 tokenID) external view returns (uint8);
+    function claimableTier(uint256 tokenID) external view returns (uint8);
+    function accruedLoyaltyPointsOf(uint256 tokenID) external view returns (uint40);
+    function accruedTierPointsOf(uint256 tokenID) external view returns (uint40);
+    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) external view returns (uint40, uint40);
+
+    function getImplementation() external view returns (address);
+
+    // only Owner
     function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;
-    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) external;  
+    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) external;
     function distributeStakingRewards() external;
-    function addNewTier(uint40 _minimumPointsRequirement, uint24 _weight) external returns (uint256);
-    */
+    function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256);
+    function setPoints(uint256 tokenID, uint40 loyaltyPoints, uint40 tierPoints) external;
+    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external;
+    function setMinDepositWei(uint64 value) external;
+    function setMaxDepositTopUpPercent(uint8 percent) external;
 }

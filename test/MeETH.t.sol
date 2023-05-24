@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import "forge-std/console2.sol";
 
 contract MeETHTest is TestSetup {
 
@@ -28,6 +29,44 @@ contract MeETHTest is TestSetup {
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
     }
 
+    function test_withdrawalPenalty() public {
+        vm.deal(alice, 100 ether);
+        vm.deal(bob, 100 ether);
+
+        vm.prank(alice);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 100 ether}(aliceProof);
+        vm.prank(bob);
+        uint256 bobToken = meEthInstance.wrapEth{value: 100 ether}(bobProof);
+
+        // NFT's points start from 0
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 0);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 0);
+        assertEq(meEthInstance.loyaltyPointsOf(bobToken), 0);
+        assertEq(meEthInstance.tierPointsOf(bobToken), 0);
+
+        // wait a few months and claim new tiers
+        skip(100 days);
+        vm.prank(alice);
+        meEthInstance.claimTier(aliceToken);
+        vm.prank(bob);
+        meEthInstance.claimTier(bobToken);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 2400);
+        assertEq(meEthInstance.tierOf(aliceToken), 2);
+        assertEq(meEthInstance.tierPointsOf(bobToken), 2400);
+        assertEq(meEthInstance.tierOf(bobToken), 2);
+
+        // alice unwraps 1% and should lose 1 tier. Bob unwraps 80% and should lose 80% of tier points
+        vm.prank(alice);
+        meEthInstance.unwrapForEth(aliceToken, 1 ether);
+        vm.prank(bob);
+        meEthInstance.unwrapForEth(bobToken, 80 ether);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 28 * 24 * 1); // booted to start of previous tier == 672
+        assertEq(meEthInstance.tierOf(aliceToken), 1);
+
+        assertEq(meEthInstance.tierPointsOf(bobToken), 2400 * 200 / 1000); // 80% reduction == 20% remaining == 480
+        assertEq(meEthInstance.tierOf(bobToken), 0);
+    }
+
     // Note that 1 ether meETH earns 1 kwei (10 ** 6) points a day
     function test_HowPointsGrow() public {
         vm.deal(alice, 2 ether);
@@ -52,7 +91,7 @@ contract MeETHTest is TestSetup {
         // Alice's NFT unwraps 1 meETH to 1 ETH
         meEthInstance.unwrapForEth(tokenId, 1 ether);
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei);
-        assertEq(meEthInstance.tierPointsOf(tokenId), 24 / 2);
+        assertEq(meEthInstance.tierPointsOf(tokenId), 0);
         assertEq(meEthInstance.valueOf(tokenId), 1 ether);
         assertEq(address(liquidityPoolInstance).balance, 1 ether);
         assertEq(alice.balance, 1 ether);
@@ -60,10 +99,10 @@ contract MeETHTest is TestSetup {
         // Alice's NFT keeps earnings points with the remaining 1 meETH
         skip(1 days);
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei + 1 * kwei);
-        assertEq(meEthInstance.tierPointsOf(tokenId), 24 / 2 + 24 * 1);
+        assertEq(meEthInstance.tierPointsOf(tokenId), 24 * 1);
         skip(1 days);
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei + 1 * kwei * 2);
-        assertEq(meEthInstance.tierPointsOf(tokenId), 24 / 2 + 24 * 2);
+        assertEq(meEthInstance.tierPointsOf(tokenId), 24 * 2);
 
         // Alice's NFT unwraps the whole remaining meETH, but the points remain the same
         meEthInstance.unwrapForEth(tokenId, 1 ether);
@@ -139,9 +178,9 @@ contract MeETHTest is TestSetup {
         // Alice unwraps 0.5 meETH (which is 50% of her meETH holdings)
         meEthInstance.unwrapForEth(tokenId, 0.5 ether);
 
-        // The points and tier didn't get penalized by unwrapping
+        // Tier gets penalized by unwrapping
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 28 * kwei);
-        assertEq(meEthInstance.tierPointsOf(tokenId), 14 * 24);
+        assertEq(meEthInstance.tierPointsOf(tokenId), 14 * 24 * 0);
         assertEq(meEthInstance.tierOf(tokenId), 0);
     }
 
@@ -162,7 +201,7 @@ contract MeETHTest is TestSetup {
         vm.stopPrank();
 
         /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
-        // Alice's Points are 103680 * 1e9 
+        // Alice's Points are 103680 
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
@@ -184,14 +223,14 @@ contract MeETHTest is TestSetup {
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.expectRevert("Invalid deposit amount");
-        meEthInstance.eapDeposit{value: 0.5 ether}(
+        meEthInstance.wrapEthForEap{value: 0.5 ether}(
             1 ether,
-            103680 * 1e9,
+            103680,
             aliceProof
         );
 
         vm.expectRevert("You don't have any points to claim");
-        meEthInstance.eapDeposit{value: 1 ether}(
+        meEthInstance.wrapEthForEap{value: 1 ether}(
             1 ether,
             0,
             aliceProof
@@ -218,7 +257,7 @@ contract MeETHTest is TestSetup {
         vm.stopPrank();
 
         /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
-        // Alice's Points are 103680 * 1e9 
+        // Alice's Points are 103680 
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
@@ -237,9 +276,9 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 100 ether);
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        uint256 tokenId = meEthInstance.eapDeposit{value: 2 ether}(
+        uint256 tokenId = meEthInstance.wrapEthForEap{value: 2 ether}(
             1 ether,
-            103680 * 1e9,
+            103680,
             aliceProof
         );
         vm.stopPrank();
@@ -249,7 +288,7 @@ contract MeETHTest is TestSetup {
 
         // Check that Alice has received meETH
         assertEq(meEthInstance.valueOf(tokenId), 2 ether);
-        assertEq(meEthInstance.tierOf(tokenId), 3); // Platinum
+        assertEq(meEthInstance.tierOf(tokenId), 2); // Gold
         assertEq(eETHInstance.balanceOf(address(meEthInstance)), 2 ether);
     }
 
@@ -639,4 +678,50 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.balanceOf(alice, aliceToken), 0);
         assertEq(meEthInstance.balanceOf(bob, aliceToken), 1);
     }
+
+    function test_MixedDeposits() public {
+        // Alice claims her funds after the snapshot has been taken. 
+        // She then deposits her ETH into the MeETH and has her points allocated to her
+        // Then, she top-ups with ETH and eETH
+
+        // Acotrs deposit into EAP
+        startHoax(alice);
+        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
+        vm.stopPrank();
+
+        skip(28 days);
+
+        /// MERKLE TREE GETS GENERATED AND UPDATED
+        vm.startPrank(owner);
+        earlyAdopterPoolInstance.pauseContract();
+        meEthInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
+        vm.stopPrank();
+
+        vm.deal(alice, 100 ether);
+        bytes32[] memory aliceProof = merkleMigration2.getProof(dataForVerification2, 0);
+
+        // Alice Withdraws
+        vm.startPrank(alice);
+        earlyAdopterPoolInstance.withdraw();
+
+        // Alice Deposits into MeETH and receives meETH in return
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        uint256 tokenId = meEthInstance.wrapEthForEap{value: 2 ether}(1 ether, 103680, aliceProof);
+        
+        assertEq(meEthInstance.valueOf(tokenId), 2 ether);
+        assertEq(meEthInstance.tierOf(tokenId), 2);
+
+        // Top-up with ETH
+        meEthInstance.topUpDepositWithEth{value: 0.2 ether}(tokenId, 0.1 ether, 0.1 ether, aliceProof);
+        assertEq(meEthInstance.valueOf(tokenId), 2.2 ether);
+
+        skip(28 days);
+        // Top-up with EETH
+        liquidityPoolInstance.deposit{value: 0.2 ether}(alice, aliceProof);
+        meEthInstance.topUpDepositWithEEth(tokenId, 0.1 ether, 0.1 ether);
+        assertEq(meEthInstance.valueOf(tokenId), 2.4 ether);
+
+        vm.stopPrank();
+    }
+
 }
