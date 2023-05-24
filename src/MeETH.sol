@@ -139,7 +139,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         TokenDeposit memory deposit = _tokenDeposits[tokenID];
         uint256 monthInSeconds = 4 * 7 * 24 * 3600;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
-        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
         require(block.timestamp - uint256(token.prevTopUpTimestamp) > monthInSeconds, "Already topped up this month");
         require(msg.value <= maxDeposit, "Above maximum deposit");
         require(msg.value == amount + amountForPoints, "Invalid allocation");
@@ -163,7 +163,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         TokenDeposit storage deposit = _tokenDeposits[tokenID];
         uint256 monthInSeconds = 4 * 7 * 24 * 3600;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
-        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
         require(block.timestamp - uint256(token.prevTopUpTimestamp) > monthInSeconds, "Already topped up this month");
         require(eETH.balanceOf(msg.sender) >= amount + amountForPoints, "Not enough balance");
         require(amount + amountForPoints <= maxDeposit, "Above maximum deposit");
