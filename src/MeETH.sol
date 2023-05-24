@@ -88,16 +88,21 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
     /// @dev The deposit amount must be greater than or equal to what they deposited into the EAP
-    /// @param _points points of the user
-    /// @param _ethAmount exact balance user has in the merkle snapshot
+    /// @param _amount amount of eETH to earn staking rewards.
+    /// @param _amountForPoints amount of eth to boost earnings of {loyalty, tier} points
+    /// @param _points EAP points that the user has in the merkle snapshot
+    /// @param _ethAmount exact balance that the user has in the merkle snapshot
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function wrapEthForEap(
+        uint256 _amount,
+        uint256 _amountForPoints,
         uint256 _ethAmount,
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable returns (uint256) {
         require(_points > 0, "You don't have any points to claim");
         require(msg.value >= _ethAmount, "Invalid deposit amount");
+        require(msg.value == _amount + _amountForPoints, "Invalid allocation");
         require(eapDepositProcessed[msg.sender] == false, "You already made EAP deposit");
         _verifyEapUserData(msg.sender, _ethAmount, _points, _merkleProof);
 
@@ -106,40 +111,54 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
         (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _ethAmount);
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value, loyaltyPoints, tierPoints);
+        if (_amountForPoints > 0) {
+            _stakeForPoints(tokenId, _amountForPoints);
+        }
+
         emit FundsMigrated(msg.sender, tokenId, msg.value, _points, loyaltyPoints, tierPoints);
         return tokenId;
     }
 
     /// @notice Wraps ETH into a meETH NFT.
     /// @dev This function allows users to wrap their ETH into meETH NFT.
+    /// @param _amount amount of eETH to earn staking rewards.
+    /// @param _amountForPoints amount of eth to boost earnings of {loyalty, tier} points
     /// @param _merkleProof Array of hashes forming the merkle proof for the user.
     /// @return tokenId The ID of the minted meETH membership NFT.
-    function wrapEth(bytes32[] calldata _merkleProof) public payable returns (uint256) {
+    function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable returns (uint256) {
         require(msg.value / 1 gwei >= minDepositGwei, "Below minimum deposit");
+        require(msg.value == _amount + _amountForPoints, "Invalid allocation");
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value, 0, 0);
+        if (_amountForPoints > 0) {
+            _stakeForPoints(tokenId, _amountForPoints);
+        }
         return tokenId;
     }
 
     /// @notice Wraps eETH into a meETH NFT.
     /// @dev This function allows users to wrap their eETH into a meETH NFT.
-    /// @param _amount The amount of eETH to be wrapped.
+    /// @param _amount amount of eETH to earn staking rewards.
+    /// @param _amountForPoints amount of eth to boost earnings of {loyalty, tier} points
     /// @return tokenId The ID of the minted meETH membership NFT.
-    function wrapEEth(uint256 _amount) external isEEthStakingOpen returns (uint256) {
+    function wrapEEth(uint256 _amount, uint256 _amountForPoints) external isEEthStakingOpen returns (uint256) {
         require(_amount / 1 gwei >= minDepositGwei, "Below minimum deposit");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
-        eETH.transferFrom(msg.sender, address(this), _amount);
-        uint256 tokenId = _mintMembershipNFT(msg.sender, _amount, 0, 0);
+        eETH.transferFrom(msg.sender, address(this), _amount + _amountForPoints);
+        uint256 tokenId = _mintMembershipNFT(msg.sender, _amount + _amountForPoints, 0, 0);
+        if (_amountForPoints > 0) {
+            _stakeForPoints(tokenId, _amountForPoints);
+        }
         return tokenId;
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
     /// @dev Can only be done once per month
     /// @param _tokenId ID of NFT token
-    /// @param _amount amount of eth to increase effective balance by
-    /// @param _amountForPoints amount of eth to increase balance earning increased loyalty rewards
+    /// @param _amount amount of eETH to earn staking rewards.
+    /// @param _amountForPoints amount of eth to boost earnings of {loyalty, tier} points
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
         TokenData storage token = tokenData[_tokenId];
