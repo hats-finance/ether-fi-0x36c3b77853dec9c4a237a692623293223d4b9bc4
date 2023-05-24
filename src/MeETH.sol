@@ -24,11 +24,13 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
+    uint64 minDepositWei;
+    uint32 nextMintID;
+    uint8 maxDepositTopUpPercent;
 
     mapping (uint256 => TokenDeposit) public _tokenDeposits;
     mapping (uint256 => TokenData) public _tokenData;
 
-    uint256 nextMintID = 0;
 
     /// @dev base URI for all token metadata
     string private _metadataURI;
@@ -84,6 +86,9 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
+        nextMintID = 0;
+        minDepositWei = 0.1 ether;
+        maxDepositTopUpPercent = 20;
     }
 
     /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
@@ -111,8 +116,16 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         return tokenID;
     }
 
+    function wrapEth(bytes32[] calldata _merkleProof) public payable returns (uint256) {
+        require(msg.value >= minDepositWei, "Below minimum deposit");
+
+        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, 0, 0);
+        return tokenID;
+    }
+
     function wrapEEth(uint256 _amount) external isEEthStakingOpen returns (uint256) {
-        require(_amount > 0, "You cannot wrap 0 eETH");
+        require(_amount >= minDepositWei, "Below minimum deposit");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
         eETH.transferFrom(msg.sender, address(this), _amount);
@@ -120,16 +133,54 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         return tokenID;
     }
 
-    function wrapEth(uint256 _amount, bytes32[] calldata _merkleProof) public payable returns (uint256) {
-        require(_amount > 0, "You cannot wrap 0 ETH");
-        require(_amount >= msg.value, "Not enough deposit");
+    /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
+    /// @dev Can only be done once per month
+    /// @param tokenID ID of NFT token
+    /// @param amount amount of eth to increase effective balance by
+    /// @param amountForPoints amount of eth to increase balance earning increased loyalty rewards
+    /// @param _merkleProof array of hashes forming the merkle proof for the user
+    function topUpDepositWithEth(uint256 tokenID, uint128 amount, uint128 amountForPoints, bytes32[] calldata _merkleProof) public payable {
+        TokenData storage token = _tokenData[tokenID];
+        TokenDeposit memory deposit = _tokenDeposits[tokenID];
+        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
+        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
+        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(block.timestamp - uint256(token.prevTopUpTimestamp) > monthInSeconds, "Already topped up this month");
+        require(msg.value <= maxDeposit, "Above maximum deposit");
+        require(msg.value == amount + amountForPoints, "Invalid allocation");
 
-        liquidityPool.deposit{value: _amount}(msg.sender, address(this), _merkleProof);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, _amount, 0, 0);
-        return tokenID;
+        claimPoints(tokenID);
+        claimStakingRewards(tokenID);
+
+        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+
+        _incrementTokenDeposit(tokenID, amount, amountForPoints);
+        token.prevTopUpTimestamp = uint32(block.timestamp);
     }
 
-    error OnlyTokenOwner();
+    /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
+    /// @dev Can only be done once per month
+    /// @param tokenID ID of NFT token
+    /// @param amount amount of eth to increase effective balance by
+    /// @param amountForPoints amount of eth to increase balance earning increased loyalty rewards
+    function topUpDepositWithEEth(uint256 tokenID, uint128 amount, uint128 amountForPoints) public {
+        TokenData storage token = _tokenData[tokenID];
+        TokenDeposit storage deposit = _tokenDeposits[tokenID];
+        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
+        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
+        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(block.timestamp - uint256(token.prevTopUpTimestamp) > monthInSeconds, "Already topped up this month");
+        require(eETH.balanceOf(msg.sender) >= amount + amountForPoints, "Not enough balance");
+        require(amount + amountForPoints <= maxDeposit, "Above maximum deposit");
+
+        claimPoints(tokenID);
+        claimStakingRewards(tokenID);
+
+        eETH.transferFrom(msg.sender, address(this), amount+amountForPoints);
+
+        _incrementTokenDeposit(tokenID, amount, amountForPoints);
+        token.prevTopUpTimestamp = uint32(block.timestamp);
+    }
 
     function unwrapForEEth(uint256 tokenID, uint256 _amount) public isEEthStakingOpen {
         require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
@@ -266,6 +317,18 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
         eapMerkleRoot = _newMerkleRoot;
         requiredEapPointsPerEapDeposit = _requiredEapPointsPerEapDeposit;
         emit MerkleUpdated(oldMerkleRoot, _newMerkleRoot);
+    }
+
+    /// @notice Updates minimum valid deposit
+    /// @param value minimum deposit in wei
+    function setMinDepositWei(uint64 value) external onlyOwner {
+        minDepositWei = value;
+    }
+
+    /// @notice Updates minimum valid deposit
+    /// @param percent integer percentage value
+    function setMaxDepositTopUpPercent(uint8 percent) external onlyOwner {
+        maxDepositTopUpPercent = percent;
     }
 
     //--------------------------------------------------------------------------------------

@@ -13,6 +13,7 @@ interface ImeETH {
         uint40 baseLoyaltyPoints;
         uint40 baseTierPoints;
         uint32 prevPointsAccrualTimestamp;
+        uint32 prevTopUpTimestamp;
         uint8  tier;
     }
 

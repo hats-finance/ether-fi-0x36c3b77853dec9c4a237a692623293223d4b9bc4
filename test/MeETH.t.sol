@@ -34,7 +34,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints an NFT with 2 meETH by wrapping 2 ETH and starts earning points
-        uint256 tokenId = meEthInstance.wrapEth{value: 2 ether}(2 ether, aliceProof);
+        uint256 tokenId = meEthInstance.wrapEth{value: 2 ether}(aliceProof);
         assertEq(alice.balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 2 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
@@ -80,7 +80,7 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 1_000_000 ether);
 
         vm.startPrank(alice);
-        uint256 tokenId = meEthInstance.wrapEth{value: 1_000_000 ether}(1_000_000 ether, aliceProof);
+        uint256 tokenId = meEthInstance.wrapEth{value: 1_000_000 ether}(aliceProof);
 
         // (1 gwei = 10^9)
         // Alice earns 1 gwei points a day
@@ -111,7 +111,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice deposits 1 ETH and mints 1 meETH.
-        uint256 tokenId = meEthInstance.wrapEth{value: 1 ether}(1 ether, aliceProof);
+        uint256 tokenId = meEthInstance.wrapEth{value: 1 ether}(aliceProof);
 
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 0);
         assertEq(meEthInstance.claimableTier(tokenId), 0);
@@ -269,7 +269,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice deposits 0.5 ETH and mints 0.5 meETH.
-        uint256 aliceToken = meEthInstance.wrapEth{value: 0.5 ether}(0.5 ether, aliceProof);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 0.5 ether}(aliceProof);
         vm.stopPrank();
 
         // Check the balance
@@ -298,7 +298,7 @@ contract MeETHTest is TestSetup {
         // Bob in
         vm.deal(bob, 2 ether);
         vm.startPrank(bob);
-        uint256 bobToken = meEthInstance.wrapEth{value: 2 ether}(2 ether, bobProof);
+        uint256 bobToken = meEthInstance.wrapEth{value: 2 ether}(bobProof);
         vm.stopPrank();
 
         // Alice belongs to the Tier 1, Bob belongs to the Tier 0
@@ -346,20 +346,92 @@ contract MeETHTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_topUpDepositWithEth() public {
+        vm.deal(alice, 100 ether);
+
+        vm.startPrank(alice);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 10 ether}(aliceProof);
+
+        // can't top up immediately
+        vm.expectRevert("Already topped up this month");
+        meEthInstance.topUpDepositWithEth(aliceToken, 1 ether, 0 ether, aliceProof);
+
+        skip(31 days);
+
+        // can't top over more than 20%
+        vm.expectRevert("Above maximum deposit");
+        meEthInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 3 ether, 0 ether, aliceProof);
+        vm.expectRevert("Above maximum deposit");
+        meEthInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 0 ether, 3 ether, aliceProof);
+        vm.expectRevert("Above maximum deposit");
+        meEthInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 1 ether, 2 ether, aliceProof);
+
+        // should succeed
+        meEthInstance.topUpDepositWithEth{value: 2 ether}(aliceToken, 1 ether, 1 ether, aliceProof);
+
+        // can't top up again immediately
+        vm.expectRevert("Already topped up this month");
+        meEthInstance.topUpDepositWithEth{value: 2 ether}(aliceToken, 1 ether, 1 ether, aliceProof);
+
+        skip(31 days);
+
+        // deposit is larger so should be able to top up more
+        meEthInstance.topUpDepositWithEth{value: 2.1 ether}(aliceToken, 1 ether, 1.1 ether, aliceProof);
+
+        vm.stopPrank();
+    }
+
+    function test_topUpDepositWithEEth() public {
+        vm.deal(alice, 100 ether);
+
+        vm.startPrank(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(aliceProof);
+
+        // can't top up immediately
+        vm.expectRevert("Already topped up this month");
+        meEthInstance.topUpDepositWithEEth(aliceToken, .1 ether, 0 ether);
+
+        skip(31 days);
+
+        // can't top over more than 20%
+        vm.expectRevert("Above maximum deposit");
+        meEthInstance.topUpDepositWithEEth(aliceToken, .3 ether, 0 ether);
+        vm.expectRevert("Above maximum deposit");
+        meEthInstance.topUpDepositWithEEth(aliceToken, 0 ether, .3 ether);
+        vm.expectRevert("Above maximum deposit");
+        meEthInstance.topUpDepositWithEEth(aliceToken, .1 ether, .2 ether);
+
+        // should succeed
+        meEthInstance.topUpDepositWithEEth(aliceToken, .1 ether, .1 ether);
+
+        // can't top up again immediately
+        vm.expectRevert("Already topped up this month");
+        meEthInstance.topUpDepositWithEEth(aliceToken, .1 ether, .1 ether);
+
+        skip(31 days);
+
+        // deposit is larger so should be able to top up more
+        meEthInstance.topUpDepositWithEEth(aliceToken, .1 ether, .11 ether);
+
+        vm.stopPrank();
+    }
+
     function test_SacrificeRewardsForPoints() public {
         vm.deal(alice, 2 ether);
         vm.deal(bob, 2 ether);
 
         // Both Alice and Bob mint 2 meETH.
         vm.startPrank(alice);
-        uint256 aliceToken = meEthInstance.wrapEth{value: 2 ether}(2 ether, aliceProof);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 2 ether}(aliceProof);
         vm.stopPrank();
         vm.startPrank(bob);
-        uint256 bobToken = meEthInstance.wrapEth{value: 2 ether}(2 ether, bobProof);
+        uint256 bobToken = meEthInstance.wrapEth{value: 2 ether}(bobProof);
         vm.stopPrank();
 
         // Alice stakes 1 meETH to earn more points by sacrificing the staking rewards
         vm.startPrank(alice);
+        //meEthInstance.updateDepositAllocation(aliceToken, 1 ether, 1 ether);
         meEthInstance.stakeForPoints(aliceToken, 1 ether);
         vm.stopPrank();
 
@@ -393,6 +465,7 @@ contract MeETHTest is TestSetup {
         // Alice unstakes the 1 meETH which she sacrificed for points
         vm.startPrank(alice);
         meEthInstance.unstakeForPoints(aliceToken, 1 ether);
+        //meEthInstance.updateDepositAllocation(aliceToken, 2 ether, 0);
         vm.stopPrank();
         
         // Alice and Bob unwrap their whole amounts of meETH to eETH
@@ -416,7 +489,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints an meETH by wrapping 2 ETH starts earning points
-        uint256 aliceToken = meEthInstance.wrapEth{value: 2 ether}(2 ether, aliceProof);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 2 ether}(aliceProof);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(meEthInstance.valueOf(aliceToken), 2 ether);
 
@@ -459,12 +532,12 @@ contract MeETHTest is TestSetup {
     }
 
     function test_wrapEth() public {
-        vm.deal(alice, 10 ether);
+        vm.deal(alice, 12 ether);
 
         vm.startPrank(alice);
 
         // Alice deposits 10 ETH and mints 10 meETH.
-        uint256 aliceToken = meEthInstance.wrapEth{value: 10 ether}(10 ether, aliceProof);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 10 ether}(aliceProof);
 
         // 10 ETH to the LP
         // 10 eETH to the meEth contract
@@ -472,7 +545,7 @@ contract MeETHTest is TestSetup {
         assertEq(address(liquidityPoolInstance).balance, 10 ether);
         assertEq(address(eETHInstance).balance, 0 ether);
         assertEq(address(meEthInstance).balance, 0 ether);
-        assertEq(address(alice).balance, 0 ether);
+        assertEq(address(alice).balance, 2 ether);
         
         assertEq(eETHInstance.balanceOf(address(liquidityPoolInstance)), 0 ether);
         assertEq(eETHInstance.balanceOf(address(eETHInstance)), 0 ether);
@@ -480,6 +553,27 @@ contract MeETHTest is TestSetup {
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
 
         assertEq(meEthInstance.valueOf(aliceToken), 10 ether);
+
+        // cannot deposit more than minimum
+        vm.expectRevert("Below minimum deposit");
+        meEthInstance.wrapEth{value: 0.01 ether}(aliceProof);
+
+        // should get entirely new token with a 2nd deposit
+        uint256 token2 = meEthInstance.wrapEth{value: 2 ether}(aliceProof);
+        assert(aliceToken != token2);
+
+        assertEq(address(liquidityPoolInstance).balance, 12 ether);
+        assertEq(address(eETHInstance).balance, 0 ether);
+        assertEq(address(meEthInstance).balance, 0 ether);
+        assertEq(address(alice).balance, 0 ether);
+        
+        assertEq(eETHInstance.balanceOf(address(liquidityPoolInstance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(address(eETHInstance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 12 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+
+        assertEq(meEthInstance.valueOf(token2), 2 ether);
+        
     }
 
     function test_UpdatingPointsGrowthRate() public {
@@ -487,7 +581,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints 1 meETH by wrapping 1 ETH starts earning points
-        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, aliceProof);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(aliceProof);
         vm.stopPrank();
 
         // Alice earns 1 kwei per day by holding 1 meETH
@@ -508,7 +602,7 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints 1 meETH by wrapping 1 ETH starts earning points
-        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, aliceProof);
+        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(aliceProof);
         vm.stopPrank();
 
         // Alice earns 1 kwei per day by holding 1 meETH
