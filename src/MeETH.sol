@@ -24,13 +24,13 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
+    uint64 minDepositWei;
+    uint32 nextMintID;
+    uint8 maxDepositTopUpPercent;
 
     mapping (uint256 => TokenDeposit) public _tokenDeposits;
     mapping (uint256 => TokenData) public _tokenData;
 
-    uint256 minDepositWei;
-    uint256 maxDepositTopUpPercent;
-    uint256 nextMintID;
 
     /// @dev base URI for all token metadata
     string private _metadataURI;
@@ -321,13 +321,13 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
     /// @notice Updates minimum valid deposit
     /// @param value minimum deposit in wei
-    function setMinDepositWei(uint256 value) external onlyOwner {
+    function setMinDepositWei(uint64 value) external onlyOwner {
         minDepositWei = value;
     }
 
     /// @notice Updates minimum valid deposit
     /// @param percent integer percentage value
-    function setMaxDepositTopUpPercent(uint256 percent) external onlyOwner {
+    function setMaxDepositTopUpPercent(uint8 percent) external onlyOwner {
         maxDepositTopUpPercent = percent;
     }
 
