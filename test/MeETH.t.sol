@@ -580,6 +580,7 @@ contract MeETHTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(meEthInstance)), 10 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
 
+        assertEq(meEthInstance.balanceOf(alice, aliceToken), 1); // alice owns it
         assertEq(meEthInstance.valueOf(aliceToken), 10 ether);
 
         // cannot deposit more than minimum
@@ -600,8 +601,7 @@ contract MeETHTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(meEthInstance)), 12 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
 
-        assertEq(meEthInstance.valueOf(token2), 2 ether);
-        
+        assertEq(meEthInstance.valueOf(token2), 2 ether);   
     }
 
     function test_UpdatingPointsGrowthRate() public {
