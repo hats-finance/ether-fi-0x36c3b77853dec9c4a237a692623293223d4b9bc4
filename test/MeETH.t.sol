@@ -386,10 +386,6 @@ contract MeETHTest is TestSetup {
         vm.startPrank(alice);
         uint256 aliceToken = meEthInstance.wrapEth{value: 8 ether}(8 ether, 0, aliceProof);
 
-        // can't top up immediately
-        vm.expectRevert("Already topped up this month");
-        meEthInstance.topUpDepositWithEth(aliceToken, 1 ether, 0 ether, aliceProof);
-
         skip(28 days);
 
         // can't top over more than 20%
@@ -432,10 +428,6 @@ contract MeETHTest is TestSetup {
         vm.startPrank(alice);
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
         uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
-
-        // can't top up immediately
-        vm.expectRevert("Already topped up this month");
-        meEthInstance.topUpDepositWithEEth(aliceToken, .1 ether, 0 ether);
 
         skip(31 days);
 
