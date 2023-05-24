@@ -160,7 +160,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @param _amountForPoints amount of eth to increase balance earning increased loyalty rewards
     function topUpDepositWithEEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) public {
         TokenData storage token = tokenData[_tokenId];
-        TokenDeposit storage deposit = tokenDeposits[_tokenId];
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 monthInSeconds = 4 * 7 * 24 * 3600;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
         require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
@@ -369,7 +369,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         require(tokenDeposits[_tokenId].amounts >= _amount, "Not enough Balance");
         uint256 share = liquidityPool.sharesForAmount(_amount);
         uint256 tier = tierOf(_tokenId);
-
         _decrementTokenDeposit(_tokenId, _amount, 0);
         _decrementTierDeposit(tier, _amount, share);
     }
@@ -610,9 +609,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
             return 0;
         } 
         TokenData memory tokenData = tokenData[_tokenId];
-        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
-        uint256 tierPointsPerMonth = 28 * 24; // 1 per an hour
-        uint256 earnedPoints = (uint32(block.timestamp) - tokenData.prevPointsAccrualTimestamp) * tierPointsPerMonth / monthInSeconds;
+        uint256 tierPointsPerDay = 24; // 1 per an hour
+        uint256 earnedPoints = (uint32(block.timestamp) - tokenData.prevPointsAccrualTimestamp) * tierPointsPerDay / 1 days;
         uint256 effectiveBalanceForEarningPoints = tokenDeposit.amounts + ((10000 + pointsBoostFactor) * tokenDeposit.amountStakedForPoints) / 10000;
         earnedPoints = earnedPoints * effectiveBalanceForEarningPoints / (tokenDeposit.amounts + tokenDeposit.amountStakedForPoints);
         return uint40(earnedPoints);
