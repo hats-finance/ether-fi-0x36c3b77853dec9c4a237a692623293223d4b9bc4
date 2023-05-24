@@ -11,6 +11,8 @@ import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
+import "forge-std/console.sol";
+
 contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, ImeETH {
 
     //--------------------------------------------------------------------------------------
@@ -140,7 +142,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         uint256 monthInSeconds = 4 * 7 * 24 * 3600;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
         require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
-        require(block.timestamp - uint256(token.prevTopUpTimestamp) > monthInSeconds, "Already topped up this month");
+        require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
         require(msg.value <= maxDeposit, "Above maximum deposit");
         require(msg.value == amount + amountForPoints, "Invalid allocation");
 
@@ -164,7 +166,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         uint256 monthInSeconds = 4 * 7 * 24 * 3600;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
         require(balanceOf(msg.sender, tokenID) == 1, "Only token owner");
-        require(block.timestamp - uint256(token.prevTopUpTimestamp) > monthInSeconds, "Already topped up this month");
+        require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
         require(eETH.balanceOf(msg.sender) >= amount + amountForPoints, "Not enough balance");
         require(amount + amountForPoints <= maxDeposit, "Above maximum deposit");
 
@@ -245,8 +247,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     function claimPoints(uint256 tokenID) public {
         TokenData storage token = _tokenData[tokenID];
-        token.baseLoyaltyPoints += accruedLoyaltyPointsOf(tokenID);
-        token.baseTierPoints += accruedTierPointsOf(tokenID);
+        token.baseLoyaltyPoints = loyaltyPointsOf(tokenID);
+        token.baseTierPoints = tierPointsOf(tokenID);
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
 
@@ -592,9 +594,11 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     }
 
     function tierPointsOf(uint256 tokenID) public view returns (uint40) {
-        TokenData memory token = _tokenData[tokenID];
-        uint40 tierPoints = token.baseTierPoints + accruedTierPointsOf(tokenID);
-        return tierPoints;
+        TokenData memory tokenData = _tokenData[tokenID];
+        uint256 points = tokenData.baseTierPoints;
+        uint256 pointsEarning = accruedTierPointsOf(tokenID);
+        uint256 total = _min(points + pointsEarning, type(uint40).max);
+        return uint40(total);
     }
 
     function tierOf(uint256 tokenID) public view returns (uint8) {
@@ -615,7 +619,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         TokenDeposit memory tokenDeposit = _tokenDeposits[tokenID];
         if (tokenDeposit.amounts == 0 && tokenDeposit.amountStakedForPoints == 0) {
             return 0;
-        }
+        } 
         TokenData memory tokenData = _tokenData[tokenID];
         uint256 monthInSeconds = 4 * 7 * 24 * 3600;
         uint256 tierPointsPerMonth = 28 * 24; // 1 per an hour
