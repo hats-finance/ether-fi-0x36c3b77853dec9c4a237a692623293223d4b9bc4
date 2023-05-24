@@ -178,9 +178,9 @@ contract MeETHTest is TestSetup {
         // Alice unwraps 0.5 meETH (which is 50% of her meETH holdings)
         meEthInstance.unwrapForEth(tokenId, 0.5 ether);
 
-        // The points and tier didn't get penalized by unwrapping
+        // Tier gets penalized by unwrapping
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 28 * kwei);
-        assertEq(meEthInstance.tierPointsOf(tokenId), 14 * 24);
+        assertEq(meEthInstance.tierPointsOf(tokenId), 14 * 24 * 0);
         assertEq(meEthInstance.tierOf(tokenId), 0);
     }
 

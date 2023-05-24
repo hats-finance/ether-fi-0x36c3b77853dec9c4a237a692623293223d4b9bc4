@@ -536,7 +536,7 @@ contract MeETH is ERC1155, Initializable, OwnableUpgradeable, UUPSUpgradeable, I
 
         TokenData storage token = _tokenData[tokenID];
         uint8 prevTier = token.tier > 0 ? token.tier - 1 : 0;
-        uint40 curTierPoints = tierPointsOf(tokenID);
+        uint40 curTierPoints = token.baseTierPoints;
 
         // point deduction if we kick back to start of previous tier
         uint40 degradeTierPenalty = curTierPoints - tierData[prevTier].requiredTierPoints;
