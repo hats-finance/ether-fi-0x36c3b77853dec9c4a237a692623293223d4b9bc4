@@ -416,7 +416,7 @@ contract MeETHTest is TestSetup {
         uint40 aliceLoyaltyPoints = meEthInstance.loyaltyPointsOf(aliceToken);
         skip(1 days);
         assertEq(meEthInstance.tierPointsOf(aliceToken) - aliceTierPoints, 24 + 24 * uint256(1) / uint256(10));
-        assertEq(meEthInstance.loyaltyPointsOf(aliceToken) - aliceLoyaltyPoints, 9 * kwei + 1 * kwei * 2);
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken) - aliceLoyaltyPoints, 10 * kwei + 10 * kwei * uint256(1) / uint256(10));
         vm.stopPrank();
     }
 
