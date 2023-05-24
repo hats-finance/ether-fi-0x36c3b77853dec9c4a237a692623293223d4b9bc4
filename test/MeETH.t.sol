@@ -46,8 +46,8 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.loyaltyPointsOf(bobToken), 0);
         assertEq(meEthInstance.tierPointsOf(bobToken), 0);
 
+        // wait a few months and claim new tiers
         skip(100 days);
-
         vm.prank(alice);
         meEthInstance.claimTier(aliceToken);
         vm.prank(bob);
@@ -57,11 +57,7 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.tierPointsOf(bobToken), 2400);
         assertEq(meEthInstance.tierOf(bobToken), 2);
 
-        console2.log(meEthInstance.tierPointsOf(aliceToken));
-        console2.log(meEthInstance.tierOf(aliceToken));
-        console2.log(meEthInstance.tierPointsOf(bobToken));
-        console2.log(meEthInstance.tierOf(bobToken));
-
+        // alice unwraps 1% and should lose 1 tier. Bob unwraps 80% and should lose 80% of tier points
         vm.prank(alice);
         meEthInstance.unwrapForEth(aliceToken, 1 ether);
         vm.prank(bob);
@@ -71,26 +67,6 @@ contract MeETHTest is TestSetup {
 
         assertEq(meEthInstance.tierPointsOf(bobToken), 2400 * 200 / 1000); // 80% reduction == 20% remaining == 480
         assertEq(meEthInstance.tierOf(bobToken), 0);
-        console2.log(meEthInstance.tierPointsOf(aliceToken));
-        console2.log(meEthInstance.tierOf(aliceToken));
-        console2.log(meEthInstance.tierPointsOf(bobToken));
-        console2.log(meEthInstance.tierOf(bobToken));
-
-        console2.log("--------------------------------");
-
-        (uint96 a0, uint96 b0, uint40 td0, uint24 z0) = meEthInstance.tierData(0);
-        (uint96 a1, uint96 b1, uint40 td1, uint24 z1) = meEthInstance.tierData(1);
-        (uint96 a2, uint96 b2, uint40 td2, uint24 z2) = meEthInstance.tierData(2);
-        (uint96 a3, uint96 b3, uint40 td3, uint24 z3) = meEthInstance.tierData(3);
-        console2.log(td0);
-        console2.log(td1);
-        console2.log(td2);
-        console2.log(td3);
-        //console2.log(meEthInstance.tierData[1][2]);
-        //console2.log(meEthInstance.tierData[2][2]);
-        //console2.log(meEthInstance.tierData(3)[2]);
-
-
     }
 
     // Note that 1 ether meETH earns 1 kwei (10 ** 6) points a day
