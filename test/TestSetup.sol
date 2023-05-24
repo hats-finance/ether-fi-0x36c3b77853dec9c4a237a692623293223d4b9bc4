@@ -449,7 +449,7 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     alice,
                     uint256(1 ether),
-                    uint256(103680 * 1e9)
+                    uint256(103680)
                 )
             )
         );

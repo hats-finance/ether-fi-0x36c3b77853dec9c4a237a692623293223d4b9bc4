@@ -201,7 +201,7 @@ contract MeETHTest is TestSetup {
         vm.stopPrank();
 
         /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
-        // Alice's Points are 103680 * 1e9 
+        // Alice's Points are 103680 
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
@@ -225,7 +225,7 @@ contract MeETHTest is TestSetup {
         vm.expectRevert("Invalid deposit amount");
         meEthInstance.wrapEthForEap{value: 0.5 ether}(
             1 ether,
-            103680 * 1e9,
+            103680,
             aliceProof
         );
 
@@ -257,7 +257,7 @@ contract MeETHTest is TestSetup {
         vm.stopPrank();
 
         /// SNAPSHOT FROM PYTHON SCRIPT GETS TAKEN HERE
-        // Alice's Points are 103680 * 1e9 
+        // Alice's Points are 103680 
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
@@ -278,7 +278,7 @@ contract MeETHTest is TestSetup {
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         uint256 tokenId = meEthInstance.wrapEthForEap{value: 2 ether}(
             1 ether,
-            103680 * 1e9,
+            103680,
             aliceProof
         );
         vm.stopPrank();
@@ -288,7 +288,7 @@ contract MeETHTest is TestSetup {
 
         // Check that Alice has received meETH
         assertEq(meEthInstance.valueOf(tokenId), 2 ether);
-        assertEq(meEthInstance.tierOf(tokenId), 3); // Platinum
+        assertEq(meEthInstance.tierOf(tokenId), 2); // Gold
         assertEq(eETHInstance.balanceOf(address(meEthInstance)), 2 ether);
     }
 
@@ -678,4 +678,50 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.balanceOf(alice, aliceToken), 0);
         assertEq(meEthInstance.balanceOf(bob, aliceToken), 1);
     }
+
+    function test_MixedDeposits() public {
+        // Alice claims her funds after the snapshot has been taken. 
+        // She then deposits her ETH into the MeETH and has her points allocated to her
+        // Then, she top-ups with ETH and eETH
+
+        // Acotrs deposit into EAP
+        startHoax(alice);
+        earlyAdopterPoolInstance.depositEther{value: 1 ether}();
+        vm.stopPrank();
+
+        skip(28 days);
+
+        /// MERKLE TREE GETS GENERATED AND UPDATED
+        vm.startPrank(owner);
+        earlyAdopterPoolInstance.pauseContract();
+        meEthInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
+        vm.stopPrank();
+
+        vm.deal(alice, 100 ether);
+        bytes32[] memory aliceProof = merkleMigration2.getProof(dataForVerification2, 0);
+
+        // Alice Withdraws
+        vm.startPrank(alice);
+        earlyAdopterPoolInstance.withdraw();
+
+        // Alice Deposits into MeETH and receives meETH in return
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        uint256 tokenId = meEthInstance.wrapEthForEap{value: 2 ether}(1 ether, 103680, aliceProof);
+        
+        assertEq(meEthInstance.valueOf(tokenId), 2 ether);
+        assertEq(meEthInstance.tierOf(tokenId), 2);
+
+        // Top-up with ETH
+        meEthInstance.topUpDepositWithEth{value: 0.2 ether}(tokenId, 0.1 ether, 0.1 ether, aliceProof);
+        assertEq(meEthInstance.valueOf(tokenId), 2.2 ether);
+
+        skip(28 days);
+        // Top-up with EETH
+        liquidityPoolInstance.deposit{value: 0.2 ether}(alice, aliceProof);
+        meEthInstance.topUpDepositWithEEth(tokenId, 0.1 ether, 0.1 ether);
+        assertEq(meEthInstance.valueOf(tokenId), 2.4 ether);
+
+        vm.stopPrank();
+    }
+
 }
