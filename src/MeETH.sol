@@ -20,19 +20,20 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
 
-    bytes32 public merkleRoot;
-
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
+    uint64 minDepositWei;
+    uint32 nextMintID;
+    uint8 maxDepositTopUpPercent;
 
     mapping (uint256 => TokenDeposit) public _tokenDeposits;
     mapping (uint256 => TokenData) public _tokenData;
 
-    uint256 nextMintID;
-
     /// @dev base URI for all token metadata
     string private _metadataURI;
 
+    bytes32 public eapMerkleRoot;
+    uint64[] public requiredEapPointsPerEapDeposit;
     mapping (address => bool) public _eapDepositProcessed;
 
     TierDeposit[] public tierDeposits;
@@ -82,6 +83,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
         nextMintID = 0;
+        minDepositWei = 0.1 ether;
+        maxDepositTopUpPercent = 20;
     }
 
     /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
@@ -102,28 +105,76 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         _eapDepositProcessed[msg.sender] = true;
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
-        uint40 loyaltyPoints = convertEapPointsToLoyaltyPoints(_points);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, loyaltyPoints);
+        (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _ethAmount);
+        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, loyaltyPoints, tierPoints);
         emit FundsMigrated(msg.sender, tokenID, msg.value, _points, loyaltyPoints);
         return tokenID;
     }
 
-    function wrapEEth(uint256 _amount) external isEEthStakingOpen returns (uint256) {
-        require(_amount > 0, "You cannot wrap 0 eETH");
-        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
+    function wrapEth(bytes32[] calldata _merkleProof) public payable returns (uint256) {
+        require(msg.value >= minDepositWei, "Below minimum deposit");
 
-        eETH.transferFrom(msg.sender, address(this), _amount);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, _amount, 0);
+        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+        uint256 tokenID = _mintMembershipNFT(msg.sender, msg.value, 0, 0);
         return tokenID;
     }
 
-    function wrapEth(uint256 _amount, bytes32[] calldata _merkleProof) public payable returns (uint256) {
-        require(_amount > 0, "You cannot wrap 0 ETH");
-        require(_amount >= msg.value, "Not enough deposit");
+    function wrapEEth(uint256 _amount) external isEEthStakingOpen returns (uint256) {
+        require(_amount >= minDepositWei, "Below minimum deposit");
+        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
 
-        liquidityPool.deposit{value: _amount}(msg.sender, address(this), _merkleProof);
-        uint256 tokenID = _mintMembershipNFT(msg.sender, _amount, 0);
+        eETH.transferFrom(msg.sender, address(this), _amount);
+        uint256 tokenID = _mintMembershipNFT(msg.sender, _amount, 0, 0);
         return tokenID;
+    }
+
+    /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
+    /// @dev Can only be done once per month
+    /// @param tokenID ID of NFT token
+    /// @param amount amount of eth to increase effective balance by
+    /// @param amountForPoints amount of eth to increase balance earning increased loyalty rewards
+    /// @param _merkleProof array of hashes forming the merkle proof for the user
+    function topUpDepositWithEth(uint256 tokenID, uint128 amount, uint128 amountForPoints, bytes32[] calldata _merkleProof) public payable {
+        TokenData storage token = _tokenData[tokenID];
+        TokenDeposit memory deposit = _tokenDeposits[tokenID];
+        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
+        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
+        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(block.timestamp - uint256(token.prevTopUpTimestamp) > monthInSeconds, "Already topped up this month");
+        require(msg.value <= maxDeposit, "Above maximum deposit");
+        require(msg.value == amount + amountForPoints, "Invalid allocation");
+
+        claimPoints(tokenID);
+        claimStakingRewards(tokenID);
+
+        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+
+        _incrementTokenDeposit(tokenID, amount, amountForPoints);
+        token.prevTopUpTimestamp = uint32(block.timestamp);
+    }
+
+    /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
+    /// @dev Can only be done once per month
+    /// @param tokenID ID of NFT token
+    /// @param amount amount of eth to increase effective balance by
+    /// @param amountForPoints amount of eth to increase balance earning increased loyalty rewards
+    function topUpDepositWithEEth(uint256 tokenID, uint128 amount, uint128 amountForPoints) public {
+        TokenData storage token = _tokenData[tokenID];
+        TokenDeposit storage deposit = _tokenDeposits[tokenID];
+        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
+        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
+        require(balanceOf[msg.sender][tokenID] == 1, "Only token owner");
+        require(block.timestamp - uint256(token.prevTopUpTimestamp) > monthInSeconds, "Already topped up this month");
+        require(eETH.balanceOf(msg.sender) >= amount + amountForPoints, "Not enough balance");
+        require(amount + amountForPoints <= maxDeposit, "Above maximum deposit");
+
+        claimPoints(tokenID);
+        claimStakingRewards(tokenID);
+
+        eETH.transferFrom(msg.sender, address(this), amount+amountForPoints);
+
+        _incrementTokenDeposit(tokenID, amount, amountForPoints);
+        token.prevTopUpTimestamp = uint32(block.timestamp);
     }
 
     function unwrapForEEth(uint256 tokenID, uint256 _amount) public isEEthStakingOpen {
@@ -207,12 +258,18 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
-    function convertEapPointsToLoyaltyPoints(uint256 _eapPoints) public view returns (uint40) {
-        uint256 points = (_eapPoints * 1e14 / 1000) / 1 days / 0.001 ether;
-        if (points >= type(uint40).max) {
-            points = type(uint40).max;
+    // EapPoints => (Loyalty Points, Tier Points)
+    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
+        uint256 loyaltyPoints = _min(1e5 * _eapPoints / 1 days , type(uint40).max);        
+        uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
+        uint8 tierId = 0;
+        while (tierId < requiredEapPointsPerEapDeposit.length 
+                && eapPointsPerDeposit >= requiredEapPointsPerEapDeposit[tierId]) {
+            tierId++;
         }
-        return uint40(points);
+        tierId -= 1;
+        uint256 tierPoints = tierData[tierId].requiredTierPoints;
+        return (uint40(loyaltyPoints), uint40(tierPoints));
     }
 
     function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyOwner {
@@ -247,23 +304,39 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
 
-    /// @notice Updates the merkle root
-    /// @param _newMerkle new merkle root used to verify the EAP user data (deposits, points)
-    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
-        bytes32 oldMerkle = merkleRoot;
-        merkleRoot = _newMerkle;
-        emit MerkleUpdated(oldMerkle, _newMerkle);
+    /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
+    /// @param _newMerkleRoot new merkle root used to verify the EAP user data (deposits, points)
+    /// @param _requiredEapPointsPerEapDeposit required EAP points per deposit for each tier
+    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external onlyOwner {
+        bytes32 oldMerkleRoot = eapMerkleRoot;
+        eapMerkleRoot = _newMerkleRoot;
+        requiredEapPointsPerEapDeposit = _requiredEapPointsPerEapDeposit;
+        emit MerkleUpdated(oldMerkleRoot, _newMerkleRoot);
+    }
+
+    /// @notice Updates minimum valid deposit
+    /// @param value minimum deposit in wei
+    function setMinDepositWei(uint64 value) external onlyOwner {
+        minDepositWei = value;
+    }
+
+    /// @notice Updates minimum valid deposit
+    /// @param percent integer percentage value
+    function setMaxDepositTopUpPercent(uint8 percent) external onlyOwner {
+        maxDepositTopUpPercent = percent;
     }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _mintMembershipNFT(address to, uint256 _amount, uint40 _points) internal returns (uint256) {
+    function _mintMembershipNFT(address to, uint256 _amount, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
         uint256 tokenID = nextMintID++;
 
-        uint8 tier = _tierForPoints(_points);
+        uint8 tier = _tierForPoints(_tierPoints);
         TokenData storage tokenData = _tokenData[tokenID];
+        tokenData.baseLoyaltyPoints = _loyaltyPoints;
+        tokenData.baseTierPoints = _tierPoints;
         tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
         tokenData.tier = tier;
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
@@ -469,7 +542,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         bytes32[] calldata _merkleProof
     ) internal view returns (bool) {
         bytes32 leaf = keccak256(abi.encodePacked(_user, _ethBal, _points));
-        bool verified = MerkleProof.verify(_merkleProof, merkleRoot, leaf);
+        bool verified = MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf);
         require(verified, "Verification failed");
     }
 
