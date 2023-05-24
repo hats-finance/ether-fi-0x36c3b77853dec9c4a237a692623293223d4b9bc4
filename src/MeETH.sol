@@ -110,10 +110,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
         (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _snapshotEthAmount);
-        uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value, loyaltyPoints, tierPoints);
-        if (_amountForPoints > 0) {
-            _stakeForPoints(tokenId, _amountForPoints);
-        }
+        uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
         emit FundsMigrated(msg.sender, tokenId, msg.value, _points, loyaltyPoints, tierPoints);
         return tokenId;
@@ -130,10 +127,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         require(msg.value == _amount + _amountForPoints, "Invalid allocation");
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
-        uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value, 0, 0);
-        if (_amountForPoints > 0) {
-            _stakeForPoints(tokenId, _amountForPoints);
-        }
+        uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, 0, 0);
         return tokenId;
     }
 
@@ -147,10 +141,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         require(eETH.balanceOf(msg.sender) >= _amount + _amountForPoints, "Not enough balance");
 
         eETH.transferFrom(msg.sender, address(this), _amount + _amountForPoints);
-        uint256 tokenId = _mintMembershipNFT(msg.sender, _amount + _amountForPoints, 0, 0);
-        if (_amountForPoints > 0) {
-            _stakeForPoints(tokenId, _amountForPoints);
-        }
+        uint256 tokenId = _mintMembershipNFT(msg.sender, _amount, _amountForPoints, 0, 0);
         return tokenId;
     }
 
@@ -175,8 +166,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
-        _deposit(_tokenId, _amount + _amountForPoints);
-        _stakeForPoints(_tokenId, _amountForPoints);
+        _deposit(_tokenId, _amount, _amountForPoints);
         token.prevTopUpTimestamp = uint32(block.timestamp);
     }
 
@@ -200,8 +190,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
         eETH.transferFrom(msg.sender, address(this), _amount + _amountForPoints);
         
-        _deposit(_tokenId, _amount + _amountForPoints);
-        _stakeForPoints(_tokenId, _amountForPoints);
+        _deposit(_tokenId, _amount, _amountForPoints);
         token.prevTopUpTimestamp = uint32(block.timestamp);
     }
 
@@ -400,7 +389,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     * @param _tierPoints The initial tier points for the NFT.
     * @return tokenId The unique ID of the newly minted NFT.
     */
-    function _mintMembershipNFT(address to, uint256 _amount, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
+    function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
         uint256 tokenId = nextMintID++;
 
         uint8 tier = _tierForPoints(_tierPoints);
@@ -410,7 +399,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
         tokenData.tier = tier;
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
-        _deposit(tokenId, _amount);
+        
+        _deposit(tokenId, _amount, _amountForPoints);
         _mint(to, tokenId, 1, "");
 
         emit TransferSingle(to, address(0), to, tokenId, 1);
@@ -426,11 +416,12 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         return tokenId;
     }
 
-    function _deposit(uint256 _tokenId, uint256 _amount) internal {
-        uint256 share = liquidityPool.sharesForAmount(_amount);
+    function _deposit(uint256 _tokenId, uint256 _amount, uint256 _amountForPoints) internal {
+        uint256 share = liquidityPool.sharesForAmount(_amount + _amountForPoints);
         uint256 tier = tierOf(_tokenId);
-        _incrementTokenDeposit(_tokenId, _amount, 0);
-        _incrementTierDeposit(tier, _amount, share);
+        _incrementTokenDeposit(_tokenId, _amount, _amountForPoints);
+        _incrementTierDeposit(tier, _amount + _amountForPoints, share);
+        tierData[tier].amountStakedForPoints += uint96(_amountForPoints);
     }
 
     function _withdraw(uint256 _tokenId, uint256 _amount) internal {
