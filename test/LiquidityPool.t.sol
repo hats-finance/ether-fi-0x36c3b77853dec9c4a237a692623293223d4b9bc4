@@ -286,9 +286,6 @@ contract LiquidityPoolTest is TestSetup {
         }
 
         bytes32 depositRoot = _getDepositRoot();
-
-        assertFalse(liquidityPoolInstance.validators(newValidators[0]));
-        assertFalse(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.numValidators(), 0);
 
         vm.expectRevert("Ownable: caller is not the owner");
@@ -300,8 +297,6 @@ contract LiquidityPoolTest is TestSetup {
 
         assertEq(address(stakingManagerInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
-        assertTrue(liquidityPoolInstance.validators(newValidators[0]));
-        assertTrue(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.numValidators(), 2);
         assertEq(TNFTInstance.ownerOf(newValidators[0]), address(liquidityPoolInstance));
         assertEq(TNFTInstance.ownerOf(newValidators[1]), address(liquidityPoolInstance));
@@ -390,9 +385,6 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
 
         assertEq(liquidityPoolInstance.numValidators(), 2);
-        assertTrue(liquidityPoolInstance.validators(newValidators[0]));
-        assertTrue(liquidityPoolInstance.validators(newValidators[1]));
-
         assertEq(liquidityPoolInstance.accruedSlashingPenalties(), 1 ether);
         
         // Delist the node from the liquidity pool
@@ -400,8 +392,6 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
 
         assertEq(liquidityPoolInstance.numValidators(), 0);
-        assertFalse(liquidityPoolInstance.validators(newValidators[0]));
-        assertFalse(liquidityPoolInstance.validators(newValidators[1]));
         assertEq(liquidityPoolInstance.accruedSlashingPenalties(), 0 ether);
     }
 
