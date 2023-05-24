@@ -144,7 +144,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @return tokenId The ID of the minted meETH membership NFT.
     function wrapEEth(uint256 _amount, uint256 _amountForPoints) external isEEthStakingOpen returns (uint256) {
         require(_amount / 1 gwei >= minDepositGwei, "Below minimum deposit");
-        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough balance");
+        require(eETH.balanceOf(msg.sender) >= _amount + _amountForPoints, "Not enough balance");
 
         eETH.transferFrom(msg.sender, address(this), _amount + _amountForPoints);
         uint256 tokenId = _mintMembershipNFT(msg.sender, _amount + _amountForPoints, 0, 0);
