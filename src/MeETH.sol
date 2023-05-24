@@ -136,7 +136,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
         TokenData storage token = tokenData[_tokenId];
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
-        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
+        uint256 monthInSeconds = 28 days;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
         require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
@@ -148,7 +148,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
-        _mintInternal(_tokenId, _amount + _amountForPoints);
+        _deposit(_tokenId, _amount + _amountForPoints);
         _stakeForPoints(_tokenId, _amountForPoints);
         token.prevTopUpTimestamp = uint32(block.timestamp);
     }
@@ -161,7 +161,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     function topUpDepositWithEEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) public {
         TokenData storage token = tokenData[_tokenId];
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
-        uint256 monthInSeconds = 4 * 7 * 24 * 3600;
+        uint256 monthInSeconds = 28 days;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
         require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
@@ -173,7 +173,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
         eETH.transferFrom(msg.sender, address(this), _amount + _amountForPoints);
         
-        _mintInternal(_tokenId, _amount + _amountForPoints);
+        _deposit(_tokenId, _amount + _amountForPoints);
         _stakeForPoints(_tokenId, _amountForPoints);
         token.prevTopUpTimestamp = uint32(block.timestamp);
     }
@@ -189,7 +189,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         claimStakingRewards(_tokenId);
 
         uint256 prevAmount = tokenDeposits[_tokenId].amounts;
-        _burn(_tokenId, _amount);
+        _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         eETH.transferFrom(address(this), msg.sender, _amount);
@@ -203,7 +203,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         claimStakingRewards(_tokenId);
 
         uint256 prevAmount = tokenDeposits[_tokenId].amounts;
-        _burn(_tokenId, _amount);
+        _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         liquidityPool.withdraw(address(this), _amount);
@@ -341,7 +341,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
         tokenData.tier = tier;
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
-        _mintInternal(tokenId, _amount);
+        _deposit(tokenId, _amount);
         _mint(to, tokenId, 1, "");
 
         emit TransferSingle(to, address(0), to, tokenId, 1);
@@ -357,15 +357,14 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         return tokenId;
     }
 
-    function _mintInternal(uint256 _tokenId, uint256 _amount) internal {
+    function _deposit(uint256 _tokenId, uint256 _amount) internal {
         uint256 share = liquidityPool.sharesForAmount(_amount);
         uint256 tier = tierOf(_tokenId);
-
         _incrementTokenDeposit(_tokenId, _amount, 0);
         _incrementTierDeposit(tier, _amount, share);
     }
 
-    function _burn(uint256 _tokenId, uint256 _amount) internal {
+    function _withdraw(uint256 _tokenId, uint256 _amount) internal {
         require(tokenDeposits[_tokenId].amounts >= _amount, "Not enough Balance");
         uint256 share = liquidityPool.sharesForAmount(_amount);
         uint256 tier = tierOf(_tokenId);
