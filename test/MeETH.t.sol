@@ -88,8 +88,6 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei);
         assertEq(meEthInstance.tierPointsOf(tokenId), 24);
 
-        console.log(meEthInstance.balanceOf(alice, 0));
-
         // Alice's NFT unwraps 1 meETH to 1 ETH
         meEthInstance.unwrapForEth(tokenId, 1 ether);
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei);
@@ -225,14 +223,14 @@ contract MeETHTest is TestSetup {
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.expectRevert("Invalid deposit amount");
-        meEthInstance.eapDeposit{value: 0.5 ether}(
+        meEthInstance.wrapEthForEap{value: 0.5 ether}(
             1 ether,
             103680 * 1e9,
             aliceProof
         );
 
         vm.expectRevert("You don't have any points to claim");
-        meEthInstance.eapDeposit{value: 1 ether}(
+        meEthInstance.wrapEthForEap{value: 1 ether}(
             1 ether,
             0,
             aliceProof
@@ -278,7 +276,7 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 100 ether);
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        uint256 tokenId = meEthInstance.eapDeposit{value: 2 ether}(
+        uint256 tokenId = meEthInstance.wrapEthForEap{value: 2 ether}(
             1 ether,
             103680 * 1e9,
             aliceProof
@@ -651,5 +649,33 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.claimableTier(aliceToken), 1);
         meEthInstance.claimTier(aliceToken);
         assertEq(meEthInstance.tierOf(aliceToken), 1);
+    }
+
+    function test_trade() public {
+        vm.deal(alice, 1 ether);
+
+        vm.startPrank(alice);
+        // Alice mints 1 meETH by wrapping 1 ETH starts earning points
+        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(aliceProof);
+        vm.stopPrank();
+
+        skip(28 days);
+        meEthInstance.claimTier(aliceToken);
+
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 28 * 24);
+        assertEq(meEthInstance.tierOf(aliceToken), 1);
+        assertEq(meEthInstance.balanceOf(alice, aliceToken), 1);
+        assertEq(meEthInstance.balanceOf(bob, aliceToken), 0);
+
+        vm.startPrank(alice);
+        meEthInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+        vm.stopPrank();
+
+        assertEq(meEthInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
+        assertEq(meEthInstance.tierPointsOf(aliceToken), 28 * 24);
+        assertEq(meEthInstance.tierOf(aliceToken), 1);
+        assertEq(meEthInstance.balanceOf(alice, aliceToken), 0);
+        assertEq(meEthInstance.balanceOf(bob, aliceToken), 1);
     }
 }

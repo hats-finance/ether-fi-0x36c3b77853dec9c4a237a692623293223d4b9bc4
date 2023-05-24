@@ -92,7 +92,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @param _points points of the user
     /// @param _ethAmount exact balance user has in the merkle snapshot
     /// @param _merkleProof array of hashes forming the merkle proof for the user
-    function eapDeposit(
+    function wrapEthForEap(
         uint256 _ethAmount,
         uint256 _points,
         bytes32[] calldata _merkleProof
