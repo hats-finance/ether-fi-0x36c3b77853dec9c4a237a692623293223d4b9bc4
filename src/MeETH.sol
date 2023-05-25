@@ -377,6 +377,18 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         maxDepositTopUpPercent = _percent;
     }
 
+    /// @notice Updates the eETH address
+    /// @param _eEthAddress address of the new eETH instance
+    function setEETHInstance(address _eEthAddress) external onlyOwner {
+        eETH = IeETH(_eEthAddress);
+    }
+
+    /// @notice Updates the liquidity pool address
+    /// @param _liquidityPoolAddress address of the new LP instance
+    function setLPInstance(address _liquidityPoolAddress) external onlyOwner {
+        liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
