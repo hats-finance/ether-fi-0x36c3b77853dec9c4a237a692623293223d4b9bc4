@@ -1245,34 +1245,6 @@ contract StakingManagerTest is TestSetup {
         assertEq(stakingManagerInstance.whitelistEnabled(), false);
     }
 
-    function verifySignature(bytes32 message, bytes memory signature, bytes memory pubkey) public pure returns (address) {
-        // Prepare the message hash
-        bytes32 messageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", message));
-
-        // Extract signature components
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        // Signature length must be 65 (r, s, v)
-        require(signature.length == 65, "Invalid signature length");
-
-        // Retrieve signature components
-        assembly {
-            r := mload(add(signature, 32))
-            s := mload(add(signature, 64))
-            v := byte(0, mload(add(signature, 96)))
-        }
-
-        // Verify the signature
-        address signer = ecrecover(messageHash, v, r, s);
-
-        // Ensure the signer matches the provided pubkey
-        require(signer == address(uint160(uint256(keccak256(pubkey)))), "Signature verification failed");
-
-        return signer;
-    }
-
     // https://dashboard.tenderly.co/public/safe/safe-apps/simulator/8f9bf820-b9a5-4df5-8c50-20c7ecfa30a6?trace=0.0.4.0.1.0.0.2.2.1
     function test_reproduceBugFromSimulator() public {
         bytes memory pubkey = hex"92c465ab9d85c53ad0dd7fe21bf102c3a3927aa3cd01458bd6593c78834f9fcc86ee6944cdf560e1f3d264581a952bc6";
