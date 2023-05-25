@@ -102,7 +102,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     ) external payable returns (uint256) {
         require(_points > 0, "You don't have any points to claim");
         require(msg.value >= _snapshotEthAmount, "Invalid deposit amount");
-        require(msg.value <= _snapshotEthAmount*2, "Exceeded max rollover");
+        require(msg.value <= _snapshotEthAmount * 2, "Exceeded max rollover");
         require(msg.value == _amount + _amountForPoints, "Invalid allocation");
         require(eapDepositProcessed[msg.sender] == false, "You already made EAP deposit");
         _verifyEapUserData(msg.sender, _snapshotEthAmount, _points, _merkleProof);
