@@ -154,14 +154,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
-        TokenData storage token = tokenData[_tokenId];
-        TokenDeposit memory deposit = tokenDeposits[_tokenId];
-        uint256 monthInSeconds = 28 days;
-        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
-        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
-        require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
-        require(msg.value <= maxDeposit, "Above maximum deposit");
-        require(msg.value == _amount + _amountForPoints, "Invalid allocation");
+        _verifyTopUpConditions(_tokenId, msg.value, _amount, _amountForPoints);
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -169,7 +162,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
         _deposit(_tokenId, _amount, _amountForPoints);
-        token.prevTopUpTimestamp = uint32(block.timestamp);
+        tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
@@ -178,14 +171,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @param _amount amount of eth to increase effective balance by
     /// @param _amountForPoints amount of eth to increase balance earning increased loyalty rewards
     function topUpDepositWithEEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) public {
-        TokenData storage token = tokenData[_tokenId];
-        TokenDeposit memory deposit = tokenDeposits[_tokenId];
-        uint256 monthInSeconds = 28 days;
-        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
-        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
-        require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
         require(eETH.balanceOf(msg.sender) >= _amount + _amountForPoints, "Not enough balance");
-        require(_amount + _amountForPoints <= maxDeposit, "Above maximum deposit");
+        _verifyTopUpConditions(_tokenId, _amount + _amountForPoints, _amount, _amountForPoints);
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -193,7 +180,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         eETH.transferFrom(msg.sender, address(this), _amount + _amountForPoints);
         
         _deposit(_tokenId, _amount, _amountForPoints);
-        token.prevTopUpTimestamp = uint32(block.timestamp);
+        tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
     }
 
     /// @notice Unwraps meETH tokens for eETH.
@@ -669,6 +656,17 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
             tierId++;
         }
         return tierId - 1;
+    }
+
+    function _verifyTopUpConditions(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) internal view returns (bool) {
+        TokenData memory token = tokenData[_tokenId];
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 monthInSeconds = 28 days;
+        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
+        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
+        require(_totalAmount == _amount + _amountForPoints, "Invalid allocation");
+        require(_totalAmount <= maxDeposit, "Above maximum deposit");
     }
 
     function _verifyEapUserData(
