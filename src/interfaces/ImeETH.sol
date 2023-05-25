@@ -58,6 +58,7 @@ interface ImeETH {
     function claimableTier(uint256 _tokenId) external view returns (uint8);
     function accruedLoyaltyPointsOf(uint256 _tokenId) external view returns (uint40);
     function accruedTierPointsOf(uint256 _tokenId) external view returns (uint40);
+    function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) external view returns (bool);
     function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) external view returns (bool);
     function allTimeHighDepositOf(uint256 _tokenId) external view returns (uint256);
     function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) external view returns (uint40, uint40);
