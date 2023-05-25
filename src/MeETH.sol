@@ -25,6 +25,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
 
+    mapping (uint256 => uint256) public allTimeHighDepositAmount;
+
     mapping (address => bool) public eapDepositProcessed;
     bytes32 public eapMerkleRoot;
     uint64[] public requiredEapPointsPerEapDeposit;
@@ -209,11 +211,30 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
 
+        require(isWithdrawable(_tokenId, _amount), "Cannot withdraw below 50% max value");
+
         uint256 prevAmount = tokenDeposits[_tokenId].amounts;
+        _updateAllTimeHighDepositOf(_tokenId);
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         eETH.transferFrom(address(this), msg.sender, _amount);
+    }
+
+    /// @notice withdraw the entire balance of this NFT and burn it
+    /// @param _tokenId The ID of the meETH membership NFT to unwrap
+    function withdrawAndBurnForEEth(uint256 _tokenId) public isEEthStakingOpen {
+        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+
+        claimStakingRewards(_tokenId);
+
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 totalBalance = deposit.amounts + deposit.amountStakedForPoints;
+        _unstakeForPoints(_tokenId, deposit.amountStakedForPoints);
+        _withdraw(_tokenId, totalBalance);
+        _burn(msg.sender, _tokenId, 1);
+
+        eETH.transferFrom(address(this), msg.sender, totalBalance);
     }
 
     /// @notice Unwraps meETH tokens for ETH.
@@ -227,12 +248,33 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
 
+        require(isWithdrawable(_tokenId, _amount), "Cannot withdraw below 50% max value");
+
         uint256 prevAmount = tokenDeposits[_tokenId].amounts;
+        _updateAllTimeHighDepositOf(_tokenId);
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         liquidityPool.withdraw(address(this), _amount);
         (bool sent, ) = address(msg.sender).call{value: _amount}("");
+        require(sent, "Failed to send Ether");
+    }
+
+    /// @notice withdraw the entire balance of this NFT and burn it
+    /// @param _tokenId The ID of the meETH membership NFT to unwrap
+    function withdrawAndBurnForEth(uint256 _tokenId) public {
+        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+
+        claimStakingRewards(_tokenId);
+
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 totalBalance = deposit.amounts + deposit.amountStakedForPoints;
+        _unstakeForPoints(_tokenId, deposit.amountStakedForPoints);
+        _withdraw(_tokenId, totalBalance);
+        _burn(msg.sender, _tokenId, 1);
+
+        liquidityPool.withdraw(address(this), totalBalance);
+        (bool sent, ) = address(msg.sender).call{value: totalBalance}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -506,6 +548,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         tokenData[_tokenId].tier = _newTier;
     }
 
+    function _updateAllTimeHighDepositOf(uint256 _tokenId) internal returns (uint256) {
+        allTimeHighDepositAmount[_tokenId] = allTimeHighDepositOf(_tokenId);
+    }
+
     // Compute the points earnings of a user between [since, until) 
     // Assuming the user's balance didn't change in between [since, until)
     function _membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) internal view returns (uint40) {
@@ -644,7 +690,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    // it returns the value of a certain NFT interms of ETH amount
+    // it returns the value of a certain NFT in terms of ETH amount
     function valueOf(uint256 _tokenId) public view returns (uint256) {
         TokenData memory tokenData = tokenData[_tokenId];
         TokenDeposit memory tokenDeposit = tokenDeposits[_tokenId];
@@ -696,6 +742,20 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         uint256 effectiveBalanceForEarningPoints = tokenDeposit.amounts + ((10000 + pointsBoostFactor) * tokenDeposit.amountStakedForPoints) / 10000;
         earnedPoints = earnedPoints * effectiveBalanceForEarningPoints / (tokenDeposit.amounts + tokenDeposit.amountStakedForPoints);
         return uint40(earnedPoints);
+    }
+
+    function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) public view returns (bool) {
+        // cap withdrawals to 50% of lifetime max balance. Otherwise need to fully withdraw and burn NFT
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
+        uint256 highestDeposit = allTimeHighDepositOf(_tokenId);
+        return (totalDeposit - _withdrawalAmount >= highestDeposit / 2);
+    }
+
+    function allTimeHighDepositOf(uint256 _tokenId) public view returns (uint256) {
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
+        return _max(totalDeposit, allTimeHighDepositAmount[_tokenId]);        
     }
 
     function getImplementation() external view returns (address) {
