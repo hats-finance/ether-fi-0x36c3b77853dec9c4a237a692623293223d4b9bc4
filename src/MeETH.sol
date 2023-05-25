@@ -384,7 +384,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /**
     * @dev Internal function to mint a new membership NFT.
     * @param to The address of the recipient of the NFT.
-    * @param _amount The amount of ETH to be deposited into the contract.
+    * @param _amount The amount of ETH to earn the staking rewards.
+    * @param _amountForPoints The amount of ETH to boost the points earnings.
     * @param _loyaltyPoints The initial loyalty points for the NFT.
     * @param _tierPoints The initial tier points for the NFT.
     * @return tokenId The unique ID of the newly minted NFT.
@@ -399,7 +400,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
         tokenData.tier = tier;
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
-        
+
         _deposit(tokenId, _amount, _amountForPoints);
         _mint(to, tokenId, 1, "");
 
