@@ -231,6 +231,15 @@ contract MeETHTest is TestSetup {
             aliceProof
         );
 
+        vm.expectRevert("Exceeded max rollover");
+        meEthInstance.wrapEthForEap{value: 3.0 ether}(
+            1 ether,
+            2 ether,
+            1 ether,
+            103680,
+            aliceProof
+        );
+
         vm.expectRevert("You don't have any points to claim");
         meEthInstance.wrapEthForEap{value: 1 ether}(
             1 ether,
