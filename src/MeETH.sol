@@ -37,7 +37,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     uint56 public minDepositGwei;
     uint8  public maxDepositTopUpPercent;
 
-    string private _metadataURI;    /// @dev base URI for all token metadata    
+    string private contractMetadataURI; /// @dev opensea contract-level metadata
 
     uint256[23] __gap;
 
@@ -779,20 +779,19 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     //---------------------------------- NFT METADATA --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice ERC1155 Metadata URI
-    /// @param id token ID
-    /// @dev https://eips.ethereum.org/EIPS/eip-1155#metadata
-    function uri(uint256 id) public override view returns (string memory) {
-        return _metadataURI;
-    }
-
     /// @notice OpenSea contract-level metadata
     function contractURI() public view returns (string memory) {
-        return string.concat(_metadataURI, "contract-metadata");
+        return contractMetadataURI;
     }
 
+    /// @dev opensea contract-level metadata
+    function setContractMetadataURI(string calldata _newURI) external onlyOwner {
+        contractMetadataURI = _newURI;
+    }
+
+    /// @dev erc1155 metadata extension
     function setMetadataURI(string calldata _newURI) external onlyOwner {
-        _metadataURI = _newURI;
+        _setURI(_newURI);
     }
 
     /// @dev alert opensea to a metadata update
@@ -804,7 +803,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     function alertBatchMetadataUpdate(uint256 startID, uint256 endID) public onlyOwner {
         emit BatchMetadataUpdate(startID, endID);
     }
-
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------

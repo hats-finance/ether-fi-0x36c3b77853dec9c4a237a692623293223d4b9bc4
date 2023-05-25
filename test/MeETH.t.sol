@@ -29,6 +29,24 @@ contract MeETHTest is TestSetup {
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
     }
 
+    function test_metadata() public {
+
+        // only admin can update uri
+        vm.expectRevert("Ownable: caller is not the owner");
+        meEthInstance.setMetadataURI("badURI.com");
+        vm.expectRevert("Ownable: caller is not the owner");
+        meEthInstance.setContractMetadataURI("badURI2.com");
+
+        vm.startPrank(owner);
+        meEthInstance.setMetadataURI("http://ether-fi/{id}");
+        assertEq(meEthInstance.uri(5), "http://ether-fi/{id}");
+
+        meEthInstance.setContractMetadataURI("http://ether-fi/contract-metadata");
+        assertEq(meEthInstance.contractURI(), "http://ether-fi/contract-metadata");
+
+        vm.stopPrank();
+    }
+
     function test_withdrawalPenalty() public {
         vm.deal(alice, 100 ether);
         vm.deal(bob, 100 ether);
