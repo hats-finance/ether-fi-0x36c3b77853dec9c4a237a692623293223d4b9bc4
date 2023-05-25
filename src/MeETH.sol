@@ -705,13 +705,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     //---------------------------------- NFT METADATA --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice ERC1155 Metadata URI
-    /// @param id token ID
-    /// @dev https://eips.ethereum.org/EIPS/eip-1155#metadata
-    function uri(uint256 id) public override view returns (string memory) {
-        return _metadataURI;
-    }
-
     /// @notice OpenSea contract-level metadata
     function contractURI() public view returns (string memory) {
         return string.concat(_metadataURI, "contract-metadata");
@@ -719,6 +712,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     function setMetadataURI(string calldata _newURI) external onlyOwner {
         _metadataURI = _newURI;
+        _setURI(_newURI);
     }
 
     /// @dev alert opensea to a metadata update
