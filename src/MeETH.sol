@@ -25,6 +25,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
 
+    mapping (uint256 => uint256) public allTimeHighDepositAmount;
+
     mapping (address => bool) public eapDepositProcessed;
     bytes32 public eapMerkleRoot;
     uint64[] public requiredEapPointsPerEapDeposit;
@@ -34,8 +36,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
     uint56 public minDepositGwei;
     uint8  public maxDepositTopUpPercent;
-
-    mapping (uint256 => uint256) public highestDepositDuringWithdrawal;
 
     string private _metadataURI;    /// @dev base URI for all token metadata    
 
@@ -210,16 +210,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
 
-        // cap withdrawals to 50% of lifetime max balance. Otherwise need to fully withdraw and burn NFT
-        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
-        uint256 highestDeposit = highestDepositDuringWithdrawal[_tokenId];
-        if (totalDeposit > highestDeposit) {
-            highestDepositDuringWithdrawal[_tokenId] = totalDeposit;
-            highestDeposit = totalDeposit;
-        }
-        require(totalDeposit - _amount >= highestDeposit / 2, "Cannot withdraw below 50% max value");
+        require(isWithdrawable(_tokenId, _amount), "Cannot withdraw below 50% max value");
 
         uint256 prevAmount = tokenDeposits[_tokenId].amounts;
+        _updateAllTimeHighDepositOf(_tokenId);
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
@@ -253,17 +247,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
 
-        // cap withdrawals to 50% of lifetime max balance. Otherwise need to fully withdraw and burn NFT
-        TokenDeposit memory deposit = tokenDeposits[_tokenId];
-        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
-        uint256 highestDeposit = highestDepositDuringWithdrawal[_tokenId];
-        if (totalDeposit > highestDeposit) {
-            highestDepositDuringWithdrawal[_tokenId] = totalDeposit;
-            highestDeposit = totalDeposit;
-        }
-        require(totalDeposit - _amount >= highestDeposit / 2, "Cannot withdraw below 50% max value");
+        require(isWithdrawable(_tokenId, _amount), "Cannot withdraw below 50% max value");
 
         uint256 prevAmount = tokenDeposits[_tokenId].amounts;
+        _updateAllTimeHighDepositOf(_tokenId);
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
@@ -559,6 +546,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         tokenData[_tokenId].tier = _newTier;
     }
 
+    function _updateAllTimeHighDepositOf(uint256 _tokenId) internal returns (uint256) {
+        allTimeHighDepositAmount[_tokenId] = allTimeHighDepositOf(_tokenId);
+    }
+
     // Compute the points earnings of a user between [since, until) 
     // Assuming the user's balance didn't change in between [since, until)
     function _membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) internal view returns (uint40) {
@@ -749,6 +740,20 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         uint256 effectiveBalanceForEarningPoints = tokenDeposit.amounts + ((10000 + pointsBoostFactor) * tokenDeposit.amountStakedForPoints) / 10000;
         earnedPoints = earnedPoints * effectiveBalanceForEarningPoints / (tokenDeposit.amounts + tokenDeposit.amountStakedForPoints);
         return uint40(earnedPoints);
+    }
+
+    function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) public view returns (bool) {
+        // cap withdrawals to 50% of lifetime max balance. Otherwise need to fully withdraw and burn NFT
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
+        uint256 highestDeposit = allTimeHighDepositOf(_tokenId);
+        return (totalDeposit - _withdrawalAmount >= highestDeposit / 2);
+    }
+
+    function allTimeHighDepositOf(uint256 _tokenId) public view returns (uint256) {
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
+        return _max(totalDeposit, allTimeHighDepositAmount[_tokenId]);        
     }
 
     function getImplementation() external view returns (address) {
