@@ -262,7 +262,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
-    function withdrawAndBurnForEth(uint256 _tokenId) public isEEthStakingOpen {
+    function withdrawAndBurnForEth(uint256 _tokenId) public {
         require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
 
         claimStakingRewards(_tokenId);
