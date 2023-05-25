@@ -55,33 +55,16 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.tierPointsOf(bobToken), 2400);
         assertEq(meEthInstance.tierOf(bobToken), 2);
 
-        // alice unwraps 1% and should lose 1 tier.
+        // alice unwraps 1% and should lose 1 tier. Bob unwraps 80% and should lose 80% of tier points
         vm.prank(alice);
         meEthInstance.unwrapForEth(aliceToken, 1 ether);
+        vm.prank(bob);
+        meEthInstance.unwrapForEth(bobToken, 80 ether);
         assertEq(meEthInstance.tierPointsOf(aliceToken), 28 * 24 * 1); // booted to start of previous tier == 672
         assertEq(meEthInstance.tierOf(aliceToken), 1);
 
-        // Bob attempts to unwrap 80% this is disallowed without burning the NFT
-        vm.startPrank(bob);
-        vm.expectRevert("Cannot withdraw below 50% max value");
-        meEthInstance.unwrapForEth(bobToken, 80 ether);
-        vm.expectRevert("Cannot withdraw below 50% max value");
-        meEthInstance.unwrapForEEth(bobToken, 80 ether);
-        assertEq(meEthInstance.tierPointsOf(bobToken), 2400);
-        assertEq(meEthInstance.tierOf(bobToken), 2);
-
-        // Bob should be unable to burn a token that doesn't belong to him
-        vm.expectRevert("Only token owner");
-        meEthInstance.withdrawAndBurnForEth(aliceToken);
-        vm.expectRevert("Only token owner");
-        meEthInstance.withdrawAndBurnForEEth(aliceToken);
-
-        // Bob burns the NFT extracting remaining value
-        meEthInstance.withdrawAndBurnForEth(bobToken);
-        assertEq(bob.balance, 100 ether);
-        assertEq(meEthInstance.balanceOf(bob, bobToken), 0);
-
-        vm.stopPrank();
+        assertEq(meEthInstance.tierPointsOf(bobToken), 2400 * 200 / 1000); // 80% reduction == 20% remaining == 480
+        assertEq(meEthInstance.tierOf(bobToken), 0);
     }
 
     // Note that 1 ether meETH earns 1 kwei (10 ** 6) points a day
@@ -121,9 +104,12 @@ contract MeETHTest is TestSetup {
         assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei + 1 * kwei * 2);
         assertEq(meEthInstance.tierPointsOf(tokenId), 24 * 2);
 
-        // Alice's NFT unwraps the whole remaining meETH, burning the NFT
-        meEthInstance.withdrawAndBurnForEth(tokenId);
-        assertEq(meEthInstance.balanceOf(alice, tokenId), 0); 
+        // Alice's NFT unwraps the whole remaining meETH, but the points remain the same
+        meEthInstance.unwrapForEth(tokenId, 1 ether);
+        assertEq(meEthInstance.loyaltyPointsOf(tokenId), 2 * kwei + 1 * kwei * 2);
+        assertEq(meEthInstance.tierPointsOf(tokenId), 0);
+        assertEq(meEthInstance.valueOf(tokenId), 0 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0 ether);
         assertEq(alice.balance, 2 ether);
         vm.stopPrank();
     }
@@ -528,19 +514,19 @@ contract MeETHTest is TestSetup {
         meEthInstance.unstakeForPoints(aliceToken, 1 ether);
         vm.stopPrank();
         
-        // Alice and Bob burn their tokens and unwrap their whole amounts of meETH to eETH
+        // Alice and Bob unwrap their whole amounts of meETH to eETH
         vm.startPrank(alice);
-        meEthInstance.withdrawAndBurnForEth(aliceToken);
+        meEthInstance.unwrapForEth(aliceToken, 2.333333333333333330 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        meEthInstance.withdrawAndBurnForEth(bobToken);
+        meEthInstance.unwrapForEth(bobToken, 2.666666666666666660 ether);
         vm.stopPrank();
 
-        assertEq(alice.balance, 2.333333333333333333 ether);
-        assertEq(meEthInstance.balanceOf(bob, aliceToken), 0);
-        assertEq(bob.balance, 2.666666666666666666 ether);
-        assertEq(meEthInstance.balanceOf(bob, bobToken), 0);
+        assertEq(alice.balance, 2.333333333333333330 ether);
+        assertEq(bob.balance, 2.666666666666666660 ether);
+        assertEq(meEthInstance.valueOf(aliceToken), 0.000000000000000003 ether);
+        assertEq(meEthInstance.valueOf(bobToken), 0.000000000000000006 ether);
     }
 
     function test_unwrapForEth() public {
