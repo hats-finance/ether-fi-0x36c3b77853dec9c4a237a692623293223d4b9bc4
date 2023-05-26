@@ -21,7 +21,8 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
-
+    
+    /// @notice initialize to set variables on deployment
     function initialize(address _stakingManagerAddress) initializer external {
         require(_stakingManagerAddress != address(0), "No zero addresses");
         __ERC721_init("Bond NFT", "BNFT");
@@ -61,6 +62,8 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Fetches the address of the implementation contract currently being used by the proxy
+    /// @return the address of the currently used implementation contract
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }

@@ -28,7 +28,7 @@ contract AuctionManager is
     uint256 public numberOfBids;
     uint256 public numberOfActiveBids;
 
-    INodeOperatorManager public nodeOperatorManagerInterface;
+    INodeOperatorManager public nodeOperatorManager;
     IProtocolRevenueManager public protocolRevenueManager;
 
     address public stakingManagerContractAddress;
@@ -42,15 +42,9 @@ contract AuctionManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event BidCreated(
-        address indexed bidder,
-        uint256 amountPerBid,
-        uint256[] bidIdArray,
-        uint64[] ipfsIndexArray
-    );
+    event BidCreated(address indexed bidder, uint256 amountPerBid, uint256[] bidIdArray, uint64[] ipfsIndexArray);
     event BidCancelled(uint256 indexed bidId);
     event BidReEnteredAuction(uint256 indexed bidId);
-    event Received(address indexed sender, uint256 value);
     event WhitelistDisabled(bool whitelistStatus);
     event WhitelistEnabled(bool whitelistStatus);
 
@@ -63,7 +57,7 @@ contract AuctionManager is
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice initialize to set variables on deployment
+    /// @notice Initialize to set variables on deployment
     function initialize(
         address _nodeOperatorManagerContract
     ) external initializer {
@@ -75,9 +69,7 @@ contract AuctionManager is
         numberOfBids = 1;
         whitelistEnabled = true;
 
-        nodeOperatorManagerInterface = INodeOperatorManager(
-            _nodeOperatorManagerContract
-        );
+        nodeOperatorManager = INodeOperatorManager(_nodeOperatorManagerContract);
 
         __Pausable_init();
         __Ownable_init();
@@ -96,7 +88,7 @@ contract AuctionManager is
         require(_bidSize > 0, "Bid size is too small");
         if (whitelistEnabled) {
             require(
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender),
+                nodeOperatorManager.isWhitelisted(msg.sender),
                 "Only whitelisted addresses"
             );
             require(
@@ -107,7 +99,7 @@ contract AuctionManager is
             );
         } else {
             if (
-                nodeOperatorManagerInterface.isWhitelisted(msg.sender)
+                nodeOperatorManager.isWhitelisted(msg.sender)
             ) {
                 require(
                     msg.value == _bidSize * _bidAmountPerBid &&
@@ -124,22 +116,15 @@ contract AuctionManager is
                 );
             }
         }
-
-        uint64 keysRemaining = nodeOperatorManagerInterface.getNumKeysRemaining(
-            msg.sender
-        );
+        uint64 keysRemaining = nodeOperatorManager.getNumKeysRemaining(msg.sender);
         require(_bidSize <= keysRemaining, "Insufficient public keys");
 
         uint256[] memory bidIdArray = new uint256[](_bidSize);
         uint64[] memory ipfsIndexArray = new uint64[](_bidSize);
 
         for (uint256 i = 0; i < _bidSize; i++) {
-            uint64 ipfsIndex = nodeOperatorManagerInterface.fetchNextKeyIndex(
-                msg.sender
-            );
-
-            uint256 bidId = numberOfBids;
-
+            uint64 ipfsIndex = nodeOperatorManager.fetchNextKeyIndex(msg.sender);
+            uint256 bidId = numberOfBids + i;
             bidIdArray[i] = bidId;
             ipfsIndexArray[i] = ipfsIndex;
 
@@ -150,20 +135,17 @@ contract AuctionManager is
                 bidderAddress: msg.sender,
                 isActive: true
             });
-
-            numberOfBids++;
         }
-
+        numberOfBids += _bidSize;
         numberOfActiveBids += _bidSize;
-        emit BidCreated(
-            msg.sender,
-            _bidAmountPerBid,
-            bidIdArray,
-            ipfsIndexArray
-        );
+
+        emit BidCreated(msg.sender, _bidAmountPerBid, bidIdArray, ipfsIndexArray);
         return bidIdArray;
     }
 
+    /// @notice Cancels bids in a batch by calling the 'cancelBid' function multiple times
+    /// @dev Calls an internal function to perform the cancel
+    /// @param _bidIds the ID's of the bids to cancel
     function cancelBidBatch(uint256[] calldata _bidIds) external whenNotPaused {
         for (uint256 i = 0; i < _bidIds.length; i++) {
             _cancelBid(_bidIds[i]);
@@ -171,21 +153,22 @@ contract AuctionManager is
     }
 
     /// @notice Cancels a specified bid by de-activating it
-    /// @dev Require the bid to exist and be active
+    /// @dev Calls an internal function to perform the cancel
     /// @param _bidId the ID of the bid to cancel
     function cancelBid(uint256 _bidId) public whenNotPaused {
         _cancelBid(_bidId);
     }
 
-    /// @notice Updates a bid winning bids details
+    /// @notice Updates the details of the bid which has been used in a stake match
     /// @dev Called by batchDepositWithBidIds() in StakingManager.sol
     /// @param _bidId the ID of the bid being removed from the auction (since it has been selected)
     function updateSelectedBidInformation(
         uint256 _bidId
     ) public onlyStakingManagerContract {
-        require(bids[_bidId].isActive, "The bid is not active");
+        Bid storage bid = bids[_bidId];
+        require(bid.isActive, "The bid is not active");
 
-        bids[_bidId].isActive = false;
+        bid.isActive = false;
         numberOfActiveBids--;
     }
 
@@ -194,9 +177,10 @@ contract AuctionManager is
     function reEnterAuction(
         uint256 _bidId
     ) external onlyStakingManagerContract {
-        require(!bids[_bidId].isActive, "Bid already active");
-        //Reactivate the bid
-        bids[_bidId].isActive = true;
+        Bid storage bid = bids[_bidId];
+        require(!bid.isActive, "Bid already active");
+
+        bid.isActive = true;
         numberOfActiveBids++;
         emit BidReEnteredAuction(_bidId);
     }
@@ -211,14 +195,14 @@ contract AuctionManager is
         protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
     }
 
-    /// @notice Disables the bid whitelist
+    /// @notice Disables the whitelisting phase of the bidding
     /// @dev Allows both regular users and whitelisted users to bid
     function disableWhitelist() public onlyOwner {
         whitelistEnabled = false;
         emit WhitelistDisabled(whitelistEnabled);
     }
 
-    /// @notice Enables the bid whitelist
+    /// @notice Enables the whitelisting phase of the bidding
     /// @dev Only users who are on a whitelist can bid
     function enableWhitelist() public onlyOwner {
         whitelistEnabled = true;
@@ -240,9 +224,7 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
 
     function _cancelBid(uint256 _bidId) internal {
-
         Bid storage bid = bids[_bidId];
-
         require(bid.bidderAddress == msg.sender, "Invalid bid");
         require(bid.isActive, "Bid already cancelled");
 
@@ -257,17 +239,15 @@ contract AuctionManager is
         emit BidCancelled(_bidId);
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
     /// @notice Fetches the address of the user who placed a bid for a specific bid ID
-    /// @dev Needed for registerValidator() function in Staking Contract
-    /// @return the user who placed the bid
+    /// @dev Needed for registerValidator() function in Staking Contract as well as function in the EtherFiNodeManager.sol
+    /// @return the address of the user who placed (owns) the bid
     function getBidOwner(uint256 _bidId) external view returns (address) {
         return bids[_bidId].bidderAddress;
     }
@@ -279,6 +259,8 @@ contract AuctionManager is
         return bids[_bidId].isActive;
     }
 
+    /// @notice Fetches the address of the implementation contract currently being used by the proxy
+    /// @return the address of the currently used implementation contract
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
@@ -288,9 +270,9 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
 
     /// @notice Sets an instance of the protocol revenue manager
-    /// @dev Needed to process an auction fee
-    /// @param _protocolRevenueManager the addres of the protocol manager
     /// @notice Performed this way due to circular dependencies
+    /// @dev Needed to process an auction fee
+    /// @param _protocolRevenueManager the address of the protocol manager
     function setProtocolRevenueManager(
         address _protocolRevenueManager
     ) external onlyOwner {
@@ -301,7 +283,7 @@ contract AuctionManager is
         );
     }
 
-    /// @notice Sets the stakingManagerContractAddress address in the current contract
+    /// @notice Sets the staking managers contract address in the current contract
     /// @param _stakingManagerContractAddress new stakingManagerContract address
     function setStakingManagerContractAddress(
         address _stakingManagerContractAddress
@@ -311,15 +293,15 @@ contract AuctionManager is
         stakingManagerContractAddress = _stakingManagerContractAddress;
     }
 
-    /// @notice Updates the minimum bid price
+    /// @notice Updates the minimum bid price for a non-whitelisted bidder
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint64 _newMinBidAmount) external onlyOwner {
         require(_newMinBidAmount < maxBidAmount, "Min bid exceeds max bid");
-        require(_newMinBidAmount > whitelistBidAmount, "Min bid less than whitelist bid amount");
+        require(_newMinBidAmount >= whitelistBidAmount, "Min bid less than whitelist bid amount");
         minBidAmount = _newMinBidAmount;
     }
 
-    /// @notice Updates the maximum bid price
+    /// @notice Updates the maximum bid price for both whitelisted and non-whitelisted bidders
     /// @param _newMaxBidAmount the new amount to set the maximum bid price as
     function setMaxBidPrice(uint64 _newMaxBidAmount) external onlyOwner {
         require(_newMaxBidAmount > minBidAmount, "Min bid exceeds max bid");
@@ -340,18 +322,20 @@ contract AuctionManager is
     //--------------------------------------------------------------------------------------
 
     modifier onlyStakingManagerContract() {
-        require(
-            msg.sender == stakingManagerContractAddress,
-            "Only staking manager contract function"
-        );
+        require(msg.sender == stakingManagerContractAddress, "Only staking manager contract function");
         _;
     }
 
     modifier onlyNodeOperatorManagerContract() {
-        require(
-            msg.sender == address(nodeOperatorManagerInterface),
-            "Only node operator key manager contract function"
-        );
+        require(msg.sender == address(nodeOperatorManager), "Only node operator key manager contract function");
         _;
+    }
+}
+
+contract AuctionManagerV2 is AuctionManager {
+    function updateNodeOperatorManager(address _address) external onlyOwner {
+        nodeOperatorManager = INodeOperatorManager(
+            _address
+        );
     }
 }

@@ -2,12 +2,12 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
-import "../src/interfaces/IWeth.sol";
+import "../src/interfaces/IWETH.sol";
 import "../src/interfaces/ILiquidityPool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "../lib/murky/src/Merkle.sol";
 
-contract AuctionManagerV2 is AuctionManager {
+contract AuctionManagerV2Test is AuctionManager {
     function isUpgraded() public pure returns(bool){
         return true;
     }
@@ -37,25 +37,13 @@ contract ProtocolRevenueManagerV2 is ProtocolRevenueManager {
     }
 }
 
-contract StakingManagerV2 is StakingManager {
-    function isUpgraded() public pure returns(bool){
-        return true;
-    }
-}
-
 contract EtherFiNodeV2 is EtherFiNode {
     function isUpgraded() public pure returns(bool){
         return true;
     }
 }
 
-contract ClaimReceiverPoolV2 is ClaimReceiverPool {
-    function isUpgraded() public pure returns(bool){
-        return true;
-    }
-}
-
-contract ScoreManagerV2 is ScoreManager {
+contract NodeOperatorManagerV2 is NodeOperatorManager {
     function isUpgraded() public pure returns(bool){
         return true;
     }
@@ -63,33 +51,24 @@ contract ScoreManagerV2 is ScoreManager {
 
 contract UpgradeTest is TestSetup {
 
-    AuctionManagerV2 public auctionManagerV2Instance;
-    ScoreManagerV2 public scoreManagerV2Instance;
-    ClaimReceiverPoolV2 public claimReceiverPoolV2Instance;
+    AuctionManagerV2Test public auctionManagerV2Instance;
     BNFTV2 public BNFTV2Instance;
     TNFTV2 public TNFTV2Instance;
     EtherFiNodesManagerV2 public etherFiNodesManagerV2Instance;
     ProtocolRevenueManagerV2 public protocolRevenueManagerV2Instance;
-    StakingManagerV2 public stakingManagerV2Instance;
+    StakingManager public stakingManagerV2Instance;
+    NodeOperatorManagerV2 public nodeOperatorManagerV2Instance;
 
     uint256[] public slippageArray;
+
    
     function setUp() public {
         setUpTests();
-
-        slippageArray = new uint256[](4);
-        slippageArray[0] = 90;
-        slippageArray[1] = 90;
-        slippageArray[2] = 90;
-        slippageArray[3] = 90;
     }
 
     function test_CanUpgradeAuctionManager() public {
-
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             5
         );
@@ -102,12 +81,12 @@ contract UpgradeTest is TestSetup {
         assertEq(auctionInstance.numberOfActiveBids(), 1);
         assertEq(auctionInstance.getImplementation(), address(auctionImplementation));
 
-        AuctionManagerV2 auctionManagerV2Implementation = new AuctionManagerV2();
+        AuctionManagerV2Test auctionManagerV2Implementation = new AuctionManagerV2Test();
 
         vm.prank(owner);
         auctionInstance.upgradeTo(address(auctionManagerV2Implementation));
 
-        auctionManagerV2Instance = AuctionManagerV2(address(auctionManagerProxy));
+        auctionManagerV2Instance = AuctionManagerV2Test(address(auctionManagerProxy));
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
@@ -118,72 +97,6 @@ contract UpgradeTest is TestSetup {
         // Check that state is maintained
         assertEq(auctionManagerV2Instance.numberOfActiveBids(), 1);
         assertEq(auctionManagerV2Instance.isUpgraded(), true);
-    }
-
-    function test_CanUpgradeClaimReceiverPool() public {
-
-        bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
-
-        vm.prank(owner);
-        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
-
-        assertEq(address(claimReceiverPoolInstance).balance, 0 ether);
-        assertEq(claimReceiverPoolInstance.getImplementation(), address(claimReceiverPoolImplementation));
-
-        ClaimReceiverPoolV2 claimReceiverV2Implementation = new ClaimReceiverPoolV2();
-        vm.stopPrank();
-        
-        vm.prank(owner);
-        claimReceiverPoolInstance.upgradeTo(address(claimReceiverV2Implementation));
-        claimReceiverPoolV2Instance = ClaimReceiverPoolV2(payable(address(claimReceiverPoolProxy)));
-
-        vm.expectRevert("Initializable: contract is already initialized");
-        vm.startPrank(owner);
-        claimReceiverPoolV2Instance.initialize(
-            address(rETH),
-            address(wstETH),
-            address(sfrxEth),
-            address(cbEth),
-            address(scoreManagerInstance),
-            address(regulationsManagerInstance)
-        );
-        assertEq(claimReceiverPoolV2Instance.getImplementation(), address(claimReceiverV2Implementation));
-
-        // Check that state is maintained
-        assertEq(claimReceiverPoolV2Instance.isUpgraded(), true);
-    }
-
-    function test_CanUpgradeScoreManager() public {
-        bytes32[] memory proof1 = merkleMigration.getProof(dataForVerification, 1);
-
-        vm.prank(owner);
-        claimReceiverPoolInstance.updateMerkleRoot(rootMigration);
-
-        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        regulationsManagerInstance.confirmEligibility("Hash_Example");
-        claimReceiverPoolInstance.deposit{value: 0.2 ether}(0, 0, 0, 0, 652, proof1, slippageArray);
-
-        assertEq(scoreManagerInstance.getImplementation(), address(scoreManagerImplementation));
-
-        ScoreManagerV2 scoreManagerV2Implementation = new ScoreManagerV2();
-        vm.stopPrank();
-        
-        vm.prank(owner);
-        scoreManagerInstance.upgradeTo(address(scoreManagerV2Implementation));
-        scoreManagerV2Instance = ScoreManagerV2(address(scoreManagerProxy));
-
-        vm.expectRevert("Initializable: contract is already initialized");
-        vm.startPrank(owner);
-        scoreManagerV2Instance.initialize();
-
-        assertEq(scoreManagerV2Instance.getImplementation(), address(scoreManagerV2Implementation));
-
-        // Check that state is maintained
-        assertEq(scoreManagerV2Instance.isUpgraded(), true);
     }
 
     function test_CanUpgradeBNFT() public {
@@ -290,12 +203,28 @@ contract UpgradeTest is TestSetup {
     }
 
     function test_CanUpgradeStakingManager() public {
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
+        startHoax(alice);
+        auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+
+        vm.stopPrank();      
+        
         assertEq(stakingManagerInstance.getImplementation(), address(stakingManagerImplementation));
 
         vm.prank(owner);
         stakingManagerInstance.setMaxBatchDepositSize(uint128(25));
 
-        StakingManagerV2 stakingManagerV2Implementation = new StakingManagerV2();
+        StakingManager stakingManagerV2Implementation = new StakingManager();
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        stakingManagerV2Implementation.initialize(address(auctionInstance));
+
 
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(alice);
@@ -304,17 +233,22 @@ contract UpgradeTest is TestSetup {
         vm.prank(owner);
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
 
-        stakingManagerV2Instance = StakingManagerV2(address(stakingManagerProxy));
+        stakingManagerV2Instance = StakingManager(address(stakingManagerProxy));
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
         stakingManagerV2Instance.initialize(address(auctionInstance));
 
         assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
-        assertEq(stakingManagerV2Instance.isUpgraded(), true);
+        // assertEq(stakingManagerV2Instance.isUpgraded(), true);
         
         // State is maintained
         assertEq(stakingManagerV2Instance.maxBatchDepositSize(), 25);
+
+        assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(depositContractEth2));
+        vm.prank(owner);
+        stakingManagerV2Instance.registerEth2DepositContract(address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
+        assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
     }
 
     function test_canUpgradeEtherFiNode() public {
@@ -322,7 +256,6 @@ contract UpgradeTest is TestSetup {
         
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            proof,
             _ipfsHash,
             5
         );
@@ -341,7 +274,6 @@ contract UpgradeTest is TestSetup {
         
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            aliceProof,
             _ipfsHash,
             5
         );
@@ -370,5 +302,36 @@ contract UpgradeTest is TestSetup {
 
         assertEq(safe1V2.isUpgraded(), true);
         assertEq(safe2V2.isUpgraded(), true);
+    }
+
+    function test_CanUpgradeNodeOperatorManager() public {
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        
+        assertEq(nodeOperatorManagerInstance.getImplementation(), address(nodeOperatorManagerImplementation));
+
+        NodeOperatorManagerV2 nodeOperatorManagerV2Implementation = new NodeOperatorManagerV2();
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        nodeOperatorManagerV2Implementation.initialize();
+
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(alice);
+        nodeOperatorManagerInstance.upgradeTo(address(nodeOperatorManagerV2Implementation));
+
+        vm.prank(owner);
+        nodeOperatorManagerInstance.upgradeTo(address(nodeOperatorManagerV2Implementation));
+
+        nodeOperatorManagerV2Instance = NodeOperatorManagerV2(address(nodeOperatorManagerProxy));
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        nodeOperatorManagerV2Instance.initialize();
+
+        assertEq(nodeOperatorManagerV2Instance.getImplementation(), address(nodeOperatorManagerV2Implementation));
+        assertEq(nodeOperatorManagerV2Instance.isUpgraded(), true);
     }
 }

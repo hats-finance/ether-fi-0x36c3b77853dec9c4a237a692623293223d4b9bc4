@@ -3,7 +3,6 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "./interfaces/IRegulationsManager.sol";
@@ -13,15 +12,15 @@ contract RegulationsManager is
     Initializable,
     OwnableUpgradeable,
     PausableUpgradeable,
-    ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
     mapping(uint32 => mapping(address => bool)) public isEligible;
     mapping(address => bytes32) public declarationHashes;
+    mapping(uint256 => bytes32) public correctVersionHash;
 
     uint32 public whitelistVersion;
 
-    uint256[47] __gap;
+    uint256[7] __gap;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -35,18 +34,23 @@ contract RegulationsManager is
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+    
     /// @notice initializes contract
     function initialize() external initializer {
         __Pausable_init();
         __Ownable_init();
         __UUPSUpgradeable_init();
-        __ReentrancyGuard_init();
     }
 
     /// @notice sets a user apart of the whitelist, confirming they are not in a blacklisted country
     function confirmEligibility(bytes32 _hash) external whenNotPaused {
+        require(correctVersionHash[whitelistVersion] == _hash, "Incorrect hash");
         isEligible[whitelistVersion][msg.sender] = true;
-        declarationHashes[msg.sender] = _hash;
+        declarationHashes[msg.sender] = keccak256(abi.encodePacked(_hash, msg.sender));
 
         emit EligibilityConfirmed(whitelistVersion, _hash, msg.sender);
     }
@@ -61,7 +65,7 @@ contract RegulationsManager is
         );
         require(
             isEligible[whitelistVersion][_user] == true,
-            "User not whitelisted"
+            "User is not whitelisted"
         );
 
         isEligible[whitelistVersion][_user] = false;
@@ -71,8 +75,9 @@ contract RegulationsManager is
 
     /// @notice resets the whitelist by incrementing the iteration
     /// @dev happens when there is an update to the blacklisted country list
-    function resetWhitelist() external onlyOwner {
+    function initializeNewWhitelist(bytes32 _newVersionHash) external onlyOwner {
         whitelistVersion++;
+        correctVersionHash[whitelistVersion] = _newVersionHash;
 
         emit whitelistVersionIncreased(whitelistVersion);
     }
