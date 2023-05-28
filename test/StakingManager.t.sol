@@ -1244,4 +1244,18 @@ contract StakingManagerTest is TestSetup {
         stakingManagerInstance.disableWhitelist();
         assertEq(stakingManagerInstance.whitelistEnabled(), false);
     }
+
+    // https://dashboard.tenderly.co/public/safe/safe-apps/simulator/8f9bf820-b9a5-4df5-8c50-20c7ecfa30a6?trace=0.0.4.0.1.0.0.2.2.1
+    function test_reproduceBugFromSimulator() public {
+        bytes memory pubkey = hex"92c465ab9d85c53ad0dd7fe21bf102c3a3927aa3cd01458bd6593c78834f9fcc86ee6944cdf560e1f3d264581a952bc6";
+        bytes memory withdrawal_credentials = hex"0100000000000000000000007c676cfb7d5e25103024ba86d38c8466aba8f190";
+        bytes memory signature = hex"87b490e315affa0c6535d00eed998f295dbb2287391ec825aabb05376b19eaea8b0e39e921acb6838bce6ef17a858c620092767d67fae44e676515d8b3afc944d026fb13182dafcf7254229f13fa46af07d2445b16b9b200877b4b180e77bdfe";
+        bytes32 deposit_data_root = hex"2684db66168254570a885b592a6a83003e83ee52b22c4e016ac37cc97d7572bf";
+
+        vm.deal(owner, 100 ether);
+        vm.startPrank(owner);
+
+        vm.expectRevert("DepositContract: reconstructed DepositData does not match supplied deposit_data_root");
+        mockDepositContractEth2.deposit{value: 32 ether}(pubkey, withdrawal_credentials, signature, deposit_data_root);
+    }
 }
