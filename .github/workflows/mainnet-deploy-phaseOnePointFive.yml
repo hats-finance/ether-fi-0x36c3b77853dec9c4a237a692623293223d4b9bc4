@@ -1,4 +1,4 @@
-name: upgrade-regulations-manager
+name: mainnet-deploy-phaseOnePointFive
 
 on: workflow_dispatch
 
@@ -31,9 +31,15 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade Regulations Manager Contract
-        run: make upgrade-regulations-manager
-        id: upgrade-regulations-manager
+      - name: Generate ABIs
+        uses: sergeysova/jq-action@v2.3.0
+        id: extract-abi
+        with:
+          cmd: bash script/extractABI.sh
+
+      - name: Deploy EtherFi Phase One Point Five Contracts
+        run: make deploy-mainnet-phase-1.5
+        id: deploy-mainnet-phase-1.5
 
       - name: Get date
         id: get-date
@@ -59,13 +65,13 @@ jobs:
           user_email: "bot@ether.fi"
           user_name: "Ether.Fi Github Bot"
 
-      - name: PR to dapp
+      - name: PR to next-dapp
         uses: paygoc6/action-pull-request-another-repo@v1.0.1
         with:
           source_folder: "release"
-          destination_repo: "GadzeFinance/dapp"
+          destination_repo: "GadzeFinance/etherfi-app"
           destination_folder: "src"
-          destination_base_branch: "master"
+          destination_base_branch: "main"
           destination_head_branch: "contract-deployment-triggered-${{ env.DATE }}"
           user_email: "bot@ether.fi"
           user_name: "Ether.Fi Github Bot"

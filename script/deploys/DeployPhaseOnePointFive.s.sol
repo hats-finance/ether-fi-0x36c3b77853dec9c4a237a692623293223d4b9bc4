@@ -2,33 +2,15 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/Treasury.sol";
-import "../../src/NodeOperatorManager.sol";
-import "../../src/EtherFiNodesManager.sol";
-import "../../src/EtherFiNode.sol";
-import "../../src/BNFT.sol";
-import "../../src/TNFT.sol";
-import "../../src/ProtocolRevenueManager.sol";
-import "../../src/StakingManager.sol";
-import "../../src/AuctionManager.sol";
-
 import "../../src/MeETH.sol";
 import "../../src/WeETH.sol";
 import "../../src/EETH.sol";
 import "../../src/LiquidityPool.sol";
 import "../../src/RegulationsManager.sol";
-
-
 import "../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-//meETH
-//eETH
-//liquidityPool
-//regulationsManager
-//weETH
-
-contract DeployPhaseOnePointFive is Script {
+contract DeployPhaseOnePointFiveScript is Script {
     using Strings for string;
 
     /*---- Storage variables ----*/
@@ -38,20 +20,6 @@ contract DeployPhaseOnePointFive is Script {
     UUPSProxy public weETHProxy;
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public regulationsManagerProxy;
-
-    // UUPSProxy public auctionManagerProxy;
-    // UUPSProxy public stakingManagerProxy;
-    // UUPSProxy public etherFiNodeManagerProxy;
-    // UUPSProxy public protocolRevenueManagerProxy;
-    // UUPSProxy public TNFTProxy;
-    // UUPSProxy public BNFTProxy;
-
-    // BNFT public BNFTImplementation;
-    // BNFT public BNFTInstance;
-
-    // TNFT public TNFTImplementation;
-    // TNFT public TNFTInstance;+
-
 
     MeETH public meETHImplementation;
     MeETH public meETH;
@@ -68,19 +36,6 @@ contract DeployPhaseOnePointFive is Script {
     RegulationsManager public regulationsManagerImplementation;
     RegulationsManager public regulationsManager;
 
-
-    // AuctionManager public auctionManagerImplementation;
-    // AuctionManager public auctionManager;
-
-    // StakingManager public stakingManagerImplementation;
-    // StakingManager public stakingManager;
-
-    // ProtocolRevenueManager public protocolRevenueManagerImplementation;
-    // ProtocolRevenueManager public protocolRevenueManager;
-
-    // EtherFiNodesManager public etherFiNodesManagerImplementation;
-    // EtherFiNodesManager public etherFiNodesManager;
-
     struct suiteAddresses {
         address weETH;
         address meETH;
@@ -88,18 +43,6 @@ contract DeployPhaseOnePointFive is Script {
         address liquidityPool;
         address regulationsManager;
     }
-
-    // struct suiteAddresses {
-    //     address treasury;
-    //     address nodeOperatorManager;
-    //     address auctionManager;
-    //     address stakingManager;
-    //     address TNFT;
-    //     address BNFT;
-    //     address etherFiNodesManager;
-    //     address protocolRevenueManager;
-    //     address etherFiNode;
-    // }
 
     suiteAddresses suiteAddressesStruct;
 
@@ -141,51 +84,6 @@ contract DeployPhaseOnePointFive is Script {
         liquidityPool = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPool.initialize(address(regulationsManagerProxy));
 
-
-
-        // Deploy contracts
-        // Treasury treasury = new Treasury();
-        // NodeOperatorManager nodeOperatorManager = new NodeOperatorManager();
-
-        // auctionManagerImplementation = new AuctionManager();
-        // auctionManagerProxy = new UUPSProxy(address(auctionManagerImplementation),"");
-        // auctionManager = AuctionManager(address(auctionManagerProxy));
-        // auctionManager.initialize(address(nodeOperatorManager));
-
-        // stakingManagerImplementation = new StakingManager();
-        // stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation),"");
-        // stakingManager = StakingManager(address(stakingManagerProxy));
-        // stakingManager.initialize(address(auctionManager));
-
-        // BNFTImplementation = new BNFT();
-        // BNFTProxy = new UUPSProxy(address(BNFTImplementation),"");
-        // BNFTInstance = BNFT(address(BNFTProxy));
-        // BNFTInstance.initialize(address(stakingManager));
-
-        // TNFTImplementation = new TNFT();
-        // TNFTProxy = new UUPSProxy(address(TNFTImplementation),"");
-        // TNFTInstance = TNFT(address(TNFTProxy));
-        // TNFTInstance.initialize(address(stakingManager));
-
-        // protocolRevenueManagerImplementation = new ProtocolRevenueManager();
-        // protocolRevenueManagerProxy = new UUPSProxy(address(protocolRevenueManagerImplementation),"");
-        // protocolRevenueManager = ProtocolRevenueManager(payable(address(protocolRevenueManagerProxy)));
-        // protocolRevenueManager.initialize();
-
-        // etherFiNodesManagerImplementation = new EtherFiNodesManager();
-        // etherFiNodeManagerProxy = new UUPSProxy(address(etherFiNodesManagerImplementation),"");
-        // etherFiNodesManager = EtherFiNodesManager(payable(address(etherFiNodeManagerProxy)));
-        // etherFiNodesManager.initialize(
-        //     address(treasury),
-        //     address(auctionManager),
-        //     address(stakingManager),
-        //     address(TNFTInstance),
-        //     address(BNFTInstance),
-        //     address(protocolRevenueManager)
-        // );
-
-        // EtherFiNode etherFiNode = new EtherFiNode();
-
         // Setup dependencies
         regulationsManager.initializeNewWhitelist(initialHash);
 
@@ -194,33 +92,7 @@ contract DeployPhaseOnePointFive is Script {
         liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
         liquidityPool.setMeETH(address(meETH));
 
-        // Setup dependencies
-        // nodeOperatorManager.setAuctionContractAddress(address(auctionManager));
-
-        // auctionManager.setStakingManagerContractAddress(address(stakingManager));
-        // auctionManager.setProtocolRevenueManager(address(protocolRevenueManager));
-
-        // protocolRevenueManager.setAuctionManagerAddress(address(auctionManager));
-        // protocolRevenueManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
-
-        // stakingManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
-        // stakingManager.registerEtherFiNodeImplementationContract(address(etherFiNode));
-        // stakingManager.registerTNFTContract(address(TNFTInstance));
-        // stakingManager.registerBNFTContract(address(BNFTInstance));
-
         vm.stopBroadcast();
-
-        // suiteAddressesStruct = suiteAddresses({
-        //     treasury: address(treasury),
-        //     nodeOperatorManager: address(nodeOperatorManager),
-        //     auctionManager: address(auctionManager),
-        //     stakingManager: address(stakingManager),
-        //     TNFT: address(TNFTInstance),
-        //     BNFT: address(BNFTInstance),
-        //     etherFiNodesManager: address(etherFiNodesManager),
-        //     protocolRevenueManager: address(protocolRevenueManager),
-        //     etherFiNode: address(etherFiNode)
-        // });
 
         suiteAddressesStruct = suiteAddresses({
             weETH: address(weETH),
