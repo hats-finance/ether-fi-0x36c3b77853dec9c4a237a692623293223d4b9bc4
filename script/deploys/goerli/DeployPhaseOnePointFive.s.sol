@@ -2,12 +2,12 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/MeETH.sol";
-import "../../src/WeETH.sol";
-import "../../src/EETH.sol";
-import "../../src/LiquidityPool.sol";
-import "../../src/RegulationsManager.sol";
-import "../../src/UUPSProxy.sol";
+import "../../../src/MeETH.sol";
+import "../../../src/WeETH.sol";
+import "../../../src/EETH.sol";
+import "../../../src/LiquidityPool.sol";
+import "../../../src/RegulationsManager.sol";
+import "../../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployPhaseOnePointFiveScript is Script {
@@ -123,7 +123,7 @@ contract DeployPhaseOnePointFiveScript is Script {
 
     function writeSuiteVersionFile() internal {
         // Read Current version
-        string memory versionString = vm.readLine("release/logs/PhaseOnePointFive/version.txt");
+        string memory versionString = vm.readLine("release/logs/PhaseOnePointFive/goerli/version.txt");
 
         // Cast string to uint256
         uint256 version = _stringToUint(versionString);
@@ -132,7 +132,7 @@ contract DeployPhaseOnePointFiveScript is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/PhaseOnePointFive/version.txt",
+            "release/logs/PhaseOnePointFive/goerli/version.txt",
             string(abi.encodePacked(Strings.toString(version)))
         );
 
@@ -140,7 +140,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/PhaseOnePointFive/",
+                    "release/logs/PhaseOnePointFive/goerli/",
                     Strings.toString(version),
                     ".release"
                 )

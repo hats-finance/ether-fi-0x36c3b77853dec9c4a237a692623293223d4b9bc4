@@ -35,9 +35,9 @@ deploy-goerli-early-reward-pool :; @forge script script/deploys/DeployEarlyAdopt
 
 deploy-phase-1:; forge clean && forge script script/deploys/DeployPhaseOne.s.sol:DeployPhaseOne --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
-deploy-goerli-phase-1.5:; forge clean && forge script script/deploys/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFive --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-goerli-phase-1.5:; forge clean && forge script script/deploys/goerli/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFive --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
-deploy-mainnet-phase-1.5:; forge clean && forge script script/deploys/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFive --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-mainnet-phase-1.5:; forge clean && forge script script/deploys/mainnet/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFive --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (GOERLI)
