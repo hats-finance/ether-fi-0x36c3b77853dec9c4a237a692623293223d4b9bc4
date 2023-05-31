@@ -50,8 +50,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        address eETHProxyAddress = vm.envAddress("EETH_PROXY_ADDRESS");
-        address liquidityPoolProxyAddress = vm.envAddress("LIQUIDITY_POOL_PROXY_ADDRESS");
         address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
@@ -59,21 +57,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         string memory baseURI = "https:token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json";
 
         // Deploy contracts
-        meETHImplementation = new MeETH();
-        meETHProxy = new UUPSProxy(address(meETHImplementation),"");
-        meETH = MeETH(payable(address(meETHProxy)));
-        meETH.initialize(baseURI, eETHProxyAddress, liquidityPoolProxyAddress);
-
-        weETHImplementation = new WeETH();
-        weETHProxy = new UUPSProxy(address(weETHImplementation),"");
-        weETH = WeETH(address(weETHProxy));
-        weETH.initialize(liquidityPoolProxyAddress, eETHProxyAddress);
-
-        eETHImplementation = new EETH();
-        eETHProxy = new UUPSProxy(address(eETHImplementation),"");
-        eETH = EETH(address(eETHProxy));
-        eETH.initialize(liquidityPoolProxyAddress);
-
         regulationsManagerImplementation = new RegulationsManager();
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation),"");
         regulationsManager = RegulationsManager(address(regulationsManagerProxy));
@@ -82,7 +65,22 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPoolImplementation = new LiquidityPool();
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPool = LiquidityPool(payable(address(liquidityPoolProxy)));
-        liquidityPool.initialize(address(regulationsManagerProxy));
+        liquidityPool.initialize(address(regulationsManager));
+
+        eETHImplementation = new EETH();
+        eETHProxy = new UUPSProxy(address(eETHImplementation),"");
+        eETH = EETH(address(eETHProxy));
+        eETH.initialize(address(liquidityPool));
+
+        meETHImplementation = new MeETH();
+        meETHProxy = new UUPSProxy(address(meETHImplementation),"");
+        meETH = MeETH(payable(address(meETHProxy)));
+        meETH.initialize(baseURI, address(eETH), address(liquidityPool));
+
+        weETHImplementation = new WeETH();
+        weETHProxy = new UUPSProxy(address(weETHImplementation),"");
+        weETH = WeETH(address(weETHProxy));
+        weETH.initialize(address(liquidityPool), address(eETH));
 
         // Setup dependencies
         regulationsManager.initializeNewWhitelist(initialHash);
