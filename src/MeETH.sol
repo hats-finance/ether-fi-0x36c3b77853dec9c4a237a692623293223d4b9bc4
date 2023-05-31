@@ -135,7 +135,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @return tokenId The ID of the minted meETH membership NFT.
-    function wrapEEth(uint256 _amount, uint256 _amountForPoints) external isEEthStakingOpen returns (uint256) {
+    function wrapEEth(uint256 _amount, uint256 _amountForPoints) external returns (uint256) {
+        _requireEEthStakingOpen();
         if (_amount / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (eETH.balanceOf(msg.sender) < _amount + _amountForPoints) revert InsufficientBalance();
 
@@ -187,7 +188,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @dev This function allows users to unwrap their meETH tokens and receive eETH in return.
     /// @param _tokenId The ID of the meETH membership NFT to unwrap.
     /// @param _amount The amount of meETH tokens to unwrap.
-    function unwrapForEEth(uint256 _tokenId, uint256 _amount) public isEEthStakingOpen {
+    function unwrapForEEth(uint256 _tokenId, uint256 _amount) public {
+        _requireEEthStakingOpen();
         _requireTokenOwner(_tokenId);
         if (_amount == 0) revert InvalidAmount();
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
@@ -209,7 +211,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
-    function withdrawAndBurnForEEth(uint256 _tokenId) public isEEthStakingOpen {
+    function withdrawAndBurnForEEth(uint256 _tokenId) public {
+        _requireEEthStakingOpen();
         _requireTokenOwner(_tokenId);
 
         claimStakingRewards(_tokenId);
@@ -541,6 +544,12 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (membershipNFT.balanceOf(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
     }
 
+
+    error EETHStakingDisabled();
+    function _requireEEthStakingOpen() internal view {
+        if (!liquidityPool.eEthliquidStakingOpened()) revert EETHStakingDisabled();
+    }
+
     // Compute the points earnings of a user between [since, until) 
     // Assuming the user's balance didn't change in between [since, until)
     function _membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) internal view returns (uint40) {
@@ -768,20 +777,4 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
-
-
-    //--------------------------------------------------------------------------------------
-    //-----------------------------------  MODIFIERS  --------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    modifier isEEthStakingOpen() {
-        require(liquidityPool.eEthliquidStakingOpened(), "Liquid staking functions are closed");
-        _;
-    }
-
-    modifier onlyLiquidityPool() {
-        require(msg.sender == address(liquidityPool), "Caller muat be the liquidity pool contract");
-        _;
-    }
 }
-
