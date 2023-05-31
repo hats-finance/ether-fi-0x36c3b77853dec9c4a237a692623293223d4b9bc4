@@ -85,7 +85,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         // Setup dependencies
         regulationsManager.initializeNewWhitelist(initialHash);
 
-        liquidityPool.setTokenAddress(eETHProxyAddress);
+        liquidityPool.setTokenAddress(address(eETH));
         liquidityPool.setStakingManager(stakingManagerProxyAddress);
         liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
         liquidityPool.setMeETH(address(meETH));
