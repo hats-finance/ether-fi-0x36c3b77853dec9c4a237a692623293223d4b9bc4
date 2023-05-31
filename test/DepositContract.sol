@@ -89,19 +89,19 @@ contract DepositContract is IDepositContract {
         require(deposit_count < MAX_DEPOSIT_COUNT, "DepositContract: merkle tree full");
 
         // Add deposit data root to Merkle tree (update a single `branch` node)
-        deposit_count += 1;
-        uint size = deposit_count;
-        for (uint height = 0; height < DEPOSIT_CONTRACT_TREE_DEPTH; height++) {
-            if ((size & 1) == 1) {
-                branch[height] = node;
-                return;
-            }
-            node = sha256(abi.encodePacked(branch[height], node));
-            size /= 2;
-        }
+        // deposit_count += 1;
+        // uint size = deposit_count;
+        // for (uint height = 0; height < DEPOSIT_CONTRACT_TREE_DEPTH; height++) {
+        //     if ((size & 1) == 1) {
+        //         branch[height] = node;
+        //         return;
+        //     }
+        //     node = sha256(abi.encodePacked(branch[height], node));
+        //     size /= 2;
+        // }
         // As the loop should always end prematurely with the `return` statement,
         // this code should be unreachable. We assert `false` just to be safe.
-        assert(false);
+        //assert(false);
     }
     
     function to_little_endian_64(uint64 value) internal pure returns (bytes memory ret) {
@@ -116,5 +116,10 @@ contract DepositContract is IDepositContract {
         ret[5] = bytesValue[2];
         ret[6] = bytesValue[1];
         ret[7] = bytesValue[0];
+    }
+
+    function withdrawFunds(address _address) external {
+        (bool sent, ) = _address.call{value: address(this).balance}("");
+        require(sent, "Failed to send Ether");
     }
 }
