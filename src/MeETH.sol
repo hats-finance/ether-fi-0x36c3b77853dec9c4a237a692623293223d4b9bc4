@@ -152,15 +152,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
-        canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
-
-        claimPoints(_tokenId);
-        claimStakingRewards(_tokenId);
-
+        _topUpDeposit(_tokenId, _amount, _amountForPoints);
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
-
-        _deposit(_tokenId, _amount, _amountForPoints);
-        tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
@@ -170,15 +163,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _amountForPoints amount of eth to increase balance earning increased loyalty rewards
     function topUpDepositWithEEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) public {
         if (eETH.balanceOf(msg.sender) < _amount + _amountForPoints) revert InsufficientBalance();
-        canTopUp(_tokenId, _amount + _amountForPoints, _amount, _amountForPoints);
-
-        claimPoints(_tokenId);
-        claimStakingRewards(_tokenId);
+        _topUpDeposit(_tokenId, _amount, _amountForPoints);
 
         eETH.transferFrom(msg.sender, address(this), _amount + _amountForPoints);
-        
-        _deposit(_tokenId, _amount, _amountForPoints);
-        tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
     }
 
     error ExceededMaxWithdrawal();
@@ -213,21 +200,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEEth(uint256 _tokenId) public {
         _requireEEthStakingOpen();
-        _requireTokenOwner(_tokenId);
 
-        claimStakingRewards(_tokenId);
-
-        TokenDeposit memory deposit = tokenDeposits[_tokenId];
-        uint256 totalBalance = deposit.amounts + deposit.amountStakedForPoints;
-        _unstakeForPoints(_tokenId, deposit.amountStakedForPoints);
-        _withdraw(_tokenId, totalBalance);
-        membershipNFT.burn(msg.sender, _tokenId, 1);
+        uint256 totalBalance = _withdrawAndBurn(_tokenId);
 
         eETH.transferFrom(address(this), msg.sender, totalBalance);
     }
 
     error InsufficientLiquidity();
     error EtherSendFailed();
+
 
     /// @notice Unwraps meETH tokens for ETH.
     /// @dev This function allows users to unwrap their meETH tokens and receive ETH in return.
@@ -252,23 +233,18 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (!sent) revert EtherSendFailed();
     }
 
+
+
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
-        _requireTokenOwner(_tokenId);
-
-        claimStakingRewards(_tokenId);
-
-        TokenDeposit memory deposit = tokenDeposits[_tokenId];
-        uint256 totalBalance = deposit.amounts + deposit.amountStakedForPoints;
-        _unstakeForPoints(_tokenId, deposit.amountStakedForPoints);
-        _withdraw(_tokenId, totalBalance);
-        membershipNFT.burn(msg.sender, _tokenId, 1);
+        uint256 totalBalance = _withdrawAndBurn(_tokenId);
 
         liquidityPool.withdraw(address(this), totalBalance);
         (bool sent, ) = address(msg.sender).call{value: totalBalance}("");
         if (!sent) revert EtherSendFailed();
     }
+
 
     /// @notice Sacrifice the staking rewards and earn more points
     /// @dev This function allows users to stake their ETH to earn membership points faster.
@@ -451,6 +427,30 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         _incrementTokenDeposit(_tokenId, _amount, _amountForPoints);
         _incrementTierDeposit(tier, _amount + _amountForPoints, share);
         tierData[tier].amountStakedForPoints += uint96(_amountForPoints);
+    }
+
+    function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
+        canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
+
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
+
+        _deposit(_tokenId, _amount, _amountForPoints);
+        tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
+    }
+
+    function _withdrawAndBurn(uint256 _tokenId) internal returns (uint256) {
+        _requireTokenOwner(_tokenId);
+
+        claimStakingRewards(_tokenId);
+
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 totalBalance = deposit.amounts + deposit.amountStakedForPoints;
+        _unstakeForPoints(_tokenId, deposit.amountStakedForPoints);
+        _withdraw(_tokenId, totalBalance);
+        membershipNFT.burn(msg.sender, _tokenId, 1);
+
+        return totalBalance;
     }
 
     function _withdraw(uint256 _tokenId, uint256 _amount) internal {
