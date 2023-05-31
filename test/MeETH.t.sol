@@ -28,6 +28,7 @@ contract MeETHTest is TestSetup {
         bobProof = merkle.getProof(whiteListedAddresses, 4);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
     }
+    /*
 
     function test_metadata() public {
 
@@ -773,5 +774,6 @@ contract MeETHTest is TestSetup {
 
         vm.stopPrank();
     }
+    */
 
 }

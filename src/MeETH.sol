@@ -5,13 +5,13 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@openzeppelin-upgradeable/contracts/token/ERC1155/ERC1155Upgradeable.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/ImeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./MembershipNFT.sol";
 
-contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, ImeETH {
+contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -19,6 +19,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
+    MembershipNFT public membershipNFT;
 
     mapping (uint256 => TokenDeposit) public tokenDeposits;
     mapping (uint256 => TokenData) public tokenData;
@@ -31,13 +32,11 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     bytes32 public eapMerkleRoot;
     uint64[] public requiredEapPointsPerEapDeposit;
 
-    uint32 public nextMintID;
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
     uint56 public minDepositGwei;
     uint8  public maxDepositTopUpPercent;
 
-    string private contractMetadataURI; /// @dev opensea contract-level metadata
 
     uint256[23] __gap;
 
@@ -47,17 +46,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
-
-    /// @dev ERC-4906 This event emits when the metadata of a token is changed.
-    /// So that the third-party platforms such as NFT market could
-    /// timely update the images and related attributes of the NFT.
-    event MetadataUpdate(uint256 _tokenId);
-
-    /// @dev ERC-4906 This event emits when the metadata of a range of tokens is changed.
-    /// So that the third-party platforms such as NFT market could
-    /// timely update the images and related attributes of the NFTs.    
-    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
-
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -76,14 +64,13 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
 
         __Ownable_init();
         __UUPSUpgradeable_init();
-        __ERC1155_init(_newURI);
+//        __ERC1155_init(_newURI);
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
-        nextMintID = 0;
         minDepositGwei = (0.1 ether / 1 gwei);
         maxDepositTopUpPercent = 20;
     }
@@ -189,7 +176,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @param _tokenId The ID of the meETH membership NFT to unwrap.
     /// @param _amount The amount of meETH tokens to unwrap.
     function unwrapForEEth(uint256 _tokenId, uint256 _amount) public isEEthStakingOpen {
-        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(membershipNFT.balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(_amount > 0, "You cannot unwrap 0 meETH");
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 unwrappableBalance = deposit.amounts - deposit.amountStakedForPoints;
@@ -211,7 +198,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEEth(uint256 _tokenId) public isEEthStakingOpen {
-        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(membershipNFT.balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
 
         claimStakingRewards(_tokenId);
 
@@ -219,7 +206,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         uint256 totalBalance = deposit.amounts + deposit.amountStakedForPoints;
         _unstakeForPoints(_tokenId, deposit.amountStakedForPoints);
         _withdraw(_tokenId, totalBalance);
-        _burn(msg.sender, _tokenId, 1);
+        membershipNFT.burn(msg.sender, _tokenId, 1);
 
         eETH.transferFrom(address(this), msg.sender, totalBalance);
     }
@@ -229,7 +216,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @param _tokenId The ID of the meETH membership NFT to unwrap.
     /// @param _amount The amount of meETH tokens to unwrap.
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external {
-        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(membershipNFT.balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(address(liquidityPool).balance >= _amount, "Not enough ETH in the liquidity pool");
 
         claimPoints(_tokenId);
@@ -250,7 +237,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
-        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(membershipNFT.balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
 
         claimStakingRewards(_tokenId);
 
@@ -258,7 +245,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         uint256 totalBalance = deposit.amounts + deposit.amountStakedForPoints;
         _unstakeForPoints(_tokenId, deposit.amountStakedForPoints);
         _withdraw(_tokenId, totalBalance);
-        _burn(msg.sender, _tokenId, 1);
+        membershipNFT.burn(msg.sender, _tokenId, 1);
 
         liquidityPool.withdraw(address(this), totalBalance);
         (bool sent, ) = address(msg.sender).call{value: totalBalance}("");
@@ -270,7 +257,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @param _tokenId The ID of the meETH membership NFT.
     /// @param _amount The amount of ETH which sacrifices its staking rewards to earn points faster
     function stakeForPoints(uint256 _tokenId, uint256 _amount) external {
-        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(membershipNFT.balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(tokenDeposits[_tokenId].amounts >= _amount, "Not enough balance to stake for points");
 
         claimPoints(_tokenId);
@@ -284,7 +271,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     /// @param _tokenId The ID of the meETH membership NFT.
     /// @param _amount The amount of ETH to unstake for staking rewards.
     function unstakeForPoints(uint256 _tokenId, uint256 _amount) external {
-        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(membershipNFT.balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(tokenDeposits[_tokenId].amountStakedForPoints >= _amount, "Not enough balance staked");
 
         claimPoints(_tokenId);
@@ -421,7 +408,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
     * @return tokenId The unique ID of the newly minted NFT.
     */
     function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-        uint256 tokenId = nextMintID++;
+
+        uint256 tokenId = membershipNFT.nextMintID();
 
         uint8 tier = _tierForPoints(_tierPoints);
         TokenData storage tokenData = tokenData[tokenId];
@@ -432,19 +420,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
 
         _deposit(tokenId, _amount, _amountForPoints);
-        _mint(to, tokenId, 1, "");
+        uint256 mintedTokenId = membershipNFT.mint(to, 1);
+        require(mintedTokenId == tokenId, "Invalid mint"); // shouldn't be an issue?
 
-        emit TransferSingle(to, address(0), to, tokenId, 1);
-
-        require(
-            to.code.length == 0
-                ? to != address(0)
-                : IERC165Upgradeable(to).supportsInterface(type(IERC1155ReceiverUpgradeable).interfaceId) && 
-                IERC1155ReceiverUpgradeable(to).onERC1155Received.selector == bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")),
-            "UNSAFE_RECIPIENT"
-        );
-
-        return tokenId;
+        return mintedTokenId;
     }
 
     function _deposit(uint256 _tokenId, uint256 _amount, uint256 _amountForPoints) internal {
@@ -736,7 +715,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 monthInSeconds = 28 days;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
-        require(balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
+        require(membershipNFT.balanceOf(msg.sender, _tokenId) == 1, "Only token owner");
         require(block.timestamp - uint256(token.prevTopUpTimestamp) >= monthInSeconds, "Already topped up this month");
         require(_totalAmount == _amount + _amountForPoints, "Invalid allocation");
         require(_totalAmount <= maxDeposit, "Above maximum deposit");
@@ -762,35 +741,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upg
         return _getImplementation();
     }
 
-
-    //--------------------------------------------------------------------------------------
-    //---------------------------------- NFT METADATA --------------------------------------
-    //--------------------------------------------------------------------------------------
-
-    /// @notice OpenSea contract-level metadata
-    function contractURI() public view returns (string memory) {
-        return contractMetadataURI;
-    }
-
-    /// @dev opensea contract-level metadata
-    function setContractMetadataURI(string calldata _newURI) external onlyOwner {
-        contractMetadataURI = _newURI;
-    }
-
-    /// @dev erc1155 metadata extension
-    function setMetadataURI(string calldata _newURI) external onlyOwner {
-        _setURI(_newURI);
-    }
-
-    /// @dev alert opensea to a metadata update
-    function alertMetadataUpdate(uint256 id) public onlyOwner {
-        emit MetadataUpdate(id);
-    }
-
-    /// @dev alert opensea to a metadata update
-    function alertBatchMetadataUpdate(uint256 startID, uint256 endID) public onlyOwner {
-        emit BatchMetadataUpdate(startID, endID);
-    }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
