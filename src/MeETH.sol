@@ -21,6 +21,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     ILiquidityPool public liquidityPool;
     MembershipNFT public membershipNFT;
 
+    address public treasury;
+    address public protocolRevenueManager;
+
     mapping (uint256 => TokenDeposit) public tokenDeposits;
     mapping (uint256 => TokenData) public tokenData;
     TierDeposit[] public tierDeposits;
@@ -60,7 +63,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     error DissallowZeroAddress();
 
-    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress) external initializer {
+    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress, address _treasury, address _protocolRevenueManager) external initializer {
         if (_eEthAddress == address(0)) revert DissallowZeroAddress();
         if (_liquidityPoolAddress == address(0)) revert DissallowZeroAddress();
 
@@ -70,6 +73,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+
+        treasury = _treasury;
+        protocolRevenueManager = _protocolRevenueManager;
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
@@ -342,6 +348,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     */
     function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
 
+        uint256 amountAfterFee = _distributeFee("mint", _amount);
+
         uint256 tokenId = membershipNFT.nextMintID();
 
         uint8 tier = tierForPoints(_tierPoints);
@@ -594,6 +602,23 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         token.baseTierPoints -= penalty;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
         _claimTier(_tokenId);
+    }
+
+    function _distributeFee(bytes32 _feeType, uint256 _amount) internal returns (uint256){
+        uint256 feeID = membershipNFT.feeTypes(_feeType);
+        uint256 feePercentage = membershipNFT.feePercentage(feeID);
+        uint256 feeAmount = _amount * feePercentage / 100;
+
+        uint256 treasuryAmount = feeAmount * membershipNFT.treasuryFeePercentage() / 100;
+        uint256 protocolRevenueManagerAmount = feeAmount * membershipNFT.protocolRevenueFeePercentage() / 100;
+
+        (bool sent, ) = treasury.call{value: treasuryAmount}("");
+        require(sent, "Failed to send Ether");
+
+        (sent, ) = protocolRevenueManager.call{value: protocolRevenueManagerAmount}("");
+        require(sent, "Failed to send Ether");
+
+        return _amount - feeAmount;
     }
 
     // Finds the corresponding for the tier points

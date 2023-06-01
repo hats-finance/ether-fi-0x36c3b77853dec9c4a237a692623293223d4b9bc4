@@ -14,10 +14,23 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     string private contractMetadataURI; /// @dev opensea contract-level metadata
     uint256 public nextMintID;
+    uint256 public numberOfFeeTypes;
+    uint256 public numberofFeeRecipients;
+
+    uint256 public treasuryFeePercentage;
+    uint256 public protocolRevenueFeePercentage;
+
+    mapping(bytes32 => uint256) public feeTypes;
+    mapping(uint256 => uint256) public feePercentage;
+
+    uint256[10] public gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
+    }
+
+    function initialize() external initializer {
     }
 
     // TODO(dave): permissions
@@ -31,9 +44,37 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         _burn(_from, _tokenId, _amount);
     }
 
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  SETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    error IncorrectFeePercentage();
+
+    function addNewFeeType(bytes32 _type, uint256 _percentage) external onlyOwner {
+        feeTypes[_type] = numberOfFeeTypes;
+        feePercentage[numberOfFeeTypes] = _percentage;
+        numberOfFeeTypes++;
+    }
+
+    function updateFeeTypePercentage(bytes32 _type, uint256 _newPercentage) external onlyOwner {
+        if (_newPercentage >= 100) revert IncorrectFeePercentage();
+        uint256 feeID = feeTypes[_type];
+        feePercentage[feeID] = _newPercentage;
+    }
+
+    function updateTreasuryFeePercentage(uint256 _percentage) external onlyOwner {
+        if (_percentage >= 100) revert IncorrectFeePercentage();
+        treasuryFeePercentage = _percentage;
+        protocolRevenueFeePercentage = 100 - _percentage;
+    }
+
     function setMeETH(address _address) external onlyOwner {
         meETH = ImeETH(_address);
     }
+
+    //--------------------------------------------------------------------------------------
+    //---------------------------------  INTERNAL FUNCTIONS  -------------------------------
+    //--------------------------------------------------------------------------------------
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
