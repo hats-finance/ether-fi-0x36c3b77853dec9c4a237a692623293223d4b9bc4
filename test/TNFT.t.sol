@@ -52,6 +52,9 @@ contract TnftTest is TestSetup {
             32 ether
         );
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
         IStakingManager.DepositData memory depositData = IStakingManager
             .DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -60,8 +63,10 @@ contract TnftTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
+        depositDataArray[0] = depositData;
+
         startHoax(alice);
-        stakingManagerInstance.registerValidator(zeroRoot, bidIds[0], depositData);
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidIds, depositDataArray);
         vm.stopPrank();
 
         assertEq(TNFTInstance.ownerOf(1), alice);
