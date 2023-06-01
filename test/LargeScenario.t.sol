@@ -252,91 +252,88 @@ contract LargeScenariosTest is TestSetup {
         }
 
         // Greg registers his validator
-        // address gregNode = managerInstance.etherfiNodeAddress(
-        //     gregProcessedBidIds[0]
-        // );
+        address gregNode = managerInstance.etherfiNodeAddress(
+            gregProcessedBidIds[0]
+        );
 
-        // IStakingManager.DepositData[]
-        //     memory depositDataArray3 = new IStakingManager.DepositData[](1);
+        root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(gregNode),
+            32 ether
+        );
+        depositData = IStakingManager.DepositData({
+            publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            depositDataRoot: root,
+            ipfsHashForEncryptedValidatorKey: "test_ipfs"
+        });
 
-        // root = depGen.generateDepositRoot(
-        //     hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-        //     hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-        //     managerInstance.generateWithdrawalCredentials(gregNode),
-        //     32 ether
-        // );
-        // depositData = IStakingManager.DepositData({
-        //     publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-        //     signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-        //     depositDataRoot: root,
-        //     ipfsHashForEncryptedValidatorKey: "test_ipfs"
-        // });
+        depositDataArray1[0] = depositData;
 
-        // depositDataArray3[0] = depositData;
+        startHoax(greg);
+        stakingManagerInstance.batchRegisterValidators(
+            zeroRoot,
+            gregProcessedBidIds,
+            depositDataArray1
+        );
+        vm.stopPrank();
 
-        // startHoax(greg);
-        // stakingManagerInstance.batchRegisterValidators(
-        //     zeroRoot,
-        //     gregProcessedBidIds,
-        //     depositDataArray3
-        // );
-        // vm.stopPrank();
+        // Auction Revenue gets transfered
+        // Because he used bobs bid of 0.002 ether
+        assertEq(gregNode.balance, 0.001 ether);
+        assertEq(address(auctionInstance).balance, 0.605 ether - 0.002 ether);
 
-        // // Auction Revenue gets transfered
-        // // Because he used bobs bid of 0.002 ether
-        // assertEq(gregNode.balance, 0.001 ether);
-        // assertEq(address(auctionInstance).balance, 0.605 ether - 0.002 ether);
+        // Check nodes state and NFT Owners
+        assertTrue(
+            IEtherFiNode(gregNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE
+        );
+        assertEq(TNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
+        assertEq(BNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
 
-        // // Check nodes state and NFT Owners
-        // assertTrue(
-        //     IEtherFiNode(gregNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE
-        // );
-        // assertEq(TNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
-        // assertEq(BNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
+        /*---- Staking Rewards come in ----*/
 
-        // /*---- Staking Rewards come in ----*/
+        // Owner acting as deposit contract
+        skip(2 weeks);
+        hoax(owner);
+        (bool sent, ) = address(protocolRevenueManagerInstance).call{
+            value: 1 ether
+        }("");
+        require(sent, "Failed to send Ether");
 
-        // // Owner acting as deposit contract
-        // skip(2 weeks);
-        // hoax(owner);
-        // (bool sent, ) = address(protocolRevenueManagerInstance).call{
-        //     value: 1 ether
-        // }("");
-        // require(sent, "Failed to send Ether");
+        // Bob is N.O.
+        // Greg is TNFT and BNFT owner
+        uint256 bobBalanceBeforeSkim = bob.balance;
+        uint256 gregBalanceBeforeSkim = greg.balance;
+        uint256 treasuryBalanceBeforeSkim = address(treasuryInstance).balance;
 
-        // // Bob is N.O.
-        // // Greg is TNFT and BNFT owner
-        // uint256 bobBalanceBeforeSkim = bob.balance;
-        // uint256 gregBalanceBeforeSkim = greg.balance;
-        // uint256 treasuryBalanceBeforeSkim = address(treasuryInstance).balance;
+        (
+            uint256 toOperator,
+            uint256 toTnft,
+            uint256 toBnft,
+            uint256 toTreasury
+        ) = managerInstance.getRewardsPayouts(
+                gregProcessedBidIds[0],
+                true,
+                true,
+                true
+            );
 
-        // (
-        //     uint256 toOperator,
-        //     uint256 toTnft,
-        //     uint256 toBnft,
-        //     uint256 toTreasury
-        // ) = managerInstance.getRewardsPayouts(
-        //         gregProcessedBidIds[0],
-        //         true,
-        //         true,
-        //         true
-        //     );
+        // Greg skims rewards
+        vm.prank(greg);
+        managerInstance.partialWithdraw(
+            gregProcessedBidIds[0],
+            true,
+            true,
+            true
+        );
 
-        // // Greg skims rewards
-        // vm.prank(greg);
-        // managerInstance.partialWithdraw(
-        //     gregProcessedBidIds[0],
-        //     true,
-        //     true,
-        //     true
-        // );
-
-        // // Correct rewards go to NFT holders, Node Operator and Treasury
-        // assertEq(greg.balance, gregBalanceBeforeSkim + toTnft + toBnft);
-        // assertEq(bob.balance, bobBalanceBeforeSkim + toOperator);
-        // assertEq(
-        //     address(treasuryInstance).balance,
-        //     treasuryBalanceBeforeSkim + toTreasury
-        // );    
+        // Correct rewards go to NFT holders, Node Operator and Treasury
+        assertEq(greg.balance, gregBalanceBeforeSkim + toTnft + toBnft);
+        assertEq(bob.balance, bobBalanceBeforeSkim + toOperator);
+        assertEq(
+            address(treasuryInstance).balance,
+            treasuryBalanceBeforeSkim + toTreasury
+        );    
     }
 }
