@@ -35,6 +35,8 @@ deploy-goerli-early-reward-pool :; @forge script script/deploys/DeployEarlyAdopt
 
 deploy-phase-1:; forge clean && forge script script/deploys/DeployPhaseOne.s.sol:DeployPhaseOne --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
+deploy-test-deposit-contract:; forge clean && forge script script/deploys/goerli/DeployTestDepositContract.s.sol:DeployTestDepositContractScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+
 deploy-goerli-phase-1.5:; forge clean && forge script script/deploys/goerli/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFiveScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
 deploy-mainnet-phase-1.5:; forge clean && forge script script/deploys/mainnet/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFiveScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
