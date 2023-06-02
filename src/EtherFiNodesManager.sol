@@ -433,8 +433,6 @@ contract EtherFiNodesManager is
     function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
-        require(IEtherFiNode(etherfiNode).phase() != IEtherFiNode.VALIDATOR_PHASE.EXITED, "Validator already exited");
-
         // Mark EXITED
         IEtherFiNode(etherfiNode).markExited(_exitTimestamp);
 

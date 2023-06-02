@@ -53,9 +53,6 @@ contract RewardsSkimmingTest is TestSetup {
         nodeOperatorManagerInstance.addToWhitelist(operators[0]);
         vm.stopPrank();
 
-        hoax(owner);
-        stakingManagerInstance.setMaxBatchDepositSize(50);
-
         startHoax(operators[0]);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -72,12 +69,11 @@ contract RewardsSkimmingTest is TestSetup {
         }
         vm.stopPrank();
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](num_stakers);
+
         for (uint i = 0; i < num_stakers; i++) {
             startHoax(stakers[i]);
-            
-            IStakingManager.DepositData[]
-            memory depositDataArray = new IStakingManager.DepositData[](1);
-
             uint256[] memory candidateBidIds = new uint256[](1);
             candidateBidIds[0] = validatorIds[i];
             bytes32[] memory stakerProof = merkleStakers.getProof(stakerWhitelistedAddresses, i);
@@ -91,16 +87,17 @@ contract RewardsSkimmingTest is TestSetup {
                 managerInstance.generateWithdrawalCredentials(etherFiNode),
                 32 ether
             );
-            depositDataArray[0] = IStakingManager.DepositData({
+            depositDataArray[i] = IStakingManager.DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-            stakingManagerInstance.batchRegisterValidators(zeroRoot, candidateBidIds, depositDataArray);
-
             vm.stopPrank();
         }
+
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, validatorIds, depositDataArray);
+
 
         // Mix the T-NFT holders
         for (uint i = 0; i < num_stakers; i++) {
