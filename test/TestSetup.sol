@@ -248,12 +248,14 @@ contract TestSetup is Test {
         meEthImplementation = new MeETH();
         meETHProxy = new UUPSProxy(address(meEthImplementation), "");
         meEthInstance = MeETH(payable(meETHProxy));
-        meEthInstance.initialize("https:token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json", address(eETHInstance), address(liquidityPoolInstance));
 
         membershipNftImplementation = new MembershipNFT();
         membershipNftProxy = new UUPSProxy(address(membershipNftImplementation), "");
         membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
-        membershipNftInstance.setMeETH(address(meEthInstance));
+
+        // initialize circular dependency
+        meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance));
+        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json", address(meEthInstance));
 
         // Setup dependencies
         _setUpNodeOperatorWhitelist();

@@ -60,16 +60,16 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     error DissallowZeroAddress();
 
-    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress) external initializer {
+    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNFT) external initializer {
         if (_eEthAddress == address(0)) revert DissallowZeroAddress();
         if (_liquidityPoolAddress == address(0)) revert DissallowZeroAddress();
 
         __Ownable_init();
         __UUPSUpgradeable_init();
-//        __ERC1155_init(_newURI);
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+        membershipNFT = MembershipNFT(_membershipNFT);
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
@@ -142,6 +142,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         _topUpDeposit(_tokenId, _amount, _amountForPoints);
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
     }
+
 
     error ExceededMaxWithdrawal();
     error ExceededMaxDeposit();
@@ -367,8 +368,23 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         tierData[tier].amountStakedForPoints += uint96(_amountForPoints);
     }
 
+    error OncePerMonth();
+
+    function _canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) private view returns (bool) {
+        uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 monthInSeconds = 28 days;
+        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
+        if (membershipNFT.balanceOf(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
+        if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
+        if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
+        if (_totalAmount > maxDeposit) revert ExceededMaxDeposit();
+
+        return true;
+    }
+
     function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
-        membershipNFT.canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
+        _canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);

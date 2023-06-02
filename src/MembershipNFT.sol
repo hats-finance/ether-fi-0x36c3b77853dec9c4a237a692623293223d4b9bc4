@@ -19,11 +19,23 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     constructor() {
         _disableInitializers();
     }
+  
+    error DissallowZeroAddress();
+    function initialize(string calldata _metadataURI, address _membershipManager) external initializer {
+        if (_membershipManager == address(0)) revert DissallowZeroAddress();
+
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ERC1155_init(_metadataURI);
+
+        meETH = ImeETH(_membershipManager);
+    }
 
     // TODO(dave): permissions
     function mint(address _to, uint256 _amount) external returns (uint256) {
         uint256 tokenId = nextMintID++;
         _mint(_to, tokenId, _amount, "");
+        return tokenId;
     }
 
     // TODO(dave): permissions
@@ -91,23 +103,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return uint40(earnedPoints);
     }
 
-    error OnlyTokenOwner();
-    error OncePerMonth();
-    error InvalidAllocation();
-    error ExceededMaxDeposit();
-
-    function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
-        (,,,, uint32 prevTopUpTimestamp,,) = meETH.tokenData(_tokenId);
-        (uint128 amounts, uint128 amountStakedForPoints) = meETH.tokenDeposits(_tokenId);
-        uint256 monthInSeconds = 28 days;
-        uint256 maxDeposit = ((amounts + amountStakedForPoints) * meETH.maxDepositTopUpPercent()) / 100;
-        if (balanceOf(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
-        if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
-        if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
-        if (_totalAmount > maxDeposit) revert ExceededMaxDeposit();
-        
-        return true;
-    }
 
     function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) public view returns (bool) {
         // cap withdrawals to 50% of lifetime max balance. Otherwise need to fully withdraw and burn NFT
