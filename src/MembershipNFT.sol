@@ -12,6 +12,13 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     ImeETH meETH;
 
+    struct FeeAmounts {
+        uint64 mint;
+        uint64 withdraw;
+        uint64 burn;
+        uint64 upgrade;
+    }
+
     string private contractMetadataURI; /// @dev opensea contract-level metadata
     uint256 public nextMintID;
     uint256 public numberOfFeeTypes;
@@ -20,8 +27,18 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     uint256 public treasuryFeePercentage;
     uint256 public protocolRevenueFeePercentage;
 
-    mapping(bytes32 => uint256) public feeTypes;
-    mapping(uint256 => uint256) public feePercentage;
+    uint256 public treasuryFeesOwed;
+    uint256 public protocolRevenueFeesOwed;
+
+    uint256 public mintFee;
+    uint256 public upgradeFee;
+    uint256 public withdrawFee;
+    uint256 public burnFee;
+
+    address public treasury;
+    address public protocolRevenueManager;
+
+    FeeAmounts public feeAmount;
 
     uint256[10] public gap;
 
@@ -30,7 +47,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         _disableInitializers();
     }
 
-    function initialize() external initializer {
+    function initialize(address _treasury, address _protocolRevenueManager) external initializer {
+        treasury = _treasury;
+        protocolRevenueManager = _protocolRevenueManager;
     }
 
     // TODO(dave): permissions
@@ -49,27 +68,38 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     //--------------------------------------------------------------------------------------
 
     error IncorrectFeePercentage();
-
-    function addNewFeeType(bytes32 _type, uint256 _percentage) external onlyOwner {
-        feeTypes[_type] = numberOfFeeTypes;
-        feePercentage[numberOfFeeTypes] = _percentage;
-        numberOfFeeTypes++;
-    }
-
-    function updateFeeTypePercentage(bytes32 _type, uint256 _newPercentage) external onlyOwner {
-        if (_newPercentage >= 100) revert IncorrectFeePercentage();
-        uint256 feeID = feeTypes[_type];
-        feePercentage[feeID] = _newPercentage;
-    }
-
-    function updateTreasuryFeePercentage(uint256 _percentage) external onlyOwner {
-        if (_percentage >= 100) revert IncorrectFeePercentage();
-        treasuryFeePercentage = _percentage;
-        protocolRevenueFeePercentage = 100 - _percentage;
-    }
+    error IncorrectCaller();
 
     function setMeETH(address _address) external onlyOwner {
         meETH = ImeETH(_address);
+    }
+
+    function setFeeAmounts(uint64 _mintingFee, uint64 _withdrawalFee, uint64 _burnFee, uint64 _upgradeFee) external onlyOwner {
+        feeAmount = FeeAmounts({
+            mint: _mintingFee,
+            withdraw: _withdrawalFee,
+            burn: _burnFee,
+            upgrade: _upgradeFee
+        });
+    }
+
+    function updateFeesOwed(uint256 _amount) external {
+        if(msg.sender != address(meETH)) revert IncorrectCaller();
+
+        treasuryFeesOwed += _amount * treasuryFeePercentage / 100;
+        protocolRevenueFeesOwed += _amount * protocolRevenueFeePercentage / 100;
+    }
+
+    function withdrawFees() external onlyOwner() {
+
+        treasuryFeePercentage = 0;
+        protocolRevenueFeesOwed = 0;
+
+        (bool sent, ) = treasury.call{value: treasuryFeesOwed}("");
+        require(sent, "Failed to send Ether");
+
+        (sent, ) = protocolRevenueManager.call{value: protocolRevenueFeesOwed}("");
+        require(sent, "Failed to send Ether");
     }
 
     //--------------------------------------------------------------------------------------
