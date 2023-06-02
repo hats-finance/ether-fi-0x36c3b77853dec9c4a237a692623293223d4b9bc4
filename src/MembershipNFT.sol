@@ -101,6 +101,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return uint40(earnedPoints);
     }
 
+    function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
+        return meETH.canTopUp(_tokenId, _totalAmount, _amount, _amountForPoints);
+    }
+
     function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) public view returns (bool) {
         // cap withdrawals to 50% of lifetime max balance. Otherwise need to fully withdraw and burn NFT
         (uint128 amounts, uint128 amountStakedForPoints) = meETH.tokenDeposits(_tokenId);

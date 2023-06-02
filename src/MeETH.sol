@@ -371,20 +371,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     error OncePerMonth();
 
-    function _canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) private view returns (bool) {
-        uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
-        TokenDeposit memory deposit = tokenDeposits[_tokenId];
-        uint256 monthInSeconds = 28 days;
-        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
-        if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
-        if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
-        if (_totalAmount > maxDeposit) revert ExceededMaxDeposit();
-
-        return true;
-    }
-
     function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
-        _canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
+        canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -619,6 +607,18 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
             tierId++;
         }
         return tierId - 1;
+    }
+
+    function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
+        uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 monthInSeconds = 28 days;
+        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
+        if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
+        if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
+        if (_totalAmount > maxDeposit) revert ExceededMaxDeposit();
+
+        return true;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
