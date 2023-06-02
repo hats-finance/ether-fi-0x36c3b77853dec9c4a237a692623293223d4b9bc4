@@ -139,6 +139,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
+        _requireTokenOwner(_tokenId);
         _topUpDeposit(_tokenId, _amount, _amountForPoints);
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
     }
@@ -375,7 +376,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 monthInSeconds = 28 days;
         uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
-        if (membershipNFT.balanceOf(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
         if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
         if (_totalAmount > maxDeposit) revert ExceededMaxDeposit();
