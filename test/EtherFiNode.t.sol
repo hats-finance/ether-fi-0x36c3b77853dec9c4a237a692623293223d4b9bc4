@@ -312,6 +312,10 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
+
+        hoax(owner);
+        vm.expectRevert("Validator already exited");
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
     function test_partialWithdraw() public {
