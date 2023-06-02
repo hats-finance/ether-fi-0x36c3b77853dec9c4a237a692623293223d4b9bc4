@@ -324,7 +324,7 @@ contract SmallScenariosTest is TestSetup {
 
         uint256 danBalanceBeforeCancelling = dan.balance;
 
-        stakingManagerInstance.cancelDeposit(chadBidIds[4]);
+        stakingManagerInstance.batchCancelDeposit(bidIdArray);
 
         (amount, , , isActive) = auctionInstance.bids(chadBidIds[4]);
         staker = stakingManagerInstance.bidIdToStaker(chadBidIds[4]);

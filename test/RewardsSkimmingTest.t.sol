@@ -93,9 +93,11 @@ contract RewardsSkimmingTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-            stakingManagerInstance.registerValidator(zeroRoot, validatorIds[i], depositDataArray[i]);
             vm.stopPrank();
         }
+
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, validatorIds, depositDataArray);
+
 
         // Mix the T-NFT holders
         for (uint i = 0; i < num_stakers; i++) {

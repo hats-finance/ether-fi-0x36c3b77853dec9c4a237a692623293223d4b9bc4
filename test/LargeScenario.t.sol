@@ -106,7 +106,7 @@ contract LargeScenariosTest is TestSetup {
         // Elvis cancels a deposit
         vm.prank(elvis);
         balanceBefore = elvis.balance;
-        stakingManagerInstance.cancelDeposit(elvisProcessedBidIds[0]);
+        stakingManagerInstance.batchCancelDeposit(elvisProcessedBidIds);
         assertTrue(auctionInstance.isBidActive(elvisProcessedBidIds[0]));
         assertEq(address(stakingManagerInstance).balance, 320 ether - 32 ether);
         assertEq(elvis.balance, balanceBefore + 32 ether);
@@ -129,6 +129,9 @@ contract LargeScenariosTest is TestSetup {
             .batchDepositWithBidIds{value: 32 ether}(bobBidIds, gregProof);
         assertEq(gregProcessedBidIds.length, 1);
 
+        IStakingManager.DepositData[]
+            memory depositDataArray1 = new IStakingManager.DepositData[](1);
+
         /// Register Validators
         // generate deposit data
         bytes32 root = depGen.generateDepositRoot(
@@ -145,14 +148,16 @@ contract LargeScenariosTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
+        depositDataArray1[0] = depositData;
+
         staker = stakingManagerInstance.bidIdToStaker(danProcessedBidIds[0]);
         assertEq(staker, dan);
 
         startHoax(dan);
-        stakingManagerInstance.registerValidator(
+        stakingManagerInstance.batchRegisterValidators(
             zeroRoot,
-            danProcessedBidIds[0],
-            depositData
+            danProcessedBidIds,
+            depositDataArray1
         );
         vm.stopPrank();
 
@@ -264,11 +269,13 @@ contract LargeScenariosTest is TestSetup {
             ipfsHashForEncryptedValidatorKey: "test_ipfs"
         });
 
+        depositDataArray1[0] = depositData;
+
         startHoax(greg);
-        stakingManagerInstance.registerValidator(
+        stakingManagerInstance.batchRegisterValidators(
             zeroRoot,
-            gregProcessedBidIds[0],
-            depositData
+            gregProcessedBidIds,
+            depositDataArray1
         );
         vm.stopPrank();
 
