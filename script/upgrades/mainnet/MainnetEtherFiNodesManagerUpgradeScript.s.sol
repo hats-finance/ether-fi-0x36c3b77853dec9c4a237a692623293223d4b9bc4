@@ -95,7 +95,7 @@ contract EtherFiNodesManagerUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.EtherFiNodesManagerImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "Our current implementation allows us to exit a validator which has already been exited. We added a check to make sure the validator is live"
                 )
             )
         );
