@@ -44,4 +44,28 @@ contract MembershipNFTTest is TestSetup {
 
         vm.stopPrank();
     }
+
+    function test_permissions() public {
+
+        // only Meeth can update call
+        vm.startPrank(alice);
+        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        membershipNftInstance.mint(alice, 1);
+        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        membershipNftInstance.burn(alice, 0, 1);
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        membershipNftInstance.mint(alice, 1);
+        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        membershipNftInstance.burn(alice, 0, 1);
+        vm.stopPrank();
+
+        // should succeed
+        vm.startPrank(address(meEthInstance));
+        membershipNftInstance.mint(alice, 1);
+        membershipNftInstance.burn(alice, 0, 1);
+        vm.stopPrank();
+    }
 }

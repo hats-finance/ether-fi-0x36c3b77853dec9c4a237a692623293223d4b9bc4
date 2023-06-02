@@ -19,7 +19,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     constructor() {
         _disableInitializers();
     }
-  
+
     error DissallowZeroAddress();
     function initialize(string calldata _metadataURI, address _membershipManager) external initializer {
         if (_membershipManager == address(0)) revert DissallowZeroAddress();
@@ -31,15 +31,13 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         meETH = ImeETH(_membershipManager);
     }
 
-    // TODO(dave): permissions
-    function mint(address _to, uint256 _amount) external returns (uint256) {
+    function mint(address _to, uint256 _amount) external onlyMeETHContract returns (uint256) {
         uint256 tokenId = nextMintID++;
         _mint(_to, tokenId, _amount, "");
         return tokenId;
     }
 
-    // TODO(dave): permissions
-    function burn(address _from, uint256 _tokenId, uint256 _amount) external {
+    function burn(address _from, uint256 _tokenId, uint256 _amount) onlyMeETHContract external {
         _burn(_from, _tokenId, _amount);
     }
 
@@ -94,7 +92,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         (uint128 amounts, uint128 amountStakedForPoints) = meETH.tokenDeposits(_tokenId);
         if (amounts == 0 && amountStakedForPoints == 0) {
             return 0;
-        } 
+        }
         (,,, uint32 prevPointsAccrualTimestamp,,,) = meETH.tokenData(_tokenId);
         uint256 tierPointsPerDay = 24; // 1 per an hour
         uint256 earnedPoints = (uint32(block.timestamp) - prevPointsAccrualTimestamp) * tierPointsPerDay / 1 days;
@@ -126,6 +124,12 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return (_a > _b) ? _a : _b;
     }
 
+    error OnlyMeETHContract();
+    modifier onlyMeETHContract() {
+        if (msg.sender != address(meETH)) revert OnlyMeETHContract();
+        _;
+    }
+
     //--------------------------------------------------------------------------------------
     //---------------------------------- NFT METADATA --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -139,7 +143,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     /// So that the third-party platforms such as NFT market could
     /// timely update the images and related attributes of the NFTs.    
     event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
-
 
     /// @notice OpenSea contract-level metadata
     function contractURI() public view returns (string memory) {

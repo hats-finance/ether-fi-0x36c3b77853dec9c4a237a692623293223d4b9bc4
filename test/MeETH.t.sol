@@ -37,7 +37,6 @@ contract MeETHTest is TestSetup {
         uint256 aliceToken = meEthInstance.wrapEth{value: 100 ether}(100 ether, 0, aliceProof);
         vm.prank(bob);
         uint256 bobToken = meEthInstance.wrapEth{value: 100 ether}(100 ether, 0, bobProof);
-
         // NFT's points start from 0
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 0);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 0);
@@ -426,7 +425,7 @@ contract MeETHTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(aliceToken), 8 ether + 1 ether);
 
         // can't top up again immediately
-        vm.expectRevert(MembershipNFT.OncePerMonth.selector);
+        vm.expectRevert(MeETH.OncePerMonth.selector);
         meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
 
         skip(28 days);
