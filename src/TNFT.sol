@@ -26,6 +26,7 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
 
     /// @notice initialize to set variables on deployment
+    /// @param _stakingManagerAddress address of the staking manager contract
     function initialize(address _stakingManagerAddress) initializer external {
         require(_stakingManagerAddress != address(0), "No zero addresses");
         
