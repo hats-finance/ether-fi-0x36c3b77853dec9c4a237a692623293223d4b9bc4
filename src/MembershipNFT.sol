@@ -12,13 +12,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     ImeETH meETH;
 
-    struct FeeAmounts {
-        uint64 mint;
-        uint64 withdraw;
-        uint64 burn;
-        uint64 upgrade;
-    }
-
     string private contractMetadataURI; /// @dev opensea contract-level metadata
     uint256 public nextMintID;
     uint256 public numberOfFeeTypes;
@@ -30,15 +23,8 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     uint256 public treasuryFeesOwed;
     uint256 public protocolRevenueFeesOwed;
 
-    uint256 public mintFee;
-    uint256 public upgradeFee;
-    uint256 public withdrawFee;
-    uint256 public burnFee;
-
     address public treasury;
     address public protocolRevenueManager;
-
-    FeeAmounts public feeAmount;
 
     uint256[10] public gap;
 
@@ -72,34 +58,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     function setMeETH(address _address) external onlyOwner {
         meETH = ImeETH(_address);
-    }
-
-    function setFeeAmounts(uint64 _mintingFee, uint64 _withdrawalFee, uint64 _burnFee, uint64 _upgradeFee) external onlyOwner {
-        feeAmount = FeeAmounts({
-            mint: _mintingFee,
-            withdraw: _withdrawalFee,
-            burn: _burnFee,
-            upgrade: _upgradeFee
-        });
-    }
-
-    function updateFeesOwed(uint256 _amount) external {
-        if(msg.sender != address(meETH)) revert IncorrectCaller();
-
-        treasuryFeesOwed += _amount * treasuryFeePercentage / 100;
-        protocolRevenueFeesOwed += _amount * protocolRevenueFeePercentage / 100;
-    }
-
-    function withdrawFees() external onlyOwner() {
-
-        treasuryFeePercentage = 0;
-        protocolRevenueFeesOwed = 0;
-
-        (bool sent, ) = treasury.call{value: treasuryFeesOwed}("");
-        require(sent, "Failed to send Ether");
-
-        (sent, ) = protocolRevenueManager.call{value: protocolRevenueFeesOwed}("");
-        require(sent, "Failed to send Ether");
     }
 
     //--------------------------------------------------------------------------------------

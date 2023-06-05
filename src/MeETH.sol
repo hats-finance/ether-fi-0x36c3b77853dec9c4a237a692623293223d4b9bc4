@@ -37,6 +37,12 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     uint56 public minDepositGwei;
     uint8  public maxDepositTopUpPercent;
 
+    uint64 public mintFee;
+    uint64 public upgradeFee;
+    uint64 public withdrawFee;
+    uint64 public burnFee;
+
+    uint256 public totalFeesAccumulated;
 
     uint256[23] __gap;
 
@@ -46,6 +52,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
+    event UpdatedFees(uint64 mintFee, uint64 upgradeFee, uint64 withdrawFee, uint256 burnFee);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -127,8 +134,11 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (msg.value != _amount + _amountForPoints) revert InvalidAllocation();
 
-        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
-        uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, 0, 0);
+        uint64 returnedMintFee = _updateMintFee();
+        uint256 liquidityPoolDepositAmount = msg.value - returnedMintFee;
+
+        liquidityPool.deposit{value: liquidityPoolDepositAmount}(msg.sender, address(this), _merkleProof);
+        uint256 tokenId = _mintMembershipNFT(msg.sender, liquidityPoolDepositAmount - _amountForPoints, _amountForPoints, 0, 0);
         return tokenId;
     }
 
@@ -327,9 +337,32 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         maxDepositTopUpPercent = _percent;
     }
 
+    function setFeeAmounts(uint64 _mintingFee, uint64 _upgradeFee, uint64 _withdrawalFee, uint64 _burnFee) external onlyOwner {
+        mintFee = _mintingFee;
+        upgradeFee = _upgradeFee;
+        withdrawFee = _withdrawalFee;
+        burnFee = _burnFee;
+
+        emit UpdatedFees(_mintingFee, _upgradeFee, _withdrawalFee, _burnFee);
+    }
+
+    function withdrawFees() external onlyOwner {
+        uint256 totalAccumulatedFeesBefore = totalFeesAccumulated;
+        totalFeesAccumulated = 0;
+
+        (bool sent, ) = msg.sender.call{value: totalAccumulatedFeesBefore}("");
+        require(sent, "Failed to send Ether");
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
+
+    function _updateMintFee() internal returns (uint64) {
+        totalFeesAccumulated += mintFee;
+
+        return mintFee;
+    }
 
     /**
     * @dev Internal function to mint a new membership NFT.
@@ -341,9 +374,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     * @return tokenId The unique ID of the newly minted NFT.
     */
     function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-
-        (uint64 mintFee ,,,) = membershipNFT.feeAmount();
-        membershipNFT.updateFeesOwed(mintFee);
 
         uint256 tokenId = membershipNFT.nextMintID();
 
