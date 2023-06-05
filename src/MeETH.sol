@@ -134,8 +134,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (msg.value != _amount + _amountForPoints) revert InvalidAllocation();
 
-        uint64 returnedMintFee = _updateMintFee();
-        uint256 liquidityPoolDepositAmount = msg.value - returnedMintFee;
+        totalFeesAccumulated += mintFee;        
+        uint256 liquidityPoolDepositAmount = msg.value - mintFee;
 
         liquidityPool.deposit{value: liquidityPoolDepositAmount}(msg.sender, address(this), _merkleProof);
         uint256 tokenId = _mintMembershipNFT(msg.sender, liquidityPoolDepositAmount - _amountForPoints, _amountForPoints, 0, 0);
@@ -177,11 +177,11 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         liquidityPool.withdraw(address(this), _amount);
-        (bool sent, ) = address(msg.sender).call{value: _amount}("");
+        uint64 withdrawFeeFinal = _withdrawFees();
+
+        (bool sent, ) = address(msg.sender).call{value: _amount - withdrawFeeFinal}("");
         if (!sent) revert EtherSendFailed();
     }
-
-
 
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
@@ -189,7 +189,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
 
         liquidityPool.withdraw(address(this), totalBalance);
-        (bool sent, ) = address(msg.sender).call{value: totalBalance}("");
+        uint64 withdrawFeeFinal = _withdrawFees();
+
+        (bool sent, ) = address(msg.sender).call{value: totalBalance - withdrawFeeFinal}("");
         if (!sent) revert EtherSendFailed();
     }
 
@@ -358,10 +360,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _updateMintFee() internal returns (uint64) {
-        totalFeesAccumulated += mintFee;
+    function _withdrawFees() internal returns (uint64) {
+        totalFeesAccumulated += withdrawFee;
 
-        return mintFee;
+        return withdrawFee;
     }
 
     /**
