@@ -410,6 +410,12 @@ contract EtherFiNodesManager is
         numberOfValidators += _count;
     }
 
+    /// TODO: remove it for mainnet deploy
+    /// @notice just for testnet!
+    function setNumberOfValidators(uint64 _numberOfValidators) external onlyOwner {
+        numberOfValidators = _numberOfValidators;
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
