@@ -95,7 +95,7 @@ contract EtherFiNodesManagerUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.EtherFiNodesManagerImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "The current 'proccessNodeExit' function does not take into account duplicate exits, we fixed this by adding a require to make sure the validator is in the LIVE phase"
                 )
             )
         );

@@ -19,7 +19,7 @@ contract EtherFiNodesManagerUpgrade is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address EtherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
 
-        require(EtherFiNodesManagerProxyAddress == 0x8B71140AD2e5d1E7018d2a7f8a288BD3CD38916F, "EtherFiNodesManagerProxyAddress incorrect see .env");
+        require(EtherFiNodesManagerProxyAddress == 0xc5C53bEB64Fe5F9fd99A10577855aee8e0Cc4Cc0, "EtherFiNodesManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -94,7 +94,7 @@ contract EtherFiNodesManagerUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.EtherFiNodesManagerImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "The current 'proccessNodeExit' function does not take into account duplicate exits, we fixed this by adding a require to make sure the validator is in the LIVE phase"
                 )
             )
         );
