@@ -144,11 +144,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
     }
 
-
     error ExceededMaxWithdrawal();
     error ExceededMaxDeposit();
     error InsufficientLiquidity();
-    error EtherSendFailed();
 
     /// @notice Unwraps meETH tokens for ETH.
     /// @dev This function allows users to unwrap their meETH tokens and receive ETH in return.
@@ -168,23 +166,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
-        liquidityPool.withdraw(address(this), _amount);
-        (bool sent, ) = address(msg.sender).call{value: _amount}("");
-        if (!sent) revert EtherSendFailed();
+        liquidityPool.withdraw(address(msg.sender), _amount);
     }
-
-
 
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
-
-        liquidityPool.withdraw(address(this), totalBalance);
-        (bool sent, ) = address(msg.sender).call{value: totalBalance}("");
-        if (!sent) revert EtherSendFailed();
+        liquidityPool.withdraw(address(msg.sender), totalBalance);
     }
-
 
     /// @notice Sacrifice the staking rewards and earn more points
     /// @dev This function allows users to stake their ETH to earn membership points faster.
