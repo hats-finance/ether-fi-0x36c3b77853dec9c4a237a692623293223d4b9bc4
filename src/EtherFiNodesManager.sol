@@ -54,13 +54,17 @@ contract EtherFiNodesManager is
     event NodeExitProcessed(uint256 _validatorId);
 
     //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
-
+    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
+
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
 
     receive() external payable {}
 
@@ -325,6 +329,8 @@ contract EtherFiNodesManager is
         }
     }
 
+    /// @notice Update the nodes that they are being slashed
+    /// @param _validatorIds The validator Ids being slashed
     function markBeingSlahsed(uint256[] calldata _validatorIds) external whenNotPaused onlyOwner {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             address etherfiNode = etherfiNodeAddress[_validatorIds[i]];

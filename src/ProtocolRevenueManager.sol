@@ -41,6 +41,11 @@ contract ProtocolRevenueManager is
         _disableInitializers();
     }
 
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
+    /// @notice Initialize to set variables on deployment
     function initialize() external initializer {
         __Pausable_init();
         __Ownable_init();

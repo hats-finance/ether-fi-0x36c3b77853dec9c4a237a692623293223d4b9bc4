@@ -43,13 +43,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event Withdraw(address indexed sender, uint256 amount);
 
     //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //----------------------------------  CONSTRUCTOR   ------------------------------------
     //--------------------------------------------------------------------------------------
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
+
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
 
     receive() external payable {
         // Staking Manager can send ETH to LP without updating 'accruedEther'
@@ -62,6 +66,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         accruedEther -= msg.value;
     }
 
+    /// @notice Initialize to set variables on deployment
+    /// @param _regulationsManager address of the deployed regulations manager contract
     function initialize(address _regulationsManager) external initializer {
         require(_regulationsManager != address(0), "No zero addresses");
 
@@ -71,11 +77,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         eEthliquidStakingOpened = false;
     }
 
+    /// @notice deposit into pool
+    /// @param _user address of the depositer
+    /// @param _merkleProof proof of the user to allow them to deposit
+    /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user, bytes32[] calldata _merkleProof) public payable {
         deposit(_user, _user, _merkleProof);
     }
 
     /// @notice deposit into pool
+    /// @param _user address of the user calling the deposit
+    /// @param _recipient address of the receiver of the eETH
+    /// @param _merkleProof proof of the user to allow them to deposit
     /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
         stakingManager.verifyWhitelisted(_user, _merkleProof);

@@ -10,17 +10,30 @@ import "./interfaces/ImeETH.sol";
 
 contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable {
 
+    //--------------------------------------------------------------------------------------
+    //---------------------------------  STATE-VARIABLES  ----------------------------------
+    //--------------------------------------------------------------------------------------
+
     ImeETH meETH;
 
     string private contractMetadataURI; /// @dev opensea contract-level metadata
     uint256 public nextMintID;
+
+    //--------------------------------------------------------------------------------------
+    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //--------------------------------------------------------------------------------------
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
     error DissallowZeroAddress();
+    /// @notice Initialize to set variables on deployment
     function initialize(string calldata _metadataURI) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -115,6 +128,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return _max(totalDeposit, meETH.allTimeHighDepositAmount(_tokenId));        
     }
 
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
+
     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
         return (_a > _b) ? _b : _a;
     }
@@ -122,6 +139,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     function _max(uint256 _a, uint256 _b) internal pure returns (uint256) {
         return (_a > _b) ? _a : _b;
     }
+
+    //--------------------------------------------------------------------------------------
+    //-----------------------------------  MODIFIERS  --------------------------------------
+    //--------------------------------------------------------------------------------------
 
     error OnlyMeETHContract();
     modifier onlyMeETHContract() {

@@ -11,6 +11,9 @@ contract Treasury is ITreasury, Ownable {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    //Allows ether to be sent to this contract
+    receive() external payable {}
+
     /// @notice Function allows only the owner to withdraw all the funds in the contract
     function withdraw(uint256 _amount, address _to) external onlyOwner {
         require(
@@ -21,7 +24,5 @@ contract Treasury is ITreasury, Ownable {
         (bool sent, ) = payable(_to).call{value: _amount}("");
         require(sent, "Failed to send Ether");
     }
-
-    //Allows ether to be sent to this contract
-    receive() external payable {}
 }
+    
