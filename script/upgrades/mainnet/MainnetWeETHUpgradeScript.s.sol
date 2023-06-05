@@ -37,6 +37,8 @@ contract WeEthUpgrade is Script {
             WeETHImplementation: address(weEthV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(

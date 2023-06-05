@@ -37,6 +37,8 @@ contract NodeOperatorManagerUpgrade is Script {
             NodeOperatorManagerImplementation: address(NodeOperatorManagerV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(
