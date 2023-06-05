@@ -182,6 +182,8 @@ contract LargeScenariosTest is TestSetup {
         );
         assertEq(IEtherFiNode(danNode).localRevenueIndex(), 1);
 
+        console.log(1);
+
         /// Elvis batch registers validators
         // Generate Elvis's deposit data
         IStakingManager.DepositData[]
@@ -214,6 +216,7 @@ contract LargeScenariosTest is TestSetup {
             );
             assertEq(staker, elvis);
         }
+        console.log(2);
 
         startHoax(elvis);
         stakingManagerInstance.batchRegisterValidators(
@@ -237,6 +240,7 @@ contract LargeScenariosTest is TestSetup {
             assertEq(TNFTInstance.ownerOf(newElvisProcessedBidIds[i]), elvis);
             assertEq(BNFTInstance.ownerOf(newElvisProcessedBidIds[i]), elvis);
         }
+        console.log(3);
 
         assertEq(managerInstance.numberOfValidators(), 9);
 
@@ -268,6 +272,7 @@ contract LargeScenariosTest is TestSetup {
             depositDataRoot: root,
             ipfsHashForEncryptedValidatorKey: "test_ipfs"
         });
+        console.log(4);
 
         depositDataArray1[0] = depositData;
 
@@ -292,6 +297,7 @@ contract LargeScenariosTest is TestSetup {
         assertEq(BNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
 
         /*---- Staking Rewards come in ----*/
+        console.log(5);
 
         // Owner acting as deposit contract
         skip(2 weeks);
@@ -327,6 +333,7 @@ contract LargeScenariosTest is TestSetup {
             true,
             true
         );
+        console.log(6);
 
         // Correct rewards go to NFT holders, Node Operator and Treasury
         assertEq(greg.balance, gregBalanceBeforeSkim + toTnft + toBnft);

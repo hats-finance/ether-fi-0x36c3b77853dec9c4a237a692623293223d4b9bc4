@@ -16,6 +16,7 @@ contract DeployPhaseOnePointFiveScript is Script {
     /*---- Storage variables ----*/
 
     UUPSProxy public meETHProxy;
+    UUPSProxy public membershipNFTProxy;
     UUPSProxy public eETHProxy;
     UUPSProxy public weETHProxy;
     UUPSProxy public liquidityPoolProxy;
@@ -23,6 +24,9 @@ contract DeployPhaseOnePointFiveScript is Script {
 
     MeETH public meETHImplementation;
     MeETH public meETH;
+
+    MembershipNFT public membershipNFTImplementation;
+    MembershipNFT public membershipNFT;
 
     WeETH public weETHImplementation;
     WeETH public weETH;
@@ -39,6 +43,7 @@ contract DeployPhaseOnePointFiveScript is Script {
     struct suiteAddresses {
         address weETH;
         address meETH;
+        address membershipNFT;
         address eETH;
         address liquidityPool;
         address regulationsManager;
@@ -54,7 +59,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
 
-        string memory baseURI = "https:token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json";
+        string memory baseURI = vm.envString("BASE_URI");
 
         // Deploy contracts
 
@@ -73,10 +78,15 @@ contract DeployPhaseOnePointFiveScript is Script {
         eETH = EETH(address(eETHProxy));
         eETH.initialize(address(liquidityPool));
 
+        membershipNFTImplementation = new MembershipNFT();
+        membershipNFTProxy = new UUPSProxy(address(membershipNFTImplementation),"");
+        membershipNFT = MembershipNFT(payable(address(membershipNFTProxy)));
+        membershipNFT.initialize(baseURI);
+
         meETHImplementation = new MeETH();
         meETHProxy = new UUPSProxy(address(meETHImplementation),"");
         meETH = MeETH(payable(address(meETHProxy)));
-        meETH.initialize(baseURI, address(eETH), address(liquidityPool));
+        meETH.initialize(address(eETH), address(liquidityPool), address(membershipNFT));
 
         weETHImplementation = new WeETH();
         weETHProxy = new UUPSProxy(address(weETHImplementation),"");
@@ -95,6 +105,7 @@ contract DeployPhaseOnePointFiveScript is Script {
 
         suiteAddressesStruct = suiteAddresses({
             weETH: address(weETH),
+            membershipNFT: address(membershipNFT),
             meETH: address(meETH),
             eETH: address(eETH),
             liquidityPool: address(liquidityPool),
@@ -151,6 +162,8 @@ contract DeployPhaseOnePointFiveScript is Script {
                     Strings.toHexString(suiteAddressesStruct.weETH),
                     "\nMeETH: ",
                     Strings.toHexString(suiteAddressesStruct.meETH),
+                    "\nMembershipNFT: ",
+                    Strings.toHexString(suiteAddressesStruct.membershipNFT),
                     "\nEETH: ",
                     Strings.toHexString(suiteAddressesStruct.eETH),
                     "\nLiquidity Pool: ",

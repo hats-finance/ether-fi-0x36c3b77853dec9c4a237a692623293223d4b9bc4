@@ -255,7 +255,8 @@ contract TestSetup is Test {
 
         // initialize circular dependency
         meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance));
-        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json", address(meEthInstance));
+        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
+        membershipNftInstance.setMeETH(address(meEthInstance));
 
         // Setup dependencies
         _setUpNodeOperatorWhitelist();
