@@ -21,14 +21,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
     error DissallowZeroAddress();
-    function initialize(string calldata _metadataURI, address _membershipManager) external initializer {
-        if (_membershipManager == address(0)) revert DissallowZeroAddress();
-
+    function initialize(string calldata _metadataURI) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
-
-        meETH = ImeETH(_membershipManager);
     }
 
     function mint(address _to, uint256 _amount) external onlyMeETHContract returns (uint256) {
