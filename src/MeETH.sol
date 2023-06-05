@@ -354,7 +354,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     * @return tokenId The unique ID of the newly minted NFT.
     */
     function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-
         uint256 tokenId = membershipNFT.nextMintID();
 
         uint8 tier = tierForPoints(_tierPoints);
@@ -385,23 +384,21 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
         canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
 
-
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
 
         // proportionally dilute tier points if over deposit threshold
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
-        uint256 maxDepositWithoutPenalty = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
+        TokenData storage token = tokenData[_tokenId];
+        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
+        uint256 maxDepositWithoutPenalty = (totalDeposit * maxDepositTopUpPercent) / 100;
         if (msg.value > maxDepositWithoutPenalty) {
-            TokenData storage token = tokenData[_tokenId];
-            uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
             uint256 dilutedPoints = (msg.value * token.baseTierPoints) / (msg.value + totalDeposit);
-
             token.baseTierPoints = uint40(dilutedPoints);
         }
 
         _deposit(_tokenId, _amount, _amountForPoints);
-        tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
+        token.prevTopUpTimestamp = uint32(block.timestamp);
     }
 
     function _withdrawAndBurn(uint256 _tokenId) internal returns (uint256) {
