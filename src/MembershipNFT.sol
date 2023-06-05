@@ -40,9 +40,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    error IncorrectFeePercentage();
-    error IncorrectCaller();
-
     function setMeETH(address _address) external onlyOwner {
         meETH = ImeETH(_address);
     }
