@@ -146,7 +146,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
 
     error ExceededMaxWithdrawal();
-    error ExceededMaxDeposit();
     error InsufficientLiquidity();
     error EtherSendFailed();
 
@@ -386,8 +385,20 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
         canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
 
+
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
+
+        // proportionally dilute tier points if over deposit threshold
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 maxDepositWithoutPenalty = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
+        if (msg.value > maxDepositWithoutPenalty) {
+            TokenData storage token = tokenData[_tokenId];
+            uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
+            uint256 dilutedPoints = (msg.value * token.baseTierPoints) / (msg.value + totalDeposit);
+
+            token.baseTierPoints = uint40(dilutedPoints);
+        }
 
         _deposit(_tokenId, _amount, _amountForPoints);
         tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
@@ -625,10 +636,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 monthInSeconds = 28 days;
-        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
         if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
-        if (_totalAmount > maxDeposit) revert ExceededMaxDeposit();
 
         return true;
     }
