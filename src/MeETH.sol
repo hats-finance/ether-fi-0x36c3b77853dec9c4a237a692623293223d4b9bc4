@@ -192,7 +192,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint64 withdrawFeeFinal = _withdrawFees();
         totalFeesAccumulated += burnFee;
         
-        uint64 finalCallerBalance = totalBalance - withdrawFeeFinal - burnFee;
+        uint256 finalCallerBalance = totalBalance - withdrawFeeFinal - burnFee;
 
         (bool sent, ) = address(msg.sender).call{value: finalCallerBalance}("");
         if (!sent) revert EtherSendFailed();
