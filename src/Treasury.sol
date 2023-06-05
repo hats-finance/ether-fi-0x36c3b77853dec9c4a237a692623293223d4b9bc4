@@ -14,7 +14,9 @@ contract Treasury is ITreasury, Ownable {
     //Allows ether to be sent to this contract
     receive() external payable {}
 
-    /// @notice Function allows only the owner to withdraw all the funds in the contract
+    /// @notice Function allows only the owner to withdraw a certain amount of funds to an address
+    /// @param _amount the amount to withdraw
+    /// @param _to the address to receive the funds
     function withdraw(uint256 _amount, address _to) external onlyOwner {
         require(
             _amount <= address(this).balance,
