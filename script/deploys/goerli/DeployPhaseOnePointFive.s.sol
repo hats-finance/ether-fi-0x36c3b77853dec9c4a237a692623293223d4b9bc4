@@ -100,6 +100,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPool.setStakingManager(stakingManagerProxyAddress);
         liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
         liquidityPool.setMeETH(address(meETH));
+        membershipNFT.setMeETH(address(meETH));
 
         vm.stopBroadcast();
 
