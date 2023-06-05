@@ -14,17 +14,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     string private contractMetadataURI; /// @dev opensea contract-level metadata
     uint256 public nextMintID;
-    uint256 public numberOfFeeTypes;
-    uint256 public numberofFeeRecipients;
-
-    uint256 public treasuryFeePercentage;
-    uint256 public protocolRevenueFeePercentage;
-
-    uint256 public treasuryFeesOwed;
-    uint256 public protocolRevenueFeesOwed;
-
-    address public treasury;
-    address public protocolRevenueManager;
 
     uint256[10] public gap;
 
@@ -33,9 +22,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         _disableInitializers();
     }
 
-    function initialize(address _treasury, address _protocolRevenueManager) external initializer {
-        treasury = _treasury;
-        protocolRevenueManager = _protocolRevenueManager;
+    function initialize() external initializer {
     }
 
     // TODO(dave): permissions

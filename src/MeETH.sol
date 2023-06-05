@@ -42,7 +42,13 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     uint64 public withdrawFee;
     uint64 public burnFee;
 
+    uint256 public treasuryFeePercentage;
+    uint256 public protocolRevenueFeePercentage;
+
     uint256 public totalFeesAccumulated;
+
+    address public treasury;
+    address public protocolRevenueManager;
 
     uint256[23] __gap;
 
@@ -67,7 +73,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     error DissallowZeroAddress();
 
-    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress) external initializer {
+    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress, address _treasury, address _protocolRevenueManager) external initializer {
         if (_eEthAddress == address(0)) revert DissallowZeroAddress();
         if (_liquidityPoolAddress == address(0)) revert DissallowZeroAddress();
 
@@ -77,6 +83,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+        treasury = _treasury;
+        protocolRevenueManager = _protocolRevenueManager;
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
@@ -351,11 +359,27 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         emit UpdatedFees(_mintingFee, _upgradeFee, _withdrawalFee, _burnFee);
     }
 
+    error InvalidPercentages();
+
+    function updateFeeRecipientsValues(uint256 _treasuryAmount, uint256 _protocolRevenueManagerAmount) external onlyOwner {
+        if(_treasuryAmount + _protocolRevenueManagerAmount != 100) revert InvalidPercentages();
+        
+        treasuryFeePercentage = _treasuryAmount;
+        protocolRevenueFeePercentage = _protocolRevenueManagerAmount;
+    }
+
     function withdrawFees() external onlyOwner {
         uint256 totalAccumulatedFeesBefore = totalFeesAccumulated;
+
+        uint256 treasuryFees = totalAccumulatedFeesBefore * treasuryFeePercentage / 100;
+        uint256 protocolRevenueFees = totalAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
+
         totalFeesAccumulated = 0;
 
-        (bool sent, ) = msg.sender.call{value: totalAccumulatedFeesBefore}("");
+        (bool sent, ) = treasury.call{value: treasuryFees}("");
+        require(sent, "Failed to send Ether");
+
+        (sent, ) = protocolRevenueManager.call{value: protocolRevenueFees}("");
         require(sent, "Failed to send Ether");
     }
 
