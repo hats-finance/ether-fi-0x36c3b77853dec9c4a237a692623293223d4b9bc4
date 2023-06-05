@@ -33,6 +33,7 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
     //--------------------------------------------------------------------------------------
 
     /// @notice Initialize to set variables on deployment
+    /// @param _liquidityPool address of the deployed LP
     function initialize(address _liquidityPool) external initializer {
         require(_liquidityPool != address(0), "No zero addresses");
         
