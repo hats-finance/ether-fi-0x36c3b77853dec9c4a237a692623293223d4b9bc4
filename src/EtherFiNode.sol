@@ -28,6 +28,10 @@ contract EtherFiNode is IEtherFiNode {
         stakingStartTimestamp = type(uint32).max;
     }
 
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @notice Based on the sources where they come from, the staking rewards are split into
     ///  - those from the execution layer: transaction fees and MEV
     ///  - those from the consensus layer: Pstaking rewards for attesting the state of the chain, 
@@ -35,12 +39,90 @@ contract EtherFiNode is IEtherFiNode {
     ///  To receive the rewards from the execution layer, it should have 'receive()' function.
     receive() external payable {}
 
+    /// @notice Initialize to set variables on deployment
     function initialize(address _etherFiNodesManager) public {
         require(stakingStartTimestamp == 0, "already initialised");
         require(_etherFiNodesManager != address(0), "No zero addresses");
         stakingStartTimestamp = uint32(block.timestamp);
         etherFiNodesManager = _etherFiNodesManager;
     }    
+
+    //--------------------------------------------------------------------------------------
+    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
+    //--------------------------------------------------------------------------------------
+
+    /// @notice Marks the validator phase as being slashed
+    function markBeingSlahsed() external onlyEtherFiNodeManagerContract {
+        phase = VALIDATOR_PHASE.BEING_SLASHED;
+    }
+
+    /// @notice Marks the validator phase as being fully withdrawn
+    function markFullyWithdrawn() external onlyEtherFiNodeManagerContract {
+        phase = VALIDATOR_PHASE.FULLY_WITHDRAWN;
+    }
+
+    /// @notice Sets the vested auction rewards amount which is hald the bid size
+    function receiveVestedRewardsForStakers()
+        external
+        payable
+        onlyProtocolRevenueManagerContract
+    {
+        require(
+            vestedAuctionRewards == 0,
+            "already received the vested auction fee reward"
+        );
+        vestedAuctionRewards = msg.value;
+    }
+
+    /// @notice Sets the vested auction rewards variable to 0 to show the auction fee has been withdrawn
+    function processVestedAuctionFeeWithdrawal() external onlyEtherFiNodeManagerContract {
+        if (_getClaimableVestedRewards() > 0) {
+            vestedAuctionRewards = 0;
+        }
+    }
+
+    /// @notice Sends funds to the rewards manager
+    /// @param _amount The value calculated in the etherfi node manager to send to the rewards manager
+    function moveRewardsToManager(
+        uint256 _amount
+    ) external onlyEtherFiNodeManagerContract {
+        (bool sent, ) = payable(etherFiNodesManager).call{value: _amount}("");
+        require(sent, "Failed to send Ether");
+    }
+
+    /// @notice Sends funds to the various recipients
+    /// @param _treasury address of the treasury
+    /// @param _treasuryAmount amount to send to the treasury
+    /// @param _operator address of the operator
+    /// @param _operatorAmount amount to send to the operator
+    /// @param _tnftHolder address of the TNFT holder
+    /// @param _tnftAmount amount to send to the TNFT holder
+    /// @param _bnftHolder address of the BNFT holder
+    /// @param _bnftAmount amount to send to the BNFT holder
+    function withdrawFunds(
+        address _treasury,
+        uint256 _treasuryAmount,
+        address _operator,
+        uint256 _operatorAmount,
+        address _tnftHolder,
+        uint256 _tnftAmount,
+        address _bnftHolder,
+        uint256 _bnftAmount
+    ) external onlyEtherFiNodeManagerContract {
+        // the recipients of the funds must be able to receive the fund
+        // For example, if it is a smart contract, 
+        // they should implement either recieve() or fallback() properly
+        // It's designed to prevent malicious actors from pausing the withdrawals
+        bool sent;
+        (sent, ) = payable(_operator).call{value: _operatorAmount}("");
+        _treasuryAmount += (!sent) ? _operatorAmount : 0;
+        (sent, ) = payable(_tnftHolder).call{value: _tnftAmount}("");
+        _treasuryAmount += (!sent) ? _tnftAmount : 0;
+        (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");
+        _treasuryAmount += (!sent) ? _bnftAmount : 0;
+        (sent, ) = _treasury.call{value: _treasuryAmount}("");
+        require(sent, "Failed to send Ether");
+    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  SETTER   --------------------------------------
@@ -85,73 +167,6 @@ contract EtherFiNode is IEtherFiNode {
         require(_exitTimestamp <= block.timestamp, "Invalid exit timesamp");
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
-    }
-
-    //--------------------------------------------------------------------------------------
-    //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
-    //--------------------------------------------------------------------------------------
-
-    function markBeingSlahsed() external onlyEtherFiNodeManagerContract {
-        phase = VALIDATOR_PHASE.BEING_SLASHED;
-    }
-
-    /// @notice Sets and receives the value of the auction rewards to be vested
-    /// @dev This value is half of the bid value of the bid which was matched with the stake
-    function markFullyWithdrawn() external onlyEtherFiNodeManagerContract {
-        phase = VALIDATOR_PHASE.FULLY_WITHDRAWN;
-    }
-
-    function receiveVestedRewardsForStakers()
-        external
-        payable
-        onlyProtocolRevenueManagerContract
-    {
-        require(
-            vestedAuctionRewards == 0,
-            "already received the vested auction fee reward"
-        );
-        vestedAuctionRewards = msg.value;
-    }
-
-    /// @notice Sets the vested auction rewards variable to 0 to show the auction fee has been withdrawn
-    function processVestedAuctionFeeWithdrawal() external onlyEtherFiNodeManagerContract {
-        if (_getClaimableVestedRewards() > 0) {
-            vestedAuctionRewards = 0;
-        }
-    }
-
-    /// @notice Sends funds to the rewards manager
-    /// @param _amount The value calculated in the etherfi node manager to send to the rewards manager
-    function moveRewardsToManager(
-        uint256 _amount
-    ) external onlyEtherFiNodeManagerContract {
-        (bool sent, ) = payable(etherFiNodesManager).call{value: _amount}("");
-        require(sent, "Failed to send Ether");
-    }
-
-    function withdrawFunds(
-        address _treasury,
-        uint256 _treasuryAmount,
-        address _operator,
-        uint256 _operatorAmount,
-        address _tnftHolder,
-        uint256 _tnftAmount,
-        address _bnftHolder,
-        uint256 _bnftAmount
-    ) external onlyEtherFiNodeManagerContract {
-        // the recipients of the funds must be able to receive the fund
-        // For example, if it is a smart contract, 
-        // they should implement either recieve() or fallback() properly
-        // It's designed to prevent malicious actors from pausing the withdrawals
-        bool sent;
-        (sent, ) = payable(_operator).call{value: _operatorAmount}("");
-        _treasuryAmount += (!sent) ? _operatorAmount : 0;
-        (sent, ) = payable(_tnftHolder).call{value: _tnftAmount}("");
-        _treasuryAmount += (!sent) ? _tnftAmount : 0;
-        (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");
-        _treasuryAmount += (!sent) ? _bnftAmount : 0;
-        (sent, ) = _treasury.call{value: _treasuryAmount}("");
-        require(sent, "Failed to send Ether");
     }
 
     //--------------------------------------------------------------------------------------

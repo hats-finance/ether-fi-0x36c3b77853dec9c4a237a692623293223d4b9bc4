@@ -13,6 +13,10 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     address public stakingManagerAddress;
     uint256[49] public __gap;
 
+    //--------------------------------------------------------------------------------------
+    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();

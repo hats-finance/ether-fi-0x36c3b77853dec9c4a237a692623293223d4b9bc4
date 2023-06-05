@@ -48,6 +48,10 @@ contract AuctionManager is
     event WhitelistDisabled(bool whitelistStatus);
     event WhitelistEnabled(bool whitelistStatus);
 
+    //--------------------------------------------------------------------------------------
+    //----------------------------------  CONSTRUCTOR   ------------------------------------
+    //--------------------------------------------------------------------------------------
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
