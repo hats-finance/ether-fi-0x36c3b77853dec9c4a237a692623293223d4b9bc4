@@ -338,8 +338,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         maxDepositTopUpPercent = _percent;
     }
 
-    function setFeeAmounts(uint64 _mintingFee) external onlyOwner {
+    function setFeeAmounts(uint64 _mintingFee, uint64 _burnFee) external onlyOwner {
         mintFee = _mintingFee;
+        burnFee = _burnFee;
 
         emit UpdatedFees(_mintingFee);
     }
