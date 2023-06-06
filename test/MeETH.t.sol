@@ -417,10 +417,16 @@ contract MeETHTest is TestSetup {
         uint256 currentPoints = membershipNftInstance.tierPointsOf(aliceToken);
         assertEq(currentPoints, 6720); // force update if calculation logic changes
 
-        // points should get diluted by 50%
+        assertEq(membershipNftInstance.claimableTier(aliceToken), 4);
+        meEthInstance.claimTier(aliceToken);
+        assertEq(membershipNftInstance.tierOf(aliceToken), 4);
+
+        // points should get diluted by 50% & the tier is properly updated
         meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
         uint256 dilutedPoints = membershipNftInstance.tierPointsOf(aliceToken);
         assertEq(dilutedPoints , currentPoints / 2);
+        assertEq(membershipNftInstance.tierOf(aliceToken), 2);
+        assertEq(membershipNftInstance.tierOf(aliceToken), meEthInstance.tierForPoints(uint40(dilutedPoints)));
 
         vm.stopPrank();
 
