@@ -56,7 +56,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
-    event UpdatedFees(uint64 mintFee);
+    event UpdatedFees(uint64 mintFee, uint64 burnFee);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -342,7 +342,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         mintFee = _mintingFee;
         burnFee = _burnFee;
 
-        emit UpdatedFees(_mintingFee);
+        emit UpdatedFees(_mintingFee, _burnFee);
     }
 
     error InvalidPercentages();
