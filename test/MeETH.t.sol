@@ -772,8 +772,10 @@ contract MeETHTest is TestSetup {
     }
 
     function test_FeeWorksCorrectly() public {
-        vm.prank(owner);
+        vm.startPrank(owner);
         meEthInstance.setFeeAmounts(0.05 ether, 0.05 ether);
+        meEthInstance.updateFeeRecipientsValues(50, 50);
+        vm.stopPrank();
 
         hoax(alice);
         meEthInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
@@ -786,5 +788,13 @@ contract MeETHTest is TestSetup {
         meEthInstance.withdrawAndBurnForEth(0);
 
         assertEq(meEthInstance.totalFeesAccumulated(), 0.1 ether);
+
+        vm.prank(owner);
+        meEthInstance.withdrawFees();
+
+        assertEq(eETHInstance.balanceOf(address(treasuryInstance)), 0.05 ether);
+        assertEq(eETHInstance.balanceOf(address(protocolRevenueManagerInstance)), 0.05 ether);
+        assertEq(meEthInstance.totalFeesAccumulated(), 0);
+
     }
 }

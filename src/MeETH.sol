@@ -360,7 +360,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint256 treasuryFees = totalAccumulatedFeesBefore * treasuryFeePercentage / 100;
         uint256 protocolRevenueFees = totalAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
 
-        totalAccumulatedFeesBefore = 0;
+        totalFeesAccumulated = 0;
 
         eETH.transfer(treasury, treasuryFees);
         eETH.transfer(protocolRevenueManager, protocolRevenueFees);
