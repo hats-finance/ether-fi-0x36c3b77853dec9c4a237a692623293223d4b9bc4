@@ -512,6 +512,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "markFullyWithdrawn",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",

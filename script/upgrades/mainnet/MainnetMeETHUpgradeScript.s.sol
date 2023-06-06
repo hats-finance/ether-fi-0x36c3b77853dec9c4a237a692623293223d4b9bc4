@@ -37,6 +37,8 @@ contract MeETHUpgrade is Script {
             MeETHImplementation: address(meETHV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(

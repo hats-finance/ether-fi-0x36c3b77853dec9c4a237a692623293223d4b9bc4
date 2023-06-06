@@ -67,11 +67,13 @@ contract EETHTest is TestSetup {
 
     /// @dev Tests eETH balanceOf and totalSupply functions as well
     function test_EEthRebase() public {
-        
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
 
         // Total pooled ether = 10
-        vm.deal(address(liquidityPoolInstance), 10 ether);
+        vm.prank(owner);
+        liquidityPoolInstance.rebase(10 ether, 0 ether);
+        _transferTo(address(liquidityPoolInstance), 10 ether);
+
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
         assertEq(eETHInstance.totalSupply(), 10 ether);
 
@@ -118,8 +120,10 @@ contract EETHTest is TestSetup {
         // Staking Rewards sent to liquidity pool
         /// vm.deal sets the balance of whoever its called on
         /// In this case 10 ether is added as reward 
-        vm.deal(address(liquidityPoolInstance), 35 ether);
-        
+        vm.prank(owner);
+        liquidityPoolInstance.rebase(10 ether + 25 ether, 25 ether);
+        _transferTo(address(liquidityPoolInstance), 10 ether);
+
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 35 ether);
         assertEq(eETHInstance.totalSupply(), 35 ether);
 

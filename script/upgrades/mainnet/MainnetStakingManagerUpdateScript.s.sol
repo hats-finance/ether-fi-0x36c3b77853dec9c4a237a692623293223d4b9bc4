@@ -37,6 +37,8 @@ contract StakingManagerUpgrade is Script {
             StakingManagerImplementation: address(stakingManagerV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(

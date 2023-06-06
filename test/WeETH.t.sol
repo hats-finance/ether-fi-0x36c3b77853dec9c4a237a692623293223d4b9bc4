@@ -24,7 +24,9 @@ contract WeETHTest is TestSetup {
     function test_WrapWorksCorrectly() public {
 
         // Total pooled ether = 10
-        vm.deal(address(liquidityPoolInstance), 10 ether);
+        vm.prank(owner);
+        liquidityPoolInstance.rebase(10 ether + 0 ether, 0 ether);
+        _transferTo(address(liquidityPoolInstance), 10 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
         assertEq(eETHInstance.totalSupply(), 10 ether);
 
@@ -60,7 +62,9 @@ contract WeETHTest is TestSetup {
 
     function test_UnWrapWorksCorrectly() public {
         // Total pooled ether = 10
-        vm.deal(address(liquidityPoolInstance), 10 ether);
+        vm.prank(owner);
+        liquidityPoolInstance.rebase(10 ether + 0 ether, 0 ether);
+        _transferTo(address(liquidityPoolInstance), 10 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
         assertEq(eETHInstance.totalSupply(), 10 ether);
 
@@ -140,12 +144,11 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedEther(10 ether);
+        liquidityPoolInstance.rebase(10 ether + 50 ether, 50 ether);
         vm.stopPrank();
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        (bool sent, ) = address(liquidityPoolInstance).call{value: 10 ether}("");
-        require(sent, "Failed to send Ether");        
+        _transferTo(address(liquidityPoolInstance), 10 ether);
+
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         assertEq(eETHInstance.balanceOf(greg), 42 ether);
 
@@ -166,12 +169,10 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedEther(50 ether);
+        liquidityPoolInstance.rebase(60 ether + 50 ether, 60 ether);
         vm.stopPrank();
 
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        (sent, ) = address(liquidityPoolInstance).call{value: 50 ether}("");
-        require(sent, "Failed to send Ether");        
+        _transferTo(address(liquidityPoolInstance), 50 ether);   
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 110 ether);
         assertEq(eETHInstance.balanceOf(alice), 3.666666666666666667 ether);
 
@@ -207,9 +208,12 @@ contract WeETHTest is TestSetup {
         weEthInstance.wrap(1 ether);
         assertEq(eETHInstance.balanceOf(bob), 0 ether);
         assertEq(weEthInstance.balanceOf(bob), 1 ether);
+        vm.stopPrank();
 
         // Rewards enter LP
-        vm.deal(address(liquidityPoolInstance), 4 ether);
+        vm.prank(owner);
+        liquidityPoolInstance.rebase(1 ether + 3 ether, 3 ether);
+        _transferTo(address(liquidityPoolInstance), 1 ether);
         assertEq(address(liquidityPoolInstance).balance, 4 ether);
 
         // Alice now has 2.666666666666666666 ether
@@ -221,6 +225,7 @@ contract WeETHTest is TestSetup {
         // Bob should get 1.333333333333333333 ether
 
         /// @notice not sure where the 0.000000000000000001 ether goes to. Possible that it gets rounded down on conversion
+        vm.startPrank(bob);
         weEthInstance.unwrap(1 ether);
         assertEq(eETHInstance.balanceOf(bob), 1.333333333333333332 ether);
     }

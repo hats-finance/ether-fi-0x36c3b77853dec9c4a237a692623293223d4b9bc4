@@ -410,6 +410,12 @@ contract EtherFiNodesManager is
         numberOfValidators += _count;
     }
 
+    /// TODO: remove it for mainnet deploy
+    /// @notice just for testnet!
+    function setNumberOfValidators(uint64 _numberOfValidators) external onlyOwner {
+        numberOfValidators = _numberOfValidators;
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
@@ -432,6 +438,8 @@ contract EtherFiNodesManager is
     /// @param _exitTimestamp the exit timestamp
     function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
+
+        require(IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE, "Validator already exited");
 
         // Mark EXITED
         IEtherFiNode(etherfiNode).markExited(_exitTimestamp);

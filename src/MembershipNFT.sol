@@ -22,17 +22,20 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         _disableInitializers();
     }
 
-    function initialize() external initializer {
+    error DissallowZeroAddress();
+    function initialize(string calldata _metadataURI) external initializer {
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+        __ERC1155_init(_metadataURI);
     }
 
-    // TODO(dave): permissions
-    function mint(address _to, uint256 _amount) external returns (uint256) {
+    function mint(address _to, uint256 _amount) external onlyMeETHContract returns (uint256) {
         uint256 tokenId = nextMintID++;
         _mint(_to, tokenId, _amount, "");
+        return tokenId;
     }
 
-    // TODO(dave): permissions
-    function burn(address _from, uint256 _tokenId, uint256 _amount) external {
+    function burn(address _from, uint256 _tokenId, uint256 _amount) onlyMeETHContract external {
         _burn(_from, _tokenId, _amount);
     }
 
@@ -95,7 +98,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         (uint128 amounts, uint128 amountStakedForPoints) = meETH.tokenDeposits(_tokenId);
         if (amounts == 0 && amountStakedForPoints == 0) {
             return 0;
-        } 
+        }
         (,,, uint32 prevPointsAccrualTimestamp,,,) = meETH.tokenData(_tokenId);
         uint256 tierPointsPerDay = 24; // 1 per an hour
         uint256 earnedPoints = (uint32(block.timestamp) - prevPointsAccrualTimestamp) * tierPointsPerDay / 1 days;
@@ -104,22 +107,8 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return uint40(earnedPoints);
     }
 
-    error OnlyTokenOwner();
-    error OncePerMonth();
-    error InvalidAllocation();
-    error ExceededMaxDeposit();
-
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
-        (,,,, uint32 prevTopUpTimestamp,,) = meETH.tokenData(_tokenId);
-        (uint128 amounts, uint128 amountStakedForPoints) = meETH.tokenDeposits(_tokenId);
-        uint256 monthInSeconds = 28 days;
-        uint256 maxDeposit = ((amounts + amountStakedForPoints) * meETH.maxDepositTopUpPercent()) / 100;
-        if (balanceOf(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
-        if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
-        if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
-        if (_totalAmount > maxDeposit) revert ExceededMaxDeposit();
-        
-        return true;
+        return meETH.canTopUp(_tokenId, _totalAmount, _amount, _amountForPoints);
     }
 
     function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) public view returns (bool) {
@@ -144,6 +133,12 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return (_a > _b) ? _a : _b;
     }
 
+    error OnlyMeETHContract();
+    modifier onlyMeETHContract() {
+        if (msg.sender != address(meETH)) revert OnlyMeETHContract();
+        _;
+    }
+
     //--------------------------------------------------------------------------------------
     //---------------------------------- NFT METADATA --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -157,7 +152,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     /// So that the third-party platforms such as NFT market could
     /// timely update the images and related attributes of the NFTs.    
     event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
-
 
     /// @notice OpenSea contract-level metadata
     function contractURI() public view returns (string memory) {

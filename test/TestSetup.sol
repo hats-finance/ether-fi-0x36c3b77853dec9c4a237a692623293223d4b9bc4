@@ -253,6 +253,10 @@ contract TestSetup is Test {
         membershipNftImplementation = new MembershipNFT();
         membershipNftProxy = new UUPSProxy(address(membershipNftImplementation), "");
         membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
+
+        // initialize circular dependency
+        meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance));
+        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
         membershipNftInstance.setMeETH(address(meEthInstance));
 
         // Setup dependencies
@@ -497,5 +501,11 @@ contract TestSetup is Test {
     function _getDepositRoot() internal returns (bytes32) {
         bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
         return onchainDepositRoot;
+    }
+
+    function _transferTo(address _recipient, uint256 _amount) internal {
+        vm.deal(owner, address(owner).balance + _amount);
+        vm.prank(owner);
+        payable(_recipient).call{value: _amount}("");
     }
 }

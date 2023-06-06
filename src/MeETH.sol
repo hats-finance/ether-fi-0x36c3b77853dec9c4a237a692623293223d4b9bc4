@@ -76,7 +76,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         __Ownable_init();
         __UUPSUpgradeable_init();
-//        __ERC1155_init(_newURI);
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
@@ -154,14 +153,13 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
+        _requireTokenOwner(_tokenId);
         _topUpDeposit(_tokenId, _amount, _amountForPoints);
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
     }
 
     error ExceededMaxWithdrawal();
-    error ExceededMaxDeposit();
     error InsufficientLiquidity();
-    error EtherSendFailed();
 
     /// @notice Unwraps meETH tokens for ETH.
     /// @dev This function allows users to unwrap their meETH tokens and receive ETH in return.
@@ -181,23 +179,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
-        liquidityPool.withdraw(address(this), _amount);
-
-        (bool sent, ) = address(msg.sender).call{value: _amount}("");
-        if (!sent) revert EtherSendFailed();
+        liquidityPool.withdraw(address(msg.sender), _amount);
     }
 
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
-
-        liquidityPool.withdraw(address(this), totalBalance);
-        
-        (bool sent, ) = address(msg.sender).call{value: totalBalance}("");
-        if (!sent) revert EtherSendFailed();
+        liquidityPool.withdraw(address(msg.sender), totalBalance);
     }
-
 
     /// @notice Sacrifice the staking rewards and earn more points
     /// @dev This function allows users to stake their ETH to earn membership points faster.
@@ -370,6 +360,16 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         (sent, ) = protocolRevenueManager.call{value: protocolRevenueFees}("");
         require(sent, "Failed to send Ether");
+    /// @notice Updates the eETH address
+    /// @param _eEthAddress address of the new eETH instance
+    function setEETHInstance(address _eEthAddress) external onlyOwner {
+        eETH = IeETH(_eEthAddress);
+    }
+
+    /// @notice Updates the liquidity pool address
+    /// @param _liquidityPoolAddress address of the new LP instance
+    function setLPInstance(address _liquidityPoolAddress) external onlyOwner {
+        liquidityPool = ILiquidityPool(_liquidityPoolAddress);
     }
 
     //--------------------------------------------------------------------------------------
@@ -386,8 +386,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     * @return tokenId The unique ID of the newly minted NFT.
     */
     function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-
-        uint256 tokenId = membershipNFT.nextMintID();
+        uint256 tokenId = membershipNFT.mint(to, 1);
 
         uint8 tier = tierForPoints(_tierPoints);
         TokenData storage tokenData = tokenData[tokenId];
@@ -398,10 +397,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
 
         _deposit(tokenId, _amount, _amountForPoints);
-        uint256 mintedTokenId = membershipNFT.mint(to, 1);
-        require(mintedTokenId == tokenId, "Invalid mint"); // shouldn't be an issue?
-
-        return mintedTokenId;
+        return tokenId;
     }
 
     function _deposit(uint256 _tokenId, uint256 _amount, uint256 _amountForPoints) internal {
@@ -412,14 +408,28 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         tierData[tier].amountStakedForPoints += uint96(_amountForPoints);
     }
 
+    error OncePerMonth();
+
     function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
-        membershipNFT.canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
+        canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
 
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        TokenData storage token = tokenData[_tokenId];
+        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
+        uint256 maxDepositWithoutPenalty = (totalDeposit * maxDepositTopUpPercent) / 100;
+
         _deposit(_tokenId, _amount, _amountForPoints);
-        tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
+        token.prevTopUpTimestamp = uint32(block.timestamp);
+
+        // proportionally dilute tier points if over deposit threshold & update the tier
+        if (msg.value > maxDepositWithoutPenalty) {
+            uint256 dilutedPoints = (msg.value * token.baseTierPoints) / (msg.value + totalDeposit);
+            token.baseTierPoints = uint40(dilutedPoints);
+            _claimTier(_tokenId);
+        }
     }
 
     function _withdrawAndBurn(uint256 _tokenId) internal returns (uint256) {
@@ -648,6 +658,16 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
             tierId++;
         }
         return tierId - 1;
+    }
+
+    function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
+        uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        uint256 monthInSeconds = 28 days;
+        if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
+        if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
+
+        return true;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}

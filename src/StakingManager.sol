@@ -134,39 +134,6 @@ contract StakingManager is
         return processedBidIds;
     }
 
-
-    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @dev Called from the staking manager for general solo stakes
-    /// @param _depositRoot The fetched root of the Beacon Chain
-    /// @param _validatorId ID of the validator to register
-    /// @param _depositData Data structure to hold all data needed for depositing to the beacon chain
-    /// however, instead of the validator key, it will include the IPFS hash
-    /// containing the validator key encrypted by the corresponding node operator's public key
-    function registerValidator(
-        bytes32 _depositRoot,
-        uint256 _validatorId,
-        DepositData calldata _depositData
-    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {        
-        return _registerValidator(_validatorId, msg.sender, msg.sender, _depositData);
-    }
-
-    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
-    /// @dev Called from LP where T / BNFT holders can be different
-    /// @param _depositRoot The fetched root of the Beacon Chain
-    /// @param _validatorId ID of the validator to register
-    /// @param _bNftRecipient The recipient of the BNFT
-    /// @param _tNftRecipient The recipient of the TNFT
-    /// @param _depositData Data structure to hold all data needed for depositing to the beacon chain
-    function registerValidator(
-        bytes32 _depositRoot,
-        uint256 _validatorId,
-        address _bNftRecipient, 
-        address _tNftRecipient,
-        DepositData calldata _depositData
-    ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {        
-        return _registerValidator(_validatorId, _bNftRecipient, _tNftRecipient, _depositData);
-    }
-
     /// @notice Batch creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _depositRoot The fetched root of the Beacon Chain
     /// @param _validatorId Array of IDs of the validator to register
@@ -211,12 +178,6 @@ contract StakingManager is
         for (uint256 x; x < _validatorIds.length; ++x) {
             _cancelDeposit(_validatorIds[x]);    
         }  
-    }
-
-    /// @notice Cancels a user's deposit
-    /// @param _validatorId the ID of the validator deposit to cancel
-    function cancelDeposit(uint256 _validatorId) public whenNotPaused nonReentrant {
-        _cancelDeposit(_validatorId);
     }
 
     /// @notice Sets the EtherFi node manager contract

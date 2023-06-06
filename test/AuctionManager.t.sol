@@ -137,7 +137,7 @@ contract AuctionManagerTest is TestSetup {
         assertEq(selectedBidId, 1);
         assertEq(isBid1Active, false);
 
-        stakingManagerInstance.cancelDeposit(bidId1[0]);
+        stakingManagerInstance.batchCancelDeposit(bidIdArray);
 
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
@@ -714,6 +714,8 @@ contract AuctionManagerTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory processedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bid1Ids, proofAddress1);
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
@@ -731,8 +733,9 @@ contract AuctionManagerTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
+        depositDataArray[0] = depositData;
 
-        stakingManagerInstance.registerValidator(zeroRoot, processedBidIds[0], depositData);
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, processedBidIds, depositDataArray);
 
         assertEq(etherFiNode.balance, 0.5 ether);
     }
@@ -823,7 +826,7 @@ contract AuctionManagerTest is TestSetup {
 
         vm.expectEmit(true, false, false, true);
         emit BidReEnteredAuction(bidIds[0]);
-        stakingManagerInstance.cancelDeposit(bidIds[0]);
+        stakingManagerInstance.batchCancelDeposit(bidIds);
     }
 
     function test_EventBidCancelled() public {

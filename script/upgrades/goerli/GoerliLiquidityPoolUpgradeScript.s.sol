@@ -35,6 +35,8 @@ contract LiquidityPoolUpgrade is Script {
             LiquidityPoolImplementation: address(LiquidityPoolV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(

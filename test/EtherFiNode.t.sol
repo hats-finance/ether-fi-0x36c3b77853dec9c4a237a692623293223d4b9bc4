@@ -49,6 +49,9 @@ contract EtherFiNodeTest is TestSetup {
                 IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED
         );
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -64,7 +67,9 @@ contract EtherFiNodeTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(zeroRoot, bidId[0], depositData);
+        depositDataArray[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId, depositDataArray);
         vm.stopPrank();
 
         assertTrue(
@@ -185,6 +190,9 @@ contract EtherFiNodeTest is TestSetup {
 
         address etherFiNode = managerInstance.etherfiNodeAddress(bidId1[0]);
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
         root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -199,9 +207,11 @@ contract EtherFiNodeTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
+        
+        depositDataArray[0] = depositData;
 
         startHoax(bob);
-        stakingManagerInstance.registerValidator(zeroRoot, bidId1[0], depositData);
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, depositDataArray);
         vm.stopPrank();
 
         assertEq(
@@ -231,6 +241,9 @@ contract EtherFiNodeTest is TestSetup {
 
         etherFiNode = managerInstance.etherfiNodeAddress(bidId2[0]);
 
+        IStakingManager.DepositData[]
+            memory depositDataArray2 = new IStakingManager.DepositData[](1);
+
         root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -246,9 +259,10 @@ contract EtherFiNodeTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
         
+        depositDataArray2[0] = depositData;
 
         startHoax(dan);
-        stakingManagerInstance.registerValidator(zeroRoot, bidId2[0], depositData);
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId2, depositDataArray2);
         vm.stopPrank();
 
         assertEq(
@@ -298,6 +312,10 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
+
+        hoax(owner);
+        vm.expectRevert("Validator already exited");
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
     function test_partialWithdraw() public {

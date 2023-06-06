@@ -37,6 +37,8 @@ contract TNFTUpgrade is Script {
             TNFTImplementation: address(TNFTV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(
