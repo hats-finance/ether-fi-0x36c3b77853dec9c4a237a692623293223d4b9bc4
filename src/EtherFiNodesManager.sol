@@ -128,7 +128,6 @@ contract EtherFiNodesManager is
         );
     }
 
-
     /// @notice Registers the validator ID for the EtherFiNode contract
     /// @param _validatorId ID of the validator associated to the node
     /// @param _address Address of the EtherFiNode contract
@@ -441,11 +440,11 @@ contract EtherFiNodesManager is
 
         require(IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE, "Validator already exited");
 
-        // Mark EXITED
-        IEtherFiNode(etherfiNode).markExited(_exitTimestamp);
-
         // distribute the protocol reward from the ProtocolRevenueMgr contrac to the validator's etherfi node contract
         uint256 amount = protocolRevenueManager.distributeAuctionRevenue(_validatorId);
+
+        // Mark EXITED
+        IEtherFiNode(etherfiNode).markExited(_exitTimestamp);
 
         // Reset its local revenue index to 0, which indicates that no accrued protocol revenue exists
         IEtherFiNode(etherfiNode).setLocalRevenueIndex(0);

@@ -76,7 +76,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
         );
     }
 
-        function test_Receive() public {
+    function test_Receive() public {
         vm.expectRevert("No Active Validator");
         startHoax(alice);
         (bool sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");

@@ -493,6 +493,31 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.fullWithdraw(validatorIds[0]);
     }
 
+    function test_processNodeDistributeProtocolRevenueCorrectly() public {
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
+
+        uint256[] memory validatorIds = new uint256[](1);
+        validatorIds[0] = bidId[0];
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = 1;
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
+        uint256 auctionFeeRewards = protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]);
+
+        uint256 nodeOperatorBalance = address(nodeOperator).balance;
+        uint256 treasuryBalance = address(treasuryInstance).balance;
+        uint256 stakerBalance = address(staker).balance;
+
+        startHoax(owner);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        vm.stopPrank();
+
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 25 * auctionFeeRewards / 100);
+        assertEq(address(treasuryInstance).balance, treasuryBalance + 25 * auctionFeeRewards / 100);
+        assertEq(address(staker).balance, stakerBalance + 50 * auctionFeeRewards / 100);
+    }
+
     function test_getFullWithdrawalPayoutsWorksCorrectlyAfterVestingPeriod() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
