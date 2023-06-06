@@ -36,6 +36,8 @@ contract BNFTUpgrade is Script {
             BNFTImplementation: address(BNFTV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(

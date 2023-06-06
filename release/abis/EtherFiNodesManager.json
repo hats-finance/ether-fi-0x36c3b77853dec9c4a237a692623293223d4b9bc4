@@ -186,7 +186,7 @@
   },
   {
     "inputs": [],
-    "name": "auctionInterfaceInstance",
+    "name": "auctionManager",
     "outputs": [
       {
         "internalType": "contract IAuctionManager",
@@ -212,7 +212,7 @@
   },
   {
     "inputs": [],
-    "name": "bnftInstance",
+    "name": "bnft",
     "outputs": [
       {
         "internalType": "contract BNFT",
@@ -800,10 +800,10 @@
   },
   {
     "inputs": [],
-    "name": "protocolRevenueManagerContract",
+    "name": "protocolRevenueManager",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "contract IProtocolRevenueManager",
         "name": "",
         "type": "address"
       }
@@ -813,10 +813,10 @@
   },
   {
     "inputs": [],
-    "name": "protocolRevenueManagerInstance",
+    "name": "protocolRevenueManagerContract",
     "outputs": [
       {
-        "internalType": "contract IProtocolRevenueManager",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -1082,7 +1082,7 @@
   },
   {
     "inputs": [],
-    "name": "tnftInstance",
+    "name": "tnft",
     "outputs": [
       {
         "internalType": "contract TNFT",

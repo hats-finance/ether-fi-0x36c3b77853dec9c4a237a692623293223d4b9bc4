@@ -19,7 +19,7 @@ contract EtherFiNodesManagerUpgrade is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address EtherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
 
-        require(EtherFiNodesManagerProxyAddress == 0xc5C53bEB64Fe5F9fd99A10577855aee8e0Cc4Cc0, "EtherFiNodesManagerProxyAddress incorrect see .env");
+        require(EtherFiNodesManagerProxyAddress == 0xB914b281260222c6C118FEBD78d5dbf4fD419Ffb, "EtherFiNodesManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -35,6 +35,8 @@ contract EtherFiNodesManagerUpgrade is Script {
             EtherFiNodesManagerProxy: EtherFiNodesManagerProxyAddress,
             EtherFiNodesManagerImplementation: address(EtherFiNodesManagerV2Implementation)
         });
+
+        writeUpgradeVersionFile();
 
     }
 

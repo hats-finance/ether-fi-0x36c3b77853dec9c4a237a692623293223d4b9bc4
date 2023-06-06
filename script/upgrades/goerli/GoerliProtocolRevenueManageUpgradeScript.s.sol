@@ -36,6 +36,8 @@ contract ProtocolRevenueManagerUpgrade is Script {
             ProtocolRevenueManagerImplementation: address(ProtocolRevenueManagerV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(

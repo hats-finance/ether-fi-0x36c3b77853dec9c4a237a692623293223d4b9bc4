@@ -93,38 +93,6 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "sender",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "Received",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newAddress",
-        "type": "address"
-      }
-    ],
-    "name": "TokenAddressChanged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
         "name": "implementation",
         "type": "address"
       }
@@ -153,7 +121,7 @@
   },
   {
     "inputs": [],
-    "name": "accruedSlashingPenalties",
+    "name": "accruedEther",
     "outputs": [
       {
         "internalType": "uint256",
@@ -166,7 +134,7 @@
   },
   {
     "inputs": [],
-    "name": "accruedStakingRewards",
+    "name": "accruedSlashingPenalties",
     "outputs": [
       {
         "internalType": "uint256",
@@ -207,6 +175,11 @@
         "internalType": "uint256[]",
         "name": "_candidateBidIds",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_merkleProof",
+        "type": "bytes32[]"
       }
     ],
     "name": "batchDepositWithBidIds",
@@ -217,7 +190,7 @@
         "type": "uint256[]"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -267,7 +240,7 @@
   },
   {
     "inputs": [],
-    "name": "closeLiquidStaking",
+    "name": "closeEEthLiquidStaking",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -318,7 +291,7 @@
     "name": "eETH",
     "outputs": [
       {
-        "internalType": "contract IEETH",
+        "internalType": "contract IeETH",
         "name": "",
         "type": "address"
       }
@@ -399,10 +372,10 @@
   },
   {
     "inputs": [],
-    "name": "meEth",
+    "name": "meETH",
     "outputs": [
       {
-        "internalType": "contract IMEETH",
+        "internalType": "contract ImeETH",
         "name": "",
         "type": "address"
       }
@@ -428,9 +401,9 @@
     "name": "numValidators",
     "outputs": [
       {
-        "internalType": "uint64",
+        "internalType": "uint256",
         "name": "",
-        "type": "uint64"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -438,7 +411,7 @@
   },
   {
     "inputs": [],
-    "name": "openLiquidStaking",
+    "name": "openEEthLiquidStaking",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -528,7 +501,7 @@
         "type": "uint256"
       }
     ],
-    "name": "setAccruedSlashingPenalty",
+    "name": "setAccruedEther",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -541,7 +514,7 @@
         "type": "uint256"
       }
     ],
-    "name": "setAccruedStakingRewards",
+    "name": "setAccruedSlashingPenalty",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -567,20 +540,7 @@
         "type": "address"
       }
     ],
-    "name": "setMeEth",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
-      }
-    ],
-    "name": "setMerkleProof",
+    "name": "setMeETH",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -685,25 +645,6 @@
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "validators",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
