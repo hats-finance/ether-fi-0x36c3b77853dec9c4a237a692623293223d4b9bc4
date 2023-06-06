@@ -29,8 +29,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     ImeETH public meETH;
 
     uint256 public numValidators;
-    uint256 public accruedSlashingPenalties;    // total amounts of accrued slashing penalties on the principals
-    uint256 public accruedEther;                // total amounts of accrued ethers rewards + exited principals
+    uint256 public totalValueOutOfLp;
     bool public eEthliquidStakingOpened;
 
     uint256[21] __gap;
@@ -52,14 +51,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     receive() external payable {
-        // Staking Manager can send ETH to LP without updating 'accruedEther'
-        // It occurs when the ETH sent to via 'batchDepositWithBidIds' is returned
-        if (msg.sender == address(stakingManager)) {
-            return;
-        }
-    
-        require(accruedEther >= msg.value, "Update the accrued ethers first");
-        accruedEther -= msg.value;
+        require(totalValueOutOfLp >= msg.value, "rebase first before collecting the rewards");
+        totalValueOutOfLp -= msg.value;
     }
 
     function initialize(address _regulationsManager) external initializer {
@@ -123,11 +116,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         ) payable public onlyOwner returns (uint256[] memory) {
         require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
         require(address(this).balance >= 32 ether * _numDeposits, "Not enough balance");
-        
+
+        totalValueOutOfLp += 30 ether * _numDeposits;
         uint256 amount = 32 ether * _numDeposits;
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, _merkleProof);
 
         uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
+        totalValueOutOfLp += returnAmount;
         (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
         require(sent, "Failed to send Ether");
 
@@ -146,21 +141,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     // After the nodes are exited, delist them from the liquidity pool
     function processNodeExit(uint256[] calldata _validatorIds, uint256[] calldata _slashingPenalties) public onlyOwner {
-        uint256 totalSlashingPenalties = 0;
-        uint256 totalPrincipals = 0;
-        for (uint256 i = 0; i < _validatorIds.length; i++) {
-            uint256 validatorId = _validatorIds[i];
-            require(nodesManager.phase(validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED, "Incorrect Phase");
-            (, uint256 toTnft, uint256 toBnft,) = nodesManager.getFullWithdrawalPayouts(validatorId);
-
-            totalSlashingPenalties += _slashingPenalties[i];
-            totalPrincipals += (toTnft >= 30 ether) ? 30 ether : toTnft;
-        }
-
         numValidators -= _validatorIds.length;
-        accruedEther += totalPrincipals;
-        accruedSlashingPenalties -= totalSlashingPenalties;
-
         nodesManager.fullWithdrawBatch(_validatorIds);
     }
 
@@ -182,15 +163,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         eEthliquidStakingOpened = false;
     }
 
-    /// @notice ether.fi protocol will update the accrued staking rewards for rebasing
-    function setAccruedEther(uint256 _amount) external onlyOwner {
-        accruedEther = _amount;
-    }
-
-    /// @notice ether.fi protocol will be monitoring the status of validator nodes
-    ///         and update the accrued slashing penalties, if nay
-    function setAccruedSlashingPenalty(uint256 _amount) external onlyOwner {
-        accruedSlashingPenalties = _amount;
+    /// @notice Rebase by ether.fi
+    /// @param _tvl total value locked in ether.fi liquidty pool
+    /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
+    function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyOwner {
+        require(address(this).balance == _balanceInLp, "the LP balance has changed.");
+        totalValueOutOfLp = _tvl - _balanceInLp;
     }
 
     /// @notice sets the contract address for eETH
@@ -243,7 +221,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function getTotalPooledEther() public view returns (uint256) {
-        return (30 ether * numValidators) + accruedEther + address(this).balance - (accruedSlashingPenalties);
+        return totalValueOutOfLp + address(this).balance;
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {

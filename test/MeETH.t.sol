@@ -327,6 +327,7 @@ contract MeETHTest is TestSetup {
         vm.startPrank(alice);
         // Alice deposits 0.5 ETH and mints 0.5 meETH.
         uint256 aliceToken = meEthInstance.wrapEth{value: 0.5 ether}(0.5 ether, 0, aliceProof);
+        assertEq(address(liquidityPoolInstance).balance, 0.5 ether);
         vm.stopPrank();
 
         // Check the balance
@@ -334,7 +335,7 @@ contract MeETHTest is TestSetup {
 
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedEther(0.5 ether);
+        liquidityPoolInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
         meEthInstance.distributeStakingRewards();
         vm.stopPrank();
 
@@ -364,9 +365,11 @@ contract MeETHTest is TestSetup {
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
         assertEq(membershipNftInstance.tierOf(bobToken), 0);
 
+        assertEq(address(liquidityPoolInstance).balance, 2.5 ether);
+
         // More Staking rewards 1 ETH into LP
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedEther(0.5 ether + 1 ether);
+        liquidityPoolInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
         meEthInstance.distributeStakingRewards();
         vm.stopPrank();
 
@@ -480,7 +483,7 @@ contract MeETHTest is TestSetup {
 
         // Now, eETH is rebased with the staking rewards 1 eETH
         startHoax(owner);
-        liquidityPoolInstance.setAccruedEther(1 ether);
+        liquidityPoolInstance.rebase(4 ether + 1 ether, 4 ether);
         meEthInstance.distributeStakingRewards();
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(owner, ownerProof);
