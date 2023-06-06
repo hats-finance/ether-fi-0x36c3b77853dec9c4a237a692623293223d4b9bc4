@@ -106,7 +106,11 @@ contract LargeScenariosTest is TestSetup {
         // Elvis cancels a deposit
         vm.prank(elvis);
         balanceBefore = elvis.balance;
-        stakingManagerInstance.batchCancelDeposit(elvisProcessedBidIds);
+        {
+            uint256[] memory bidToCancel = new uint256[](1);
+            bidToCancel[0] = elvisProcessedBidIds[0];
+            stakingManagerInstance.batchCancelDeposit(bidToCancel);
+        }
         assertTrue(auctionInstance.isBidActive(elvisProcessedBidIds[0]));
         assertEq(address(stakingManagerInstance).balance, 320 ether - 32 ether);
         assertEq(elvis.balance, balanceBefore + 32 ether);
@@ -217,7 +221,7 @@ contract LargeScenariosTest is TestSetup {
 
         startHoax(elvis);
         stakingManagerInstance.batchRegisterValidators(
-            _getDepositRoot(),
+            zeroRoot,
             newElvisProcessedBidIds,
             depositDataArray
         );
