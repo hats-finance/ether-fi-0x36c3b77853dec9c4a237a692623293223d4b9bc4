@@ -181,11 +181,11 @@ contract SmallScenariosTest is TestSetup {
         vm.expectRevert("Not enough ETH in the liquidity pool");
         vm.prank(chad);
         liquidityPoolInstance.withdraw(chad, 15.5 ether);
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether);
         
         // EtherFi deposits a validators worth (32 ETH) into the pool to allow users to withdraw
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 32 ether}(owner, ownerProof);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether + 32 ether);
