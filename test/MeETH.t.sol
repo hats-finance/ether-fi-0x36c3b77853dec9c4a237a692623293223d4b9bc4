@@ -788,6 +788,7 @@ contract MeETHTest is TestSetup {
         meEthInstance.withdrawAndBurnForEth(0);
 
         assertEq(meEthInstance.totalFeesAccumulated(), 0.1 ether);
+        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 0.1 ether);
 
         vm.prank(owner);
         meEthInstance.withdrawFees();
