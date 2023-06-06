@@ -344,7 +344,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     * @return tokenId The unique ID of the newly minted NFT.
     */
     function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-        uint256 tokenId = membershipNFT.nextMintID();
+        uint256 tokenId = membershipNFT.mint(to, 1);
 
         uint8 tier = tierForPoints(_tierPoints);
         TokenData storage tokenData = tokenData[tokenId];
@@ -355,10 +355,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
 
         _deposit(tokenId, _amount, _amountForPoints);
-        uint256 mintedTokenId = membershipNFT.mint(to, 1);
-        require(mintedTokenId == tokenId, "Invalid mint"); // shouldn't be an issue?
-
-        return mintedTokenId;
+        return tokenId;
     }
 
     function _deposit(uint256 _tokenId, uint256 _amount, uint256 _amountForPoints) internal {
