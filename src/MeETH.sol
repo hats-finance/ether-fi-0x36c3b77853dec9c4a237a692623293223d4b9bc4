@@ -38,7 +38,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     uint8  public maxDepositTopUpPercent;
 
     uint64 public mintFee;
-    uint64 public burnFee;
 
     uint256 public treasuryFeePercentage;
     uint256 public protocolRevenueFeePercentage;
@@ -56,7 +55,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
-    event UpdatedFees(uint64 mintFee, uint256 burnFee);
+    event UpdatedFees(uint64 mintFee);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -194,11 +193,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
 
         liquidityPool.withdraw(address(this), totalBalance);
-        totalFeesAccumulated += burnFee;
         
-        uint256 finalCallerBalance = totalBalance - burnFee;
-
-        (bool sent, ) = address(msg.sender).call{value: finalCallerBalance}("");
+        (bool sent, ) = address(msg.sender).call{value: totalBalance}("");
         if (!sent) revert EtherSendFailed();
     }
 
@@ -346,11 +342,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         maxDepositTopUpPercent = _percent;
     }
 
-    function setFeeAmounts(uint64 _mintingFee, uint64 _burnFee) external onlyOwner {
+    function setFeeAmounts(uint64 _mintingFee) external onlyOwner {
         mintFee = _mintingFee;
-        burnFee = _burnFee;
 
-        emit UpdatedFees(_mintingFee, _burnFee);
+        emit UpdatedFees(_mintingFee);
     }
 
     error InvalidPercentages();
