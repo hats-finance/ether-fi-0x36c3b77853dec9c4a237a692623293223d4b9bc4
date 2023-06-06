@@ -425,6 +425,7 @@ contract MeETHTest is TestSetup {
         meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
         uint256 dilutedPoints = membershipNftInstance.tierPointsOf(aliceToken);
         assertEq(dilutedPoints , currentPoints / 2);
+        assertEq(membershipNftInstance.tierOf(aliceToken), 2);
         assertEq(membershipNftInstance.tierOf(aliceToken), meEthInstance.tierForPoints(uint40(dilutedPoints)));
 
         vm.stopPrank();
