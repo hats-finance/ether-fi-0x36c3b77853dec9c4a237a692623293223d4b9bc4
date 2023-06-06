@@ -28,7 +28,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IRegulationsManager public regulationsManager;
     ImeETH public meETH;
 
-    uint256 public numValidators;
     uint256 public totalValueOutOfLp;
     bool public eEthliquidStakingOpened;
 
@@ -137,13 +136,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         ) public onlyOwner
     {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
-        numValidators += _validatorIds.length;
-    }
-
-    // After the nodes are exited, delist them from the liquidity pool
-    function processNodeExit(uint256[] calldata _validatorIds, uint256[] calldata _slashingPenalties) public onlyOwner {
-        numValidators -= _validatorIds.length;
-        nodesManager.fullWithdrawBatch(_validatorIds);
     }
 
     /// @notice Send the exit reqeusts as the T-NFT holder

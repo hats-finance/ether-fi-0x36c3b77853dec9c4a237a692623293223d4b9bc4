@@ -139,7 +139,6 @@ contract SmallScenariosTest is TestSetup {
         liquidityPoolInstance.batchRegisterValidators(_getDepositRoot(), processedBidIds, depositDataArray);
         vm.stopPrank();
 
-        assertEq(liquidityPoolInstance.numValidators(), 1);
         assertEq(address(stakingManagerInstance).balance, 0 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
@@ -231,9 +230,8 @@ contract SmallScenariosTest is TestSetup {
         slashingPenalties[0] = 0;
 
         // (30 ETH + @ ETH) enters the pool from the ether.fi node contract
-        liquidityPoolInstance.processNodeExit(processedBidIds, slashingPenalties);
+        managerInstance.fullWithdrawBatch(processedBidIds);
 
-        assertEq(liquidityPoolInstance.numValidators(), 0);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.333333333333333333 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.166666666666666665 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 0.000000000000000001 ether);
