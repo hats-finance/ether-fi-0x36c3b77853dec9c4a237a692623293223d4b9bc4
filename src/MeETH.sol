@@ -146,7 +146,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
 
     error ExceededMaxWithdrawal();
-    error ExceededMaxDeposit();
     error InsufficientLiquidity();
     error EtherSendFailed();
 
@@ -355,7 +354,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     * @return tokenId The unique ID of the newly minted NFT.
     */
     function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-
         uint256 tokenId = membershipNFT.nextMintID();
 
         uint8 tier = tierForPoints(_tierPoints);
@@ -389,8 +387,20 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
 
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        TokenData storage token = tokenData[_tokenId];
+        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
+        uint256 maxDepositWithoutPenalty = (totalDeposit * maxDepositTopUpPercent) / 100;
+
         _deposit(_tokenId, _amount, _amountForPoints);
-        tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
+        token.prevTopUpTimestamp = uint32(block.timestamp);
+
+        // proportionally dilute tier points if over deposit threshold & update the tier
+        if (msg.value > maxDepositWithoutPenalty) {
+            uint256 dilutedPoints = (msg.value * token.baseTierPoints) / (msg.value + totalDeposit);
+            token.baseTierPoints = uint40(dilutedPoints);
+            _claimTier(_tokenId);
+        }
     }
 
     function _withdrawAndBurn(uint256 _tokenId) internal returns (uint256) {
@@ -625,10 +635,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 monthInSeconds = 28 days;
-        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
         if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
-        if (_totalAmount > maxDeposit) revert ExceededMaxDeposit();
 
         return true;
     }
