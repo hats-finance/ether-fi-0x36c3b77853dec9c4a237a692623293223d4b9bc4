@@ -38,11 +38,13 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     uint8  public maxDepositTopUpPercent;
 
     uint64 public mintFee;
+    uint64 public burnFee;
 
     uint256 public treasuryFeePercentage;
     uint256 public protocolRevenueFeePercentage;
 
-    uint256 public totalFeesAccumulated;
+    uint256 public totalMintFeesAccumulated;
+    uint256 public totalBurnFeesAccumulated;
 
     address public treasury;
     address public protocolRevenueManager;
@@ -70,15 +72,19 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     error DissallowZeroAddress();
 
-    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress, address _treasury, address _protocolRevenueManager) external initializer {
+    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNft, address _treasury, address _protocolRevenueManager) external initializer {
         if (_eEthAddress == address(0)) revert DissallowZeroAddress();
         if (_liquidityPoolAddress == address(0)) revert DissallowZeroAddress();
+        if (_treasury == address(0)) revert DissallowZeroAddress();
+        if (_protocolRevenueManager == address(0)) revert DissallowZeroAddress();
+        if (_membershipNft == address(0)) revert DissallowZeroAddress();
 
         __Ownable_init();
         __UUPSUpgradeable_init();
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+        membershipNFT = MembershipNFT(_membershipNft);
         treasury = _treasury;
         protocolRevenueManager = _protocolRevenueManager;
 
@@ -138,7 +144,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (msg.value != _amount + _amountForPoints) revert InvalidAllocation();
 
-        totalFeesAccumulated += mintFee;        
+        totalMintFeesAccumulated += mintFee;        
         uint256 liquidityPoolDepositAmount = msg.value - mintFee;
 
         liquidityPool.deposit{value: liquidityPoolDepositAmount}(msg.sender, address(this), _merkleProof);
@@ -186,7 +192,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
-        liquidityPool.withdraw(address(msg.sender), totalBalance);
+        totalBurnFeesAccumulated += burnFee;
+        liquidityPool.withdraw(address(msg.sender), totalBalance - burnFee);
     }
 
     /// @notice Sacrifice the staking rewards and earn more points
@@ -348,18 +355,28 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     function withdrawFees() external onlyOwner {
-        uint256 totalAccumulatedFeesBefore = totalFeesAccumulated;
+        uint256 totalMintAccumulatedFeesBefore = totalMintFeesAccumulated;
+        uint256 totalBurnAccumulatedFeesBefore = totalBurnFeesAccumulated;
 
-        uint256 treasuryFees = totalAccumulatedFeesBefore * treasuryFeePercentage / 100;
-        uint256 protocolRevenueFees = totalAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
+        uint256 treasuryETHFees = totalMintAccumulatedFeesBefore * treasuryFeePercentage / 100;
+        uint256 protocolETHRevenueFees = totalMintAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
 
-        totalFeesAccumulated = 0;
+        uint256 treasuryEETHFees = totalBurnAccumulatedFeesBefore * treasuryFeePercentage / 100;
+        uint256 protocolEETHRevenueFees = totalBurnAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
 
-        (bool sent, ) = treasury.call{value: treasuryFees}("");
+        totalMintFeesAccumulated = 0;
+        totalBurnFeesAccumulated = 0;
+        
+        (bool sent, ) = treasury.call{value: treasuryETHFees}("");
         require(sent, "Failed to send Ether");
 
-        (sent, ) = protocolRevenueManager.call{value: protocolRevenueFees}("");
+        (sent, ) = protocolRevenueManager.call{value: protocolETHRevenueFees}("");
         require(sent, "Failed to send Ether");
+
+        eETH.transfer(treasury, treasuryEETHFees);
+        eETH.transfer(protocolRevenueManager, protocolEETHRevenueFees);
+    }
+
     /// @notice Updates the eETH address
     /// @param _eEthAddress address of the new eETH instance
     function setEETHInstance(address _eEthAddress) external onlyOwner {
