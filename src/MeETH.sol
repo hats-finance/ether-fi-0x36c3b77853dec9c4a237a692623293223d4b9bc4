@@ -144,11 +144,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
     }
 
-
     error ExceededMaxWithdrawal();
-    error ExceededMaxDeposit();
     error InsufficientLiquidity();
-    error EtherSendFailed();
 
     /// @notice Unwraps meETH tokens for ETH.
     /// @dev This function allows users to unwrap their meETH tokens and receive ETH in return.
@@ -168,23 +165,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
-        liquidityPool.withdraw(address(this), _amount);
-        (bool sent, ) = address(msg.sender).call{value: _amount}("");
-        if (!sent) revert EtherSendFailed();
+        liquidityPool.withdraw(address(msg.sender), _amount);
     }
-
-
 
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
-
-        liquidityPool.withdraw(address(this), totalBalance);
-        (bool sent, ) = address(msg.sender).call{value: totalBalance}("");
-        if (!sent) revert EtherSendFailed();
+        liquidityPool.withdraw(address(msg.sender), totalBalance);
     }
-
 
     /// @notice Sacrifice the staking rewards and earn more points
     /// @dev This function allows users to stake their ETH to earn membership points faster.
@@ -385,8 +374,20 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
 
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        TokenData storage token = tokenData[_tokenId];
+        uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
+        uint256 maxDepositWithoutPenalty = (totalDeposit * maxDepositTopUpPercent) / 100;
+
         _deposit(_tokenId, _amount, _amountForPoints);
-        tokenData[_tokenId].prevTopUpTimestamp = uint32(block.timestamp);
+        token.prevTopUpTimestamp = uint32(block.timestamp);
+
+        // proportionally dilute tier points if over deposit threshold & update the tier
+        if (msg.value > maxDepositWithoutPenalty) {
+            uint256 dilutedPoints = (msg.value * token.baseTierPoints) / (msg.value + totalDeposit);
+            token.baseTierPoints = uint40(dilutedPoints);
+            _claimTier(_tokenId);
+        }
     }
 
     function _withdrawAndBurn(uint256 _tokenId) internal returns (uint256) {
@@ -621,10 +622,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 monthInSeconds = 28 days;
-        uint256 maxDeposit = ((deposit.amounts + deposit.amountStakedForPoints) * maxDepositTopUpPercent) / 100;
         if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
-        if (_totalAmount > maxDeposit) revert ExceededMaxDeposit();
 
         return true;
     }

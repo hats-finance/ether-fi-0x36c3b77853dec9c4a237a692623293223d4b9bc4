@@ -327,6 +327,7 @@ contract MeETHTest is TestSetup {
         vm.startPrank(alice);
         // Alice deposits 0.5 ETH and mints 0.5 meETH.
         uint256 aliceToken = meEthInstance.wrapEth{value: 0.5 ether}(0.5 ether, 0, aliceProof);
+        assertEq(address(liquidityPoolInstance).balance, 0.5 ether);
         vm.stopPrank();
 
         // Check the balance
@@ -334,7 +335,7 @@ contract MeETHTest is TestSetup {
 
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedEther(0.5 ether);
+        liquidityPoolInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
         meEthInstance.distributeStakingRewards();
         vm.stopPrank();
 
@@ -364,9 +365,11 @@ contract MeETHTest is TestSetup {
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
         assertEq(membershipNftInstance.tierOf(bobToken), 0);
 
+        assertEq(address(liquidityPoolInstance).balance, 2.5 ether);
+
         // More Staking rewards 1 ETH into LP
         vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedEther(0.5 ether + 1 ether);
+        liquidityPoolInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
         meEthInstance.distributeStakingRewards();
         vm.stopPrank();
 
@@ -404,23 +407,58 @@ contract MeETHTest is TestSetup {
     }
 
 
+    function test_topUpDilution() public {
+        vm.deal(alice, 100 ether);
+        vm.deal(bob, 100 ether);
+
+        // alice doubles her deposit and should get penalized
+        vm.startPrank(alice);
+
+        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        skip(28 days * 10);
+
+        uint256 currentPoints = membershipNftInstance.tierPointsOf(aliceToken);
+        assertEq(currentPoints, 6720); // force update if calculation logic changes
+
+        assertEq(membershipNftInstance.claimableTier(aliceToken), 4);
+        meEthInstance.claimTier(aliceToken);
+        assertEq(membershipNftInstance.tierOf(aliceToken), 4);
+
+        // points should get diluted by 50% & the tier is properly updated
+        meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
+        uint256 dilutedPoints = membershipNftInstance.tierPointsOf(aliceToken);
+        assertEq(dilutedPoints , currentPoints / 2);
+        assertEq(membershipNftInstance.tierOf(aliceToken), 2);
+        assertEq(membershipNftInstance.tierOf(aliceToken), meEthInstance.tierForPoints(uint40(dilutedPoints)));
+
+        vm.stopPrank();
+
+        // bob does a 15% top up and should not get penalized
+        vm.startPrank(bob);
+
+        uint256 bobToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, 0, bobProof);
+        skip(28 days * 10);
+
+        currentPoints = membershipNftInstance.tierPointsOf(bobToken);
+        assertEq(currentPoints, 6720); // force update if calculation logic changes
+
+        // points should not get diluted
+        meEthInstance.topUpDepositWithEth{value: 0.15 ether}(bobToken, 0.15 ether, 0 ether, bobProof);
+        dilutedPoints = membershipNftInstance.tierPointsOf(bobToken);
+        assertEq(dilutedPoints , currentPoints); 
+
+        vm.stopPrank();
+    }
+
     function test_topUpDepositWithEth() public {
         vm.deal(alice, 100 ether);
+        vm.deal(bob, 100 ether);
 
         vm.startPrank(alice);
         uint256 aliceToken = meEthInstance.wrapEth{value: 8 ether}(8 ether, 0, aliceProof);
 
         skip(28 days);
 
-        // can't top over more than 20%
-        vm.expectRevert(MeETH.ExceededMaxDeposit.selector);
-        meEthInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 3 ether, 0 ether, aliceProof);
-        vm.expectRevert(MeETH.ExceededMaxDeposit.selector);
-        meEthInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 0 ether, 3 ether, aliceProof);
-        vm.expectRevert(MeETH.ExceededMaxDeposit.selector);
-        meEthInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 1 ether, 2 ether, aliceProof);
-
-        // should succeed
         meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
         assertEq(membershipNftInstance.valueOf(aliceToken), 8 ether + 1 ether);
 
@@ -480,7 +518,7 @@ contract MeETHTest is TestSetup {
 
         // Now, eETH is rebased with the staking rewards 1 eETH
         startHoax(owner);
-        liquidityPoolInstance.setAccruedEther(1 ether);
+        liquidityPoolInstance.rebase(4 ether + 1 ether, 4 ether);
         meEthInstance.distributeStakingRewards();
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(owner, ownerProof);

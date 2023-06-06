@@ -250,10 +250,10 @@
   },
   {
     "inputs": [],
-    "name": "eEth",
+    "name": "eETH",
     "outputs": [
       {
-        "internalType": "contract IEETH",
+        "internalType": "contract IeETH",
         "name": "",
         "type": "address"
       }
@@ -345,7 +345,7 @@
       },
       {
         "internalType": "address",
-        "name": "_eEth",
+        "name": "_eETH",
         "type": "address"
       }
     ],

@@ -36,6 +36,8 @@ contract EETHUpgrade is Script {
             EETHImplementation: address(EETHV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(

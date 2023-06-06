@@ -36,6 +36,8 @@ contract RegulationsManagerUpgrade is Script {
             RegulationsManagerImplementation: address(RegulationsManagerV2Implementation)
         });
 
+         writeUpgradeVersionFile();
+
     }
 
     function _stringToUint(
