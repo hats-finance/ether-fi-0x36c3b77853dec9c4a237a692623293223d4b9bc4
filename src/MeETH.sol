@@ -38,8 +38,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     uint8  public maxDepositTopUpPercent;
 
     uint64 public mintFee;
-    uint64 public upgradeFee;
-    uint64 public withdrawFee;
     uint64 public burnFee;
 
     uint256 public treasuryFeePercentage;
@@ -58,7 +56,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
-    event UpdatedFees(uint64 mintFee, uint64 upgradeFee, uint64 withdrawFee, uint256 burnFee);
+    event UpdatedFees(uint64 mintFee, uint256 burnFee);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -185,9 +183,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         liquidityPool.withdraw(address(this), _amount);
-        uint64 withdrawFeeFinal = _withdrawFees();
 
-        (bool sent, ) = address(msg.sender).call{value: _amount - withdrawFeeFinal}("");
+        (bool sent, ) = address(msg.sender).call{value: _amount}("");
         if (!sent) revert EtherSendFailed();
     }
 
@@ -197,10 +194,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
 
         liquidityPool.withdraw(address(this), totalBalance);
-        uint64 withdrawFeeFinal = _withdrawFees();
         totalFeesAccumulated += burnFee;
         
-        uint256 finalCallerBalance = totalBalance - withdrawFeeFinal - burnFee;
+        uint256 finalCallerBalance = totalBalance - burnFee;
 
         (bool sent, ) = address(msg.sender).call{value: finalCallerBalance}("");
         if (!sent) revert EtherSendFailed();
@@ -350,13 +346,11 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         maxDepositTopUpPercent = _percent;
     }
 
-    function setFeeAmounts(uint64 _mintingFee, uint64 _upgradeFee, uint64 _withdrawalFee, uint64 _burnFee) external onlyOwner {
+    function setFeeAmounts(uint64 _mintingFee, uint64 _burnFee) external onlyOwner {
         mintFee = _mintingFee;
-        upgradeFee = _upgradeFee;
-        withdrawFee = _withdrawalFee;
         burnFee = _burnFee;
 
-        emit UpdatedFees(_mintingFee, _upgradeFee, _withdrawalFee, _burnFee);
+        emit UpdatedFees(_mintingFee, _burnFee);
     }
 
     error InvalidPercentages();
@@ -387,12 +381,6 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _withdrawFees() internal returns (uint64) {
-        totalFeesAccumulated += withdrawFee;
-
-        return withdrawFee;
-    }
-
     /**
     * @dev Internal function to mint a new membership NFT.
     * @param to The address of the recipient of the NFT.
@@ -414,7 +402,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         tokenData.tier = tier;
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
 
-        _deposit(tokenId, _amount - mintFee, _amountForPoints);
+        _deposit(tokenId, _amount, _amountForPoints);
         uint256 mintedTokenId = membershipNFT.mint(to, 1);
         require(mintedTokenId == tokenId, "Invalid mint"); // shouldn't be an issue?
 
