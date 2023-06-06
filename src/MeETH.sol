@@ -146,7 +146,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         totalFeesAccumulated += mintFee;        
         uint256 amountAfterDeposit = msg.value - mintFee;
 
-        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+        liquidityPool.deposit{value: amountAfterDeposit}(msg.sender, address(this), _merkleProof);
         uint256 tokenId = _mintMembershipNFT(msg.sender, amountAfterDeposit - _amountForPoints, _amountForPoints, 0, 0);
         return tokenId;
     }
@@ -187,12 +187,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         liquidityPool.withdraw(address(msg.sender), _amount);
     }
 
+    error InvalidFee();
+
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
-    function withdrawAndBurnForEth(uint256 _tokenId) public {
+    function withdrawAndBurnForEth(uint256 _tokenId) public payable {
+        if(msg.value != burnFee) revert InvalidFee();
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
-        totalFeesAccumulated += burnFee;
-        liquidityPool.withdraw(address(msg.sender), totalBalance - burnFee);
+        totalFeesAccumulated += msg.value;
+        liquidityPool.withdraw(address(msg.sender), totalBalance);
     }
 
     /// @notice Sacrifice the staking rewards and earn more points
@@ -362,8 +365,11 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         totalFeesAccumulated = 0;
 
-        eETH.transfer(treasury, treasuryFees);
-        eETH.transfer(protocolRevenueManager, protocolRevenueFees);
+        (bool sent, ) = treasury.call{value: treasuryFees}("");
+        require(sent, "Failed to send Ether");
+
+        (sent, ) = protocolRevenueManager.call{value: protocolRevenueFees}("");
+        require(sent, "Failed to send Ether");
     }
 
     /// @notice Updates the eETH address

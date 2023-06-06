@@ -780,22 +780,31 @@ contract MeETHTest is TestSetup {
         hoax(alice);
         meEthInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
 
-        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 2 ether);
+        assertEq(address(liquidityPoolInstance).balance, 1.95 ether);
+        assertEq(address(meEthInstance).balance, 0.05 ether);
+
+        (uint256 amount, ) = meEthInstance.tokenDeposits(0);
+        
+        assertEq(amount, 1.95 ether);
+        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 1.95 ether);
+        
         assertEq(meEthInstance.totalFeesAccumulated(), 0.05 ether);
         assertEq(membershipNftInstance.balanceOf(alice, 0), 1);
 
-        hoax(alice);
-        meEthInstance.withdrawAndBurnForEth(0);
+        uint256 aliceBalBefore = alice.balance;
 
+        hoax(alice);
+        meEthInstance.withdrawAndBurnForEth{value: 0.05 ether}(0);
+
+        assertEq(address(meEthInstance).balance, 0.1 ether);
         assertEq(meEthInstance.totalFeesAccumulated(), 0.1 ether);
-        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 0.1 ether);
 
         vm.prank(owner);
         meEthInstance.withdrawFees();
 
         assertEq(eETHInstance.balanceOf(address(treasuryInstance)), 0.05 ether);
         assertEq(eETHInstance.balanceOf(address(protocolRevenueManagerInstance)), 0.05 ether);
+        assertEq(address(meEthInstance).balance, 0 ether);
         assertEq(meEthInstance.totalFeesAccumulated(), 0);
-
     }
 }
