@@ -28,7 +28,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     mapping (uint256 => uint256) public allTimeHighDepositAmount;
 
-    mapping (address => bool) public eapDepositProcessed;
+    mapping (address => bool) public eapMigrationProcessed;
     bytes32 public eapMerkleRoot;
     uint64[] public requiredEapPointsPerEapDeposit;
 
@@ -78,6 +78,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     error InvalidEAPRollover();
+    error InvalidAmounts();
+    error EapMigrationAlreadyProcessed();
 
     /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
     /// @dev The deposit amount must be greater than or equal to what they deposited into the EAP
@@ -93,16 +95,14 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable returns (uint256) {
-        if (_points == 0) revert InvalidEAPRollover();
-        if (msg.value < _snapshotEthAmount) revert InvalidEAPRollover();
-        if (msg.value > _snapshotEthAmount * 2) revert InvalidEAPRollover();
-        if (msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
-        if (eapDepositProcessed[msg.sender] == true) revert InvalidEAPRollover();
+        if (msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2) revert InvalidEAPRollover();
+        if (msg.value != _amount + _amountForPoints) revert InvalidAmounts();
+        if (eapMigrationProcessed[msg.sender] == true) revert EapMigrationAlreadyProcessed();
 
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, _snapshotEthAmount, _points));
         if (!MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf)) revert InvalidEAPRollover(); 
 
-        eapDepositProcessed[msg.sender] = true;
+        eapMigrationProcessed[msg.sender] = true;
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
 
         (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _snapshotEthAmount);
