@@ -128,7 +128,6 @@ contract EtherFiNodesManager is
         );
     }
 
-
     /// @notice Registers the validator ID for the EtherFiNode contract
     /// @param _validatorId ID of the validator associated to the node
     /// @param _address Address of the EtherFiNode contract
@@ -410,6 +409,12 @@ contract EtherFiNodesManager is
         numberOfValidators += _count;
     }
 
+    /// TODO: remove it for mainnet deploy
+    /// @notice just for testnet!
+    function setNumberOfValidators(uint64 _numberOfValidators) external onlyOwner {
+        numberOfValidators = _numberOfValidators;
+    }
+
     //Pauses the contract
     function pauseContract() external onlyOwner {
         _pause();
@@ -433,11 +438,13 @@ contract EtherFiNodesManager is
     function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
-        // Mark EXITED
-        IEtherFiNode(etherfiNode).markExited(_exitTimestamp);
+        require(IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE, "Validator already exited");
 
         // distribute the protocol reward from the ProtocolRevenueMgr contrac to the validator's etherfi node contract
         uint256 amount = protocolRevenueManager.distributeAuctionRevenue(_validatorId);
+
+        // Mark EXITED
+        IEtherFiNode(etherfiNode).markExited(_exitTimestamp);
 
         // Reset its local revenue index to 0, which indicates that no accrued protocol revenue exists
         IEtherFiNode(etherfiNode).setLocalRevenueIndex(0);

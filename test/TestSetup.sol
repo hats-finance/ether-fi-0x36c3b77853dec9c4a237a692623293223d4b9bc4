@@ -18,6 +18,7 @@ import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
 import "../src/WeETH.sol";
 import "../src/MeETH.sol";
+import "../src/MembershipNFT.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
@@ -46,6 +47,7 @@ contract TestSetup is Test {
     UUPSProxy public weETHProxy;
     UUPSProxy public nodeOperatorManagerProxy;
     UUPSProxy public meETHProxy;
+    UUPSProxy public membershipNftProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -86,6 +88,9 @@ contract TestSetup is Test {
 
     MeETH public meEthImplementation;
     MeETH public meEthInstance;
+
+    MembershipNFT public membershipNftImplementation;
+    MembershipNFT public membershipNftInstance;
 
     NodeOperatorManager public nodeOperatorManagerImplementation;
     NodeOperatorManager public nodeOperatorManagerInstance;
@@ -240,10 +245,18 @@ contract TestSetup is Test {
 
         regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
 
+        membershipNftImplementation = new MembershipNFT();
+        membershipNftProxy = new UUPSProxy(address(membershipNftImplementation), "");
+        membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
+        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
+        
         meEthImplementation = new MeETH();
         meETHProxy = new UUPSProxy(address(meEthImplementation), "");
         meEthInstance = MeETH(payable(meETHProxy));
-        meEthInstance.initialize("https:token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json", address(eETHInstance), address(liquidityPoolInstance));
+        meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance), address(treasuryInstance), address(protocolRevenueManagerInstance));
+
+        membershipNftInstance.setMeETH(address(meEthInstance));
+
 
         // Setup dependencies
         _setUpNodeOperatorWhitelist();
@@ -487,5 +500,11 @@ contract TestSetup is Test {
     function _getDepositRoot() internal returns (bytes32) {
         bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
         return onchainDepositRoot;
+    }
+
+    function _transferTo(address _recipient, uint256 _amount) internal {
+        vm.deal(owner, address(owner).balance + _amount);
+        vm.prank(owner);
+        payable(_recipient).call{value: _amount}("");
     }
 }

@@ -36,6 +36,9 @@ contract BNFTTest is TestSetup {
             proof
         );
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -51,10 +54,12 @@ contract BNFTTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
+        
+        depositDataArray[0] = depositData;
 
 
         startHoax(alice);
-        stakingManagerInstance.registerValidator(zeroRoot, bidIds[0], depositData);
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidIds, depositDataArray);
         vm.stopPrank();
 
         assertEq(BNFTInstance.ownerOf(1), alice);
@@ -88,6 +93,9 @@ contract BNFTTest is TestSetup {
             proof
         );
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -104,7 +112,9 @@ contract BNFTTest is TestSetup {
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
 
-        stakingManagerInstance.registerValidator(zeroRoot, bidIdArray[0], depositData);
+        depositDataArray[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidIdArray, depositDataArray);
 
         vm.expectRevert("Err: token is SOUL BOUND");
         BNFTInstance.transferFrom(

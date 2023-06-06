@@ -76,7 +76,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
         );
     }
 
-        function test_Receive() public {
+    function test_Receive() public {
         vm.expectRevert("No Active Validator");
         startHoax(alice);
         (bool sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");
@@ -103,6 +103,9 @@ contract ProtocolRevenueManagerTest is TestSetup {
             32 ether
         );
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
         IStakingManager.DepositData memory depositData = IStakingManager
             .DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -110,10 +113,13 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        stakingManagerInstance.registerValidator(
+
+        depositDataArray[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(
             zeroRoot,
-            bidIds[0],
-            depositData
+            bidIds,
+            depositDataArray
         );
 
         assertEq(
@@ -137,6 +143,10 @@ contract ProtocolRevenueManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, proof);
 
+
+        IStakingManager.DepositData[]
+            memory depositDataArray2 = new IStakingManager.DepositData[](1);
+
         etherFiNode = managerInstance.etherfiNodeAddress(2);
         root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -151,10 +161,13 @@ contract ProtocolRevenueManagerTest is TestSetup {
             depositDataRoot: root,
             ipfsHashForEncryptedValidatorKey: "test_ipfs"
         });
-        stakingManagerInstance.registerValidator(
+
+        depositDataArray2[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(
             zeroRoot,
-            bidId[0],
-            depositData
+            bidId,
+            depositDataArray2
         );
 
         assertEq(
@@ -188,6 +201,9 @@ contract ProtocolRevenueManagerTest is TestSetup {
             32 ether
         );
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
         IStakingManager.DepositData memory depositData = IStakingManager
             .DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -195,10 +211,13 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        stakingManagerInstance.registerValidator(
+
+        depositDataArray[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(
             zeroRoot,
-            bidId[0],
-            depositData
+            bidId,
+            depositDataArray
         );
         vm.stopPrank();
 
@@ -216,6 +235,10 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1 ether
         );
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds2, proof);
+
+        IStakingManager.DepositData[]
+            memory depositDataArray2 = new IStakingManager.DepositData[](1);
+
         etherFiNode = managerInstance.etherfiNodeAddress(2);
         root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -230,10 +253,13 @@ contract ProtocolRevenueManagerTest is TestSetup {
             depositDataRoot: root,
             ipfsHashForEncryptedValidatorKey: "test_ipfs"
         });
-        stakingManagerInstance.registerValidator(
+
+        depositDataArray2[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(
             zeroRoot,
-            bidIds2[0],
-            depositData
+            bidIds2,
+            depositDataArray2
         );
         vm.stopPrank();
 
@@ -284,6 +310,9 @@ contract ProtocolRevenueManagerTest is TestSetup {
             32 ether
         );
 
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
         IStakingManager.DepositData memory depositData = IStakingManager
             .DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -291,12 +320,15 @@ contract ProtocolRevenueManagerTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
+        
+        depositDataArray[0] = depositData;
+        
         assertEq(address(protocolRevenueManagerInstance).balance, 0);
 
-        stakingManagerInstance.registerValidator(
+        stakingManagerInstance.batchRegisterValidators(
             zeroRoot,
-            bidId[0],
-            depositData
+            bidId,
+            depositDataArray
         );
         vm.stopPrank();
 

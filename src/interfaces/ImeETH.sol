@@ -31,16 +31,13 @@ interface ImeETH {
     }
 
     // State-changing functions
-    function initialize(string calldata _newURI, address _eEthAddress, address _liquidityPoolAddress) external;
+    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNft, address _treasury, address _protocolRevenueManager) external;
 
     function wrapEthForEap(uint256 _amount, uint256 _amountForPoint, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) external payable returns (uint256);
     function wrapEth(uint256 _amount, uint256 _amountForPoint, bytes32[] calldata _merkleProof) external payable returns (uint256);
-    function wrapEEth(uint256 _amount, uint256 _amountForPoint) external returns (uint256);
 
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) external payable;
-    function topUpDepositWithEEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) external;
 
-    function unwrapForEEth(uint256 _tokenId, uint256 _amount) external;
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external;
 
     function stakeForPoints(uint256 _tokenId, uint256 _amount) external;
@@ -51,17 +48,16 @@ interface ImeETH {
     function claimStakingRewards(uint256 _tokenId) external;
 
     // Getter functions
-    function valueOf(uint256 _tokenId) external view returns (uint256);
-    function loyaltyPointsOf(uint256 _tokenId) external view returns (uint40);
-    function tierPointsOf(uint256 _tokenId) external view returns (uint40);
-    function tierOf(uint256 _tokenId) external view returns (uint8);
-    function claimableTier(uint256 _tokenId) external view returns (uint8);
-    function accruedLoyaltyPointsOf(uint256 _tokenId) external view returns (uint40);
-    function accruedTierPointsOf(uint256 _tokenId) external view returns (uint40);
+    function tokenDeposits(uint256) external view returns (uint128, uint128);
+    function tokenData(uint256) external view returns (uint96, uint40, uint40, uint32, uint32, uint8, uint8);
+    function allTimeHighDepositAmount(uint256 _tokenId) external view returns (uint256);
+    function tierForPoints(uint40 _tierPoints) external view returns (uint8);
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) external view returns (bool);
-    function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) external view returns (bool);
-    function allTimeHighDepositOf(uint256 _tokenId) external view returns (uint256);
+    function membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) external view returns (uint40);
+    function pointsBoostFactor() external view returns (uint16);
+    function maxDepositTopUpPercent() external view returns (uint8);
     function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) external view returns (uint40, uint40);
+    function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory);
 
     function getImplementation() external view returns (address);
 
