@@ -159,36 +159,6 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(newValidators[0], 1);
     }
 
-    function test_WithdrawLiquidityPoolSlashingPenalties() public {
-        vm.deal(alice, 3 ether);
-        vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
-        assertEq(alice.balance, 1 ether);
-        assertEq(eETHInstance.balanceOf(alice), 2 ether);
-        assertEq(eETHInstance.balanceOf(bob), 0);
-        vm.stopPrank();
-
-        vm.deal(bob, 3 ether);
-        vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
-        assertEq(bob.balance, 1 ether);
-        assertEq(eETHInstance.balanceOf(alice), 2 ether);
-        assertEq(eETHInstance.balanceOf(bob), 2 ether);
-        vm.stopPrank();
-
-        vm.startPrank(owner);
-        liquidityPoolInstance.setAccruedSlashingPenalty(1 ether);
-        assertEq(eETHInstance.balanceOf(alice), 1.5 ether);
-        assertEq(eETHInstance.balanceOf(bob), 1.5 ether);
-
-        liquidityPoolInstance.setAccruedSlashingPenalty(2 ether);
-        assertEq(eETHInstance.balanceOf(alice), 1 ether);
-        assertEq(eETHInstance.balanceOf(bob), 1 ether);
-        vm.stopPrank();
-    }
-
     function test_WithdrawLiquidityPoolAccrueStakingRewardsWithoutPartialWithdrawal() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
@@ -211,26 +181,22 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.setAccruedEther(2 ether);
+        liquidityPoolInstance.rebase(2 ether + 4 ether, 4 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
-        assertEq(liquidityPoolInstance.accruedEther(), 2 ether);
         (bool sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
         assertEq(sent, true);
-        assertEq(liquidityPoolInstance.accruedEther(), 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
         (sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
         assertEq(sent, true);
-        assertEq(liquidityPoolInstance.accruedEther(), 0 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
-        vm.expectRevert("Update the accrued ethers first");
         (sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
-        assertEq(liquidityPoolInstance.accruedEther(), 0 ether);
+        assertEq(sent, false);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
@@ -313,18 +279,22 @@ contract LiquidityPoolTest is TestSetup {
             5
         );
 
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0);
+
         hoax(alice);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 64 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();
 
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
         vm.prank(owner);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](2);
@@ -352,14 +322,16 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(owner);
         liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
 
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
+
         uint256[] memory slashingPenalties = new uint256[](2);
         slashingPenalties[0] = 0.5 ether;
         slashingPenalties[1] = 0.5 ether;
 
         vm.prank(owner);
-        liquidityPoolInstance.setAccruedSlashingPenalty(1 ether);
+        liquidityPoolInstance.rebase(64 ether - 1 ether, 0 ether);
 
-        vm.expectRevert("Incorrect Phase");
+        vm.expectRevert("validator node is not exited");
         vm.prank(owner);
         liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
 
@@ -385,14 +357,17 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
 
         assertEq(liquidityPoolInstance.numValidators(), 2);
-        assertEq(liquidityPoolInstance.accruedSlashingPenalties(), 1 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 64 ether - 1 ether);
         
+        assertTrue(managerInstance.isExited(newValidators[0]));
+        assertTrue(managerInstance.isExited(newValidators[1]));
+
         // Delist the node from the liquidity pool
         vm.prank(owner);
         liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
 
         assertEq(liquidityPoolInstance.numValidators(), 0);
-        assertEq(liquidityPoolInstance.accruedSlashingPenalties(), 0 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 63 ether);
     }
 
     function test_SettersFailOnZeroAddress() public {
