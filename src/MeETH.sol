@@ -387,18 +387,20 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
 
-        // proportionally dilute tier points if over deposit threshold
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         TokenData storage token = tokenData[_tokenId];
         uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
         uint256 maxDepositWithoutPenalty = (totalDeposit * maxDepositTopUpPercent) / 100;
-        if (msg.value > maxDepositWithoutPenalty) {
-            uint256 dilutedPoints = (msg.value * token.baseTierPoints) / (msg.value + totalDeposit);
-            token.baseTierPoints = uint40(dilutedPoints);
-        }
 
         _deposit(_tokenId, _amount, _amountForPoints);
         token.prevTopUpTimestamp = uint32(block.timestamp);
+
+        // proportionally dilute tier points if over deposit threshold & update the tier
+        if (msg.value > maxDepositWithoutPenalty) {
+            uint256 dilutedPoints = (msg.value * token.baseTierPoints) / (msg.value + totalDeposit);
+            token.baseTierPoints = uint40(dilutedPoints);
+            _claimTier(_tokenId);
+        }
     }
 
     function _withdrawAndBurn(uint256 _tokenId) internal returns (uint256) {
