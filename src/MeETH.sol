@@ -43,8 +43,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     uint256 public treasuryFeePercentage;
     uint256 public protocolRevenueFeePercentage;
 
-    uint256 public totalMintFeesAccumulated;
-    uint256 public totalBurnFeesAccumulated;
+    uint256 public totalFeesAccumulated;
 
     address public treasury;
     address public protocolRevenueManager;
@@ -144,11 +143,11 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (msg.value != _amount + _amountForPoints) revert InvalidAllocation();
 
-        totalMintFeesAccumulated += mintFee;        
-        uint256 liquidityPoolDepositAmount = msg.value - mintFee;
+        totalFeesAccumulated += mintFee;        
+        uint256 amountAfterDeposit = msg.value - mintFee;
 
-        liquidityPool.deposit{value: liquidityPoolDepositAmount}(msg.sender, address(this), _merkleProof);
-        uint256 tokenId = _mintMembershipNFT(msg.sender, liquidityPoolDepositAmount - _amountForPoints, _amountForPoints, 0, 0);
+        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+        uint256 tokenId = _mintMembershipNFT(msg.sender, amountAfterDeposit - _amountForPoints, _amountForPoints, 0, 0);
         return tokenId;
     }
 
@@ -192,7 +191,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
-        totalBurnFeesAccumulated += burnFee;
+        totalFeesAccumulated += burnFee;
         liquidityPool.withdraw(address(msg.sender), totalBalance - burnFee);
     }
 
@@ -355,26 +354,15 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     function withdrawFees() external onlyOwner {
-        uint256 totalMintAccumulatedFeesBefore = totalMintFeesAccumulated;
-        uint256 totalBurnAccumulatedFeesBefore = totalBurnFeesAccumulated;
+        uint256 totalAccumulatedFeesBefore = totalFeesAccumulated;
 
-        uint256 treasuryETHFees = totalMintAccumulatedFeesBefore * treasuryFeePercentage / 100;
-        uint256 protocolETHRevenueFees = totalMintAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
+        uint256 treasuryFees = totalAccumulatedFeesBefore * treasuryFeePercentage / 100;
+        uint256 protocolRevenueFees = totalAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
 
-        uint256 treasuryEETHFees = totalBurnAccumulatedFeesBefore * treasuryFeePercentage / 100;
-        uint256 protocolEETHRevenueFees = totalBurnAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
+        totalAccumulatedFeesBefore = 0;
 
-        totalMintFeesAccumulated = 0;
-        totalBurnFeesAccumulated = 0;
-        
-        (bool sent, ) = treasury.call{value: treasuryETHFees}("");
-        require(sent, "Failed to send Ether");
-
-        (sent, ) = protocolRevenueManager.call{value: protocolETHRevenueFees}("");
-        require(sent, "Failed to send Ether");
-
-        eETH.transfer(treasury, treasuryEETHFees);
-        eETH.transfer(protocolRevenueManager, protocolEETHRevenueFees);
+        eETH.transfer(treasury, treasuryFees);
+        eETH.transfer(protocolRevenueManager, protocolRevenueFees);
     }
 
     /// @notice Updates the eETH address
