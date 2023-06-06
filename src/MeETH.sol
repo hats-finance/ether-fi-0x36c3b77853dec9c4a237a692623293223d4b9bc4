@@ -37,6 +37,16 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     uint56 public minDepositGwei;
     uint8  public maxDepositTopUpPercent;
 
+    uint64 public mintFee;
+    uint64 public burnFee;
+
+    uint256 public treasuryFeePercentage;
+    uint256 public protocolRevenueFeePercentage;
+
+    uint256 public totalFeesAccumulated;
+
+    address public treasury;
+    address public protocolRevenueManager;
 
     uint256[23] __gap;
 
@@ -46,6 +56,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
+    event UpdatedFees(uint64 mintFee);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -60,16 +71,21 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     error DissallowZeroAddress();
 
-    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNFT) external initializer {
+    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNft, address _treasury, address _protocolRevenueManager) external initializer {
         if (_eEthAddress == address(0)) revert DissallowZeroAddress();
         if (_liquidityPoolAddress == address(0)) revert DissallowZeroAddress();
+        if (_treasury == address(0)) revert DissallowZeroAddress();
+        if (_protocolRevenueManager == address(0)) revert DissallowZeroAddress();
+        if (_membershipNft == address(0)) revert DissallowZeroAddress();
 
         __Ownable_init();
         __UUPSUpgradeable_init();
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
-        membershipNFT = MembershipNFT(_membershipNFT);
+        membershipNFT = MembershipNFT(_membershipNft);
+        treasury = _treasury;
+        protocolRevenueManager = _protocolRevenueManager;
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
@@ -127,8 +143,11 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (msg.value != _amount + _amountForPoints) revert InvalidAllocation();
 
+        totalFeesAccumulated += mintFee;        
+        uint256 amountAfterDeposit = msg.value - mintFee;
+
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
-        uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, 0, 0);
+        uint256 tokenId = _mintMembershipNFT(msg.sender, amountAfterDeposit - _amountForPoints, _amountForPoints, 0, 0);
         return tokenId;
     }
 
@@ -172,7 +191,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _tokenId The ID of the meETH membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
-        liquidityPool.withdraw(address(msg.sender), totalBalance);
+        totalFeesAccumulated += burnFee;
+        liquidityPool.withdraw(address(msg.sender), totalBalance - burnFee);
     }
 
     /// @notice Sacrifice the staking rewards and earn more points
@@ -316,6 +336,33 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     /// @param _percent integer percentage value
     function setMaxDepositTopUpPercent(uint8 _percent) external onlyOwner {
         maxDepositTopUpPercent = _percent;
+    }
+
+    function setFeeAmounts(uint64 _mintingFee) external onlyOwner {
+        mintFee = _mintingFee;
+
+        emit UpdatedFees(_mintingFee);
+    }
+
+    error InvalidPercentages();
+
+    function updateFeeRecipientsValues(uint256 _treasuryAmount, uint256 _protocolRevenueManagerAmount) external onlyOwner {
+        if(_treasuryAmount + _protocolRevenueManagerAmount != 100) revert InvalidPercentages();
+        
+        treasuryFeePercentage = _treasuryAmount;
+        protocolRevenueFeePercentage = _protocolRevenueManagerAmount;
+    }
+
+    function withdrawFees() external onlyOwner {
+        uint256 totalAccumulatedFeesBefore = totalFeesAccumulated;
+
+        uint256 treasuryFees = totalAccumulatedFeesBefore * treasuryFeePercentage / 100;
+        uint256 protocolRevenueFees = totalAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
+
+        totalAccumulatedFeesBefore = 0;
+
+        eETH.transfer(treasury, treasuryFees);
+        eETH.transfer(protocolRevenueManager, protocolRevenueFees);
     }
 
     /// @notice Updates the eETH address

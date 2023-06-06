@@ -58,6 +58,9 @@ contract DeployPhaseOnePointFiveScript is Script {
 
         address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
+        address treasury = vm.envAddress("TREASURY_ADDRESS");
+        address protocolRevenueManagerProxy = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
+
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
 
         string memory baseURI = vm.envString("BASE_URI");
@@ -86,7 +89,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         meETHImplementation = new MeETH();
         meETHProxy = new UUPSProxy(address(meETHImplementation),"");
         meETH = MeETH(payable(address(meETHProxy)));
-        meETH.initialize(address(eETH), address(liquidityPool), address(membershipNFT));
+        meETH.initialize(address(eETH), address(liquidityPool), address(membershipNFT), treasury, protocolRevenueManagerProxy);
 
         weETHImplementation = new WeETH();
         weETHProxy = new UUPSProxy(address(weETHImplementation),"");
