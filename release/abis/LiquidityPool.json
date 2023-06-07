@@ -111,6 +111,12 @@
       },
       {
         "indexed": false,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
@@ -118,32 +124,6 @@
     ],
     "name": "Withdraw",
     "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "accruedEther",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "accruedSlashingPenalties",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [
@@ -372,10 +352,10 @@
   },
   {
     "inputs": [],
-    "name": "meETH",
+    "name": "membershipManager",
     "outputs": [
       {
-        "internalType": "contract ImeETH",
+        "internalType": "contract IMembershipManager",
         "name": "",
         "type": "address"
       }
@@ -461,6 +441,24 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tvl",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_balanceInLp",
+        "type": "uint256"
+      }
+    ],
+    "name": "rebase",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "regulationsManager",
     "outputs": [
@@ -496,32 +494,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "setAccruedEther",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "setAccruedSlashingPenalty",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "_nodeManager",
         "type": "address"
@@ -540,7 +512,7 @@
         "type": "address"
       }
     ],
-    "name": "setMeETH",
+    "name": "setMembershipManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -598,6 +570,19 @@
         "internalType": "contract IStakingManager",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalValueOutOfLp",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
