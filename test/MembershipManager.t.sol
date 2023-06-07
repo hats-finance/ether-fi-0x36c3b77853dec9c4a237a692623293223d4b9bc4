@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 import "forge-std/console2.sol";
 
-contract MeETHTest is TestSetup {
+contract MembershipManagerTest is TestSetup {
 
     bytes32[] public aliceProof;
     bytes32[] public bobProof;

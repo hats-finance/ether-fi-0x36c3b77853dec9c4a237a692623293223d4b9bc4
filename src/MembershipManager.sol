@@ -7,11 +7,11 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "./interfaces/IeETH.sol";
-import "./interfaces/ImeETH.sol";
+import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./MembershipNFT.sol";
 
-contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
+contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable, IMembershipManager {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
