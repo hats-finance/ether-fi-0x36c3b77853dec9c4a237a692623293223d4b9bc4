@@ -143,7 +143,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (msg.value != _amount + _amountForPoints) revert InvalidAllocation();
 
-        totalFeesAccumulated += mintFee;        
+        totalFeesAccumulated += mintFee;
         uint256 amountAfterDeposit = msg.value - mintFee;
 
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
@@ -361,8 +361,8 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
         totalAccumulatedFeesBefore = 0;
 
-        eETH.transfer(treasury, treasuryFees);
-        eETH.transfer(protocolRevenueManager, protocolRevenueFees);
+        liquidityPool.withdraw(treasury, treasuryFees);
+        liquidityPool.withdraw(protocolRevenueManager, protocolRevenueFees);
     }
 
     /// @notice Updates the eETH address
