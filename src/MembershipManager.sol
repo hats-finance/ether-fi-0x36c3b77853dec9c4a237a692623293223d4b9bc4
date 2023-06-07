@@ -7,11 +7,11 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "./interfaces/IeETH.sol";
-import "./interfaces/ImeETH.sol";
+import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./MembershipNFT.sol";
 
-contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
+contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable, IMembershipManager {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -33,7 +33,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     uint64[] public requiredEapPointsPerEapDeposit;
 
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
-    uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 meETH per day
+    uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 membership token per day
     uint56 public minDepositGwei;
     uint8  public maxDepositTopUpPercent;
 
@@ -95,7 +95,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     error InvalidEAPRollover();
 
-    /// @notice EarlyAdopterPool users can re-deposit and mint meETH claiming their points & tiers
+    /// @notice EarlyAdopterPool users can re-deposit and mint a membership NFT claiming their points & tiers
     /// @dev The deposit amount must be greater than or equal to what they deposited into the EAP
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
@@ -133,12 +133,12 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     error InvalidAmount();
     error InsufficientBalance();
 
-    /// @notice Wraps ETH into a meETH NFT.
-    /// @dev This function allows users to wrap their ETH into meETH NFT.
+    /// @notice Wraps ETH into a membership NFT.
+    /// @dev This function allows users to wrap their ETH into membership NFT.
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof Array of hashes forming the merkle proof for the user.
-    /// @return tokenId The ID of the minted meETH membership NFT.
+    /// @return tokenId The ID of the minted membership NFT.
     function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable returns (uint256) {
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (msg.value != _amount + _amountForPoints) revert InvalidAllocation();
@@ -166,10 +166,10 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     error ExceededMaxWithdrawal();
     error InsufficientLiquidity();
 
-    /// @notice Unwraps meETH tokens for ETH.
-    /// @dev This function allows users to unwrap their meETH tokens and receive ETH in return.
-    /// @param _tokenId The ID of the meETH membership NFT to unwrap.
-    /// @param _amount The amount of meETH tokens to unwrap.
+    /// @notice Unwraps membership points tokens for ETH.
+    /// @dev This function allows users to unwrap their membership tokens and receive ETH in return.
+    /// @param _tokenId The ID of the membership NFT to unwrap.
+    /// @param _amount The amount of membership tokens to unwrap.
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external {
         _requireTokenOwner(_tokenId);
         if (address(liquidityPool).balance < _amount) revert InsufficientLiquidity();
@@ -188,7 +188,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     /// @notice withdraw the entire balance of this NFT and burn it
-    /// @param _tokenId The ID of the meETH membership NFT to unwrap
+    /// @param _tokenId The ID of the membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
         totalFeesAccumulated += burnFee;
@@ -197,7 +197,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     /// @notice Sacrifice the staking rewards and earn more points
     /// @dev This function allows users to stake their ETH to earn membership points faster.
-    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _tokenId The ID of the membership NFT.
     /// @param _amount The amount of ETH which sacrifices its staking rewards to earn points faster
     function stakeForPoints(uint256 _tokenId, uint256 _amount) external {
         _requireTokenOwner(_tokenId);
@@ -211,7 +211,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     /// @notice Unstakes ETH.
     /// @dev This function allows users to un-do 'stakeForPoints'
-    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _tokenId The ID of the membership NFT.
     /// @param _amount The amount of ETH to unstake for staking rewards.
     function unstakeForPoints(uint256 _tokenId, uint256 _amount) external {
         _requireTokenOwner(_tokenId);
@@ -224,7 +224,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     /// @notice Claims the tier.
-    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _tokenId The ID of the membership NFT.
     /// @dev This function allows users to claim the rewards + a new tier, if eligible.
     function claimTier(uint256 _tokenId) public {
         uint8 oldTier = tokenData[_tokenId].tier;
@@ -240,7 +240,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
     }
 
     /// @notice Claims the accrued membership {loyalty, tier} points.
-    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _tokenId The ID of the membership NFT.
     function claimPoints(uint256 _tokenId) public {
         TokenData storage token = tokenData[_tokenId];
         token.baseLoyaltyPoints = membershipNFT.loyaltyPointsOf(_tokenId);
@@ -248,9 +248,9 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
 
-    /// @notice Claims the staking rewards for a specific meETH membership NFT.
-    /// @dev This function allows users to claim the staking rewards earned by a specific meETH membership NFT.
-    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @notice Claims the staking rewards for a specific membership NFT.
+    /// @dev This function allows users to claim the staking rewards earned by a specific membership NFT.
+    /// @param _tokenId The ID of the membership NFT.
     function claimStakingRewards(uint256 _tokenId) public {
         TokenData storage tokenData = tokenData[_tokenId];
         uint256 tier = tokenData.tier;
@@ -306,7 +306,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     /// @notice Sets the points for a given Ethereum address.
     /// @dev This function allows the contract owner to set the points for a specific Ethereum address.
-    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _tokenId The ID of the membership NFT.
     /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
     /// @param _tierPoints The number of tier points to set for the specified NFT.
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external onlyOwner {
@@ -554,11 +554,11 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
         uint256 effectiveBalanceForEarningPoints = tokenDeposit.amounts + ((10000 + pointsBoostFactor) * tokenDeposit.amountStakedForPoints) / 10000;
         uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate / 10000;
 
-        // 0.001 ether   meETH earns 1     wei   points per day
-        // == 1  ether   meETH earns 1     kwei  points per day
-        // == 1  Million meETH earns 1     gwei  points per day
+        // 0.001 ether   membership points earns 1     wei   points per day
+        // == 1  ether   membership points earns 1     kwei  points per day
+        // == 1  Million membership points earns 1     gwei  points per day
         // type(uint40).max == 2^40 - 1 ~= 4 * (10 ** 12) == 1000 gwei
-        // - A user with 1 Million meETH can earn points for 1000 days
+        // - A user with 1 Million membership points can earn points for 1000 days
         earning = _min((earning / 1 days) / 0.001 ether, type(uint40).max);
         return uint40(earning);
     }
@@ -634,7 +634,7 @@ contract MeETH is Initializable, OwnableUpgradeable, UUPSUpgradeable, ImeETH {
 
     /// @notice Applies the unwrap penalty.
     /// @dev Always lose at least a tier, possibly more depending on percentage of deposit withdrawn
-    /// @param _tokenId The ID of the meETH membership NFT.
+    /// @param _tokenId The ID of the membership NFT.
     /// @param _prevAmount The amount of ETH that the NFT was holding
     /// @param _withdrawalAmount The amount of ETH that is being withdrawn
     function _applyUnwrapPenalty(uint256 _tokenId, uint256 _prevAmount, uint256 _withdrawalAmount) internal {

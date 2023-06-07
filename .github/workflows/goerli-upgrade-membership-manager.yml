@@ -1,4 +1,4 @@
-name: upgrade-goerli-meeth
+name: upgrade-goerli-membership-manager
 
 on: workflow_dispatch
 
@@ -31,9 +31,9 @@ jobs:
         run: make test
         id: test
 
-      - name: Upgrade MeETH Contract
-        run: make upgrade-goerli-meeth
-        id: upgrade-goerli-meeth
+      - name: Upgrade Membership Manager Contract
+        run: make upgrade-goerli-membership-manager
+        id: upgrade-goerli-membership-manager
 
       - name: Get date
         id: get-date
