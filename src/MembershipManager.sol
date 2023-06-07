@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/IMembershipManager.sol";
+import "./interfaces/IMembershipNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
-import "./MembershipNFT.sol";
 
 contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable, IMembershipManager {
 
@@ -19,7 +19,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
-    MembershipNFT public membershipNFT;
+    IMembershipNFT public membershipNFT;
 
     mapping (uint256 => TokenDeposit) public tokenDeposits;
     mapping (uint256 => TokenData) public tokenData;
@@ -83,7 +83,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
         eETH = IeETH(_eEthAddress);
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
-        membershipNFT = MembershipNFT(_membershipNft);
+        membershipNFT = IMembershipNFT(_membershipNft);
         treasury = _treasury;
         protocolRevenueManager = _protocolRevenueManager;
 
@@ -538,8 +538,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     }
 
     error OnlyTokenOwner();
-    function _requireTokenOwner(uint256 _tokenId) internal view {
-        if (membershipNFT.balanceOf(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
+    function _requireTokenOwner(uint256 _tokenId) internal {
+        if (membershipNFT.balanceOfUser(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
     }
 
     // Compute the points earnings of a user between [since, until) 

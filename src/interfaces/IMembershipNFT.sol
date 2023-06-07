@@ -21,4 +21,5 @@ interface IMembershipNFT {
     function setMetadataURI(string calldata _newURI) external;
     function alertMetadataUpdate(uint256 id) external;
     function alertBatchMetadataUpdate(uint256 startID, uint256 endID) external;
+    function balanceOfUser(address _user, uint256 _id) external returns (uint256);
 }
