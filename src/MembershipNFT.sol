@@ -29,13 +29,13 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         __ERC1155_init(_metadataURI);
     }
 
-    function mint(address _to, uint256 _amount) external onlyMeETHContract returns (uint256) {
+    function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
         uint256 tokenId = nextMintID++;
         _mint(_to, tokenId, _amount, "");
         return tokenId;
     }
 
-    function burn(address _from, uint256 _tokenId, uint256 _amount) onlyMeETHContract external {
+    function burn(address _from, uint256 _tokenId, uint256 _amount) onlyMembershipManagerContract external {
         _burn(_from, _tokenId, _amount);
     }
 
@@ -133,9 +133,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return (_a > _b) ? _a : _b;
     }
 
-    error OnlyMeETHContract();
-    modifier onlyMeETHContract() {
-        if (msg.sender != address(membershipManager)) revert OnlyMeETHContract();
+    error OnlyMembershipManagerContract();
+    modifier onlyMembershipManagerContract() {
+        if (msg.sender != address(membershipManager)) revert OnlyMembershipManagerContract();
         _;
     }
 

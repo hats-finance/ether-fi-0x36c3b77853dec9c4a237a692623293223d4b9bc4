@@ -47,18 +47,18 @@ contract MembershipNFTTest is TestSetup {
 
     function test_permissions() public {
 
-        // only Meeth can update call
+        // only membership manager can update call
         vm.startPrank(alice);
-        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        vm.expectRevert(MembershipNFT.OnlyMembershipManagerContract.selector);
         membershipNftInstance.mint(alice, 1);
-        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        vm.expectRevert(MembershipNFT.OnlyMembershipManagerContract.selector);
         membershipNftInstance.burn(alice, 0, 1);
         vm.stopPrank();
 
         vm.startPrank(owner);
-        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        vm.expectRevert(MembershipNFT.OnlyMembershipManagerContract.selector);
         membershipNftInstance.mint(alice, 1);
-        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        vm.expectRevert(MembershipNFT.OnlyMembershipManagerContract.selector);
         membershipNftInstance.burn(alice, 0, 1);
         vm.stopPrank();
 
