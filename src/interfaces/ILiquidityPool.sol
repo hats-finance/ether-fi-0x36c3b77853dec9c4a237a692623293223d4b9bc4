@@ -26,5 +26,5 @@ interface ILiquidityPool {
     function setTokenAddress(address _eETH) external;
     function setStakingManager(address _address) external;
     function setEtherFiNodesManager(address _nodeManager) external;
-    function setMeEth(address _address) external;
+    function setMembershipManager(address _address) external;
 }

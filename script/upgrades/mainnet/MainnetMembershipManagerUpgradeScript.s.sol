@@ -2,38 +2,39 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/MeETH.sol";
+import "../../../src/MembershipManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract MeETHUpgrade is Script {
+contract MembershipManagerUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address MeETHProxy;
-        address MeETHImplementation;
+        address MembershipManagerProxy;
+        address MembershipManagerImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address meETHProxyAddress = vm.envAddress("MeETH_PROXY_ADDRESS");
+        address meETHProxyAddress = vm.envAddress("MEMBERSHIP_MANAGER_PROXY_ADDRESS");
 
+        // mainnet
         //require(meETHProxyAddress == , "meETHProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        MeETH meETHInstance = MeETH(payable(meETHProxyAddress));
-        MeETH meETHV2Implementation = new MeETH();
+        MembershipManager membershipManagerInstance = MembershipManager(payable(meETHProxyAddress));
+        MembershipManager membershipManagerV2Implementation = new MembershipManager();
 
-        meETHInstance.upgradeTo(address(meETHV2Implementation));
-        MeETH meETHV2Instance = MeETH(payable(meETHProxyAddress));
+        membershipManagerInstance.upgradeTo(address(membershipManagerV2Implementation));
+        MembershipManager membershipManagerV2Instance = MembershipManager(payable(meETHProxyAddress));
 
         vm.stopBroadcast();
         
         criticalAddresses = CriticalAddresses({
-            MeETHProxy: meETHProxyAddress,
-            MeETHImplementation: address(meETHV2Implementation)
+            MembershipManagerProxy: meETHProxyAddress,
+            MembershipManagerImplementation: address(membershipManagerV2Implementation)
         });
 
          writeUpgradeVersionFile();
@@ -58,9 +59,9 @@ contract MeETHUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/MeETH/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/MembershipManager/version.txt");
         // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
+        string memory globalVersionString = vm.readLine("release/logs/Upgrades/mainnet/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -71,11 +72,11 @@ contract MeETHUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/goerli/MeETH/version.txt",
+            "release/logs/Upgrades/mainnet/MembershipManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
         vm.writeFile(
-            "release/logs/Upgrades/goerli/version.txt",
+            "release/logs/Upgrades/mainnet/version.txt",
             string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
@@ -83,7 +84,7 @@ contract MeETHUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/goerli/MeETH/",
+                    "release/logs/Upgrades/mainnet/MembershipManager/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -92,9 +93,9 @@ contract MeETHUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.MeETHProxy),
+                    Strings.toHexString(criticalAddresses.MembershipManagerProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.MeETHImplementation),
+                    Strings.toHexString(criticalAddresses.MembershipManagerImplementation),
                     "\nOptional Comments: ", 
                     "Comment Here"
                 )
