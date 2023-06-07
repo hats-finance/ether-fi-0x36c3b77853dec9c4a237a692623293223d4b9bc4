@@ -376,12 +376,14 @@ contract ProtocolRevenueManagerTest is TestSetup {
         );
 
         hoax(address(managerInstance));
-        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        assertEq(revenue, 0.05 ether);
         assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
 
         hoax(address(managerInstance));
-        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        assertEq(revenue, 0 ether); // can't double dip
         assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
     }
