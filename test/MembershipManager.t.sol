@@ -769,4 +769,120 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_FeeWorksCorrectly() public {
+        launch_validator(); // there will be 2 validators from the beginning
+
+        vm.startPrank(owner);
+        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
+        membershipManagerInstance.setFeeSplits(20, 80);
+        vm.stopPrank();
+
+        (uint256 mintFee, uint256 burnFee) = membershipManagerInstance.getFees();
+        assertEq(mintFee, 0.05 ether);
+        assertEq(burnFee, 0.05 ether);
+        assertEq(membershipManagerInstance.treasuryFeeSplitPercent(), 20);
+        assertEq(membershipManagerInstance.protocolRevenueFeeSplitPercent(), 80);
+
+        vm.prank(alice);
+        uint256 tokenId = membershipManagerInstance.wrapEth{value: 2 ether + mintFee}(2 ether, 0, aliceProof);
+        (uint256 amount, ) = membershipManagerInstance.tokenDeposits(tokenId);
+
+        assertEq(amount, 2 ether);
+        assertEq(address(liquidityPoolInstance).balance, 2 ether);
+        assertEq(address(membershipManagerInstance).balance, 0.05 ether); // totalFeesAccumulated
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 2 ether);
+        assertEq(membershipNftInstance.balanceOf(alice, tokenId), 1);
+
+        uint256 aliceBalBefore = alice.balance;
+        vm.prank(alice);
+        membershipManagerInstance.withdrawAndBurnForEth(tokenId);
+        (amount, ) = membershipManagerInstance.tokenDeposits(tokenId);
+
+        assertEq(address(alice).balance, aliceBalBefore + 2 ether - burnFee);
+        assertEq(amount, 0 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0 ether);
+        assertEq(address(membershipManagerInstance).balance, 0.1 ether); // totalFeesAccumulated
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 0 ether);
+        assertEq(membershipNftInstance.balanceOf(alice, tokenId), 0);
+
+        uint256 treausryBalanceBefore = address(treasuryInstance).balance;
+        uint256 prmBalanceBefore = address(protocolRevenueManagerInstance).balance;
+
+        vm.prank(owner);
+        membershipManagerInstance.withdrawFees();
+
+        assertEq(address(treasuryInstance).balance, treausryBalanceBefore + 0.02 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + 0.08 ether);
+        assertEq(address(membershipManagerInstance).balance, 0 ether); // totalFeesAccumulated
+    }
+
+    function test_SettingFeesFail() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
+        vm.expectRevert("Ownable: caller is not the owner");
+        membershipManagerInstance.setFeeSplits(20, 80);
+        
+        vm.startPrank(owner);
+
+        vm.expectRevert(MembershipManager.InvalidAmount.selector);
+        membershipManagerInstance.setFeeAmounts(0.001 ether * uint256(type(uint16).max) + 1, 0);
+
+        vm.expectRevert(MembershipManager.InvalidAmount.selector);
+        membershipManagerInstance.setFeeAmounts(0, 0.001 ether * uint256(type(uint16).max) + 1);
+
+        vm.expectRevert(MembershipManager.InvalidAmount.selector);
+        membershipManagerInstance.setFeeSplits(10, 80);
+
+        vm.expectRevert(MembershipManager.InvalidAmount.selector);
+        membershipManagerInstance.setFeeSplits(21, 80);
+
+        vm.stopPrank();
+    }
+
+    function launch_validator() internal {
+        vm.deal(owner, 100 ether);
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0);
+
+        hoax(alice);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
+
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
+        vm.stopPrank();
+
+        bytes32[] memory proof = getWhitelistMerkleProof(9);
+
+        vm.prank(owner);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
+
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](2);
+
+        for (uint256 i = 0; i < newValidators.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                newValidators[i]
+            );
+            bytes32 root = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                32 ether
+            );
+            depositDataArray[i] = IStakingManager.DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+        }
+
+        bytes32 depositRoot = _getDepositRoot();
+        vm.prank(owner);
+        liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
+    }
 }

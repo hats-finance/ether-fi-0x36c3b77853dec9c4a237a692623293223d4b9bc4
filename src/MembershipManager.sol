@@ -37,13 +37,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     uint56 public minDepositGwei;
     uint8  public maxDepositTopUpPercent;
 
-    uint64 public mintFee;
-    uint64 public burnFee;
-
-    uint256 public treasuryFeePercentage;
-    uint256 public protocolRevenueFeePercentage;
-
-    uint256 public totalFeesAccumulated;
+    uint16 private mintFee; // fee = 0.001 ETH * 'mintFee'
+    uint16 private burnFee; // fee = 0.001 ETH * 'burnFee'
+    uint8 public treasuryFeeSplitPercent;
+    uint8 public protocolRevenueFeeSplitPercent;
 
     address public treasury;
     address public protocolRevenueManager;
@@ -56,7 +53,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
-    event UpdatedFees(uint64 mintFee);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -140,14 +136,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @param _merkleProof Array of hashes forming the merkle proof for the user.
     /// @return tokenId The ID of the minted membership NFT.
     function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable returns (uint256) {
+        uint256 feeAmount = mintFee * 0.001 ether;
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
-        if (msg.value != _amount + _amountForPoints) revert InvalidAllocation();
-
-        totalFeesAccumulated += mintFee;        
-        uint256 amountAfterDeposit = msg.value - mintFee;
-
-        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
-        uint256 tokenId = _mintMembershipNFT(msg.sender, amountAfterDeposit - _amountForPoints, _amountForPoints, 0, 0);
+        if (msg.value != _amount + _amountForPoints + feeAmount) revert InvalidAllocation();
+        uint256 amountAfterFee = msg.value - feeAmount;
+        
+        liquidityPool.deposit{value: amountAfterFee}(msg.sender, address(this), _merkleProof);
+        uint256 tokenId = _mintMembershipNFT(msg.sender, amountAfterFee - _amountForPoints, _amountForPoints, 0, 0);
         return tokenId;
     }
 
@@ -190,9 +185,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
+        uint256 feeAmount = burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
-        totalFeesAccumulated += burnFee;
-        liquidityPool.withdraw(address(msg.sender), totalBalance - burnFee);
+        if (totalBalance < feeAmount) revert InsufficientBalance();
+        
+        liquidityPool.withdraw(address(msg.sender), totalBalance - feeAmount);
+        liquidityPool.withdraw(address(this), feeAmount);
     }
 
     /// @notice Sacrifice the staking rewards and earn more points
@@ -338,31 +336,30 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         maxDepositTopUpPercent = _percent;
     }
 
-    function setFeeAmounts(uint64 _mintingFee) external onlyOwner {
-        mintFee = _mintingFee;
-
-        emit UpdatedFees(_mintingFee);
+    function setFeeAmounts(uint256 _mintFeeAmount, uint256 _burnFeeAmount) external onlyOwner {
+        if (_mintFeeAmount % 0.001 ether != 0 || _mintFeeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
+        if (_burnFeeAmount % 0.001 ether != 0 || _burnFeeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
+        mintFee = uint16(_mintFeeAmount / 0.001 ether);
+        burnFee = uint16(_burnFeeAmount / 0.001 ether);
     }
 
-    error InvalidPercentages();
-
-    function updateFeeRecipientsValues(uint256 _treasuryAmount, uint256 _protocolRevenueManagerAmount) external onlyOwner {
-        if(_treasuryAmount + _protocolRevenueManagerAmount != 100) revert InvalidPercentages();
-        
-        treasuryFeePercentage = _treasuryAmount;
-        protocolRevenueFeePercentage = _protocolRevenueManagerAmount;
+    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) external onlyOwner {
+        if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
+        treasuryFeeSplitPercent = _treasurySplitPercent;
+        protocolRevenueFeeSplitPercent = _protocolRevenueManagerSplitPercent;
     }
 
+    error InvalidWithdraw();
     function withdrawFees() external onlyOwner {
-        uint256 totalAccumulatedFeesBefore = totalFeesAccumulated;
+        uint256 totalAccumulatedFeeAmount = address(this).balance;
+        uint256 treasuryFees = totalAccumulatedFeeAmount * treasuryFeeSplitPercent / 100;
+        uint256 protocolRevenueFees = totalAccumulatedFeeAmount * protocolRevenueFeeSplitPercent / 100;
 
-        uint256 treasuryFees = totalAccumulatedFeesBefore * treasuryFeePercentage / 100;
-        uint256 protocolRevenueFees = totalAccumulatedFeesBefore * protocolRevenueFeePercentage / 100;
-
-        totalAccumulatedFeesBefore = 0;
-
-        eETH.transfer(treasury, treasuryFees);
-        eETH.transfer(protocolRevenueManager, protocolRevenueFees);
+        bool sent;
+        (sent, ) = address(treasury).call{value: treasuryFees}("");
+        if (!sent) revert InvalidWithdraw();
+        (sent, ) = address(protocolRevenueManager).call{value: protocolRevenueFees}("");
+        if (!sent) revert InvalidWithdraw();
     }
 
     /// @notice Updates the eETH address
@@ -680,7 +677,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
-    
+
+    // returns (mintFeeAmount, burnFeeAmount)
+    function getFees() external view returns (uint256, uint256) {
+        return (mintFee * 0.001 ether, burnFee * 0.001 ether);
+    }
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
