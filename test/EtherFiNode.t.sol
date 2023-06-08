@@ -9,7 +9,6 @@ contract EtherFiNodeTest is TestSetup {
 
     uint256[] bidId;
     EtherFiNode safeInstance;
-    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
 
     function setUp() public {
        

@@ -20,8 +20,6 @@ contract StakingManagerTest is TestSetup {
         string ipfsHashForEncryptedValidatorKey
     );
 
-    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
-
     function setUp() public {
         setUpTests();
     }

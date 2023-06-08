@@ -5,8 +5,6 @@ import "./TestSetup.sol";
 
 contract TnftTest is TestSetup {
 
-    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
-
     function setUp() public {
         setUpTests();
 
