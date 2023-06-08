@@ -380,7 +380,7 @@ contract EtherFiNodesManager is
             uint256 toTreasury
         ) = getFullWithdrawalPayouts(_validatorId);
         IEtherFiNode(etherfiNode).processVestedAuctionFeeWithdrawal();
-        IEtherFiNode(etherfiNode).markFullyWithdrawn();
+        IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
 
         _distributePayouts(
             _validatorId,
@@ -411,7 +411,7 @@ contract EtherFiNodesManager is
                     IEtherFiNode.VALIDATOR_PHASE.LIVE,
                 "validator node is not live"
             );
-            IEtherFiNode(etherfiNode).markBeingSlashed();
+            IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
         }
     }
 

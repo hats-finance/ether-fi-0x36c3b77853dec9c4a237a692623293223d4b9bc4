@@ -91,16 +91,6 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function markBeingSlashed() external onlyEtherFiNodeManagerContract {
-        phase = VALIDATOR_PHASE.BEING_SLASHED;
-    }
-
-    /// @notice Sets and receives the value of the auction rewards to be vested
-    /// @dev This value is half of the bid value of the bid which was matched with the stake
-    function markFullyWithdrawn() external onlyEtherFiNodeManagerContract {
-        phase = VALIDATOR_PHASE.FULLY_WITHDRAWN;
-    }
-
     function receiveVestedRewardsForStakers()
         external
         payable

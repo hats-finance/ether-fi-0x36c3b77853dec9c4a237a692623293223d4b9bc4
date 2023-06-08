@@ -90,10 +90,6 @@ interface IEtherFiNode {
 
     function markExited(uint32 _exitTimestamp) external;
 
-    function markBeingSlashed() external;
-
-    function markFullyWithdrawn() external;
-
     function receiveVestedRewardsForStakers() external payable;
 
     function processVestedAuctionFeeWithdrawal() external;
