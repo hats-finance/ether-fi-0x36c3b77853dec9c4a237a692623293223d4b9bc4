@@ -7,8 +7,9 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC1155/ERC1155Upgradeable.sol";
 
 import "./interfaces/IMembershipManager.sol";
+import "./interfaces/IMembershipNFT.sol";
 
-contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable {
+contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, IMembershipNFT {
 
     IMembershipManager membershipManager;
 
@@ -56,6 +57,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
+
+    function balanceOfUser(address _user, uint256 _id) external returns (uint256) {
+        return balanceOf(_user, _id);
+    }
 
     function valueOf(uint256 _tokenId) public view returns (uint256) {
         (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
