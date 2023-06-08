@@ -590,6 +590,12 @@ contract EtherFiNodesManager is
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EXITED;
     }
 
+    /// @notice Fetches if the specified validator has been withdrawn
+    /// @return The bool value representing if the validator has been withdrawn
+    function isFullyWithdrawn(uint256 _validatorId) public view returns (bool) {
+        return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN;
+    }
+
     /// @notice Fetches the address of the implementation contract currently being used by the proxy
     /// @return The address of the currently used implementation contract
     function getImplementation() external view returns (address) {
