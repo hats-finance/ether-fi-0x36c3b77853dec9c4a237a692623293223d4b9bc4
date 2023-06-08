@@ -9,6 +9,7 @@ interface IEtherFiNode {
     // - STAKE_DEPOSITED => {LIVE, CANCELLED}
     // - LIVE => {BEING_SLASHED, EXITED}
     // - BEING_SLASHED => EXITED
+    // - EXITED => FULLY_WITHDRAWN
     enum VALIDATOR_PHASE {
         NOT_INITIALIZED,
         STAKE_DEPOSITED,
