@@ -91,7 +91,7 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function markBeingSlahsed() external onlyEtherFiNodeManagerContract {
+    function markBeingSlashed() external onlyEtherFiNodeManagerContract {
         phase = VALIDATOR_PHASE.BEING_SLASHED;
     }
 

@@ -90,7 +90,7 @@ interface IEtherFiNode {
 
     function markExited(uint32 _exitTimestamp) external;
 
-    function markBeingSlahsed() external;
+    function markBeingSlashed() external;
 
     function markFullyWithdrawn() external;
 

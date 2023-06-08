@@ -401,7 +401,7 @@ contract EtherFiNodesManager is
         }
     }
 
-    function markBeingSlahsed(
+    function markBeingSlashed(
         uint256[] calldata _validatorIds
     ) external whenNotPaused onlyOwner {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -411,7 +411,7 @@ contract EtherFiNodesManager is
                     IEtherFiNode.VALIDATOR_PHASE.LIVE,
                 "validator node is not live"
             );
-            IEtherFiNode(etherfiNode).markBeingSlahsed();
+            IEtherFiNode(etherfiNode).markBeingSlashed();
         }
     }
 

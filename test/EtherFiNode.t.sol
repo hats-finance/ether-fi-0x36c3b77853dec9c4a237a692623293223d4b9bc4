@@ -398,10 +398,10 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert(
             "Ownable: caller is not the owner"
         );
-        managerInstance.markBeingSlahsed(bidId);
+        managerInstance.markBeingSlashed(bidId);
 
         hoax(owner);
-        managerInstance.markBeingSlahsed(bidId);
+        managerInstance.markBeingSlashed(bidId);
         vm.expectRevert(
             "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
         );
