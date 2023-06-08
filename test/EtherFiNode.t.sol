@@ -317,6 +317,29 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
+    function test_markExitedWorksCorrectlyWhenBeingSlashed() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        validatorIds[0] = bidId[0];
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = 1;
+        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+
+        assertTrue(
+            IEtherFiNode(etherFiNode).phase() ==
+                IEtherFiNode.VALIDATOR_PHASE.LIVE
+        );
+        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
+
+        hoax(owner);
+        managerInstance.markBeingSlashed(validatorIds);
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
+
+        hoax(owner);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
+    }
+
     function test_partialWithdraw() public {
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
@@ -397,14 +420,40 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert(
             "Ownable: caller is not the owner"
         );
-        managerInstance.markBeingSlahsed(bidId);
+        managerInstance.markBeingSlashed(bidId);
 
         hoax(owner);
-        managerInstance.markBeingSlahsed(bidId);
+        managerInstance.markBeingSlashed(bidId);
         vm.expectRevert(
             "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
         );
         managerInstance.partialWithdraw(bidId[0], true, true, true);
+    }
+
+    function test_markBeingSlashedFails() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        validatorIds[0] = bidId[0];
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = 1;
+
+        hoax(owner);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+
+        hoax(owner);
+        vm.expectRevert("validator node is not live");
+        managerInstance.markBeingSlashed(bidId);
+    }
+
+    function test_markBeingSlashedWorks() public {
+        uint256[] memory validatorIds = new uint256[](1);
+        validatorIds[0] = bidId[0];
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = 1;
+        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+
+        hoax(owner);
+        managerInstance.markBeingSlashed(bidId);
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
     }
 
     function test_partialWithdrawAfterExitRequest() public {

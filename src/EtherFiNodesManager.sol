@@ -311,7 +311,7 @@ contract EtherFiNodesManager is
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
             = getFullWithdrawalPayouts(_validatorId);
         IEtherFiNode(etherfiNode).processVestedAuctionFeeWithdrawal();
-        IEtherFiNode(etherfiNode).markFullyWithdrawn();
+        IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
 
         _distributePayouts(_validatorId, toTreasury, toOperator, toTnft, toBnft);
     }
@@ -324,10 +324,16 @@ contract EtherFiNodesManager is
         }
     }
 
-    function markBeingSlahsed(uint256[] calldata _validatorIds) external whenNotPaused onlyOwner {
+    function markBeingSlashed(
+        uint256[] calldata _validatorIds
+    ) external whenNotPaused onlyOwner {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             address etherfiNode = etherfiNodeAddress[_validatorIds[i]];
-            IEtherFiNode(etherfiNode).markBeingSlahsed();
+            require(
+                IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE,
+                "validator node is not live"
+            );
+            IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
         }
     }
 
@@ -437,8 +443,11 @@ contract EtherFiNodesManager is
     /// @param _exitTimestamp the exit timestamp
     function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-
-        require(IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE, "Validator already exited");
+        require(
+            IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE
+             || IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED,
+            "Validator already exited"
+        );
 
         // distribute the protocol reward from the ProtocolRevenueMgr contrac to the validator's etherfi node contract
         uint256 amount = protocolRevenueManager.distributeAuctionRevenue(_validatorId);

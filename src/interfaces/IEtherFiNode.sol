@@ -4,7 +4,12 @@ pragma solidity 0.8.13;
 import "./IEtherFiNodesManager.sol";
 
 interface IEtherFiNode {
-    //The state of the validator
+    // State Transition Diagram
+    // - NOT_INITIALIZED =>STAKE_DEPOSITED
+    // - STAKE_DEPOSITED => {LIVE, CANCELLED}
+    // - LIVE => {BEING_SLASHED, EXITED}
+    // - BEING_SLASHED => EXITED
+    // - EXITED => FULLY_WITHDRAWN
     enum VALIDATOR_PHASE {
         NOT_INITIALIZED,
         STAKE_DEPOSITED,
@@ -84,10 +89,6 @@ interface IEtherFiNode {
     function setExitRequestTimestamp() external;
 
     function markExited(uint32 _exitTimestamp) external;
-
-    function markBeingSlahsed() external;
-
-    function markFullyWithdrawn() external;
 
     function receiveVestedRewardsForStakers() external payable;
 

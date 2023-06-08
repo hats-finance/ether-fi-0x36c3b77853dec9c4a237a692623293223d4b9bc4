@@ -940,9 +940,6 @@ contract StakingManagerTest is TestSetup {
 
         vm.expectRevert("Incorrect phase");
         stakingManagerInstance.batchCancelDeposit(bidId);
-
-        vm.expectRevert("Incorrect phase");
-        stakingManagerInstance.batchCancelDeposit(bidId);
     }
 
     function cancelDepositFailsIfContractPaused() public {
