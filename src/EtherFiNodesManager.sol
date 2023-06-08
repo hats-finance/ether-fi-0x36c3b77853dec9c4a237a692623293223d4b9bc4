@@ -559,7 +559,8 @@ contract EtherFiNodesManager is
 
         require(
             IEtherFiNode(etherfiNode).phase() ==
-                IEtherFiNode.VALIDATOR_PHASE.LIVE,
+                IEtherFiNode.VALIDATOR_PHASE.LIVE || IEtherFiNode(etherfiNode).phase() ==
+                IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED,
             "Validator already exited"
         );
 
