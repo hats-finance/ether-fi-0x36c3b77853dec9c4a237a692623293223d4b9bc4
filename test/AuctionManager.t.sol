@@ -14,8 +14,6 @@ contract AuctionManagerTest is TestSetup {
     event BidReEnteredAuction(uint256 indexed bidId);
     event Received(address indexed sender, uint256 value);
 
-    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
-
     function setUp() public {
         setUpTests();
     }

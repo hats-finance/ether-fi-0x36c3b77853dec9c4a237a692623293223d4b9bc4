@@ -7,7 +7,6 @@ contract ProtocolRevenueManagerTest is TestSetup {
         
     bytes32[] public proof;
     bytes32[] public aliceProof;
-    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
     
     function setUp() public {
         setUpTests();
