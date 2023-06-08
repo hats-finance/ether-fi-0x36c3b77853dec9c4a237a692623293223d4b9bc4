@@ -330,8 +330,7 @@ contract EtherFiNodesManager is
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             address etherfiNode = etherfiNodeAddress[_validatorIds[i]];
             require(
-                IEtherFiNode(etherfiNode).phase() ==
-                    IEtherFiNode.VALIDATOR_PHASE.LIVE,
+                IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE,
                 "validator node is not live"
             );
             IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
@@ -444,11 +443,9 @@ contract EtherFiNodesManager is
     /// @param _exitTimestamp the exit timestamp
     function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-
         require(
-            IEtherFiNode(etherfiNode).phase() ==
-                IEtherFiNode.VALIDATOR_PHASE.LIVE || IEtherFiNode(etherfiNode).phase() ==
-                IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED,
+            IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE
+             || IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED,
             "Validator already exited"
         );
 
