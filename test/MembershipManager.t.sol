@@ -300,6 +300,7 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(alice, 100 ether);
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        
         uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(
             2 ether,
             0,
