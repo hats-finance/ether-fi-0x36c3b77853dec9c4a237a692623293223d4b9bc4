@@ -646,6 +646,25 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(token2), 2 ether);   
     }
 
+    function test_WrapEthFailsIfNotCorrectlyEligible() public {
+        vm.deal(henry, 12 ether);
+        vm.deal(alice, 12 ether);
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 11);
+
+        vm.prank(henry);
+
+        // Alice deposits 10 ETH and mints 10 membership points.
+        vm.expectRevert("User is not whitelisted");
+        uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, aliceProof);
+
+        vm.deal(vm.addr(1200), 12 ether);
+        vm.prank(vm.addr(1200));
+
+        // Alice deposits 10 ETH and mints 10 membership points.
+        vm.expectRevert("User is not whitelisted");
+        Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, proof);
+    }
+
     function test_UpdatingPointsGrowthRate() public {
         vm.deal(alice, 1 ether);
 

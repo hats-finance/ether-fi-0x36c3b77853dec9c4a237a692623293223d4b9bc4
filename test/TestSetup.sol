@@ -334,6 +334,8 @@ contract TestSetup is Test {
 
         whiteListedAddresses.push(keccak256(abi.encodePacked(owner)));
 
+        whiteListedAddresses.push(keccak256(abi.encodePacked(vm.addr(1200))));
+
         root = merkle.getRoot(whiteListedAddresses);
         stakingManagerInstance.updateMerkleRoot(root);
     }
