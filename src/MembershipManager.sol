@@ -530,7 +530,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         tokenData[_tokenId].tier = _newTier;
     }
 
-    function _updateAllTimeHighDepositOf(uint256 _tokenId) internal returns (uint256) {
+    function _updateAllTimeHighDepositOf(uint256 _tokenId) internal {
         allTimeHighDepositAmount[_tokenId] = membershipNFT.allTimeHighDepositOf(_tokenId);
     }
 
