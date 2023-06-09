@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC1155/ERC1155Upgradeable.sol";
@@ -9,7 +9,7 @@ import "@openzeppelin-upgradeable/contracts/token/ERC1155/ERC1155Upgradeable.sol
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/IMembershipNFT.sol";
 
-contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, IMembershipNFT {
+contract MembershipNFT is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, IMembershipNFT {
 
     IMembershipManager membershipManager;
 

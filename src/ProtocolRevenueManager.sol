@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 
@@ -15,7 +15,7 @@ contract ProtocolRevenueManager is
     Initializable,
     IProtocolRevenueManager,
     PausableUpgradeable,
-    OwnableUpgradeable,
+    Ownable2StepUpgradeable,
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {

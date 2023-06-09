@@ -6,7 +6,7 @@ import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 
 import "./interfaces/IStakingManager.sol";
@@ -17,7 +17,7 @@ import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract LiquidityPool is Initializable, Ownable2StepUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------

@@ -6,7 +6,7 @@ import "./interfaces/INodeOperatorManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
@@ -14,7 +14,7 @@ contract AuctionManager is
     Initializable,
     IAuctionManager,
     PausableUpgradeable,
-    OwnableUpgradeable,
+    Ownable2StepUpgradeable,
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
