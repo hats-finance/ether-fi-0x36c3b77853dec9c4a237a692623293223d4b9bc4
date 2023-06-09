@@ -16,4 +16,7 @@ interface IeETH {
     function transferFrom(address _sender, address _recipient, uint256 _amount) external returns (bool);
     function transfer(address _recipient, uint256 _amount) external returns (bool);
     function approve(address _spender, uint256 _amount) external returns (bool);
+    function increaseAllowance(address _spender, uint256 _increaseAmount) external returns (bool);
+    function decreaseAllowance(address _spender, uint256 _decreaseAmount) external returns (bool);
+
 }

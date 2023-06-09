@@ -225,6 +225,23 @@ contract EETHTest is TestSetup {
         assertEq(eETHInstance.allowance(alice, bob), 0 ether);
     }
 
+    function test_UpdateApprovalAmounts() public {
+        assertEq(eETHInstance.allowance(alice, bob), 0);
+
+        vm.startPrank(alice);
+        eETHInstance.approve(bob, 5 ether);
+
+        assertEq(eETHInstance.allowance(alice, bob), 5 ether);
+        eETHInstance.increaseAllowance(bob, 2 ether);
+        assertEq(eETHInstance.allowance(alice, bob), 7 ether);
+
+        eETHInstance.decreaseAllowance(bob, 4 ether);
+        assertEq(eETHInstance.allowance(alice, bob), 3 ether);
+
+        vm.expectRevert("ERC20: decreased allowance below zero");
+        eETHInstance.decreaseAllowance(bob, 4 ether);
+    }
+
     function test_TransferFromWithAmount() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
