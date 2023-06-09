@@ -252,7 +252,6 @@ contract LiquidityPoolTest is TestSetup {
         }
 
         bytes32 depositRoot = _getDepositRoot();
-        assertEq(liquidityPoolInstance.numValidators(), 0);
 
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(alice);
@@ -263,7 +262,6 @@ contract LiquidityPoolTest is TestSetup {
 
         assertEq(address(stakingManagerInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
-        assertEq(liquidityPoolInstance.numValidators(), 2);
         assertEq(TNFTInstance.ownerOf(newValidators[0]), address(liquidityPoolInstance));
         assertEq(TNFTInstance.ownerOf(newValidators[1]), address(liquidityPoolInstance));
         assertEq(BNFTInstance.ownerOf(newValidators[0]), owner);
@@ -292,6 +290,7 @@ contract LiquidityPoolTest is TestSetup {
 
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
+        vm.warp(1681075815 - 35 * 24 * 3600);   // Sun March ...
         vm.prank(owner);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
@@ -333,12 +332,13 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.expectRevert("validator node is not exited");
         vm.prank(owner);
-        liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
+        managerInstance.fullWithdrawBatch(newValidators);
 
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(alice);
         liquidityPoolInstance.sendExitRequests(newValidators);
 
+        vm.warp(1681075815 - 7 * 24 * 3600);   // Sun Apr 02 2023 21:30:15 UTC
         vm.prank(owner);
         liquidityPoolInstance.sendExitRequests(newValidators);
 
@@ -348,26 +348,26 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.warp(1681351200 + 12 * 6);
 
+        address etherfiNode1 = managerInstance.etherfiNodeAddress(newValidators[0]);
+        address etherfiNode2 = managerInstance.etherfiNodeAddress(newValidators[1]);
+
+        _transferTo(etherfiNode1, 32 ether - slashingPenalties[0]);
+        _transferTo(etherfiNode2, 32 ether - slashingPenalties[1]);
+
         // Process the node exit via nodeManager
         vm.prank(owner);
         managerInstance.processNodeExit(newValidators, exitRequestTimestamps);
 
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
-        liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
-
-        assertEq(liquidityPoolInstance.numValidators(), 2);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 64 ether - 1 ether);
-        
         assertTrue(managerInstance.isExited(newValidators[0]));
         assertTrue(managerInstance.isExited(newValidators[1]));
 
         // Delist the node from the liquidity pool
         vm.prank(owner);
-        liquidityPoolInstance.processNodeExit(newValidators, slashingPenalties);
+        managerInstance.fullWithdrawBatch(newValidators);
 
-        assertEq(liquidityPoolInstance.numValidators(), 0);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 63 ether);
+        assertEq(address(liquidityPoolInstance).balance, 60.045312500000000000 ether);
     }
 
     function test_SettersFailOnZeroAddress() public {

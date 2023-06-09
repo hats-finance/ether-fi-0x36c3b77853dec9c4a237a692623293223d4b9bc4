@@ -14,7 +14,7 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
-import "./interfaces/ImeETH.sol";
+import "./interfaces/IMembershipManager.sol";
 
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
@@ -26,9 +26,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
-    ImeETH public meETH;
+    IMembershipManager public membershipManager;
 
-    uint256 public numValidators;
     uint256 public totalValueOutOfLp;
     bool public eEthliquidStakingOpened;
 
@@ -73,7 +72,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
         stakingManager.verifyWhitelisted(_user, _merkleProof);
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
-        require(_recipient == msg.sender || _recipient == address(meETH), "Wrong Recipient");
+        require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
 
         uint256 share = _sharesForDepositAmount(msg.value);
         if (share == 0) {
@@ -137,13 +136,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         ) public onlyOwner
     {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
-        numValidators += _validatorIds.length;
-    }
-
-    // After the nodes are exited, delist them from the liquidity pool
-    function processNodeExit(uint256[] calldata _validatorIds, uint256[] calldata _slashingPenalties) public onlyOwner {
-        numValidators -= _validatorIds.length;
-        nodesManager.fullWithdrawBatch(_validatorIds);
     }
 
     /// @notice Send the exit reqeusts as the T-NFT holder
@@ -189,9 +181,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
-    function setMeETH(address _address) external onlyOwner {
+    function setMembershipManager(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
-        meETH = ImeETH(_address);
+        membershipManager = IMembershipManager(_address);
     }
     
     //--------------------------------------------------------------------------------------

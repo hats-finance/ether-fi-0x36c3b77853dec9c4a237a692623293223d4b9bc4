@@ -7,7 +7,6 @@ contract ProtocolRevenueManagerTest is TestSetup {
         
     bytes32[] public proof;
     bytes32[] public aliceProof;
-    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
     
     function setUp() public {
         setUpTests();
@@ -348,6 +347,24 @@ contract ProtocolRevenueManagerTest is TestSetup {
             0.05 ether + 1
         );
 
+        // Expect no revenue if node is considered exited or withdraw
+        vm.prank(address(stakingManagerInstance));
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.EXITED);
+
+        vm.prank(address(managerInstance));
+        uint256 revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        assertEq(revenue, 0);
+
+        vm.prank(address(stakingManagerInstance));
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+        vm.prank(address(managerInstance));
+        revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        assertEq(revenue, 0);
+
+        // set back to normal
+        vm.prank(address(stakingManagerInstance));
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.LIVE);
+
         // 3
         hoax(address(auctionInstance));
         vm.expectRevert(
@@ -358,12 +375,14 @@ contract ProtocolRevenueManagerTest is TestSetup {
         );
 
         hoax(address(managerInstance));
-        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        assertEq(revenue, 0.05 ether);
         assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
 
         hoax(address(managerInstance));
-        protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        assertEq(revenue, 0 ether); // can't double dip
         assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
     }

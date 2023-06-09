@@ -17,7 +17,7 @@ update:; forge update
 
 build:; forge build
 
-test :; forge test --fork-url https://eth-goerli.g.alchemy.com/v2/0z7pxDff9KkuVkuVY4QxuITXogzKOMS1 --etherscan-api-key 1YTFXGVDUI38JU3RSY7S5AAUPXQXYKR2SR 
+test :; forge test --fork-url ${RPC_API_KEY} --etherscan-api-key ${ETHERSCAN_API_KEY}
 
 snapshot :; forge snapshot
 
@@ -57,7 +57,7 @@ upgrade-goerli-etherfi_nodes_manager :; forge clean && forge script script/upgra
 
 upgrade-goerli-liquidity_pool :; forge clean && forge script script/upgrades/goerli/GoerliLiquidityPoolUpgradeScript.s.sol:LiquidityPoolUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-meeth :; forge clean && forge script script/upgrades/goerli/GoerliMeETHUpgradeScript.s.sol:MeETHUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-membership-manager :; forge clean && forge script script/upgrades/goerli/GoerliMembershipManagerUpgradeScript.s.sol:MembershipManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-goerli-node_operator_manager :; forge clean && forge script script/upgrades/goerli/GoerliNodeOperatorManagerUpgradeScript.s.sol:NodeOperatorManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
@@ -84,7 +84,7 @@ upgrade-etherfi_nodes_manager :; forge clean && forge script script/upgrades/mai
 
 upgrade-liquidity_pool :; forge clean && forge script script/upgrades/mainnet/MainnetLiquidityPoolUpgradeScript.s.sol:LiquidityPoolUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-meeth :; forge clean && forge script script/upgrades/mainnet/MainnetMeETHUpgradeScript.s.sol:MeETHUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-membership-manager :; forge clean && forge script script/upgrades/mainnet/MainnetMembershipManagerUpgradeScript.s.sol:MembershipManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-node_operator_manager :; forge clean && forge script script/upgrades/mainnet/MainnetNodeOperatorManagerUpgradeScript.s.sol:NodeOperatorManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 

@@ -14,12 +14,12 @@ contract MembershipNFTTest is TestSetup {
         setUpTests();
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        eETHInstance.approve(address(meEthInstance), 1_000_000_000 ether);
+        eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        eETHInstance.approve(address(meEthInstance), 1_000_000_000 ether);
+        eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
@@ -47,23 +47,23 @@ contract MembershipNFTTest is TestSetup {
 
     function test_permissions() public {
 
-        // only Meeth can update call
+        // only membership manager can update call
         vm.startPrank(alice);
-        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        vm.expectRevert(MembershipNFT.OnlyMembershipManagerContract.selector);
         membershipNftInstance.mint(alice, 1);
-        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        vm.expectRevert(MembershipNFT.OnlyMembershipManagerContract.selector);
         membershipNftInstance.burn(alice, 0, 1);
         vm.stopPrank();
 
         vm.startPrank(owner);
-        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        vm.expectRevert(MembershipNFT.OnlyMembershipManagerContract.selector);
         membershipNftInstance.mint(alice, 1);
-        vm.expectRevert(MembershipNFT.OnlyMeETHContract.selector);
+        vm.expectRevert(MembershipNFT.OnlyMembershipManagerContract.selector);
         membershipNftInstance.burn(alice, 0, 1);
         vm.stopPrank();
 
         // should succeed
-        vm.startPrank(address(meEthInstance));
+        vm.startPrank(address(membershipManagerInstance));
         membershipNftInstance.mint(alice, 1);
         membershipNftInstance.burn(alice, 0, 1);
         vm.stopPrank();

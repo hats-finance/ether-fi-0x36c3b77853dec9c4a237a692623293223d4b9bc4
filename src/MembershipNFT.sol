@@ -6,11 +6,12 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC1155/ERC1155Upgradeable.sol";
 
-import "./interfaces/ImeETH.sol";
+import "./interfaces/IMembershipManager.sol";
+import "./interfaces/IMembershipNFT.sol";
 
-contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable {
+contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, IMembershipNFT {
 
-    ImeETH meETH;
+    IMembershipManager membershipManager;
 
     string private contractMetadataURI; /// @dev opensea contract-level metadata
     uint256 public nextMintID;
@@ -29,13 +30,13 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         __ERC1155_init(_metadataURI);
     }
 
-    function mint(address _to, uint256 _amount) external onlyMeETHContract returns (uint256) {
+    function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
         uint256 tokenId = nextMintID++;
         _mint(_to, tokenId, _amount, "");
         return tokenId;
     }
 
-    function burn(address _from, uint256 _tokenId, uint256 _amount) onlyMeETHContract external {
+    function burn(address _from, uint256 _tokenId, uint256 _amount) onlyMembershipManagerContract external {
         _burn(_from, _tokenId, _amount);
     }
 
@@ -43,8 +44,8 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function setMeETH(address _address) external onlyOwner {
-        meETH = ImeETH(_address);
+    function setMembershipManager(address _address) external onlyOwner {
+        membershipManager = IMembershipManager(_address);
     }
 
     //--------------------------------------------------------------------------------------
@@ -57,72 +58,76 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
+    function balanceOfUser(address _user, uint256 _id) external returns (uint256) {
+        return balanceOf(_user, _id);
+    }
+
     function valueOf(uint256 _tokenId) public view returns (uint256) {
-        (uint96 rewardsLocalIndex,,,,, uint8 tier,) = meETH.tokenData(_tokenId);
-        (uint128 amounts, uint128 amountStakedForPoints) = meETH.tokenDeposits(_tokenId);
-        (uint96[] memory globalIndex, ) = meETH.calculateGlobalIndex();
+        (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
+        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
+        (uint96[] memory globalIndex, ) = membershipManager.calculateGlobalIndex();
         uint256 rewards = (globalIndex[tier] - rewardsLocalIndex) * amounts / 1 ether;
         return amounts + rewards + amountStakedForPoints;
     }
 
     function loyaltyPointsOf(uint256 _tokenId) public view returns (uint40) {
-        (, uint40 baseLoyaltyPoints,,,,,) = meETH.tokenData(_tokenId);
+        (, uint40 baseLoyaltyPoints,,,,,) = membershipManager.tokenData(_tokenId);
         uint256 pointsEarning = accruedLoyaltyPointsOf(_tokenId);
         uint256 total = _min(baseLoyaltyPoints + pointsEarning, type(uint40).max);
         return uint40(total);
     }
 
     function tierPointsOf(uint256 _tokenId) public view returns (uint40) {
-        (,, uint40 baseTierPoints,,,,) = meETH.tokenData(_tokenId);
+        (,, uint40 baseTierPoints,,,,) = membershipManager.tokenData(_tokenId);
         uint256 pointsEarning = accruedTierPointsOf(_tokenId);
         uint256 total = _min(baseTierPoints + pointsEarning, type(uint40).max);
         return uint40(total);
     }
 
     function tierOf(uint256 _tokenId) public view returns (uint8) {
-        (,,,,, uint8 tier,) = meETH.tokenData(_tokenId);
+        (,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
         return tier;
     }
 
     function claimableTier(uint256 _tokenId) public view returns (uint8) {
         uint40 tierPoints = tierPointsOf(_tokenId);
-        return meETH.tierForPoints(tierPoints);
+        return membershipManager.tierForPoints(tierPoints);
     }
 
     function accruedLoyaltyPointsOf(uint256 _tokenId) public view returns (uint40) {
-        (,,, uint32 prevPointsAccrualTimestamp,,,) = meETH.tokenData(_tokenId);
-        return meETH.membershipPointsEarning(_tokenId, prevPointsAccrualTimestamp, block.timestamp);
+        (,,, uint32 prevPointsAccrualTimestamp,,,) = membershipManager.tokenData(_tokenId);
+        return membershipManager.membershipPointsEarning(_tokenId, prevPointsAccrualTimestamp, block.timestamp);
     }
 
     function accruedTierPointsOf(uint256 _tokenId) public view returns (uint40) {
-        (uint128 amounts, uint128 amountStakedForPoints) = meETH.tokenDeposits(_tokenId);
+        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
         if (amounts == 0 && amountStakedForPoints == 0) {
             return 0;
         }
-        (,,, uint32 prevPointsAccrualTimestamp,,,) = meETH.tokenData(_tokenId);
+        (,,, uint32 prevPointsAccrualTimestamp,,,) = membershipManager.tokenData(_tokenId);
         uint256 tierPointsPerDay = 24; // 1 per an hour
         uint256 earnedPoints = (uint32(block.timestamp) - prevPointsAccrualTimestamp) * tierPointsPerDay / 1 days;
-        uint256 effectiveBalanceForEarningPoints = amounts + ((10000 + meETH.pointsBoostFactor()) * amountStakedForPoints) / 10000;
+        uint256 effectiveBalanceForEarningPoints = amounts + ((10000 + membershipManager.pointsBoostFactor()) * amountStakedForPoints) / 10000;
         earnedPoints = earnedPoints * effectiveBalanceForEarningPoints / (amounts + amountStakedForPoints);
         return uint40(earnedPoints);
     }
 
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
-        return meETH.canTopUp(_tokenId, _totalAmount, _amount, _amountForPoints);
+        return membershipManager.canTopUp(_tokenId, _totalAmount, _amount, _amountForPoints);
     }
 
     function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) public view returns (bool) {
         // cap withdrawals to 50% of lifetime max balance. Otherwise need to fully withdraw and burn NFT
-        (uint128 amounts, uint128 amountStakedForPoints) = meETH.tokenDeposits(_tokenId);
+        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
         uint256 totalDeposit = amounts + amountStakedForPoints;
         uint256 highestDeposit = allTimeHighDepositOf(_tokenId);
         return (totalDeposit - _withdrawalAmount >= highestDeposit / 2);
     }
 
     function allTimeHighDepositOf(uint256 _tokenId) public view returns (uint256) {
-        (uint128 amounts, uint128 amountStakedForPoints) = meETH.tokenDeposits(_tokenId);
+        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
         uint256 totalDeposit = amounts + amountStakedForPoints;
-        return _max(totalDeposit, meETH.allTimeHighDepositAmount(_tokenId));        
+        return _max(totalDeposit, membershipManager.allTimeHighDepositAmount(_tokenId));        
     }
 
     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
@@ -133,9 +138,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return (_a > _b) ? _a : _b;
     }
 
-    error OnlyMeETHContract();
-    modifier onlyMeETHContract() {
-        if (msg.sender != address(meETH)) revert OnlyMeETHContract();
+    error OnlyMembershipManagerContract();
+    modifier onlyMembershipManagerContract() {
+        if (msg.sender != address(membershipManager)) revert OnlyMembershipManagerContract();
         _;
     }
 

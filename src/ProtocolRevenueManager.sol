@@ -77,7 +77,7 @@ contract ProtocolRevenueManager is
     /// @notice Distribute the accrued rewards to the validator
     /// @param _validatorId id of the validator
     function distributeAuctionRevenue(uint256 _validatorId) external onlyEtherFiNodesManager nonReentrant returns (uint256) {
-        if (etherFiNodesManager.isExited(_validatorId)) {
+        if (etherFiNodesManager.isExited(_validatorId) || etherFiNodesManager.isFullyWithdrawn(_validatorId)) {
             return 0;
         }
         uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);

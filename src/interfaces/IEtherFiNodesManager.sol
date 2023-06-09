@@ -50,6 +50,7 @@ interface IEtherFiNodesManager {
     function isExitRequested(uint256 _validatorId) external view returns (bool);
 
     function isExited(uint256 _validatorId) external view returns (bool);
+    function isFullyWithdrawn(uint256 _validatorId) external view returns (bool);
 
     function getNonExitPenalty(
         uint256 _validatorId,

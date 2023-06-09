@@ -17,7 +17,7 @@ import "../src/Treasury.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
 import "../src/WeETH.sol";
-import "../src/MeETH.sol";
+import "../src/MembershipManager.sol";
 import "../src/MembershipNFT.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
@@ -46,7 +46,7 @@ contract TestSetup is Test {
     UUPSProxy public regulationsManagerProxy;
     UUPSProxy public weETHProxy;
     UUPSProxy public nodeOperatorManagerProxy;
-    UUPSProxy public meETHProxy;
+    UUPSProxy public membershipManagerProxy;
     UUPSProxy public membershipNftProxy;
 
     DepositDataGeneration public depGen;
@@ -86,8 +86,8 @@ contract TestSetup is Test {
     WeETH public weEthImplementation;
     WeETH public weEthInstance;
 
-    MeETH public meEthImplementation;
-    MeETH public meEthInstance;
+    MembershipManager public membershipManagerImplementation;
+    MembershipManager public membershipManagerInstance;
 
     MembershipNFT public membershipNftImplementation;
     MembershipNFT public membershipNftInstance;
@@ -133,6 +133,8 @@ contract TestSetup is Test {
 
     bytes aliceIPFSHash = "AliceIPFS";
     bytes _ipfsHash = "ipfsHash";
+
+    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
 
     function setUpTests() internal {
         vm.startPrank(owner);
@@ -250,12 +252,12 @@ contract TestSetup is Test {
         membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
         membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
         
-        meEthImplementation = new MeETH();
-        meETHProxy = new UUPSProxy(address(meEthImplementation), "");
-        meEthInstance = MeETH(payable(meETHProxy));
-        meEthInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance), address(treasuryInstance), address(protocolRevenueManagerInstance));
+        membershipManagerImplementation = new MembershipManager();
+        membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation), "");
+        membershipManagerInstance = MembershipManager(payable(membershipManagerProxy));
+        membershipManagerInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance), address(treasuryInstance), address(protocolRevenueManagerInstance));
 
-        membershipNftInstance.setMeETH(address(meEthInstance));
+        membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
 
 
         // Setup dependencies
@@ -280,7 +282,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setTokenAddress(address(eETHInstance));
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
-        liquidityPoolInstance.setMeETH(address(meEthInstance));
+        liquidityPoolInstance.setMembershipManager(address(membershipManagerInstance));
         liquidityPoolInstance.openEEthLiquidStaking();
 
         depGen = new DepositDataGeneration();
@@ -345,7 +347,7 @@ contract TestSetup is Test {
         for (uint256 i = 0; i < 5 ; i++) {
             requiredPointsForTier += uint40(28 * 24 * i);
             uint24 weight = uint24(i + 1);
-            meEthInstance.addNewTier(requiredPointsForTier, weight);
+            membershipManagerInstance.addNewTier(requiredPointsForTier, weight);
         }
     }
 
@@ -452,7 +454,7 @@ contract TestSetup is Test {
         requiredEapPointsPerEapDeposit.push(0); // we want all EAP users to be at least Silver
         requiredEapPointsPerEapDeposit.push(100); 
         requiredEapPointsPerEapDeposit.push(400); 
-        meEthInstance.setUpForEap(rootMigration, requiredEapPointsPerEapDeposit);
+        membershipManagerInstance.setUpForEap(rootMigration, requiredEapPointsPerEapDeposit);
     }
 
     function _merkleSetupMigration2() internal {

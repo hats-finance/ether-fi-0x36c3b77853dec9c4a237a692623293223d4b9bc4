@@ -20,8 +20,6 @@ contract StakingManagerTest is TestSetup {
         string ipfsHashForEncryptedValidatorKey
     );
 
-    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
-
     function setUp() public {
         setUpTests();
     }
@@ -939,9 +937,6 @@ contract StakingManagerTest is TestSetup {
         depositDataArray[0] = depositData;
 
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId, depositDataArray);
-
-        vm.expectRevert("Incorrect phase");
-        stakingManagerInstance.batchCancelDeposit(bidId);
 
         vm.expectRevert("Incorrect phase");
         stakingManagerInstance.batchCancelDeposit(bidId);

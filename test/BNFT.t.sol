@@ -4,9 +4,6 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 
 contract BNFTTest is TestSetup {
-
-    bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
-
    function setUp() public {
         setUpTests();
     }

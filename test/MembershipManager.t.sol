@@ -4,24 +4,22 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 import "forge-std/console2.sol";
 
-contract MeETHTest is TestSetup {
+contract MembershipManagerTest is TestSetup {
 
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
     bytes32[] public ownerProof;
 
-    event MEETHBurnt(address indexed _recipient, uint256 _amount);
-
     function setUp() public {
         setUpTests();
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        eETHInstance.approve(address(meEthInstance), 1_000_000_000 ether);
+        eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        eETHInstance.approve(address(meEthInstance), 1_000_000_000 ether);
+        eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
@@ -34,9 +32,9 @@ contract MeETHTest is TestSetup {
         vm.deal(bob, 100 ether);
 
         vm.prank(alice);
-        uint256 aliceToken = meEthInstance.wrapEth{value: 100 ether}(100 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 100 ether}(100 ether, 0, aliceProof);
         vm.prank(bob);
-        uint256 bobToken = meEthInstance.wrapEth{value: 100 ether}(100 ether, 0, bobProof);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 100 ether}(100 ether, 0, bobProof);
         // NFT's points start from 0
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 0);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 0);
@@ -46,9 +44,9 @@ contract MeETHTest is TestSetup {
         // wait a few months and claim new tiers
         skip(100 days);
         vm.prank(alice);
-        meEthInstance.claimTier(aliceToken);
+        membershipManagerInstance.claimTier(aliceToken);
         vm.prank(bob);
-        meEthInstance.claimTier(bobToken);
+        membershipManagerInstance.claimTier(bobToken);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 2400);
         assertEq(membershipNftInstance.tierOf(aliceToken), 2);
         assertEq(membershipNftInstance.tierPointsOf(bobToken), 2400);
@@ -56,25 +54,25 @@ contract MeETHTest is TestSetup {
 
         // alice unwraps 1% and should lose 1 tier.
         vm.prank(alice);
-        meEthInstance.unwrapForEth(aliceToken, 1 ether);
+        membershipManagerInstance.unwrapForEth(aliceToken, 1 ether);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 28 * 24 * 1); // booted to start of previous tier == 672
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
 
         // Bob attempts to unwrap 80% this is disallowed without burning the NFT
         vm.startPrank(bob);
-        vm.expectRevert(MeETH.ExceededMaxWithdrawal.selector);
-        meEthInstance.unwrapForEth(bobToken, 80 ether);
-        vm.expectRevert(MeETH.ExceededMaxWithdrawal.selector);
-        meEthInstance.unwrapForEth(bobToken, 80 ether);
+        vm.expectRevert(MembershipManager.ExceededMaxWithdrawal.selector);
+        membershipManagerInstance.unwrapForEth(bobToken, 80 ether);
+        vm.expectRevert(MembershipManager.ExceededMaxWithdrawal.selector);
+        membershipManagerInstance.unwrapForEth(bobToken, 80 ether);
         assertEq(membershipNftInstance.tierPointsOf(bobToken), 2400);
         assertEq(membershipNftInstance.tierOf(bobToken), 2);
 
         // Bob should be unable to burn a token that doesn't belong to him
-        vm.expectRevert(MeETH.OnlyTokenOwner.selector);
-        meEthInstance.withdrawAndBurnForEth(aliceToken);
+        vm.expectRevert(MembershipManager.OnlyTokenOwner.selector);
+        membershipManagerInstance.withdrawAndBurnForEth(aliceToken);
 
         // Bob burns the NFT extracting remaining value
-        meEthInstance.withdrawAndBurnForEth(bobToken);
+        membershipManagerInstance.withdrawAndBurnForEth(bobToken);
         assertEq(bob.balance, 100 ether);
         assertEq(membershipNftInstance.balanceOf(bob, bobToken), 0);
 
@@ -83,13 +81,13 @@ contract MeETHTest is TestSetup {
     }
 
 
-    // Note that 1 ether meETH earns 1 kwei (10 ** 6) points a day
+    // Note that 1 ether membership points earns 1 kwei (10 ** 6) points a day
     function test_HowPointsGrow() public {
         vm.deal(alice, 2 ether);
 
         vm.startPrank(alice);
-        // Alice mints an NFT with 2 meETH by wrapping 2 ETH and starts earning points
-        uint256 tokenId = meEthInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
+        // Alice mints an NFT with 2 points by wrapping 2 ETH and starts earning points
+        uint256 tokenId = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
         assertEq(alice.balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 2 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
@@ -104,15 +102,15 @@ contract MeETHTest is TestSetup {
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 2 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(tokenId), 24);
 
-        // Alice's NFT unwraps 1 meETH to 1 ETH
-        meEthInstance.unwrapForEth(tokenId, 1 ether);
+        // Alice's NFT unwraps 1 membership points to 1 ETH
+        membershipManagerInstance.unwrapForEth(tokenId, 1 ether);
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 2 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(tokenId), 0);
         assertEq(membershipNftInstance.valueOf(tokenId), 1 ether);
         assertEq(address(liquidityPoolInstance).balance, 1 ether);
         assertEq(alice.balance, 1 ether);
 
-        // Alice's NFT keeps earnings points with the remaining 1 meETH
+        // Alice's NFT keeps earnings points with the remaining 1 membership points
         skip(1 days);
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 2 * kwei + 1 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(tokenId), 24 * 1);
@@ -120,8 +118,8 @@ contract MeETHTest is TestSetup {
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 2 * kwei + 1 * kwei * 2);
         assertEq(membershipNftInstance.tierPointsOf(tokenId), 24 * 2);
 
-        // Alice's NFT unwraps the whole remaining meETH, burning the NFT
-        meEthInstance.withdrawAndBurnForEth(tokenId);
+        // Alice's NFT unwraps all her remaining membership points, burning the NFT
+        membershipManagerInstance.withdrawAndBurnForEth(tokenId);
         assertEq(membershipNftInstance.balanceOf(alice, tokenId), 0); 
         assertEq(alice.balance, 2 ether);
         vm.stopPrank();
@@ -132,7 +130,7 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 1_000_000 ether);
 
         vm.startPrank(alice);
-        uint256 tokenId = meEthInstance.wrapEth{value: 1_000_000 ether}(1_000_000 ether, 0, aliceProof);
+        uint256 tokenId = membershipManagerInstance.wrapEth{value: 1_000_000 ether}(1_000_000 ether, 0, aliceProof);
 
         // (1 gwei = 10^9)
         // Alice earns 1 gwei points a day
@@ -162,8 +160,8 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 10 ether);
 
         vm.startPrank(alice);
-        // Alice deposits 1 ETH and mints 1 meETH.
-        uint256 tokenId = meEthInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        // Alice deposits 1 ETH and mints 1 membership points.
+        uint256 tokenId = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
 
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 0);
         assertEq(membershipNftInstance.claimableTier(tokenId), 0);
@@ -185,11 +183,11 @@ contract MeETHTest is TestSetup {
         // Alice sees that she can claim her tier 1, which is higher than her current tier 0
         // By calling 'claimTier', Alice's tier gets upgraded to the tier 1
         assertEq(membershipNftInstance.claimableTier(tokenId), 1);
-        meEthInstance.claimTier(tokenId);
+        membershipManagerInstance.claimTier(tokenId);
         assertEq(membershipNftInstance.tierOf(tokenId), 1);
 
-        // Alice unwraps 0.5 meETH (which is 50% of her meETH holdings)
-        meEthInstance.unwrapForEth(tokenId, 0.5 ether);
+        // Alice unwraps 0.5 membership points (which is 50% of her membership points holdings)
+        membershipManagerInstance.unwrapForEth(tokenId, 0.5 ether);
 
         // Tier gets penalized by unwrapping
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 28 * kwei);
@@ -201,7 +199,7 @@ contract MeETHTest is TestSetup {
         /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
 
         // Alice claims her funds after the snapshot has been taken. 
-        // She then deposits her ETH into the MeETH and has her points allocated to her
+        // She then deposits her ETH into the MembershipManager and has her points allocated to her
 
         // Alice deposit into EAP
         startHoax(alice);
@@ -218,14 +216,14 @@ contract MeETHTest is TestSetup {
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
-        meEthInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
+        membershipManagerInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
         // Alice Withdraws
         vm.startPrank(alice);
         earlyAdopterPoolInstance.withdraw();
         vm.stopPrank();
 
-        // Alice Deposits into MeETH and receives eETH in return
+        // Alice Deposits into MembershipManager and receives eETH in return
         bytes32[] memory aliceProof = merkleMigration2.getProof(
             dataForVerification2,
             0
@@ -235,8 +233,8 @@ contract MeETHTest is TestSetup {
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
-        vm.expectRevert(MeETH.InvalidEAPRollover.selector);
-        meEthInstance.wrapEthForEap{value: 0.5 ether}(
+        vm.expectRevert(MembershipManager.InvalidEAPRollover.selector);
+        membershipManagerInstance.wrapEthForEap{value: 0.5 ether}(
             1 ether,
             0,
             1 ether,
@@ -244,8 +242,8 @@ contract MeETHTest is TestSetup {
             aliceProof
         );
 
-        vm.expectRevert(MeETH.InvalidEAPRollover.selector);
-        meEthInstance.wrapEthForEap{value: 3.0 ether}(
+        vm.expectRevert(MembershipManager.InvalidEAPRollover.selector);
+        membershipManagerInstance.wrapEthForEap{value: 3.0 ether}(
             1 ether,
             2 ether,
             1 ether,
@@ -253,8 +251,8 @@ contract MeETHTest is TestSetup {
             aliceProof
         );
 
-        vm.expectRevert(MeETH.InvalidEAPRollover.selector);
-        meEthInstance.wrapEthForEap{value: 1 ether}(
+        vm.expectRevert(MembershipManager.InvalidEAPRollover.selector);
+        membershipManagerInstance.wrapEthForEap{value: 1 ether}(
             1 ether,
             0,
             1 ether,
@@ -268,7 +266,7 @@ contract MeETHTest is TestSetup {
         /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
 
         // Alice claims her funds after the snapshot has been taken. 
-        // She then deposits her ETH into the MeETH and has her points allocated to her
+        // She then deposits her ETH into the MembershipManager and has her points allocated to her
 
         // Acotrs deposit into EAP
         startHoax(alice);
@@ -287,14 +285,14 @@ contract MeETHTest is TestSetup {
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(owner);
-        meEthInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
+        membershipManagerInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
         // Alice Withdraws
         vm.startPrank(alice);
         earlyAdopterPoolInstance.withdraw();
         vm.stopPrank();
 
-        // Alice Deposits into MeETH and receives eETH in return
+        // Alice Deposits into MembershipManager and receives eETH in return
         bytes32[] memory aliceProof = merkleMigration2.getProof(
             dataForVerification2,
             0
@@ -302,7 +300,7 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 100 ether);
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        uint256 tokenId = meEthInstance.wrapEthForEap{value: 2 ether}(
+        uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(
             2 ether,
             0,
             1 ether,
@@ -311,13 +309,13 @@ contract MeETHTest is TestSetup {
         );
         vm.stopPrank();
 
-        assertEq(address(meEthInstance).balance, 0 ether);
+        assertEq(address(membershipManagerInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 2 ether);
 
-        // Check that Alice has received meETH
+        // Check that Alice has received membership points
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
         assertEq(membershipNftInstance.tierOf(tokenId), 2); // Gold
-        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 2 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 2 ether);
     }
 
 
@@ -325,8 +323,8 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 100 ether);
 
         vm.startPrank(alice);
-        // Alice deposits 0.5 ETH and mints 0.5 meETH.
-        uint256 aliceToken = meEthInstance.wrapEth{value: 0.5 ether}(0.5 ether, 0, aliceProof);
+        // Alice deposits 0.5 ETH and mints 0.5 membership points.
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 0.5 ether}(0.5 ether, 0, aliceProof);
         assertEq(address(liquidityPoolInstance).balance, 0.5 ether);
         vm.stopPrank();
 
@@ -336,7 +334,7 @@ contract MeETHTest is TestSetup {
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(owner);
         liquidityPoolInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
-        meEthInstance.distributeStakingRewards();
+        membershipManagerInstance.distributeStakingRewards();
         vm.stopPrank();
 
         // Check the blanace of Alice updated by the rebasing
@@ -349,14 +347,14 @@ contract MeETHTest is TestSetup {
         assertEq(membershipNftInstance.claimableTier(aliceToken), 1);
         assertEq(membershipNftInstance.tierOf(aliceToken), 0);
 
-        meEthInstance.claimTier(aliceToken);
+        membershipManagerInstance.claimTier(aliceToken);
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
         assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether);
 
         // Bob in
         vm.deal(bob, 2 ether);
         vm.startPrank(bob);
-        uint256 bobToken = meEthInstance.wrapEth{value: 2 ether}(2 ether, 0, bobProof);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, bobProof);
         vm.stopPrank();
 
         // Alice belongs to the Tier 1, Bob belongs to the Tier 0
@@ -370,7 +368,7 @@ contract MeETHTest is TestSetup {
         // More Staking rewards 1 ETH into LP
         vm.startPrank(owner);
         liquidityPoolInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
-        meEthInstance.distributeStakingRewards();
+        membershipManagerInstance.distributeStakingRewards();
         vm.stopPrank();
 
         // Alice belongs to the tier 1 with the weight 2
@@ -385,9 +383,9 @@ contract MeETHTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(bobToken), 2 ether + bobRescaledRewards - 2); // some rounding errors
 
         // They claim the rewards
-        meEthInstance.claimStakingRewards(aliceToken);
+        membershipManagerInstance.claimStakingRewards(aliceToken);
         assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether + aliceRescaledRewards - 1); // some rounding errors
-        meEthInstance.claimStakingRewards(bobToken);
+        membershipManagerInstance.claimStakingRewards(bobToken);
         assertEq(membershipNftInstance.valueOf(bobToken), 2 ether + bobRescaledRewards - 2); // some rounding errors
     }
 
@@ -395,14 +393,14 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 1000 ether);
         vm.startPrank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
-        meEthInstance.updatePointsGrowthRate(12345);
+        membershipManagerInstance.updatePointsGrowthRate(12345);
         vm.expectRevert("Ownable: caller is not the owner");
-        meEthInstance.updatePointsBoostFactor(12345);
+        membershipManagerInstance.updatePointsBoostFactor(12345);
         vm.stopPrank();
 
         vm.startPrank(owner);
-        meEthInstance.updatePointsGrowthRate(12345);
-        meEthInstance.updatePointsBoostFactor(12345);
+        membershipManagerInstance.updatePointsGrowthRate(12345);
+        membershipManagerInstance.updatePointsBoostFactor(12345);
         vm.stopPrank();
     }
 
@@ -414,36 +412,36 @@ contract MeETHTest is TestSetup {
         // alice doubles her deposit and should get penalized
         vm.startPrank(alice);
 
-        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
         skip(28 days * 10);
 
         uint256 currentPoints = membershipNftInstance.tierPointsOf(aliceToken);
         assertEq(currentPoints, 6720); // force update if calculation logic changes
 
         assertEq(membershipNftInstance.claimableTier(aliceToken), 4);
-        meEthInstance.claimTier(aliceToken);
+        membershipManagerInstance.claimTier(aliceToken);
         assertEq(membershipNftInstance.tierOf(aliceToken), 4);
 
         // points should get diluted by 50% & the tier is properly updated
-        meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
         uint256 dilutedPoints = membershipNftInstance.tierPointsOf(aliceToken);
         assertEq(dilutedPoints , currentPoints / 2);
         assertEq(membershipNftInstance.tierOf(aliceToken), 2);
-        assertEq(membershipNftInstance.tierOf(aliceToken), meEthInstance.tierForPoints(uint40(dilutedPoints)));
+        assertEq(membershipNftInstance.tierOf(aliceToken), membershipManagerInstance.tierForPoints(uint40(dilutedPoints)));
 
         vm.stopPrank();
 
         // bob does a 15% top up and should not get penalized
         vm.startPrank(bob);
 
-        uint256 bobToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, 0, bobProof);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, bobProof);
         skip(28 days * 10);
 
         currentPoints = membershipNftInstance.tierPointsOf(bobToken);
         assertEq(currentPoints, 6720); // force update if calculation logic changes
 
         // points should not get diluted
-        meEthInstance.topUpDepositWithEth{value: 0.15 ether}(bobToken, 0.15 ether, 0 ether, bobProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 0.15 ether}(bobToken, 0.15 ether, 0 ether, bobProof);
         dilutedPoints = membershipNftInstance.tierPointsOf(bobToken);
         assertEq(dilutedPoints , currentPoints); 
 
@@ -455,21 +453,21 @@ contract MeETHTest is TestSetup {
         vm.deal(bob, 100 ether);
 
         vm.startPrank(alice);
-        uint256 aliceToken = meEthInstance.wrapEth{value: 8 ether}(8 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 8 ether}(8 ether, 0, aliceProof);
 
         skip(28 days);
 
-        meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
         assertEq(membershipNftInstance.valueOf(aliceToken), 8 ether + 1 ether);
 
         // can't top up again immediately
-        vm.expectRevert(MeETH.OncePerMonth.selector);
-        meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
+        vm.expectRevert(MembershipManager.OncePerMonth.selector);
+        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
 
         skip(28 days);
 
         // deposit is larger so should be able to top up more
-        meEthInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 0.5 ether, 0.5 ether, aliceProof);
         assertEq(membershipNftInstance.valueOf(aliceToken), 9 ether + 1 ether);
 
         skip(28 days);
@@ -489,27 +487,27 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 2 ether);
         vm.deal(bob, 2 ether);
 
-        // Both Alice and Bob mint 2 meETH.
+        // Both Alice and Bob mint 2 membership points.
 
         // - Alice takes weird ways though 
-        //   and stakes 1 meETH to earn more points by sacrificing the staking rewards
+        //   and stakes 1 membership points to earn more points by sacrificing the staking rewards
         vm.startPrank(alice);
-        uint256 aliceToken = meEthInstance.wrapEth{value: 1.8 ether}(1.6 ether, 0.2 ether, aliceProof);
-        meEthInstance.stakeForPoints(aliceToken, 0.6 ether);
-        meEthInstance.topUpDepositWithEth{value: 0.2 ether}(aliceToken, 0, 0.2 ether, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1.8 ether}(1.6 ether, 0.2 ether, aliceProof);
+        membershipManagerInstance.stakeForPoints(aliceToken, 0.6 ether);
+        membershipManagerInstance.topUpDepositWithEth{value: 0.2 ether}(aliceToken, 0, 0.2 ether, aliceProof);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        uint256 bobToken = meEthInstance.wrapEth{value: 2 ether}(2 ether, 0, bobProof);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, bobProof);
         vm.stopPrank();
 
-        // They have the same amounts of meETH and belong to the same tier
+        // They have the same amounts of membership points and belong to the same tier
         assertEq(membershipNftInstance.valueOf(aliceToken), 2 ether);
         assertEq(membershipNftInstance.valueOf(bobToken), 2 ether);
         assertEq(membershipNftInstance.tierOf(aliceToken), membershipNftInstance.tierOf(bobToken));
 
-        // Bob's 2 meETH earns 2 kwei loyalty points AND 24 tier points a day
-        // Alice's 2 meETH earns (1 + 1 * 2) kwei loyalty points AND 24 * 1.5 tier points a day
+        // Bob's 2 membership points earns 2 kwei loyalty points AND 24 tier points a day
+        // Alice's 2 membership points earns (1 + 1 * 2) kwei loyalty points AND 24 * 1.5 tier points a day
         skip(1 days);
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei + 2 * kwei);
         assertEq(membershipNftInstance.loyaltyPointsOf(bobToken),   2 * kwei);
@@ -519,29 +517,29 @@ contract MeETHTest is TestSetup {
         // Now, eETH is rebased with the staking rewards 1 eETH
         startHoax(owner);
         liquidityPoolInstance.rebase(4 ether + 1 ether, 4 ether);
-        meEthInstance.distributeStakingRewards();
+        membershipManagerInstance.distributeStakingRewards();
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(owner, ownerProof);
         assertEq(address(liquidityPoolInstance).balance, 5 ether);
         vm.stopPrank();
 
-        // Alice's 1 meETH does not earn any rewards
-        // Alice's 1 meETH and Bob's 2 meETH earn 1/3 meETH and 2/3 meETH, respectively.
+        // Alice's 1 membership points does not earn any rewards
+        // Alice's 1 membership points and Bob's 2 membership points earn 1/3 membership points and 2/3 membership points, respectively.
         assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether + 1 ether + 1 ether * 1 / uint256(3));
         assertEq(membershipNftInstance.valueOf(bobToken), 2 ether + (1 ether * 2) / uint256(3));
 
-        // Alice unstakes the 1 meETH which she sacrificed for points
+        // Alice unstakes the 1 membership points which she sacrificed for points
         vm.startPrank(alice);
-        meEthInstance.unstakeForPoints(aliceToken, 1 ether);
+        membershipManagerInstance.unstakeForPoints(aliceToken, 1 ether);
         vm.stopPrank();
         
-        // Alice and Bob burn their tokens and unwrap their whole amounts of meETH to eETH
+        // Alice and Bob burn their tokens and unwrap their whole amounts of membership points to eETH
         vm.startPrank(alice);
-        meEthInstance.withdrawAndBurnForEth(aliceToken);
+        membershipManagerInstance.withdrawAndBurnForEth(aliceToken);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        meEthInstance.withdrawAndBurnForEth(bobToken);
+        membershipManagerInstance.withdrawAndBurnForEth(bobToken);
         vm.stopPrank();
 
         assertEq(alice.balance, 2.333333333333333333 ether);
@@ -555,19 +553,19 @@ contract MeETHTest is TestSetup {
         assertEq(alice.balance, 2 ether);
 
         vm.startPrank(alice);
-        // Alice mints an meETH by wrapping 2 ETH starts earning points
-        uint256 aliceToken = meEthInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
+        // Alice mints an membership points by wrapping 2 ETH starts earning points
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(membershipNftInstance.valueOf(aliceToken), 2 ether);
 
-        // Alice burns meETH directly for ETH
-        meEthInstance.unwrapForEth(aliceToken, 1 ether);
+        // Alice burns membership points directly for ETH
+        membershipManagerInstance.unwrapForEth(aliceToken, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether);
         assertEq(alice.balance, 1 ether);
 
-        vm.expectRevert(MeETH.InsufficientLiquidity.selector);
-        meEthInstance.unwrapForEth(aliceToken, 5 ether);
+        vm.expectRevert(MembershipManager.InsufficientLiquidity.selector);
+        membershipManagerInstance.unwrapForEth(aliceToken, 5 ether);
     }
 
 
@@ -576,7 +574,7 @@ contract MeETHTest is TestSetup {
     function test_LiquidStakingAccessControl() public {
         vm.deal(alice, 2 ether);
 
-        // Alice mints 2 meETH.
+        // Alice mints 2 membership points.
         vm.prank(alice);
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
 
@@ -585,20 +583,20 @@ contract MeETHTest is TestSetup {
 
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
-        meEthInstance.wrapEEth(2 ether, 0);
+        membershipManagerInstance.wrapEEth(2 ether, 0);
 
         vm.prank(owner);
         liquidityPoolInstance.openEEthLiquidStaking();
 
         vm.prank(alice);
-        uint256 aliceToken = meEthInstance.wrapEEth(2 ether, 0);
+        uint256 aliceToken = membershipManagerInstance.wrapEEth(2 ether, 0);
 
         vm.prank(owner);
         liquidityPoolInstance.closeEEthLiquidStaking();
 
         vm.prank(alice);
         vm.expectRevert("Liquid staking functions are closed");
-        meEthInstance.unwrapForEEth(aliceToken, 2 ether);
+        membershipManagerInstance.unwrapForEEth(aliceToken, 2 ether);
     }
     */
 
@@ -607,41 +605,41 @@ contract MeETHTest is TestSetup {
 
         vm.startPrank(alice);
 
-        // Alice deposits 10 ETH and mints 10 meETH.
-        uint256 aliceToken = meEthInstance.wrapEth{value: 10 ether}(10 ether, 0, aliceProof);
+        // Alice deposits 10 ETH and mints 10 membership points.
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, aliceProof);
 
         // 10 ETH to the LP
-        // 10 eETH to the meEth contract
-        // 10 meETH to Alice's NFT
+        // 10 eETH to the membership points contract
+        // 10 membership points to Alice's NFT
         assertEq(address(liquidityPoolInstance).balance, 10 ether);
         assertEq(address(eETHInstance).balance, 0 ether);
-        assertEq(address(meEthInstance).balance, 0 ether);
+        assertEq(address(membershipManagerInstance).balance, 0 ether);
         assertEq(address(alice).balance, 2 ether);
         
         assertEq(eETHInstance.balanceOf(address(liquidityPoolInstance)), 0 ether);
         assertEq(eETHInstance.balanceOf(address(eETHInstance)), 0 ether);
-        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 10 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 10 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
 
         assertEq(membershipNftInstance.balanceOf(alice, aliceToken), 1); // alice owns it
         assertEq(membershipNftInstance.valueOf(aliceToken), 10 ether);
 
         // cannot deposit more than minimum
-        vm.expectRevert(MeETH.InvalidDeposit.selector);
-        meEthInstance.wrapEth{value: 0.01 ether}(0.01 ether, 0, aliceProof);
+        vm.expectRevert(MembershipManager.InvalidDeposit.selector);
+        membershipManagerInstance.wrapEth{value: 0.01 ether}(0.01 ether, 0, aliceProof);
 
         // should get entirely new token with a 2nd deposit
-        uint256 token2 = meEthInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
+        uint256 token2 = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
         assert(aliceToken != token2);
 
         assertEq(address(liquidityPoolInstance).balance, 12 ether);
         assertEq(address(eETHInstance).balance, 0 ether);
-        assertEq(address(meEthInstance).balance, 0 ether);
+        assertEq(address(membershipManagerInstance).balance, 0 ether);
         assertEq(address(alice).balance, 0 ether);
         
         assertEq(eETHInstance.balanceOf(address(liquidityPoolInstance)), 0 ether);
         assertEq(eETHInstance.balanceOf(address(eETHInstance)), 0 ether);
-        assertEq(eETHInstance.balanceOf(address(meEthInstance)), 12 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 12 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
 
         assertEq(membershipNftInstance.valueOf(token2), 2 ether);   
@@ -651,17 +649,17 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 1 ether);
 
         vm.startPrank(alice);
-        // Alice mints 1 meETH by wrapping 1 ETH starts earning points
-        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        // Alice mints 1 membership points by wrapping 1 ETH starts earning points
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
         vm.stopPrank();
 
-        // Alice earns 1 kwei per day by holding 1 meETH
+        // Alice earns 1 kwei per day by holding 1 membership points
         skip(1 days);
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei);
 
         vm.startPrank(owner);
         // The points growth rate decreased to 5000 from 10000
-        meEthInstance.updatePointsGrowthRate(5000);
+        membershipManagerInstance.updatePointsGrowthRate(5000);
         vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei / 2);
@@ -672,25 +670,25 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 1 ether);
 
         vm.startPrank(alice);
-        // Alice mints 1 meETH by wrapping 1 ETH starts earning points
-        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        // Alice mints 1 membership points by wrapping 1 ETH starts earning points
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
         vm.stopPrank();
 
-        // Alice earns 1 kwei per day by holding 1 meETH
+        // Alice earns 1 kwei per day by holding 1 membership points
         skip(1 days);
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24);
 
         // owner manually sets Alice's tier
         vm.startPrank(owner);
-        meEthInstance.setPoints(aliceToken, uint40(28 * kwei), uint40(24 * 28));
+        membershipManagerInstance.setPoints(aliceToken, uint40(28 * kwei), uint40(24 * 28));
         vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24 * 28);
 
         assertEq(membershipNftInstance.claimableTier(aliceToken), 1);
-        meEthInstance.claimTier(aliceToken);
+        membershipManagerInstance.claimTier(aliceToken);
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
     }
 
@@ -698,12 +696,12 @@ contract MeETHTest is TestSetup {
         vm.deal(alice, 1 ether);
 
         vm.startPrank(alice);
-        // Alice mints 1 meETH by wrapping 1 ETH starts earning points
-        uint256 aliceToken = meEthInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        // Alice mints 1 membership points by wrapping 1 ETH starts earning points
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
         vm.stopPrank();
 
         skip(28 days);
-        meEthInstance.claimTier(aliceToken);
+        membershipManagerInstance.claimTier(aliceToken);
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 28 * 24);
@@ -724,7 +722,7 @@ contract MeETHTest is TestSetup {
 
     function test_MixedDeposits() public {
         // Alice claims her funds after the snapshot has been taken. 
-        // She then deposits her ETH into the MeETH and has her points allocated to her
+        // She then deposits her ETH into the MembershipManager and has her points allocated to her
         // Then, she top-ups with ETH and eETH
 
         // Acotrs deposit into EAP
@@ -737,7 +735,7 @@ contract MeETHTest is TestSetup {
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.startPrank(owner);
         earlyAdopterPoolInstance.pauseContract();
-        meEthInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
+        membershipManagerInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
         vm.stopPrank();
 
         vm.deal(alice, 100 ether);
@@ -747,15 +745,15 @@ contract MeETHTest is TestSetup {
         vm.startPrank(alice);
         earlyAdopterPoolInstance.withdraw();
 
-        // Alice Deposits into MeETH and receives meETH in return
+        // Alice Deposits into MembershipManager and receives membership points in return
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        uint256 tokenId = meEthInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 1 ether, 103680, aliceProof);
+        uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 1 ether, 103680, aliceProof);
         
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
         assertEq(membershipNftInstance.tierOf(tokenId), 2);
 
         // Top-up with ETH
-        meEthInstance.topUpDepositWithEth{value: 0.2 ether}(tokenId, 0.1 ether, 0.1 ether, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 0.2 ether}(tokenId, 0.1 ether, 0.1 ether, aliceProof);
         assertEq(membershipNftInstance.valueOf(tokenId), 2.2 ether);
 
         skip(28 days);
@@ -764,11 +762,127 @@ contract MeETHTest is TestSetup {
         TODO: re-enable when EEth is brought back
         // Top-up with EETH
         liquidityPoolInstance.deposit{value: 0.2 ether}(alice, aliceProof);
-        meEthInstance.topUpDepositWithEEth(tokenId, 0.1 ether, 0.1 ether);
+        membershipManagerInstance.topUpDepositWithEEth(tokenId, 0.1 ether, 0.1 ether);
         assertEq(membershipNftInstance.valueOf(tokenId), 2.4 ether);
         */
 
         vm.stopPrank();
     }
 
+    function test_FeeWorksCorrectly() public {
+        launch_validator(); // there will be 2 validators from the beginning
+
+        vm.startPrank(owner);
+        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
+        membershipManagerInstance.setFeeSplits(20, 80);
+        vm.stopPrank();
+
+        (uint256 mintFee, uint256 burnFee) = membershipManagerInstance.getFees();
+        assertEq(mintFee, 0.05 ether);
+        assertEq(burnFee, 0.05 ether);
+        assertEq(membershipManagerInstance.treasuryFeeSplitPercent(), 20);
+        assertEq(membershipManagerInstance.protocolRevenueFeeSplitPercent(), 80);
+
+        vm.prank(alice);
+        uint256 tokenId = membershipManagerInstance.wrapEth{value: 2 ether + mintFee}(2 ether, 0, aliceProof);
+        (uint256 amount, ) = membershipManagerInstance.tokenDeposits(tokenId);
+
+        assertEq(amount, 2 ether);
+        assertEq(address(liquidityPoolInstance).balance, 2 ether);
+        assertEq(address(membershipManagerInstance).balance, 0.05 ether); // totalFeesAccumulated
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 2 ether);
+        assertEq(membershipNftInstance.balanceOf(alice, tokenId), 1);
+
+        uint256 aliceBalBefore = alice.balance;
+        vm.prank(alice);
+        membershipManagerInstance.withdrawAndBurnForEth(tokenId);
+        (amount, ) = membershipManagerInstance.tokenDeposits(tokenId);
+
+        assertEq(address(alice).balance, aliceBalBefore + 2 ether - burnFee);
+        assertEq(amount, 0 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0 ether);
+        assertEq(address(membershipManagerInstance).balance, 0.1 ether); // totalFeesAccumulated
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 0 ether);
+        assertEq(membershipNftInstance.balanceOf(alice, tokenId), 0);
+
+        uint256 treausryBalanceBefore = address(treasuryInstance).balance;
+        uint256 prmBalanceBefore = address(protocolRevenueManagerInstance).balance;
+
+        vm.prank(owner);
+        membershipManagerInstance.withdrawFees();
+
+        assertEq(address(treasuryInstance).balance, treausryBalanceBefore + 0.02 ether);
+        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + 0.08 ether);
+        assertEq(address(membershipManagerInstance).balance, 0 ether); // totalFeesAccumulated
+    }
+
+    function test_SettingFeesFail() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
+        vm.expectRevert("Ownable: caller is not the owner");
+        membershipManagerInstance.setFeeSplits(20, 80);
+        
+        vm.startPrank(owner);
+
+        vm.expectRevert(MembershipManager.InvalidAmount.selector);
+        membershipManagerInstance.setFeeAmounts(0.001 ether * uint256(type(uint16).max) + 1, 0);
+
+        vm.expectRevert(MembershipManager.InvalidAmount.selector);
+        membershipManagerInstance.setFeeAmounts(0, 0.001 ether * uint256(type(uint16).max) + 1);
+
+        vm.expectRevert(MembershipManager.InvalidAmount.selector);
+        membershipManagerInstance.setFeeSplits(10, 80);
+
+        vm.expectRevert(MembershipManager.InvalidAmount.selector);
+        membershipManagerInstance.setFeeSplits(21, 80);
+
+        vm.stopPrank();
+    }
+
+    function launch_validator() internal {
+        vm.deal(owner, 100 ether);
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0);
+
+        hoax(alice);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
+
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
+        vm.stopPrank();
+
+        bytes32[] memory proof = getWhitelistMerkleProof(9);
+
+        vm.prank(owner);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
+
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](2);
+
+        for (uint256 i = 0; i < newValidators.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                newValidators[i]
+            );
+            bytes32 root = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                32 ether
+            );
+            depositDataArray[i] = IStakingManager.DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+        }
+
+        bytes32 depositRoot = _getDepositRoot();
+        vm.prank(owner);
+        liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
+    }
 }
