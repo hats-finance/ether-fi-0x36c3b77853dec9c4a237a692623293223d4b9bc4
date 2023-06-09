@@ -68,4 +68,32 @@ contract MembershipNFTTest is TestSetup {
         membershipNftInstance.burn(alice, 0, 1);
         vm.stopPrank();
     }
+
+    function test_OwnershipChange() public {
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        membershipNftInstance.transferOwnership(bob);
+
+        vm.startPrank(owner);
+        membershipNftInstance.transferOwnership(alice);
+        assertEq(membershipNftInstance.pendingOwner(), alice);
+
+        vm.expectRevert("Ownable2Step: caller is not the new owner");
+        membershipNftInstance.acceptOwnership();
+
+        membershipNftInstance.transferOwnership(bob);
+        assertEq(membershipNftInstance.pendingOwner(), bob);
+        assertEq(membershipNftInstance.owner(), owner);
+
+        vm.stopPrank();
+
+        vm.prank(alice);
+        vm.expectRevert("Ownable2Step: caller is not the new owner");
+        membershipNftInstance.acceptOwnership();
+
+        vm.prank(bob);
+        membershipNftInstance.acceptOwnership();
+
+        assertEq(membershipNftInstance.owner(), bob);
+    }
 }
