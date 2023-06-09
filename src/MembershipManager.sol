@@ -664,11 +664,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
         uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
-        TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 monthInSeconds = 28 days;
         if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
-
         return true;
     }
 
