@@ -1,4 +1,5 @@
 -include .env
+export
 
 .PHONY: all test clean deploy-anvil extract-abi
 
