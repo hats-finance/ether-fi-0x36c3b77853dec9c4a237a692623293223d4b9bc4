@@ -250,11 +250,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @dev This function allows users to claim the staking rewards earned by a specific membership NFT.
     /// @param _tokenId The ID of the membership NFT.
     function claimStakingRewards(uint256 _tokenId) public {
-        TokenData storage tokenData = tokenData[_tokenId];
-        uint256 tier = tokenData.tier;
-        uint256 amount = (tierData[tier].rewardsGlobalIndex - tokenData.rewardsLocalIndex) * tokenDeposits[_tokenId].amounts / 1 ether;
+        TokenData storage token = tokenData[_tokenId];
+        uint256 tier = token.tier;
+        uint256 amount = (tierData[tier].rewardsGlobalIndex - token.rewardsLocalIndex) * tokenDeposits[_tokenId].amounts / 1 ether;
         _incrementTokenDeposit(_tokenId, amount, 0);
-        tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
+        token.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
     /// @notice Converts meTokens points to EAP tokens.
