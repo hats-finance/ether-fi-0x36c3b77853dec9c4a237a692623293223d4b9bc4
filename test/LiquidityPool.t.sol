@@ -290,6 +290,7 @@ contract LiquidityPoolTest is TestSetup {
 
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
+        vm.warp(1681075815 - 35 * 24 * 3600);   // Sun March ...
         vm.prank(owner);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
@@ -337,6 +338,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(alice);
         liquidityPoolInstance.sendExitRequests(newValidators);
 
+        vm.warp(1681075815 - 7 * 24 * 3600);   // Sun Apr 02 2023 21:30:15 UTC
         vm.prank(owner);
         liquidityPoolInstance.sendExitRequests(newValidators);
 
@@ -365,7 +367,7 @@ contract LiquidityPoolTest is TestSetup {
         managerInstance.fullWithdrawBatch(newValidators);
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 63 ether);
-        assertEq(address(liquidityPoolInstance).balance, 60.135937500000000000 ether);
+        assertEq(address(liquidityPoolInstance).balance, 60.045312500000000000 ether);
     }
 
     function test_SettersFailOnZeroAddress() public {
