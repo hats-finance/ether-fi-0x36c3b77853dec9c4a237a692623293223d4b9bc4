@@ -15,8 +15,6 @@ import "./interfaces/IeETH.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
-import "forge-std/console.sol";
-
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
