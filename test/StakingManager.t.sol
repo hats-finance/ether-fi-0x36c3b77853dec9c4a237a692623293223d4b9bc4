@@ -411,6 +411,7 @@ contract StakingManagerTest is TestSetup {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.deal(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 1000000000000 ether);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -448,11 +449,12 @@ contract StakingManagerTest is TestSetup {
         depositDataArray[0] = depositData;
 
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidIdArray, depositDataArray);
+
+        vm.expectRevert("Invalid phase transition");
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidIdArray, depositDataArray);
+
         vm.stopPrank();
 
-        vm.expectRevert("Incorrect phase");
-        hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidIdArray, depositDataArray);
     }
 
     function test_RegisterValidatorFailsIfContractPaused() public {
@@ -754,7 +756,7 @@ contract StakingManagerTest is TestSetup {
         );
 
         root = _getDepositRoot();
-        vm.expectRevert("Incorrect phase");
+        vm.expectRevert("Invalid phase transition");
         stakingManagerInstance.batchRegisterValidators(root, 
             bidIdArray,
             depositDataArray
@@ -902,6 +904,8 @@ contract StakingManagerTest is TestSetup {
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        vm.deal(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 10000 ether);
+
         uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
             1,
             0.1 ether
@@ -938,7 +942,7 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId, depositDataArray);
 
-        vm.expectRevert("Incorrect phase");
+        vm.expectRevert("Invalid phase transition");
         stakingManagerInstance.batchCancelDeposit(bidId);
     }
 

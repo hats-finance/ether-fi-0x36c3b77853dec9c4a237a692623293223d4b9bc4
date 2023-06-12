@@ -469,7 +469,7 @@ contract EtherFiNode is IEtherFiNode {
         // Transition rules
         if (_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED) {
             require(currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED, "Invalid phase transition");
-        } else if (_newPhase == VALIDATOR_PHASE.LIVE || currentPhase == VALIDATOR_PHASE.CANCELLED) {
+        } else if (_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED) {
             require(currentPhase == VALIDATOR_PHASE.STAKE_DEPOSITED, "Invalid phase transition");
         } else if (_newPhase == VALIDATOR_PHASE.EXITED) {
             require(currentPhase == VALIDATOR_PHASE.LIVE || currentPhase == VALIDATOR_PHASE.BEING_SLASHED, "Invalid phase transition");
@@ -478,8 +478,6 @@ contract EtherFiNode is IEtherFiNode {
         } else if (_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN) {
             require(currentPhase == VALIDATOR_PHASE.EXITED, "Invalid phase transition");
         }
-
-        return false;
     }
 
     //--------------------------------------------------------------------------------------
