@@ -52,7 +52,7 @@ contract EtherFiNode is IEtherFiNode {
     function setPhase(
         VALIDATOR_PHASE _phase
     ) external onlyEtherFiNodeManagerContract {
-        validPhaseTransition(_phase);
+        _validPhaseTransition(_phase);
         phase = _phase;
     }
 
@@ -85,7 +85,7 @@ contract EtherFiNode is IEtherFiNode {
         uint32 _exitTimestamp
     ) external onlyEtherFiNodeManagerContract {
         require(_exitTimestamp <= block.timestamp, "Invalid exit timesamp");
-        validPhaseTransition(VALIDATOR_PHASE.EXITED);
+        _validPhaseTransition(VALIDATOR_PHASE.EXITED);
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
     }
@@ -463,7 +463,11 @@ contract EtherFiNode is IEtherFiNode {
         return (operator, tnft, bnft, treasury);
     }
 
-    function validPhaseTransition(VALIDATOR_PHASE _newPhase) public view returns (bool) {
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function _validPhaseTransition(VALIDATOR_PHASE _newPhase) internal view returns (bool) {
         VALIDATOR_PHASE currentPhase = phase;
         
         // Transition rules
@@ -479,10 +483,6 @@ contract EtherFiNode is IEtherFiNode {
             require(currentPhase == VALIDATOR_PHASE.EXITED, "Invalid phase transition");
         }
     }
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
-    //--------------------------------------------------------------------------------------
     
     function _getClaimableVestedRewards() internal view returns (uint256) {
         if (vestedAuctionRewards == 0) {
