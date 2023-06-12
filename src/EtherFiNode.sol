@@ -6,6 +6,7 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
+import "forge-std/Test.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
@@ -51,6 +52,7 @@ contract EtherFiNode is IEtherFiNode {
     function setPhase(
         VALIDATOR_PHASE _phase
     ) external onlyEtherFiNodeManagerContract {
+        validPhaseTransition(_phase);
         phase = _phase;
     }
 
@@ -83,6 +85,7 @@ contract EtherFiNode is IEtherFiNode {
         uint32 _exitTimestamp
     ) external onlyEtherFiNodeManagerContract {
         require(_exitTimestamp <= block.timestamp, "Invalid exit timesamp");
+        validPhaseTransition(VALIDATOR_PHASE.EXITED);
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
     }
@@ -458,6 +461,25 @@ contract EtherFiNode is IEtherFiNode {
         uint256 bnft = (_totalAmount * _splits.bnft) / _scale;
         uint256 treasury = _totalAmount - (bnft + tnft + operator);
         return (operator, tnft, bnft, treasury);
+    }
+
+    function validPhaseTransition(VALIDATOR_PHASE _newPhase) public view returns (bool) {
+        VALIDATOR_PHASE currentPhase = phase;
+        
+        // Transition rules
+        if (_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED) {
+            require(currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED, "Invalid phase transition");
+        } else if (_newPhase == VALIDATOR_PHASE.LIVE || currentPhase == VALIDATOR_PHASE.CANCELLED) {
+            require(currentPhase == VALIDATOR_PHASE.STAKE_DEPOSITED, "Invalid phase transition");
+        } else if (_newPhase == VALIDATOR_PHASE.EXITED) {
+            require(currentPhase == VALIDATOR_PHASE.LIVE || currentPhase == VALIDATOR_PHASE.BEING_SLASHED, "Invalid phase transition");
+        } else if (_newPhase == VALIDATOR_PHASE.BEING_SLASHED) {
+            require(currentPhase == VALIDATOR_PHASE.LIVE, "Invalid phase transition");
+        } else if (_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN) {
+            require(currentPhase == VALIDATOR_PHASE.EXITED, "Invalid phase transition");
+        }
+
+        return false;
     }
 
     //--------------------------------------------------------------------------------------

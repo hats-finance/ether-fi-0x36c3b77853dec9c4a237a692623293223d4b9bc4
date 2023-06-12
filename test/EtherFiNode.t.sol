@@ -313,7 +313,7 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
 
         hoax(owner);
-        vm.expectRevert("Validator already exited");
+        vm.expectRevert("Invalid phase transition");
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
@@ -333,7 +333,7 @@ contract EtherFiNodeTest is TestSetup {
         hoax(owner);
         managerInstance.markBeingSlashed(validatorIds);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
-
+        console.log(1);
         hoax(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
@@ -440,7 +440,7 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
 
         hoax(owner);
-        vm.expectRevert("validator node is not live");
+        vm.expectRevert("Invalid phase transition");
         managerInstance.markBeingSlashed(bidId);
     }
 
