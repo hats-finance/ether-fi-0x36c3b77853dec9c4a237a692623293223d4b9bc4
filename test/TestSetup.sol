@@ -127,6 +127,7 @@ contract TestSetup is Test {
     address greg = vm.addr(7);
     address henry = vm.addr(8);
     address liquidityPool = vm.addr(9);
+    address shonee = vm.addr(1200);
 
     address[] public actors;
     uint256[] public whitelistIndices;
@@ -334,7 +335,8 @@ contract TestSetup is Test {
 
         whiteListedAddresses.push(keccak256(abi.encodePacked(owner)));
 
-        whiteListedAddresses.push(keccak256(abi.encodePacked(vm.addr(1200))));
+        //Needed a whitelisted address that hasn't been registered as a node operator
+        whiteListedAddresses.push(keccak256(abi.encodePacked(shonee)));
 
         root = merkle.getRoot(whiteListedAddresses);
         stakingManagerInstance.updateMerkleRoot(root);

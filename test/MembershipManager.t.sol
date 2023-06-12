@@ -9,6 +9,7 @@ contract MembershipManagerTest is TestSetup {
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
     bytes32[] public ownerProof;
+    bytes32[] public emptyProof;
 
     function setUp() public {
         setUpTests();
@@ -647,20 +648,28 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_WrapEthFailsIfNotCorrectlyEligible() public {
+        //NOTE: Test that wrappingETH fails in both scenarios listed below:
+            // 1. User is not whitelisted
+            // 2. User is whitelisted but not registered
+
+        //Giving 12 Ether to alice and henry
         vm.deal(henry, 12 ether);
         vm.deal(alice, 12 ether);
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 11);
 
         vm.prank(henry);
 
-        // Alice deposits 10 ETH and mints 10 membership points.
+        // Henry tries to mint but fails because he is not whitelisted.
         vm.expectRevert("User is not whitelisted");
-        uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, aliceProof);
+        uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, emptyProof);
 
-        vm.deal(vm.addr(1200), 12 ether);
-        vm.prank(vm.addr(1200));
+        //Giving 12 Ether to shonee
+        vm.deal(shonee, 12 ether);
+        vm.prank(shonee);
 
-        // Alice deposits 10 ETH and mints 10 membership points.
+        //This is the merkle proof for Shonee
+        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 11);
+
+        // Now shonee cant mint because she is not registered, even though she is whitelisted
         vm.expectRevert("User is not whitelisted");
         Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, proof);
     }
