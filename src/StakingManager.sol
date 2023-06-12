@@ -289,13 +289,13 @@ contract StakingManager is
         uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData
     ) internal {
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");        
-        
+        nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
+
         // Deposit to the Beacon Chain
         bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
         depositContractEth2.deposit{value: stakeAmount}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, _depositData.depositDataRoot);
 
         nodesManager.incrementNumberOfValidators(1);
-        nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
         nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         // Let valiadatorId = nftTokenId
