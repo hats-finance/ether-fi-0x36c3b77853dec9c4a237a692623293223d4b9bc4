@@ -23,6 +23,7 @@ import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
 import "./DepositContract.sol";
+import "./Attacker.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 
