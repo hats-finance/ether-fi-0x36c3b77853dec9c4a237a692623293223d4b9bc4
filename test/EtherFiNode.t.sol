@@ -333,7 +333,6 @@ contract EtherFiNodeTest is TestSetup {
         hoax(owner);
         managerInstance.markBeingSlashed(validatorIds);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
-        console.log(1);
         hoax(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);

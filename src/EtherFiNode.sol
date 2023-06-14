@@ -51,7 +51,7 @@ contract EtherFiNode is IEtherFiNode {
     function setPhase(
         VALIDATOR_PHASE _phase
     ) external onlyEtherFiNodeManagerContract {
-        _validPhaseTransition(_phase);
+        _validatePhaseTransition(_phase);
         phase = _phase;
     }
 
@@ -84,7 +84,7 @@ contract EtherFiNode is IEtherFiNode {
         uint32 _exitTimestamp
     ) external onlyEtherFiNodeManagerContract {
         require(_exitTimestamp <= block.timestamp, "Invalid exit timesamp");
-        _validPhaseTransition(VALIDATOR_PHASE.EXITED);
+        _validatePhaseTransition(VALIDATOR_PHASE.EXITED);
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
     }
@@ -466,7 +466,7 @@ contract EtherFiNode is IEtherFiNode {
     //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _validPhaseTransition(VALIDATOR_PHASE _newPhase) internal view returns (bool) {
+    function _validatePhaseTransition(VALIDATOR_PHASE _newPhase) internal view returns (bool) {
         VALIDATOR_PHASE currentPhase = phase;
         
         // Transition rules
