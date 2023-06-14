@@ -450,7 +450,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     function _withdraw(uint256 _tokenId, uint256 _amount) internal {
         if (tokenDeposits[_tokenId].amounts < _amount) revert InsufficientBalance();
-        uint256 share = liquidityPool.sharesForAmount(_amount);
+        uint256 share = liquidityPool.sharesForWithdrawalAmount(_amount);
         uint256 tier = tokenData[_tokenId].tier;
         _decrementTokenDeposit(_tokenId, _amount, 0);
         _decrementTierDeposit(tier, _amount, share);

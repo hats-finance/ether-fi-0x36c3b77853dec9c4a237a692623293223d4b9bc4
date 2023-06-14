@@ -91,7 +91,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
 
-        uint256 share = sharesForAmount(_amount);
+        uint256 share = sharesForWithdrawalAmount(_amount);
         eETH.burnShares(msg.sender, share);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
@@ -223,6 +223,23 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             return 0;
         }
         return (_amount * eETH.totalShares()) / totalPooledEther;
+    }
+
+    /// @dev withdrawal rounding errors favor the protocol by rounding up
+    function sharesForWithdrawalAmount(uint256 _amount) public view returns (uint256) {
+        uint256 totalPooledEther = getTotalPooledEther();
+        if (totalPooledEther == 0) {
+            return 0;
+        }
+
+        // ceiling division so rounding errors favor the protocol
+        uint256 numerator = _amount * eETH.totalShares();
+        uint256 result = numerator / totalPooledEther;
+        if (numerator % totalPooledEther != 0) {
+            result += 1;
+        }
+
+        return result;
     }
 
     function amountForShare(uint256 _share) public view returns (uint256) {
