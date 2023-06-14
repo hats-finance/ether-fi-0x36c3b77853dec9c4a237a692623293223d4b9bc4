@@ -63,15 +63,18 @@ contract LiquidityPool is Initializable, Ownable2StepUpgradeable, UUPSUpgradeabl
         eEthliquidStakingOpened = false;
     }
 
-    function deposit(address _user, bytes32[] calldata _merkleProof) public payable {
+    function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
         deposit(_user, _user, _merkleProof);
     }
 
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
-        stakingManager.verifyWhitelisted(_user, _merkleProof);
-        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
+        if(msg.sender == address(membershipManager)) {
+            isWhitelistedAndEligible(_user, _merkleProof);
+        } else {
+            isWhitelistedAndEligible(msg.sender, _merkleProof);
+        }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
 
         uint256 share = _sharesForDepositAmount(msg.value);
@@ -87,7 +90,7 @@ contract LiquidityPool is Initializable, Ownable2StepUpgradeable, UUPSUpgradeabl
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to the recipient
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
-    function withdraw(address _recipient, uint256 _amount) public whenLiquidStakingOpen {
+    function withdraw(address _recipient, uint256 _amount) external whenLiquidStakingOpen {
         require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
 
@@ -113,7 +116,7 @@ contract LiquidityPool is Initializable, Ownable2StepUpgradeable, UUPSUpgradeabl
         uint256 _numDeposits, 
         uint256[] calldata _candidateBidIds, 
         bytes32[] calldata _merkleProof
-        ) payable public onlyOwner returns (uint256[] memory) {
+        ) payable external onlyOwner returns (uint256[] memory) {
         require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
         require(address(this).balance >= 32 ether * _numDeposits, "Not enough balance");
 
@@ -133,13 +136,13 @@ contract LiquidityPool is Initializable, Ownable2StepUpgradeable, UUPSUpgradeabl
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData
-        ) public onlyOwner
+        ) external onlyOwner
     {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
     }
 
     /// @notice Send the exit reqeusts as the T-NFT holder
-    function sendExitRequests(uint256[] calldata _validatorIds) public onlyOwner {
+    function sendExitRequests(uint256[] calldata _validatorIds) external onlyOwner {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             nodesManager.sendExitRequest(validatorId);
@@ -189,6 +192,11 @@ contract LiquidityPool is Initializable, Ownable2StepUpgradeable, UUPSUpgradeabl
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
+        stakingManager.verifyWhitelisted(_user, _merkleProof);
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
+    }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;

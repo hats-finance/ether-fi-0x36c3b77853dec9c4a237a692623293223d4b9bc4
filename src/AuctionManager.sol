@@ -164,7 +164,7 @@ contract AuctionManager is
     /// @param _bidId the ID of the bid being removed from the auction (since it has been selected)
     function updateSelectedBidInformation(
         uint256 _bidId
-    ) public onlyStakingManagerContract {
+    ) external onlyStakingManagerContract {
         Bid storage bid = bids[_bidId];
         require(bid.isActive, "The bid is not active");
 
