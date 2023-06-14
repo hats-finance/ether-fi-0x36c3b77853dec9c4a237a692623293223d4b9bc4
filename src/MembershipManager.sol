@@ -114,8 +114,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, _snapshotEthAmount, _points));
         if (!MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf)) revert InvalidEAPRollover(); 
 
+        bytes32[] memory zeroProof;
         eapDepositProcessed[msg.sender] = true;
-        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), zeroProof);
 
         (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _snapshotEthAmount);
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
