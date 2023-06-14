@@ -30,37 +30,35 @@ contract TreasuryTest is TestSetup {
 
     function test_WithdrawWorks() public {
         assertEq(address(treasuryInstance).balance, 0);
-
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
         require(sent, "Failed to send Ether");
-
         assertEq(address(treasuryInstance).balance, 0.5 ether);
-
         vm.prank(owner);
         vm.expectRevert("the balance is lower than the requested amount");
         treasuryInstance.withdraw(0.5 ether + 1, owner);
 
+        uint256 ownerPrevBalance = address(owner).balance;
         vm.prank(owner);
         treasuryInstance.withdraw(0.5 ether, owner);
 
-        assertEq(address(owner).balance, 0.5 ether);
+        assertEq(address(owner).balance, ownerPrevBalance + 0.5 ether);
         assertEq(address(treasuryInstance).balance, 0);
     }
 
     function test_WithdrawPartialWorks() public {
         assertEq(address(treasuryInstance).balance, 0);
-
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 5 ether}("");
         require(sent, "Failed to send Ether");
 
         assertEq(address(treasuryInstance).balance, 5 ether);
 
+        uint256 ownerPrevBalance = address(owner).balance;
         vm.prank(owner);
         treasuryInstance.withdraw(0.5 ether, owner);
 
-        assertEq(address(owner).balance, 0.5 ether);
+        assertEq(address(owner).balance, ownerPrevBalance + 0.5 ether);
         assertEq(address(treasuryInstance).balance, 4.5 ether);
     }
 }
