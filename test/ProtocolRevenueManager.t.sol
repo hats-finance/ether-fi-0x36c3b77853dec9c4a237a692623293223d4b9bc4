@@ -347,35 +347,8 @@ contract ProtocolRevenueManagerTest is TestSetup {
             0.05 ether + 1
         );
 
-        // Expect no revenue if node is considered exited or withdraw
-        vm.prank(address(stakingManagerInstance));
-        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.EXITED);
-
-        vm.prank(address(managerInstance));
-        uint256 revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
-        assertEq(revenue, 0);
-
-        vm.prank(address(stakingManagerInstance));
-        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
-        vm.prank(address(managerInstance));
-        revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
-        assertEq(revenue, 0);
-
-        // set back to normal
-        vm.prank(address(stakingManagerInstance));
-        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.LIVE);
-
-        // 3
-        hoax(address(auctionInstance));
-        vm.expectRevert(
-            "addAuctionRevenue is already processed for the validator."
-        );
-        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(
-            bidId[0]
-        );
-
         hoax(address(managerInstance));
-        revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        uint256 revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
         assertEq(revenue, 0.05 ether);
         assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
@@ -385,6 +358,28 @@ contract ProtocolRevenueManagerTest is TestSetup {
         assertEq(revenue, 0 ether); // can't double dip
         assertEq(address(protocolRevenueManagerInstance).balance, 0 ether);
         assertEq(address(etherFiNode).balance, 0.1 ether);
+
+        // Expect no revenue if node is considered exited or withdraw
+        vm.prank(address(stakingManagerInstance));
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.EXITED);
+
+        vm.prank(address(managerInstance));
+        revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        assertEq(revenue, 0);
+
+        vm.prank(address(stakingManagerInstance));
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+        vm.prank(address(managerInstance));
+        revenue = protocolRevenueManagerInstance.distributeAuctionRevenue(bidId[0]);
+        assertEq(revenue, 0);
+
+        hoax(address(auctionInstance));
+        vm.expectRevert(
+            "addAuctionRevenue is already processed for the validator."
+        );
+        protocolRevenueManagerInstance.addAuctionRevenue{value: 1 ether}(
+            bidId[0]
+        );
     }
 
     function test_modifiers() public {

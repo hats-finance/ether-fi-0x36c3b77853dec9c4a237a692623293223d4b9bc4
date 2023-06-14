@@ -4,12 +4,33 @@ pragma solidity 0.8.13;
 import "./IEtherFiNodesManager.sol";
 
 interface IEtherFiNode {
-    // State Transition Diagram
-    // - NOT_INITIALIZED =>STAKE_DEPOSITED
-    // - STAKE_DEPOSITED => {LIVE, CANCELLED}
-    // - LIVE => {BEING_SLASHED, EXITED}
-    // - BEING_SLASHED => EXITED
-    // - EXITED => FULLY_WITHDRAWN
+    // State Transition Diagram for StateMachine contract:
+    //
+    //      NOT_INITIALIZED
+    //              |
+    //              ↓
+    //      STAKE_DEPOSITED
+    //           /      \
+    //          /        \
+    //         ↓          ↓
+    //         LIVE     CANCELLED
+    //         |    \
+    //         |     \
+    //         |      ↓
+    //         |     BEING_SLASHED
+    //         |      /
+    //         |     /
+    //         ↓    ↓
+    //         EXITED
+    //           |
+    //           ↓
+    //      FULLY_WITHDRAWN
+    // Transitions are only allowed as directed above.
+    // For instance, a transition from STAKE_DEPOSITED to either LIVE or CANCELLED is allowed,
+    // but a transition from STAKE_DEPOSITED to NOT_INITIALIZED, BEING_SLASHED, or EXITED is not.
+    //
+    // All phase transitions should be made through the setPhase function,
+    // which validates transitions based on these rules.
     enum VALIDATOR_PHASE {
         NOT_INITIALIZED,
         STAKE_DEPOSITED,

@@ -303,10 +303,6 @@ contract EtherFiNodesManager is
     /// @param _validatorId the validator Id to withdraw from
     function fullWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused{
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        require(
-            IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED,
-            "validator node is not exited"
-        );
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
             = getFullWithdrawalPayouts(_validatorId);
@@ -329,10 +325,6 @@ contract EtherFiNodesManager is
     ) external whenNotPaused onlyOwner {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             address etherfiNode = etherfiNodeAddress[_validatorIds[i]];
-            require(
-                IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE,
-                "validator node is not live"
-            );
             IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
         }
     }
@@ -443,11 +435,6 @@ contract EtherFiNodesManager is
     /// @param _exitTimestamp the exit timestamp
     function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        require(
-            IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE
-             || IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED,
-            "Validator already exited"
-        );
 
         // distribute the protocol reward from the ProtocolRevenueMgr contrac to the validator's etherfi node contract
         uint256 amount = protocolRevenueManager.distributeAuctionRevenue(_validatorId);
