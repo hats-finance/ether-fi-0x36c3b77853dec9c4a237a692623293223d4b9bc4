@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./interfaces/IAuctionManager.sol";
-import "./interfaces/INodeOperatorManager.sol";
-import "./interfaces/IProtocolRevenueManager.sol";
+import "../src/interfaces/IAuctionManager.sol";
+import "../src/interfaces/INodeOperatorManager.sol";
+import "../src/interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract AuctionManager is
+contract AuctionManagerNon2StepOwnable is
     Initializable,
     IAuctionManager,
     PausableUpgradeable,
-    Ownable2StepUpgradeable,
+    OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable
 {
@@ -315,12 +315,6 @@ contract AuctionManager is
     ) external onlyOwner {
         require(_newAmount < minBidAmount && _newAmount > 0, "Invalid Amount");
         whitelistBidAmount = _newAmount;
-    }
-
-    function updateNodeOperatorManager(address _address) external onlyOwner {
-        nodeOperatorManager = INodeOperatorManager(
-            _address
-        );
     }
 
     //--------------------------------------------------------------------------------------

@@ -28,10 +28,10 @@ contract DeployNodeOperatorManagerScript is Script {
         nodeOperatorManagerInstance.initialize();
 
         AuctionManager auctionManagerInstance = AuctionManager(auctionManagerProxyAddress);
-        AuctionManagerV2 auctionManagerV2Implementation = new AuctionManagerV2();
+        AuctionManager auctionManagerV2Implementation = new AuctionManager();
 
         auctionManagerInstance.upgradeTo(address(auctionManagerV2Implementation));
-        AuctionManagerV2 auctionManagerV2Instance = AuctionManagerV2(auctionManagerProxyAddress);
+        AuctionManager auctionManagerV2Instance = AuctionManager(auctionManagerProxyAddress);
 
         auctionManagerV2Instance.updateNodeOperatorManager(address(nodeOperatorManagerInstance));    
             

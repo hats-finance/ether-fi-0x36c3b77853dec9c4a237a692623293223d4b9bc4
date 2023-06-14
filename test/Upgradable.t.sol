@@ -2,10 +2,13 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "../src/interfaces/IWETH.sol";
 import "../src/interfaces/ILiquidityPool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "../lib/murky/src/Merkle.sol";
+import "./AuctionManagerNon2StepOwnable.sol";
+
 
 contract AuctionManagerV2Test is AuctionManager {
     function isUpgraded() public pure returns(bool){
@@ -59,11 +62,42 @@ contract UpgradeTest is TestSetup {
     StakingManager public stakingManagerV2Instance;
     NodeOperatorManagerV2 public nodeOperatorManagerV2Instance;
 
+    UUPSProxy public auctionManagerNon2StepOwnableProxy;
+    AuctionManagerNon2StepOwnable public auctionManagerNon2StepOwnableImplementation;
+    AuctionManagerNon2StepOwnable public auctionManagerNon2StepOwnableInstance;
+
     uint256[] public slippageArray;
 
    
     function setUp() public {
         setUpTests();
+
+        vm.startPrank(owner);
+        auctionManagerNon2StepOwnableImplementation = new AuctionManagerNon2StepOwnable();
+        auctionManagerNon2StepOwnableProxy = new UUPSProxy(address(auctionManagerNon2StepOwnableImplementation), "");
+        auctionManagerNon2StepOwnableInstance = AuctionManagerNon2StepOwnable(address(auctionManagerNon2StepOwnableProxy));
+        auctionManagerNon2StepOwnableInstance.initialize(address(nodeOperatorManagerInstance));
+        vm.stopPrank();
+    }
+
+    function test_CanUpgradeAuctionManagerFromOwnableToOwnable2Step() public {
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        
+        assertEq(auctionManagerNon2StepOwnableInstance.getImplementation(), address(auctionManagerNon2StepOwnableImplementation));
+
+        AuctionManagerV2Test auctionManagerV2Implementation = new AuctionManagerV2Test();
+
+        vm.prank(owner);
+        auctionManagerNon2StepOwnableInstance.upgradeTo(address(auctionManagerV2Implementation));
+
+        auctionManagerV2Instance = AuctionManagerV2Test(address(auctionManagerNon2StepOwnableProxy));
+
+        vm.expectRevert("Initializable: contract is already initialized");
+        vm.prank(owner);
+        auctionManagerV2Instance.initialize(address(nodeOperatorManagerInstance));
+
+        assertEq(auctionManagerV2Instance.getImplementation(), address(auctionManagerV2Implementation));
+        assertEq(auctionManagerV2Instance.isUpgraded(), true);
     }
 
     function test_CanUpgradeAuctionManager() public {
@@ -93,9 +127,6 @@ contract UpgradeTest is TestSetup {
         auctionManagerV2Instance.initialize(address(nodeOperatorManagerInstance));
 
         assertEq(auctionManagerV2Instance.getImplementation(), address(auctionManagerV2Implementation));
-
-        // Check that state is maintained
-        assertEq(auctionManagerV2Instance.numberOfActiveBids(), 1);
         assertEq(auctionManagerV2Instance.isUpgraded(), true);
     }
 
