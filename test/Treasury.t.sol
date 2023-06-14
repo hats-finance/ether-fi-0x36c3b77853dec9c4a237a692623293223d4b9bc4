@@ -35,17 +35,17 @@ contract TreasuryTest is TestSetup {
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         (bool sent, ) = address(treasuryInstance).call{value: 0.5 ether}("");
         require(sent, "Failed to send Ether");
-
         assertEq(address(treasuryInstance).balance, 0.5 ether);
-
         vm.prank(owner);
         vm.expectRevert("the balance is lower than the requested amount");
         treasuryInstance.withdraw(0.5 ether + 1, owner);
 
+        uint256 ownerPrevBalance = address(owner).balance;
         vm.prank(owner);
         treasuryInstance.withdraw(0.5 ether, owner);
 
         assertEq(address(owner).balance, ownerbalanceBeforeWithdrawal + 0.5 ether);
+
         assertEq(address(treasuryInstance).balance, 0);
     }
 
@@ -59,6 +59,7 @@ contract TreasuryTest is TestSetup {
 
         assertEq(address(treasuryInstance).balance, 5 ether);
 
+        uint256 ownerPrevBalance = address(owner).balance;
         vm.prank(owner);
         treasuryInstance.withdraw(0.5 ether, owner);
 
