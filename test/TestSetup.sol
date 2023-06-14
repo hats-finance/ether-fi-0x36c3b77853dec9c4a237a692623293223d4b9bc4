@@ -334,7 +334,6 @@ contract TestSetup is Test {
         whiteListedAddresses.push(keccak256(abi.encodePacked(address(liquidityPoolInstance))));
 
         whiteListedAddresses.push(keccak256(abi.encodePacked(owner)));
-
         //Needed a whitelisted address that hasn't been registered as a node operator
         whiteListedAddresses.push(keccak256(abi.encodePacked(shonee)));
 

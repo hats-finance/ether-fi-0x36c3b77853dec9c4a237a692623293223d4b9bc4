@@ -7,6 +7,7 @@ import "forge-std/console2.sol";
 contract MembershipManagerTest is TestSetup {
 
     bytes32[] public aliceProof;
+    bytes32[] public shoneeProof;
     bytes32[] public bobProof;
     bytes32[] public ownerProof;
     bytes32[] public emptyProof;
@@ -24,6 +25,7 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
+        shoneeProof = merkle.getProof(whiteListedAddresses, 11);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
     }
@@ -656,6 +658,9 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(henry, 12 ether);
         vm.deal(alice, 12 ether);
 
+        vm.prank(owner);
+        stakingManagerInstance.enableWhitelist();
+
         vm.prank(henry);
 
         // Henry tries to mint but fails because he is not whitelisted.
@@ -664,14 +669,14 @@ contract MembershipManagerTest is TestSetup {
 
         //Giving 12 Ether to shonee
         vm.deal(shonee, 12 ether);
-        vm.prank(shonee);
+        vm.startPrank(shonee);
 
         //This is the merkle proof for Shonee
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 11);
 
         // Now shonee cant mint because she is not registered, even though she is whitelisted
-        vm.expectRevert("User is not whitelisted");
-        Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, proof);
+        vm.expectRevert("User is not eligible to participate");
+        Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, shoneeProof);
     }
 
     function test_UpdatingPointsGrowthRate() public {

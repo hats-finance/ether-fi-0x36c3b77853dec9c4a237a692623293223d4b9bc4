@@ -69,10 +69,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
-        if(msg.sender != address(membershipManager)) {
-            isWhitelistedAndEligible(msg.sender, _merkleProof);
-        } else {
+        if(msg.sender == address(membershipManager)) {
             isWhitelistedAndEligible(_user, _merkleProof);
+        } else {
+            isWhitelistedAndEligible(msg.sender, _merkleProof);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
 
@@ -194,7 +194,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
         stakingManager.verifyWhitelisted(_user, _merkleProof);
-        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not whitelisted");
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
     }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
