@@ -470,16 +470,16 @@ contract EtherFiNode is IEtherFiNode {
         VALIDATOR_PHASE currentPhase = phase;
         
         // Transition rules
-        if (_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED) {
-            require(currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED, "Invalid phase transition");
-        } else if (_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED) {
-            require(currentPhase == VALIDATOR_PHASE.STAKE_DEPOSITED, "Invalid phase transition");
-        } else if (_newPhase == VALIDATOR_PHASE.EXITED) {
-            require(currentPhase == VALIDATOR_PHASE.LIVE || currentPhase == VALIDATOR_PHASE.BEING_SLASHED, "Invalid phase transition");
-        } else if (_newPhase == VALIDATOR_PHASE.BEING_SLASHED) {
-            require(currentPhase == VALIDATOR_PHASE.LIVE, "Invalid phase transition");
-        } else if (_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN) {
-            require(currentPhase == VALIDATOR_PHASE.EXITED, "Invalid phase transition");
+        if (currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED) {
+            require(_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED, "Invalid phase transition");
+        } else if (currentPhase == VALIDATOR_PHASE.STAKE_DEPOSITED) {
+            require(_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED, "Invalid phase transition");
+        } else if (currentPhase == VALIDATOR_PHASE.LIVE) {
+            require(_newPhase == VALIDATOR_PHASE.EXITED || _newPhase == VALIDATOR_PHASE.BEING_SLASHED, "Invalid phase transition");
+        } else if (currentPhase == VALIDATOR_PHASE.BEING_SLASHED) {
+            require(_newPhase == VALIDATOR_PHASE.EXITED, "Invalid phase transition");
+        } else if (currentPhase == VALIDATOR_PHASE.EXITED) {
+            require(_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN, "Invalid phase transition");
         }
     }
     

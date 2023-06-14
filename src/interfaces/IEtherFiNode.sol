@@ -13,17 +13,18 @@ interface IEtherFiNode {
     //           /      \
     //          /        \
     //         ↓          ↓
-    //        LIVE     CANCELLED
-    //         | \
-    //         |  \
-    //         |   ↓
-    //         |  EXITED
-    //         ↓
-    //   BEING_SLASHED
-    //         |
-    //         ↓
-    //      EXITED
-    //
+    //         LIVE     CANCELLED
+    //         |    \
+    //         |     \
+    //         |      ↓
+    //         |     BEING_SLASHED
+    //         |      /
+    //         |     /
+    //         ↓    ↓
+    //         EXITED
+    //           |
+    //           ↓
+    //      FULLY_WITHDRAWN
     // Transitions are only allowed as directed above.
     // For instance, a transition from STAKE_DEPOSITED to either LIVE or CANCELLED is allowed,
     // but a transition from STAKE_DEPOSITED to NOT_INITIALIZED, BEING_SLASHED, or EXITED is not.
