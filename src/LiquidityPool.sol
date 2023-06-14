@@ -62,7 +62,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         eEthliquidStakingOpened = false;
     }
 
-    function deposit(address _user, bytes32[] calldata _merkleProof) public payable {
+    function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
         deposit(_user, _user, _merkleProof);
     }
 
@@ -89,7 +89,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to the recipient
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
-    function withdraw(address _recipient, uint256 _amount) public whenLiquidStakingOpen {
+    function withdraw(address _recipient, uint256 _amount) external whenLiquidStakingOpen {
         require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
 
@@ -115,7 +115,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 _numDeposits, 
         uint256[] calldata _candidateBidIds, 
         bytes32[] calldata _merkleProof
-        ) payable public onlyOwner returns (uint256[] memory) {
+        ) payable external onlyOwner returns (uint256[] memory) {
         require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
         require(address(this).balance >= 32 ether * _numDeposits, "Not enough balance");
 
@@ -135,13 +135,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData
-        ) public onlyOwner
+        ) external onlyOwner
     {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
     }
 
     /// @notice Send the exit reqeusts as the T-NFT holder
-    function sendExitRequests(uint256[] calldata _validatorIds) public onlyOwner {
+    function sendExitRequests(uint256[] calldata _validatorIds) external onlyOwner {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             nodesManager.sendExitRequest(validatorId);
