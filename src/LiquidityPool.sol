@@ -16,7 +16,6 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 
-
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -70,8 +69,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
-        stakingManager.verifyWhitelisted(_user, _merkleProof);
-        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
+        if(msg.sender == address(membershipManager)) {
+            isWhitelistedAndEligible(_user, _merkleProof);
+        } else {
+            isWhitelistedAndEligible(msg.sender, _merkleProof);
+        }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
 
         uint256 share = _sharesForDepositAmount(msg.value);
@@ -189,6 +191,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
+        stakingManager.verifyWhitelisted(_user, _merkleProof);
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
+    }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;

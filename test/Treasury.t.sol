@@ -64,7 +64,6 @@ contract TreasuryTest is TestSetup {
         treasuryInstance.withdraw(0.5 ether, owner);
 
         assertEq(address(owner).balance, ownerbalanceBeforeWithdrawal + 0.5 ether);
-
         assertEq(address(treasuryInstance).balance, 4.5 ether);
     }
 }
