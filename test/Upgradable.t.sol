@@ -127,6 +127,7 @@ contract UpgradeTest is TestSetup {
         auctionManagerV2Instance.initialize(address(nodeOperatorManagerInstance));
 
         assertEq(auctionManagerV2Instance.getImplementation(), address(auctionManagerV2Implementation));
+        assertEq(auctionManagerV2Instance.numberOfActiveBids(), 1);
         assertEq(auctionManagerV2Instance.isUpgraded(), true);
     }
 
