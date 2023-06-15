@@ -234,7 +234,7 @@ contract SmallScenariosTest is TestSetup {
 
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.333333333333333333 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.166666666666666665 ether);
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 0.000000000000000001 ether);
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 0 ether);
     }
 
     /*------ AUCTION / STAKER FLOW ------*/
