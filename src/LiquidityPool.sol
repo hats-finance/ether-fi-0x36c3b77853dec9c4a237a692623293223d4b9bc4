@@ -16,7 +16,6 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 
-
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -234,12 +233,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         // ceiling division so rounding errors favor the protocol
         uint256 numerator = _amount * eETH.totalShares();
-        uint256 result = numerator / totalPooledEther;
-        if (numerator % totalPooledEther != 0) {
-            result += 1;
-        }
-
-        return result;
+        return (numerator + totalPooledEther - 1) / totalPooledEther;
     }
 
     function amountForShare(uint256 _share) public view returns (uint256) {
