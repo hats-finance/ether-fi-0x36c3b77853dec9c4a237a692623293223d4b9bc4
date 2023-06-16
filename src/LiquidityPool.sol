@@ -41,6 +41,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, address recipient, uint256 amount);
 
+    error InvalidAmount();
+
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
@@ -52,6 +54,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     receive() external payable {
         require(totalValueOutOfLp >= msg.value, "rebase first before collecting the rewards");
+        if (msg.value > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp -= uint128(msg.value);
         totalValueInLp += uint128(msg.value);
     }
@@ -75,6 +78,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager.verifyWhitelisted(_user, _merkleProof);
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
+        if (msg.value > type(uint128).max) revert InvalidAmount();
 
         totalValueInLp += uint128(msg.value);
         uint256 share = _sharesForDepositAmount(msg.value);
@@ -93,6 +97,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function withdraw(address _recipient, uint256 _amount) external whenLiquidStakingOpen {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
+        if (_amount > type(uint128).max) revert InvalidAmount();
 
         uint256 share = sharesForAmount(_amount);
         eETH.burnShares(msg.sender, share);
@@ -123,6 +128,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(totalValueInLp + msg.value >= 32 ether * _numDeposits, "Not enough balance");
 
         uint256 amountFromLp = 30 ether * _numDeposits;
+        if (amountFromLp > type(uint128).max) revert InvalidAmount();
+
         totalValueOutOfLp += uint128(amountFromLp);
         totalValueInLp -= uint128(amountFromLp);
 
@@ -170,6 +177,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
     function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyOwner {
         require(address(this).balance == _balanceInLp, "the LP balance has changed.");
+        if (_tvl > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp = uint128(_tvl - _balanceInLp);
         totalValueInLp = uint128(_balanceInLp);
     }

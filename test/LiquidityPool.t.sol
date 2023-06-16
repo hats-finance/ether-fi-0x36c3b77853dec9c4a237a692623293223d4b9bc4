@@ -441,4 +441,15 @@ contract LiquidityPoolTest is TestSetup {
         vm.expectRevert("Liquid staking functions are closed");
         liquidityPoolInstance.withdraw(alice, 1 ether);
     }
+
+    function test_fallback() public {
+        vm.prank(owner);
+        liquidityPoolInstance.rebase(3 ether, 0 ether);
+
+        vm.deal(alice, 3 ether);
+        vm.prank(alice);
+        (bool sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
+        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+        assertEq(sent, true);
+    }
 }
