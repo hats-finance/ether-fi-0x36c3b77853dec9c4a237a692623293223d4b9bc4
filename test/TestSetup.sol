@@ -23,6 +23,7 @@ import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
 import "./DepositContract.sol";
+import "./Attacker.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 
@@ -510,6 +511,7 @@ contract TestSetup is Test {
     function _transferTo(address _recipient, uint256 _amount) internal {
         vm.deal(owner, address(owner).balance + _amount);
         vm.prank(owner);
-        payable(_recipient).call{value: _amount}("");
+        (bool sent, ) = payable(_recipient).call{value: _amount}("");
+        assertEq(sent, true);
     }
 }

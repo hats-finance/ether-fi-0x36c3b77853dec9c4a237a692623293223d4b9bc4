@@ -168,7 +168,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @param _amount The amount of membership tokens to unwrap.
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external {
         _requireTokenOwner(_tokenId);
-        if (address(liquidityPool).balance < _amount) revert InsufficientLiquidity();
+        if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);

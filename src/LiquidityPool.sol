@@ -27,7 +27,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IRegulationsManager public regulationsManager;
     IMembershipManager public membershipManager;
 
-    uint256 public totalValueOutOfLp;
+    uint128 public totalValueOutOfLp;
+    uint128 public totalValueInLp;
     bool public eEthliquidStakingOpened;
 
     uint256[21] __gap;
@@ -38,6 +39,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, address recipient, uint256 amount);
+
+    error InvalidAmount();
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -50,7 +53,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     receive() external payable {
         require(totalValueOutOfLp >= msg.value, "rebase first before collecting the rewards");
-        totalValueOutOfLp -= msg.value;
+        if (msg.value > type(uint128).max) revert InvalidAmount();
+        totalValueOutOfLp -= uint128(msg.value);
+        totalValueInLp += uint128(msg.value);
     }
 
     function initialize(address _regulationsManager) external initializer {
@@ -75,7 +80,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             isWhitelistedAndEligible(msg.sender, _merkleProof);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
+        if (msg.value > type(uint128).max) revert InvalidAmount();
 
+        totalValueInLp += uint128(msg.value);
         uint256 share = _sharesForDepositAmount(msg.value);
         if (share == 0) {
             share = msg.value;
@@ -90,11 +97,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
     function withdraw(address _recipient, uint256 _amount) external whenLiquidStakingOpen {
-        require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
+        require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
+        if (_amount > type(uint128).max) revert InvalidAmount();
 
         uint256 share = sharesForWithdrawalAmount(_amount);
         eETH.burnShares(msg.sender, share);
+
+        totalValueInLp -= uint128(_amount);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "Failed to send Ether");
@@ -117,14 +127,20 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32[] calldata _merkleProof
         ) payable external onlyOwner returns (uint256[] memory) {
         require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
-        require(address(this).balance >= 32 ether * _numDeposits, "Not enough balance");
+        require(totalValueInLp + msg.value >= 32 ether * _numDeposits, "Not enough balance");
 
-        totalValueOutOfLp += 30 ether * _numDeposits;
-        uint256 amount = 32 ether * _numDeposits;
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, _merkleProof);
+        uint256 amountFromLp = 30 ether * _numDeposits;
+        if (amountFromLp > type(uint128).max) revert InvalidAmount();
+
+        totalValueOutOfLp += uint128(amountFromLp);
+        totalValueInLp -= uint128(amountFromLp);
+
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numDeposits}(_candidateBidIds, _merkleProof);
 
         uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
-        totalValueOutOfLp += returnAmount;
+        totalValueOutOfLp += uint128(returnAmount);
+        totalValueInLp -= uint128(returnAmount);
+
         (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
         require(sent, "Failed to send Ether");
 
@@ -163,7 +179,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
     function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyOwner {
         require(address(this).balance == _balanceInLp, "the LP balance has changed.");
-        totalValueOutOfLp = _tvl - _balanceInLp;
+        if (_tvl > type(uint128).max) revert InvalidAmount();
+        totalValueOutOfLp = uint128(_tvl - _balanceInLp);
+        totalValueInLp = uint128(_balanceInLp);
     }
 
     /// @notice sets the contract address for eETH
@@ -221,7 +239,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function getTotalPooledEther() public view returns (uint256) {
-        return totalValueOutOfLp + address(this).balance;
+        return totalValueOutOfLp + totalValueInLp;
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {

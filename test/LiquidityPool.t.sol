@@ -94,7 +94,11 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_WithdrawLiquidityPoolFails() public {
-        vm.deal(address(liquidityPoolInstance), 3 ether);
+        vm.startPrank(owner);
+        liquidityPoolInstance.rebase(3 ether, 0 ether);
+        vm.stopPrank();
+        _transferTo(address(liquidityPoolInstance), 3 ether);
+
         startHoax(alice);
         vm.expectRevert("Not enough eETH");
         liquidityPoolInstance.withdraw(alice, 2 ether);
@@ -141,9 +145,11 @@ contract LiquidityPoolTest is TestSetup {
         vm.expectRevert("Not enough balance");
         liquidityPoolInstance.batchDepositWithBidIds{value: 2 ether}(1, bidIds, proof);
 
+
+        liquidityPoolInstance.rebase(70 ether, 0 ether);
         vm.stopPrank();
 
-        vm.deal(address(liquidityPoolInstance), 70 ether);
+        _transferTo(address(liquidityPoolInstance), 70 ether);
 
         vm.startPrank(owner);
         stakingManagerInstance.enableWhitelist();
@@ -157,6 +163,29 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(address(owner).balance, 2 ether);
         assertEq(newValidators.length, 1);
         assertEq(newValidators[0], 1);
+    }
+
+    function test_selfdestruct() public {
+        vm.deal(alice, 3 ether);
+        vm.startPrank(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        vm.stopPrank();
+
+        assertEq(alice.balance, 1 ether);
+        assertEq(address(liquidityPoolInstance).balance, 2 ether);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+
+        Attacker attacker = new Attacker(address(liquidityPoolInstance));
+        _transferTo(address(attacker), 1 ether);
+        attacker.attack();
+
+        // While the 'selfdestruct' attack can change the LP contract's balance,
+        // it does not affect the critical logics for determining ETH amount per share
+        // so, the balance of Alice remains the same as 2 ether.
+        assertEq(alice.balance, 1 ether);
+        assertEq(address(liquidityPoolInstance).balance, 3 ether);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
     }
 
     function test_WithdrawLiquidityPoolAccrueStakingRewardsWithoutPartialWithdrawal() public {
@@ -411,5 +440,16 @@ contract LiquidityPoolTest is TestSetup {
         hoax(alice);
         vm.expectRevert("Liquid staking functions are closed");
         liquidityPoolInstance.withdraw(alice, 1 ether);
+    }
+
+    function test_fallback() public {
+        vm.prank(owner);
+        liquidityPoolInstance.rebase(3 ether, 0 ether);
+
+        vm.deal(alice, 3 ether);
+        vm.prank(alice);
+        (bool sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
+        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+        assertEq(sent, true);
     }
 }
