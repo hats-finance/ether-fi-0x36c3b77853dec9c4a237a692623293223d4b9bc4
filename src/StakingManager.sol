@@ -147,8 +147,8 @@ contract StakingManager is
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);    
-        }  
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
+        }
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain

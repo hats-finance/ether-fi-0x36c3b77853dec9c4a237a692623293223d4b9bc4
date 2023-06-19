@@ -744,7 +744,13 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.balanceOf(bob, aliceToken), 0);
 
         vm.startPrank(alice);
+        // fails because token is not locked
+        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
         membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+
+        membershipNftInstance.lockToken(aliceToken, 100);
+        membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+
         vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 28 * kwei);

@@ -3,8 +3,10 @@ pragma solidity 0.8.13;
 
 interface IMembershipNFT {
     function initialize(string calldata _metadataURI) external;
+    function tokenLocks(uint256 _tokenId) external returns (uint256);
     function mint(address _to, uint256 _amount) external returns (uint256);
     function burn(address _from, uint256 _tokenId, uint256 _amount) external;
+    function lockToken(uint256 _tokenId, uint256 _blocks) external;
     function setMembershipManager(address _address) external;
     function valueOf(uint256 _tokenId) external view returns (uint256);
     function loyaltyPointsOf(uint256 _tokenId) external view returns (uint40);
