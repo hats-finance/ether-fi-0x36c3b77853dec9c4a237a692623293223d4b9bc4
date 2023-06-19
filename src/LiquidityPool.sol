@@ -137,13 +137,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numDeposits}(_candidateBidIds, _merkleProof);
 
-        uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
-        totalValueOutOfLp += uint128(returnAmount);
-        totalValueInLp -= uint128(returnAmount);
+        if (_numDeposits > newValidators.length) {
+            uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
+            totalValueOutOfLp += uint128(returnAmount);
+            totalValueInLp -= uint128(returnAmount);
 
-        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
-        require(sent, "Failed to send Ether");
-
+            (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+            require(sent, "Failed to send Ether");
+        }
+        
         return newValidators;
     }
 
