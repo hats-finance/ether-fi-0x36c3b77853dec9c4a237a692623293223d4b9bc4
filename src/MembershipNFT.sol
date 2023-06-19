@@ -16,7 +16,11 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     string private contractMetadataURI; /// @dev opensea contract-level metadata
     uint256 public nextMintID;
 
-    uint256[10] public gap;
+    mapping(uint256 => uint256) public tokenLocks;
+    event TokenLocked(uint256 indexed _tokenId, uint256 until);
+
+    uint256[9] public gap;
+
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -40,6 +44,27 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         _burn(_from, _tokenId, _amount);
     }
 
+    error OnlyTokenOwner();
+    error RequireTokenUnlocked();
+    error InvalidLock();
+
+    /// @notice locks a token for the specified number of blocks preventing withdrawing or burning.
+    ///         A token must be locked for it to be transferred. A user should ONLY purchase a token
+    ///         if the remaining time on the lock is safely above the number of blocks the user expects
+    ///         the TX to be confirmed in.
+    /// @dev lock will expire immediately once the token is transferred
+    /// @param _tokenId ID of the token to lock
+    /// @param _blocks how many blocks to lock the token for
+    function lockToken(uint256 _tokenId, uint256 _blocks) external {
+        if (balanceOfUser(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
+        if (block.timestamp < tokenLocks[_tokenId]) revert RequireTokenUnlocked();
+        if (_blocks == 0) revert InvalidLock();
+
+        uint256 until = block.timestamp + _blocks;
+        tokenLocks[_tokenId] = block.timestamp + _blocks;
+        emit TokenLocked(_tokenId, until);
+    }
+
     //--------------------------------------------------------------------------------------
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -54,11 +79,48 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
+
+    error RequireTokenLocked();
+    function _beforeTokenTransfer(
+        address _operator,
+        address _from,
+        address _to,
+        uint256[] memory _ids,
+        uint256[] memory _amounts,
+        bytes memory _data
+    ) internal override {
+
+        // exempt mints/burns from check
+        if (_from == address(0x00) || _to == address(0x00)) {
+            return;
+        }
+
+        // prevent transfers if token is not locked
+        for (uint256 x; x < _ids.length; ++x) {
+            if (block.timestamp >= tokenLocks[_ids[x]]) revert RequireTokenLocked();
+        }
+    }
+
+    function _afterTokenTransfer(
+        address _operator,
+        address _from,
+        address _to,
+        uint256[] memory _ids,
+        uint256[] memory _amounts,
+        bytes memory _data
+    ) internal override {
+
+        // reset locks so new owner has control
+        for (uint256 x; x < _ids.length; ++x) {
+            tokenLocks[_ids[x]] = 0;
+        }
+    }
+
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function balanceOfUser(address _user, uint256 _id) external returns (uint256) {
+    function balanceOfUser(address _user, uint256 _id) public returns (uint256) {
         return balanceOf(_user, _id);
     }
 
@@ -184,5 +246,3 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
 }
-
-
