@@ -100,6 +100,9 @@ contract NFTExchangeTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
         assertEq(address(liquidityPoolInstance).balance, 0);
         assertEq(address(owner).balance, ownerBalance + 30 ether);
+
+        // Now after all of the trades, disapprove the token transfer
+        membershipNftInstance.setApprovalForAll(address(nftExchangeInstance), false);
     }
 
     function test_delist() public {

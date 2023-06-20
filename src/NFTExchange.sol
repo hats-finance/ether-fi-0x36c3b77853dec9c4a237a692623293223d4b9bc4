@@ -56,6 +56,7 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             uint256 tokenId = _mNftTokenIds[i];
             address reservedBuyer = _reservedBuyers[i];
             reservedBuyers[tokenId] = reservedBuyer;
+
             membershipNft.safeTransferFrom(msg.sender, address(this), tokenId, 1, "");
         }
     }
@@ -72,9 +73,10 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             uint256 mNftTokenId = _mNftTokenIds[i];
             require(reservedBuyers[mNftTokenId] != address(0), "Token is not currently listed for sale");
             require(msg.sender == reservedBuyers[mNftTokenId], "You are not the reserved buyer");
+            reservedBuyers[mNftTokenId] = address(0);
+
             tNft.transferFrom(msg.sender, owner(), tnftTokenId);
             membershipNft.safeTransferFrom(address(this), msg.sender, mNftTokenId, 1, "");
-            reservedBuyers[mNftTokenId] = address(0);
         }
     }
 
@@ -86,8 +88,9 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         for (uint256 i = 0; i < _mNftTokenIds.length; i++) {
             uint256 tokenId = _mNftTokenIds[i];
             require(reservedBuyers[tokenId] != address(0), "Token is not currently listed for sale");
-            membershipNft.safeTransferFrom(address(this), owner(), tokenId, 1, "");
             reservedBuyers[tokenId] = address(0);
+
+            membershipNft.safeTransferFrom(address(this), owner(), tokenId, 1, "");
         }
     }
 
