@@ -57,11 +57,11 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     /// @param _blocks how many blocks to lock the token for
     function lockToken(uint256 _tokenId, uint256 _blocks) external {
         if (balanceOfUser(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
-        if (block.timestamp < tokenLocks[_tokenId]) revert RequireTokenUnlocked();
+        if (block.number < tokenLocks[_tokenId]) revert RequireTokenUnlocked();
         if (_blocks == 0) revert InvalidLock();
 
-        uint256 until = block.timestamp + _blocks;
-        tokenLocks[_tokenId] = block.timestamp + _blocks;
+        uint256 until = block.number + _blocks;
+        tokenLocks[_tokenId] = block.number + _blocks;
         emit TokenLocked(_tokenId, until);
     }
 
@@ -97,7 +97,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
         // prevent transfers if token is not locked
         for (uint256 x; x < _ids.length; ++x) {
-            if (block.timestamp >= tokenLocks[_ids[x]]) revert RequireTokenLocked();
+            if (block.number >= tokenLocks[_ids[x]]) revert RequireTokenLocked();
         }
     }
 
