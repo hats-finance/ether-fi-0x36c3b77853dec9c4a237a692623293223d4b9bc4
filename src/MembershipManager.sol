@@ -161,6 +161,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     error ExceededMaxWithdrawal();
     error InsufficientLiquidity();
+    error RequireTokenUnlocked();
 
     /// @notice Unwraps membership points tokens for ETH.
     /// @dev This function allows users to unwrap their membership tokens and receive ETH in return.
@@ -169,6 +170,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external {
         _requireTokenOwner(_tokenId);
         if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
+        if (block.number < membershipNFT.tokenLocks(_tokenId)) revert RequireTokenUnlocked();
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -186,10 +188,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
+        // this check must come before burn because burning updates the locks
+        if (block.number < membershipNFT.tokenLocks(_tokenId)) revert RequireTokenUnlocked(); 
+
         uint256 feeAmount = burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
         if (totalBalance < feeAmount) revert InsufficientBalance();
-        
+
         liquidityPool.withdraw(address(msg.sender), totalBalance - feeAmount);
         liquidityPool.withdraw(address(this), feeAmount);
     }

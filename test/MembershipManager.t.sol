@@ -726,6 +726,51 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
     }
 
+    function test_lockToken() public {
+        vm.deal(alice, 1 ether);
+
+        vm.startPrank(alice);
+
+        // Alice mints 1 NFT
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+
+        // fails because token is not locked
+        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
+        membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+
+        // lock token for 5 blocks
+        uint256 currentBlocknum = block.number;
+        membershipNftInstance.lockToken(aliceToken, 5);
+        assertEq(membershipNftInstance.tokenLocks(aliceToken), currentBlocknum + 5);
+
+        // withdraw should fail during lock period
+        vm.expectRevert(MembershipManager.RequireTokenUnlocked.selector);
+        membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
+
+        // withdraw and burn should fail during lock period
+        vm.expectRevert(MembershipManager.RequireTokenUnlocked.selector);
+        membershipManagerInstance.withdrawAndBurnForEth(aliceToken);
+
+        // wait a few blocks
+        vm.roll(block.number + 6);
+
+        // fails because lock has expired
+        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
+        membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+
+        // withdraw should work now
+        membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
+
+        // lock again and transfer
+        membershipNftInstance.lockToken(aliceToken, 5);
+        membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+
+        // lock should be reset for the new owner
+        assertEq(membershipNftInstance.tokenLocks(aliceToken), 0);
+
+        vm.stopPrank();
+    }
+
     function test_trade() public {
         vm.deal(alice, 1 ether);
 
@@ -744,7 +789,13 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.balanceOf(bob, aliceToken), 0);
 
         vm.startPrank(alice);
+        // fails because token is not locked
+        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
         membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+
+        membershipNftInstance.lockToken(aliceToken, 100);
+        membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+
         vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
