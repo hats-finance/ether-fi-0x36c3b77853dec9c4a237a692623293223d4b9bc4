@@ -229,6 +229,7 @@ contract TestSetup is Test {
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
+        liquidityPoolInstance.setTnft(address(TNFTInstance));
 
         eETHImplementation = new EETH();
         vm.expectRevert("Initializable: contract is already initialized");

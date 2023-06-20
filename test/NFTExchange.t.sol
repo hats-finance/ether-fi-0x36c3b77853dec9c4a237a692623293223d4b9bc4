@@ -30,7 +30,7 @@ contract NFTExchangeTest is TestSetup {
         uint256 tNftTokenId = _alice_stake();
  
         // Owner mints a membership NFT holding 30 ETH
-        vm.deal(owner, 30 ether);
+        vm.deal(owner, 100 ether);
         vm.startPrank(owner);
         uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, ownerProof);
 
@@ -67,6 +67,13 @@ contract NFTExchangeTest is TestSetup {
         TNFTInstance.setApprovalForAll(address(nftExchangeInstance), true);
         nftExchangeInstance.buy(tNftTokenIds, mNftTokenIds);
 
+        // B-NFT still belongs to Alice
+        // T-NFT belongs to Owner now
+        assertEq(BNFTInstance.ownerOf(tNftTokenId), alice);
+        assertEq(TNFTInstance.ownerOf(tNftTokenId), owner);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
+        assertEq(address(liquidityPoolInstance).balance, 30 ether);
+
         // Fail: Already Sold
         vm.expectRevert("Token is not currently listed for sale");
         nftExchangeInstance.buy(tNftTokenIds, mNftTokenIds);
@@ -77,6 +84,22 @@ contract NFTExchangeTest is TestSetup {
         vm.expectRevert("Token is not currently listed for sale");
         nftExchangeInstance.delist(mNftTokenIds);
         vm.stopPrank();
+
+        uint256 ownerBalance = address(owner).balance;
+
+        // Success: Owner brings the T-NFT to the liquidity pool and gets 30 ETH
+        vm.startPrank(owner);
+        TNFTInstance.setApprovalForAll(address(liquidityPoolInstance), true);
+        liquidityPoolInstance.swapTNftForEth(tNftTokenIds);
+        vm.stopPrank();
+
+        // B-NFT still belongs to Alice
+        // T-NFT belongs to Liquidity Pool
+        assertEq(BNFTInstance.ownerOf(tNftTokenId), alice);
+        assertEq(TNFTInstance.ownerOf(tNftTokenId), address(liquidityPoolInstance));
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0);
+        assertEq(address(owner).balance, ownerBalance + 30 ether);
     }
 
     function test_delist() public {
@@ -118,6 +141,24 @@ contract NFTExchangeTest is TestSetup {
         vm.expectRevert("Token is not currently listed for sale");
         nftExchangeInstance.buy(tNftTokenIds, mNftTokenIds);
         vm.stopPrank();
+    }
+
+    function test_access_control() public {
+        uint256[] memory tNftTokenIds = new uint256[](1);
+        uint256[] memory mNftTokenIds = new uint256[](1);
+        address[] memory reservedBuyers = new address[](1);
+        tNftTokenIds[0] = 0;
+        mNftTokenIds[0] = 0;
+        reservedBuyers[0] = address(0);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        nftExchangeInstance.delist(mNftTokenIds);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        liquidityPoolInstance.swapTNftForEth(tNftTokenIds);
     }
 
     function _alice_stake() internal returns (uint256) {
