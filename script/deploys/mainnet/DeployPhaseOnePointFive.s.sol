@@ -51,6 +51,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         address eETH;
         address liquidityPool;
         address regulationsManager;
+        address tvlOracle;
     }
 
     suiteAddresses suiteAddressesStruct;
