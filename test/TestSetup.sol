@@ -20,6 +20,7 @@ import "../src/WeETH.sol";
 import "../src/MembershipManager.sol";
 import "../src/MembershipNFT.sol";
 import "../src/EarlyAdopterPool.sol";
+import "../src/TVLOracle.sol";
 import "../src/UUPSProxy.sol";
 import "./DepositDataGeneration.sol";
 import "./DepositContract.sol";
@@ -98,6 +99,8 @@ contract TestSetup is Test {
 
     EtherFiNode public node;
     Treasury public treasuryInstance;
+
+    TVLOracle tvlOracle;
     
     Merkle merkle;
     bytes32 root;
@@ -261,6 +264,7 @@ contract TestSetup is Test {
 
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
 
+        tvlOracle = new TVLOracle(alice);
 
         // Setup dependencies
         _setUpNodeOperatorWhitelist();
