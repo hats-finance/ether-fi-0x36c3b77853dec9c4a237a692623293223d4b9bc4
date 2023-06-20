@@ -739,8 +739,9 @@ contract MembershipManagerTest is TestSetup {
         membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
 
         // lock token for 5 blocks
+        uint256 currentBlocknum = block.number;
         membershipNftInstance.lockToken(aliceToken, 5);
-        assertEq(membershipNftInstance.tokenLocks(aliceToken), 6);
+        assertEq(membershipNftInstance.tokenLocks(aliceToken), currentBlocknum + 5);
 
         // withdraw should fail during lock period
         vm.expectRevert(MembershipManager.RequireTokenUnlocked.selector);
