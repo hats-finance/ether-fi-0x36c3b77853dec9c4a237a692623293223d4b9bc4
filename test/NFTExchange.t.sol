@@ -140,7 +140,6 @@ contract NFTExchangeTest is TestSetup {
         // Fail: Delisted
         vm.expectRevert("Token is not currently listed for sale");
         nftExchangeInstance.buy(tNftTokenIds, mNftTokenIds);
-        vm.stopPrank();
     }
 
     function test_access_control() public {
