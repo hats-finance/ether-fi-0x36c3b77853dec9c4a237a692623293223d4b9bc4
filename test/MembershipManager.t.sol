@@ -754,6 +754,10 @@ contract MembershipManagerTest is TestSetup {
         // wait a few blocks
         vm.roll(block.number + 6);
 
+        // fails because lock has expired
+        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
+        membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
+
         // withdraw should work now
         membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
 
