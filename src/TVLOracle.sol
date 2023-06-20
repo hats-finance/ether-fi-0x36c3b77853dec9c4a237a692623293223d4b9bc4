@@ -15,6 +15,8 @@ contract TVLOracle is Ownable {
     tvlAggregator = _tvlAggregator;
   }
 
+  receive() external payable {}
+
   /// @notice Sets TVL by aggregator
   /// @param _newTvl New TVL calculated by aggregator
   function setTvl(uint256 _newTvl) public {
