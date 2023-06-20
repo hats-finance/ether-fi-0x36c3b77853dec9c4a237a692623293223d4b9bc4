@@ -15,7 +15,7 @@ interface IMembershipManager {
         uint32 prevPointsAccrualTimestamp;
         uint32 prevTopUpTimestamp;
         uint8  tier;
-        uint8  locked;
+        uint8  __gap;
     }
 
     struct TierDeposit {
