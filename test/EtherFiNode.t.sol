@@ -339,6 +339,32 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
     }
 
+    function test_evict() public {
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        uint256[] memory validatorIds = new uint256[](1);
+        validatorIds[0] = bidId[0];
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = 1;
+        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
+        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
+        assertEq(address(etherFiNode).balance, 0.05 ether);
+        assertTrue(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]) > 0);
+
+        uint256 auctionRevenueRewards = protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]);
+        uint256 nodeOperatorBalance = address(nodeOperator).balance;
+
+        vm.prank(owner);
+        managerInstance.processNodeEvict(validatorIds);
+
+        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EVICTED);
+        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
+        assertEq(address(etherFiNode).balance, 0);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]), 0);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.05 ether + auctionRevenueRewards);
+    }
+
     function test_partialWithdraw() public {
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
