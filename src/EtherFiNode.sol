@@ -357,14 +357,14 @@ contract EtherFiNode is IEtherFiNode {
         )
     {
         require(phase == VALIDATOR_PHASE.EXITED, "validator node is not exited");
-        uint256 balance = getWithdrawableAmount(true, true, true);
+        uint256 balance = getWithdrawableAmount(true, false, true);
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
-        (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(true, true, true,
+        (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(true, false, true,
                                                                              _splits, _scale,
                                                                              _splits, _scale);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
