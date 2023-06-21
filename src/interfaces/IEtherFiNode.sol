@@ -13,14 +13,14 @@ interface IEtherFiNode {
     //           /      \
     //          /        \
     //         ↓          ↓
-    //         LIVE     CANCELLED
-    //         |    \
-    //         |     \
-    //         |      ↓
-    //         |     BEING_SLASHED
-    //         |      /
-    //         |     /
-    //         ↓    ↓
+    //         LIVE    CANCELLED
+    //         |  \ \ 
+    //         |   \ \
+    //         |   ↓  --> EVICTED
+    //         |  BEING_SLASHED
+    //         |    /
+    //         |   /
+    //         ↓  ↓
     //         EXITED
     //           |
     //           ↓
@@ -38,7 +38,8 @@ interface IEtherFiNode {
         EXITED,
         FULLY_WITHDRAWN,
         CANCELLED,
-        BEING_SLASHED
+        BEING_SLASHED,
+        EVICTED
     }
 
     // VIEW functions
@@ -110,6 +111,8 @@ interface IEtherFiNode {
     function setExitRequestTimestamp() external;
 
     function markExited(uint32 _exitTimestamp) external;
+
+    function markEvicted() external;
 
     function receiveVestedRewardsForStakers() external payable;
 

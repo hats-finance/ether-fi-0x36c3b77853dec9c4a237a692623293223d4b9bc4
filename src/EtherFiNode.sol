@@ -89,6 +89,13 @@ contract EtherFiNode is IEtherFiNode {
         exitTimestamp = _exitTimestamp;
     }
 
+    /// @notice Set the validators phase to EVICTED
+    function markEvicted() external onlyEtherFiNodeManagerContract {
+        _validatePhaseTransition(VALIDATOR_PHASE.EVICTED);
+        phase = VALIDATOR_PHASE.EVICTED;
+        exitTimestamp = uint32(block.timestamp);
+    }
+
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
@@ -494,19 +501,24 @@ contract EtherFiNode is IEtherFiNode {
 
     function _validatePhaseTransition(VALIDATOR_PHASE _newPhase) internal view returns (bool) {
         VALIDATOR_PHASE currentPhase = phase;
-        
+        bool pass = true;
+
         // Transition rules
         if (currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED) {
-            require(_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED);
         } else if (currentPhase == VALIDATOR_PHASE.STAKE_DEPOSITED) {
-            require(_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED);
         } else if (currentPhase == VALIDATOR_PHASE.LIVE) {
-            require(_newPhase == VALIDATOR_PHASE.EXITED || _newPhase == VALIDATOR_PHASE.BEING_SLASHED, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.EXITED || _newPhase == VALIDATOR_PHASE.BEING_SLASHED || _newPhase == VALIDATOR_PHASE.EVICTED);
         } else if (currentPhase == VALIDATOR_PHASE.BEING_SLASHED) {
-            require(_newPhase == VALIDATOR_PHASE.EXITED, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.EXITED);
         } else if (currentPhase == VALIDATOR_PHASE.EXITED) {
-            require(_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN);
+        } else {
+            pass = false;
         }
+
+        require(pass, "Invalid phase transition");
     }
     
     function _getClaimableVestedRewards() internal view returns (uint256) {
@@ -520,7 +532,7 @@ contract EtherFiNode is IEtherFiNode {
             stakingStartTimestamp,
             uint32(block.timestamp)
         );
-        if (daysPassed >= vestingPeriodInDays) {
+        if (daysPassed >= vestingPeriodInDays || phase == VALIDATOR_PHASE.EVICTED) {
             return vestedAuctionRewards;
         } else {
             return 0;
