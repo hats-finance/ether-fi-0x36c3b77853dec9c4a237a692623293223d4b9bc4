@@ -114,8 +114,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, _snapshotEthAmount, _points));
         if (!MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf)) revert InvalidEAPRollover(); 
 
+        bytes32[] memory zeroProof;
         eapDepositProcessed[msg.sender] = true;
-        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), zeroProof);
 
         (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _snapshotEthAmount);
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
@@ -160,6 +161,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     error ExceededMaxWithdrawal();
     error InsufficientLiquidity();
+    error RequireTokenUnlocked();
 
     /// @notice Unwraps membership points tokens for ETH.
     /// @dev This function allows users to unwrap their membership tokens and receive ETH in return.
@@ -167,7 +169,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @param _amount The amount of membership tokens to unwrap.
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external {
         _requireTokenOwner(_tokenId);
-        if (address(liquidityPool).balance < _amount) revert InsufficientLiquidity();
+        if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
+        if (block.number < membershipNFT.tokenLocks(_tokenId)) revert RequireTokenUnlocked();
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -185,10 +188,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
+        // this check must come before burn because burning updates the locks
+        if (block.number < membershipNFT.tokenLocks(_tokenId)) revert RequireTokenUnlocked(); 
+
         uint256 feeAmount = burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
         if (totalBalance < feeAmount) revert InsufficientBalance();
-        
+
         liquidityPool.withdraw(address(msg.sender), totalBalance - feeAmount);
         liquidityPool.withdraw(address(this), feeAmount);
     }
@@ -250,11 +256,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @dev This function allows users to claim the staking rewards earned by a specific membership NFT.
     /// @param _tokenId The ID of the membership NFT.
     function claimStakingRewards(uint256 _tokenId) public {
-        TokenData storage tokenData = tokenData[_tokenId];
-        uint256 tier = tokenData.tier;
-        uint256 amount = (tierData[tier].rewardsGlobalIndex - tokenData.rewardsLocalIndex) * tokenDeposits[_tokenId].amounts / 1 ether;
+        TokenData storage token = tokenData[_tokenId];
+        uint256 tier = token.tier;
+        uint256 amount = (tierData[tier].rewardsGlobalIndex - token.rewardsLocalIndex) * tokenDeposits[_tokenId].amounts / 1 ether;
         _incrementTokenDeposit(_tokenId, amount, 0);
-        tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
+        token.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
     /// @notice Converts meTokens points to EAP tokens.
@@ -450,7 +456,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     function _withdraw(uint256 _tokenId, uint256 _amount) internal {
         if (tokenDeposits[_tokenId].amounts < _amount) revert InsufficientBalance();
-        uint256 share = liquidityPool.sharesForAmount(_amount);
+        uint256 share = liquidityPool.sharesForWithdrawalAmount(_amount);
         uint256 tier = tokenData[_tokenId].tier;
         _decrementTokenDeposit(_tokenId, _amount, 0);
         _decrementTierDeposit(tier, _amount, share);
@@ -530,7 +536,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         tokenData[_tokenId].tier = _newTier;
     }
 
-    function _updateAllTimeHighDepositOf(uint256 _tokenId) internal returns (uint256) {
+    function _updateAllTimeHighDepositOf(uint256 _tokenId) internal {
         allTimeHighDepositAmount[_tokenId] = membershipNFT.allTimeHighDepositOf(_tokenId);
     }
 
@@ -664,11 +670,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
         uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
-        TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 monthInSeconds = 28 days;
         if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
-
         return true;
     }
 

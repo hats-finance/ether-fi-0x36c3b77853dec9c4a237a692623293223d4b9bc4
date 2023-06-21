@@ -51,6 +51,7 @@ contract EtherFiNode is IEtherFiNode {
     function setPhase(
         VALIDATOR_PHASE _phase
     ) external onlyEtherFiNodeManagerContract {
+        _validatePhaseTransition(_phase);
         phase = _phase;
     }
 
@@ -83,6 +84,7 @@ contract EtherFiNode is IEtherFiNode {
         uint32 _exitTimestamp
     ) external onlyEtherFiNodeManagerContract {
         require(_exitTimestamp <= block.timestamp, "Invalid exit timesamp");
+        _validatePhaseTransition(VALIDATOR_PHASE.EXITED);
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
     }
@@ -463,6 +465,23 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
     //--------------------------------------------------------------------------------------
+
+    function _validatePhaseTransition(VALIDATOR_PHASE _newPhase) internal view returns (bool) {
+        VALIDATOR_PHASE currentPhase = phase;
+        
+        // Transition rules
+        if (currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED) {
+            require(_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED, "Invalid phase transition");
+        } else if (currentPhase == VALIDATOR_PHASE.STAKE_DEPOSITED) {
+            require(_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED, "Invalid phase transition");
+        } else if (currentPhase == VALIDATOR_PHASE.LIVE) {
+            require(_newPhase == VALIDATOR_PHASE.EXITED || _newPhase == VALIDATOR_PHASE.BEING_SLASHED, "Invalid phase transition");
+        } else if (currentPhase == VALIDATOR_PHASE.BEING_SLASHED) {
+            require(_newPhase == VALIDATOR_PHASE.EXITED, "Invalid phase transition");
+        } else if (currentPhase == VALIDATOR_PHASE.EXITED) {
+            require(_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN, "Invalid phase transition");
+        }
+    }
     
     function _getClaimableVestedRewards() internal view returns (uint256) {
         if (vestedAuctionRewards == 0) {

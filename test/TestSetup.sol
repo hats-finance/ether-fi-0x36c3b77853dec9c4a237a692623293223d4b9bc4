@@ -21,10 +21,13 @@ import "../src/MembershipManager.sol";
 import "../src/MembershipNFT.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
+import "../src/NFTExchange.sol";
 import "./DepositDataGeneration.sol";
 import "./DepositContract.sol";
+import "./Attacker.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
+
 
 contract TestSetup is Test {
     uint256 constant public kwei = 10 ** 3;
@@ -48,6 +51,7 @@ contract TestSetup is Test {
     UUPSProxy public nodeOperatorManagerProxy;
     UUPSProxy public membershipManagerProxy;
     UUPSProxy public membershipNftProxy;
+    UUPSProxy public nftExchangeProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -92,6 +96,9 @@ contract TestSetup is Test {
     MembershipNFT public membershipNftImplementation;
     MembershipNFT public membershipNftInstance;
 
+    NFTExchange public nftExchangeImplementation;
+    NFTExchange public nftExchangeInstance;
+
     NodeOperatorManager public nodeOperatorManagerImplementation;
     NodeOperatorManager public nodeOperatorManagerInstance;
 
@@ -127,6 +134,7 @@ contract TestSetup is Test {
     address greg = vm.addr(7);
     address henry = vm.addr(8);
     address liquidityPool = vm.addr(9);
+    address shonee = vm.addr(1200);
 
     address[] public actors;
     uint256[] public whitelistIndices;
@@ -221,6 +229,7 @@ contract TestSetup is Test {
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
+        liquidityPoolInstance.setTnft(address(TNFTInstance));
 
         eETHImplementation = new EETH();
         vm.expectRevert("Initializable: contract is already initialized");
@@ -259,6 +268,10 @@ contract TestSetup is Test {
 
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
 
+        nftExchangeImplementation = new NFTExchange();
+        nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation), "");
+        nftExchangeInstance = NFTExchange(payable(nftExchangeProxy));
+        nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance));
 
         // Setup dependencies
         _setUpNodeOperatorWhitelist();
@@ -333,6 +346,8 @@ contract TestSetup is Test {
         whiteListedAddresses.push(keccak256(abi.encodePacked(address(liquidityPoolInstance))));
 
         whiteListedAddresses.push(keccak256(abi.encodePacked(owner)));
+        //Needed a whitelisted address that hasn't been registered as a node operator
+        whiteListedAddresses.push(keccak256(abi.encodePacked(shonee)));
 
         root = merkle.getRoot(whiteListedAddresses);
         stakingManagerInstance.updateMerkleRoot(root);
@@ -507,6 +522,7 @@ contract TestSetup is Test {
     function _transferTo(address _recipient, uint256 _amount) internal {
         vm.deal(owner, address(owner).balance + _amount);
         vm.prank(owner);
-        payable(_recipient).call{value: _amount}("");
+        (bool sent, ) = payable(_recipient).call{value: _amount}("");
+        assertEq(sent, true);
     }
 }

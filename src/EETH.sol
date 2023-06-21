@@ -43,12 +43,30 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
         return true;
     }
 
-    function allowance(address _owner, address _spender) external view returns (uint256) {
+    function allowance(address _owner, address _spender) public view returns (uint256) {
         return allowances[_owner][_spender];
     }
 
     function approve(address _spender, uint256 _amount) external override(IeETH, IERC20Upgradeable) returns (bool) {
         _approve(msg.sender, _spender, _amount);
+        return true;
+    }
+
+    function increaseAllowance(address _spender, uint256 _increaseAmount) external returns (bool) {
+        address owner = msg.sender;
+        uint256 currentAllowance = allowance(owner, _spender);
+        _approve(owner, _spender,currentAllowance + _increaseAmount);
+        return true;
+    }
+
+    function decreaseAllowance(address _spender, uint256 _decreaseAmount) external returns (bool) {
+        address owner = msg.sender;
+        uint256 currentAllowance = allowance(owner, _spender);
+        require(currentAllowance >= _decreaseAmount, "ERC20: decreased allowance below zero");
+        unchecked {
+            _approve(owner, _spender, currentAllowance - _decreaseAmount);
+        }
+
         return true;
     }
 

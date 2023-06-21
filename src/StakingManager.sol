@@ -147,8 +147,8 @@ contract StakingManager is
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);    
-        }  
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
+        }
     }
 
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
@@ -288,15 +288,14 @@ contract StakingManager is
     function _registerValidator(
         uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData
     ) internal {
-        require(nodesManager.phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED, "Incorrect phase");
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");        
-        
+        nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
+
         // Deposit to the Beacon Chain
         bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
         depositContractEth2.deposit{value: stakeAmount}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, _depositData.depositDataRoot);
 
         nodesManager.incrementNumberOfValidators(1);
-        nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
         nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         // Let valiadatorId = nftTokenId
@@ -335,7 +334,6 @@ contract StakingManager is
     /// @param _validatorId the ID of the validator deposit to cancel
     function _cancelDeposit(uint256 _validatorId) internal {
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
-        require(nodesManager.phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED, "Incorrect phase");
 
         bidIdToStaker[_validatorId] = address(0);
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.CANCELLED);

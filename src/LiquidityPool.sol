@@ -15,7 +15,7 @@ import "./interfaces/IeETH.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
-
+import "./interfaces/ITNFT.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -27,8 +27,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
     IMembershipManager public membershipManager;
+    ITNFT public tNft;
 
-    uint256 public totalValueOutOfLp;
+    uint128 public totalValueOutOfLp;
+    uint128 public totalValueInLp;
     bool public eEthliquidStakingOpened;
 
     uint256[21] __gap;
@@ -39,6 +41,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, address recipient, uint256 amount);
+
+    error InvalidAmount();
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -51,7 +55,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     receive() external payable {
         require(totalValueOutOfLp >= msg.value, "rebase first before collecting the rewards");
-        totalValueOutOfLp -= msg.value;
+        if (msg.value > type(uint128).max) revert InvalidAmount();
+        totalValueOutOfLp -= uint128(msg.value);
+        totalValueInLp += uint128(msg.value);
     }
 
     function initialize(address _regulationsManager) external initializer {
@@ -63,17 +69,22 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         eEthliquidStakingOpened = false;
     }
 
-    function deposit(address _user, bytes32[] calldata _merkleProof) public payable {
+    function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
         deposit(_user, _user, _merkleProof);
     }
 
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable whenLiquidStakingOpen {
-        stakingManager.verifyWhitelisted(_user, _merkleProof);
-        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user), "User is not whitelisted");
+        if(msg.sender == address(membershipManager)) {
+            isWhitelistedAndEligible(_user, _merkleProof);
+        } else {
+            isWhitelistedAndEligible(msg.sender, _merkleProof);
+        }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
+        if (msg.value > type(uint128).max) revert InvalidAmount();
 
+        totalValueInLp += uint128(msg.value);
         uint256 share = _sharesForDepositAmount(msg.value);
         if (share == 0) {
             share = msg.value;
@@ -87,12 +98,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to the recipient
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
-    function withdraw(address _recipient, uint256 _amount) public whenLiquidStakingOpen {
-        require(address(this).balance >= _amount, "Not enough ETH in the liquidity pool");
+    function withdraw(address _recipient, uint256 _amount) external whenLiquidStakingOpen {
+        require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
+        if (_amount > type(uint128).max) revert InvalidAmount();
 
-        uint256 share = sharesForAmount(_amount);
+        uint256 share = sharesForWithdrawalAmount(_amount);
         eETH.burnShares(msg.sender, share);
+
+        totalValueInLp -= uint128(_amount);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "Failed to send Ether");
@@ -113,19 +127,27 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 _numDeposits, 
         uint256[] calldata _candidateBidIds, 
         bytes32[] calldata _merkleProof
-        ) payable public onlyOwner returns (uint256[] memory) {
+        ) payable external onlyOwner returns (uint256[] memory) {
         require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
-        require(address(this).balance >= 32 ether * _numDeposits, "Not enough balance");
+        require(totalValueInLp + msg.value >= 32 ether * _numDeposits, "Not enough balance");
 
-        totalValueOutOfLp += 30 ether * _numDeposits;
-        uint256 amount = 32 ether * _numDeposits;
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: amount}(_candidateBidIds, _merkleProof);
+        uint256 amountFromLp = 30 ether * _numDeposits;
+        if (amountFromLp > type(uint128).max) revert InvalidAmount();
 
-        uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
-        totalValueOutOfLp += returnAmount;
-        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
-        require(sent, "Failed to send Ether");
+        totalValueOutOfLp += uint128(amountFromLp);
+        totalValueInLp -= uint128(amountFromLp);
 
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numDeposits}(_candidateBidIds, _merkleProof);
+
+        if (_numDeposits > newValidators.length) {
+            uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
+            totalValueOutOfLp += uint128(returnAmount);
+            totalValueInLp -= uint128(returnAmount);
+
+            (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+            require(sent, "Failed to send Ether");
+        }
+        
         return newValidators;
     }
 
@@ -133,13 +155,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData
-        ) public onlyOwner
+        ) external onlyOwner
     {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
     }
 
     /// @notice Send the exit reqeusts as the T-NFT holder
-    function sendExitRequests(uint256[] calldata _validatorIds) public onlyOwner {
+    function sendExitRequests(uint256[] calldata _validatorIds) external onlyOwner {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             nodesManager.sendExitRequest(validatorId);
@@ -161,7 +183,24 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
     function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyOwner {
         require(address(this).balance == _balanceInLp, "the LP balance has changed.");
-        totalValueOutOfLp = _tvl - _balanceInLp;
+        if (_tvl > type(uint128).max) revert InvalidAmount();
+        totalValueOutOfLp = uint128(_tvl - _balanceInLp);
+        totalValueInLp = uint128(_balanceInLp);
+    }
+
+    /// @notice swap T-NFTs for ETH
+    /// @param _tokenIds the token Ids of T-NFTs
+    function swapTNftForEth(uint256[] calldata _tokenIds) external onlyOwner {
+        require(totalValueInLp >= 30 ether * _tokenIds.length, "not enough ETH in LP");
+        uint128 amount = uint128(30 ether * _tokenIds.length);
+        totalValueOutOfLp += amount;
+        totalValueInLp -= amount;
+        address owner = owner();
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            tNft.transferFrom(owner, address(this), _tokenIds[i]);
+        }
+        (bool sent, ) = address(owner).call{value: amount}("");
+        require(sent, "Failed to send Ether");
     }
 
     /// @notice sets the contract address for eETH
@@ -185,10 +224,20 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(_address != address(0), "Cannot be address zero");
         membershipManager = IMembershipManager(_address);
     }
+
+    function setTnft(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        tNft = ITNFT(_address);
+    }
     
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
+        stakingManager.verifyWhitelisted(_user, _merkleProof);
+        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
+    }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;
@@ -214,7 +263,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function getTotalPooledEther() public view returns (uint256) {
-        return totalValueOutOfLp + address(this).balance;
+        return totalValueOutOfLp + totalValueInLp;
     }
 
     function sharesForAmount(uint256 _amount) public view returns (uint256) {
@@ -223,6 +272,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             return 0;
         }
         return (_amount * eETH.totalShares()) / totalPooledEther;
+    }
+
+    /// @dev withdrawal rounding errors favor the protocol by rounding up
+    function sharesForWithdrawalAmount(uint256 _amount) public view returns (uint256) {
+        uint256 totalPooledEther = getTotalPooledEther();
+        if (totalPooledEther == 0) {
+            return 0;
+        }
+
+        // ceiling division so rounding errors favor the protocol
+        uint256 numerator = _amount * eETH.totalShares();
+        return (numerator + totalPooledEther - 1) / totalPooledEther;
     }
 
     function amountForShare(uint256 _share) public view returns (uint256) {
