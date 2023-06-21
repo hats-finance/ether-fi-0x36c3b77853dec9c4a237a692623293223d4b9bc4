@@ -52,6 +52,7 @@ contract EtherFiNodesManager is
     event FundsWithdrawn(uint256 indexed _validatorId, uint256 amount);
     event NodeExitRequested(uint256 _validatorId);
     event NodeExitProcessed(uint256 _validatorId);
+    event NodeEvicted(uint256 _validatorId);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -177,6 +178,16 @@ contract EtherFiNodesManager is
         require(_validatorIds.length == _exitTimestamps.length, "Check params");
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             _processNodeExit(_validatorIds[i], _exitTimestamps[i]);
+        }
+    }
+
+    /// @notice Once the node's malicious behavior (such as front-running) is observed, the protocol calls this function to evict them.
+    /// @param _validatorIds The list of validators which should be evicted
+    function processNodeEvict(
+        uint256[] calldata _validatorIds
+    ) external onlyOwner nonReentrant whenNotPaused {
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            _processNodeEvict(_validatorIds[i]);
         }
     }
 
@@ -456,6 +467,28 @@ contract EtherFiNodesManager is
         emit NodeExitProcessed(_validatorId);
     }
 
+    function _processNodeEvict(uint256 _validatorId) internal {
+        address etherfiNode = etherfiNodeAddress[_validatorId];
+
+        // distribute the protocol reward from the ProtocolRevenueMgr contrac to the validator's etherfi node contract
+        uint256 amount = protocolRevenueManager.distributeAuctionRevenue(_validatorId);
+
+        // Mark EVICTED
+        IEtherFiNode(etherfiNode).markEvicted();
+
+        // Reset its local revenue index to 0, which indicates that no accrued protocol revenue exists
+        IEtherFiNode(etherfiNode).setLocalRevenueIndex(0);
+        IEtherFiNode(etherfiNode).processVestedAuctionFeeWithdrawal();
+
+        numberOfValidators -= 1;
+
+        // Return the all amount in the contract back to the node operator
+        uint256 returnAmount = address(etherfiNode).balance;
+        _distributePayouts(_validatorId, 0, returnAmount, 0, 0);
+
+        emit NodeEvicted(_validatorId);
+    }
+
     function _distributePayouts(uint256 _validatorId, uint256 _toTreasury, uint256 _toOperator, uint256 _toTnft, uint256 _toBnft) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).withdrawFunds(
@@ -590,6 +623,12 @@ contract EtherFiNodesManager is
     /// @return The bool value representing if the validator has been withdrawn
     function isFullyWithdrawn(uint256 _validatorId) public view returns (bool) {
         return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN;
+    }
+
+    /// @notice Fetches if the specified validator has been evicted
+    /// @return The bool value representing if the validator has been evicted
+    function isEvicted(uint256 _validatorId) public view returns (bool) {
+        return phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.EVICTED;
     }
 
     /// @notice Fetches the address of the implementation contract currently being used by the proxy

@@ -9,6 +9,7 @@ import "../../../src/EETH.sol";
 import "../../../src/LiquidityPool.sol";
 import "../../../src/RegulationsManager.sol";
 import "../../../src/UUPSProxy.sol";
+import "../../../src/TVLOracle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployPhaseOnePointFiveScript is Script {
@@ -41,6 +42,8 @@ contract DeployPhaseOnePointFiveScript is Script {
     RegulationsManager public regulationsManagerImplementation;
     RegulationsManager public regulationsManager;
 
+    TVLOracle public tvlOracle;
+
     struct suiteAddresses {
         address weETH;
         address membershipManager;
@@ -48,6 +51,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         address eETH;
         address liquidityPool;
         address regulationsManager;
+        address tvlOracle;
     }
 
     suiteAddresses suiteAddressesStruct;
@@ -60,6 +64,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
         address treasury = vm.envAddress("TREASURY_ADDRESS");
         address protocolRevenueManagerProxy = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
+        address tvlAggregatorAddress = vm.envAddress("TVL_AGGREGATOR_ADDRESS");
 
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
 
@@ -96,6 +101,8 @@ contract DeployPhaseOnePointFiveScript is Script {
         weETH = WeETH(address(weETHProxy));
         weETH.initialize(address(liquidityPool), address(eETH));
 
+        tvlOracle = new TVLOracle(tvlAggregatorAddress);
+
         // Setup dependencies
         regulationsManager.initializeNewWhitelist(initialHash);
 
@@ -113,7 +120,8 @@ contract DeployPhaseOnePointFiveScript is Script {
             membershipManager: address(membershipManager),
             eETH: address(eETH),
             liquidityPool: address(liquidityPool),
-            regulationsManager: address(regulationsManager)
+            regulationsManager: address(regulationsManager),
+            tvlOracle: address(tvlOracle)
         });
 
         writeSuiteVersionFile();
@@ -173,7 +181,9 @@ contract DeployPhaseOnePointFiveScript is Script {
                     "\nLiquidity Pool: ",
                     Strings.toHexString(suiteAddressesStruct.liquidityPool),
                     "\nRegulations Manager: ",
-                    Strings.toHexString(suiteAddressesStruct.regulationsManager)
+                    Strings.toHexString(suiteAddressesStruct.regulationsManager),
+                    "\nTVL Oracle: ",
+                    Strings.toHexString(suiteAddressesStruct.tvlOracle)
                 )
             )
         );
