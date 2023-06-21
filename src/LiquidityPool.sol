@@ -15,6 +15,7 @@ import "./interfaces/IeETH.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
+import "./interfaces/ITNFT.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -26,6 +27,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
     IMembershipManager public membershipManager;
+    ITNFT public tNft;
 
     uint128 public totalValueOutOfLp;
     uint128 public totalValueInLp;
@@ -186,6 +188,21 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         totalValueInLp = uint128(_balanceInLp);
     }
 
+    /// @notice swap T-NFTs for ETH
+    /// @param _tokenIds the token Ids of T-NFTs
+    function swapTNftForEth(uint256[] calldata _tokenIds) external onlyOwner {
+        require(totalValueInLp >= 30 ether * _tokenIds.length, "not enough ETH in LP");
+        uint128 amount = uint128(30 ether * _tokenIds.length);
+        totalValueOutOfLp += amount;
+        totalValueInLp -= amount;
+        address owner = owner();
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            tNft.transferFrom(owner, address(this), _tokenIds[i]);
+        }
+        (bool sent, ) = address(owner).call{value: amount}("");
+        require(sent, "Failed to send Ether");
+    }
+
     /// @notice sets the contract address for eETH
     /// @param _eETH address of eETH contract
     function setTokenAddress(address _eETH) external onlyOwner {
@@ -206,6 +223,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function setMembershipManager(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         membershipManager = IMembershipManager(_address);
+    }
+
+    function setTnft(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        tNft = ITNFT(_address);
     }
     
     //--------------------------------------------------------------------------------------

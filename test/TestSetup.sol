@@ -21,11 +21,13 @@ import "../src/MembershipManager.sol";
 import "../src/MembershipNFT.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/UUPSProxy.sol";
+import "../src/NFTExchange.sol";
 import "./DepositDataGeneration.sol";
 import "./DepositContract.sol";
 import "./Attacker.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
+
 
 contract TestSetup is Test {
     uint256 constant public kwei = 10 ** 3;
@@ -49,6 +51,7 @@ contract TestSetup is Test {
     UUPSProxy public nodeOperatorManagerProxy;
     UUPSProxy public membershipManagerProxy;
     UUPSProxy public membershipNftProxy;
+    UUPSProxy public nftExchangeProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -92,6 +95,9 @@ contract TestSetup is Test {
 
     MembershipNFT public membershipNftImplementation;
     MembershipNFT public membershipNftInstance;
+
+    NFTExchange public nftExchangeImplementation;
+    NFTExchange public nftExchangeInstance;
 
     NodeOperatorManager public nodeOperatorManagerImplementation;
     NodeOperatorManager public nodeOperatorManagerInstance;
@@ -223,6 +229,7 @@ contract TestSetup is Test {
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
+        liquidityPoolInstance.setTnft(address(TNFTInstance));
 
         eETHImplementation = new EETH();
         vm.expectRevert("Initializable: contract is already initialized");
@@ -261,6 +268,10 @@ contract TestSetup is Test {
 
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
 
+        nftExchangeImplementation = new NFTExchange();
+        nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation), "");
+        nftExchangeInstance = NFTExchange(payable(nftExchangeProxy));
+        nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance));
 
         // Setup dependencies
         _setUpNodeOperatorWhitelist();

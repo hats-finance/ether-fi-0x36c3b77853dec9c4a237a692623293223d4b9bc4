@@ -55,7 +55,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     /// @dev lock will expire immediately once the token is transferred
     /// @param _tokenId ID of the token to lock
     /// @param _blocks how many blocks to lock the token for
-    function lockToken(uint256 _tokenId, uint256 _blocks) external {
+    function lockToken(uint256 _tokenId, uint256 _blocks) public {
         if (balanceOfUser(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
         if (block.number < tokenLocks[_tokenId]) revert RequireTokenUnlocked();
         if (_blocks == 0) revert InvalidLock();
@@ -63,6 +63,12 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         uint256 until = block.number + _blocks;
         tokenLocks[_tokenId] = block.number + _blocks;
         emit TokenLocked(_tokenId, until);
+    }
+
+    function lockTokens(uint256[] calldata _tokenIds, uint256 _blocks) external {
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            lockToken(_tokenIds[i], _blocks);
+        }
     }
 
     //--------------------------------------------------------------------------------------
