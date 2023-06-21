@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "./interfaces/IMembershipNFT.sol";
 
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
@@ -20,7 +20,7 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
 
     IERC721 public tNft;
-    IERC1155 public membershipNft;
+    IMembershipNFT public membershipNft;
     mapping (uint256 => address) public reservedBuyers;
 
     //--------------------------------------------------------------------------------------
@@ -42,22 +42,24 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         __UUPSUpgradeable_init();
 
         tNft = IERC721(_tNft);
-        membershipNft = IERC1155(_membershipNft);
+        membershipNft = IMembershipNFT(_membershipNft);
     }
 
     /**
      * @dev Allows the owner to list membership NFTs for sale.
      * @param _mNftTokenIds The token IDs of the membership NFTs to list for sale.
      * @param _reservedBuyers The addresses of the reserved buyers for each NFT.
+     * @param _blocks how many blocks to list & lock the token for
      */
-    function listForSale(uint256[] calldata _mNftTokenIds, address[] calldata _reservedBuyers) external onlyOwner {
+    function listForSale(uint256[] calldata _mNftTokenIds, address[] calldata _reservedBuyers, uint256 _blocks) external onlyOwner {
         require(_mNftTokenIds.length == _reservedBuyers.length, "Input arrays must be the same length");
         for (uint256 i = 0; i < _mNftTokenIds.length; i++) {
             uint256 tokenId = _mNftTokenIds[i];
             address reservedBuyer = _reservedBuyers[i];
             reservedBuyers[tokenId] = reservedBuyer;
-
+        
             membershipNft.safeTransferFrom(msg.sender, address(this), tokenId, 1, "");
+            membershipNft.lockToken(tokenId, _blocks);
         }
     }
 

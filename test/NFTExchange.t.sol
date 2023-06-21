@@ -45,12 +45,20 @@ contract NFTExchangeTest is TestSetup {
         // Owner approves the NFTExchange to transfer the membership NFT
         membershipNftInstance.setApprovalForAll(address(nftExchangeInstance), true);
 
-        // Owner lists it for sale
         uint256[] memory mNftTokenIds = new uint256[](1);
         address[] memory reservedBuyers = new address[](1);
         mNftTokenIds[0] = membershipNftTokenId;
         reservedBuyers[0] = alice;
-        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers);
+
+        // Fail: Owner must lock the token first before listing it for sale
+        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
+        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
+
+        // Owner locks the token
+        membershipNftInstance.lockToken(membershipNftTokenId, 10);
+
+        // Owner lists it for sale
+        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
         vm.stopPrank();
 
         uint256[] memory tNftTokenIds = new uint256[](1);
@@ -122,6 +130,9 @@ contract NFTExchangeTest is TestSetup {
         assertEq(membershipNftInstance.loyaltyPointsOf(membershipNftTokenId), loyaltyPoints);
         assertEq(membershipNftInstance.tierPointsOf(membershipNftTokenId), tierPoints);
 
+        // Owner locks the token
+        membershipNftInstance.lockToken(membershipNftTokenId, 10);
+
         // Owner approves the NFTExchange to transfer the membership NFT
         membershipNftInstance.setApprovalForAll(address(nftExchangeInstance), true);
 
@@ -130,7 +141,7 @@ contract NFTExchangeTest is TestSetup {
         address[] memory reservedBuyers = new address[](1);
         mNftTokenIds[0] = membershipNftTokenId;
         reservedBuyers[0] = alice;
-        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers);
+        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
         vm.stopPrank();
 
         uint256[] memory tNftTokenIds = new uint256[](1);
@@ -154,7 +165,7 @@ contract NFTExchangeTest is TestSetup {
         reservedBuyers[0] = address(0);
 
         vm.expectRevert("Ownable: caller is not the owner");
-        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers);
+        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
 
         vm.expectRevert("Ownable: caller is not the owner");
         nftExchangeInstance.delist(mNftTokenIds);
