@@ -478,11 +478,9 @@ contract EtherFiNode is IEtherFiNode {
         if (_staking) {
             balance += address(this).balance - vestedAuctionRewards;
         }
-        if (_protocolRewards) {
-            if (localRevenueIndex > 0) {
-                uint256 globalRevenueIndex = IProtocolRevenueManager(_protocolRevenueManagerAddress()).globalRevenueIndex();
-                balance += globalRevenueIndex - localRevenueIndex;
-            }
+        if (_protocolRewards && localRevenueIndex > 0) {
+            uint256 globalRevenueIndex = IProtocolRevenueManager(_protocolRevenueManagerAddress()).globalRevenueIndex();
+            balance += globalRevenueIndex - localRevenueIndex;
         }
         if (_vestedAuctionFee) {
             balance += _getClaimableVestedRewards();
