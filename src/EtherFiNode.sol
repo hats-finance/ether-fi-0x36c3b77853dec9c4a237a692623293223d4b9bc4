@@ -393,12 +393,12 @@ contract EtherFiNode is IEtherFiNode {
         payouts[2] -= appliedPenalty;
 
         // While the NonExitPenalty keeps growing till 1 ether,
-        //  the incentive to the node operator stops growing at 0.5 ether
+        //  the incentive to the node operator stops growing at 0.2 ether
         //  the rest goes to the treasury
-        // - Cap the incentive to the operator under 0.5 ether.
-        if (appliedPenalty > 0.5 ether) {
-            payouts[0] += 0.5 ether;
-            payouts[3] += appliedPenalty - 0.5 ether;
+        // - Cap the incentive to the operator under 0.2 ether.
+        if (appliedPenalty > 0.2 ether) {
+            payouts[0] += 0.2 ether;
+            payouts[3] += appliedPenalty - 0.2 ether;
         } else {
             payouts[0] += appliedPenalty;
         }
