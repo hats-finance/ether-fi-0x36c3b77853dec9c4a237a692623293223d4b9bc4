@@ -51,7 +51,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _amountSacrificedForBoostingPoints, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
+    event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
     event NftUpdated(uint256 _tokenId, uint128 _amount, uint128 _amountSacrificedForBoostingPoints, uint40 _loyaltyPoints, uint40 _tierPoints, uint8 _tier, uint32 _prevTopUpTimestamp, uint96 _rewardsLocalIndex);
 
@@ -123,7 +123,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
         _emitNftUpdateEvent(tokenId);
-        emit FundsMigrated(msg.sender, tokenId, msg.value - _amountForPoints, _amountForPoints, _points, loyaltyPoints, tierPoints);
+        emit FundsMigrated(msg.sender, tokenId, msg.value, _points, loyaltyPoints, tierPoints);
         return tokenId;
     }
 
