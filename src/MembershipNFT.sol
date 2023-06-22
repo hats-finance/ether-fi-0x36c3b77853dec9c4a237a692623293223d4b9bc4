@@ -16,11 +16,13 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     string private contractMetadataURI; /// @dev opensea contract-level metadata
     uint256 public nextMintID;
 
+    bool public mintingPaused;
+    event MintingPaused(bool isPaused);
+
     mapping(uint256 => uint256) public tokenLocks;
     event TokenLocked(uint256 indexed _tokenId, uint256 until);
 
-    uint256[9] public gap;
-
+    uint256[8] public gap;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -34,7 +36,11 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         __ERC1155_init(_metadataURI);
     }
 
+    error MintingIsPaused();
+
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
+        if (mintingPaused) revert MintingIsPaused();
+
         uint256 tokenId = nextMintID++;
         _mint(_to, tokenId, _amount, "");
         return tokenId;
@@ -77,6 +83,11 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     function setMembershipManager(address _address) external onlyOwner {
         membershipManager = IMembershipManager(_address);
+    }
+
+    function setMintingPaused(bool _paused) external onlyOwner {
+        mintingPaused = _paused;
+        emit MintingPaused(_paused);
     }
 
     //--------------------------------------------------------------------------------------

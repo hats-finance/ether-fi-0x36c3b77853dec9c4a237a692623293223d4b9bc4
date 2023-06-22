@@ -434,7 +434,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
         // proportionally dilute tier points if over deposit threshold & update the tier
         if (msg.value > maxDepositWithoutPenalty) {
-            uint256 dilutedPoints = (msg.value * token.baseTierPoints) / (msg.value + totalDeposit);
+            uint256 dilutedPoints = (totalDeposit * token.baseTierPoints) / (msg.value + totalDeposit);
             token.baseTierPoints = uint40(dilutedPoints);
             _claimTier(_tokenId);
         }
@@ -655,7 +655,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         uint40 penalty = uint40(_max(degradeTierPenalty, scaledTierPointsPenalty));
 
         token.baseTierPoints -= penalty;
-        token.prevPointsAccrualTimestamp = uint32(block.timestamp);
         _claimTier(_tokenId);
     }
 
