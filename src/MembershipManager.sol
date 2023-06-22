@@ -655,7 +655,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         uint40 penalty = uint40(_max(degradeTierPenalty, scaledTierPointsPenalty));
 
         token.baseTierPoints -= penalty;
-        token.prevPointsAccrualTimestamp = uint32(block.timestamp);
         _claimTier(_tokenId);
     }
 
