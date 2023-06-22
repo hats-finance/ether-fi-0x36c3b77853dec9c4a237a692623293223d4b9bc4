@@ -218,7 +218,7 @@ contract MembershipManagerTest is TestSetup {
         // Alice's Points are 103680 
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
-        vm.prank(owner);
+        vm.prank(alice);
         membershipManagerInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
         // Alice Withdraws
@@ -287,7 +287,7 @@ contract MembershipManagerTest is TestSetup {
         // Alice's Points are 103680 
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
-        vm.prank(owner);
+        vm.prank(alice);
         membershipManagerInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
         // Alice Withdraws
@@ -336,7 +336,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(aliceToken), 0.5 ether);
 
         // Rebase; staking rewards 0.5 ETH into LP
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         liquidityPoolInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
         membershipManagerInstance.distributeStakingRewards();
         vm.stopPrank();
@@ -370,7 +370,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(address(liquidityPoolInstance).balance, 2.5 ether);
 
         // More Staking rewards 1 ETH into LP
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         liquidityPoolInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
         membershipManagerInstance.distributeStakingRewards();
         vm.stopPrank();
@@ -395,14 +395,14 @@ contract MembershipManagerTest is TestSetup {
 
     function test_OwnerPermissions() public {
         vm.deal(alice, 1000 ether);
-        vm.startPrank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.startPrank(owner);
+        vm.expectRevert("Only admin function");
         membershipManagerInstance.updatePointsGrowthRate(12345);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Only admin function");
         membershipManagerInstance.updatePointsBoostFactor(12345);
         vm.stopPrank();
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         membershipManagerInstance.updatePointsGrowthRate(12345);
         membershipManagerInstance.updatePointsBoostFactor(12345);
         vm.stopPrank();
@@ -519,9 +519,11 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(bobToken),  24);
 
         // Now, eETH is rebased with the staking rewards 1 eETH
-        startHoax(owner);
+        startHoax(alice);
         liquidityPoolInstance.rebase(4 ether + 1 ether, 4 ether);
         membershipManagerInstance.distributeStakingRewards();
+        vm.stopPrank();
+        startHoax(owner);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(owner, ownerProof);
         assertEq(address(liquidityPoolInstance).balance, 5 ether);
@@ -658,7 +660,7 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(henry, 12 ether);
         vm.deal(alice, 12 ether);
 
-        vm.prank(owner);
+        vm.prank(alice);
         stakingManagerInstance.enableWhitelist();
 
         vm.prank(henry);
@@ -691,7 +693,7 @@ contract MembershipManagerTest is TestSetup {
         skip(1 days);
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei);
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         // The points growth rate decreased to 5000 from 10000
         membershipManagerInstance.updatePointsGrowthRate(5000);
         vm.stopPrank();
@@ -714,9 +716,8 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24);
 
         // owner manually sets Alice's tier
-        vm.startPrank(owner);
+        vm.prank(alice);
         membershipManagerInstance.setPoints(aliceToken, uint40(28 * kwei), uint40(24 * 28));
-        vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24 * 28);
@@ -810,7 +811,7 @@ contract MembershipManagerTest is TestSetup {
         // She then deposits her ETH into the MembershipManager and has her points allocated to her
         // Then, she top-ups with ETH and eETH
 
-        // Acotrs deposit into EAP
+        // Actors deposit into EAP
         startHoax(alice);
         earlyAdopterPoolInstance.depositEther{value: 1 ether}();
         vm.stopPrank();
@@ -818,10 +819,10 @@ contract MembershipManagerTest is TestSetup {
         skip(28 days);
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
-        vm.startPrank(owner);
+        vm.prank(owner);
         earlyAdopterPoolInstance.pauseContract();
+        vm.prank(alice);
         membershipManagerInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
-        vm.stopPrank();
 
         vm.deal(alice, 100 ether);
         bytes32[] memory aliceProof = merkleMigration2.getProof(dataForVerification2, 0);
@@ -857,7 +858,7 @@ contract MembershipManagerTest is TestSetup {
     function test_FeeWorksCorrectly() public {
         launch_validator(); // there will be 2 validators from the beginning
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
         membershipManagerInstance.setFeeSplits(20, 80);
         vm.stopPrank();
@@ -893,7 +894,7 @@ contract MembershipManagerTest is TestSetup {
         uint256 treausryBalanceBefore = address(treasuryInstance).balance;
         uint256 prmBalanceBefore = address(protocolRevenueManagerInstance).balance;
 
-        vm.prank(owner);
+        vm.prank(alice);
         membershipManagerInstance.withdrawFees();
 
         assertEq(address(treasuryInstance).balance, treausryBalanceBefore + 0.02 ether);
@@ -902,12 +903,12 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_SettingFeesFail() public {
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Only admin function");
         membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Only admin function");
         membershipManagerInstance.setFeeSplits(20, 80);
         
-        vm.startPrank(owner);
+        vm.startPrank(alice);
 
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
         membershipManagerInstance.setFeeAmounts(0.001 ether * uint256(type(uint16).max) + 1, 0);
@@ -941,7 +942,7 @@ contract MembershipManagerTest is TestSetup {
 
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
-        vm.prank(owner);
+        vm.prank(alice);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
@@ -967,7 +968,7 @@ contract MembershipManagerTest is TestSetup {
         }
 
         bytes32 depositRoot = _getDepositRoot();
-        vm.prank(owner);
+        vm.prank(alice);
         liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
     }
 }

@@ -50,6 +50,7 @@ contract NodeOperatorManagerV2 is NodeOperatorManager {
 }
 
 contract UpgradeTest is TestSetup {
+    using stdStorage for StdStorage;
 
     AuctionManagerV2Test public auctionManagerV2Instance;
     BNFTV2 public BNFTV2Instance;
@@ -61,7 +62,6 @@ contract UpgradeTest is TestSetup {
 
     uint256[] public slippageArray;
 
-   
     function setUp() public {
         setUpTests();
     }
@@ -74,7 +74,6 @@ contract UpgradeTest is TestSetup {
         );
 
         assertEq(auctionInstance.numberOfActiveBids(), 0);
-
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
@@ -138,7 +137,7 @@ contract UpgradeTest is TestSetup {
     function test_CanUpgradeEtherFiNodesManager() public {
         assertEq(managerInstance.getImplementation(), address(managerImplementation));
 
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.setStakingRewardsSplit(uint64(100000), uint64(100000), uint64(400000), uint64(400000));
 
         EtherFiNodesManagerV2 managerV2Implementation = new EtherFiNodesManagerV2();
@@ -177,7 +176,7 @@ contract UpgradeTest is TestSetup {
     function test_CanUpgradeProtocolRevenueManager() public {
         assertEq(protocolRevenueManagerInstance.getImplementation(), address(protocolRevenueManagerImplementation));
 
-        vm.prank(owner);
+        vm.prank(alice);
         protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(uint128(60));
 
         ProtocolRevenueManagerV2 protocolRevenueManagerV2Implementation = new ProtocolRevenueManagerV2();
@@ -216,7 +215,7 @@ contract UpgradeTest is TestSetup {
         
         assertEq(stakingManagerInstance.getImplementation(), address(stakingManagerImplementation));
 
-        vm.prank(owner);
+        vm.prank(alice);
         stakingManagerInstance.setMaxBatchDepositSize(uint128(25));
 
         StakingManager stakingManagerV2Implementation = new StakingManager();

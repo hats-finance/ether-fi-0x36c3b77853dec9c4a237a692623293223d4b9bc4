@@ -66,7 +66,7 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[0] = bidId[0];
         vm.stopPrank();
 
-        startHoax(owner);
+        startHoax(alice);
         stakingManagerInstance.enableWhitelist();
         vm.expectRevert("User is not whitelisted");
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
@@ -221,7 +221,7 @@ contract StakingManagerTest is TestSetup {
 
         vm.stopPrank();
 
-        vm.prank(owner);
+        vm.prank(alice);
         stakingManagerInstance.pauseContract();
 
         vm.expectRevert("Pausable: paused");
@@ -259,7 +259,7 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[9] = 20;
         vm.stopPrank();
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         stakingManagerInstance.enableWhitelist();
         vm.stopPrank();
 
@@ -477,7 +477,7 @@ contract StakingManagerTest is TestSetup {
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
 
-        vm.prank(owner);
+        vm.prank(alice);
         stakingManagerInstance.pauseContract();
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -1159,12 +1159,12 @@ contract StakingManagerTest is TestSetup {
 
     function test_SetMaxDeposit() public {
         assertEq(stakingManagerInstance.maxBatchDepositSize(), 25);
-        vm.prank(owner);
+        vm.prank(alice);
         stakingManagerInstance.setMaxBatchDepositSize(12);
         assertEq(stakingManagerInstance.maxBatchDepositSize(), 12);
 
-        vm.prank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(owner);
+        vm.expectRevert("Only admin function");
         stakingManagerInstance.setMaxBatchDepositSize(12);
     }
 
@@ -1277,7 +1277,7 @@ contract StakingManagerTest is TestSetup {
     function test_EnablingAndDisablingWhitelistingWorks() public {
         assertEq(stakingManagerInstance.whitelistEnabled(), false);
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         stakingManagerInstance.enableWhitelist();
         assertEq(stakingManagerInstance.whitelistEnabled(), true);
 

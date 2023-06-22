@@ -302,17 +302,18 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         IEtherFiNode(etherFiNode).markExited(1);
 
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Only admin function");
+        vm.prank(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
 
-        hoax(owner);
+        hoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
 
-        hoax(owner);
+        hoax(alice);
         vm.expectRevert("Invalid phase transition");
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
@@ -330,10 +331,10 @@ contract EtherFiNodeTest is TestSetup {
         );
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
 
-        hoax(owner);
+        hoax(alice);
         managerInstance.markBeingSlashed(validatorIds);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
-        hoax(owner);
+        hoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
@@ -417,11 +418,12 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(etherfiNode, 4 ether + vestedAuctionFeeRewardsForStakers);
 
         vm.expectRevert(
-            "Ownable: caller is not the owner"
+            "Only admin function"
         );
+        vm.prank(owner);
         managerInstance.markBeingSlashed(bidId);
 
-        hoax(owner);
+        hoax(alice);
         managerInstance.markBeingSlashed(bidId);
         vm.expectRevert(
             "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
@@ -435,10 +437,10 @@ contract EtherFiNodeTest is TestSetup {
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
 
-        hoax(owner);
+        hoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
 
-        hoax(owner);
+        hoax(alice);
         vm.expectRevert("Invalid phase transition");
         managerInstance.markBeingSlashed(bidId);
     }
@@ -450,7 +452,7 @@ contract EtherFiNodeTest is TestSetup {
         exitTimestamps[0] = 1;
         address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
-        hoax(owner);
+        hoax(alice);
         managerInstance.markBeingSlashed(bidId);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
     }
@@ -556,7 +558,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256 treasuryBalance = address(treasuryInstance).balance;
         uint256 stakerBalance = address(staker).balance;
 
-        startHoax(owner);
+        startHoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         vm.stopPrank();
 
@@ -573,7 +575,7 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        startHoax(owner);
+        startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
         assertFalse(managerInstance.isExitRequested(validatorIds[0]));
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
@@ -625,7 +627,7 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        startHoax(owner);
+        startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
         assertFalse(managerInstance.isExitRequested(validatorIds[0]));
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
@@ -699,7 +701,7 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        startHoax(owner);
+        startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertEq(managerInstance.numberOfValidators(), 0);
@@ -827,7 +829,7 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        startHoax(owner);
+        startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertEq(managerInstance.numberOfValidators(), 0);
@@ -876,7 +878,7 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        startHoax(owner);
+        startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertEq(managerInstance.numberOfValidators(), 0);
@@ -925,7 +927,7 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
         uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
-        startHoax(owner);
+        startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertEq(managerInstance.numberOfValidators(), 0);
@@ -981,7 +983,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // 1 day passed
         vm.warp(block.timestamp + 86400);
-        startHoax(owner);
+        startHoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
 
@@ -1009,7 +1011,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // 14 days passed
         vm.warp(block.timestamp + (1 + 14 * 86400));
-        startHoax(owner);
+        startHoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
 
@@ -1037,7 +1039,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // 28 days passed
         vm.warp(block.timestamp + 28 * 86400);
-        startHoax(owner);
+        startHoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
 
@@ -1053,7 +1055,7 @@ contract EtherFiNodeTest is TestSetup {
     function test_markExitedFails() public {
         uint256[] memory validatorIds = new uint256[](1);
         uint32[] memory exitTimestamps = new uint32[](2);
-        startHoax(owner);
+        startHoax(alice);
         vm.expectRevert("Check params");
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
@@ -1071,7 +1073,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // 28 days passed
         vm.warp(block.timestamp + (1 + 28 * 86400));
-        startHoax(owner);
+        startHoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
         assertGe(nonExitPenalty, 0.5 ether);
@@ -1112,7 +1114,7 @@ contract EtherFiNodeTest is TestSetup {
 
         validatorIds[0] = bidId[0];
 
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
 
         vm.prank(TNFTInstance.ownerOf(validatorIds[0]));
@@ -1133,7 +1135,7 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.sendExitRequest(validatorIds[0]);
 
         // the node actually exited a second before the exit request from the T-NFT holder
-        vm.prank(owner);
+        vm.prank(alice);
         exitTimestamps[0] = uint32(block.timestamp) - 1;
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
 

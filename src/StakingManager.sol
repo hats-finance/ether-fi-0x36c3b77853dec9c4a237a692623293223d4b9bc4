@@ -50,6 +50,7 @@ contract StakingManager is
     mapping(uint256 => address) public bidIdToStaker;
 
     uint256[40] public __gap;
+    address public admin;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -200,7 +201,7 @@ contract StakingManager is
 
     /// @notice Sets the max number of deposits allowed at a time
     /// @param _newMaxBatchDepositSize the max number of deposits allowed
-    function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyOwner {
+    function setMaxBatchDepositSize(uint128 _newMaxBatchDepositSize) public onlyAdmin {
         maxBatchDepositSize = _newMaxBatchDepositSize;
     }
 
@@ -241,14 +242,14 @@ contract StakingManager is
 
     /// @notice Disables the bid whitelist
     /// @dev Allows both regular users and whitelisted users to bid
-    function disableWhitelist() public onlyOwner {
+    function disableWhitelist() public onlyAdmin {
         whitelistEnabled = false;
         emit WhitelistDisabled();
     }
 
     /// @notice Enables the bid whitelist
     /// @dev Only users who are on a whitelist can bid
-    function enableWhitelist() public onlyOwner {
+    function enableWhitelist() public onlyAdmin {
         whitelistEnabled = true;
         emit WhitelistEnabled();
     }
@@ -257,7 +258,7 @@ contract StakingManager is
     /// @dev Merkleroot Fetches generated in JS offline and sent to the contract
     /// @dev Used in the staking manager and LP
     /// @param _newMerkle New merkle root to be used for staking
-    function updateMerkleRoot(bytes32 _newMerkle) external onlyOwner {
+    function updateMerkleRoot(bytes32 _newMerkle) external onlyAdmin {
         bytes32 oldMerkle = merkleRoot;
         merkleRoot = _newMerkle;
 
@@ -271,8 +272,15 @@ contract StakingManager is
         }
     }
 
-    function pauseContract() external onlyOwner { _pause(); }
-    function unPauseContract() external onlyOwner { _unpause(); }
+    function pauseContract() external onlyAdmin { _pause(); }
+    function unPauseContract() external onlyAdmin { _unpause(); }
+
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
+    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
@@ -398,6 +406,11 @@ contract StakingManager is
             bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
             require(_depositRoot == onchainDepositRoot, "deposit root changed");
         }
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin function");
         _;
     }
 }

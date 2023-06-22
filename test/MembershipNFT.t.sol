@@ -30,12 +30,12 @@ contract MembershipNFTTest is TestSetup {
     function test_metadata() public {
 
         // only admin can update uri
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Only admin function");
         membershipNftInstance.setMetadataURI("badURI.com");
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Only admin function");
         membershipNftInstance.setContractMetadataURI("badURI2.com");
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         membershipNftInstance.setMetadataURI("http://ether-fi/{id}");
         assertEq(membershipNftInstance.uri(5), "http://ether-fi/{id}");
 

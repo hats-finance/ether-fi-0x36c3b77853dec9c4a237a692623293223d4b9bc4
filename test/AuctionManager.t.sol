@@ -149,11 +149,11 @@ contract AuctionManagerTest is TestSetup {
     function test_DisableWhitelist() public {
         assertTrue(auctionInstance.whitelistEnabled());
 
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
+        vm.expectRevert("Only admin function");
+        vm.prank(owner);
         auctionInstance.disableWhitelist();
 
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.disableWhitelist();
 
         assertFalse(auctionInstance.whitelistEnabled());
@@ -162,16 +162,16 @@ contract AuctionManagerTest is TestSetup {
     function test_EnableWhitelist() public {
         assertTrue(auctionInstance.whitelistEnabled());
 
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.disableWhitelist();
 
         assertFalse(auctionInstance.whitelistEnabled());
 
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
+        vm.expectRevert("Only admin function");
+        vm.prank(owner);
         auctionInstance.enableWhitelist();
 
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.enableWhitelist();
 
         assertTrue(auctionInstance.whitelistEnabled());
@@ -240,7 +240,7 @@ contract AuctionManagerTest is TestSetup {
         assertEq(auctionInstance.numberOfActiveBids(), 5);
 
         // Owner disables whitelist
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.disableWhitelist();
 
         // Bob can still bid below min bid amount because he was whitlelisted
@@ -280,7 +280,7 @@ contract AuctionManagerTest is TestSetup {
         assertTrue(isActive);
 
         // Owner enables whitelist
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.enableWhitelist();
 
         vm.expectRevert("Only whitelisted addresses");
@@ -323,7 +323,7 @@ contract AuctionManagerTest is TestSetup {
         hoax(alice);
         auctionInstance.createBid{value: 5.1 ether}(1, 5.1 ether);
 
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.disableWhitelist();
 
         vm.expectRevert("Incorrect bid value");
@@ -513,7 +513,7 @@ contract AuctionManagerTest is TestSetup {
         );
 
         assertFalse(auctionInstance.paused());
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.pauseContract();
         assertTrue(auctionInstance.paused());
 
@@ -523,7 +523,7 @@ contract AuctionManagerTest is TestSetup {
 
         assertEq(auctionInstance.numberOfActiveBids(), 0);
 
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.unPauseContract();
 
         hoax(alice);
@@ -663,14 +663,14 @@ contract AuctionManagerTest is TestSetup {
         );
         assertEq(auctionInstance.numberOfActiveBids(), 2);
 
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.pauseContract();
 
         vm.expectRevert("Pausable: paused");
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         auctionInstance.cancelBid(bid2Id[0]);
 
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.unPauseContract();
 
         assertEq(auctionInstance.numberOfActiveBids(), 2);
@@ -739,31 +739,31 @@ contract AuctionManagerTest is TestSetup {
     }
 
     function test_SetMaxBidAmount() public {
-        vm.prank(owner);
+        vm.prank(alice);
         vm.expectRevert("Min bid exceeds max bid");
         auctionInstance.setMaxBidPrice(0.001 ether);
 
-        vm.prank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(owner);
+        vm.expectRevert("Only admin function");
         auctionInstance.setMaxBidPrice(10 ether);
 
         assertEq(auctionInstance.maxBidAmount(), 5 ether);
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.setMaxBidPrice(10 ether);
         assertEq(auctionInstance.maxBidAmount(), 10 ether);
     }
 
     function test_SetMinBidAmount() public {
-        vm.prank(owner);
+        vm.prank(alice);
         vm.expectRevert("Min bid exceeds max bid");
         auctionInstance.setMinBidPrice(5 ether);
 
-        vm.prank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(owner);
+        vm.expectRevert("Only admin function");
         auctionInstance.setMinBidPrice(0.005 ether);
 
         assertEq(auctionInstance.minBidAmount(), 0.01 ether);
-        vm.prank(owner);
+        vm.prank(alice);
         auctionInstance.setMinBidPrice(1 ether);
         assertEq(auctionInstance.minBidAmount(), 1 ether);
     }

@@ -29,6 +29,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     mapping(address => KeyData) public addressToOperatorData;
     mapping(address => bool) private whitelistedAddresses;
     mapping(address => bool) public registered;
+    address public admin;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -91,7 +92,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
 
     /// @notice Adds an address to the whitelist
     /// @param _address Address of the user to add
-    function addToWhitelist(address _address) external onlyOwner {
+    function addToWhitelist(address _address) external onlyAdmin {
         whitelistedAddresses[_address] = true;
 
         emit AddedToWhitelist(_address);
@@ -99,19 +100,19 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
 
     /// @notice Removed an address from the whitelist
     /// @param _address Address of the user to remove
-    function removeFromWhitelist(address _address) external onlyOwner {
+    function removeFromWhitelist(address _address) external onlyAdmin {
         whitelistedAddresses[_address] = false;
 
         emit RemovedFromWhitelist(_address);
     }
 
     //Pauses the contract
-    function pauseContract() external onlyOwner {
+    function pauseContract() external onlyAdmin {
         _pause();
     }
 
     //Unpauses the contract
-    function unPauseContract() external onlyOwner {
+    function unPauseContract() external onlyAdmin {
         _unpause();
     }
 
@@ -169,6 +170,13 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         auctionManagerContractAddress = _auctionContractAddress;
     }
 
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
@@ -186,6 +194,11 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
             msg.sender == auctionManagerContractAddress,
             "Only auction manager contract function"
         );
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin function");
         _;
     }
 }

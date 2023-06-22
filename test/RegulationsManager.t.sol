@@ -10,7 +10,7 @@ contract RegulationsManagerTest is TestSetup {
     }
 
     function test_ConfirmEligibilityWorks() public {
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         regulationsManagerInstance.pauseContract();
         vm.expectRevert("Pausable: paused");
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
@@ -34,7 +34,7 @@ contract RegulationsManagerTest is TestSetup {
         vm.expectRevert("User is not whitelisted");
         regulationsManagerInstance.removeFromWhitelist(alice);
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         regulationsManagerInstance.pauseContract();
         vm.expectRevert("Pausable: paused");
         regulationsManagerInstance.removeFromWhitelist(alice);
@@ -47,7 +47,7 @@ contract RegulationsManagerTest is TestSetup {
 
         assertEq(regulationsManagerInstance.isEligible(1, alice), true);
 
-        vm.prank(owner);
+        vm.prank(alice);
         regulationsManagerInstance.removeFromWhitelist(alice);
 
         assertEq(regulationsManagerInstance.isEligible(1, alice), false);
@@ -64,18 +64,19 @@ contract RegulationsManagerTest is TestSetup {
     }
 
     function test_initializeNewWhitelistWorks() public {
-        vm.startPrank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.startPrank(owner);
+        vm.expectRevert("Only admin function");
         regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
 
         assertEq(regulationsManagerInstance.whitelistVersion(), 1);
-
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         vm.stopPrank();
 
-        assertEq(regulationsManagerInstance.isEligible(1, alice), true);
+        vm.prank(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
-        vm.prank(owner);
+        assertEq(regulationsManagerInstance.isEligible(regulationsManagerInstance.whitelistVersion(), alice), true);
+
+        vm.prank(alice);
         regulationsManagerInstance.initializeNewWhitelist("USA, CANADA, FRANCE");
 
         assertEq(regulationsManagerInstance.whitelistVersion(), 2);
