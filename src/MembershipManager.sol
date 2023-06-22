@@ -88,8 +88,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         minDepositGwei = (0.1 ether / 1 gwei);
         maxDepositTopUpPercent = 20;
 
-        treasuryFeeSplitPercent = 0;
-        protocolRevenueFeeSplitPercent = 100;
+        setFeeSplits(0, 100);
     }
 
     error InvalidEAPRollover();
@@ -352,7 +351,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         burnFee = uint16(_burnFeeAmount / 0.001 ether);
     }
 
-    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) external onlyOwner {
+    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) public onlyOwner {
         if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
         treasuryFeeSplitPercent = _treasurySplitPercent;
         protocolRevenueFeeSplitPercent = _protocolRevenueManagerSplitPercent;
