@@ -426,11 +426,11 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.claimTier(aliceToken);
         assertEq(membershipNftInstance.tierOf(aliceToken), 4);
 
-        // points should get diluted by 50% & the tier is properly updated
-        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
+        // points should get diluted by 25% & the tier is properly updated
+        membershipManagerInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 3 ether, 0 ether, aliceProof);
         uint256 dilutedPoints = membershipNftInstance.tierPointsOf(aliceToken);
-        assertEq(dilutedPoints , currentPoints / 2);
-        assertEq(membershipNftInstance.tierOf(aliceToken), 2);
+        assertEq(dilutedPoints , currentPoints / 4);
+        assertEq(membershipNftInstance.tierOf(aliceToken), 1);
         assertEq(membershipNftInstance.tierOf(aliceToken), membershipManagerInstance.tierForPoints(uint40(dilutedPoints)));
 
         vm.stopPrank();
