@@ -78,6 +78,19 @@
         "type": "uint256"
       }
     ],
+    "name": "NodeEvicted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      }
+    ],
     "name": "NodeExitProcessed",
     "type": "event"
   },
@@ -538,6 +551,25 @@
         "type": "uint256"
       }
     ],
+    "name": "isEvicted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      }
+    ],
     "name": "isExitRequested",
     "outputs": [
       {
@@ -576,6 +608,25 @@
         "type": "uint256"
       }
     ],
+    "name": "isFullyWithdrawn",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      }
+    ],
     "name": "localRevenueIndex",
     "outputs": [
       {
@@ -595,7 +646,7 @@
         "type": "uint256[]"
       }
     ],
-    "name": "markBeingSlahsed",
+    "name": "markBeingSlashed",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -778,6 +829,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "processNodeEvict",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
