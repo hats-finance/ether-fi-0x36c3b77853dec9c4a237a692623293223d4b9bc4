@@ -70,6 +70,7 @@ contract MembershipNFTTest is TestSetup {
         vm.startPrank(address(membershipManagerInstance));
         vm.expectRevert(MembershipNFT.MintingIsPaused.selector);
         membershipNftInstance.mint(alice, 1);
+        vm.stopPrank();
 
         // unpause
         vm.prank(owner);
