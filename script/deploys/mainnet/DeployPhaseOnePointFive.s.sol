@@ -9,7 +9,6 @@ import "../../../src/EETH.sol";
 import "../../../src/LiquidityPool.sol";
 import "../../../src/RegulationsManager.sol";
 import "../../../src/UUPSProxy.sol";
-import "../../../src/TVLOracle.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployPhaseOnePointFiveScript is Script {
@@ -42,7 +41,6 @@ contract DeployPhaseOnePointFiveScript is Script {
     RegulationsManager public regulationsManagerImplementation;
     RegulationsManager public regulationsManager;
 
-    TVLOracle public tvlOracle;
 
     struct suiteAddresses {
         address weETH;
@@ -51,7 +49,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         address eETH;
         address liquidityPool;
         address regulationsManager;
-        address tvlOracle;
     }
 
     suiteAddresses suiteAddressesStruct;
@@ -101,8 +98,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         weETH = WeETH(address(weETHProxy));
         weETH.initialize(address(liquidityPool), address(eETH));
 
-        tvlOracle = new TVLOracle(tvlAggregatorAddress);
-
         // Setup dependencies
         regulationsManager.initializeNewWhitelist(initialHash);
 
@@ -120,8 +115,7 @@ contract DeployPhaseOnePointFiveScript is Script {
             membershipManager: address(membershipManager),
             eETH: address(eETH),
             liquidityPool: address(liquidityPool),
-            regulationsManager: address(regulationsManager),
-            tvlOracle: address(tvlOracle)
+            regulationsManager: address(regulationsManager)
         });
 
         writeSuiteVersionFile();
@@ -181,9 +175,7 @@ contract DeployPhaseOnePointFiveScript is Script {
                     "\nLiquidity Pool: ",
                     Strings.toHexString(suiteAddressesStruct.liquidityPool),
                     "\nRegulations Manager: ",
-                    Strings.toHexString(suiteAddressesStruct.regulationsManager),
-                    "\nTVL Oracle: ",
-                    Strings.toHexString(suiteAddressesStruct.tvlOracle)
+                    Strings.toHexString(suiteAddressesStruct.regulationsManager)
                 )
             )
         );
