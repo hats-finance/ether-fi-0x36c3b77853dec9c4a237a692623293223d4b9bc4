@@ -87,6 +87,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         pointsGrowthRate = 10000;
         minDepositGwei = (0.1 ether / 1 gwei);
         maxDepositTopUpPercent = 20;
+
+        treasuryFeeSplitPercent = 0;
+        protocolRevenueFeeSplitPercent = 100;
     }
 
     error InvalidEAPRollover();
@@ -362,10 +365,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         uint256 protocolRevenueFees = totalAccumulatedFeeAmount * protocolRevenueFeeSplitPercent / 100;
 
         bool sent;
-        (sent, ) = address(treasury).call{value: treasuryFees}("");
-        if (!sent) revert InvalidWithdraw();
-        (sent, ) = address(protocolRevenueManager).call{value: protocolRevenueFees}("");
-        if (!sent) revert InvalidWithdraw();
+        if (treasuryFees > 0) {
+            (sent, ) = address(treasury).call{value: treasuryFees}("");
+            if (!sent) revert InvalidWithdraw();
+        }
+        if (protocolRevenueFees > 0) {
+            (sent, ) = address(protocolRevenueManager).call{value: protocolRevenueFees}("");
+            if (!sent) revert InvalidWithdraw();
+        }
     }
 
     /// @notice Updates the eETH address
