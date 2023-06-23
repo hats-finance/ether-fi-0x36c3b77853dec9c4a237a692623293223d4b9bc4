@@ -334,9 +334,6 @@ contract TestSetup is Test {
         stakingManagerInstance.registerEth2DepositContract(address(mockDepositContractEth2));
 
         _initializeMembershipTiers();
-
-        vm.stopPrank();
-
         _initializePeople();
     }
 
