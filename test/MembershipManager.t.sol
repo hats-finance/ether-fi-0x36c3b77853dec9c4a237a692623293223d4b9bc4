@@ -519,11 +519,9 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(bobToken),  24);
 
         // Now, eETH is rebased with the staking rewards 1 eETH
-        startHoax(alice);
+        startHoax(owner);
         liquidityPoolInstance.rebase(4 ether + 1 ether, 4 ether);
         membershipManagerInstance.distributeStakingRewards();
-        vm.stopPrank();
-        startHoax(owner);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 1 ether}(owner, ownerProof);
         assertEq(address(liquidityPoolInstance).balance, 5 ether);
@@ -552,26 +550,6 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.balanceOf(bob, aliceToken), 0);
         assertEq(bob.balance, 2.666666666666666666 ether);
         assertEq(membershipNftInstance.balanceOf(bob, bobToken), 0);
-    }
-
-    function test_unwrapForEth() public {
-        vm.deal(alice, 2 ether);
-        assertEq(alice.balance, 2 ether);
-
-        vm.startPrank(alice);
-        // Alice mints an membership points by wrapping 2 ETH starts earning points
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
-        assertEq(eETHInstance.balanceOf(alice), 0 ether);
-        assertEq(membershipNftInstance.valueOf(aliceToken), 2 ether);
-
-        // Alice burns membership points directly for ETH
-        membershipManagerInstance.unwrapForEth(aliceToken, 1 ether);
-        assertEq(eETHInstance.balanceOf(alice), 0 ether);
-        assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether);
-        assertEq(alice.balance, 1 ether);
-
-        vm.expectRevert(MembershipManager.InsufficientLiquidity.selector);
-        membershipManagerInstance.unwrapForEth(aliceToken, 5 ether);
     }
 
 

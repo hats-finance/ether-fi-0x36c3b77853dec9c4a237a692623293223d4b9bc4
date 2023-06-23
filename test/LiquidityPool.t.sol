@@ -121,21 +121,20 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_LiquidityPoolBatchDepositWithBidIds() public {
-        vm.deal(alice, 3 ether);
-        vm.deal(owner, 4 ether);
+        vm.deal(alice, 4 ether);
+        vm.deal(owner, 3 ether);
 
-        vm.startPrank(alice);
+        vm.startPrank(owner);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
             5
         );
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
-        vm.stopPrank();
 
         vm.expectRevert("Only admin function");
-        vm.prank(owner);
         liquidityPoolInstance.batchDepositWithBidIds(1, bidIds, aliceProof);
+        vm.stopPrank();
 
         vm.startPrank(alice);
         bytes32[] memory proof = getWhitelistMerkleProof(9);
@@ -146,12 +145,13 @@ contract LiquidityPoolTest is TestSetup {
         vm.expectRevert("Not enough balance");
         liquidityPoolInstance.batchDepositWithBidIds{value: 2 ether}(1, bidIds, proof);
 
+
         liquidityPoolInstance.rebase(70 ether, 0 ether);
         vm.stopPrank();
 
         _transferTo(address(liquidityPoolInstance), 70 ether);
 
-        startHoax(alice);
+        vm.startPrank(alice);
         stakingManagerInstance.enableWhitelist();
         uint256[] memory longBidIds = new uint256[](2);
         longBidIds[0] = bidIds[0];
@@ -160,7 +160,7 @@ contract LiquidityPoolTest is TestSetup {
 
         assertEq(address(liquidityPoolInstance).balance, 70 ether + 2 ether - 32 ether);
         assertEq(address(stakingManagerInstance).balance, 32 ether);
-        assertEq(address(owner).balance, 2 ether);
+        assertEq(address(alice).balance, 2 ether);
         assertEq(newValidators.length, 1);
         assertEq(newValidators[0], 1);
     }
