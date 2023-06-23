@@ -281,6 +281,12 @@ contract TestSetup is Test {
         membershipManagerInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance), address(treasuryInstance), address(protocolRevenueManagerInstance));
         membershipManagerInstance.updateAdmin(alice);
 
+        vm.stopPrank();
+
+        vm.prank(alice);
+        membershipManagerInstance.setTopUpCooltimePeriod(28 days);
+        vm.startPrank(owner);
+
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
 
         tvlOracle = new TVLOracle(alice);
