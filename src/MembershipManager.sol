@@ -158,7 +158,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         _requireTokenOwner(_tokenId);
         _topUpDeposit(_tokenId, _amount, _amountForPoints);
 
-        uint256 additionalDeposit = msg.value - (upgradeFee * 0.001 ether);
+        uint256 additionalDeposit = msg.value - (uint256(upgradeFee) * 0.001 ether);
         liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
     }
 
@@ -424,6 +424,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     error OncePerMonth();
 
     function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
+
+        // subtract fee from provided ether. Will revert if not enough eth provided
         uint256 additionalDeposit = msg.value - (uint256(upgradeFee) * 0.001 ether);
         canTopUp(_tokenId, additionalDeposit, _amount, _amountForPoints);
 
@@ -689,7 +691,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     // returns (mintFeeAmount, burnFeeAmount, upgradeFeeAmount)
     function getFees() external view returns (uint256, uint256, uint256) {
-        return (mintFee * 0.001 ether, burnFee * 0.001 ether, upgradeFee * 0.001 ether);
+        return (uint256(mintFee) * 0.001 ether, uint256(burnFee) * 0.001 ether, uint256(upgradeFee) * 0.001 ether);
     }
 
     function getImplementation() external view returns (address) {
