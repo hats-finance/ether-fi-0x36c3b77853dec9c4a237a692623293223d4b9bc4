@@ -33,8 +33,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint128 public totalValueInLp;
     bool public eEthliquidStakingOpened;
 
-    uint256[21] __gap;
-
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------

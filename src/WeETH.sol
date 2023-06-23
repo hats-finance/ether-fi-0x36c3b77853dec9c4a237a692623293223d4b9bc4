@@ -16,8 +16,6 @@ contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
 
-    uint256[9] __gap;
-
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------

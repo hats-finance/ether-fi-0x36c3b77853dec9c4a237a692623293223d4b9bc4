@@ -47,7 +47,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     address public treasury;
     address public protocolRevenueManager;
 
-    uint256[23] __gap;
     address public admin;
 
 
