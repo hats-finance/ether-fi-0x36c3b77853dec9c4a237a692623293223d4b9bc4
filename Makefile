@@ -43,7 +43,7 @@ deploy-mainnet-phase-1.5:; forge clean && forge script script/deploys/mainnet/De
 
 deploy-goerli-tvlOracle:; forge clean && forge script script/deploys/goerli/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
-deploy-optimism-tvlOracle:; forge clean && forge script script/deploys/optimism/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${OPTIMISM_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-optimism-tvlOracle:; forge clean && forge script script/deploys/mainnet/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${OPTIMISM_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (GOERLI)
