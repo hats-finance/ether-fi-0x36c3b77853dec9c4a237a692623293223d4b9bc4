@@ -158,7 +158,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         _requireTokenOwner(_tokenId);
         _topUpDeposit(_tokenId, _amount, _amountForPoints);
 
-        uint256 additionalDeposit = msg.value - (uint256(upgradeFee) * 0.001 ether);
+        uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
+        uint256 additionalDeposit = msg.value - upgradeFeeAmount;
         liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
     }
 
@@ -426,7 +427,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
 
         // subtract fee from provided ether. Will revert if not enough eth provided
-        uint256 additionalDeposit = msg.value - (uint256(upgradeFee) * 0.001 ether);
+        uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
+        uint256 additionalDeposit = msg.value - upgradeFeeAmount;
         canTopUp(_tokenId, additionalDeposit, _amount, _amountForPoints);
 
         claimPoints(_tokenId);
