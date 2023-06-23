@@ -87,6 +87,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         pointsGrowthRate = 10000;
         minDepositGwei = (0.1 ether / 1 gwei);
         maxDepositTopUpPercent = 20;
+
+        setFeeSplits(0, 100);
     }
 
     error InvalidEAPRollover();
@@ -349,7 +351,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         burnFee = uint16(_burnFeeAmount / 0.001 ether);
     }
 
-    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) external onlyOwner {
+    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) public onlyOwner {
         if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
         treasuryFeeSplitPercent = _treasurySplitPercent;
         protocolRevenueFeeSplitPercent = _protocolRevenueManagerSplitPercent;
@@ -362,10 +364,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         uint256 protocolRevenueFees = totalAccumulatedFeeAmount * protocolRevenueFeeSplitPercent / 100;
 
         bool sent;
-        (sent, ) = address(treasury).call{value: treasuryFees}("");
-        if (!sent) revert InvalidWithdraw();
-        (sent, ) = address(protocolRevenueManager).call{value: protocolRevenueFees}("");
-        if (!sent) revert InvalidWithdraw();
+        if (treasuryFees > 0) {
+            (sent, ) = address(treasury).call{value: treasuryFees}("");
+            if (!sent) revert InvalidWithdraw();
+        }
+        if (protocolRevenueFees > 0) {
+            (sent, ) = address(protocolRevenueManager).call{value: protocolRevenueFees}("");
+            if (!sent) revert InvalidWithdraw();
+        }
     }
 
     /// @notice Updates the eETH address
