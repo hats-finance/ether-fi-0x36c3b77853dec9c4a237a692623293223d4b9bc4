@@ -17,6 +17,7 @@ interface IMembershipNFT is IERC1155Upgradeable {
     function claimableTier(uint256 _tokenId) external view returns (uint8);
     function accruedLoyaltyPointsOf(uint256 _tokenId) external view returns (uint40);
     function accruedTierPointsOf(uint256 _tokenId) external view returns (uint40);
+    function accruedStakingRewardsOf(uint256 _tokenId) external view returns (uint);
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) external view returns (bool);
     function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) external view returns (bool);
     function allTimeHighDepositOf(uint256 _tokenId) external view returns (uint256);

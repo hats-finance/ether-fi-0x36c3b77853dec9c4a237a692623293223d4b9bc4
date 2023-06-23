@@ -43,10 +43,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     uint8 public treasuryFeeSplitPercent;
     uint8 public protocolRevenueFeeSplitPercent;
 
+    uint32 public topUpCooltimePeriod;
+
     address public treasury;
     address public protocolRevenueManager;
 
     uint256[23] __gap;
+    address public admin;
+
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -54,6 +58,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
+    event NftUpdated(uint256 _tokenId, uint128 _amount, uint128 _amountSacrificedForBoostingPoints, uint40 _loyaltyPoints, uint40 _tierPoints, uint8 _tier, uint32 _prevTopUpTimestamp, uint96 _rewardsLocalIndex);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -88,6 +93,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         pointsGrowthRate = 10000;
         minDepositGwei = (0.1 ether / 1 gwei);
         maxDepositTopUpPercent = 20;
+
+        setFeeSplits(0, 100);
     }
 
     error InvalidEAPRollover();
@@ -122,6 +129,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _snapshotEthAmount);
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
+        _emitNftUpdateEvent(tokenId);
         emit FundsMigrated(msg.sender, tokenId, msg.value, _points, loyaltyPoints, tierPoints);
         return tokenId;
     }
@@ -145,6 +153,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         
         liquidityPool.deposit{value: amountAfterFee}(msg.sender, address(this), _merkleProof);
         uint256 tokenId = _mintMembershipNFT(msg.sender, amountAfterFee - _amountForPoints, _amountForPoints, 0, 0);
+
+        _emitNftUpdateEvent(tokenId);
         return tokenId;
     }
 
@@ -161,6 +171,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
         uint256 additionalDeposit = msg.value - upgradeFeeAmount;
         liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
+        _emitNftUpdateEvent(_tokenId);
     }
 
     error ExceededMaxWithdrawal();
@@ -187,6 +198,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         liquidityPool.withdraw(address(msg.sender), _amount);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice withdraw the entire balance of this NFT and burn it
@@ -201,6 +214,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
         liquidityPool.withdraw(address(msg.sender), totalBalance - feeAmount);
         liquidityPool.withdraw(address(this), feeAmount);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Sacrifice the staking rewards and earn more points
@@ -215,6 +230,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         claimStakingRewards(_tokenId);
 
         _stakeForPoints(_tokenId, _amount);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Unstakes ETH.
@@ -229,6 +246,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         claimStakingRewards(_tokenId);
 
         _unstakeForPoints(_tokenId, _amount);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Claims the tier.
@@ -245,6 +264,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         claimStakingRewards(_tokenId);
 
         _claimTier(_tokenId, oldTier, newTier);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Claims the accrued membership {loyalty, tier} points.
@@ -355,7 +376,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
     }
 
-    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) external onlyOwner {
+    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) public onlyOwner {
         if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
         treasuryFeeSplitPercent = _treasurySplitPercent;
         protocolRevenueFeeSplitPercent = _protocolRevenueManagerSplitPercent;
@@ -368,10 +389,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         uint256 protocolRevenueFees = totalAccumulatedFeeAmount * protocolRevenueFeeSplitPercent / 100;
 
         bool sent;
-        (sent, ) = address(treasury).call{value: treasuryFees}("");
-        if (!sent) revert InvalidWithdraw();
-        (sent, ) = address(protocolRevenueManager).call{value: protocolRevenueFees}("");
-        if (!sent) revert InvalidWithdraw();
+        if (treasuryFees > 0) {
+            (sent, ) = address(treasury).call{value: treasuryFees}("");
+            if (!sent) revert InvalidWithdraw();
+        }
+        if (protocolRevenueFees > 0) {
+            (sent, ) = address(protocolRevenueManager).call{value: protocolRevenueFees}("");
+            if (!sent) revert InvalidWithdraw();
+        }
     }
 
     /// @notice Updates the eETH address
@@ -384,6 +409,19 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @param _liquidityPoolAddress address of the new LP instance
     function setLPInstance(address _liquidityPoolAddress) external onlyOwner {
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+    }
+
+    /// @notice Updates the time a user must wait between top ups
+    /// @param _newWaitTime the new time to wait between top ups
+    function setTopUpCooltimePeriod(uint32 _newWaitTime) external onlyAdmin {
+        topUpCooltimePeriod = _newWaitTime;
+    }
+
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
     }
 
     //--------------------------------------------------------------------------------------
@@ -668,6 +706,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         _claimTier(_tokenId);
     }
 
+    function _emitNftUpdateEvent(uint256 _tokenId) internal {
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        TokenData memory token = tokenData[_tokenId];
+        emit NftUpdated(_tokenId, deposit.amounts, deposit.amountStakedForPoints,
+                        token.baseLoyaltyPoints, token.baseTierPoints, token.tier,
+                        token.prevTopUpTimestamp, token.rewardsLocalIndex);
+    }
+
     // Finds the corresponding for the tier points
     function tierForPoints(uint40 _tierPoints) public view returns (uint8) {
         uint8 tierId = 0;
@@ -679,8 +725,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
         uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
-        uint256 monthInSeconds = 28 days;
-        if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
+        if (block.timestamp - uint256(prevTopUpTimestamp) < topUpCooltimePeriod) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
         return true;
     }
@@ -699,4 +744,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
+
+    //--------------------------------------------------------------------------------------
+    //------------------------------------  MODIFIER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin function");
+        _;
+    }
+
 }
