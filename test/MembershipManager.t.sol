@@ -531,6 +531,8 @@ contract MembershipManagerTest is TestSetup {
         // Alice's 1 membership points and Bob's 2 membership points earn 1/3 membership points and 2/3 membership points, respectively.
         assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether + 1 ether + 1 ether * 1 / uint256(3));
         assertEq(membershipNftInstance.valueOf(bobToken), 2 ether + (1 ether * 2) / uint256(3));
+        assertEq(membershipNftInstance.accruedStakingRewardsOf(aliceToken), (1 ether * 1) / uint256(3));
+        assertEq(membershipNftInstance.accruedStakingRewardsOf(bobToken), (1 ether * 2) / uint256(3));
 
         // Alice unstakes the 1 membership points which she sacrificed for points
         vm.startPrank(alice);

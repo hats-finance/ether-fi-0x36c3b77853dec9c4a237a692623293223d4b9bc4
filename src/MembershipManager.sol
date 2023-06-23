@@ -57,6 +57,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event MerkleUpdated(bytes32, bytes32);
+    event NftUpdated(uint256 _tokenId, uint128 _amount, uint128 _amountSacrificedForBoostingPoints, uint40 _loyaltyPoints, uint40 _tierPoints, uint8 _tier, uint32 _prevTopUpTimestamp, uint96 _rewardsLocalIndex);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -127,6 +128,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _snapshotEthAmount);
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
+        _emitNftUpdateEvent(tokenId);
         emit FundsMigrated(msg.sender, tokenId, msg.value, _points, loyaltyPoints, tierPoints);
         return tokenId;
     }
@@ -150,6 +152,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         
         liquidityPool.deposit{value: amountAfterFee}(msg.sender, address(this), _merkleProof);
         uint256 tokenId = _mintMembershipNFT(msg.sender, amountAfterFee - _amountForPoints, _amountForPoints, 0, 0);
+
+        _emitNftUpdateEvent(tokenId);
         return tokenId;
     }
 
@@ -163,6 +167,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         _requireTokenOwner(_tokenId);
         _topUpDeposit(_tokenId, _amount, _amountForPoints);
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+        _emitNftUpdateEvent(_tokenId);
     }
 
     error ExceededMaxWithdrawal();
@@ -189,6 +194,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
         liquidityPool.withdraw(address(msg.sender), _amount);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice withdraw the entire balance of this NFT and burn it
@@ -203,6 +210,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
         liquidityPool.withdraw(address(msg.sender), totalBalance - feeAmount);
         liquidityPool.withdraw(address(this), feeAmount);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Sacrifice the staking rewards and earn more points
@@ -217,6 +226,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         claimStakingRewards(_tokenId);
 
         _stakeForPoints(_tokenId, _amount);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Unstakes ETH.
@@ -231,6 +242,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         claimStakingRewards(_tokenId);
 
         _unstakeForPoints(_tokenId, _amount);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Claims the tier.
@@ -247,6 +260,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         claimStakingRewards(_tokenId);
 
         _claimTier(_tokenId, oldTier, newTier);
+
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Claims the accrued membership {loyalty, tier} points.
@@ -679,6 +694,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
         token.baseTierPoints -= penalty;
         _claimTier(_tokenId);
+    }
+
+    function _emitNftUpdateEvent(uint256 _tokenId) internal {
+        TokenDeposit memory deposit = tokenDeposits[_tokenId];
+        TokenData memory token = tokenData[_tokenId];
+        emit NftUpdated(_tokenId, deposit.amounts, deposit.amountStakedForPoints,
+                        token.baseLoyaltyPoints, token.baseTierPoints, token.tier,
+                        token.prevTopUpTimestamp, token.rewardsLocalIndex);
     }
 
     // Finds the corresponding for the tier points
