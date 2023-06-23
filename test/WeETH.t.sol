@@ -56,7 +56,7 @@ contract WeETHTest is TestSetup {
     }
 
     function test_UnWrapEETHFailsIfZeroAmount() public {
-        vm.expectRevert("Cannot wrap a zero amount");
+        vm.expectRevert("Cannot unwrap a zero amount");
         weEthInstance.unwrap(0);
     }
 
