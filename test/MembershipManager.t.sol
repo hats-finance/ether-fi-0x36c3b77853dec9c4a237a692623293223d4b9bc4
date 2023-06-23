@@ -428,11 +428,11 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.claimTier(aliceToken);
         assertEq(membershipNftInstance.tierOf(aliceToken), 4);
 
-        // points should get diluted by 50% & the tier is properly updated
-        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
+        // points should get diluted by 25% & the tier is properly updated
+        membershipManagerInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 3 ether, 0 ether, aliceProof);
         uint256 dilutedPoints = membershipNftInstance.tierPointsOf(aliceToken);
-        assertEq(dilutedPoints , currentPoints / 2);
-        assertEq(membershipNftInstance.tierOf(aliceToken), 2);
+        assertEq(dilutedPoints , currentPoints / 4);
+        assertEq(membershipNftInstance.tierOf(aliceToken), 1);
         assertEq(membershipNftInstance.tierOf(aliceToken), membershipManagerInstance.tierForPoints(uint40(dilutedPoints)));
 
         vm.stopPrank();
@@ -859,7 +859,7 @@ contract MembershipManagerTest is TestSetup {
     function test_FeeWorksCorrectly() public {
         launch_validator(); // there will be 2 validators from the beginning
 
-        vm.startPrank(alice);
+        vm.startPrank(owner);
         membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
         membershipManagerInstance.setFeeSplits(20, 80);
         vm.stopPrank();
@@ -904,13 +904,14 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_SettingFeesFail() public {
-        vm.expectRevert("Only admin function");
-        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
-        vm.expectRevert("Only admin function");
-        membershipManagerInstance.setFeeSplits(20, 80);
-        
         vm.startPrank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
+        vm.expectRevert("Ownable: caller is not the owner");
+        membershipManagerInstance.setFeeSplits(20, 80);
+        vm.stopPrank();
 
+        vm.startPrank(owner);
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
         membershipManagerInstance.setFeeAmounts(0.001 ether * uint256(type(uint16).max) + 1, 0);
 

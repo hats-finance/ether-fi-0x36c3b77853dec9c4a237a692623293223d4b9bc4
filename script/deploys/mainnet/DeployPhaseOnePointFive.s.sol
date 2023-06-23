@@ -41,6 +41,7 @@ contract DeployPhaseOnePointFiveScript is Script {
     RegulationsManager public regulationsManagerImplementation;
     RegulationsManager public regulationsManager;
 
+
     struct suiteAddresses {
         address weETH;
         address membershipManager;
@@ -60,6 +61,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
         address treasury = vm.envAddress("TREASURY_ADDRESS");
         address protocolRevenueManagerProxy = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
+        address tvlAggregatorAddress = vm.envAddress("TVL_AGGREGATOR_ADDRESS");
 
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
 

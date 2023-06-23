@@ -10,6 +10,8 @@ contract MembershipNFTTest is TestSetup {
     bytes32[] public bobProof;
     bytes32[] public ownerProof;
 
+    event MintingPaused(bool isPaused);
+
     function setUp() public {
         setUpTests();
         vm.startPrank(alice);
@@ -43,6 +45,45 @@ contract MembershipNFTTest is TestSetup {
         assertEq(membershipNftInstance.contractURI(), "http://ether-fi/contract-metadata");
 
         vm.stopPrank();
+    }
+
+    function test_pauseMinting() public {
+
+        // only owner can set pause status
+        vm.startPrank(owner);
+        vm.expectRevert("Only admin function");
+        membershipNftInstance.setMintingPaused(true);
+        vm.stopPrank();
+
+        // mint a token
+        vm.prank(address(membershipManagerInstance));
+        membershipNftInstance.mint(alice, 1);
+
+        // pause the minting
+        vm.prank(alice);
+        vm.expectEmit(false, false, false, true);
+        emit MintingPaused(true);
+        membershipNftInstance.setMintingPaused(true);
+        assertEq(membershipNftInstance.mintingPaused(), true);
+
+        // mint should fail
+        vm.startPrank(address(membershipManagerInstance));
+        vm.expectRevert(MembershipNFT.MintingIsPaused.selector);
+        membershipNftInstance.mint(alice, 1);
+        vm.stopPrank();
+
+        // unpause
+        vm.prank(alice);
+        vm.expectEmit(false, false, false, true);
+        emit MintingPaused(false);
+        membershipNftInstance.setMintingPaused(false);
+        assertEq(membershipNftInstance.mintingPaused(), false);
+
+        // mint should succeed again
+        vm.startPrank(address(membershipManagerInstance));
+        membershipNftInstance.mint(alice, 1);
+
+
     }
 
     function test_permissions() public {

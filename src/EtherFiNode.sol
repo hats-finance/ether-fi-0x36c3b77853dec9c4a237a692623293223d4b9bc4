@@ -7,6 +7,7 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
+
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
@@ -87,6 +88,13 @@ contract EtherFiNode is IEtherFiNode {
         _validatePhaseTransition(VALIDATOR_PHASE.EXITED);
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
+    }
+
+    /// @notice Set the validators phase to EVICTED
+    function markEvicted() external onlyEtherFiNodeManagerContract {
+        _validatePhaseTransition(VALIDATOR_PHASE.EVICTED);
+        phase = VALIDATOR_PHASE.EVICTED;
+        exitTimestamp = uint32(block.timestamp);
     }
 
     //--------------------------------------------------------------------------------------
@@ -237,10 +245,8 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        uint256 balance = address(this).balance;
-        uint256 rewards = (balance > vestedAuctionRewards)
-            ? balance - vestedAuctionRewards
-            : 0;
+        require(address(this).balance >= vestedAuctionRewards, "Vested Auction Rewards is missing");
+        uint256 rewards = getWithdrawableAmount(true, false, false);
 
         if (rewards >= 32 ether) {
             rewards -= 32 ether;
@@ -293,13 +299,10 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        if (localRevenueIndex == 0) {
+        uint256 rewards = getWithdrawableAmount(false, true, false);
+        if (rewards == 0) {
             return (0, 0, 0, 0);
         }
-        uint256 globalRevenueIndex = IProtocolRevenueManager(
-            _protocolRevenueManagerAddress()
-        ).globalRevenueIndex();
-        uint256 rewards = globalRevenueIndex - localRevenueIndex;
         return calculatePayouts(rewards, _splits, _scale);
     }
 
@@ -362,7 +365,7 @@ contract EtherFiNode is IEtherFiNode {
         )
     {
         require(phase == VALIDATOR_PHASE.EXITED, "validator node is not exited");
-        uint256 balance = address(this).balance - (vestedAuctionRewards - _getClaimableVestedRewards());
+        uint256 balance = getWithdrawableAmount(true, false, true);
 
         // (toNodeOperator, toTnft, toBnft, toTreasury)
         uint256[] memory payouts = new uint256[](4);
@@ -375,27 +378,7 @@ contract EtherFiNode is IEtherFiNode {
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
-        uint256 toBnftPrincipal;
-        uint256 toTnftPrincipal;
-        if (balance > 31.5 ether) {
-            // 31.5 ether < balance <= 32 ether
-            toBnftPrincipal = balance - 30 ether;
-        } else if (balance > 26 ether) {
-            // 26 ether < balance <= 31.5 ether
-            toBnftPrincipal = 1.5 ether;
-        } else if (balance > 25.5 ether) {
-            // 25.5 ether < balance <= 26 ether
-            toBnftPrincipal = 1.5 ether - (26 ether - balance);
-        } else if (balance > 16 ether) {
-            // 16 ether <= balance <= 25.5 ether
-            toBnftPrincipal = 1 ether;
-        } else {
-            // balance < 16 ether
-            // The T-NFT and B-NFT holder's principals decrease 
-            // starting from 15 ether and 1 ether respectively.
-            toBnftPrincipal = 625 * balance / 10_000;
-        }
-        toTnftPrincipal = balance - toBnftPrincipal;
+        (uint256 toBnftPrincipal, uint256 toTnftPrincipal) = calculatePrincipals(balance);
         payouts[1] += toTnftPrincipal;
         payouts[2] += toBnftPrincipal;
 
@@ -406,22 +389,18 @@ contract EtherFiNode is IEtherFiNode {
             exitTimestamp
         );
 
-        if (payouts[2] > bnftNonExitPenalty) {
-            payouts[2] -= bnftNonExitPenalty;
+        uint256 appliedPenalty = Math.min(payouts[2], bnftNonExitPenalty);
+        payouts[2] -= appliedPenalty;
 
-            // While the NonExitPenalty keeps growing till 1 ether,
-            //  the incentive to the node operator stops growing at 0.5 ether
-            //  the rest goes to the treasury
-            if (bnftNonExitPenalty > 0.5 ether) {
-                payouts[0] += 0.5 ether;
-                payouts[3] += bnftNonExitPenalty - 0.5 ether;
-            } else {
-                payouts[0] += bnftNonExitPenalty;
-            }
+        // While the NonExitPenalty keeps growing till 1 ether,
+        //  the incentive to the node operator stops growing at 0.2 ether
+        //  the rest goes to the treasury
+        // - Cap the incentive to the operator under 0.2 ether.
+        if (appliedPenalty > 0.2 ether) {
+            payouts[0] += 0.2 ether;
+            payouts[3] += appliedPenalty - 0.2 ether;
         } else {
-            // If the B-NFT lost the whole principal, incentivize the node operator to exit the node. 
-            payouts[0] += payouts[2];
-            payouts[2] = 0;
+            payouts[0] += appliedPenalty;
         }
 
         require(
@@ -462,25 +441,81 @@ contract EtherFiNode is IEtherFiNode {
         return (operator, tnft, bnft, treasury);
     }
 
+    /// @notice Calculate the principal for the T-NFT and B-NFT holders based on the balance
+    /// @param _balance The balance of the node
+    /// @return toBnftPrincipal the principal for the B-NFT holder
+    /// @return toTnftPrincipal the principal for the T-NFT holder
+    function calculatePrincipals(
+        uint256 _balance
+    ) public pure returns (uint256, uint256) {
+        require(_balance <= 32 ether, "the total principal must be lower than 32 ether");
+        uint256 toBnftPrincipal;
+        uint256 toTnftPrincipal;
+        if (_balance > 31.5 ether) {
+            // 31.5 ether < balance <= 32 ether
+            toBnftPrincipal = _balance - 30 ether;
+        } else if (_balance > 26 ether) {
+            // 26 ether < balance <= 31.5 ether
+            toBnftPrincipal = 1.5 ether;
+        } else if (_balance > 25.5 ether) {
+            // 25.5 ether < balance <= 26 ether
+            toBnftPrincipal = 1.5 ether - (26 ether - _balance);
+        } else if (_balance > 16 ether) {
+            // 16 ether <= balance <= 25.5 ether
+            toBnftPrincipal = 1 ether;
+        } else {
+            // balance < 16 ether
+            // The T-NFT and B-NFT holder's principals decrease 
+            // starting from 15 ether and 1 ether respectively.
+            toBnftPrincipal = 625 * _balance / 10_000;
+        }
+        toTnftPrincipal = _balance - toBnftPrincipal;
+        return (toBnftPrincipal, toTnftPrincipal);
+    }
+
+    /// @notice Compute the withdrawable amount from the node
+    /// @param _staking a flag to include the withdrawable amount for the staking principal + rewards
+    /// @param _protocolRewards a flag to include the withdrawable amount for the protocol rewards
+    /// @param _vestedAuctionFee a flag to include the withdrawable amount for the vested auction fee
+    function getWithdrawableAmount(bool _staking, bool _protocolRewards, bool _vestedAuctionFee) public view returns (uint256) {
+        uint256 balance = 0;
+        if (_staking) {
+            balance += address(this).balance - vestedAuctionRewards;
+        }
+        if (_protocolRewards && localRevenueIndex > 0) {
+            uint256 globalRevenueIndex = IProtocolRevenueManager(_protocolRevenueManagerAddress()).globalRevenueIndex();
+            balance += globalRevenueIndex - localRevenueIndex;
+        }
+        if (_vestedAuctionFee) {
+            balance += _getClaimableVestedRewards();
+        }
+        return balance;
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
     //--------------------------------------------------------------------------------------
 
     function _validatePhaseTransition(VALIDATOR_PHASE _newPhase) internal view returns (bool) {
         VALIDATOR_PHASE currentPhase = phase;
-        
+        bool pass = true;
+
         // Transition rules
         if (currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED) {
-            require(_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED);
         } else if (currentPhase == VALIDATOR_PHASE.STAKE_DEPOSITED) {
-            require(_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED);
         } else if (currentPhase == VALIDATOR_PHASE.LIVE) {
-            require(_newPhase == VALIDATOR_PHASE.EXITED || _newPhase == VALIDATOR_PHASE.BEING_SLASHED, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.EXITED || _newPhase == VALIDATOR_PHASE.BEING_SLASHED || _newPhase == VALIDATOR_PHASE.EVICTED);
         } else if (currentPhase == VALIDATOR_PHASE.BEING_SLASHED) {
-            require(_newPhase == VALIDATOR_PHASE.EXITED, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.EXITED);
         } else if (currentPhase == VALIDATOR_PHASE.EXITED) {
-            require(_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN, "Invalid phase transition");
+            pass = (_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN);
+        } else {
+            pass = false;
         }
+
+        require(pass, "Invalid phase transition");
     }
     
     function _getClaimableVestedRewards() internal view returns (uint256) {
@@ -494,7 +529,7 @@ contract EtherFiNode is IEtherFiNode {
             stakingStartTimestamp,
             uint32(block.timestamp)
         );
-        if (daysPassed >= vestingPeriodInDays) {
+        if (daysPassed >= vestingPeriodInDays || phase == VALIDATOR_PHASE.EVICTED) {
             return vestedAuctionRewards;
         } else {
             return 0;
