@@ -32,6 +32,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
+        nextMintID = 1;
     }
 
     error MintingIsPaused();
@@ -39,8 +40,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
         if (mintingPaused) revert MintingIsPaused();
 
-        uint256 tokenId = nextMintID++;
+        uint256 tokenId = nextMintID;
         _mint(_to, tokenId, _amount, "");
+        nextMintID++;
         return tokenId;
     }
 
