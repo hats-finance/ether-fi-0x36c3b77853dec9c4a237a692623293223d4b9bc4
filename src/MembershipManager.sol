@@ -709,7 +709,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     //--------------------------------------------------------------------------------------
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin function");
+        require(msg.sender == admin, "Caller is not the admin");
         _;
     }
 }

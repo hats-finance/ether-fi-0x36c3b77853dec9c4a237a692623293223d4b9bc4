@@ -58,7 +58,7 @@ contract NodeOperatorManagerTest is TestSetup {
         assertEq(nodeOperatorManagerInstance.isWhitelisted(henry), false);
         vm.stopPrank();
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         nodeOperatorManagerInstance.addToWhitelist(henry);
 
@@ -74,7 +74,7 @@ contract NodeOperatorManagerTest is TestSetup {
             uint64(10)
         );
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         nodeOperatorManagerInstance.removeFromWhitelist(alice);
 

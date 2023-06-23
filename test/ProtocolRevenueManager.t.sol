@@ -46,9 +46,9 @@ contract ProtocolRevenueManagerTest is TestSetup {
     }
 
     function test_changeAuctionRewardParams() public {
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         protocolRevenueManagerInstance.setAuctionRewardVestingPeriod(1);
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(10);
 
         vm.startPrank(alice);

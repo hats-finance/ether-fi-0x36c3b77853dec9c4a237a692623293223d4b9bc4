@@ -32,9 +32,9 @@ contract MembershipNFTTest is TestSetup {
     function test_metadata() public {
 
         // only admin can update uri
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         membershipNftInstance.setMetadataURI("badURI.com");
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         membershipNftInstance.setContractMetadataURI("badURI2.com");
 
         vm.startPrank(alice);
@@ -51,7 +51,7 @@ contract MembershipNFTTest is TestSetup {
 
         // only owner can set pause status
         vm.startPrank(owner);
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         membershipNftInstance.setMintingPaused(true);
         vm.stopPrank();
 

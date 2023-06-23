@@ -65,7 +65,7 @@ contract RegulationsManagerTest is TestSetup {
 
     function test_initializeNewWhitelistWorks() public {
         vm.startPrank(owner);
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         regulationsManagerInstance.initializeNewWhitelist(termsAndConditionsHash);
 
         assertEq(regulationsManagerInstance.whitelistVersion(), 1);

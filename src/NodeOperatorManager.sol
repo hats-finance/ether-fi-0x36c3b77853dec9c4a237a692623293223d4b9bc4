@@ -198,7 +198,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin function");
+        require(msg.sender == admin, "Caller is not the admin");
         _;
     }
 }

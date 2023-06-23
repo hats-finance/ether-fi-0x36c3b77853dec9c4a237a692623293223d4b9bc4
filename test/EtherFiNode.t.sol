@@ -302,7 +302,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         IEtherFiNode(etherFiNode).markExited(1);
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
@@ -444,7 +444,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(etherfiNode, 4 ether + vestedAuctionFeeRewardsForStakers);
 
         vm.expectRevert(
-            "Only admin function"
+            "Caller is not the admin"
         );
         vm.prank(owner);
         managerInstance.markBeingSlashed(bidId);

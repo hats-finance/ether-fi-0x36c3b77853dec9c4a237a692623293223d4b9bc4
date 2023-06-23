@@ -398,9 +398,9 @@ contract MembershipManagerTest is TestSetup {
     function test_OwnerPermissions() public {
         vm.deal(alice, 1000 ether);
         vm.startPrank(owner);
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         membershipManagerInstance.updatePointsGrowthRate(12345);
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         membershipManagerInstance.updatePointsBoostFactor(12345);
         vm.stopPrank();
 

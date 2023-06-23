@@ -149,7 +149,7 @@ contract AuctionManagerTest is TestSetup {
     function test_DisableWhitelist() public {
         assertTrue(auctionInstance.whitelistEnabled());
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         auctionInstance.disableWhitelist();
 
@@ -167,7 +167,7 @@ contract AuctionManagerTest is TestSetup {
 
         assertFalse(auctionInstance.whitelistEnabled());
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         auctionInstance.enableWhitelist();
 
@@ -744,7 +744,7 @@ contract AuctionManagerTest is TestSetup {
         auctionInstance.setMaxBidPrice(0.001 ether);
 
         vm.prank(owner);
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         auctionInstance.setMaxBidPrice(10 ether);
 
         assertEq(auctionInstance.maxBidAmount(), 5 ether);
@@ -759,7 +759,7 @@ contract AuctionManagerTest is TestSetup {
         auctionInstance.setMinBidPrice(5 ether);
 
         vm.prank(owner);
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         auctionInstance.setMinBidPrice(0.005 ether);
 
         assertEq(auctionInstance.minBidAmount(), 0.01 ether);

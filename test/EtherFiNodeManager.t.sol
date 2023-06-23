@@ -78,7 +78,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetStakingRewardsSplit() public {
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
 
@@ -103,7 +103,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetProtocolRewardsSplit() public {
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 400000);
 
@@ -128,7 +128,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetNonExitPenaltyPrincipal() public {
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         managerInstance.setNonExitPenaltyPrincipal(2 ether);
 
@@ -141,7 +141,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetNonExitPenaltyDailyRate() public {
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         managerInstance.setNonExitPenaltyDailyRate(2 ether);
 

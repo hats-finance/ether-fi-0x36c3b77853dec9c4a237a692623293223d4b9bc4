@@ -132,7 +132,7 @@ contract LiquidityPoolTest is TestSetup {
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         liquidityPoolInstance.batchDepositWithBidIds(1, bidIds, aliceProof);
         vm.stopPrank();
 
@@ -281,7 +281,7 @@ contract LiquidityPoolTest is TestSetup {
 
         bytes32 depositRoot = _getDepositRoot();
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
 
@@ -362,7 +362,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(owner);
         managerInstance.fullWithdrawBatch(newValidators);
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
         liquidityPoolInstance.sendExitRequests(newValidators);
 

@@ -1164,7 +1164,7 @@ contract StakingManagerTest is TestSetup {
         assertEq(stakingManagerInstance.maxBatchDepositSize(), 12);
 
         vm.prank(owner);
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         stakingManagerInstance.setMaxBatchDepositSize(12);
     }
 

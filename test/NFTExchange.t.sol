@@ -177,13 +177,13 @@ contract NFTExchangeTest is TestSetup {
         mNftTokenIds[0] = 0;
         reservedBuyers[0] = address(0);
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         nftExchangeInstance.delist(mNftTokenIds);
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Caller is not the admin");
         liquidityPoolInstance.swapTNftForEth(tNftTokenIds);
     }
 
