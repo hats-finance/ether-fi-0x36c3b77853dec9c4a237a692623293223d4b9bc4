@@ -22,8 +22,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     mapping(uint256 => uint256) public tokenLocks;
     event TokenLocked(uint256 indexed _tokenId, uint256 until);
 
-    uint256[8] public gap;
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
