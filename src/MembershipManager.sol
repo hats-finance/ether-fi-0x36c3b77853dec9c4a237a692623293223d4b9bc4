@@ -39,6 +39,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     uint16 private mintFee; // fee = 0.001 ETH * 'mintFee'
     uint16 private burnFee; // fee = 0.001 ETH * 'burnFee'
+    uint16 private upgradeFee; // fee = 0.001 ETH * 'upgradeFee'
     uint8 public treasuryFeeSplitPercent;
     uint8 public protocolRevenueFeeSplitPercent;
 
@@ -166,7 +167,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
         _requireTokenOwner(_tokenId);
         _topUpDeposit(_tokenId, _amount, _amountForPoints);
-        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), _merkleProof);
+
+        uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
+        uint256 additionalDeposit = msg.value - upgradeFeeAmount;
+        liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -363,11 +367,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         maxDepositTopUpPercent = _percent;
     }
 
-    function setFeeAmounts(uint256 _mintFeeAmount, uint256 _burnFeeAmount) external onlyOwner {
+    function setFeeAmounts(uint256 _mintFeeAmount, uint256 _burnFeeAmount, uint256 _upgradeFeeAmount) external onlyOwner {
         if (_mintFeeAmount % 0.001 ether != 0 || _mintFeeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
         if (_burnFeeAmount % 0.001 ether != 0 || _burnFeeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
+        if (_upgradeFeeAmount % 0.001 ether != 0 || _upgradeFeeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
         mintFee = uint16(_mintFeeAmount / 0.001 ether);
         burnFee = uint16(_burnFeeAmount / 0.001 ether);
+        upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
     }
 
     function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) public onlyOwner {
@@ -457,7 +463,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     error OncePerMonth();
 
     function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
-        canTopUp(_tokenId, msg.value, _amount, _amountForPoints);
+
+        // subtract fee from provided ether. Will revert if not enough eth provided
+        uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
+        uint256 additionalDeposit = msg.value - upgradeFeeAmount;
+        canTopUp(_tokenId, additionalDeposit, _amount, _amountForPoints);
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -471,8 +481,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         token.prevTopUpTimestamp = uint32(block.timestamp);
 
         // proportionally dilute tier points if over deposit threshold & update the tier
-        if (msg.value > maxDepositWithoutPenalty) {
-            uint256 dilutedPoints = (totalDeposit * token.baseTierPoints) / (msg.value + totalDeposit);
+        if (additionalDeposit > maxDepositWithoutPenalty) {
+            uint256 dilutedPoints = (totalDeposit * token.baseTierPoints) / (additionalDeposit + totalDeposit);
             token.baseTierPoints = uint40(dilutedPoints);
             _claimTier(_tokenId);
         }
@@ -726,9 +736,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    // returns (mintFeeAmount, burnFeeAmount)
-    function getFees() external view returns (uint256, uint256) {
-        return (mintFee * 0.001 ether, burnFee * 0.001 ether);
+    // returns (mintFeeAmount, burnFeeAmount, upgradeFeeAmount)
+    function getFees() external view returns (uint256, uint256, uint256) {
+        return (uint256(mintFee) * 0.001 ether, uint256(burnFee) * 0.001 ether, uint256(upgradeFee) * 0.001 ether);
     }
 
     function getImplementation() external view returns (address) {
