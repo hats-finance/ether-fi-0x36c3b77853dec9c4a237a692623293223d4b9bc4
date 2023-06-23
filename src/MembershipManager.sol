@@ -42,7 +42,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     uint8 public treasuryFeeSplitPercent;
     uint8 public protocolRevenueFeeSplitPercent;
 
-    uint256 public topUpWaitTime;
+    uint32 public topUpCooltimePeriod;
 
     address public treasury;
     address public protocolRevenueManager;
@@ -386,8 +386,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     /// @notice Updates the time a user must wait between top ups
     /// @param _newWaitTime the new time to wait between top ups
-    function setTopUpWaitTime(uint256 _newWaitTime) external onlyAdmin {
-        topUpWaitTime = _newWaitTime;
+    function setTopUpCooltimePeriod(uint32 _newWaitTime) external onlyAdmin {
+        topUpCooltimePeriod = _newWaitTime;
     }
 
     /// @notice Updates the address of the admin
@@ -686,7 +686,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
         uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
-        if (block.timestamp - uint256(prevTopUpTimestamp) < topUpWaitTime) revert OncePerMonth();
+        if (block.timestamp - uint256(prevTopUpTimestamp) < topUpCooltimePeriod) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
         return true;
     }

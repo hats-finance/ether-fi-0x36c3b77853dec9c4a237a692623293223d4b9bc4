@@ -273,7 +273,7 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         vm.prank(alice);
-        membershipManagerInstance.setTopUpWaitTime(28 days);
+        membershipManagerInstance.setTopUpCooltimePeriod(28 days);
         vm.startPrank(owner);
 
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
