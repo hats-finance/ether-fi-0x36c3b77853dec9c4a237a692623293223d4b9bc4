@@ -42,10 +42,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     uint8 public treasuryFeeSplitPercent;
     uint8 public protocolRevenueFeeSplitPercent;
 
+    uint32 public topUpCooltimePeriod;
+
     address public treasury;
     address public protocolRevenueManager;
 
     uint256[23] __gap;
+    address public admin;
+
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -386,6 +390,19 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
     }
 
+    /// @notice Updates the time a user must wait between top ups
+    /// @param _newWaitTime the new time to wait between top ups
+    function setTopUpCooltimePeriod(uint32 _newWaitTime) external onlyAdmin {
+        topUpCooltimePeriod = _newWaitTime;
+    }
+
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
@@ -675,8 +692,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
         uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
-        uint256 monthInSeconds = 28 days;
-        if (block.timestamp - uint256(prevTopUpTimestamp) < monthInSeconds) revert OncePerMonth();
+        if (block.timestamp - uint256(prevTopUpTimestamp) < topUpCooltimePeriod) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
         return true;
     }
@@ -695,4 +711,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
+
+    //--------------------------------------------------------------------------------------
+    //------------------------------------  MODIFIER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin function");
+        _;
+    }
+
 }
