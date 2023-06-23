@@ -392,6 +392,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         require(_newAdmin != address(0), "Cannot be address zero");
         admin = _newAdmin;
     }
+    
 
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
