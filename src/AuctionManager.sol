@@ -333,11 +333,6 @@ contract AuctionManager is
         _;
     }
 
-    modifier onlyNodeOperatorManagerContract() {
-        require(msg.sender == address(nodeOperatorManager), "Only node operator key manager contract function");
-        _;
-    }
-
     modifier onlyAdmin() {
         require(msg.sender == admin, "Caller is not the admin");
         _;
