@@ -4,7 +4,6 @@ pragma solidity 0.8.13;
 import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
