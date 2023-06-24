@@ -46,12 +46,12 @@ contract RewardsSkimmingTest is TestSetup {
         _setupMerkle();
         _setUpStakerMerkle();
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         stakingManagerInstance.updateMerkleRoot(rootStakers);
         nodeOperatorManagerInstance.addToWhitelist(operators[0]);
         vm.stopPrank();
 
-        hoax(owner);
+        hoax(alice);
         stakingManagerInstance.setMaxBatchDepositSize(50);
 
         startHoax(operators[0]);

@@ -24,7 +24,7 @@ contract WeETHTest is TestSetup {
     function test_WrapWorksCorrectly() public {
 
         // Total pooled ether = 10
-        vm.prank(owner);
+        vm.prank(alice);
         liquidityPoolInstance.rebase(10 ether + 0 ether, 0 ether);
         _transferTo(address(liquidityPoolInstance), 10 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -56,13 +56,13 @@ contract WeETHTest is TestSetup {
     }
 
     function test_UnWrapEETHFailsIfZeroAmount() public {
-        vm.expectRevert("Cannot wrap a zero amount");
+        vm.expectRevert("Cannot unwrap a zero amount");
         weEthInstance.unwrap(0);
     }
 
     function test_UnWrapWorksCorrectly() public {
         // Total pooled ether = 10
-        vm.prank(owner);
+        vm.prank(alice);
         liquidityPoolInstance.rebase(10 ether + 0 ether, 0 ether);
         _transferTo(address(liquidityPoolInstance), 10 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -143,9 +143,8 @@ contract WeETHTest is TestSetup {
 
         //----------------------------------------------------------------------------------------------------------
 
-        vm.startPrank(owner);
+        vm.prank(alice);
         liquidityPoolInstance.rebase(10 ether + 50 ether, 50 ether);
-        vm.stopPrank();
 
         _transferTo(address(liquidityPoolInstance), 10 ether);
 
@@ -168,9 +167,8 @@ contract WeETHTest is TestSetup {
 
         //----------------------------------------------------------------------------------------------------------
 
-        vm.startPrank(owner);
+        vm.prank(alice);
         liquidityPoolInstance.rebase(60 ether + 50 ether, 60 ether);
-        vm.stopPrank();
 
         _transferTo(address(liquidityPoolInstance), 50 ether);   
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 110 ether);
@@ -211,7 +209,7 @@ contract WeETHTest is TestSetup {
         vm.stopPrank();
 
         // Rewards enter LP
-        vm.prank(owner);
+        vm.prank(alice);
         liquidityPoolInstance.rebase(1 ether + 3 ether, 3 ether);
         _transferTo(address(liquidityPoolInstance), 1 ether);
         assertEq(address(liquidityPoolInstance).balance, 4 ether);

@@ -36,7 +36,7 @@ contract AuctionManager is
 
     mapping(uint256 => Bid) public bids;
 
-    uint256[43] public __gap;
+    address public admin;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -197,25 +197,25 @@ contract AuctionManager is
 
     /// @notice Disables the whitelisting phase of the bidding
     /// @dev Allows both regular users and whitelisted users to bid
-    function disableWhitelist() public onlyOwner {
+    function disableWhitelist() public onlyAdmin {
         whitelistEnabled = false;
         emit WhitelistDisabled(whitelistEnabled);
     }
 
     /// @notice Enables the whitelisting phase of the bidding
     /// @dev Only users who are on a whitelist can bid
-    function enableWhitelist() public onlyOwner {
+    function enableWhitelist() public onlyAdmin {
         whitelistEnabled = true;
         emit WhitelistEnabled(whitelistEnabled);
     }
 
     //Pauses the contract
-    function pauseContract() external onlyOwner {
+    function pauseContract() external onlyAdmin {
         _pause();
     }
 
     //Unpauses the contract
-    function unPauseContract() external onlyOwner {
+    function unPauseContract() external onlyAdmin {
         _unpause();
     }
 
@@ -295,7 +295,7 @@ contract AuctionManager is
 
     /// @notice Updates the minimum bid price for a non-whitelisted bidder
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
-    function setMinBidPrice(uint64 _newMinBidAmount) external onlyOwner {
+    function setMinBidPrice(uint64 _newMinBidAmount) external onlyAdmin {
         require(_newMinBidAmount < maxBidAmount, "Min bid exceeds max bid");
         require(_newMinBidAmount >= whitelistBidAmount, "Min bid less than whitelist bid amount");
         minBidAmount = _newMinBidAmount;
@@ -303,7 +303,7 @@ contract AuctionManager is
 
     /// @notice Updates the maximum bid price for both whitelisted and non-whitelisted bidders
     /// @param _newMaxBidAmount the new amount to set the maximum bid price as
-    function setMaxBidPrice(uint64 _newMaxBidAmount) external onlyOwner {
+    function setMaxBidPrice(uint64 _newMaxBidAmount) external onlyAdmin {
         require(_newMaxBidAmount > minBidAmount, "Min bid exceeds max bid");
         maxBidAmount = _newMaxBidAmount;
     }
@@ -317,12 +317,24 @@ contract AuctionManager is
         whitelistBidAmount = _newAmount;
     }
 
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
     modifier onlyStakingManagerContract() {
         require(msg.sender == stakingManagerContractAddress, "Only staking manager contract function");
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Caller is not the admin");
         _;
     }
 }

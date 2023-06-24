@@ -16,8 +16,6 @@ contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
 
-    uint256[9] __gap;
-
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
@@ -54,7 +52,7 @@ contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
     /// @param _weETHAmount the amount of weETH to unwrap
     /// @return returns the amount of eEth the user recieves
     function unwrap(uint256 _weETHAmount) external returns (uint256) {
-        require(_weETHAmount > 0, "Cannot wrap a zero amount");
+        require(_weETHAmount > 0, "Cannot unwrap a zero amount");
         uint256 eETHAmount = liquidityPool.amountForShare(_weETHAmount);
         _burn(msg.sender, _weETHAmount);
         eETH.transfer(msg.sender, eETHAmount);
