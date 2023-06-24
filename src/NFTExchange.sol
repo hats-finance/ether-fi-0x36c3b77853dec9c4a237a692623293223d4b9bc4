@@ -22,6 +22,7 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IERC721 public tNft;
     IMembershipNFT public membershipNft;
     mapping (uint256 => address) public reservedBuyers;
+    address public admin;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -51,7 +52,7 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @param _reservedBuyers The addresses of the reserved buyers for each NFT.
      * @param _blocks how many blocks to list & lock the token for
      */
-    function listForSale(uint256[] calldata _mNftTokenIds, address[] calldata _reservedBuyers, uint256 _blocks) external onlyOwner {
+    function listForSale(uint256[] calldata _mNftTokenIds, address[] calldata _reservedBuyers, uint256 _blocks) external onlyAdmin {
         require(_mNftTokenIds.length == _reservedBuyers.length, "Input arrays must be the same length");
         for (uint256 i = 0; i < _mNftTokenIds.length; i++) {
             uint256 tokenId = _mNftTokenIds[i];
@@ -86,7 +87,7 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @dev Allows the owner to delist membership NFTs from sale.
      * @param _mNftTokenIds The token IDs of the membership NFTs to delist.
      */
-    function delist(uint256[] calldata _mNftTokenIds)external onlyOwner {
+    function delist(uint256[] calldata _mNftTokenIds)external onlyAdmin {
         for (uint256 i = 0; i < _mNftTokenIds.length; i++) {
             uint256 tokenId = _mNftTokenIds[i];
             require(reservedBuyers[tokenId] != address(0), "Token is not currently listed for sale");
@@ -100,6 +101,22 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns(bytes4) {
         return this.onERC1155Received.selector;
+    }
+
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
+    }
+
+    //--------------------------------------------------------------------------------------
+    //------------------------------------  MODIFIER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Caller is not the admin");
+        _;
     }
 
 }

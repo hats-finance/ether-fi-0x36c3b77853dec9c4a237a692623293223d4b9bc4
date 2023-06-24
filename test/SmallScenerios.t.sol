@@ -89,7 +89,7 @@ contract SmallScenariosTest is TestSetup {
         assertEq(eETHInstance.balanceOf(bob), 5 ether);
 
         /// Bob then wraps his eETH to weETH because he wants to stake it in a 3rd party dapp
-         startHoax(bob);
+        startHoax(bob);
 
         //Approve the wrapped eth contract to spend Bob's eEth
         eETHInstance.approve(address(weEthInstance), 5 ether);
@@ -111,7 +111,7 @@ contract SmallScenariosTest is TestSetup {
 
         // EtherFi rolls up 32 ether into a vlaidator and mints the associated NFT's
         vm.deal(owner, 4 ether);
-        startHoax(owner);
+        startHoax(alice);
         uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositWithBidIds{value: 2 ether}(1, bidIds, getWhitelistMerkleProof(9));
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
@@ -134,7 +134,9 @@ contract SmallScenariosTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-
+        
+        vm.stopPrank();
+        vm.startPrank(alice);
         // Register the Validator
         liquidityPoolInstance.batchRegisterValidators(_getDepositRoot(), processedBidIds, depositDataArray);
         vm.stopPrank();
@@ -151,7 +153,7 @@ contract SmallScenariosTest is TestSetup {
         // EtherFi sets the accured staking rewards in the Liquidity Pool.
         skip(1 days);
         
-        startHoax(owner);
+        startHoax(alice);
         liquidityPoolInstance.rebase(30 ether + 1 ether, 0 ether);
         vm.stopPrank();
         _transferTo(address(liquidityPoolInstance), 1 ether);
@@ -201,7 +203,7 @@ contract SmallScenariosTest is TestSetup {
 
         // EtherFi sends an exit request for a node to be exited to reclaim the 32 ether sent to the pool for withdrawals
         {
-            vm.startPrank(owner);
+            vm.startPrank(alice);
             liquidityPoolInstance.sendExitRequests(processedBidIds);
 
             /// Node exit takes a few days...
@@ -223,8 +225,7 @@ contract SmallScenariosTest is TestSetup {
             vm.stopPrank();
         }
 
-        vm.prank(owner);
-
+        vm.prank(alice);
         // ether.fi process the node exit from the LP
         uint256[] memory slashingPenalties = new uint256[](1);
         slashingPenalties[0] = 0;

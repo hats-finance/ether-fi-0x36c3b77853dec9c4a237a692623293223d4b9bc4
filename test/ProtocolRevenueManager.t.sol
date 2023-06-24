@@ -46,12 +46,12 @@ contract ProtocolRevenueManagerTest is TestSetup {
     }
 
     function test_changeAuctionRewardParams() public {
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Caller is not the admin");
         protocolRevenueManagerInstance.setAuctionRewardVestingPeriod(1);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Caller is not the admin");
         protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(10);
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         assertEq(
             protocolRevenueManagerInstance
                 .auctionFeeVestingPeriodForStakersInDays(),

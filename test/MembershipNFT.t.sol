@@ -32,12 +32,12 @@ contract MembershipNFTTest is TestSetup {
     function test_metadata() public {
 
         // only admin can update uri
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Caller is not the admin");
         membershipNftInstance.setMetadataURI("badURI.com");
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert("Caller is not the admin");
         membershipNftInstance.setContractMetadataURI("badURI2.com");
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         membershipNftInstance.setMetadataURI("http://ether-fi/{id}");
         assertEq(membershipNftInstance.uri(5), "http://ether-fi/{id}");
 
@@ -50,8 +50,8 @@ contract MembershipNFTTest is TestSetup {
     function test_pauseMinting() public {
 
         // only owner can set pause status
-        vm.startPrank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.startPrank(owner);
+        vm.expectRevert("Caller is not the admin");
         membershipNftInstance.setMintingPaused(true);
         vm.stopPrank();
 
@@ -60,7 +60,7 @@ contract MembershipNFTTest is TestSetup {
         membershipNftInstance.mint(alice, 1);
 
         // pause the minting
-        vm.prank(owner);
+        vm.prank(alice);
         vm.expectEmit(false, false, false, true);
         emit MintingPaused(true);
         membershipNftInstance.setMintingPaused(true);
@@ -73,7 +73,7 @@ contract MembershipNFTTest is TestSetup {
         vm.stopPrank();
 
         // unpause
-        vm.prank(owner);
+        vm.prank(alice);
         vm.expectEmit(false, false, false, true);
         emit MintingPaused(false);
         membershipNftInstance.setMintingPaused(false);

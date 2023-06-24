@@ -49,7 +49,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     address public protocolRevenueManager;
 
     address public admin;
-
+    uint256[23] __gap;
+ 
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -304,17 +305,17 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         return (uint40(loyaltyPoints), uint40(tierPoints));
     }
 
-    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyOwner {
+    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyAdmin {
         pointsBoostFactor = _newPointsBoostFactor;
     }
 
-    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public onlyOwner {
+    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public onlyAdmin {
         pointsGrowthRate = _newPointsGrowthRate;
     }
 
     /// @notice Distributes staking rewards to eligible stakers.
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
-    function distributeStakingRewards() external onlyOwner {
+    function distributeStakingRewards() external onlyAdmin {
         (uint96[] memory globalIndex, uint128[] memory adjustedShares) = calculateGlobalIndex();
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             uint256 amounts = liquidityPool.amountForShare(adjustedShares[i]);
@@ -325,7 +326,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     }
 
     error TierLimitExceeded();
-    function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external onlyOwner returns (uint256) {
+    function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external onlyAdmin returns (uint256) {
         if (tierDeposits.length >= type(uint8).max) revert TierLimitExceeded();
         tierDeposits.push(TierDeposit(0, 0));
         tierData.push(TierData(0, 0, _requiredTierPoints, _weight));
@@ -337,7 +338,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @param _tokenId The ID of the membership NFT.
     /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
     /// @param _tierPoints The number of tier points to set for the specified NFT.
-    function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external onlyOwner {
+    function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external onlyAdmin {
         TokenData storage token = tokenData[_tokenId];
         token.baseLoyaltyPoints = _loyaltyPoints;
         token.baseTierPoints = _tierPoints;
@@ -347,7 +348,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
     /// @param _newMerkleRoot new merkle root used to verify the EAP user data (deposits, points)
     /// @param _requiredEapPointsPerEapDeposit required EAP points per deposit for each tier
-    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external onlyOwner {
+    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external onlyAdmin {
         bytes32 oldMerkleRoot = eapMerkleRoot;
         eapMerkleRoot = _newMerkleRoot;
         requiredEapPointsPerEapDeposit = _requiredEapPointsPerEapDeposit;
@@ -356,13 +357,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     /// @notice Updates minimum valid deposit
     /// @param _value minimum deposit in wei
-    function setMinDepositWei(uint56 _value) external onlyOwner {
+    function setMinDepositWei(uint56 _value) external onlyAdmin {
         minDepositGwei = _value;
     }
 
     /// @notice Updates minimum valid deposit
     /// @param _percent integer percentage value
-    function setMaxDepositTopUpPercent(uint8 _percent) external onlyOwner {
+    function setMaxDepositTopUpPercent(uint8 _percent) external onlyAdmin {
         maxDepositTopUpPercent = _percent;
     }
 
@@ -382,7 +383,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     }
 
     error InvalidWithdraw();
-    function withdrawFees() external onlyOwner {
+    function withdrawFees() external onlyAdmin {
         uint256 totalAccumulatedFeeAmount = address(this).balance;
         uint256 treasuryFees = totalAccumulatedFeeAmount * treasuryFeeSplitPercent / 100;
         uint256 protocolRevenueFees = totalAccumulatedFeeAmount * protocolRevenueFeeSplitPercent / 100;
@@ -749,8 +750,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     //--------------------------------------------------------------------------------------
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin function");
+        require(msg.sender == admin, "Caller is not the admin");
         _;
     }
-
 }
