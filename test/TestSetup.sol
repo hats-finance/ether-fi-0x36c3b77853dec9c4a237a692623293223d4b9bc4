@@ -300,9 +300,16 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         // Setup dependencies
+        vm.startPrank(alice);
         _setUpNodeOperatorWhitelist();
+        vm.stopPrank();
+
         _merkleSetup();
+        
+        vm.startPrank(owner);
         _merkleSetupMigration();
+        
+        vm.startPrank(owner);
         _merkleSetupMigration2();
 
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
@@ -338,8 +345,12 @@ contract TestSetup is Test {
         // depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b); // Goerli testnet deposit contract
         depositContractEth2 = IDepositContract(address(mockDepositContractEth2));
         stakingManagerInstance.registerEth2DepositContract(address(mockDepositContractEth2));
-
+        
+        vm.stopPrank();
+        
         _initializeMembershipTiers();
+        vm.stopPrank();
+
         _initializePeople();
     }
 
@@ -384,9 +395,6 @@ contract TestSetup is Test {
 
         vm.prank(alice);
         stakingManagerInstance.updateMerkleRoot(root);
-        vm.stopPrank();
-
-        vm.startPrank(owner);
     }
 
     function getWhitelistMerkleProof(uint256 index) internal returns (bytes32[] memory) {
@@ -395,15 +403,12 @@ contract TestSetup is Test {
 
     function _initializeMembershipTiers() internal {
         uint40 requiredPointsForTier = 0;
-        vm.stopPrank();
         vm.startPrank(alice);
         for (uint256 i = 0; i < 5 ; i++) {
             requiredPointsForTier += uint40(28 * 24 * i);
             uint24 weight = uint24(i + 1);
             membershipManagerInstance.addNewTier(requiredPointsForTier, weight);
         }
-        vm.stopPrank();
-
     }
 
     function _initializePeople() internal {
@@ -424,7 +429,6 @@ contract TestSetup is Test {
     }
 
     function _setUpNodeOperatorWhitelist() internal {
-        vm.startPrank(alice);
         nodeOperatorManagerInstance.addToWhitelist(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.addToWhitelist(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         nodeOperatorManagerInstance.addToWhitelist(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
@@ -436,7 +440,6 @@ contract TestSetup is Test {
         nodeOperatorManagerInstance.addToWhitelist(greg);
         nodeOperatorManagerInstance.addToWhitelist(address(liquidityPoolInstance));
         nodeOperatorManagerInstance.addToWhitelist(owner);
-        vm.stopPrank();
     }
 
     function _merkleSetupMigration() internal {
@@ -511,11 +514,10 @@ contract TestSetup is Test {
         requiredEapPointsPerEapDeposit.push(0); // we want all EAP users to be at least Silver
         requiredEapPointsPerEapDeposit.push(100); 
         requiredEapPointsPerEapDeposit.push(400); 
-
         vm.stopPrank();
+
         vm.prank(alice);
         membershipManagerInstance.setUpForEap(rootMigration, requiredEapPointsPerEapDeposit);
-        vm.startPrank(owner);
     }
 
     function _merkleSetupMigration2() internal {
