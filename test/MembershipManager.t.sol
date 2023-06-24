@@ -534,6 +534,8 @@ contract MembershipManagerTest is TestSetup {
         // Dan's 1 membership points and Bob's 2 membership points earn 1/3 membership points and 2/3 membership points, respectively.
         assertEq(membershipNftInstance.valueOf(danToken), 1 ether + 1 ether + 1 ether * 1 / uint256(3));
         assertEq(membershipNftInstance.valueOf(bobToken), 2 ether + (1 ether * 2) / uint256(3));
+        assertEq(membershipNftInstance.accruedStakingRewardsOf(danToken), (1 ether * 1) / uint256(3));
+        assertEq(membershipNftInstance.accruedStakingRewardsOf(bobToken), (1 ether * 2) / uint256(3));
 
         // Dan unstakes the 1 membership points which she sacrificed for points
         vm.startPrank(dan);
@@ -856,17 +858,58 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_upgradeFee() public {
+
+        vm.deal(alice, 100 ether);
+
+        // setup fees
+        vm.startPrank(owner);
+        membershipManagerInstance.setFeeAmounts(0 ether, 0 ether, 0.5 ether);
+        membershipManagerInstance.setFeeSplits(20, 80);
+
+        (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerInstance.getFees();
+        assertEq(mintFee, 0 ether);
+        assertEq(burnFee, 0 ether);
+        assertEq(upgradeFee, 0.5 ether);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+
+        // mint
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
+        skip(30 days);
+
+        // attempt to top up without paying fee
+        vm.expectRevert();
+        membershipManagerInstance.topUpDepositWithEth{value: 0.1 ether}(aliceToken, 0.1 ether, 0, aliceProof);
+
+        // attempt to provide in improper amount
+        vm.expectRevert(MembershipManager.InvalidAllocation.selector);
+        membershipManagerInstance.topUpDepositWithEth{value: 5 ether}(aliceToken, 0.1 ether, 0, aliceProof);
+
+        // proper upgrade
+        membershipManagerInstance.topUpDepositWithEth{value: 0.6 ether}(aliceToken, 0.1 ether, 0, aliceProof);
+
+        // assert that token balance increased by expected value and that contract received the mint fee
+        (uint256 depositAmount, ) = membershipManagerInstance.tokenDeposits(aliceToken);
+        assertEq(depositAmount, 2.1 ether);
+        assertEq(address(membershipManagerInstance).balance, 0.5 ether);
+
+        vm.stopPrank();
+    }
+
     function test_FeeWorksCorrectly() public {
         launch_validator(); // there will be 2 validators from the beginning
 
         vm.startPrank(owner);
-        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
+        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether, 0 ether);
         membershipManagerInstance.setFeeSplits(20, 80);
         vm.stopPrank();
 
-        (uint256 mintFee, uint256 burnFee) = membershipManagerInstance.getFees();
+        (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerInstance.getFees();
         assertEq(mintFee, 0.05 ether);
         assertEq(burnFee, 0.05 ether);
+        assertEq(upgradeFee, 0 ether);
         assertEq(membershipManagerInstance.treasuryFeeSplitPercent(), 20);
         assertEq(membershipManagerInstance.protocolRevenueFeeSplitPercent(), 80);
 
@@ -906,17 +949,17 @@ contract MembershipManagerTest is TestSetup {
     function test_SettingFeesFail() public {
         vm.startPrank(alice);
         vm.expectRevert("Ownable: caller is not the owner");
-        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether);
+        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether, 0 ether);
         vm.expectRevert("Ownable: caller is not the owner");
         membershipManagerInstance.setFeeSplits(20, 80);
         vm.stopPrank();
 
         vm.startPrank(owner);
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
-        membershipManagerInstance.setFeeAmounts(0.001 ether * uint256(type(uint16).max) + 1, 0);
+        membershipManagerInstance.setFeeAmounts(0.001 ether * uint256(type(uint16).max) + 1, 0, 0 ether);
 
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
-        membershipManagerInstance.setFeeAmounts(0, 0.001 ether * uint256(type(uint16).max) + 1);
+        membershipManagerInstance.setFeeAmounts(0, 0.001 ether * uint256(type(uint16).max) + 1, 0 ether);
 
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
         membershipManagerInstance.setFeeSplits(10, 80);

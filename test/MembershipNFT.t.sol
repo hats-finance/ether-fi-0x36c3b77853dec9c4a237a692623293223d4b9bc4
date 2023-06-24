@@ -106,7 +106,7 @@ contract MembershipNFTTest is TestSetup {
         // should succeed
         vm.startPrank(address(membershipManagerInstance));
         membershipNftInstance.mint(alice, 1);
-        membershipNftInstance.burn(alice, 0, 1);
+        membershipNftInstance.burn(alice, 1, 1);
         vm.stopPrank();
     }
 }

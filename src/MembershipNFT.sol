@@ -24,8 +24,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     address public admin;
 
-    uint256[8] public gap;
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -36,6 +34,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
+        nextMintID = 1;
     }
 
     error MintingIsPaused();
@@ -43,8 +42,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
         if (mintingPaused) revert MintingIsPaused();
 
-        uint256 tokenId = nextMintID++;
+        uint256 tokenId = nextMintID;
         _mint(_to, tokenId, _amount, "");
+        nextMintID++;
         return tokenId;
     }
 
@@ -156,6 +156,14 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         (uint96[] memory globalIndex, ) = membershipManager.calculateGlobalIndex();
         uint256 rewards = (globalIndex[tier] - rewardsLocalIndex) * amounts / 1 ether;
         return amounts + rewards + amountStakedForPoints;
+    }
+
+    function accruedStakingRewardsOf(uint256 _tokenId) public view returns (uint256) {
+        (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
+        (uint128 amounts, ) = membershipManager.tokenDeposits(_tokenId);
+        (uint96[] memory globalIndex, ) = membershipManager.calculateGlobalIndex();
+        uint256 rewards = (globalIndex[tier] - rewardsLocalIndex) * amounts / 1 ether;
+        return rewards;
     }
 
     function loyaltyPointsOf(uint256 _tokenId) public view returns (uint40) {
