@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
@@ -15,6 +16,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     //--------------------------------------------------------------------------------------
 
     event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
+    event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
     event AddedToWhitelist(address userAddress);
     event RemovedFromWhitelist(address userAddress);
 
