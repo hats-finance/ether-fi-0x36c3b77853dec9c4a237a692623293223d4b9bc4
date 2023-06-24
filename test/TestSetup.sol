@@ -382,7 +382,6 @@ contract TestSetup is Test {
 
         root = merkle.getRoot(whiteListedAddresses);
 
-        vm.stopPrank();
         vm.prank(alice);
         stakingManagerInstance.updateMerkleRoot(root);
         vm.stopPrank();
@@ -418,7 +417,6 @@ contract TestSetup is Test {
             vm.stopPrank();
         }
 
-        vm.stopPrank();
         vm.startPrank(alice);
         root = merkle.getRoot(whiteListedAddresses);
         stakingManagerInstance.updateMerkleRoot(root);
