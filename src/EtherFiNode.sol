@@ -182,7 +182,6 @@ contract EtherFiNode is IEtherFiNode {
     )
         public
         view
-        onlyEtherFiNodeManagerContract
         returns (uint256, uint256, uint256, uint256)
     {
         uint256 operator;
@@ -237,7 +236,6 @@ contract EtherFiNode is IEtherFiNode {
     )
         public
         view
-        onlyEtherFiNodeManagerContract
         returns (
             uint256 toNodeOperator,
             uint256 toTnft,
@@ -291,7 +289,6 @@ contract EtherFiNode is IEtherFiNode {
     )
         public
         view
-        onlyEtherFiNodeManagerContract
         returns (
             uint256 toNodeOperator,
             uint256 toTnft,
@@ -314,7 +311,7 @@ contract EtherFiNode is IEtherFiNode {
         uint128 _principal,
         uint64 _dailyPenalty,
         uint32 _exitTimestamp
-    ) public view onlyEtherFiNodeManagerContract returns (uint256) {
+    ) public view returns (uint256) {
         if (exitRequestTimestamp == 0) {
             return 0;
         }
