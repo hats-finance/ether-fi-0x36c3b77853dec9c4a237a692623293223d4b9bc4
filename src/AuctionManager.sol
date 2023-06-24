@@ -325,11 +325,6 @@ contract AuctionManager is
         require(msg.sender == stakingManagerContractAddress, "Only staking manager contract function");
         _;
     }
-
-    modifier onlyNodeOperatorManagerContract() {
-        require(msg.sender == address(nodeOperatorManager), "Only node operator key manager contract function");
-        _;
-    }
 }
 
 contract AuctionManagerV2 is AuctionManager {
