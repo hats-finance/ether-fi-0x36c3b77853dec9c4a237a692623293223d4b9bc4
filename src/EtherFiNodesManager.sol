@@ -209,8 +209,9 @@ contract EtherFiNodesManager is
         );
         
         // Retrieve all possible rewards: {Staking, Protocol} rewards and the vested auction fee reward
+        // 'beaconBalance == 32 ether' means there is no accrued staking rewards and no slashing penalties  
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury ) 
-            = getRewardsPayouts(_validatorId, 0, _stakingRewards, _protocolRewards, _vestedAuctionFee);
+            = getRewardsPayouts(_validatorId, 32 ether, _stakingRewards, _protocolRewards, _vestedAuctionFee);
 
         if (_protocolRewards) {
             protocolRevenueManager.distributeAuctionRevenue(_validatorId);
@@ -275,8 +276,9 @@ contract EtherFiNodesManager is
                 "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
             );
 
+            // 'beaconBalance == 32 ether' means there is no accrued staking rewards and no slashing penalties  
             (payouts[0], payouts[1], payouts[2], payouts[3])
-                = getRewardsPayouts(_validatorId, 0, _stakingRewards, _protocolRewards, _vestedAuctionFee);
+                = getRewardsPayouts(_validatorId, 32 ether, _stakingRewards, _protocolRewards, _vestedAuctionFee);
 
             if (_protocolRewards) {
                 protocolRevenueManager.distributeAuctionRevenue(_validatorId);
@@ -609,6 +611,8 @@ contract EtherFiNodesManager is
     function getFullWithdrawalPayouts(uint256 _validatorId) 
         public view returns (uint256, uint256, uint256, uint256) {
         require(isExited(_validatorId), "validator node is not exited");
+
+        // 'beaconBalance' should be 0 since the validator must be in 'withdrawal_done' status
         return calculateTVL(_validatorId, 0, true, true, true, false);
     }
 

@@ -115,7 +115,7 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Sets the vested auction rewards variable to 0 to show the auction fee has been withdrawn
     function processVestedAuctionFeeWithdrawal() external onlyEtherFiNodeManagerContract {
-        if (_getClaimableVestedRewards() > 0) {
+        if (_getClaimableVestedRewards(false) > 0) {
             vestedAuctionRewards = 0;
         }
     }
@@ -214,12 +214,7 @@ contract EtherFiNode is IEtherFiNode {
         }
 
         if (_vestedAuctionFee) {
-            uint256 rewards;
-            if (_assumeFullyVested) {
-                rewards = vestedAuctionRewards;
-            } else {
-                rewards = _getClaimableVestedRewards();
-            }
+            uint256 rewards = _getClaimableVestedRewards(_assumeFullyVested);
             uint256 toTnft = (rewards * 29) / 32;
             payouts[1] += toTnft; // 29 / 32
             payouts[2] += rewards - toTnft; // 3 / 32
@@ -251,7 +246,6 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        require(address(this).balance >= vestedAuctionRewards, "Vested Auction Rewards is missing");
         uint256 rewards = _beaconBalance + getWithdrawableAmount(true, false, false, false);
 
         if (rewards >= 32 ether) {
@@ -486,12 +480,7 @@ contract EtherFiNode is IEtherFiNode {
             balance += globalRevenueIndex - localRevenueIndex;
         }
         if (_vestedAuctionFee) {
-            if (_assumeFullyVested) {
-                balance += vestedAuctionRewards;
-
-            } else {
-                balance += _getClaimableVestedRewards();
-            }
+            balance += _getClaimableVestedRewards(_assumeFullyVested);
         }
         return balance;
     }
@@ -522,7 +511,7 @@ contract EtherFiNode is IEtherFiNode {
         require(pass, "Invalid phase transition");
     }
     
-    function _getClaimableVestedRewards() internal view returns (uint256) {
+    function _getClaimableVestedRewards(bool _assumeFullyVested) internal view returns (uint256) {
         if (vestedAuctionRewards == 0) {
             return 0;
         }
@@ -533,7 +522,8 @@ contract EtherFiNode is IEtherFiNode {
             stakingStartTimestamp,
             uint32(block.timestamp)
         );
-        if (daysPassed >= vestingPeriodInDays || phase == VALIDATOR_PHASE.EVICTED) {
+        bool fullyVested = _assumeFullyVested || daysPassed >= vestingPeriodInDays;
+        if (fullyVested || phase == VALIDATOR_PHASE.EVICTED) {
             return vestedAuctionRewards;
         } else {
             return 0;
