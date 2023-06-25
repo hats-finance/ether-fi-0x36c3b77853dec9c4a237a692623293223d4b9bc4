@@ -7,6 +7,7 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
+
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
@@ -181,7 +182,6 @@ contract EtherFiNode is IEtherFiNode {
     )
         public
         view
-        onlyEtherFiNodeManagerContract
         returns (uint256, uint256, uint256, uint256)
     {
         uint256 operator;
@@ -236,7 +236,6 @@ contract EtherFiNode is IEtherFiNode {
     )
         public
         view
-        onlyEtherFiNodeManagerContract
         returns (
             uint256 toNodeOperator,
             uint256 toTnft,
@@ -290,7 +289,6 @@ contract EtherFiNode is IEtherFiNode {
     )
         public
         view
-        onlyEtherFiNodeManagerContract
         returns (
             uint256 toNodeOperator,
             uint256 toTnft,
@@ -313,7 +311,7 @@ contract EtherFiNode is IEtherFiNode {
         uint128 _principal,
         uint64 _dailyPenalty,
         uint32 _exitTimestamp
-    ) public view onlyEtherFiNodeManagerContract returns (uint256) {
+    ) public view returns (uint256) {
         if (exitRequestTimestamp == 0) {
             return 0;
         }
@@ -388,22 +386,18 @@ contract EtherFiNode is IEtherFiNode {
             exitTimestamp
         );
 
-        if (payouts[2] > bnftNonExitPenalty) {
-            payouts[2] -= bnftNonExitPenalty;
+        uint256 appliedPenalty = Math.min(payouts[2], bnftNonExitPenalty);
+        payouts[2] -= appliedPenalty;
 
-            // While the NonExitPenalty keeps growing till 1 ether,
-            //  the incentive to the node operator stops growing at 0.5 ether
-            //  the rest goes to the treasury
-            if (bnftNonExitPenalty > 0.5 ether) {
-                payouts[0] += 0.5 ether;
-                payouts[3] += bnftNonExitPenalty - 0.5 ether;
-            } else {
-                payouts[0] += bnftNonExitPenalty;
-            }
+        // While the NonExitPenalty keeps growing till 1 ether,
+        //  the incentive to the node operator stops growing at 0.2 ether
+        //  the rest goes to the treasury
+        // - Cap the incentive to the operator under 0.2 ether.
+        if (appliedPenalty > 0.2 ether) {
+            payouts[0] += 0.2 ether;
+            payouts[3] += appliedPenalty - 0.2 ether;
         } else {
-            // If the B-NFT lost the whole principal, incentivize the node operator to exit the node. 
-            payouts[0] += payouts[2];
-            payouts[2] = 0;
+            payouts[0] += appliedPenalty;
         }
 
         require(

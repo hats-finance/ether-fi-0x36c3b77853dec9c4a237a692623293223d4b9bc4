@@ -22,7 +22,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     mapping(uint256 => uint256) public tokenLocks;
     event TokenLocked(uint256 indexed _tokenId, uint256 until);
 
-    uint256[8] public gap;
+    address public admin;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -34,6 +34,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
+        nextMintID = 1;
     }
 
     error MintingIsPaused();
@@ -41,8 +42,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
         if (mintingPaused) revert MintingIsPaused();
 
-        uint256 tokenId = nextMintID++;
+        uint256 tokenId = nextMintID;
         _mint(_to, tokenId, _amount, "");
+        nextMintID++;
         return tokenId;
     }
 
@@ -85,7 +87,14 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         membershipManager = IMembershipManager(_address);
     }
 
-    function setMintingPaused(bool _paused) external onlyOwner {
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
+    }
+    
+    function setMintingPaused(bool _paused) external onlyAdmin {
         mintingPaused = _paused;
         emit MintingPaused(_paused);
     }
@@ -147,6 +156,14 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         (uint96[] memory globalIndex, ) = membershipManager.calculateGlobalIndex();
         uint256 rewards = (globalIndex[tier] - rewardsLocalIndex) * amounts / 1 ether;
         return amounts + rewards + amountStakedForPoints;
+    }
+
+    function accruedStakingRewardsOf(uint256 _tokenId) public view returns (uint256) {
+        (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
+        (uint128 amounts, ) = membershipManager.tokenDeposits(_tokenId);
+        (uint96[] memory globalIndex, ) = membershipManager.calculateGlobalIndex();
+        uint256 rewards = (globalIndex[tier] - rewardsLocalIndex) * amounts / 1 ether;
+        return rewards;
     }
 
     function loyaltyPointsOf(uint256 _tokenId) public view returns (uint40) {
@@ -243,23 +260,31 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
     /// @dev opensea contract-level metadata
-    function setContractMetadataURI(string calldata _newURI) external onlyOwner {
+    function setContractMetadataURI(string calldata _newURI) external onlyAdmin {
         contractMetadataURI = _newURI;
     }
 
     /// @dev erc1155 metadata extension
-    function setMetadataURI(string calldata _newURI) external onlyOwner {
+    function setMetadataURI(string calldata _newURI) external onlyAdmin {
         _setURI(_newURI);
     }
 
     /// @dev alert opensea to a metadata update
-    function alertMetadataUpdate(uint256 id) public onlyOwner {
+    function alertMetadataUpdate(uint256 id) public onlyAdmin {
         emit MetadataUpdate(id);
     }
 
     /// @dev alert opensea to a metadata update
-    function alertBatchMetadataUpdate(uint256 startID, uint256 endID) public onlyOwner {
+    function alertBatchMetadataUpdate(uint256 startID, uint256 endID) public onlyAdmin {
         emit BatchMetadataUpdate(startID, endID);
     }
 
+    //--------------------------------------------------------------------------------------
+    //------------------------------------  MODIFIER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Caller is not the admin");
+        _;
+    }
 }

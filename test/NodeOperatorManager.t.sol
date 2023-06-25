@@ -14,7 +14,7 @@ contract NodeOperatorManagerTest is TestSetup {
     }
 
     function test_RegisterNodeOperator() public {
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         nodeOperatorManagerInstance.pauseContract();
 
         vm.expectRevert("Pausable: paused");
@@ -23,9 +23,6 @@ contract NodeOperatorManagerTest is TestSetup {
             uint64(10)
         );
         nodeOperatorManagerInstance.unPauseContract();
-        vm.stopPrank();
-
-        vm.startPrank(alice);
 
         nodeOperatorManagerInstance.registerNodeOperator(
             aliceIPFS_Hash,
@@ -59,29 +56,29 @@ contract NodeOperatorManagerTest is TestSetup {
         );
         
         assertEq(nodeOperatorManagerInstance.isWhitelisted(henry), false);
-
-        vm.expectRevert("Ownable: caller is not the owner");
-        nodeOperatorManagerInstance.addToWhitelist(henry);
-
         vm.stopPrank();
 
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
+        nodeOperatorManagerInstance.addToWhitelist(henry);
+
+        vm.prank(alice);
         nodeOperatorManagerInstance.addToWhitelist(henry);
         assertEq(nodeOperatorManagerInstance.isWhitelisted(henry), true);
     }
 
     function test_CanRemoveAddressFromWhitelist() public {
-        vm.startPrank(alice);
+        vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
             aliceIPFS_Hash,
             uint64(10)
         );
 
-        vm.expectRevert("Ownable: caller is not the owner");
-        nodeOperatorManagerInstance.removeFromWhitelist(alice);
-        vm.stopPrank();
-
+        vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
+        nodeOperatorManagerInstance.removeFromWhitelist(alice);
+
+        vm.prank(alice);
         nodeOperatorManagerInstance.removeFromWhitelist(alice);
         assertEq(nodeOperatorManagerInstance.isWhitelisted(alice), false);
     }

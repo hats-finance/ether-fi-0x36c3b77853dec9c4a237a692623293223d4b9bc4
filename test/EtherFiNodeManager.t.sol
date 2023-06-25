@@ -78,12 +78,12 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetStakingRewardsSplit() public {
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
+        vm.expectRevert("Caller is not the admin");
+        vm.prank(owner);
         managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
 
         vm.expectRevert("Amounts not equal to 1000000");
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 300000);
 
         (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = managerInstance.stakingRewardsSplit();
@@ -92,7 +92,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(tnft, 815625);
         assertEq(bnft, 84375);
 
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
 
         (treasury, nodeOperator, tnft, bnft) = managerInstance.stakingRewardsSplit();
@@ -103,12 +103,12 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetProtocolRewardsSplit() public {
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
+        vm.expectRevert("Caller is not the admin");
+        vm.prank(owner);
         managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 400000);
 
         vm.expectRevert("Amounts not equal to 1000000");
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 300000);
 
         (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = managerInstance.protocolRewardsSplit();
@@ -117,7 +117,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(tnft, 453125);
         assertEq(bnft, 46875);
 
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 400000);
 
         (treasury, nodeOperator, tnft, bnft) = managerInstance.protocolRewardsSplit();
@@ -128,26 +128,26 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetNonExitPenaltyPrincipal() public {
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
+        vm.expectRevert("Caller is not the admin");
+        vm.prank(owner);
         managerInstance.setNonExitPenaltyPrincipal(2 ether);
 
         assertEq(managerInstance.nonExitPenaltyPrincipal(), 1 ether);
 
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.setNonExitPenaltyPrincipal(2 ether);
 
         assertEq(managerInstance.nonExitPenaltyPrincipal(), 2 ether);
     }
 
     function test_SetNonExitPenaltyDailyRate() public {
-        vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(alice);
+        vm.expectRevert("Caller is not the admin");
+        vm.prank(owner);
         managerInstance.setNonExitPenaltyDailyRate(2 ether);
 
         assertEq(managerInstance.nonExitPenaltyDailyRate(), 3);
 
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.setNonExitPenaltyDailyRate(5);
 
         assertEq(managerInstance.nonExitPenaltyDailyRate(), 5);
@@ -322,7 +322,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_PausableModifierWorks() public {
-        hoax(owner);
+        hoax(alice);
         managerInstance.pauseContract();
         
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
@@ -339,27 +339,27 @@ contract EtherFiNodesManagerTest is TestSetup {
         uint32[] memory timeStamps = new uint32[](1);
         ids[0] = block.timestamp;
 
-        hoax(owner);
+        hoax(alice);
         vm.expectRevert("Pausable: paused");
         managerInstance.processNodeExit(ids, timeStamps);
 
-        hoax(owner);
+        hoax(alice);
         vm.expectRevert("Pausable: paused");
         managerInstance.partialWithdraw(0, true, true, true);
 
-        hoax(owner);
+        hoax(alice);
         vm.expectRevert("Pausable: paused");
         managerInstance.partialWithdrawBatch(ids, true, true, true);
 
-        hoax(owner);
+        hoax(alice);
         vm.expectRevert("Pausable: paused");
         managerInstance.partialWithdrawBatchGroupByOperator(alice, ids, true, true, true);
 
-        hoax(owner);
+        hoax(alice);
         vm.expectRevert("Pausable: paused");
         managerInstance.fullWithdraw(0);
 
-        hoax(owner);
+        hoax(alice);
         vm.expectRevert("Pausable: paused");
         managerInstance.fullWithdrawBatch(ids);
 

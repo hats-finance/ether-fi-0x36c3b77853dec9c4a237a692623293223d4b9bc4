@@ -15,8 +15,6 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
     mapping (address => uint256) public shares;
     mapping (address => mapping (address => uint256)) public allowances;
 
-    uint256[22] __gap;
-
     // [STATE-CHANGING FUNCTIONS]
     constructor() { _disableInitializers(); }
 
