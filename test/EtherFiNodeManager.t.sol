@@ -274,51 +274,54 @@ contract EtherFiNodesManagerTest is TestSetup {
         vm.expectRevert("Exit request was already sent.");
         managerInstance.batchSendExitRequest(ids);
 
-        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
+        uint32 exitRequestTimestamp = IEtherFiNode(etherFiNode).exitRequestTimestamp();
+
+        assertEq(IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)), 0);
 
         // 1 day passed
         vm.warp(block.timestamp + (1 + 86400));
-        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0.03 ether);
+        assertEq(IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)), 0.03 ether);
 
         vm.warp(block.timestamp + (1 + (86400 + 3600)));
-        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 0.0591 ether);
+        assertEq(IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)), 0.0591 ether);
 
         vm.warp(block.timestamp + (1 + 2 * 86400));
         assertEq(
-            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
+            IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)),
             0.114707190000000000 ether
         );
 
         // 10 days passed
         vm.warp(block.timestamp + (1 + 10 * 86400));
         assertEq(
-            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
+            IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)),
             0.347163722539392386 ether
         );
 
         // 28 days passed
         vm.warp(block.timestamp + (1 + 28 * 86400));
         assertEq(
-            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
+            IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)),
             0.721764308786155954 ether
         );
 
         // 365 days passed
         vm.warp(block.timestamp + (1 + 365 * 86400));
         assertEq(
-            managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)),
+            IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)),
             1 ether
         );
 
         // more than 1 year passed
         vm.warp(block.timestamp + (1 + 366 * 86400));
-        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
+        assertEq(IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)), 1 ether);
 
         vm.warp(block.timestamp + (1 + 400 * 86400));
-        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
+        assertEq(IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)), 1 ether);
 
         vm.warp(block.timestamp + (1 + 1000 * 86400));
-        assertEq(managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp)), 1 ether);
+        assertEq(IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)), 1 ether);
     }
 
     function test_PausableModifierWorks() public {

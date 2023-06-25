@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
@@ -562,11 +563,12 @@ contract EtherFiNodesManager is
 
     /// @notice Fetches the nodes non exit penalty amount
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @param _endTimestamp timestamp for calculation
     /// @return the amount of the penalty
-    function getNonExitPenalty(uint256 _validatorId, uint32 _endTimestamp) public view returns (uint256) {
+    function getNonExitPenalty(uint256 _validatorId) public view returns (uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        return IEtherFiNode(etherfiNode).getNonExitPenalty(nonExitPenaltyPrincipal, nonExitPenaltyDailyRate, _endTimestamp);
+        uint32 tNftExitRequestTimestamp = IEtherFiNode(etherfiNode).exitRequestTimestamp();
+        uint32 bNftExitRequestTimestamp = IEtherFiNode(etherfiNode).exitTimestamp();
+        return IEtherFiNode(etherfiNode).getNonExitPenalty(tNftExitRequestTimestamp, bNftExitRequestTimestamp);
     }
 
     /// @notice Fetches the staking rewards payout for a node
@@ -596,7 +598,7 @@ contract EtherFiNodesManager is
         return
             IEtherFiNode(etherfiNode).getRewardsPayouts(
                 _beaconBalance,
-                _stakingRewards, _protocolRewards, _vestedAuctionFee,
+                _stakingRewards, _protocolRewards, _vestedAuctionFee, false,
                 stakingRewardsSplit, protocolRewardsSplit, SCALE
             );
     }
@@ -607,31 +609,34 @@ contract EtherFiNodesManager is
     function getFullWithdrawalPayouts(uint256 _validatorId) 
         public view returns (uint256, uint256, uint256, uint256) {
         require(isExited(_validatorId), "validator node is not exited");
-        return calculateTVL(_validatorId, 0, true, true, true);
+        return calculateTVL(_validatorId, 0, true, true, true, false);
     }
 
     /// @notice Compute the TVLs for {node operator, t-nft holder, b-nft holder, treasury}
     /// @param _validatorId id of the validator associated to etherfi node
     /// @param _beaconBalance the balance of the validator in Consensus Layer
+    /// @param _stakingRewards a flag to include the withdrawable amount for the staking principal + rewards
+    /// @param _protocolRewards a flag to include the withdrawable amount for the protocol rewards
+    /// @param _vestedAuctionFee a flag to include the withdrawable amount for the vested auction fee
+    /// @param _assumedFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
     ///
-    /// @return toNodeOperator  the payout to the Node Operator
-    /// @return toTnft          the payout to the T-NFT holder
-    /// @return toBnft          the payout to the B-NFT holder
-    /// @return toTreasury      the payout to the Treasury
+    /// @return toNodeOperator  the TVL for the Node Operator
+    /// @return toTnft          the TVL for the T-NFT holder
+    /// @return toBnft          the TVL for the B-NFT holder
+    /// @return toTreasury      the TVL for the Treasury
     function calculateTVL(
         uint256 _validatorId,
         uint256 _beaconBalance,
         bool _stakingRewards,
         bool _protocolRewards,
-        bool _vestedAuctionFee
+        bool _vestedAuctionFee,
+        bool _assumedFullyVested
     ) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return  IEtherFiNode(etherfiNode).calculateTVL(
                     _beaconBalance,
-                    _stakingRewards, _protocolRewards, _vestedAuctionFee,
-                    stakingRewardsSplit,
-                    protocolRewardsSplit, SCALE,
-                    nonExitPenaltyPrincipal, nonExitPenaltyDailyRate
+                    _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumedFullyVested,
+                    stakingRewardsSplit, protocolRewardsSplit, SCALE
                 );
     }
 

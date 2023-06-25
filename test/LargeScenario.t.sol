@@ -317,6 +317,7 @@ contract LargeScenariosTest is TestSetup {
             uint256 toTreasury
         ) = managerInstance.getRewardsPayouts(
                 gregProcessedBidIds[0],
+                32 ether,
                 true,
                 true,
                 true
