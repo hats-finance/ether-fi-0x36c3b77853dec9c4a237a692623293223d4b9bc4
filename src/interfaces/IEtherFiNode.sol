@@ -87,7 +87,7 @@ interface IEtherFiNode {
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee,
-        bool _assumedFullyVested,
+        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
@@ -98,7 +98,7 @@ interface IEtherFiNode {
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee,
-        bool _assumedFullyVested,
+        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale

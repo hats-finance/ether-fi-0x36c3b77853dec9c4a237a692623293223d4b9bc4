@@ -55,7 +55,7 @@ interface IEtherFiNodesManager {
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee,
-        bool _assumedFullyVested
+        bool _assumeFullyVested
     ) external view returns (uint256, uint256, uint256, uint256);
     
     function isExitRequested(uint256 _validatorId) external view returns (bool);

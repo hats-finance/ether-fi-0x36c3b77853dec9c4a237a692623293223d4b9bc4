@@ -618,7 +618,7 @@ contract EtherFiNodesManager is
     /// @param _stakingRewards a flag to include the withdrawable amount for the staking principal + rewards
     /// @param _protocolRewards a flag to include the withdrawable amount for the protocol rewards
     /// @param _vestedAuctionFee a flag to include the withdrawable amount for the vested auction fee
-    /// @param _assumedFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
+    /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
     ///
     /// @return toNodeOperator  the TVL for the Node Operator
     /// @return toTnft          the TVL for the T-NFT holder
@@ -630,12 +630,12 @@ contract EtherFiNodesManager is
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee,
-        bool _assumedFullyVested
+        bool _assumeFullyVested
     ) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return  IEtherFiNode(etherfiNode).calculateTVL(
                     _beaconBalance,
-                    _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumedFullyVested,
+                    _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested,
                     stakingRewardsSplit, protocolRewardsSplit, SCALE
                 );
     }

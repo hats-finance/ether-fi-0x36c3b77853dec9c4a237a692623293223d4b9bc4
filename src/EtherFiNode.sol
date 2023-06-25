@@ -163,7 +163,7 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _stakingRewards a flag to be set if the caller wants to compute the payouts for the stkaing rewards
     /// @param _protocolRewards a flag to be set if the caller wants to compute the payouts for the protocol rewards
     /// @param _vestedAuctionFee a flag to be set if the caller wants to compute the payouts for the vested auction fee
-    /// @param _assumedFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
+    /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
     /// @param _SRsplits the splits for the Staking Rewards
     /// @param _PRsplits the splits for the Protocol Rewards
     /// @param _scale the scale
@@ -177,7 +177,7 @@ contract EtherFiNode is IEtherFiNode {
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee,
-        bool _assumedFullyVested,
+        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
@@ -215,7 +215,7 @@ contract EtherFiNode is IEtherFiNode {
 
         if (_vestedAuctionFee) {
             uint256 rewards;
-            if (_assumedFullyVested) {
+            if (_assumeFullyVested) {
                 rewards = vestedAuctionRewards;
             } else {
                 rewards = _getClaimableVestedRewards();
@@ -361,7 +361,7 @@ contract EtherFiNode is IEtherFiNode {
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee,
-        bool _assumedFullyVested,
+        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
@@ -371,9 +371,9 @@ contract EtherFiNode is IEtherFiNode {
         // the protocol rewards must be paid off already in 'processNodeExit'
         uint256[] memory payouts = new uint256[](4); // (toNodeOperator, toTnft, toBnft, toTreasury)
         (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(_beaconBalance, 
-                                                                            _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumedFullyVested,
+                                                                            _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested,
                                                                              _SRsplits, _PRsplits, _scale);
-        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumedFullyVested);
+        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
@@ -404,7 +404,7 @@ contract EtherFiNode is IEtherFiNode {
 
         require(
             payouts[0] + payouts[1] + payouts[2] + payouts[3] ==
-                _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumedFullyVested),
+                _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested),
             "Incorrect Amount"
         );
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
@@ -475,8 +475,8 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _stakingRewards a flag to include the withdrawable amount for the staking principal + rewards
     /// @param _protocolRewards a flag to include the withdrawable amount for the protocol rewards
     /// @param _vestedAuctionFee a flag to include the withdrawable amount for the vested auction fee
-    /// @param _assumedFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
-    function getWithdrawableAmount(bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee, bool _assumedFullyVested) public view returns (uint256) {
+    /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
+    function getWithdrawableAmount(bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee, bool _assumeFullyVested) public view returns (uint256) {
         uint256 balance = 0;
         if (_stakingRewards) {
             balance += address(this).balance - vestedAuctionRewards;
@@ -486,7 +486,7 @@ contract EtherFiNode is IEtherFiNode {
             balance += globalRevenueIndex - localRevenueIndex;
         }
         if (_vestedAuctionFee) {
-            if (_assumedFullyVested) {
+            if (_assumeFullyVested) {
                 balance += vestedAuctionRewards;
 
             } else {
