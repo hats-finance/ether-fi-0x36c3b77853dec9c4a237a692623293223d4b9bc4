@@ -45,6 +45,8 @@ contract EtherFiNodesManager is
     RewardsSplit public stakingRewardsSplit;
     RewardsSplit public protocolRewardsSplit;
 
+    address public admin;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -173,7 +175,7 @@ contract EtherFiNodesManager is
     function processNodeExit(
         uint256[] calldata _validatorIds,
         uint32[] calldata _exitTimestamps
-    ) external onlyOwner nonReentrant whenNotPaused {
+    ) external onlyAdmin nonReentrant whenNotPaused {
         require(_validatorIds.length == _exitTimestamps.length, "Check params");
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             _processNodeExit(_validatorIds[i], _exitTimestamps[i]);
@@ -335,7 +337,7 @@ contract EtherFiNodesManager is
 
     function markBeingSlashed(
         uint256[] calldata _validatorIds
-    ) external whenNotPaused onlyOwner {
+    ) external whenNotPaused onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             address etherfiNode = etherfiNodeAddress[_validatorIds[i]];
             IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
@@ -353,7 +355,7 @@ contract EtherFiNodesManager is
     /// @param _tnft the split going to the tnft holder
     /// @param _bnft the split going to the bnft holder
     function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft)
-        public onlyOwner amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft)
+        public onlyAdmin amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft)
     {
         stakingRewardsSplit.treasury = _treasury;
         stakingRewardsSplit.nodeOperator = _nodeOperator;
@@ -368,7 +370,7 @@ contract EtherFiNodesManager is
     /// @param _tnft the split going to the tnft holder
     /// @param _bnft the split going to the bnft holder
     function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft)
-        public onlyOwner amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft)
+        public onlyAdmin amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft)
     {
         protocolRewardsSplit.treasury = _treasury;
         protocolRewardsSplit.nodeOperator = _nodeOperator;
@@ -378,13 +380,13 @@ contract EtherFiNodesManager is
 
     /// @notice Sets the Non Exit Penalty Principal amount
     /// @param _nonExitPenaltyPrincipal the new principal amount
-    function setNonExitPenaltyPrincipal (uint64 _nonExitPenaltyPrincipal) public onlyOwner {
+    function setNonExitPenaltyPrincipal (uint64 _nonExitPenaltyPrincipal) public onlyAdmin {
         nonExitPenaltyPrincipal = _nonExitPenaltyPrincipal;
     }
 
     /// @notice Sets the Non Exit Penalty Daily Rate amount
     /// @param _nonExitPenaltyDailyRate the new non exit daily rate
-    function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) public onlyOwner {
+    function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) public onlyAdmin {
         require(_nonExitPenaltyDailyRate <= 100, "Invalid penalty rate");
         nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
@@ -422,17 +424,24 @@ contract EtherFiNodesManager is
 
     /// TODO: remove it for mainnet deploy
     /// @notice just for testnet!
-    function setNumberOfValidators(uint64 _numberOfValidators) external onlyOwner {
+    function setNumberOfValidators(uint64 _numberOfValidators) external onlyAdmin {
         numberOfValidators = _numberOfValidators;
     }
 
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
+    }
+
     //Pauses the contract
-    function pauseContract() external onlyOwner {
+    function pauseContract() external onlyAdmin {
         _pause();
     }
 
     //Unpauses the contract
-    function unPauseContract() external onlyOwner {
+    function unPauseContract() external onlyAdmin {
         _unpause();
     }
 
@@ -684,6 +693,11 @@ contract EtherFiNodesManager is
 
     modifier amountsEqualScale(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) {
         require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "Amounts not equal to 1000000");
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Caller is not the admin");
         _;
     }
 }

@@ -16,6 +16,7 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
+import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -32,6 +33,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint128 public totalValueOutOfLp;
     uint128 public totalValueInLp;
     bool public eEthliquidStakingOpened;
+
+    address public admin;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -125,7 +128,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 _numDeposits, 
         uint256[] calldata _candidateBidIds, 
         bytes32[] calldata _merkleProof
-        ) payable external onlyOwner returns (uint256[] memory) {
+        ) payable external onlyAdmin returns (uint256[] memory) {
         require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
         require(totalValueInLp + msg.value >= 32 ether * _numDeposits, "Not enough balance");
 
@@ -153,13 +156,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData
-        ) external onlyOwner
+        ) external onlyAdmin
     {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
     }
 
     /// @notice Send the exit reqeusts as the T-NFT holder
-    function sendExitRequests(uint256[] calldata _validatorIds) external onlyOwner {
+    function sendExitRequests(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
             nodesManager.sendExitRequest(validatorId);
@@ -167,19 +170,19 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /// @notice Allow interactions with the eEth token
-    function openEEthLiquidStaking() external onlyOwner {
+    function openEEthLiquidStaking() external onlyAdmin {
         eEthliquidStakingOpened = true;
     }
 
     /// @notice Disallow interactions with the eEth token
-    function closeEEthLiquidStaking() external onlyOwner {
+    function closeEEthLiquidStaking() external onlyAdmin {
         eEthliquidStakingOpened = false;
     }
 
     /// @notice Rebase by ether.fi
     /// @param _tvl total value locked in ether.fi liquidty pool
     /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
-    function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyOwner {
+    function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyAdmin {
         require(address(this).balance == _balanceInLp, "the LP balance has changed.");
         if (_tvl > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp = uint128(_tvl - _balanceInLp);
@@ -188,13 +191,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     /// @notice swap T-NFTs for ETH
     /// @param _tokenIds the token Ids of T-NFTs
-    function swapTNftForEth(uint256[] calldata _tokenIds) external onlyOwner {
+    function swapTNftForEth(uint256[] calldata _tokenIds) external onlyAdmin {
         require(totalValueInLp >= 30 ether * _tokenIds.length, "not enough ETH in LP");
         uint128 amount = uint128(30 ether * _tokenIds.length);
         totalValueOutOfLp += amount;
         totalValueInLp -= amount;
         address owner = owner();
         for (uint256 i = 0; i < _tokenIds.length; i++) {
+            console.log(tNft.ownerOf(_tokenIds[i]));
             tNft.transferFrom(owner, address(this), _tokenIds[i]);
         }
         (bool sent, ) = address(owner).call{value: amount}("");
@@ -226,6 +230,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function setTnft(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         tNft = ITNFT(_address);
+    }
+
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
     }
     
     //--------------------------------------------------------------------------------------
@@ -300,6 +311,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     modifier whenLiquidStakingOpen() {
         require(eEthliquidStakingOpened, "Liquid staking functions are closed");
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Caller is not the admin");
         _;
     }
 }

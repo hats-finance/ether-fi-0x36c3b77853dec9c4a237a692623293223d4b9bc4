@@ -22,6 +22,8 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     mapping(uint256 => uint256) public tokenLocks;
     event TokenLocked(uint256 indexed _tokenId, uint256 until);
 
+    address public admin;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -85,7 +87,14 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         membershipManager = IMembershipManager(_address);
     }
 
-    function setMintingPaused(bool _paused) external onlyOwner {
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
+    }
+    
+    function setMintingPaused(bool _paused) external onlyAdmin {
         mintingPaused = _paused;
         emit MintingPaused(_paused);
     }
@@ -251,23 +260,31 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
     /// @dev opensea contract-level metadata
-    function setContractMetadataURI(string calldata _newURI) external onlyOwner {
+    function setContractMetadataURI(string calldata _newURI) external onlyAdmin {
         contractMetadataURI = _newURI;
     }
 
     /// @dev erc1155 metadata extension
-    function setMetadataURI(string calldata _newURI) external onlyOwner {
+    function setMetadataURI(string calldata _newURI) external onlyAdmin {
         _setURI(_newURI);
     }
 
     /// @dev alert opensea to a metadata update
-    function alertMetadataUpdate(uint256 id) public onlyOwner {
+    function alertMetadataUpdate(uint256 id) public onlyAdmin {
         emit MetadataUpdate(id);
     }
 
     /// @dev alert opensea to a metadata update
-    function alertBatchMetadataUpdate(uint256 startID, uint256 endID) public onlyOwner {
+    function alertBatchMetadataUpdate(uint256 startID, uint256 endID) public onlyAdmin {
         emit BatchMetadataUpdate(startID, endID);
     }
 
+    //--------------------------------------------------------------------------------------
+    //------------------------------------  MODIFIER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Caller is not the admin");
+        _;
+    }
 }

@@ -30,6 +30,8 @@ contract ProtocolRevenueManager is
     uint128 public vestedAuctionFeeSplitForStakers;
     uint128 public auctionFeeVestingPeriodForStakersInDays;
 
+    address public admin;
+
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
@@ -107,19 +109,26 @@ contract ProtocolRevenueManager is
 
     /// @notice set the auction reward vesting period
     /// @param _periodInDays vesting period in days
-    function setAuctionRewardVestingPeriod(uint128 _periodInDays) external onlyOwner {
+    function setAuctionRewardVestingPeriod(uint128 _periodInDays) external onlyAdmin {
         auctionFeeVestingPeriodForStakersInDays = _periodInDays;
     }
 
     /// @notice set the auction reward split for stakers
     /// @param _split vesting period in days
-    function setAuctionRewardSplitForStakers(uint128 _split) external onlyOwner {
+    function setAuctionRewardSplitForStakers(uint128 _split) external onlyAdmin {
         require(_split <= 100, "Cannot be more than 100% split");
         vestedAuctionFeeSplitForStakers = _split;
     }
 
-    function pauseContract() external onlyOwner { _pause(); }
-    function unPauseContract() external onlyOwner { _unpause(); }
+    function pauseContract() external onlyAdmin { _pause(); }
+    function unPauseContract() external onlyAdmin { _unpause(); }
+
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
+    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
@@ -160,6 +169,11 @@ contract ProtocolRevenueManager is
 
     modifier onlyAuctionManager() {
         require(msg.sender == address(auctionManager), "Only auction manager function");
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Caller is not the admin");
         _;
     }
 }

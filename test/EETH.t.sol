@@ -70,7 +70,7 @@ contract EETHTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
 
         // Total pooled ether = 10
-        vm.prank(owner);
+        vm.prank(alice);
         liquidityPoolInstance.rebase(10 ether, 0 ether);
         _transferTo(address(liquidityPoolInstance), 10 ether);
 
@@ -120,7 +120,7 @@ contract EETHTest is TestSetup {
         // Staking Rewards sent to liquidity pool
         /// vm.deal sets the balance of whoever its called on
         /// In this case 10 ether is added as reward 
-        vm.prank(owner);
+        vm.prank(alice);
         liquidityPoolInstance.rebase(10 ether + 25 ether, 25 ether);
         _transferTo(address(liquidityPoolInstance), 10 ether);
 

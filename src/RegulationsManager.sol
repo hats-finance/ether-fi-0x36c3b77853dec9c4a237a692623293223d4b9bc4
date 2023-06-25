@@ -20,6 +20,8 @@ contract RegulationsManager is
 
     uint32 public whitelistVersion;
 
+    address public admin;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -73,7 +75,7 @@ contract RegulationsManager is
 
     /// @notice resets the whitelist by incrementing the iteration
     /// @dev happens when there is an update to the blacklisted country list
-    function initializeNewWhitelist(bytes32 _newVersionHash) external onlyOwner {
+    function initializeNewWhitelist(bytes32 _newVersionHash) external onlyAdmin {
         whitelistVersion++;
         correctVersionHash[whitelistVersion] = _newVersionHash;
 
@@ -81,13 +83,20 @@ contract RegulationsManager is
     }
 
     //Pauses the contract
-    function pauseContract() external onlyOwner {
+    function pauseContract() external onlyAdmin {
         _pause();
     }
 
     //Unpauses the contract
-    function unPauseContract() external onlyOwner {
+    function unPauseContract() external onlyAdmin {
         _unpause();
+    }
+
+    /// @notice Updates the address of the admin
+    /// @param _newAdmin the new address to set as admin
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Cannot be address zero");
+        admin = _newAdmin;
     }
 
     //--------------------------------------------------------------------------------------
@@ -109,4 +118,9 @@ contract RegulationsManager is
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Caller is not the admin");
+        _;
+    }
 }
