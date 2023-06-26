@@ -20,6 +20,8 @@ interface IEtherFiNodesManager {
 
     // VIEW functions
     function numberOfValidators() external view returns (uint64);
+    function nonExitPenaltyPrincipal() external view returns (uint64);
+    function nonExitPenaltyDailyRate() external view returns (uint64);
 
     function etherfiNodeAddress(
         uint256 _validatorId
@@ -46,7 +48,16 @@ interface IEtherFiNodesManager {
     function getWithdrawalCredentials(
         uint256 _validatorId
     ) external view returns (bytes memory);
-
+    
+    function calculateTVL(
+        uint256 _validatorId,
+        uint256 _beaconBalance,
+        bool _stakingRewards,
+        bool _protocolRewards,
+        bool _vestedAuctionFee,
+        bool _assumeFullyVested
+    ) external view returns (uint256, uint256, uint256, uint256);
+    
     function isExitRequested(uint256 _validatorId) external view returns (bool);
 
     function isExited(uint256 _validatorId) external view returns (bool);
@@ -54,16 +65,17 @@ interface IEtherFiNodesManager {
     function isEvicted(uint256 _validatorId) external view returns (bool);
 
     function getNonExitPenalty(
-        uint256 _validatorId,
-        uint32 _endTimestamp
+        uint256 _validatorId
     ) external view returns (uint256);
 
     function getStakingRewardsPayouts(
-        uint256 _validatorId
+        uint256 _validatorId,
+        uint256 _beaconBalance
     ) external view returns (uint256, uint256, uint256, uint256);
 
     function getRewardsPayouts(
         uint256 _validatorId,
+        uint256 _beaconBalance,
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee

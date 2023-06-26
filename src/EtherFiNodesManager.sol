@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
@@ -210,8 +211,9 @@ contract EtherFiNodesManager is
         );
         
         // Retrieve all possible rewards: {Staking, Protocol} rewards and the vested auction fee reward
+        // 'beaconBalance == 32 ether' means there is no accrued staking rewards and no slashing penalties  
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury ) 
-            = getRewardsPayouts(_validatorId, _stakingRewards, _protocolRewards, _vestedAuctionFee);
+            = getRewardsPayouts(_validatorId, 32 ether, _stakingRewards, _protocolRewards, _vestedAuctionFee);
 
         if (_protocolRewards) {
             protocolRevenueManager.distributeAuctionRevenue(_validatorId);
@@ -259,6 +261,7 @@ contract EtherFiNodesManager is
 
         address etherfiNode;
         uint256 _validatorId;
+        uint256[] memory payouts = new uint256[](4);  // (operator, tnft, bnft, treasury)
         for (uint i = 0; i < _validatorIds.length; i++) {
             _validatorId = _validatorIds[i];
             etherfiNode = etherfiNodeAddress[_validatorId];
@@ -275,8 +278,9 @@ contract EtherFiNodesManager is
                 "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
             );
 
-            (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury )
-                = getRewardsPayouts(_validatorId, _stakingRewards, _protocolRewards, _vestedAuctionFee);
+            // 'beaconBalance == 32 ether' means there is no accrued staking rewards and no slashing penalties  
+            (payouts[0], payouts[1], payouts[2], payouts[3])
+                = getRewardsPayouts(_validatorId, 32 ether, _stakingRewards, _protocolRewards, _vestedAuctionFee);
 
             if (_protocolRewards) {
                 protocolRevenueManager.distributeAuctionRevenue(_validatorId);
@@ -284,22 +288,22 @@ contract EtherFiNodesManager is
             if (_vestedAuctionFee) {
                 IEtherFiNode(etherfiNode).processVestedAuctionFeeWithdrawal();
             }
-            IEtherFiNode(etherfiNode).moveRewardsToManager(toOperator + toTnft + toBnft + toTreasury);
+            IEtherFiNode(etherfiNode).moveRewardsToManager(payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
             bool sent;
             tnftHolder = tnft.ownerOf(_validatorId);
             bnftHolder = bnft.ownerOf(_validatorId);
             if (tnftHolder == bnftHolder) {
-                (sent, ) = payable(tnftHolder).call{value: toTnft + toBnft}("");
-                if (!sent) totalTreasuryAmount += toTnft + toBnft;
+                (sent, ) = payable(tnftHolder).call{value: payouts[1] + payouts[2]}("");
+                if (!sent) totalTreasuryAmount += payouts[1] + payouts[2];
             } else {
-                (sent, ) = payable(tnftHolder).call{value: toTnft}("");
-                if (!sent) totalTreasuryAmount += toTnft;
-                (sent, ) = payable(bnftHolder).call{value: toBnft}("");
-                if (!sent) totalTreasuryAmount += toBnft;
+                (sent, ) = payable(tnftHolder).call{value: payouts[1]}("");
+                if (!sent) totalTreasuryAmount += payouts[1];
+                (sent, ) = payable(bnftHolder).call{value: payouts[2]}("");
+                if (!sent) totalTreasuryAmount += payouts[2];
             }
-            totalOperatorAmount += toOperator;
-            totalTreasuryAmount += toTreasury;
+            totalOperatorAmount += payouts[0];
+            totalTreasuryAmount += payouts[3];
         }
         (bool sent, ) = payable(_operator).call{value: totalOperatorAmount}("");
         if (!sent) totalTreasuryAmount += totalOperatorAmount;
@@ -570,30 +574,33 @@ contract EtherFiNodesManager is
 
     /// @notice Fetches the nodes non exit penalty amount
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @param _endTimestamp timestamp for calculation
     /// @return the amount of the penalty
-    function getNonExitPenalty(uint256 _validatorId, uint32 _endTimestamp) public view returns (uint256) {
+    function getNonExitPenalty(uint256 _validatorId) public view returns (uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        return IEtherFiNode(etherfiNode).getNonExitPenalty(nonExitPenaltyPrincipal, nonExitPenaltyDailyRate, _endTimestamp);
+        uint32 tNftExitRequestTimestamp = IEtherFiNode(etherfiNode).exitRequestTimestamp();
+        uint32 bNftExitRequestTimestamp = IEtherFiNode(etherfiNode).exitTimestamp();
+        return IEtherFiNode(etherfiNode).getNonExitPenalty(tNftExitRequestTimestamp, bNftExitRequestTimestamp);
     }
 
     /// @notice Fetches the staking rewards payout for a node
     /// @param _validatorId id of the validator associated to etherfi node
     /// @return the payout for staking rewards
-    function getStakingRewardsPayouts(uint256 _validatorId) 
+    function getStakingRewardsPayouts(uint256 _validatorId, uint256 _beaconBalance) 
         public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        return IEtherFiNode(etherfiNode).getStakingRewardsPayouts( stakingRewardsSplit, SCALE);
+        return IEtherFiNode(etherfiNode).getStakingRewardsPayouts(_beaconBalance, stakingRewardsSplit, SCALE);
     }
 
     /// @notice Fetches the total rewards payout for the node for specific revenues
     /// @param _validatorId ID of the validator associated to etherfi node
+    /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _stakingRewards A bool value to indictae whether or not to include the staking rewards
     /// @param _protocolRewards A bool value to indictae whether or not to include the protocol rewards
     /// @param _vestedAuctionFee A bool value to indictae whether or not to include the auction fee rewards
     /// @return The payout for total rewards for the node
     function getRewardsPayouts(
         uint256 _validatorId,
+        uint256 _beaconBalance,
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee
@@ -601,9 +608,9 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return
             IEtherFiNode(etherfiNode).getRewardsPayouts(
-                _stakingRewards, _protocolRewards, _vestedAuctionFee,
-                stakingRewardsSplit, SCALE,
-                protocolRewardsSplit, SCALE
+                _beaconBalance,
+                _stakingRewards, _protocolRewards, _vestedAuctionFee, false,
+                stakingRewardsSplit, protocolRewardsSplit, SCALE
             );
     }
 
@@ -612,12 +619,40 @@ contract EtherFiNodesManager is
     /// @return the payout for full withdraws
     function getFullWithdrawalPayouts(uint256 _validatorId) 
         public view returns (uint256, uint256, uint256, uint256) {
+        require(isExited(_validatorId), "validator node is not exited");
+
+        // The full withdrawal payouts should be equal to the total TVL of the validator
+        // 'beaconBalance' should be 0 since the validator must be in 'withdrawal_done' status
+        // - it will get provably verified once we have EIP 4788
+        return calculateTVL(_validatorId, 0, true, true, true, false);
+    }
+
+    /// @notice Compute the TVLs for {node operator, t-nft holder, b-nft holder, treasury}
+    /// @param _validatorId id of the validator associated to etherfi node
+    /// @param _beaconBalance the balance of the validator in Consensus Layer
+    /// @param _stakingRewards a flag to include the withdrawable amount for the staking principal + rewards
+    /// @param _protocolRewards a flag to include the withdrawable amount for the protocol rewards
+    /// @param _vestedAuctionFee a flag to include the withdrawable amount for the vested auction fee
+    /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
+    ///
+    /// @return toNodeOperator  the TVL for the Node Operator
+    /// @return toTnft          the TVL for the T-NFT holder
+    /// @return toBnft          the TVL for the B-NFT holder
+    /// @return toTreasury      the TVL for the Treasury
+    function calculateTVL(
+        uint256 _validatorId,
+        uint256 _beaconBalance,
+        bool _stakingRewards,
+        bool _protocolRewards,
+        bool _vestedAuctionFee,
+        bool _assumeFullyVested
+    ) public view returns (uint256, uint256, uint256, uint256) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        return
-            IEtherFiNode(etherfiNode).getFullWithdrawalPayouts(
-                stakingRewardsSplit, SCALE,
-                nonExitPenaltyPrincipal, nonExitPenaltyDailyRate
-            );
+        return  IEtherFiNode(etherfiNode).calculateTVL(
+                    _beaconBalance,
+                    _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested,
+                    stakingRewardsSplit, protocolRewardsSplit, SCALE
+                );
     }
 
     /// @notice Fetches if the specified validator has been exited

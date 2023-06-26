@@ -115,7 +115,7 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Sets the vested auction rewards variable to 0 to show the auction fee has been withdrawn
     function processVestedAuctionFeeWithdrawal() external onlyEtherFiNodeManagerContract {
-        if (_getClaimableVestedRewards() > 0) {
+        if (_getClaimableVestedRewards(false) > 0) {
             vestedAuctionRewards = 0;
         }
     }
@@ -159,70 +159,72 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
 
     /// @notice Compute the payouts for {staking, protocol} rewards and vested auction fee to the individuals
+    /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _stakingRewards a flag to be set if the caller wants to compute the payouts for the stkaing rewards
     /// @param _protocolRewards a flag to be set if the caller wants to compute the payouts for the protocol rewards
     /// @param _vestedAuctionFee a flag to be set if the caller wants to compute the payouts for the vested auction fee
+    /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
     /// @param _SRsplits the splits for the Staking Rewards
-    /// @param _SRscale the scale
     /// @param _PRsplits the splits for the Protocol Rewards
-    /// @param _PRscale the scale
+    /// @param _scale the scale
     ///
     /// @return toNodeOperator  the payout to the Node Operator
     /// @return toTnft          the payout to the T-NFT holder
     /// @return toBnft          the payout to the B-NFT holder
     /// @return toTreasury      the payout to the Treasury
     function getRewardsPayouts(
+        uint256 _beaconBalance,
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee,
+        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        uint256 _SRscale,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
-        uint256 _PRscale
+        uint256 _scale
     )
         public
         view
         returns (uint256, uint256, uint256, uint256)
     {
-        uint256 operator;
-        uint256 tnft;
-        uint256 bnft;
-        uint256 treasury;
-
+        // (operator, tnft, bnft, treasury)
+        uint256[] memory payouts = new uint256[](4);
         uint256[] memory tmps = new uint256[](4);
+
         if (_stakingRewards) {
             (tmps[0], tmps[1], tmps[2], tmps[3]) = getStakingRewardsPayouts(
+                _beaconBalance,
                 _SRsplits,
-                _SRscale
+                _scale
             );
-            operator += tmps[0];
-            tnft += tmps[1];
-            bnft += tmps[2];
-            treasury += tmps[3];
+            payouts[0] += tmps[0];
+            payouts[1] += tmps[1];
+            payouts[2] += tmps[2];
+            payouts[3] += tmps[3];
         }
 
         if (_protocolRewards) {
             (tmps[0], tmps[1], tmps[2], tmps[3]) = getProtocolRewardsPayouts(
                 _PRsplits,
-                _PRscale
+                _scale
             );
-            operator += tmps[0];
-            tnft += tmps[1];
-            bnft += tmps[2];
-            treasury += tmps[3];
+            payouts[0] += tmps[0];
+            payouts[1] += tmps[1];
+            payouts[2] += tmps[2];
+            payouts[3] += tmps[3];
         }
 
         if (_vestedAuctionFee) {
-            uint256 rewards = _getClaimableVestedRewards();
+            uint256 rewards = _getClaimableVestedRewards(_assumeFullyVested);
             uint256 toTnft = (rewards * 29) / 32;
-            tnft += toTnft; // 29 / 32
-            bnft += rewards - toTnft; // 3 / 32
+            payouts[1] += toTnft; // 29 / 32
+            payouts[2] += rewards - toTnft; // 3 / 32
         }
 
-        return (operator, tnft, bnft, treasury);
+        return (payouts[0], payouts[1], payouts[2], payouts[3]);
     }
 
     /// @notice Fetch the accrued staking rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
+    /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _splits the splits for the staking rewards
     /// @param _scale the scale = SUM(_splits)
     ///
@@ -231,6 +233,7 @@ contract EtherFiNode is IEtherFiNode {
     /// @return toBnft          the payout to the B-NFT holder
     /// @return toTreasury      the payout to the Treasury
     function getStakingRewardsPayouts(
+        uint256 _beaconBalance,
         IEtherFiNodesManager.RewardsSplit memory _splits,
         uint256 _scale
     )
@@ -243,8 +246,7 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        require(address(this).balance >= vestedAuctionRewards, "Vested Auction Rewards is missing");
-        uint256 rewards = getWithdrawableAmount(true, false, false);
+        uint256 rewards = _beaconBalance + getWithdrawableAmount(true, false, false, false);
 
         if (rewards >= 32 ether) {
             rewards -= 32 ether;
@@ -296,7 +298,7 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        uint256 rewards = getWithdrawableAmount(false, true, false);
+        uint256 rewards = getWithdrawableAmount(false, true, false, false);
         if (rewards == 0) {
             return (0, 0, 0, 0);
         }
@@ -304,20 +306,20 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     /// @notice Compute the non exit penalty for the b-nft holder
-    /// @param _principal the principal for the non exit penalty (e.g., 1 ether)
-    /// @param _dailyPenalty the dailty penalty for the non exit penalty
-    /// @param _exitTimestamp the exit timestamp for the validator node
+    /// @param _tNftExitRequestTimestamp the timestamp when the T-NFT holder asked the B-NFT holder to exit the node
+    /// @param _bNftExitRequestTimestamp the timestamp when the B-NFT holder submitted the exit request to the beacon network
     function getNonExitPenalty(
-        uint128 _principal,
-        uint64 _dailyPenalty,
-        uint32 _exitTimestamp
+        uint32 _tNftExitRequestTimestamp, 
+        uint32 _bNftExitRequestTimestamp
     ) public view returns (uint256) {
-        if (exitRequestTimestamp == 0) {
+        if (_tNftExitRequestTimestamp == 0) {
             return 0;
         }
+        uint128 _principal = IEtherFiNodesManager(etherFiNodesManager).nonExitPenaltyPrincipal();
+        uint64 _dailyPenalty = IEtherFiNodesManager(etherFiNodesManager).nonExitPenaltyDailyRate();
         uint256 daysElapsed = _getDaysPassedSince(
-            exitRequestTimestamp,
-            _exitTimestamp
+            _tNftExitRequestTimestamp,
+            _bNftExitRequestTimestamp
         );
 
         // full penalty
@@ -335,75 +337,68 @@ contract EtherFiNode is IEtherFiNode {
         return _principal - remaining;
     }
 
-    /// @notice Given the current balance of the ether fi node after its EXIT,
-    ///         Compute the payouts to {node operator, t-nft holder, b-nft holder, treasury}
-    /// @param _splits the splits for the staking rewards
-    /// @param _scale the scale = SUM(_splits)
-    /// @param _principal the principal for the non exit penalty (e.g., 1 ether)
-    /// @param _dailyPenalty the dailty penalty for the non exit penalty
+    /// @notice Given
+    ///         - the current balance of the valiator in Consensus Layer
+    ///         - the current balance of the ether fi node,
+    ///         Compute the TVLs for {node operator, t-nft holder, b-nft holder, treasury}
+    /// @param _beaconBalance the balance of the validator in Consensus Layer
+    /// @param _SRsplits the splits for the Staking Rewards
+    /// @param _PRsplits the splits for the Protocol Rewards
+    /// @param _scale the scale
     ///
     /// @return toNodeOperator  the payout to the Node Operator
     /// @return toTnft          the payout to the T-NFT holder
-    /// @return toBnft          the payout to the B-NFT holder
+    /// @return toBnft          `the payout to the B-NFT holder
     /// @return toTreasury      the payout to the Treasury
-    function getFullWithdrawalPayouts(
-        IEtherFiNodesManager.RewardsSplit memory _splits,
-        uint256 _scale,
-        uint128 _principal,
-        uint64 _dailyPenalty
-    )
-        external
-        view
-        returns (
-            uint256 toNodeOperator,
-            uint256 toTnft,
-            uint256 toBnft,
-            uint256 toTreasury
-        )
-    {
-        require(phase == VALIDATOR_PHASE.EXITED, "validator node is not exited");
-        uint256 balance = getWithdrawableAmount(true, false, true);
-
-        // (toNodeOperator, toTnft, toBnft, toTreasury)
-        uint256[] memory payouts = new uint256[](4);
+    function calculateTVL(
+        uint256 _beaconBalance,
+        bool _stakingRewards,
+        bool _protocolRewards,
+        bool _vestedAuctionFee,
+        bool _assumeFullyVested,
+        IEtherFiNodesManager.RewardsSplit memory _SRsplits,
+        IEtherFiNodesManager.RewardsSplit memory _PRsplits,
+        uint256 _scale
+    ) public view returns (uint256, uint256, uint256, uint256) {
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
-        (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(true, false, true,
-                                                                             _splits, _scale,
-                                                                             _splits, _scale);
+        uint256[] memory payouts = new uint256[](4); // (toNodeOperator, toTnft, toBnft, toTreasury)
+        (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(_beaconBalance, 
+                                                                            _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested,
+                                                                             _SRsplits, _PRsplits, _scale);
+        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
-        (uint256 toBnftPrincipal, uint256 toTnftPrincipal) = calculatePrincipals(balance);
-        payouts[1] += toTnftPrincipal;
-        payouts[2] += toBnftPrincipal;
+        {
+            uint256 remainingPrincipal = (balance > 32 ether) ? 32 ether : balance;
+            (uint256 toBnftPrincipal, uint256 toTnftPrincipal) = calculatePrincipals(remainingPrincipal);
+            payouts[1] += toTnftPrincipal;
+            payouts[2] += toBnftPrincipal;
+        }
 
-        // Deduct the NonExitPenalty from the payout to the B-NFT
-        uint256 bnftNonExitPenalty = getNonExitPenalty(
-            _principal,
-            _dailyPenalty,
-            exitTimestamp
-        );
+        {
+            uint256 bnftNonExitPenalty = getNonExitPenalty(exitRequestTimestamp, exitTimestamp);
 
-        uint256 appliedPenalty = Math.min(payouts[2], bnftNonExitPenalty);
-        payouts[2] -= appliedPenalty;
+            uint256 appliedPenalty = Math.min(payouts[2], bnftNonExitPenalty);
+            payouts[2] -= appliedPenalty;
 
-        // While the NonExitPenalty keeps growing till 1 ether,
-        //  the incentive to the node operator stops growing at 0.2 ether
-        //  the rest goes to the treasury
-        // - Cap the incentive to the operator under 0.2 ether.
-        if (appliedPenalty > 0.2 ether) {
-            payouts[0] += 0.2 ether;
-            payouts[3] += appliedPenalty - 0.2 ether;
-        } else {
-            payouts[0] += appliedPenalty;
+            // While the NonExitPenalty keeps growing till 1 ether,
+            //  the incentive to the node operator stops growing at 0.2 ether
+            //  the rest goes to the treasury
+            // - Cap the incentive to the operator under 0.2 ether.
+            if (appliedPenalty > 0.2 ether) {
+                payouts[0] += 0.2 ether;
+                payouts[3] += appliedPenalty - 0.2 ether;
+            } else {
+                payouts[0] += appliedPenalty;
+            }
         }
 
         require(
             payouts[0] + payouts[1] + payouts[2] + payouts[3] ==
-                address(this).balance -
-                    (vestedAuctionRewards - _getClaimableVestedRewards()),
+                _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested),
             "Incorrect Amount"
         );
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
@@ -471,12 +466,13 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     /// @notice Compute the withdrawable amount from the node
-    /// @param _staking a flag to include the withdrawable amount for the staking principal + rewards
+    /// @param _stakingRewards a flag to include the withdrawable amount for the staking principal + rewards
     /// @param _protocolRewards a flag to include the withdrawable amount for the protocol rewards
     /// @param _vestedAuctionFee a flag to include the withdrawable amount for the vested auction fee
-    function getWithdrawableAmount(bool _staking, bool _protocolRewards, bool _vestedAuctionFee) public view returns (uint256) {
+    /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
+    function getWithdrawableAmount(bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee, bool _assumeFullyVested) public view returns (uint256) {
         uint256 balance = 0;
-        if (_staking) {
+        if (_stakingRewards) {
             balance += address(this).balance - vestedAuctionRewards;
         }
         if (_protocolRewards && localRevenueIndex > 0) {
@@ -484,7 +480,7 @@ contract EtherFiNode is IEtherFiNode {
             balance += globalRevenueIndex - localRevenueIndex;
         }
         if (_vestedAuctionFee) {
-            balance += _getClaimableVestedRewards();
+            balance += _getClaimableVestedRewards(_assumeFullyVested);
         }
         return balance;
     }
@@ -515,7 +511,7 @@ contract EtherFiNode is IEtherFiNode {
         require(pass, "Invalid phase transition");
     }
     
-    function _getClaimableVestedRewards() internal view returns (uint256) {
+    function _getClaimableVestedRewards(bool _assumeFullyVested) internal view returns (uint256) {
         if (vestedAuctionRewards == 0) {
             return 0;
         }
@@ -526,7 +522,8 @@ contract EtherFiNode is IEtherFiNode {
             stakingStartTimestamp,
             uint32(block.timestamp)
         );
-        if (daysPassed >= vestingPeriodInDays || phase == VALIDATOR_PHASE.EVICTED) {
+        bool fullyVested = _assumeFullyVested || daysPassed >= vestingPeriodInDays;
+        if (fullyVested || phase == VALIDATOR_PHASE.EVICTED) {
             return vestedAuctionRewards;
         } else {
             return 0;
@@ -536,7 +533,7 @@ contract EtherFiNode is IEtherFiNode {
     function _getDaysPassedSince(
         uint32 _startTimestamp,
         uint32 _endTimestamp
-    ) internal pure returns (uint256) {
+    ) public pure returns (uint256) {
         if (_endTimestamp <= _startTimestamp) {
             return 0;
         }

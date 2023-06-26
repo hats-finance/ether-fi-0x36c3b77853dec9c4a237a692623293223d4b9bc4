@@ -60,12 +60,6 @@ interface IEtherFiNode {
 
     function vestedAuctionRewards() external view returns (uint256);
 
-    function getNonExitPenalty(
-        uint128 _principal,
-        uint64 _dailyPenalty,
-        uint32 _endTimestamp
-    ) external view returns (uint256);
-
     function calculatePayouts(
         uint256 _totalAmount,
         IEtherFiNodesManager.RewardsSplit memory _splits,
@@ -73,6 +67,7 @@ interface IEtherFiNode {
     ) external view returns (uint256, uint256, uint256, uint256);
 
     function getStakingRewardsPayouts(
+        uint256 _beaconBalance,
         IEtherFiNodesManager.RewardsSplit memory _splits,
         uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);
@@ -82,21 +77,31 @@ interface IEtherFiNode {
         uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);
 
+    function getNonExitPenalty(
+        uint32 _tNftExitRequestTimestamp, 
+        uint32 _bNftExitRequestTimestamp
+    ) external view returns (uint256);
+
     function getRewardsPayouts(
+        uint256 _beaconBalance,
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee,
+        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        uint256 _SRscale,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
-        uint256 _PRscale
+        uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);
 
-    function getFullWithdrawalPayouts(
-        IEtherFiNodesManager.RewardsSplit memory _splits,
-        uint256 _scale,
-        uint128 _principal,
-        uint64 _dailyPenalty
+    function calculateTVL(
+        uint256 _beaconBalance,
+        bool _stakingRewards,
+        bool _protocolRewards,
+        bool _vestedAuctionFee,
+        bool _assumeFullyVested,
+        IEtherFiNodesManager.RewardsSplit memory _SRsplits,
+        IEtherFiNodesManager.RewardsSplit memory _PRsplits,
+        uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);
 
     // Non-VIEW functions
