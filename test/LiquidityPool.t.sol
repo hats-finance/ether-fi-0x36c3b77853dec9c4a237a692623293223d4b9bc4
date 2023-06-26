@@ -467,7 +467,7 @@ contract LiquidityPoolTest is TestSetup {
 
         uint256 eEthTVL = tvls[1];
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         liquidityPoolInstance.rebase(eEthTVL, 0 ether);
         vm.stopPrank();
 
@@ -489,7 +489,7 @@ contract LiquidityPoolTest is TestSetup {
         _transferTo(etherfiNode2, 33 ether);
 
         // Process the node exit via nodeManager
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
         managerInstance.fullWithdrawBatch(validatorIds);
 
@@ -523,7 +523,7 @@ contract LiquidityPoolTest is TestSetup {
 
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
-        vm.prank(owner);
+        vm.prank(alice);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
@@ -549,7 +549,7 @@ contract LiquidityPoolTest is TestSetup {
         }
 
         bytes32 depositRoot = _getDepositRoot();
-        vm.prank(owner);
+        vm.prank(alice);
         liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
     
         return newValidators;
