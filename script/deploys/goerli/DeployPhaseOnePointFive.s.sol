@@ -122,6 +122,8 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.pauseContract();
         membershipManager.setTopUpCooltimePeriod(1 hours);
 
+        initializeTiers();
+
         vm.stopBroadcast();
 
         suiteAddressesStruct = suiteAddresses({
@@ -205,5 +207,12 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.updateAdmin(_admin);
         membershipNFT.updateAdmin(_admin);
         nftExchange.updateAdmin(_admin);
+    }
+
+    function initializeTiers() internal {
+        membershipManager.addNewTier(1, 0);
+        membershipManager.addNewTier(2, 672);
+        membershipManager.addNewTier(3, 2016);
+        membershipManager.addNewTier(4, 4704);
     }
 }
