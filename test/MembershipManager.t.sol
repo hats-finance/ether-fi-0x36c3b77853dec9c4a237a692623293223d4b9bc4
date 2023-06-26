@@ -756,6 +756,16 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.withdrawAndBurnForEth(aliceToken);
 
         vm.stopPrank();
+
+        // attempt to lock blocks
+        vm.prank(bob);
+        vm.expectRevert("Caller is not the admin");
+        membershipManagerInstance.setWithdrawalLockBlocks(10);
+
+        // alice is the admin?
+        vm.prank(alice);
+        membershipManagerInstance.setWithdrawalLockBlocks(10);
+        assertEq(membershipManagerInstance.withdrawalLockBlocks(), 10);
     }
 
     function test_trade() public {

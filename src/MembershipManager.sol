@@ -350,6 +350,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
 
+    /// @dev set how many blocks a token is locked from trading for after withdrawing
+    function setWithdrawalLockBlocks(uint32 _blocks) external onlyAdmin {
+        withdrawalLockBlocks = _blocks;
+    }
+
     /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
     /// @param _newMerkleRoot new merkle root used to verify the EAP user data (deposits, points)
     /// @param _requiredEapPointsPerEapDeposit required EAP points per deposit for each tier
