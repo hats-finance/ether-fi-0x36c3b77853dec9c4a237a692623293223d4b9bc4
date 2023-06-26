@@ -53,8 +53,8 @@ interface IMembershipManager {
     function allTimeHighDepositAmount(uint256 _tokenId) external view returns (uint256);
     function tierForPoints(uint40 _tierPoints) external view returns (uint8);
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) external view returns (bool);
-    function membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) external view returns (uint40);
     function pointsBoostFactor() external view returns (uint16);
+    function pointsGrowthRate() external view returns (uint16);
     function maxDepositTopUpPercent() external view returns (uint8);
     function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) external view returns (uint40, uint40);
     function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory);
@@ -63,8 +63,7 @@ interface IMembershipManager {
 
     // only Owner
     function setWithdrawalLockBlocks(uint32 _blocks) external;
-    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;
-    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) external;
+    function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external;
     function distributeStakingRewards() external;
     function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256);
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
