@@ -398,15 +398,14 @@ contract MembershipManagerTest is TestSetup {
     function test_OwnerPermissions() public {
         vm.deal(alice, 1000 ether);
         vm.startPrank(owner);
-        vm.expectRevert("Caller is not the admin");
-        membershipManagerInstance.updatePointsGrowthRate(12345);
-        vm.expectRevert("Caller is not the admin");
-        membershipManagerInstance.updatePointsBoostFactor(12345);
+        vm.expectRevert(MembershipManager.OnlyAdmin.selector);
+        membershipManagerInstance.updatePointsParams(123, 12345);
+        vm.expectRevert(MembershipManager.OnlyAdmin.selector);
+        membershipManagerInstance.updatePointsParams(123, 12345);
         vm.stopPrank();
 
         vm.startPrank(alice);
-        membershipManagerInstance.updatePointsGrowthRate(12345);
-        membershipManagerInstance.updatePointsBoostFactor(12345);
+        membershipManagerInstance.updatePointsParams(12345, 12345);
         vm.stopPrank();
     }
 
@@ -698,7 +697,7 @@ contract MembershipManagerTest is TestSetup {
 
         vm.startPrank(alice);
         // The points growth rate decreased to 5000 from 10000
-        membershipManagerInstance.updatePointsGrowthRate(5000);
+        membershipManagerInstance.updatePointsParams(10000, 5000);
         vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei / 2);
@@ -759,7 +758,7 @@ contract MembershipManagerTest is TestSetup {
 
         // attempt to lock blocks
         vm.prank(bob);
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert(MembershipManager.OnlyAdmin.selector);
         membershipManagerInstance.setWithdrawalLockBlocks(10);
 
         // alice is the admin?
@@ -1007,7 +1006,7 @@ contract MembershipManagerTest is TestSetup {
     function test_Pausable() public {
         assertEq(membershipManagerInstance.paused(), false);
 
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert(MembershipManager.OnlyAdmin.selector);
         vm.prank(owner);
         membershipManagerInstance.pauseContract();
 

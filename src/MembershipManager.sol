@@ -51,9 +51,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     address public protocolRevenueManager;
 
     address public admin;
-    uint256[23] __gap;
  
-
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -76,11 +74,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error DissallowZeroAddress();
 
     function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNft, address _treasury, address _protocolRevenueManager) external initializer {
-        if (_eEthAddress == address(0)) revert DissallowZeroAddress();
-        if (_liquidityPoolAddress == address(0)) revert DissallowZeroAddress();
-        if (_treasury == address(0)) revert DissallowZeroAddress();
-        if (_protocolRevenueManager == address(0)) revert DissallowZeroAddress();
-        if (_membershipNft == address(0)) revert DissallowZeroAddress();
+        if (_eEthAddress == address(0) || _liquidityPoolAddress == address(0) || _treasury == address(0) || _protocolRevenueManager == address(0) || _membershipNft == address(0)) revert DissallowZeroAddress();
 
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -116,11 +110,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable whenNotPaused returns (uint256) {
-        if (_points == 0) revert InvalidEAPRollover();
-        if (msg.value < _snapshotEthAmount) revert InvalidEAPRollover();
-        if (msg.value > _snapshotEthAmount * 2) revert InvalidEAPRollover();
-        if (msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
-        if (eapDepositProcessed[msg.sender] == true) revert InvalidEAPRollover();
+        if (_points == 0 || eapDepositProcessed[msg.sender] == true) revert InvalidEAPRollover();
+        if (msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2 || msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
 
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, _snapshotEthAmount, _points));
         if (!MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf)) revert InvalidEAPRollover(); 
@@ -311,17 +302,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         return (uint40(loyaltyPoints), uint40(tierPoints));
     }
 
-    function updatePointsBoostFactor(uint16 _newPointsBoostFactor) public onlyAdmin {
-        pointsBoostFactor = _newPointsBoostFactor;
-    }
-
-    function updatePointsGrowthRate(uint16 _newPointsGrowthRate) public onlyAdmin {
-        pointsGrowthRate = _newPointsGrowthRate;
-    }
-
     /// @notice Distributes staking rewards to eligible stakers.
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
-    function distributeStakingRewards() external onlyAdmin {
+    function distributeStakingRewards() external {
+        _requireAdmin();
         (uint96[] memory globalIndex, uint128[] memory adjustedShares) = calculateGlobalIndex();
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             uint256 amounts = liquidityPool.amountForShare(adjustedShares[i]);
@@ -332,7 +316,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     error TierLimitExceeded();
-    function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external onlyAdmin returns (uint256) {
+    function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256) {
+        _requireAdmin();
         if (tierDeposits.length >= type(uint8).max) revert TierLimitExceeded();
         tierDeposits.push(TierDeposit(0, 0));
         tierData.push(TierData(0, 0, _requiredTierPoints, _weight));
@@ -344,57 +329,28 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _tokenId The ID of the membership NFT.
     /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
     /// @param _tierPoints The number of tier points to set for the specified NFT.
-    function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external onlyAdmin {
+    function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external {
+        _requireAdmin();
         TokenData storage token = tokenData[_tokenId];
         token.baseLoyaltyPoints = _loyaltyPoints;
         token.baseTierPoints = _tierPoints;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
 
-    /// @dev set how many blocks a token is locked from trading for after withdrawing
-    function setWithdrawalLockBlocks(uint32 _blocks) external onlyAdmin {
-        withdrawalLockBlocks = _blocks;
-    }
-
     /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
     /// @param _newMerkleRoot new merkle root used to verify the EAP user data (deposits, points)
     /// @param _requiredEapPointsPerEapDeposit required EAP points per deposit for each tier
-    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external onlyAdmin {
+    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external {
+        _requireAdmin();
         bytes32 oldMerkleRoot = eapMerkleRoot;
         eapMerkleRoot = _newMerkleRoot;
         requiredEapPointsPerEapDeposit = _requiredEapPointsPerEapDeposit;
         emit MerkleUpdated(oldMerkleRoot, _newMerkleRoot);
     }
 
-    /// @notice Updates minimum valid deposit
-    /// @param _value minimum deposit in wei
-    function setMinDepositWei(uint56 _value) external onlyAdmin {
-        minDepositGwei = _value;
-    }
-
-    /// @notice Updates minimum valid deposit
-    /// @param _percent integer percentage value
-    function setMaxDepositTopUpPercent(uint8 _percent) external onlyAdmin {
-        maxDepositTopUpPercent = _percent;
-    }
-
-    function setFeeAmounts(uint256 _mintFeeAmount, uint256 _burnFeeAmount, uint256 _upgradeFeeAmount) external onlyOwner {
-        if (_mintFeeAmount % 0.001 ether != 0 || _mintFeeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
-        if (_burnFeeAmount % 0.001 ether != 0 || _burnFeeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
-        if (_upgradeFeeAmount % 0.001 ether != 0 || _upgradeFeeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
-        mintFee = uint16(_mintFeeAmount / 0.001 ether);
-        burnFee = uint16(_burnFeeAmount / 0.001 ether);
-        upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
-    }
-
-    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) public onlyOwner {
-        if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
-        treasuryFeeSplitPercent = _treasurySplitPercent;
-        protocolRevenueFeeSplitPercent = _protocolRevenueManagerSplitPercent;
-    }
-
     error InvalidWithdraw();
-    function withdrawFees() external onlyAdmin {
+    function withdrawFees() external {
+        _requireAdmin();
         uint256 totalAccumulatedFeeAmount = address(this).balance;
         uint256 treasuryFees = totalAccumulatedFeeAmount * treasuryFeeSplitPercent / 100;
         uint256 protocolRevenueFees = totalAccumulatedFeeAmount * protocolRevenueFeeSplitPercent / 100;
@@ -410,38 +366,69 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         }
     }
 
-    /// @notice Updates the eETH address
-    /// @param _eEthAddress address of the new eETH instance
-    function setEETHInstance(address _eEthAddress) external onlyOwner {
-        eETH = IeETH(_eEthAddress);
+    function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external {
+        _requireAdmin();
+        pointsBoostFactor = _newPointsBoostFactor;
+        pointsGrowthRate = _newPointsGrowthRate;
     }
 
-    /// @notice Updates the liquidity pool address
-    /// @param _liquidityPoolAddress address of the new LP instance
-    function setLPInstance(address _liquidityPoolAddress) external onlyOwner {
-        liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+    /// @dev set how many blocks a token is locked from trading for after withdrawing
+    function setWithdrawalLockBlocks(uint32 _blocks) external {
+        _requireAdmin();
+        withdrawalLockBlocks = _blocks;
+    }
+
+    /// @notice Updates minimum valid deposit
+    /// @param _value minimum deposit in wei
+    function setMinDepositWei(uint56 _value) external {
+        _requireAdmin();
+        minDepositGwei = _value;
+    }
+
+    /// @notice Updates minimum valid deposit
+    /// @param _percent integer percentage value
+    function setMaxDepositTopUpPercent(uint8 _percent) external {
+        _requireAdmin();
+        maxDepositTopUpPercent = _percent;
     }
 
     /// @notice Updates the time a user must wait between top ups
     /// @param _newWaitTime the new time to wait between top ups
-    function setTopUpCooltimePeriod(uint32 _newWaitTime) external onlyAdmin {
+    function setTopUpCooltimePeriod(uint32 _newWaitTime) external {
+        _requireAdmin();
         topUpCooltimePeriod = _newWaitTime;
+    }
+
+    function setFeeAmounts(uint256 _mintFeeAmount, uint256 _burnFeeAmount, uint256 _upgradeFeeAmount) external onlyOwner {
+        _feeAmountSanityCheck(_mintFeeAmount);
+        _feeAmountSanityCheck(_burnFeeAmount);
+        _feeAmountSanityCheck(_upgradeFeeAmount);
+        mintFee = uint16(_mintFeeAmount / 0.001 ether);
+        burnFee = uint16(_burnFeeAmount / 0.001 ether);
+        upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
+    }
+
+    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) public onlyOwner {
+        if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
+        treasuryFeeSplitPercent = _treasurySplitPercent;
+        protocolRevenueFeeSplitPercent = _protocolRevenueManagerSplitPercent;
     }
 
     /// @notice Updates the address of the admin
     /// @param _newAdmin the new address to set as admin
     function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
         admin = _newAdmin;
     }
 
     //Pauses the contract
-    function pauseContract() external onlyAdmin {
+    function pauseContract() external {
+        _requireAdmin();
         _pause();
     }
 
     //Unpauses the contract
-    function unPauseContract() external onlyAdmin {
+    function unPauseContract() external {
+        _requireAdmin();
         _unpause();
     }
 
@@ -614,25 +601,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (membershipNFT.balanceOfUser(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
     }
 
-    // Compute the points earnings of a user between [since, until) 
-    // Assuming the user's balance didn't change in between [since, until)
-    function membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) public view returns (uint40) {
-        TokenDeposit memory tokenDeposit = tokenDeposits[_tokenId];
-        if (tokenDeposit.amounts == 0 && tokenDeposit.amountStakedForPoints == 0) {
-            return 0;
-        }
+    error OnlyAdmin();
+    function _requireAdmin() internal {
+        if (msg.sender != admin) revert OnlyAdmin();
+    }
 
-        uint256 elapsed = _until - _since;
-        uint256 effectiveBalanceForEarningPoints = tokenDeposit.amounts + ((10000 + pointsBoostFactor) * tokenDeposit.amountStakedForPoints) / 10000;
-        uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate / 10000;
-
-        // 0.001 ether   membership points earns 1     wei   points per day
-        // == 1  ether   membership points earns 1     kwei  points per day
-        // == 1  Million membership points earns 1     gwei  points per day
-        // type(uint40).max == 2^40 - 1 ~= 4 * (10 ** 12) == 1000 gwei
-        // - A user with 1 Million membership points can earn points for 1000 days
-        earning = _min((earning / 1 days) / 0.001 ether, type(uint40).max);
-        return uint40(earning);
+    function _feeAmountSanityCheck(uint256 _feeAmount) internal {
+        if (_feeAmount % 0.001 ether != 0 || _feeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
     }
 
     error IntegerOverflow();
@@ -770,8 +745,4 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     //------------------------------------  MODIFIER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
-        _;
-    }
 }
