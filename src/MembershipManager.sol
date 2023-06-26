@@ -143,13 +143,22 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 feeAmount = mintFee * 0.001 ether;
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (msg.value != _amount + _amountForPoints + feeAmount) revert InvalidAllocation();
-        uint256 amountAfterFee = msg.value - feeAmount;
-        
-        liquidityPool.deposit{value: amountAfterFee}(msg.sender, address(this), _merkleProof);
-        uint256 tokenId = _mintMembershipNFT(msg.sender, amountAfterFee - _amountForPoints, _amountForPoints, 0, 0);
+        return _wrapEth(_amount, _amountForPoints, _merkleProof);
+    }
 
-        _emitNftUpdateEvent(tokenId);
-        return tokenId;
+    function wrapEthBatch(uint256 _numNFTs, uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused returns (uint256[] memory) {
+        uint256 feeAmount = mintFee * 0.001 ether;
+        uint256 depositPerNFT = _amount + _amountForPoints;
+        uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
+
+        if (depositPerNFT / 1 gwei < minDepositGwei) revert InvalidDeposit();
+        if (msg.value != _numNFTs * ethNeededPerNFT || msg.value != _numNFTs * ethNeededPerNFT) revert InvalidAllocation();
+
+        uint256[] memory tokenIds = new uint256[](_numNFTs);
+        for (uint256 i = 0; i < _numNFTs; i++) {
+            tokenIds[i] = _wrapEth(_amount, _amountForPoints, _merkleProof);
+        }
+        return tokenIds;
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
@@ -200,7 +209,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
-    function withdrawAndBurnForEth(uint256 _tokenId) public {
+    function withdrawAndBurnForEth(uint256 _tokenId) public whenNotPaused {
 
         // prevent transfers for several blocks after a withdrawal to prevent frontrunning
         membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
@@ -289,7 +298,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @dev This function allows users to convert their EAP points to membership {loyalty, tier} tokens.
     /// @param _eapPoints The amount of EAP points
     /// @param _ethAmount The amount of ETH deposit in the EAP (or converted amounts for ERC20s)
-    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view whenNotPaused returns (uint40, uint40) {
+    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
         uint256 loyaltyPoints = _min(1e5 * _eapPoints / 1 days , type(uint40).max);        
         uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
         uint8 tierId = 0;
@@ -399,7 +408,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         topUpCooltimePeriod = _newWaitTime;
     }
 
-    function setFeeAmounts(uint256 _mintFeeAmount, uint256 _burnFeeAmount, uint256 _upgradeFeeAmount) external onlyOwner {
+    function setFeeAmounts(uint256 _mintFeeAmount, uint256 _burnFeeAmount, uint256 _upgradeFeeAmount) external {
+        _requireAdmin();
         _feeAmountSanityCheck(_mintFeeAmount);
         _feeAmountSanityCheck(_burnFeeAmount);
         _feeAmountSanityCheck(_upgradeFeeAmount);
@@ -408,7 +418,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
     }
 
-    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) public onlyOwner {
+    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) public {
+        _requireAdmin();
         if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
         treasuryFeeSplitPercent = _treasurySplitPercent;
         protocolRevenueFeeSplitPercent = _protocolRevenueManagerSplitPercent;
@@ -494,6 +505,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
             token.baseTierPoints = uint40(dilutedPoints);
             _claimTier(_tokenId);
         }
+    }
+
+    function _wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) internal returns (uint256) {
+        liquidityPool.deposit{value: _amount + _amountForPoints}(msg.sender, address(this), _merkleProof);
+        uint256 tokenId = _mintMembershipNFT(msg.sender, _amount, _amountForPoints, 0, 0);
+        _emitNftUpdateEvent(tokenId);
+        return tokenId;
     }
 
     function _withdrawAndBurn(uint256 _tokenId) internal returns (uint256) {

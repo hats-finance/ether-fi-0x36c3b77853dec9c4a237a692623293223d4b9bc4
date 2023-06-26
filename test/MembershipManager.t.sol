@@ -32,6 +32,15 @@ contract MembershipManagerTest is TestSetup {
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
     }
 
+    function test_wrapEthBatch() public {
+        vm.deal(alice, 100 ether);
+        vm.prank(alice);
+        uint256[] memory aliceTokens = membershipManagerInstance.wrapEthBatch{value: 100 ether}(10, 10 ether, 0, aliceProof);
+        for (uint256 i = 0; i < aliceTokens.length; i++) {
+            assertEq(membershipNftInstance.valueOf(aliceTokens[i]), 10 ether);
+        }
+    }
+
     function test_withdrawalPenalty() public {
         vm.deal(alice, 100 ether);
         vm.deal(bob, 100 ether);
