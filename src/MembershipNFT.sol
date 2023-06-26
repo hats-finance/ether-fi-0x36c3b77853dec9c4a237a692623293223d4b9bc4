@@ -19,7 +19,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     bool public mintingPaused;
     event MintingPaused(bool isPaused);
 
-    mapping(uint256 => uint256) public tokenLocks;
+    mapping(uint256 => uint256) public tokenTransferLocks;
     event TokenLocked(uint256 indexed _tokenId, uint256 until);
 
     address public admin;
@@ -52,30 +52,14 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         _burn(_from, _tokenId, _amount);
     }
 
-    error OnlyTokenOwner();
-    error RequireTokenUnlocked();
-    error InvalidLock();
+    /// @dev locks a token from being transferred for a number of blocks
+    function incrementLock(uint256 _tokenId, uint256 blocks) onlyMembershipManagerContract external {
+        uint256 target = block.number + blocks;
 
-    /// @notice locks a token for the specified number of blocks preventing withdrawing or burning.
-    ///         A token must be locked for it to be transferred. A user should ONLY purchase a token
-    ///         if the remaining time on the lock is safely above the number of blocks the user expects
-    ///         the TX to be confirmed in.
-    /// @dev lock will expire immediately once the token is transferred
-    /// @param _tokenId ID of the token to lock
-    /// @param _blocks how many blocks to lock the token for
-    function lockToken(uint256 _tokenId, uint256 _blocks) public {
-        if (balanceOfUser(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
-        if (block.number < tokenLocks[_tokenId]) revert RequireTokenUnlocked();
-        if (_blocks == 0) revert InvalidLock();
-
-        uint256 until = block.number + _blocks;
-        tokenLocks[_tokenId] = block.number + _blocks;
-        emit TokenLocked(_tokenId, until);
-    }
-
-    function lockTokens(uint256[] calldata _tokenIds, uint256 _blocks) external {
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
-            lockToken(_tokenIds[i], _blocks);
+        // don't accidentally shorten an existing lock
+        if (tokenTransferLocks[_tokenId] < target) {
+            tokenTransferLocks[_tokenId] = target;
+            emit TokenLocked(_tokenId, target);
         }
     }
 
@@ -106,7 +90,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
 
-    error RequireTokenLocked();
+    error RequireTokenUnlocked();
     function _beforeTokenTransfer(
         address _operator,
         address _from,
@@ -116,29 +100,14 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         bytes memory _data
     ) internal override {
 
-        // exempt mints/burns from check
+        // exempty mints and burns from checks
         if (_from == address(0x00) || _to == address(0x00)) {
             return;
         }
 
-        // prevent transfers if token is not locked
+        // prevent transfers if token is locked
         for (uint256 x; x < _ids.length; ++x) {
-            if (block.number >= tokenLocks[_ids[x]]) revert RequireTokenLocked();
-        }
-    }
-
-    function _afterTokenTransfer(
-        address _operator,
-        address _from,
-        address _to,
-        uint256[] memory _ids,
-        uint256[] memory _amounts,
-        bytes memory _data
-    ) internal override {
-
-        // reset locks so new owner has control
-        for (uint256 x; x < _ids.length; ++x) {
-            tokenLocks[_ids[x]] = 0;
+            if (block.number < tokenTransferLocks[_ids[x]]) revert RequireTokenUnlocked();
         }
     }
 

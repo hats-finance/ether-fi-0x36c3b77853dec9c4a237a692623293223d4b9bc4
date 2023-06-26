@@ -54,18 +54,22 @@ contract NFTExchangeTest is TestSetup {
         mNftTokenIds[0] = membershipNftTokenId;
         reservedBuyers[0] = alice;
 
-        // Fail: Owner must lock the token first before listing it for sale
-        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
-        vm.prank(alice);
+        // make a small withdrawal
+        vm.startPrank(alice);
+        uint256 withdrawalAmount = 0.1 ether;
+        membershipManagerInstance.unwrapForEth(membershipNftTokenId, withdrawalAmount);
+        assertEq(membershipNftInstance.tokenTransferLocks(membershipNftTokenId), block.number + membershipManagerInstance.withdrawalLockBlocks());
+
+        // fails because token is locked
+        vm.expectRevert(MembershipNFT.RequireTokenUnlocked.selector);
         nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
 
-        // Owner locks the token
-        vm.prank(alice);
-        membershipNftInstance.lockToken(membershipNftTokenId, 10);
+        // wait for lock to expire
+        vm.roll(block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // Owner lists it for sale
-        vm.prank(alice);
         nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
+        vm.stopPrank();
 
         uint256[] memory tNftTokenIds = new uint256[](1);
         tNftTokenIds[0] = tNftTokenId;
@@ -81,12 +85,13 @@ contract NFTExchangeTest is TestSetup {
         TNFTInstance.setApprovalForAll(address(nftExchangeInstance), true);
         nftExchangeInstance.buy(tNftTokenIds, mNftTokenIds);
 
+
         // B-NFT still belongs to Alice
         // T-NFT belongs to Owner now
         assertEq(BNFTInstance.ownerOf(tNftTokenId), alice);
         assertEq(TNFTInstance.ownerOf(tNftTokenId), owner);
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
-        assertEq(address(liquidityPoolInstance).balance, 30 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether - withdrawalAmount);
+        assertEq(address(liquidityPoolInstance).balance, 30 ether - withdrawalAmount);
 
         // Fail: Already Sold
         vm.expectRevert("Token is not currently listed for sale");
@@ -99,7 +104,12 @@ contract NFTExchangeTest is TestSetup {
         nftExchangeInstance.delist(mNftTokenIds);
         vm.stopPrank();
 
+
         uint256 ownerBalance = address(owner).balance;
+
+        // need to give liquidity pool a little more eth to cover previous withdrawal
+        vm.prank(alice);
+        liquidityPoolInstance.deposit{value: 0.1 ether}(alice, aliceProof);
 
         // Success: Owner brings the T-NFT to the liquidity pool and gets 30 ETH
         vm.prank(owner);
@@ -139,10 +149,6 @@ contract NFTExchangeTest is TestSetup {
 
         assertEq(membershipNftInstance.loyaltyPointsOf(membershipNftTokenId), loyaltyPoints);
         assertEq(membershipNftInstance.tierPointsOf(membershipNftTokenId), tierPoints);
-
-        // Owner locks the token
-        vm.prank(alice);
-        membershipNftInstance.lockToken(membershipNftTokenId, 10);
 
         // Owner approves the NFTExchange to transfer the membership NFT
         vm.prank(alice);

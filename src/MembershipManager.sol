@@ -44,6 +44,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     uint8 public protocolRevenueFeeSplitPercent;
 
     uint32 public topUpCooltimePeriod;
+    uint32 public withdrawalLockBlocks;
 
     address public treasury;
     address public protocolRevenueManager;
@@ -93,6 +94,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         pointsGrowthRate = 10000;
         minDepositGwei = (0.1 ether / 1 gwei);
         maxDepositTopUpPercent = 20;
+        withdrawalLockBlocks = 100;
 
         setFeeSplits(0, 100);
     }
@@ -185,7 +187,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external {
         _requireTokenOwner(_tokenId);
         if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
-        if (block.number < membershipNFT.tokenLocks(_tokenId)) revert RequireTokenUnlocked();
+
+        // prevent transfers for several blocks after a withdrawal to prevent frontrunning
+        membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -205,8 +209,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
-        // this check must come before burn because burning updates the locks
-        if (block.number < membershipNFT.tokenLocks(_tokenId)) revert RequireTokenUnlocked(); 
+
+        // prevent transfers for several blocks after a withdrawal to prevent frontrunning
+        membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
 
         uint256 feeAmount = burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
@@ -343,6 +348,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         token.baseLoyaltyPoints = _loyaltyPoints;
         token.baseTierPoints = _tierPoints;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
+    }
+
+    /// @dev set how many blocks a token is locked from trading for after withdrawing
+    function setWithdrawalLockBlocks(uint32 _blocks) external onlyAdmin {
+        withdrawalLockBlocks = _blocks;
     }
 
     /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
