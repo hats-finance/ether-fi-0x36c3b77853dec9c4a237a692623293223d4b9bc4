@@ -51,9 +51,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     address public protocolRevenueManager;
 
     address public admin;
-    // uint256[23] __gap;
  
-
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
