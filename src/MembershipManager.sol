@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "./interfaces/IeETH.sol";
@@ -11,7 +12,7 @@ import "./interfaces/IMembershipManager.sol";
 import "./interfaces/IMembershipNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable, IMembershipManager {
+contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable, IMembershipManager {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -422,6 +423,16 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     function updateAdmin(address _newAdmin) external onlyOwner {
         require(_newAdmin != address(0), "Cannot be address zero");
         admin = _newAdmin;
+    }
+
+    //Pauses the contract
+    function pauseContract() external onlyAdmin {
+        _pause();
+    }
+
+    //Unpauses the contract
+    function unPauseContract() external onlyAdmin {
+        _unpause();
     }
 
     //--------------------------------------------------------------------------------------

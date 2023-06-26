@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import "../../../src/MembershipManager.sol";
 import "../../../src/MembershipNFT.sol";
 import "../../../src/WeETH.sol";
+import "../../../src/TNFT.sol";
 import "../../../src/EETH.sol";
 import "../../../src/NFTExchange.sol";
 import "../../../src/LiquidityPool.sol";
@@ -79,13 +80,14 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation),"");
         regulationsManager = RegulationsManager(address(regulationsManagerProxy));
         regulationsManager.initialize();
-        regulationsManager.initializeNewWhitelist(initialHash);
 
         liquidityPoolImplementation = new LiquidityPool();
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPool = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPool.initialize(address(regulationsManager));
         liquidityPool.setTnft(tnft);
+        liquidityPool.setStakingManager(stakingManagerProxyAddress);
+        liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
 
         eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation),"");
@@ -101,7 +103,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation),"");
         membershipManager = MembershipManager(payable(address(membershipManagerProxy)));
         membershipManager.initialize(address(eETH), address(liquidityPool), address(membershipNFT), treasury, protocolRevenueManagerProxy);
-        membershipManager.setTopUpCooltimePeriod(28 days);
 
         weETHImplementation = new WeETH();
         weETHProxy = new UUPSProxy(address(weETHImplementation),"");
@@ -114,13 +115,14 @@ contract DeployPhaseOnePointFiveScript is Script {
         nftExchange.initialize(tnft, address(membershipNFT));
 
         // Setup dependencies
-        liquidityPool.setTokenAddress(address(eETH));
-        liquidityPool.setStakingManager(stakingManagerProxyAddress);
-        liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
-        liquidityPool.setMembershipManager(address(membershipManager));
-        membershipNFT.setMembershipManager(address(membershipManager));
-
         setUpAdmins(admin);
+
+        liquidityPool.setTokenAddress(address(eETH));
+        liquidityPool.setMembershipManager(address(membershipManager));
+        regulationsManager.initializeNewWhitelist(initialHash);
+        membershipNFT.setMembershipManager(address(membershipManager));
+        membershipManager.pauseContract();
+        membershipManager.setTopUpCooltimePeriod(1 hours);
 
         vm.stopBroadcast();
 
@@ -199,7 +201,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         );
     }
 
-     function setUpAdmins(address _admin) internal {
+    function setUpAdmins(address _admin) internal {
         liquidityPool.updateAdmin(_admin);
         regulationsManager.updateAdmin(_admin);
         membershipManager.updateAdmin(_admin);
