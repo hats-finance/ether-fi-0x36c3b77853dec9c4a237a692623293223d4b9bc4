@@ -621,7 +621,9 @@ contract EtherFiNodesManager is
         public view returns (uint256, uint256, uint256, uint256) {
         require(isExited(_validatorId), "validator node is not exited");
 
+        // The full withdrawal payouts should be equal to the total TVL of the validator
         // 'beaconBalance' should be 0 since the validator must be in 'withdrawal_done' status
+        // - it will get provably verified once we have EIP 4788
         return calculateTVL(_validatorId, 0, true, true, true, false);
     }
 
