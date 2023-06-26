@@ -120,7 +120,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManager.initializeNewWhitelist(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
         membershipManager.pauseContract();
-        membershipManager.setTopUpCooltimePeriod(1 hours);
+        membershipManager.setTopUpCooltimePeriod(5 minutes);
 
         vm.stopBroadcast();
 
