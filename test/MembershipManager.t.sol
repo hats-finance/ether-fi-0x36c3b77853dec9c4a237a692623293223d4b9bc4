@@ -1003,4 +1003,20 @@ contract MembershipManagerTest is TestSetup {
         vm.prank(alice);
         liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
     }
+
+    function test_Pausable() public {
+        assertEq(membershipManagerInstance.paused(), false);
+
+        vm.expectRevert("Caller is not the admin");
+        vm.prank(owner);
+        membershipManagerInstance.pauseContract();
+
+        vm.prank(alice);
+        membershipManagerInstance.pauseContract();
+        assertEq(membershipManagerInstance.paused(), true);
+
+        vm.prank(alice);
+        membershipManagerInstance.unPauseContract();
+        assertEq(membershipManagerInstance.paused(), false);
+    }
 }

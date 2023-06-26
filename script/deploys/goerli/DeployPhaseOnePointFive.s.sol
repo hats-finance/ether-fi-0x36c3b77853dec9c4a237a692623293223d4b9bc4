@@ -6,6 +6,7 @@ import "../../../src/MembershipManager.sol";
 import "../../../src/MembershipNFT.sol";
 import "../../../src/WeETH.sol";
 import "../../../src/EETH.sol";
+import "../../../src/NFTExchange.sol";
 import "../../../src/LiquidityPool.sol";
 import "../../../src/RegulationsManager.sol";
 import "../../../src/UUPSProxy.sol";
@@ -22,6 +23,7 @@ contract DeployPhaseOnePointFiveScript is Script {
     UUPSProxy public weETHProxy;
     UUPSProxy public liquidityPoolProxy;
     UUPSProxy public regulationsManagerProxy;
+    UUPSProxy public nftExchangeProxy;
 
     MembershipManager public membershipManagerImplementation;
     MembershipManager public membershipManager;
@@ -41,6 +43,9 @@ contract DeployPhaseOnePointFiveScript is Script {
     RegulationsManager public regulationsManagerImplementation;
     RegulationsManager public regulationsManager;
 
+    NFTExchange public nftExchangeImplementation;
+    NFTExchange public nftExchange;
+
     struct suiteAddresses {
         address weETH;
         address membershipManager;
@@ -48,6 +53,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         address eETH;
         address liquidityPool;
         address regulationsManager;
+        address nftExchange;
     }
 
     suiteAddresses suiteAddressesStruct;
@@ -60,13 +66,14 @@ contract DeployPhaseOnePointFiveScript is Script {
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
         address treasury = vm.envAddress("TREASURY_ADDRESS");
         address protocolRevenueManagerProxy = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
+        address tnft = vm.envAddress("TNFT");
+        address admin = vm.envAddress("ADMIN");
 
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
 
         string memory baseURI = vm.envString("BASE_URI");
 
         // Deploy contracts
-
         regulationsManagerImplementation = new RegulationsManager();
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation),"");
         regulationsManager = RegulationsManager(address(regulationsManagerProxy));
@@ -76,7 +83,10 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPool = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPool.initialize(address(regulationsManager));
-
+        liquidityPool.setTnft(tnft);
+        liquidityPool.setStakingManager(stakingManagerProxyAddress);
+        liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
+        
         eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation),"");
         eETH = EETH(address(eETHProxy));
@@ -97,14 +107,20 @@ contract DeployPhaseOnePointFiveScript is Script {
         weETH = WeETH(address(weETHProxy));
         weETH.initialize(address(liquidityPool), address(eETH));
 
+        nftExchangeImplementation = new NFTExchange();
+        nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation),"");
+        nftExchange = NFTExchange(address(nftExchangeProxy));
+        nftExchange.initialize(tnft, address(membershipNFT));
+
         // Setup dependencies
-        regulationsManager.initializeNewWhitelist(initialHash);
+        setUpAdmins(admin);
 
         liquidityPool.setTokenAddress(address(eETH));
-        liquidityPool.setStakingManager(stakingManagerProxyAddress);
-        liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
         liquidityPool.setMembershipManager(address(membershipManager));
+        regulationsManager.initializeNewWhitelist(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
+        membershipManager.pauseContract();
+        membershipManager.setTopUpCooltimePeriod(1 hours);
 
         vm.stopBroadcast();
 
@@ -114,7 +130,8 @@ contract DeployPhaseOnePointFiveScript is Script {
             membershipManager: address(membershipManager),
             eETH: address(eETH),
             liquidityPool: address(liquidityPool),
-            regulationsManager: address(regulationsManager)
+            regulationsManager: address(regulationsManager),
+            nftExchange: address(nftExchange)
         });
 
         writeSuiteVersionFile();
@@ -174,9 +191,19 @@ contract DeployPhaseOnePointFiveScript is Script {
                     "\nLiquidity Pool: ",
                     Strings.toHexString(suiteAddressesStruct.liquidityPool),
                     "\nRegulations Manager: ",
-                    Strings.toHexString(suiteAddressesStruct.regulationsManager)
+                    Strings.toHexString(suiteAddressesStruct.regulationsManager),
+                    "\nNFT Exchange: ",
+                    Strings.toHexString(suiteAddressesStruct.nftExchange)
                 )
             )
         );
+    }
+
+    function setUpAdmins(address _admin) internal {
+        liquidityPool.updateAdmin(_admin);
+        regulationsManager.updateAdmin(_admin);
+        membershipManager.updateAdmin(_admin);
+        membershipNFT.updateAdmin(_admin);
+        nftExchange.updateAdmin(_admin);
     }
 }

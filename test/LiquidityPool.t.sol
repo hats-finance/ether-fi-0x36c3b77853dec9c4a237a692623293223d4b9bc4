@@ -429,9 +429,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
 
         liquidityPoolInstance.closeEEthLiquidStaking();
-        
-        vm.expectRevert("Liquid staking functions are closed");
-        liquidityPoolInstance.withdraw(alice, 1 ether);
+    
         vm.stopPrank();
     }
 
