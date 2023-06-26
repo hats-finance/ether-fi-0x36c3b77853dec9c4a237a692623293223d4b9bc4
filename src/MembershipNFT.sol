@@ -161,7 +161,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     function accruedLoyaltyPointsOf(uint256 _tokenId) public view returns (uint40) {
         (,,, uint32 prevPointsAccrualTimestamp,,,) = membershipManager.tokenData(_tokenId);
-        return membershipManager.membershipPointsEarning(_tokenId, prevPointsAccrualTimestamp, block.timestamp);
+        return membershipPointsEarning(_tokenId, prevPointsAccrualTimestamp, block.timestamp);
     }
 
     function accruedTierPointsOf(uint256 _tokenId) public view returns (uint40) {
@@ -193,6 +193,30 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
         uint256 totalDeposit = amounts + amountStakedForPoints;
         return _max(totalDeposit, membershipManager.allTimeHighDepositAmount(_tokenId));        
+    }
+
+    // Compute the points earnings of a user between [since, until) 
+    // Assuming the user's balance didn't change in between [since, until)
+    function membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) internal view returns (uint40) {
+        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
+        if (amounts == 0 && amountStakedForPoints == 0) {
+            return 0;
+        }
+
+        uint16 pointsBoostFactor = membershipManager.pointsBoostFactor();
+        uint16 pointsGrowthRate = membershipManager.pointsGrowthRate();
+
+        uint256 elapsed = _until - _since;
+        uint256 effectiveBalanceForEarningPoints = amounts + ((10000 + pointsBoostFactor) * amountStakedForPoints) / 10000;
+        uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate / 10000;
+
+        // 0.001 ether   membership points earns 1     wei   points per day
+        // == 1  ether   membership points earns 1     kwei  points per day
+        // == 1  Million membership points earns 1     gwei  points per day
+        // type(uint40).max == 2^40 - 1 ~= 4 * (10 ** 12) == 1000 gwei
+        // - A user with 1 Million membership points can earn points for 1000 days
+        earning = _min((earning / 1 days) / 0.001 ether, type(uint40).max);
+        return uint40(earning);
     }
 
     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
