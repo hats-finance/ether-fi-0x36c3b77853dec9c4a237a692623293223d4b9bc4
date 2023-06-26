@@ -91,7 +91,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         maxDepositTopUpPercent = 20;
         withdrawalLockBlocks = 100;
 
-        setFeeSplits(0, 100);
+        treasuryFeeSplitPercent = 0;
+        protocolRevenueFeeSplitPercent = 100;
     }
 
     error InvalidEAPRollover();
@@ -418,7 +419,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
     }
 
-    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) public {
+    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) external {
         _requireAdmin();
         if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
         treasuryFeeSplitPercent = _treasurySplitPercent;

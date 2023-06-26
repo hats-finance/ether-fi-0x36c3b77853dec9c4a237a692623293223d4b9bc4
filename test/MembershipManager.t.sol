@@ -854,11 +854,10 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_upgradeFee() public {
-
         vm.deal(alice, 100 ether);
 
         // setup fees
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         membershipManagerInstance.setFeeAmounts(0 ether, 0 ether, 0.5 ether);
         membershipManagerInstance.setFeeSplits(20, 80);
 
@@ -896,7 +895,7 @@ contract MembershipManagerTest is TestSetup {
     function test_FeeWorksCorrectly() public {
         launch_validator(); // there will be 2 validators from the beginning
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether, 0 ether);
         membershipManagerInstance.setFeeSplits(20, 80);
         vm.stopPrank();
@@ -942,14 +941,14 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_SettingFeesFail() public {
-        vm.startPrank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.startPrank(owner);
+        vm.expectRevert(MembershipManager.OnlyAdmin.selector);
         membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether, 0 ether);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert(MembershipManager.OnlyAdmin.selector);
         membershipManagerInstance.setFeeSplits(20, 80);
         vm.stopPrank();
 
-        vm.startPrank(owner);
+        vm.startPrank(alice);
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
         membershipManagerInstance.setFeeAmounts(0.001 ether * uint256(type(uint16).max) + 1, 0, 0 ether);
 
