@@ -62,6 +62,7 @@ interface IMembershipManager {
     function getImplementation() external view returns (address);
 
     // only Owner
+    function setWithdrawalLockBlocks(uint32 _blocks) external;
     function updatePointsBoostFactor(uint16 _newPointsBoostFactor) external;
     function updatePointsGrowthRate(uint16 _newPointsGrowthRate) external;
     function distributeStakingRewards() external;
