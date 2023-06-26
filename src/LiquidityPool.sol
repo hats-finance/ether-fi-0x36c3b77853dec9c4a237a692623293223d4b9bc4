@@ -16,7 +16,6 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
-import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -199,7 +198,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         totalValueInLp -= amount;
         address owner = owner();
         for (uint256 i = 0; i < _tokenIds.length; i++) {
-            console.log(tNft.ownerOf(_tokenIds[i]));
             tNft.transferFrom(owner, address(this), _tokenIds[i]);
         }
         (bool sent, ) = address(owner).call{value: amount}("");
