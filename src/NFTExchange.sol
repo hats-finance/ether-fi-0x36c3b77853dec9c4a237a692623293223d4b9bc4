@@ -50,7 +50,7 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @dev Allows the owner to list membership NFTs for sale.
      * @param _mNftTokenIds The token IDs of the membership NFTs to list for sale.
      * @param _reservedBuyers The addresses of the reserved buyers for each NFT.
-     * @param _blocks how many blocks to list & lock the token for
+     * @param _blocks how many blocks to list the token for
      */
     function listForSale(uint256[] calldata _mNftTokenIds, address[] calldata _reservedBuyers, uint256 _blocks) external onlyAdmin {
         require(_mNftTokenIds.length == _reservedBuyers.length, "Input arrays must be the same length");
@@ -58,9 +58,8 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             uint256 tokenId = _mNftTokenIds[i];
             address reservedBuyer = _reservedBuyers[i];
             reservedBuyers[tokenId] = reservedBuyer;
-        
+
             membershipNft.safeTransferFrom(msg.sender, address(this), tokenId, 1, "");
-            membershipNft.lockToken(tokenId, _blocks);
         }
     }
 

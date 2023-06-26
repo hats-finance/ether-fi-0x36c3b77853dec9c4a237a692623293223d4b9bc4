@@ -707,7 +707,7 @@ contract EtherFiNodeTest is TestSetup {
                 toTnft,
                 toBnft,
                 toTreasury
-            ) = managerInstance.getRewardsPayouts(validatorIds[0], true, true, true);
+            ) = managerInstance.getRewardsPayouts(validatorIds[0], 32 ether, true, true, true);
             managerInstance.partialWithdraw(validatorIds[0], true, true, true);
             assertEq(address(nodeOperator).balance, nodeOperatorBalance + toNodeOperator);
             assertEq(address(treasuryInstance).balance, treasuryBalance + toTreasury);
@@ -1011,7 +1011,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.warp(block.timestamp + 86400);
         startHoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
-        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
@@ -1039,7 +1039,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.warp(block.timestamp + (1 + 7 * 86400));
         startHoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
-        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
 
@@ -1068,7 +1068,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.warp(block.timestamp + 28 * 86400);
         startHoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
-        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
 
         // the node got slashed seriously
         vm.deal(etherfiNode, 4 ether + vestedAuctionFeeRewardsForStakers);
@@ -1104,7 +1104,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.warp(block.timestamp + (1 + 28 * 86400));
         startHoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
-        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
         assertGe(nonExitPenalty, 0.5 ether);
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
@@ -1137,8 +1137,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.warp(block.timestamp + (1 + 2 * 28 * 86400));
         hoax(alice);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
-        startHoax(owner);
-        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
 
         vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
 
@@ -1198,11 +1197,85 @@ contract EtherFiNodeTest is TestSetup {
         exitTimestamps[0] = uint32(block.timestamp) - 1;
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
 
-        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0], uint32(block.timestamp));
+        uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
         assertEq(nonExitPenalty, 0 ether);
     }
 
     function test_ImplementationContract() public {
         assertEq(safeInstance.implementation(), address(node));
+    }
+
+    function test_trackingTVL() public {
+        uint256 validatorId = bidId[0];
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
+
+        (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = (0, 0, 0, 0);
+
+        // (Validator 'active_not_slashed', Accrued rewards in CL = 1 ether)
+        {
+            uint256 beaconBalance = 32 ether + 1 ether;
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true, false, true, false);
+            assertEq(toNodeOperator, 0.05 ether);
+            assertEq(toTreasury, 0.05 ether);
+            assertEq(toTnft, 30.815625000000000000 ether);
+            assertEq(toBnft, 2.084375000000000000 ether);
+        }
+
+        // (Validator 'active_not_slashed', Accrued rewards in CL = 0)
+        {
+            uint256 beaconBalance = 32 ether;
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true, false, true, false);
+            assertEq(toNodeOperator, 0 ether);
+            assertEq(toTreasury, 0 ether);
+            assertEq(toTnft, 30 ether);
+            assertEq(toBnft, 2 ether);
+        }
+
+        // (Validator 'active_slashed', slashing penalty in CL = 0.5 ether)
+        // - slashing penalty [0, 0.5 ether] is paied by the B-NFT holder
+        {
+            uint256 beaconBalance = 31.5 ether;
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true, false, true, false);
+            assertEq(toNodeOperator, 0 ether);
+            assertEq(toTreasury, 0 ether);
+            assertEq(toTnft, 30 ether);
+            assertEq(toBnft, 1.5 ether);
+        }
+
+        // (Validator 'active_slashed', slashing penalty in CL = 1 ether)
+        // - 0.5 ether of B-NFT holder is used as the insurance claim
+        // - While T-NFT receives 29.5 ether, the insurance will conver the loss 0.5 ether (manually)
+        {
+            uint256 beaconBalance = 31 ether;
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true, false, true, false);
+            assertEq(toNodeOperator, 0 ether);
+            assertEq(toTreasury, 0 ether);
+            assertEq(toTnft, 29.5 ether);
+            assertEq(toBnft, 1.5 ether);
+        }
+
+        {
+            uint256 beaconBalance = 30 ether;
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true, false, true, false);
+            assertEq(toNodeOperator, 0 ether);
+            assertEq(toTreasury, 0 ether);
+            assertEq(toTnft, 28.5 ether);
+            assertEq(toBnft, 1.5 ether);
+        }
+
+        {
+            uint256 beaconBalance = 0 ether;
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true, false, true, false);
+            assertEq(toNodeOperator, 0 ether);
+            assertEq(toTreasury, 0 ether);
+            assertEq(toTnft, 0 ether);
+            assertEq(toBnft, 0 ether);
+        }
     }
 }

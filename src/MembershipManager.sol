@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "./interfaces/IeETH.sol";
@@ -11,7 +12,7 @@ import "./interfaces/IMembershipManager.sol";
 import "./interfaces/IMembershipNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable, IMembershipManager {
+contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable, IMembershipManager {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -44,6 +45,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     uint8 public protocolRevenueFeeSplitPercent;
 
     uint32 public topUpCooltimePeriod;
+    uint32 public withdrawalLockBlocks;
 
     address public treasury;
     address public protocolRevenueManager;
@@ -93,6 +95,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         pointsGrowthRate = 10000;
         minDepositGwei = (0.1 ether / 1 gwei);
         maxDepositTopUpPercent = 20;
+        withdrawalLockBlocks = 100;
 
         setFeeSplits(0, 100);
     }
@@ -112,7 +115,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         uint256 _snapshotEthAmount,
         uint256 _points,
         bytes32[] calldata _merkleProof
-    ) external payable returns (uint256) {
+    ) external payable whenNotPaused returns (uint256) {
         if (_points == 0) revert InvalidEAPRollover();
         if (msg.value < _snapshotEthAmount) revert InvalidEAPRollover();
         if (msg.value > _snapshotEthAmount * 2) revert InvalidEAPRollover();
@@ -145,7 +148,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof Array of hashes forming the merkle proof for the user.
     /// @return tokenId The ID of the minted membership NFT.
-    function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable returns (uint256) {
+    function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused returns (uint256) {
         uint256 feeAmount = mintFee * 0.001 ether;
         if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
         if (msg.value != _amount + _amountForPoints + feeAmount) revert InvalidAllocation();
@@ -164,7 +167,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof array of hashes forming the merkle proof for the user
-    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable {
+    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused {
         _requireTokenOwner(_tokenId);
         _topUpDeposit(_tokenId, _amount, _amountForPoints);
 
@@ -182,10 +185,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @dev This function allows users to unwrap their membership tokens and receive ETH in return.
     /// @param _tokenId The ID of the membership NFT to unwrap.
     /// @param _amount The amount of membership tokens to unwrap.
-    function unwrapForEth(uint256 _tokenId, uint256 _amount) external {
+    function unwrapForEth(uint256 _tokenId, uint256 _amount) external whenNotPaused {
         _requireTokenOwner(_tokenId);
         if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
-        if (block.number < membershipNFT.tokenLocks(_tokenId)) revert RequireTokenUnlocked();
+
+        // prevent transfers for several blocks after a withdrawal to prevent frontrunning
+        membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -205,8 +210,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public {
-        // this check must come before burn because burning updates the locks
-        if (block.number < membershipNFT.tokenLocks(_tokenId)) revert RequireTokenUnlocked(); 
+
+        // prevent transfers for several blocks after a withdrawal to prevent frontrunning
+        membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
 
         uint256 feeAmount = burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
@@ -222,7 +228,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @dev This function allows users to stake their ETH to earn membership points faster.
     /// @param _tokenId The ID of the membership NFT.
     /// @param _amount The amount of ETH which sacrifices its staking rewards to earn points faster
-    function stakeForPoints(uint256 _tokenId, uint256 _amount) external {
+    function stakeForPoints(uint256 _tokenId, uint256 _amount) external whenNotPaused {
         _requireTokenOwner(_tokenId);
         if(tokenDeposits[_tokenId].amounts < _amount) revert InsufficientBalance();
 
@@ -238,7 +244,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @dev This function allows users to un-do 'stakeForPoints'
     /// @param _tokenId The ID of the membership NFT.
     /// @param _amount The amount of ETH to unstake for staking rewards.
-    function unstakeForPoints(uint256 _tokenId, uint256 _amount) external {
+    function unstakeForPoints(uint256 _tokenId, uint256 _amount) external whenNotPaused {
         _requireTokenOwner(_tokenId);
         if (tokenDeposits[_tokenId].amountStakedForPoints < _amount) revert InsufficientBalance();
 
@@ -253,7 +259,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @notice Claims the tier.
     /// @param _tokenId The ID of the membership NFT.
     /// @dev This function allows users to claim the rewards + a new tier, if eligible.
-    function claimTier(uint256 _tokenId) public {
+    function claimTier(uint256 _tokenId) public whenNotPaused {
         uint8 oldTier = tokenData[_tokenId].tier;
         uint8 newTier = membershipNFT.claimableTier(_tokenId);
         if (oldTier == newTier) {
@@ -270,7 +276,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
 
     /// @notice Claims the accrued membership {loyalty, tier} points.
     /// @param _tokenId The ID of the membership NFT.
-    function claimPoints(uint256 _tokenId) public {
+    function claimPoints(uint256 _tokenId) public whenNotPaused {
         TokenData storage token = tokenData[_tokenId];
         token.baseLoyaltyPoints = membershipNFT.loyaltyPointsOf(_tokenId);
         token.baseTierPoints = membershipNFT.tierPointsOf(_tokenId);
@@ -280,7 +286,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @notice Claims the staking rewards for a specific membership NFT.
     /// @dev This function allows users to claim the staking rewards earned by a specific membership NFT.
     /// @param _tokenId The ID of the membership NFT.
-    function claimStakingRewards(uint256 _tokenId) public {
+    function claimStakingRewards(uint256 _tokenId) public whenNotPaused {
         TokenData storage token = tokenData[_tokenId];
         uint256 tier = token.tier;
         uint256 amount = (tierData[tier].rewardsGlobalIndex - token.rewardsLocalIndex) * tokenDeposits[_tokenId].amounts / 1 ether;
@@ -292,7 +298,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     /// @dev This function allows users to convert their EAP points to membership {loyalty, tier} tokens.
     /// @param _eapPoints The amount of EAP points
     /// @param _ethAmount The amount of ETH deposit in the EAP (or converted amounts for ERC20s)
-    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
+    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view whenNotPaused returns (uint40, uint40) {
         uint256 loyaltyPoints = _min(1e5 * _eapPoints / 1 days , type(uint40).max);        
         uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
         uint8 tierId = 0;
@@ -343,6 +349,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
         token.baseLoyaltyPoints = _loyaltyPoints;
         token.baseTierPoints = _tierPoints;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
+    }
+
+    /// @dev set how many blocks a token is locked from trading for after withdrawing
+    function setWithdrawalLockBlocks(uint32 _blocks) external onlyAdmin {
+        withdrawalLockBlocks = _blocks;
     }
 
     /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
@@ -422,6 +433,16 @@ contract MembershipManager is Initializable, OwnableUpgradeable, UUPSUpgradeable
     function updateAdmin(address _newAdmin) external onlyOwner {
         require(_newAdmin != address(0), "Cannot be address zero");
         admin = _newAdmin;
+    }
+
+    //Pauses the contract
+    function pauseContract() external onlyAdmin {
+        _pause();
+    }
+
+    //Unpauses the contract
+    function unPauseContract() external onlyAdmin {
+        _unpause();
     }
 
     //--------------------------------------------------------------------------------------

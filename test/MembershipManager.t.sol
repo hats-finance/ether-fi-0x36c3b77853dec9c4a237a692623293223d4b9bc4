@@ -738,41 +738,34 @@ contract MembershipManagerTest is TestSetup {
         // Alice mints 1 NFT
         uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
 
-        // fails because token is not locked
-        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
+        // make a small withdrawal
+        membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
+        assertEq(membershipNftInstance.tokenTransferLocks(aliceToken), block.number + membershipManagerInstance.withdrawalLockBlocks());
+
+        // fails because token is locked
+        vm.expectRevert(MembershipNFT.RequireTokenUnlocked.selector);
         membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
 
-        // lock token for 5 blocks
-        uint256 currentBlocknum = block.number;
-        membershipNftInstance.lockToken(aliceToken, 5);
-        assertEq(membershipNftInstance.tokenLocks(aliceToken), currentBlocknum + 5);
+        // wait for lock to expire
+        vm.roll(block.number + membershipManagerInstance.withdrawalLockBlocks());
 
-        // withdraw should fail during lock period
-        vm.expectRevert(MembershipManager.RequireTokenUnlocked.selector);
+        // withdraw should succeed
         membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
 
-        // withdraw and burn should fail during lock period
-        vm.expectRevert(MembershipManager.RequireTokenUnlocked.selector);
+        // withdraw and burn should succeed
         membershipManagerInstance.withdrawAndBurnForEth(aliceToken);
 
-        // wait a few blocks
-        vm.roll(block.number + 6);
-
-        // fails because lock has expired
-        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
-        membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
-
-        // withdraw should work now
-        membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
-
-        // lock again and transfer
-        membershipNftInstance.lockToken(aliceToken, 5);
-        membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
-
-        // lock should be reset for the new owner
-        assertEq(membershipNftInstance.tokenLocks(aliceToken), 0);
-
         vm.stopPrank();
+
+        // attempt to lock blocks
+        vm.prank(bob);
+        vm.expectRevert("Caller is not the admin");
+        membershipManagerInstance.setWithdrawalLockBlocks(10);
+
+        // alice is the admin?
+        vm.prank(alice);
+        membershipManagerInstance.setWithdrawalLockBlocks(10);
+        assertEq(membershipManagerInstance.withdrawalLockBlocks(), 10);
     }
 
     function test_trade() public {
@@ -793,13 +786,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.balanceOf(bob, aliceToken), 0);
 
         vm.startPrank(alice);
-        // fails because token is not locked
-        vm.expectRevert(MembershipNFT.RequireTokenLocked.selector);
         membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
-
-        membershipNftInstance.lockToken(aliceToken, 100);
-        membershipNftInstance.safeTransferFrom(alice, bob, aliceToken, 1, "");
-
         vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
@@ -1015,5 +1002,21 @@ contract MembershipManagerTest is TestSetup {
         bytes32 depositRoot = _getDepositRoot();
         vm.prank(alice);
         liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
+    }
+
+    function test_Pausable() public {
+        assertEq(membershipManagerInstance.paused(), false);
+
+        vm.expectRevert("Caller is not the admin");
+        vm.prank(owner);
+        membershipManagerInstance.pauseContract();
+
+        vm.prank(alice);
+        membershipManagerInstance.pauseContract();
+        assertEq(membershipManagerInstance.paused(), true);
+
+        vm.prank(alice);
+        membershipManagerInstance.unPauseContract();
+        assertEq(membershipManagerInstance.paused(), false);
     }
 }
