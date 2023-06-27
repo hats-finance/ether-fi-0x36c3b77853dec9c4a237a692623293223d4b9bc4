@@ -459,11 +459,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     */
     function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
         uint256 tokenId = membershipNFT.mint(to, 1);
-
         uint8 tier = tierForPoints(_tierPoints);
+
         TokenData storage tokenData = tokenData[tokenId];
         tokenData.baseLoyaltyPoints = _loyaltyPoints;
         tokenData.baseTierPoints = _tierPoints;
+
         tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
         tokenData.tier = tier;
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
@@ -473,6 +474,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     function _deposit(uint256 _tokenId, uint256 _amount, uint256 _amountForPoints) internal {
+
         uint256 share = liquidityPool.sharesForAmount(_amount + _amountForPoints);
         uint256 tier = tokenData[_tokenId].tier;
         _incrementTokenDeposit(_tokenId, _amount, _amountForPoints);
@@ -732,9 +734,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     // Finds the corresponding for the tier points
     function tierForPoints(uint40 _tierPoints) public view returns (uint8) {
         uint8 tierId = 0;
+
         while (tierId < tierData.length && _tierPoints >= tierData[tierId].requiredTierPoints) {
             tierId++;
         }
+
         return tierId - 1;
     }
 
