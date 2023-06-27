@@ -517,7 +517,7 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         vm.prank(alice);
-        membershipManagerInstance.setUpForEap(rootMigration, requiredEapPointsPerEapDeposit);
+        membershipNftInstance.setUpForEap(rootMigration, requiredEapPointsPerEapDeposit);
     }
 
     function _merkleSetupMigration2() internal {

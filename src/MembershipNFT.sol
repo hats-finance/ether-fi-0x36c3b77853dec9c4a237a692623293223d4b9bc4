@@ -5,6 +5,7 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC1155/ERC1155Upgradeable.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/IMembershipNFT.sol";
@@ -17,27 +18,34 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     uint256 public nextMintID;
 
     bool public mintingPaused;
-    event MintingPaused(bool isPaused);
 
     mapping(uint256 => uint256) public tokenTransferLocks;
-    event TokenLocked(uint256 indexed _tokenId, uint256 until);
+
+    mapping (address => bool) public eapDepositProcessed;
+    bytes32 public eapMerkleRoot;
+    uint64[] public requiredEapPointsPerEapDeposit;
 
     address public admin;
+
+    event MerkleUpdated(bytes32, bytes32);
+    event MintingPaused(bool isPaused);
+    event TokenLocked(uint256 indexed _tokenId, uint256 until);
+    
+    error DissallowZeroAddress();
+    error MintingIsPaused();
+    error InvalidEAPRollover();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
-    error DissallowZeroAddress();
     function initialize(string calldata _metadataURI) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
         nextMintID = 1;
     }
-
-    error MintingIsPaused();
 
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
         if (mintingPaused) revert MintingIsPaused();
@@ -63,12 +71,30 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         }
     }
 
+    function processFreeMintForEapUserDeposit(address _user, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) onlyMembershipManagerContract external {
+        if (eapDepositProcessed[_user] == true) revert InvalidEAPRollover();
+        bytes32 leaf = keccak256(abi.encodePacked(_user, _snapshotEthAmount, _points));
+        if (!MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf)) revert InvalidEAPRollover(); 
+
+        eapDepositProcessed[_user] = true;
+    }
+
     //--------------------------------------------------------------------------------------
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
     function setMembershipManager(address _address) external onlyOwner {
         membershipManager = IMembershipManager(_address);
+    }
+
+    /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
+    /// @param _newMerkleRoot new merkle root used to verify the EAP user data (deposits, points)
+    /// @param _requiredEapPointsPerEapDeposit required EAP points per deposit for each tier
+    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external onlyAdmin {
+        bytes32 oldMerkleRoot = eapMerkleRoot;
+        eapMerkleRoot = _newMerkleRoot;
+        requiredEapPointsPerEapDeposit = _requiredEapPointsPerEapDeposit;
+        emit MerkleUpdated(oldMerkleRoot, _newMerkleRoot);
     }
 
     /// @notice Updates the address of the admin
@@ -197,7 +223,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     // Compute the points earnings of a user between [since, until) 
     // Assuming the user's balance didn't change in between [since, until)
-    function membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) internal view returns (uint40) {
+    function membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) public view returns (uint40) {
         (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
         if (amounts == 0 && amountStakedForPoints == 0) {
             return 0;
@@ -217,6 +243,23 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         // - A user with 1 Million membership points can earn points for 1000 days
         earning = _min((earning / 1 days) / 0.001 ether, type(uint40).max);
         return uint40(earning);
+    }
+
+    /// @notice Converts meTokens points to EAP tokens.
+    /// @dev This function allows users to convert their EAP points to membership {loyalty, tier} tokens.
+    /// @param _eapPoints The amount of EAP points
+    /// @param _ethAmount The amount of ETH deposit in the EAP (or converted amounts for ERC20s)
+    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
+        uint256 loyaltyPoints = _min(1e5 * _eapPoints / 1 days , type(uint40).max);        
+        uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
+        uint8 tierId = 0;
+        while (tierId < requiredEapPointsPerEapDeposit.length 
+                && eapPointsPerDeposit >= requiredEapPointsPerEapDeposit[tierId]) {
+            tierId++;
+        }
+        tierId -= 1;
+        (,, uint40 requiredTierPoints, ) = membershipManager.tierData(tierId);
+        return (uint40(loyaltyPoints), requiredTierPoints);
     }
 
     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {

@@ -36,7 +36,7 @@ contract NFTExchangeTest is TestSetup {
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint256 aliceEapPoints = 100000;
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipManagerInstance.convertEapPoints(aliceEapPoints, 30 ether);
+        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -141,7 +141,7 @@ contract NFTExchangeTest is TestSetup {
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint256 aliceEapPoints = 100000;
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipManagerInstance.convertEapPoints(aliceEapPoints, 30 ether);
+        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
         vm.stopPrank();
 
         vm.prank(alice);

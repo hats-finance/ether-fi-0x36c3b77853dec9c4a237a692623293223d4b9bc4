@@ -5,7 +5,6 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/IMembershipManager.sol";
@@ -28,10 +27,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     TierData[] public tierData;
 
     mapping (uint256 => uint256) public allTimeHighDepositAmount;
-
-    mapping (address => bool) public eapDepositProcessed;
-    bytes32 public eapMerkleRoot;
-    uint64[] public requiredEapPointsPerEapDeposit;
 
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 membership token per day
@@ -57,7 +52,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     //--------------------------------------------------------------------------------------
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
-    event MerkleUpdated(bytes32, bytes32);
     event NftUpdated(uint256 _tokenId, uint128 _amount, uint128 _amountSacrificedForBoostingPoints, uint40 _loyaltyPoints, uint40 _tierPoints, uint8 _tier, uint32 _prevTopUpTimestamp, uint96 _rewardsLocalIndex);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -111,17 +105,15 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable whenNotPaused returns (uint256) {
-        if (_points == 0 || eapDepositProcessed[msg.sender] == true) revert InvalidEAPRollover();
+        if (_points == 0) revert InvalidEAPRollover();
         if (msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2 || msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
 
-        bytes32 leaf = keccak256(abi.encodePacked(msg.sender, _snapshotEthAmount, _points));
-        if (!MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf)) revert InvalidEAPRollover(); 
+        membershipNFT.processFreeMintForEapUserDeposit(msg.sender, _snapshotEthAmount, _points, _merkleProof);
+        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNFT.convertEapPoints(_points, _snapshotEthAmount);
 
         bytes32[] memory zeroProof;
-        eapDepositProcessed[msg.sender] = true;
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), zeroProof);
 
-        (uint40 loyaltyPoints, uint40 tierPoints) = convertEapPoints(_points, _snapshotEthAmount);
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
         _emitNftUpdateEvent(tokenId);
@@ -295,23 +287,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         token.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
-    /// @notice Converts meTokens points to EAP tokens.
-    /// @dev This function allows users to convert their EAP points to membership {loyalty, tier} tokens.
-    /// @param _eapPoints The amount of EAP points
-    /// @param _ethAmount The amount of ETH deposit in the EAP (or converted amounts for ERC20s)
-    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
-        uint256 loyaltyPoints = _min(1e5 * _eapPoints / 1 days , type(uint40).max);        
-        uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
-        uint8 tierId = 0;
-        while (tierId < requiredEapPointsPerEapDeposit.length 
-                && eapPointsPerDeposit >= requiredEapPointsPerEapDeposit[tierId]) {
-            tierId++;
-        }
-        tierId -= 1;
-        uint256 tierPoints = tierData[tierId].requiredTierPoints;
-        return (uint40(loyaltyPoints), uint40(tierPoints));
-    }
-
     /// @notice Distributes staking rewards to eligible stakers.
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
     function distributeStakingRewards() external {
@@ -345,17 +320,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         token.baseLoyaltyPoints = _loyaltyPoints;
         token.baseTierPoints = _tierPoints;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
-    }
-
-    /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
-    /// @param _newMerkleRoot new merkle root used to verify the EAP user data (deposits, points)
-    /// @param _requiredEapPointsPerEapDeposit required EAP points per deposit for each tier
-    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external {
-        _requireAdmin();
-        bytes32 oldMerkleRoot = eapMerkleRoot;
-        eapMerkleRoot = _newMerkleRoot;
-        requiredEapPointsPerEapDeposit = _requiredEapPointsPerEapDeposit;
-        emit MerkleUpdated(oldMerkleRoot, _newMerkleRoot);
     }
 
     error InvalidWithdraw();
