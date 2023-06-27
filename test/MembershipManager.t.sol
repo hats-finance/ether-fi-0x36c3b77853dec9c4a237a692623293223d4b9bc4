@@ -230,7 +230,7 @@ contract MembershipManagerTest is TestSetup {
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(alice);
-        membershipManagerInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
+        membershipNftInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
         // Alice Withdraws
         vm.startPrank(alice);
@@ -299,7 +299,7 @@ contract MembershipManagerTest is TestSetup {
 
         /// MERKLE TREE GETS GENERATED AND UPDATED
         vm.prank(alice);
-        membershipManagerInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
+        membershipNftInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
         // Alice Withdraws
         vm.startPrank(alice);
@@ -820,7 +820,7 @@ contract MembershipManagerTest is TestSetup {
         vm.prank(owner);
         earlyAdopterPoolInstance.pauseContract();
         vm.prank(alice);
-        membershipManagerInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
+        membershipNftInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
         vm.deal(alice, 100 ether);
         bytes32[] memory aliceProof = merkleMigration2.getProof(dataForVerification2, 0);
