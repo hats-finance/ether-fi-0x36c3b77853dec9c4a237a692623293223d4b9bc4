@@ -108,7 +108,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (_points == 0) revert InvalidEAPRollover();
         if (msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2 || msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
 
-        membershipNFT.processFreeMintForEapUserDeposit(msg.sender, _snapshotEthAmount, _points, _merkleProof);
+        membershipNFT.processDepositFromEapUser(msg.sender, _snapshotEthAmount, _points, _merkleProof);
         (uint40 loyaltyPoints, uint40 tierPoints) = membershipNFT.convertEapPoints(_points, _snapshotEthAmount);
 
         bytes32[] memory zeroProof;
