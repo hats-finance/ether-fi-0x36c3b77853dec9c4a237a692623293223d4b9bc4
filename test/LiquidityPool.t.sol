@@ -94,10 +94,11 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_WithdrawLiquidityPoolFails() public {
-        vm.startPrank(alice);
-        liquidityPoolInstance.rebase(3 ether, 0 ether);
+        vm.deal(bob, 100 ether);
+        vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 100 ether}(bob, bobProof);        
         vm.stopPrank();
-        _transferTo(address(liquidityPoolInstance), 3 ether);
 
         startHoax(alice);
         vm.expectRevert("Not enough eETH");
@@ -144,12 +145,13 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.expectRevert("Not enough balance");
         liquidityPoolInstance.batchDepositWithBidIds{value: 2 ether}(1, bidIds, proof);
-
-
-        liquidityPoolInstance.rebase(70 ether, 0 ether);
         vm.stopPrank();
 
-        _transferTo(address(liquidityPoolInstance), 70 ether);
+        vm.deal(bob, 70 ether);
+        vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 70 ether}(bob, bobProof);        
+        vm.stopPrank();
 
         vm.startPrank(alice);
         stakingManagerInstance.enableWhitelist();
@@ -434,14 +436,26 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_fallback() public {
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
+
+        vm.deal(bob, 100 ether);
+        vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 100 ether}(bob, bobProof);
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 100 ether);
         vm.prank(alice);
-        liquidityPoolInstance.rebase(3 ether, 0 ether);
+        liquidityPoolInstance.rebase(103 ether, 100 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 103 ether);
 
         vm.deal(alice, 3 ether);
         vm.prank(alice);
         (bool sent, ) = address(liquidityPoolInstance).call{value: 1 ether}("");
-        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+        assertEq(address(liquidityPoolInstance).balance, 100 ether + 1 ether);
         assertEq(sent, true);
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 103 ether);
     }
 
     function test_rebase_withdraw_flow() public {
