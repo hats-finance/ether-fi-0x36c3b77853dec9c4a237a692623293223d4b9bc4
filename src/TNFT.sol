@@ -10,6 +10,8 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
     address public stakingManagerAddress;
+    uint256[49] public __gap;
+
     address public admin;
 
     //--------------------------------------------------------------------------------------

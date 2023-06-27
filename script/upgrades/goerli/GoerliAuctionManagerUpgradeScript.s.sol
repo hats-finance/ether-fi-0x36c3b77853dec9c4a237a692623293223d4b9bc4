@@ -19,7 +19,7 @@ contract AuctionManagerUpgrade is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address AuctionManagerProxyAddress = vm.envAddress("AUCTION_MANAGER_PROXY_ADDRESS");
 
-        require(AuctionManagerProxyAddress == 0x00C452aFFee3a17d9Cecc1Bcd2B8d5C7635C4CB9, "AuctionManagerProxyAddress incorrect see .env");
+        require(AuctionManagerProxyAddress == 0xAB5768448499250Bda8a29F35A3eE47FAD69Eb3C, "AuctionManagerProxyAddress incorrect see .env");
        
         vm.startBroadcast(deployerPrivateKey);
 

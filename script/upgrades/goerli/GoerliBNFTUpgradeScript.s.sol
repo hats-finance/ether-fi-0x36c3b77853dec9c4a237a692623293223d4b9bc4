@@ -19,7 +19,7 @@ contract BNFTUpgrade is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address BNFTProxyAddress = vm.envAddress("BNFT_PROXY_ADDRESS");
 
-        require(BNFTProxyAddress == 0x6599861e55abd28b91dd9d86A826eC0cC8D72c2c, "BNFTProxyAddress incorrect see .env");
+        require(BNFTProxyAddress == 0x9F230a10e78343829888924B4c8CeA4F082586f9, "BNFTProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 

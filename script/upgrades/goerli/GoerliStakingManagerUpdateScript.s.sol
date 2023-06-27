@@ -20,7 +20,7 @@ contract StakingManagerUpgrade is Script {
         address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
 
         // mainnet
-        require(stakingManagerProxyAddress == 0x25e821b7197B146F7713C3b89B6A4D83516B912d, "stakingManagerProxyAddress incorrect see .env");
+        require(stakingManagerProxyAddress == 0x482f265d8D850fa6440e42b0B299C044caEB879a, "stakingManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 

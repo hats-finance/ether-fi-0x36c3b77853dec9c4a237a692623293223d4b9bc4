@@ -20,7 +20,7 @@ contract TNFTUpgrade is Script {
         address TNFTProxyAddress = vm.envAddress("TNFT_PROXY_ADDRESS");
 
         // mainnet
-        require(TNFTProxyAddress == 0x7B5ae07E2AF1C861BcC4736D23f5f66A61E0cA5e, "TNFTProxyAddress incorrect see .env");
+        require(TNFTProxyAddress == 0x0FE93205B6AdF89F5b9893F393dCf3260cb30bE0, "TNFTProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
