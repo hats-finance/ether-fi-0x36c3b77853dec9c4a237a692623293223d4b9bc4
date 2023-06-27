@@ -125,14 +125,13 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManager.initializeNewWhitelist(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
         membershipManager.setTopUpCooltimePeriod(28 days);
-        membershipManager.setFeeSplits(0, 100);
-        membershipManager.pauseContract();
-        
+        membershipManager.setFeeSplits(0, 100);        
 
         initializeTiers();
         membershipManager.wrapEthBatch{value: 9.3 ether}(31, 0.3 ether, 0, emptyProof);
         membershipManager.wrapEthBatch{value: 6.9 ether}(69, 0.1 ether, 0, emptyProof);
-        
+        membershipManager.pauseContract();
+
         EtherFiNodesManager nodesManager = EtherFiNodesManager(payable(etherFiNodesManagerProxyAddress));
         nodesManager.setProtocolRewardsSplit(0, 0, 906250, 93750);
 
@@ -222,9 +221,9 @@ contract DeployPhaseOnePointFiveScript is Script {
     }
 
     function initializeTiers() internal {
-        membershipManager.addNewTier(1, 0);
-        membershipManager.addNewTier(2, 672);
-        membershipManager.addNewTier(3, 2016);
-        membershipManager.addNewTier(4, 4704);
+        membershipManager.addNewTier(0, 1);
+        membershipManager.addNewTier(672, 2);
+        membershipManager.addNewTier(2016, 3);
+        membershipManager.addNewTier(4704, 4);
     }
 }
