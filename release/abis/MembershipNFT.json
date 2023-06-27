@@ -862,7 +862,7 @@
         "type": "bytes32[]"
       }
     ],
-    "name": "processFreeMintForEapUserDeposit",
+    "name": "processDepositFromEapUser",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
