@@ -125,14 +125,13 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManager.initializeNewWhitelist(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
         membershipManager.setTopUpCooltimePeriod(28 days);
-        membershipManager.setFeeSplits(0, 100);
-        membershipManager.pauseContract();
-        
+        membershipManager.setFeeSplits(0, 100);        
 
         initializeTiers();
         membershipManager.wrapEthBatch{value: 9.3 ether}(31, 0.3 ether, 0, emptyProof);
         membershipManager.wrapEthBatch{value: 6.9 ether}(69, 0.1 ether, 0, emptyProof);
-        
+        membershipManager.pauseContract();
+
         EtherFiNodesManager nodesManager = EtherFiNodesManager(payable(etherFiNodesManagerProxyAddress));
         nodesManager.setProtocolRewardsSplit(0, 0, 906250, 93750);
 
