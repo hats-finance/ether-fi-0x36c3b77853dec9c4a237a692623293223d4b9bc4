@@ -1268,6 +1268,8 @@ contract EtherFiNodeTest is TestSetup {
             assertEq(toBnft, 1.5 ether);
         }
 
+
+        // The worst-case, 32 ether is all slahsed!
         {
             uint256 beaconBalance = 0 ether;
 
@@ -1277,5 +1279,111 @@ contract EtherFiNodeTest is TestSetup {
             assertEq(toTnft, 0 ether);
             assertEq(toBnft, 0 ether);
         }
+    }
+
+    function test_trackingTVL2() public {
+        uint256 validatorId = bidId[0];       
+        uint256[] memory tvls = new uint256[](4);  // (operator, tnft, bnft, treasury)
+        (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = (0, 0, 0, 0);
+
+        // Check the staking rewards when we have 1 ether accrued
+        {
+            uint256 beaconBalance = 32 ether + 1 ether;
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true, false, true, false);
+            assertEq(toNodeOperator, 0.05 ether);
+            assertEq(toTreasury, 0.05 ether);
+            assertEq(toTnft, 30.815625000000000000 ether);
+            assertEq(toBnft, 2.084375000000000000 ether);
+            tvls[0] += toNodeOperator;
+            tvls[1] += toTnft;
+            tvls[2] += toBnft;
+            tvls[3] += toTreasury;
+
+            assertEq(beaconBalance, toNodeOperator + toTnft + toBnft + toTreasury);
+        }
+
+        // Check the TVL for protocol revenue rewards
+        {
+            uint256 beaconBalance = 0 ether;
+            uint256 protocolRewards =  protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorId);
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, false, true, false, false);
+            assertEq(toNodeOperator, 0.0125 ether);
+            assertEq(toTreasury, 0.0125 ether);
+            assertEq(toTnft, 0.02265625 ether);
+            assertEq(toBnft, 0.00234375 ether);
+            tvls[0] += toNodeOperator;
+            tvls[1] += toTnft;
+            tvls[2] += toBnft;
+            tvls[3] += toTreasury;
+
+            assertEq(protocolRewards, toNodeOperator + toTnft + toBnft + toTreasury);
+        }
+
+        // Check the TVL for vested auction fee rewards
+        {
+            uint256 beaconBalance = 0 ether;
+            uint256 vestedRewards = managerInstance.vestedAuctionRewards(validatorId);
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, false, false, true, true);
+            assertEq(toNodeOperator, 0 ether);
+            assertEq(toTreasury, 0 ether);
+            assertEq(toTnft, 0.0453125 ether);
+            assertEq(toBnft, 0.0046875 ether);
+            tvls[0] += toNodeOperator;
+            tvls[1] += toTnft;
+            tvls[2] += toBnft;
+            tvls[3] += toTreasury;
+
+            assertEq(vestedRewards, toNodeOperator + toTnft + toBnft + toTreasury);
+        }
+
+        // Confirm the total TVL
+        {
+            uint256 beaconBalance = 32 ether + 1 ether;
+
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true, true, true, true);
+            assertEq(toNodeOperator, tvls[0]);
+            assertEq(toTreasury, tvls[3]);
+            assertEq(toTnft, tvls[1]);
+            assertEq(toBnft, tvls[2]);
+        }
+
+        // Confirm that after exiting the validator node from the beacon network,
+        // if we trigger the full withdrawal, the same amount is transferred to {stakers, operator, treasury}
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
+
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitRequestTimestamps = new uint32[](1);
+        validatorIds[0] = validatorId;
+        exitRequestTimestamps[0] = uint32(block.timestamp);
+
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
+
+        // Transfer the T-NFT to 'dan' (Just for testing scenario)
+        vm.prank(staker);
+        TNFTInstance.transferFrom(staker, dan, bidId[0]);
+
+        uint256 nodeOperatorBalance = address(nodeOperator).balance;
+        uint256 treasuryBalance = address(treasuryInstance).balance;
+        uint256 bnftStakerBalance = address(staker).balance;
+        uint256 tNftStakerBalance = address(dan).balance;
+
+        // Simulate the withdrawal from Beacon Network to Execution Layer
+        _transferTo(etherfiNode, 32 ether + 1 ether);
+
+        // After a long period of time (after the auction fee vesting period completes)
+        skip(6 * 7 * 4 days);
+
+        vm.prank(alice);
+        managerInstance.processNodeExit(validatorIds, exitRequestTimestamps); // Marked as EXITED
+        managerInstance.fullWithdrawBatch(validatorIds); // Full Withdrawal!
+
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + tvls[0]);
+        assertEq(address(dan).balance, tNftStakerBalance + tvls[1]);
+        assertEq(address(staker).balance, bnftStakerBalance + tvls[2]);
+        assertEq(address(treasuryInstance).balance, treasuryBalance + tvls[3]);
     }
 }
