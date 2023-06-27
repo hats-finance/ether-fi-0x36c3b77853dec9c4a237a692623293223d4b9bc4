@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "../../../src/MembershipManager.sol";
 import "../../../src/MembershipNFT.sol";
+import "../../../src/EtherFiNodesManager.sol";
 import "../../../src/WeETH.sol";
 import "../../../src/TNFT.sol";
 import "../../../src/EETH.sol";
@@ -63,6 +64,8 @@ contract DeployPhaseOnePointFiveScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
+        bytes32[] memory emptyProof;
+
         address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
         address treasury = vm.envAddress("TREASURY_ADDRESS");
@@ -121,8 +124,17 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPool.setMembershipManager(address(membershipManager));
         regulationsManager.initializeNewWhitelist(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
-        membershipManager.pauseContract();
         membershipManager.setTopUpCooltimePeriod(28 days);
+        membershipManager.setFeeSplits(0, 100);
+        membershipManager.pauseContract();
+        
+
+        initializeTiers();
+        membershipManager.wrapEthBatch{value: 9.3 ether}(31, 0.3 ether, 0, emptyProof);
+        membershipManager.wrapEthBatch{value: 6.9 ether}(69, 0.1 ether, 0, emptyProof);
+        
+        EtherFiNodesManager nodesManager = EtherFiNodesManager(payable(etherFiNodesManagerProxyAddress));
+        nodesManager.setProtocolRewardsSplit(0, 0, 906250, 93750);
 
         vm.stopBroadcast();
 
@@ -207,5 +219,12 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.updateAdmin(_admin);
         membershipNFT.updateAdmin(_admin);
         nftExchange.updateAdmin(_admin);
+    }
+
+    function initializeTiers() internal {
+        membershipManager.addNewTier(1, 0);
+        membershipManager.addNewTier(2, 672);
+        membershipManager.addNewTier(3, 2016);
+        membershipManager.addNewTier(4, 4704);
     }
 }
