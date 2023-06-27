@@ -36,6 +36,8 @@ contract AuctionManager is
 
     mapping(uint256 => Bid) public bids;
 
+    uint256[43] public __gap;
+
     address public admin;
 
     //--------------------------------------------------------------------------------------
