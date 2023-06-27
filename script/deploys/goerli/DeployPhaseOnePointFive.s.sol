@@ -69,7 +69,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
         address treasury = vm.envAddress("TREASURY_ADDRESS");
         address protocolRevenueManagerProxy = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
-        address tnft = vm.envAddress("TNFT");
+        address tnft = vm.envAddress("TNFT_PROXY_ADDRESS");
         address admin = vm.envAddress("ADMIN");
 
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
