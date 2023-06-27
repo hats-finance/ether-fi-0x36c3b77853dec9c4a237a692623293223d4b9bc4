@@ -179,19 +179,13 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "__gap",
+    "inputs": [],
+    "name": "admin",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "address",
         "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -231,6 +225,65 @@
         "internalType": "contract BNFT",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_beaconBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_stakingRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_protocolRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_vestedAuctionFee",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_assumeFullyVested",
+        "type": "bool"
+      }
+    ],
+    "name": "calculateTVL",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -353,11 +406,6 @@
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint32",
-        "name": "_endTimestamp",
-        "type": "uint32"
       }
     ],
     "name": "getNonExitPenalty",
@@ -376,6 +424,11 @@
       {
         "internalType": "uint256",
         "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_beaconBalance",
         "type": "uint256"
       },
       {
@@ -425,6 +478,11 @@
       {
         "internalType": "uint256",
         "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_beaconBalance",
         "type": "uint256"
       }
     ],
@@ -1212,6 +1270,19 @@
       }
     ],
     "name": "unregisterEtherFiNode",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "updateAdmin",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

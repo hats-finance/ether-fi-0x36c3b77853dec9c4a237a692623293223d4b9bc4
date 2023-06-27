@@ -132,9 +132,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.pauseContract();
 
         EtherFiNodesManager nodesManager = EtherFiNodesManager(payable(etherFiNodesManagerProxyAddress));
-        //nodesManager.setProtocolRewardsSplit(0, 0, 906250, 93750);
-
-        initializeTiers();
 
         vm.stopBroadcast();
 

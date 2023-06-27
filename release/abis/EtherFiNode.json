@@ -7,6 +7,30 @@
   {
     "inputs": [
       {
+        "internalType": "uint32",
+        "name": "_startTimestamp",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_endTimestamp",
+        "type": "uint32"
+      }
+    ],
+    "name": "_getDaysPassedSince",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_totalAmount",
         "type": "uint256"
@@ -95,6 +119,119 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_beaconBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_stakingRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_protocolRewards",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_vestedAuctionFee",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_assumeFullyVested",
+        "type": "bool"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "treasury",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "nodeOperator",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "tnft",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "bnft",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
+        "name": "_SRsplits",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "treasury",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "nodeOperator",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "tnft",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "bnft",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
+        "name": "_PRsplits",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_scale",
+        "type": "uint256"
+      }
+    ],
+    "name": "calculateTVL",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "etherFiNodesManager",
     "outputs": [
@@ -136,89 +273,13 @@
   {
     "inputs": [
       {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "treasury",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "nodeOperator",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "tnft",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "bnft",
-            "type": "uint64"
-          }
-        ],
-        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
-        "name": "_splits",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_scale",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint128",
-        "name": "_principal",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint64",
-        "name": "_dailyPenalty",
-        "type": "uint64"
-      }
-    ],
-    "name": "getFullWithdrawalPayouts",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "toNodeOperator",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toBnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTreasury",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint128",
-        "name": "_principal",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint64",
-        "name": "_dailyPenalty",
-        "type": "uint64"
+        "internalType": "uint32",
+        "name": "_tNftExitRequestTimestamp",
+        "type": "uint32"
       },
       {
         "internalType": "uint32",
-        "name": "_exitTimestamp",
+        "name": "_bNftExitRequestTimestamp",
         "type": "uint32"
       }
     ],
@@ -297,6 +358,11 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "_beaconBalance",
+        "type": "uint256"
+      },
+      {
         "internalType": "bool",
         "name": "_stakingRewards",
         "type": "bool"
@@ -309,6 +375,11 @@
       {
         "internalType": "bool",
         "name": "_vestedAuctionFee",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_assumeFullyVested",
         "type": "bool"
       },
       {
@@ -339,11 +410,6 @@
         "type": "tuple"
       },
       {
-        "internalType": "uint256",
-        "name": "_SRscale",
-        "type": "uint256"
-      },
-      {
         "components": [
           {
             "internalType": "uint64",
@@ -372,7 +438,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "_PRscale",
+        "name": "_scale",
         "type": "uint256"
       }
     ],
@@ -404,6 +470,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_beaconBalance",
+        "type": "uint256"
+      },
       {
         "components": [
           {
@@ -467,7 +538,7 @@
     "inputs": [
       {
         "internalType": "bool",
-        "name": "_staking",
+        "name": "_stakingRewards",
         "type": "bool"
       },
       {
@@ -478,6 +549,11 @@
       {
         "internalType": "bool",
         "name": "_vestedAuctionFee",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_assumeFullyVested",
         "type": "bool"
       }
     ],
