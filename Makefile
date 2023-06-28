@@ -51,6 +51,8 @@ upgrade-goerli-staking-manager :; forge clean && forge script script/upgrades/go
 
 upgrade-goerli-auction-manager :; forge clean && forge script script/upgrades/goerli/GoerliAuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
+upgrade-goerli-etherfi-node :; forge clean && forge script script/upgrades/goerli/GoerliEtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
 upgrade-goerli-bnft :; forge clean && forge script script/upgrades/goerli/GoerliBNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-goerli-tnft :; forge clean && forge script script/upgrades/goerli/GoerliTNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh

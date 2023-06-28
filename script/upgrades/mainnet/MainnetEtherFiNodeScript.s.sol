@@ -2,42 +2,37 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/ProtocolRevenueManager.sol";
+import "../../../src/EtherFiNode.sol";
+import "../../../src/StakingManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract ProtocolRevenueManagerUpgrade is Script {
+contract EtherFiNodeUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address ProtocolRevenueManagerProxy;
-        address ProtocolRevenueManagerImplementation;
+        address etherfiNodeImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address ProtocolRevenueManagerProxyAddress = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
+        address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
 
-        // mainnet
-        require(ProtocolRevenueManagerProxyAddress == 0xFafcc0041100a80Fce3bD52825A36F73Bf9Fd93a, "ProtocolRevenueManagerProxyAddress incorrect see .env");
+        StakingManager stakingManager = StakingManager(stakingManagerProxyAddress);
 
         vm.startBroadcast(deployerPrivateKey);
 
-        ProtocolRevenueManager ProtocolRevenueManagerInstance = ProtocolRevenueManager(payable(ProtocolRevenueManagerProxyAddress));
-        ProtocolRevenueManager ProtocolRevenueManagerV2Implementation = new ProtocolRevenueManager();
-
-        ProtocolRevenueManagerInstance.upgradeTo(address(ProtocolRevenueManagerV2Implementation));
-        ProtocolRevenueManager ProtocolRevenueManagerV2Instance = ProtocolRevenueManager(payable(ProtocolRevenueManagerProxyAddress));
+        EtherFiNode etherFiNode = new EtherFiNode();
+        stakingManager.upgradeEtherFiNode(address(etherFiNode));
 
         vm.stopBroadcast();
+
         criticalAddresses = CriticalAddresses({
-            ProtocolRevenueManagerProxy: ProtocolRevenueManagerProxyAddress,
-            ProtocolRevenueManagerImplementation: address(ProtocolRevenueManagerV2Implementation)
+            etherfiNodeImplementation: address(etherFiNode)
         });
 
-         writeUpgradeVersionFile();
-
+        writeUpgradeVersionFile();
     }
 
     function _stringToUint(
@@ -58,7 +53,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/ProtocolRevenueManager/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/EtherFiNode/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -67,7 +62,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/goerli/ProtocolRevenueManager/version.txt",
+            "release/logs/Upgrades/mainnet/EtherFiNode/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
 
@@ -75,7 +70,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/goerli/ProtocolRevenueManager/",
+                    "release/logs/Upgrades/mainnet/EtherFiNode/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -83,12 +78,10 @@ contract ProtocolRevenueManagerUpgrade is Script {
             string(
                 abi.encodePacked(
                     Strings.toString(localVersion),
-                    "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.ProtocolRevenueManagerProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.ProtocolRevenueManagerImplementation),
+                    Strings.toHexString(criticalAddresses.etherfiNodeImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "Upgraded to phase 1.5 contracts"
                 )
             )
         );
