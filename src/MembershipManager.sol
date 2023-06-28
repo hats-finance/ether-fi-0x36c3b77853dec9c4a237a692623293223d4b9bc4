@@ -134,8 +134,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @return tokenId The ID of the minted membership NFT.
     function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused returns (uint256) {
         uint256 feeAmount = mintFee * 0.001 ether;
-        if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
-        if (msg.value != _amount + _amountForPoints + feeAmount) revert InvalidAllocation();
+        uint256 depositPerNFT = _amount + _amountForPoints;
+        uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
+
+        if (depositPerNFT / 1 gwei < minDepositGwei) revert InvalidDeposit();
+        if (msg.value != ethNeededPerNFT) revert InvalidAllocation();
+
         return _wrapEth(_amount, _amountForPoints, _merkleProof);
     }
 
@@ -145,7 +149,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
 
         if (depositPerNFT / 1 gwei < minDepositGwei) revert InvalidDeposit();
-        if (msg.value != _numNFTs * ethNeededPerNFT || msg.value != _numNFTs * ethNeededPerNFT) revert InvalidAllocation();
+        if (msg.value != _numNFTs * ethNeededPerNFT) revert InvalidAllocation();
 
         uint256[] memory tokenIds = new uint256[](_numNFTs);
         for (uint256 i = 0; i < _numNFTs; i++) {
