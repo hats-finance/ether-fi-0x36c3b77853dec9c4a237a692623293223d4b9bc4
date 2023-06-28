@@ -294,7 +294,7 @@ contract TestSetup is Test {
         nftExchangeImplementation = new NFTExchange();
         nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation), "");
         nftExchangeInstance = NFTExchange(payable(nftExchangeProxy));
-        nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance));
+        nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance), address(managerInstance));
         nftExchangeInstance.updateAdmin(alice);
 
         vm.stopPrank();
