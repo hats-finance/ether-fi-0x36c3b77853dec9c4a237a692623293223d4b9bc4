@@ -69,7 +69,7 @@ contract EETHTest is TestSetup {
     function test_EEthRebaseFailsWhenThereIsNoPooledEther() public {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
         vm.prank(alice);
-        vm.expectRevert("rebasing then there is no pooled ether is not allowed.");
+        vm.expectRevert("rebasing when there is no pooled ether is not allowed.");
         liquidityPoolInstance.rebase(10 ether, 0 ether);
     }
 

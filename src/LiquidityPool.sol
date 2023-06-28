@@ -182,7 +182,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
     function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyAdmin {
         require(address(this).balance == _balanceInLp, "the LP balance has changed.");
-        require(getTotalPooledEther() > 0, "rebasing then there is no pooled ether is not allowed.");
+        require(getTotalPooledEther() > 0, "rebasing when there is no pooled ether is not allowed.");
         if (_tvl > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp = uint128(_tvl - _balanceInLp);
         totalValueInLp = uint128(_balanceInLp);
