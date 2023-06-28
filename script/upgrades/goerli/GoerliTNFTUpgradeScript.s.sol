@@ -89,7 +89,7 @@ contract TNFTUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.TNFTImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "tnfts are amazing"
                 )
             )
         );

@@ -68,7 +68,7 @@ contract StakingManagerUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/StakingManager/goerli/version.txt",
+            "release/logs/Upgrades/goerli/StakingManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
 

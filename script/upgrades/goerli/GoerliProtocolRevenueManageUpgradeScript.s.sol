@@ -88,7 +88,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.ProtocolRevenueManagerImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "love that protocol revenue manager"
                 )
             )
         );
