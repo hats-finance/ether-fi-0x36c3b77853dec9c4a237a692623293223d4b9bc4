@@ -422,7 +422,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     * @return tokenId The unique ID of the newly minted NFT.
     */
     function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-        uint256 tokenId = membershipNFT.mint(to, 1);
+        uint256 tokenId = membershipNFT.nextMintID();
         uint8 tier = tierForPoints(_tierPoints);
 
         TokenData storage tokenData = tokenData[tokenId];
@@ -434,6 +434,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
 
         _deposit(tokenId, _amount, _amountForPoints);
+
+        // Finally, we mint the token!
+        require(tokenId == membershipNFT.mint(to, 1), "wrong tokenId");
+
         return tokenId;
     }
 

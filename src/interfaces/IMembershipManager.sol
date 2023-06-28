@@ -39,6 +39,7 @@ interface IMembershipManager {
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) external payable;
 
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external;
+    function withdrawAndBurnForEth(uint256 _tokenId) external;
 
     function stakeForPoints(uint256 _tokenId, uint256 _amount) external;
     function unstakeForPoints(uint256 _tokenId, uint256 _amount) external;
