@@ -412,6 +412,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
+    error WrongTokenMinted();
+
     /**
     * @dev Internal function to mint a new membership NFT.
     * @param to The address of the recipient of the NFT.
@@ -436,7 +438,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _deposit(tokenId, _amount, _amountForPoints);
 
         // Finally, we mint the token!
-        require(tokenId == membershipNFT.mint(to, 1), "wrong tokenId");
+        if (tokenId != membershipNFT.mint(to, 1)) revert WrongTokenMinted();
 
         return tokenId;
     }
