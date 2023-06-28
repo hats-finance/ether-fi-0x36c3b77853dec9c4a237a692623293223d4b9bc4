@@ -6,7 +6,7 @@ import "../../../src/EtherFiNode.sol";
 import "../../../src/StakingManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract AuctionManagerUpgrade is Script {
+contract EtherFiNodeUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
