@@ -25,7 +25,7 @@ contract AuctionManagerUpgrade is Script {
 
         EtherFiNode etherFiNode = new EtherFiNode();
         stakingManager.upgradeEtherFiNode(address(etherFiNode));
-        
+
         vm.stopBroadcast();
 
         criticalAddresses = CriticalAddresses({
@@ -79,7 +79,7 @@ contract AuctionManagerUpgrade is Script {
                 abi.encodePacked(
                     Strings.toString(localVersion),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.auctionManagerImplementation),
+                    Strings.toHexString(criticalAddresses.etherfiNodeImplementation),
                     "\nOptional Comments: ", 
                     "Upgraded to phase 1.5 contracts"
                 )
