@@ -418,15 +418,15 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     /**
     * @dev Internal function to mint a new membership NFT.
-    * @param to The address of the recipient of the NFT.
+    * @param _to The address of the recipient of the NFT.
     * @param _amount The amount of ETH to earn the staking rewards.
     * @param _amountForPoints The amount of ETH to boost the points earnings.
     * @param _loyaltyPoints The initial loyalty points for the NFT.
     * @param _tierPoints The initial tier points for the NFT.
     * @return tokenId The unique ID of the newly minted NFT.
     */
-    function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-        uint256 tokenId = membershipNFT.mint(to, 1);
+    function _mintMembershipNFT(address _to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
+        uint256 tokenId = membershipNFT.mint(_to, 1);
         uint8 tier = tierForPoints(_tierPoints);
 
         TokenData storage tokenData = tokenData[tokenId];
