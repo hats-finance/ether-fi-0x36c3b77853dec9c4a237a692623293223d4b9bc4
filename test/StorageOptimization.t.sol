@@ -43,21 +43,6 @@ contract B {
         return result;
     }
 
-    function doSomethingBetter(uint256 _referecneCounterPerVariable) external view returns (uint256) {
-        uint256 result;
-        uint256 aa1 = a1;
-        uint256 aa2 = a2;
-        uint256 aa3 = a3;
-        uint256 aa4 = a4;
-        uint256 aa5 = a5;
-        uint256 aa6 = a6;
-        uint256 aa7 = a7;
-        uint256 aa8 = a8;
-        for (uint i = 0; i < _referecneCounterPerVariable; i++) {
-            result += a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8;
-        }
-        return result;
-    }
 }
 
 contract StorageOptimizationTest is TestSetup {
@@ -78,10 +63,6 @@ contract StorageOptimizationTest is TestSetup {
         b.doSomething(1);
     }
 
-    function test_doSomethingOnceBetterWithB() public {
-        b.doSomethingBetter(1);
-    }
-
     function test_doSomethingAlotWithA() public {
         a.doSomething(10);
     }
@@ -90,7 +71,4 @@ contract StorageOptimizationTest is TestSetup {
         b.doSomething(10);
     }
 
-    function test_doSomethingAlotBetterWithB() public {
-        b.doSomethingBetter(10);
-    }
 }
