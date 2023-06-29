@@ -987,6 +987,75 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_trackAPR() public {
+        vm.deal(alice, 1 ether);
+        vm.deal(bob, 1 ether);
+        
+        // Both Alice & Bob mint the NFT with 1 ether
+        vm.prank(alice);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        vm.prank(bob);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, bobProof);
+
+        // For testing purposes, 
+        // - Bob's NFT is upgraded to tier 1,
+        // - while Alice's NFT remain tier 0
+        // Note that tier 0 and tier 1 have weight 1 and weight 2, respcetively.
+        vm.startPrank(alice);
+        membershipManagerInstance.setPoints(aliceToken, 0, 0);
+        membershipManagerInstance.claimTier(aliceToken);
+        membershipManagerInstance.setPoints(bobToken, 0, uint40(24 * 28));
+        membershipManagerInstance.claimTier(bobToken);
+        vm.stopPrank();
+
+        // The {Alice, Bob} NFTs contain 1 ether each
+        // - Memberhsip Manager contract has 2 ether (which backs the values of two NFTs)
+        assertEq(membershipNftInstance.tierOf(aliceToken), 0); // tier 0, weight 1
+        assertEq(membershipNftInstance.tierOf(bobToken), 1); // tier 1, weight 2
+        assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether);
+        assertEq(membershipNftInstance.valueOf(bobToken), 1 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 2 ether);
+
+        // Take a snapshot of the following values:
+        uint256 t1 = block.timestamp;
+        uint256 LpGI1 = liquidityPoolInstance.amountForShare(1 ether);
+        uint256 tier0GI1 = membershipManagerInstance.rewardsGlobalIndex(0);
+        uint256 tier1GI1 = membershipManagerInstance.rewardsGlobalIndex(1);
+        uint256 tier2GI1 = membershipManagerInstance.rewardsGlobalIndex(2);
+
+        // An year passed
+        skip(365 days);
+
+        // 1 ETH is earned as a staking rewards; 2 ETH has grown to 3 ETH.
+        vm.startPrank(alice);
+        liquidityPoolInstance.rebase(2 ether + 1 ether, 2 ether);
+        membershipManagerInstance.distributeStakingRewards();
+        vm.stopPrank();
+
+        // The balance has grown accordingly
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 1 ether + 2 ether);
+        assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether + uint256(1 ether * 1) / 3); // tier 0, weight 1
+        assertEq(membershipNftInstance.valueOf(bobToken), 1 ether + uint256(1 ether * 2) / 3); // tier 1, weight 2
+
+        // Take another snapshot of the following values:
+        uint256 t2 = block.timestamp;
+        uint256 LpGI2 = liquidityPoolInstance.amountForShare(1 ether);
+        uint256 tier0GI2 = membershipManagerInstance.rewardsGlobalIndex(0);
+        uint256 tier1GI2 = membershipManagerInstance.rewardsGlobalIndex(1);
+        uint256 tier2GI2 = membershipManagerInstance.rewardsGlobalIndex(2);
+        
+        // Compute APRs
+        uint256 eETH_apr_bp = 10000 * (LpGI2 - LpGI1) / 1 ether * (365 days) / (t2 - t1);
+        uint256 tier0_apr_bp = 10000 * (tier0GI2 - tier0GI1) / 1 ether * (365 days) / (t2 - t1);
+        uint256 tier1_apr_bp = 10000 * (tier1GI2 - tier1GI1) / 1 ether * (365 days) / (t2 - t1);
+        uint256 tier2_apr_bp = 10000 * (tier2GI2 - tier2GI1) / 1 ether * (365 days) / (t2 - t1);
+
+        assertEq(eETH_apr_bp, 5000); // 50.00%
+        assertEq(tier0_apr_bp, 3333); // 33.33% for tier 0 with weight 1
+        assertEq(tier1_apr_bp, 6666); // 66.66% for tier 1 with weight 2
+        assertEq(tier2_apr_bp, 0); // 00.00% for tier 2 with weight 3, because there is no deposited ETH in tier 2
+    }
+
     function launch_validator() internal {
         vm.deal(owner, 100 ether);
         vm.prank(alice);
