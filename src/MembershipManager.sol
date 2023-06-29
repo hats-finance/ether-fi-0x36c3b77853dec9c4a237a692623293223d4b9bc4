@@ -725,6 +725,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         return (uint256(mintFee) * 0.001 ether, uint256(burnFee) * 0.001 ether, uint256(upgradeFee) * 0.001 ether);
     }
 
+    function rewardsGlobalIndex(uint8 _tier) external view returns (uint256) {
+        return tierData[_tier].rewardsGlobalIndex;
+    }
+
     function getImplementation() external view returns (address) {
         return _getImplementation();
     }
