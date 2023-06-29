@@ -896,27 +896,50 @@ contract MembershipManagerTest is TestSetup {
         launch_validator(); // there will be 2 validators from the beginning
 
         vm.startPrank(alice);
-        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether, 0 ether);
+        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether, 0.05 ether);
         membershipManagerInstance.setFeeSplits(20, 80);
         vm.stopPrank();
 
         (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerInstance.getFees();
         assertEq(mintFee, 0.05 ether);
         assertEq(burnFee, 0.05 ether);
-        assertEq(upgradeFee, 0 ether);
+        assertEq(upgradeFee, 0.05 ether);
         assertEq(membershipManagerInstance.treasuryFeeSplitPercent(), 20);
         assertEq(membershipManagerInstance.protocolRevenueFeeSplitPercent(), 80);
 
+        // Mint NFT
         vm.prank(alice);
         uint256 tokenId = membershipManagerInstance.wrapEth{value: 2 ether + mintFee}(2 ether, 0, aliceProof);
         (uint256 amount, ) = membershipManagerInstance.tokenDeposits(tokenId);
 
         assertEq(amount, 2 ether);
         assertEq(address(liquidityPoolInstance).balance, 2 ether);
-        assertEq(address(membershipManagerInstance).balance, 0.05 ether); // totalFeesAccumulated
+        assertEq(address(membershipManagerInstance).balance, mintFee); // totalFeesAccumulated
         assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 2 ether);
         assertEq(membershipNftInstance.balanceOf(alice, tokenId), 1);
+        assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
 
+        skip(28 days);
+
+        // Top-up
+        vm.prank(alice);
+        membershipManagerInstance.topUpDepositWithEth{value: 1 ether + upgradeFee}(tokenId, 1 ether, 0, aliceProof);
+
+        assertEq(address(liquidityPoolInstance).balance, 3 ether);
+        assertEq(address(membershipManagerInstance).balance, mintFee + upgradeFee); // totalFeesAccumulated
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 3 ether);
+        assertEq(membershipNftInstance.valueOf(tokenId), 3 ether);
+
+        // Withdraw
+        vm.prank(alice);
+        membershipManagerInstance.unwrapForEth(tokenId, 1 ether);
+
+        assertEq(address(liquidityPoolInstance).balance, 2 ether);
+        assertEq(address(membershipManagerInstance).balance, mintFee + upgradeFee); // totalFeesAccumulated
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 2 ether);
+        assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
+
+        // Burn NFT
         uint256 aliceBalBefore = alice.balance;
         vm.prank(alice);
         membershipManagerInstance.withdrawAndBurnForEth(tokenId);
@@ -925,7 +948,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(address(alice).balance, aliceBalBefore + 2 ether - burnFee);
         assertEq(amount, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
-        assertEq(address(membershipManagerInstance).balance, 0.1 ether); // totalFeesAccumulated
+        assertEq(address(membershipManagerInstance).balance, mintFee + upgradeFee + burnFee); // totalFeesAccumulated
         assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 0 ether);
         assertEq(membershipNftInstance.balanceOf(alice, tokenId), 0);
 
@@ -935,8 +958,8 @@ contract MembershipManagerTest is TestSetup {
         vm.prank(alice);
         membershipManagerInstance.withdrawFees();
 
-        assertEq(address(treasuryInstance).balance, treausryBalanceBefore + 0.02 ether);
-        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + 0.08 ether);
+        assertEq(address(treasuryInstance).balance, treausryBalanceBefore + (mintFee + upgradeFee + burnFee) * 20 / 100);
+        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + (mintFee + upgradeFee + burnFee) * 80 / 100);
         assertEq(address(membershipManagerInstance).balance, 0 ether); // totalFeesAccumulated
     }
 

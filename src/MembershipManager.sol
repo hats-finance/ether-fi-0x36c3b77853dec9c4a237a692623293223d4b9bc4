@@ -166,10 +166,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused {
         _requireTokenOwner(_tokenId);
-        _topUpDeposit(_tokenId, _amount, _amountForPoints);
-
-        uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
-        uint256 additionalDeposit = msg.value - upgradeFeeAmount;
+        uint256 additionalDeposit = _topUpDeposit(_tokenId, _amount, _amountForPoints);
         liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
         _emitNftUpdateEvent(_tokenId);
     }
@@ -227,7 +224,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _amount The amount of ETH which sacrifices its staking rewards to earn points faster
     function stakeForPoints(uint256 _tokenId, uint256 _amount) external whenNotPaused {
         _requireTokenOwner(_tokenId);
-        if(tokenDeposits[_tokenId].amounts < _amount) revert InsufficientBalance();
+        if (tokenDeposits[_tokenId].amounts < _amount) revert InsufficientBalance();
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -448,7 +445,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     function _deposit(uint256 _tokenId, uint256 _amount, uint256 _amountForPoints) internal {
-
         uint256 share = liquidityPool.sharesForAmount(_amount + _amountForPoints);
         uint256 tier = tokenData[_tokenId].tier;
         _incrementTokenDeposit(_tokenId, _amount, _amountForPoints);
@@ -458,8 +454,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     error OncePerMonth();
 
-    function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
-
+    function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal returns (uint256) {
         // subtract fee from provided ether. Will revert if not enough eth provided
         uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
         uint256 additionalDeposit = msg.value - upgradeFeeAmount;
@@ -482,6 +477,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
             token.baseTierPoints = uint40(dilutedPoints);
             _claimTier(_tokenId);
         }
+
+        return additionalDeposit;
     }
 
     function _wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) internal returns (uint256) {
