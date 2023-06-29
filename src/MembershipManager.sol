@@ -166,6 +166,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused {
         _requireTokenOwner(_tokenId);
+
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
+
         uint256 additionalDeposit = _topUpDeposit(_tokenId, _amount, _amountForPoints);
         liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
         _emitNftUpdateEvent(_tokenId);
@@ -204,9 +208,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public whenNotPaused {
-
+        _requireTokenOwner(_tokenId);
         // prevent transfers for several blocks after a withdrawal to prevent frontrunning
         membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
+
+        // Claim all staking rewards before burn
+        claimStakingRewards(_tokenId);
 
         uint256 feeAmount = burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
@@ -454,9 +461,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 additionalDeposit = msg.value - upgradeFeeAmount;
         canTopUp(_tokenId, additionalDeposit, _amount, _amountForPoints);
 
-        claimPoints(_tokenId);
-        claimStakingRewards(_tokenId);
-
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         TokenData storage token = tokenData[_tokenId];
         uint256 totalDeposit = deposit.amounts + deposit.amountStakedForPoints;
@@ -483,10 +487,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     function _withdrawAndBurn(uint256 _tokenId) internal returns (uint256) {
-        _requireTokenOwner(_tokenId);
-
-        claimStakingRewards(_tokenId);
-
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 totalBalance = deposit.amounts + deposit.amountStakedForPoints;
         _unstakeForPoints(_tokenId, deposit.amountStakedForPoints);
