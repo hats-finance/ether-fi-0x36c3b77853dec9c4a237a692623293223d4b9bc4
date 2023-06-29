@@ -356,7 +356,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256 auctionRevenueRewards = protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]);
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
 
-        vm.prank(owner);
+        vm.prank(alice);
         managerInstance.processNodeEvict(validatorIds);
 
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EVICTED);

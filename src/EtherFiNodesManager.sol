@@ -185,7 +185,7 @@ contract EtherFiNodesManager is
     /// @param _validatorIds The list of validators which should be evicted
     function processNodeEvict(
         uint256[] calldata _validatorIds
-    ) external onlyOwner nonReentrant whenNotPaused {
+    ) external onlyAdmin nonReentrant whenNotPaused {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             _processNodeEvict(_validatorIds[i]);
         }

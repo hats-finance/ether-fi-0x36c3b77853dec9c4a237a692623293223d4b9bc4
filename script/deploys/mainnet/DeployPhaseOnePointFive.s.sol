@@ -115,7 +115,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         nftExchangeImplementation = new NFTExchange();
         nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation),"");
         nftExchange = NFTExchange(address(nftExchangeProxy));
-        nftExchange.initialize(tnft, address(membershipNFT));
+        nftExchange.initialize(tnft, address(membershipNFT), address(etherFiNodesManagerProxyAddress));
 
         // Setup dependencies
         setUpAdmins(admin);
