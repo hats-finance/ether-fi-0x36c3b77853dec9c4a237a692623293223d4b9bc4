@@ -88,7 +88,7 @@ contract EtherFiNodesManagerUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.EtherFiNodesManagerImplementation),
                     "\nOptional Comments: ", 
-                    "Comment here"
+                    "love those etherfi nodes managers"
                 )
             )
         );

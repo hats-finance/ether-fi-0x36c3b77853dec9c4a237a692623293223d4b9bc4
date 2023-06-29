@@ -88,7 +88,7 @@ contract BNFTUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.BNFTImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "bnfts are dope"
                 )
             )
         );
