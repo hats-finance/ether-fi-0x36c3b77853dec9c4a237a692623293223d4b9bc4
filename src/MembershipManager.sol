@@ -324,11 +324,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     error InvalidWithdraw();
-    function withdrawFees() external {
+    function withdrawFees(uint256 _amount) external {
         _requireAdmin();
-        uint256 totalAccumulatedFeeAmount = address(this).balance;
-        uint256 treasuryFees = totalAccumulatedFeeAmount * treasuryFeeSplitPercent / 100;
-        uint256 protocolRevenueFees = totalAccumulatedFeeAmount * protocolRevenueFeeSplitPercent / 100;
+        if (address(this).balance < _amount) revert InvalidWithdraw();
+        uint256 treasuryFees = _amount * treasuryFeeSplitPercent / 100;
+        uint256 protocolRevenueFees = _amount * protocolRevenueFeeSplitPercent / 100;
 
         bool sent;
         if (treasuryFees > 0) {
