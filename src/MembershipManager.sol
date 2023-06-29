@@ -134,8 +134,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @return tokenId The ID of the minted membership NFT.
     function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused returns (uint256) {
         uint256 feeAmount = mintFee * 0.001 ether;
-        if (msg.value / 1 gwei < minDepositGwei) revert InvalidDeposit();
-        if (msg.value != _amount + _amountForPoints + feeAmount) revert InvalidAllocation();
+        uint256 depositPerNFT = _amount + _amountForPoints;
+        uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
+
+        if (depositPerNFT / 1 gwei < minDepositGwei) revert InvalidDeposit();
+        if (msg.value != ethNeededPerNFT) revert InvalidAllocation();
+
         return _wrapEth(_amount, _amountForPoints, _merkleProof);
     }
 
@@ -145,7 +149,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
 
         if (depositPerNFT / 1 gwei < minDepositGwei) revert InvalidDeposit();
-        if (msg.value != _numNFTs * ethNeededPerNFT || msg.value != _numNFTs * ethNeededPerNFT) revert InvalidAllocation();
+        if (msg.value != _numNFTs * ethNeededPerNFT) revert InvalidAllocation();
 
         uint256[] memory tokenIds = new uint256[](_numNFTs);
         for (uint256 i = 0; i < _numNFTs; i++) {
@@ -416,14 +420,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     /**
     * @dev Internal function to mint a new membership NFT.
-    * @param to The address of the recipient of the NFT.
+    * @param _to The address of the recipient of the NFT.
     * @param _amount The amount of ETH to earn the staking rewards.
     * @param _amountForPoints The amount of ETH to boost the points earnings.
     * @param _loyaltyPoints The initial loyalty points for the NFT.
     * @param _tierPoints The initial tier points for the NFT.
     * @return tokenId The unique ID of the newly minted NFT.
     */
-    function _mintMembershipNFT(address to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
+    function _mintMembershipNFT(address _to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
         uint256 tokenId = membershipNFT.nextMintID();
         uint8 tier = tierForPoints(_tierPoints);
 
@@ -438,7 +442,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _deposit(tokenId, _amount, _amountForPoints);
 
         // Finally, we mint the token!
-        if (tokenId != membershipNFT.mint(to, 1)) revert WrongTokenMinted();
+        if (tokenId != membershipNFT.mint(_to, 1)) revert WrongTokenMinted();
 
         return tokenId;
     }
