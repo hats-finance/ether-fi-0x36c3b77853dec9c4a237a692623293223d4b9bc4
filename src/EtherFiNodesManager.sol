@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
@@ -44,8 +43,6 @@ contract EtherFiNodesManager is
     //Holds the data for the revenue splits depending on where the funds are received from
     RewardsSplit public stakingRewardsSplit;
     RewardsSplit public protocolRewardsSplit;
-
-    uint256[39] public __gap;
 
     address public admin;
 
@@ -188,7 +185,7 @@ contract EtherFiNodesManager is
     /// @param _validatorIds The list of validators which should be evicted
     function processNodeEvict(
         uint256[] calldata _validatorIds
-    ) external onlyOwner nonReentrant whenNotPaused {
+    ) external onlyAdmin nonReentrant whenNotPaused {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             _processNodeEvict(_validatorIds[i]);
         }

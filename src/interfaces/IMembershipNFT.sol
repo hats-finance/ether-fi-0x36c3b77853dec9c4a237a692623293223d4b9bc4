@@ -14,6 +14,7 @@ interface IMembershipNFT is IERC1155Upgradeable {
     function mint(address _to, uint256 _amount) external returns (uint256);
     function burn(address _from, uint256 _tokenId, uint256 _amount) external;
 
+    function nextMintID() external view returns (uint256);
     function valueOf(uint256 _tokenId) external view returns (uint256);
     function loyaltyPointsOf(uint256 _tokenId) external view returns (uint40);
     function tierPointsOf(uint256 _tokenId) external view returns (uint40);

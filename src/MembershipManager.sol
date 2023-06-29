@@ -416,6 +416,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
+    error WrongTokenMinted();
+
     /**
     * @dev Internal function to mint a new membership NFT.
     * @param _to The address of the recipient of the NFT.
@@ -426,7 +428,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     * @return tokenId The unique ID of the newly minted NFT.
     */
     function _mintMembershipNFT(address _to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-        uint256 tokenId = membershipNFT.mint(_to, 1);
+        uint256 tokenId = membershipNFT.nextMintID();
         uint8 tier = tierForPoints(_tierPoints);
 
         TokenData storage tokenData = tokenData[tokenId];
@@ -438,6 +440,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
 
         _deposit(tokenId, _amount, _amountForPoints);
+
+        // Finally, we mint the token!
+        if (tokenId != membershipNFT.mint(_to, 1)) revert WrongTokenMinted();
+
         return tokenId;
     }
 

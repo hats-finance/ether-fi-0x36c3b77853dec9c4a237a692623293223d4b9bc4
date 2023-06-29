@@ -49,8 +49,6 @@ contract StakingManager is
 
     mapping(uint256 => address) public bidIdToStaker;
 
-    uint256[40] public __gap;
-
     address public admin;
 
     //--------------------------------------------------------------------------------------

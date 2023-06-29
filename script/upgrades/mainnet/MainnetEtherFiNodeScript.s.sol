@@ -2,42 +2,37 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/EtherFiNodesManager.sol";
+import "../../../src/EtherFiNode.sol";
+import "../../../src/StakingManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract EtherFiNodesManagerUpgrade is Script {
+contract EtherFiNodeUpgrade is Script {
     using Strings for string;
 
     struct CriticalAddresses {
-        address EtherFiNodesManagerProxy;
-        address EtherFiNodesManagerImplementation;
+        address etherfiNodeImplementation;
     }
 
     CriticalAddresses criticalAddresses;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address EtherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
+        address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
 
-        require(EtherFiNodesManagerProxyAddress == 0xB914b281260222c6C118FEBD78d5dbf4fD419Ffb, "EtherFiNodesManagerProxyAddress incorrect see .env");
+        StakingManager stakingManager = StakingManager(stakingManagerProxyAddress);
 
         vm.startBroadcast(deployerPrivateKey);
 
-        EtherFiNodesManager EtherFiNodesManagerInstance = EtherFiNodesManager(payable(EtherFiNodesManagerProxyAddress));
-        EtherFiNodesManager EtherFiNodesManagerV2Implementation = new EtherFiNodesManager();
-
-        EtherFiNodesManagerInstance.upgradeTo(address(EtherFiNodesManagerV2Implementation));
-        EtherFiNodesManager EtherFiNodesManagerV2Instance = EtherFiNodesManager(payable(EtherFiNodesManagerProxyAddress));
+        EtherFiNode etherFiNode = new EtherFiNode();
+        stakingManager.upgradeEtherFiNode(address(etherFiNode));
 
         vm.stopBroadcast();
-   
+
         criticalAddresses = CriticalAddresses({
-            EtherFiNodesManagerProxy: EtherFiNodesManagerProxyAddress,
-            EtherFiNodesManagerImplementation: address(EtherFiNodesManagerV2Implementation)
+            etherfiNodeImplementation: address(etherFiNode)
         });
 
         writeUpgradeVersionFile();
-
     }
 
     function _stringToUint(
@@ -58,7 +53,7 @@ contract EtherFiNodesManagerUpgrade is Script {
 
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
-        string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/EtherFiNodesManager/version.txt");
+        string memory localVersionString = vm.readLine("release/logs/Upgrades/mainnet/EtherFiNode/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
@@ -67,15 +62,15 @@ contract EtherFiNodesManagerUpgrade is Script {
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/goerli/EtherFiNodesManager/version.txt",
+            "release/logs/Upgrades/mainnet/EtherFiNode/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
         );
-        
+
         // Writes the data to .release file
         vm.writeFile(
             string(
                 abi.encodePacked(
-                    "release/logs/Upgrades/goerli/EtherFiNodesManager/",
+                    "release/logs/Upgrades/mainnet/EtherFiNode/",
                     Strings.toString(localVersion),
                     ".release"
                 )
@@ -83,12 +78,10 @@ contract EtherFiNodesManagerUpgrade is Script {
             string(
                 abi.encodePacked(
                     Strings.toString(localVersion),
-                    "\nProxy Address: ",
-                    Strings.toHexString(criticalAddresses.EtherFiNodesManagerProxy),
                     "\nNew Implementation Address: ",
-                    Strings.toHexString(criticalAddresses.EtherFiNodesManagerImplementation),
+                    Strings.toHexString(criticalAddresses.etherfiNodeImplementation),
                     "\nOptional Comments: ", 
-                    "love those etherfi nodes managers"
+                    "Upgraded to phase 1.5 contracts"
                 )
             )
         );

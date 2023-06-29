@@ -59,24 +59,16 @@ contract ProtocolRevenueManagerUpgrade is Script {
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
         string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/ProtocolRevenueManager/version.txt");
-        // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
-        uint256 globalVersion = _stringToUint(globalVersionString);
 
         localVersion++;
-        globalVersion++;
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
             "release/logs/Upgrades/goerli/ProtocolRevenueManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
-        );
-        vm.writeFile(
-            "release/logs/Upgrades/goerli/version.txt",
-            string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
         // Writes the data to .release file
@@ -96,7 +88,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.ProtocolRevenueManagerImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "love that protocol revenue manager"
                 )
             )
         );
