@@ -47,6 +47,39 @@ contract MembershipNFTTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_setLimit() public {
+        vm.startPrank(alice);
+        membershipNftInstance.setMaxTokenId(1);
+        vm.stopPrank();
+
+        // 1st mint should work
+        vm.startPrank(address(membershipManagerInstance));
+        membershipNftInstance.mint(alice, 1);
+        vm.stopPrank();
+
+        // 2nd mint should fail
+        vm.startPrank(address(membershipManagerInstance));
+        vm.expectRevert(MembershipNFT.MintingIsPaused.selector);
+        membershipNftInstance.mint(alice, 1);
+        vm.stopPrank();
+
+        // Increase the cap
+        vm.startPrank(alice);
+        membershipNftInstance.setMaxTokenId(2);
+        vm.stopPrank();
+
+        // 3rd mint should work
+        vm.startPrank(address(membershipManagerInstance));
+        membershipNftInstance.mint(alice, 1);
+        vm.stopPrank();
+
+        // 4th mint should fail
+        vm.startPrank(address(membershipManagerInstance));
+        vm.expectRevert(MembershipNFT.MintingIsPaused.selector);
+        membershipNftInstance.mint(alice, 1);
+        vm.stopPrank();
+    }
+
     function test_pauseMinting() public {
 
         // only owner can set pause status

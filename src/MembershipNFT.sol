@@ -21,7 +21,8 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     uint64[] public requiredEapPointsPerEapDeposit;
 
     mapping(uint256 => NftData) public nftData;
-    uint256 public nextMintID;
+    uint32 public nextMintTokenId;
+    uint32 public maxTokenId;
     bool public mintingPaused;
 
     address public admin;
@@ -45,15 +46,15 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
-        nextMintID = 1;
+        nextMintTokenId = 1;
+        maxTokenId = type(uint32).max;
     }
 
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
-        if (mintingPaused) revert MintingIsPaused();
+        if (mintingPaused || nextMintTokenId > maxTokenId) revert MintingIsPaused();
 
-        uint256 tokenId = nextMintID;
+        uint32 tokenId = nextMintTokenId++;
         _mint(_to, tokenId, _amount, "");
-        nextMintID++;
         return tokenId;
     }
 
@@ -83,6 +84,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     //--------------------------------------------------------------------------------------
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
+
+    function setMaxTokenId(uint32 _maxTokenId) external onlyAdmin() {
+        maxTokenId = _maxTokenId;
+    }
 
     function setMembershipManager(address _address) external onlyOwner {
         membershipManager = IMembershipManager(_address);
