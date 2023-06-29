@@ -60,7 +60,7 @@ contract NFTExchangeTest is TestSetup {
         vm.startPrank(alice);
         uint256 withdrawalAmount = 0.1 ether;
         membershipManagerInstance.unwrapForEth(membershipNftTokenId, withdrawalAmount);
-        assertEq(membershipNftInstance.tokenTransferLocks(membershipNftTokenId), block.number + membershipManagerInstance.withdrawalLockBlocks());
+        assertEq(membershipNftInstance.transferLockedUntil(membershipNftTokenId), block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // fails because token is locked
         vm.expectRevert(MembershipNFT.RequireTokenUnlocked.selector);
