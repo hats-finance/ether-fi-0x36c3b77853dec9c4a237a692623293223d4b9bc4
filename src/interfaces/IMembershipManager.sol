@@ -71,4 +71,5 @@ interface IMembershipManager {
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
     function setMinDepositWei(uint56 _value) external;
     function setMaxDepositTopUpPercent(uint8 _percent) external;
+    function withdrawFees(uint256 _amount) external;
 }
