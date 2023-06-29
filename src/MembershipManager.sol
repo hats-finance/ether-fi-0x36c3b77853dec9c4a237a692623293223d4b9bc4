@@ -428,13 +428,15 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 tokenId = membershipNFT.nextMintID();
         uint8 tier = tierForPoints(_tierPoints);
 
-        TokenData storage tokenData = tokenData[tokenId];
-        tokenData.baseLoyaltyPoints = _loyaltyPoints;
-        tokenData.baseTierPoints = _tierPoints;
+        tokenData[tokenId] = TokenData(
+                                tierData[tier].rewardsGlobalIndex,
+                                _loyaltyPoints, 
+                                _tierPoints, 
+                                uint32(block.timestamp), 
+                                0, 
+                                tier, 
+                                0);
 
-        tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
-        tokenData.tier = tier;
-        tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
 
         _deposit(tokenId, _amount, _amountForPoints);
 
