@@ -246,13 +246,15 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        uint256 rewards = _beaconBalance + getWithdrawableAmount(true, false, false, false);
+        uint256 stakingBalance = _beaconBalance + getWithdrawableAmount(true, false, false, false);
+        uint256 rewards;
 
-        if (rewards >= 32 ether) {
-            rewards -= 32 ether;
-        } else if (rewards >= 8 ether || phase == VALIDATOR_PHASE.EXITED) {
-            // In a case of Slashing, without the Oracle, the exact staking rewards cannot be computed in this case
-            // Assume no staking rewards in this case.
+        if (stakingBalance >= 32 ether) {
+            rewards = stakingBalance - 32 ether; // the excess amount over 32 ether is the rewards amount
+        } else {
+            // In a case of Slashing, 
+            // without the Oracle, the exact staking rewards cannot be computed
+            // Assume that there is no staking rewards.
             return (0, 0, 0, 0);
         }
 
@@ -263,6 +265,12 @@ contract EtherFiNode is IEtherFiNode {
             uint256 treasury
         ) = calculatePayouts(rewards, _splits, _scale);
 
+        // If there was the exit request from the T-NFT holder,
+        // but the B-NFT holder did not serve it by sending the voluntary exit message for more than 14 days
+        // the node operator is incentivized to do so instead
+        // by
+        //  - not sharing the staking rewards anymore with the node operator (see the below logic)
+        //  - sharing the non-exit penalty with the node operator instead (~ 0.2 eth)
         if (exitRequestTimestamp > 0) {
             uint256 daysPassedSinceExitRequest = _getDaysPassedSince(
                 exitRequestTimestamp,
@@ -329,7 +337,7 @@ contract EtherFiNode is IEtherFiNode {
 
         uint256 remaining = _principal;
         while (daysElapsed > 0) {
-            uint256 exponent = Math.min(7, daysElapsed); // TODO: Re-calculate bounds
+            uint256 exponent = Math.min(7, daysElapsed);
             remaining = (remaining * (100 - uint256(_dailyPenalty)) ** exponent) / (100 ** exponent);
             daysElapsed -= Math.min(7, daysElapsed);
         }
@@ -360,6 +368,7 @@ contract EtherFiNode is IEtherFiNode {
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
     ) public view returns (uint256, uint256, uint256, uint256) {
+        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested);
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
@@ -367,20 +376,18 @@ contract EtherFiNode is IEtherFiNode {
         (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(_beaconBalance, 
                                                                             _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested,
                                                                              _SRsplits, _PRsplits, _scale);
-        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
         {
-            uint256 remainingPrincipal = (balance > 32 ether) ? 32 ether : balance;
-            (uint256 toBnftPrincipal, uint256 toTnftPrincipal) = calculatePrincipals(remainingPrincipal);
+            (uint256 toBnftPrincipal, uint256 toTnftPrincipal) = calculatePrincipals(balance);
             payouts[1] += toTnftPrincipal;
             payouts[2] += toBnftPrincipal;
         }
 
+        // Apply the non-exit penalty to the B-NFT
         {
             uint256 bnftNonExitPenalty = getNonExitPenalty(exitRequestTimestamp, exitTimestamp);
-
             uint256 appliedPenalty = Math.min(payouts[2], bnftNonExitPenalty);
             payouts[2] -= appliedPenalty;
 
