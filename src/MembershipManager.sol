@@ -212,9 +212,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
         if (totalBalance < feeAmount) revert InsufficientBalance();
 
-        liquidityPool.withdraw(address(msg.sender), totalBalance - feeAmount);
-        liquidityPool.withdraw(address(this), feeAmount);
-
+        liquidityPool.withdraw(address(this), totalBalance);
+        (bool sent, ) = address(msg.sender).call{value: totalBalance - feeAmount}("");
+        if (!sent) revert InvalidWithdraw();
         _emitNftUpdateEvent(_tokenId);
     }
 
