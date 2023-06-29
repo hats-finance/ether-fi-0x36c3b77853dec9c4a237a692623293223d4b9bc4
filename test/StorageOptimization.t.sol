@@ -50,6 +50,9 @@ contract B {
         uint256 aa3 = a3;
         uint256 aa4 = a4;
         uint256 aa5 = a5;
+        uint256 aa6 = a6;
+        uint256 aa7 = a7;
+        uint256 aa8 = a8;
         for (uint i = 0; i < _referecneCounterPerVariable; i++) {
             result += a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8;
         }
