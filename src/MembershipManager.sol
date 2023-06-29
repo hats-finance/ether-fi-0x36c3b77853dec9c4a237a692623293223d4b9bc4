@@ -166,10 +166,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused {
         _requireTokenOwner(_tokenId);
-        _topUpDeposit(_tokenId, _amount, _amountForPoints);
 
-        uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
-        uint256 additionalDeposit = msg.value - upgradeFeeAmount;
+        claimPoints(_tokenId);
+        claimStakingRewards(_tokenId);
+
+        uint256 additionalDeposit = _topUpDeposit(_tokenId, _amount, _amountForPoints);
         liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
         _emitNftUpdateEvent(_tokenId);
     }
@@ -207,9 +208,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public whenNotPaused {
-
+        _requireTokenOwner(_tokenId);
         // prevent transfers for several blocks after a withdrawal to prevent frontrunning
         membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
+
+        // Claim all staking rewards before burn
+        claimStakingRewards(_tokenId);
 
         uint256 feeAmount = burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
@@ -227,7 +231,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _amount The amount of ETH which sacrifices its staking rewards to earn points faster
     function stakeForPoints(uint256 _tokenId, uint256 _amount) external whenNotPaused {
         _requireTokenOwner(_tokenId);
-        if(tokenDeposits[_tokenId].amounts < _amount) revert InsufficientBalance();
+        if (tokenDeposits[_tokenId].amounts < _amount) revert InsufficientBalance();
 
         claimPoints(_tokenId);
         claimStakingRewards(_tokenId);
@@ -327,11 +331,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     error InvalidWithdraw();
-    function withdrawFees() external {
+    function withdrawFees(uint256 _amount) external {
         _requireAdmin();
-        uint256 totalAccumulatedFeeAmount = address(this).balance;
-        uint256 treasuryFees = totalAccumulatedFeeAmount * treasuryFeeSplitPercent / 100;
-        uint256 protocolRevenueFees = totalAccumulatedFeeAmount * protocolRevenueFeeSplitPercent / 100;
+        if (address(this).balance < _amount) revert InvalidWithdraw();
+        uint256 treasuryFees = _amount * treasuryFeeSplitPercent / 100;
+        uint256 protocolRevenueFees = _amount * protocolRevenueFeeSplitPercent / 100;
 
         bool sent;
         if (treasuryFees > 0) {
@@ -431,13 +435,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 tokenId = membershipNFT.nextMintTokenId();
         uint8 tier = tierForPoints(_tierPoints);
 
-        TokenData storage tokenData = tokenData[tokenId];
-        tokenData.baseLoyaltyPoints = _loyaltyPoints;
-        tokenData.baseTierPoints = _tierPoints;
-
-        tokenData.prevPointsAccrualTimestamp = uint32(block.timestamp);
-        tokenData.tier = tier;
-        tokenData.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
+        tokenData[tokenId] = TokenData(tierData[tier].rewardsGlobalIndex, _loyaltyPoints, _tierPoints, uint32(block.timestamp), 0, tier, 0);
 
         _deposit(tokenId, _amount, _amountForPoints);
 
@@ -448,7 +446,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     function _deposit(uint256 _tokenId, uint256 _amount, uint256 _amountForPoints) internal {
-
         uint256 share = liquidityPool.sharesForAmount(_amount + _amountForPoints);
         uint256 tier = tokenData[_tokenId].tier;
         _incrementTokenDeposit(_tokenId, _amount, _amountForPoints);
@@ -458,15 +455,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     error OncePerMonth();
 
-    function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal {
-
+    function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal returns (uint256) {
         // subtract fee from provided ether. Will revert if not enough eth provided
         uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
         uint256 additionalDeposit = msg.value - upgradeFeeAmount;
         canTopUp(_tokenId, additionalDeposit, _amount, _amountForPoints);
-
-        claimPoints(_tokenId);
-        claimStakingRewards(_tokenId);
 
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         TokenData storage token = tokenData[_tokenId];
@@ -482,6 +475,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
             token.baseTierPoints = uint40(dilutedPoints);
             _claimTier(_tokenId);
         }
+
+        return additionalDeposit;
     }
 
     function _wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) internal returns (uint256) {
@@ -492,10 +487,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     function _withdrawAndBurn(uint256 _tokenId) internal returns (uint256) {
-        _requireTokenOwner(_tokenId);
-
-        claimStakingRewards(_tokenId);
-
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         uint256 totalBalance = deposit.amounts + deposit.amountStakedForPoints;
         _unstakeForPoints(_tokenId, deposit.amountStakedForPoints);
@@ -732,6 +723,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     // returns (mintFeeAmount, burnFeeAmount, upgradeFeeAmount)
     function getFees() external view returns (uint256, uint256, uint256) {
         return (uint256(mintFee) * 0.001 ether, uint256(burnFee) * 0.001 ether, uint256(upgradeFee) * 0.001 ether);
+    }
+
+    function rewardsGlobalIndex(uint8 _tier) external view returns (uint256) {
+        return tierData[_tier].rewardsGlobalIndex;
     }
 
     function getImplementation() external view returns (address) {

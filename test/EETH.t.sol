@@ -66,29 +66,37 @@ contract EETHTest is TestSetup {
     }
 
     /// @dev Tests eETH balanceOf and totalSupply functions as well
+    function test_EEthRebaseFailsWhenThereIsNoPooledEther() public {
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
+        vm.prank(alice);
+        vm.expectRevert("rebasing when there is no pooled ether is not allowed.");
+        liquidityPoolInstance.rebase(10 ether, 0 ether);
+    }
+
+    /// @dev Tests eETH balanceOf and totalSupply functions as well
     function test_EEthRebase() public {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
 
         // Total pooled ether = 10
-        vm.prank(alice);
-        liquidityPoolInstance.rebase(10 ether, 0 ether);
-        _transferTo(address(liquidityPoolInstance), 10 ether);
-
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
-        assertEq(eETHInstance.totalSupply(), 10 ether);
-
-        // Total pooled ether = 20
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
         vm.stopPrank();
 
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.totalSupply(), 10 ether);
+        assertEq(eETHInstance.totalShares(), 10 ether);
+        assertEq(eETHInstance.shares(alice), 10 ether);
+
+        // Total pooled ether = 20
+        vm.prank(alice);
+        liquidityPoolInstance.rebase(20 ether, 10 ether);
+        _transferTo(address(liquidityPoolInstance), 10 ether);
+
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
         assertEq(eETHInstance.totalSupply(), 20 ether);
-
-        // ALice is first so get 100% of shares
-        assertEq(eETHInstance.shares(alice), 10 ether);
         assertEq(eETHInstance.totalShares(), 10 ether);
+        assertEq(eETHInstance.shares(alice), 10 ether);
 
         // ALice total claimable Ether
         /// (20 * 10) / 10

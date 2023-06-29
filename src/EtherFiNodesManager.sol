@@ -421,12 +421,6 @@ contract EtherFiNodesManager is
         numberOfValidators += _count;
     }
 
-    /// TODO: remove it for mainnet deploy
-    /// @notice just for testnet!
-    function setNumberOfValidators(uint64 _numberOfValidators) external onlyAdmin {
-        numberOfValidators = _numberOfValidators;
-    }
-
     /// @notice Updates the address of the admin
     /// @param _newAdmin the new address to set as admin
     function updateAdmin(address _newAdmin) external onlyOwner {
