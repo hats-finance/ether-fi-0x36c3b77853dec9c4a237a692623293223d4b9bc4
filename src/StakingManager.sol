@@ -305,12 +305,12 @@ contract StakingManager is
         nodesManager.incrementNumberOfValidators(1);
         nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
+        auctionManager.processAuctionFeeTransfer(_validatorId);
+
         // Let valiadatorId = nftTokenId
         uint256 nftTokenId = _validatorId;
         TNFTInterfaceInstance.mint(_tNftRecipient, nftTokenId);
         BNFTInterfaceInstance.mint(_bNftRecipient, nftTokenId);
-
-        auctionManager.processAuctionFeeTransfer(_validatorId);
 
         emit ValidatorRegistered(
             auctionManager.getBidOwner(_validatorId),
