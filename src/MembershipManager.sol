@@ -317,6 +317,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         return tierDeposits.length - 1;
     }
 
+    error OutOfBound();
+    function updateTier(uint8 _tier, uint40 _requiredTierPoints, uint24 _weight) external {
+        _requireAdmin();
+        if (_tier >= tierData.length) revert OutOfBound();
+        tierData[_tier].requiredTierPoints = _requiredTierPoints;
+        tierData[_tier].weight = _weight;
+    }
+
     /// @notice Sets the points for a given Ethereum address.
     /// @dev This function allows the contract owner to set the points for a specific Ethereum address.
     /// @param _tokenId The ID of the membership NFT.

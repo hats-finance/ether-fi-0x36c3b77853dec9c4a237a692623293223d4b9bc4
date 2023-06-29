@@ -69,6 +69,7 @@ interface IMembershipManager {
     function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external;
     function distributeStakingRewards() external;
     function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256);
+    function updateTier(uint8 _tier, uint40 _requiredTierPoints, uint24 _weight) external;
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
     function setMinDepositWei(uint56 _value) external;
     function setMaxDepositTopUpPercent(uint8 _percent) external;
