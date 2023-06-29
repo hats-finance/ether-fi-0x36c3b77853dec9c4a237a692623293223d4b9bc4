@@ -249,11 +249,12 @@ contract EtherFiNode is IEtherFiNode {
         uint256 stakingBalance = _beaconBalance + getWithdrawableAmount(true, false, false, false);
         uint256 rewards;
 
+        // If (Staking Principal + Staking Rewards >= 32 ether), the validator is running in a normal state
+        // Else, the validator is getting slashed
         if (stakingBalance >= 32 ether) {
-            rewards = stakingBalance - 32 ether; // the excess amount over 32 ether is the rewards amount
+            rewards = stakingBalance - 32 ether;
         } else {
-            // In a case of Slashing, 
-            // without the Oracle, the exact staking rewards cannot be computed
+            // Without the Oracle, the exact staking rewards cannot be computed
             // Assume that there is no staking rewards.
             return (0, 0, 0, 0);
         }
