@@ -65,7 +65,7 @@ contract RegulationsManager is
         );
         require(
             isEligible[whitelistVersion][_user] == true,
-            "User is not whitelisted"
+            "User may be in a regulated country"
         );
 
         isEligible[whitelistVersion][_user] = false;
