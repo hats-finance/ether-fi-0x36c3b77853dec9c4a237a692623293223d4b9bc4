@@ -22,13 +22,16 @@ contract WeETHTest is TestSetup {
     }
 
     function test_WrapWorksCorrectly() public {
-
         // Total pooled ether = 10
-        vm.prank(alice);
-        liquidityPoolInstance.rebase(10 ether + 0 ether, 0 ether);
-        _transferTo(address(liquidityPoolInstance), 10 ether);
+        vm.deal(bob, 10 ether);
+        vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        vm.stopPrank();
+
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
-        assertEq(eETHInstance.totalSupply(), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
 
         // Total pooled ether = 20
         startHoax(alice);
@@ -37,11 +40,8 @@ contract WeETHTest is TestSetup {
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
-        assertEq(eETHInstance.totalSupply(), 20 ether);
-
-        // ALice is first so get 100% of shares
-        assertEq(eETHInstance.shares(alice), 10 ether);
-        assertEq(eETHInstance.totalShares(), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
 
         startHoax(alice);
 
@@ -49,10 +49,9 @@ contract WeETHTest is TestSetup {
         eETHInstance.approve(address(weEthInstance), 100 ether);
         weEthInstance.wrap(5 ether);
 
-        assertEq(eETHInstance.shares(alice), 7.5 ether);
-        assertEq(eETHInstance.shares(address(weEthInstance)), 2.5 ether);
-        assertEq(eETHInstance.totalShares(), 10 ether);
-        assertEq(weEthInstance.balanceOf(alice), 2.5 ether);
+        assertEq(weEthInstance.balanceOf(alice), 5 ether);
+        assertEq(eETHInstance.balanceOf(alice), 5 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
     }
 
     function test_UnWrapEETHFailsIfZeroAmount() public {
@@ -61,10 +60,15 @@ contract WeETHTest is TestSetup {
     }
 
     function test_UnWrapWorksCorrectly() public {
+        vm.deal(alice, 10 ether);
+        vm.deal(bob, 10 ether);
+
         // Total pooled ether = 10
-        vm.prank(alice);
-        liquidityPoolInstance.rebase(10 ether + 0 ether, 0 ether);
-        _transferTo(address(liquidityPoolInstance), 10 ether);
+        vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        vm.stopPrank();
+
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
         assertEq(eETHInstance.totalSupply(), 10 ether);
 
@@ -77,27 +81,27 @@ contract WeETHTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
         assertEq(eETHInstance.totalSupply(), 20 ether);
 
-        // ALice is first so get 100% of shares
-        assertEq(eETHInstance.shares(alice), 10 ether);
-        assertEq(eETHInstance.totalShares(), 10 ether);
+        assertEq(weEthInstance.balanceOf(alice), 0 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
 
-        startHoax(alice);
+        vm.startPrank(alice);
 
         //Approve the wrapped eth contract to spend 100 eEth
         eETHInstance.approve(address(weEthInstance), 100 ether);
-        weEthInstance.wrap(5 ether);
+        weEthInstance.wrap(2.5 ether);
 
-        assertEq(eETHInstance.shares(alice), 7.5 ether);
-        assertEq(eETHInstance.shares(address(weEthInstance)), 2.5 ether);
-        assertEq(eETHInstance.totalShares(), 10 ether);
         assertEq(weEthInstance.balanceOf(alice), 2.5 ether);
+        assertEq(eETHInstance.balanceOf(alice), 7.5 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
 
         weEthInstance.unwrap(2.5 ether);
 
-        assertEq(eETHInstance.shares(alice), 10 ether);
-        assertEq(eETHInstance.shares(address(weEthInstance)), 0  ether);
-        assertEq(eETHInstance.totalShares(), 10 ether);
         assertEq(weEthInstance.balanceOf(alice), 0 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
+
+        vm.stopPrank();
     }
 
     function test_MultipleDepositsAndFunctionalityWorksCorrectly() public {

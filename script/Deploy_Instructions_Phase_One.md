@@ -24,7 +24,7 @@ For Mac use Homebrew to install jq 1.6 with:
  
 Deploy the EtherFi phase one suite.
 
-This consists of the Node Operator Manager, Auction Manager, Staking Manager, EtherFi Nodes Manager, Protocol Revenue Manager, EtherFi Node, Treasury, TNFT, BNFT and Score Manager contracts. The deploy srcipt will set all dependencies automatically.
+This consists of the Node Operator Manager, Auction Manager, Staking Manager, EtherFi Nodes Manager, Protocol Revenue Manager, EtherFi Node, Treasury, TNFT, BNFT and Score Manager contracts. The deploy script will set all dependencies automatically.
 
 There are a few important variables to set before running the deploy command.
 
@@ -36,7 +36,7 @@ If you currently do not have a .env file, and only a .example.env, perform the f
     * PRIVATE_KEY=
     * ETHERSCAN_API_KEY=
 
-3. Please fill in the data accordingly. You can find a GOERLI_RPC_URL or MAINNET_RPC_URL in the case of mainnet deployment, on Alchemy. The private key used here will be the multisig wallet you wish to use. And lastly you can retreive a ETHERSCAN_API_KEY from etherscan if you sign up.
+3. Please fill in the data accordingly. You can find a GOERLI_RPC_URL or MAINNET_RPC_URL in the case of mainnet deployment, on Alchemy. The private key used here will be the multisig wallet you wish to use. And lastly you can retrieve a ETHERSCAN_API_KEY from etherscan if you sign up.
 
 4. Once your environment is set up, run
     source .env

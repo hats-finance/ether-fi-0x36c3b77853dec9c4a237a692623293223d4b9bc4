@@ -19,7 +19,7 @@ contract AuctionManagerUpgrade is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address AuctionManagerProxyAddress = vm.envAddress("AUCTION_MANAGER_PROXY_ADDRESS");
 
-        require(AuctionManagerProxyAddress == 0x00C452aFFee3a17d9Cecc1Bcd2B8d5C7635C4CB9, "AuctionManagerProxyAddress incorrect see .env");
+        require(AuctionManagerProxyAddress == 0xAB5768448499250Bda8a29F35A3eE47FAD69Eb3C, "AuctionManagerProxyAddress incorrect see .env");
        
         vm.startBroadcast(deployerPrivateKey);
 
@@ -58,24 +58,16 @@ contract AuctionManagerUpgrade is Script {
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
         string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/AuctionManager/version.txt");
-        // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
-        uint256 globalVersion = _stringToUint(globalVersionString);
 
         localVersion++;
-        globalVersion++;
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
             "release/logs/Upgrades/goerli/AuctionManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
-        );
-        vm.writeFile(
-            "release/logs/Upgrades/goerli/version.txt",
-            string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
         // Writes the data to .release file
@@ -95,7 +87,7 @@ contract AuctionManagerUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.auctionManagerImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "Upgraded to phase 1.5 contracts"
                 )
             )
         );

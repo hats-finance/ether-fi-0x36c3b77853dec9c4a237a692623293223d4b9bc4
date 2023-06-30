@@ -20,7 +20,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
         address ProtocolRevenueManagerProxyAddress = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
 
         // mainnet
-        require(ProtocolRevenueManagerProxyAddress == 0xfE8A8FC74B2fdD3D745AbFc4940DD858BA60696c, "ProtocolRevenueManagerProxyAddress incorrect see .env");
+        require(ProtocolRevenueManagerProxyAddress == 0xFafcc0041100a80Fce3bD52825A36F73Bf9Fd93a, "ProtocolRevenueManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -59,24 +59,16 @@ contract ProtocolRevenueManagerUpgrade is Script {
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
         string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/ProtocolRevenueManager/version.txt");
-        // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
-        uint256 globalVersion = _stringToUint(globalVersionString);
 
         localVersion++;
-        globalVersion++;
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
             "release/logs/Upgrades/goerli/ProtocolRevenueManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
-        );
-        vm.writeFile(
-            "release/logs/Upgrades/goerli/version.txt",
-            string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
         // Writes the data to .release file
@@ -96,7 +88,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.ProtocolRevenueManagerImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "love that protocol revenue manager"
                 )
             )
         );

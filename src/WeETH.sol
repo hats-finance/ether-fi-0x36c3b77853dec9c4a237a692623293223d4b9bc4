@@ -39,7 +39,7 @@ contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
 
     /// @notice Wraps eEth
     /// @param _eETHAmount the amount of eEth to wrap
-    /// @return returns the amount of weEth the user recieves
+    /// @return returns the amount of weEth the user receives
     function wrap(uint256 _eETHAmount) external returns (uint256) {
         require(_eETHAmount > 0, "weETH: can't wrap zero eETH");
         uint256 weEthAmount = liquidityPool.sharesForAmount(_eETHAmount);
@@ -50,7 +50,7 @@ contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
 
     /// @notice Unwraps weETH
     /// @param _weETHAmount the amount of weETH to unwrap
-    /// @return returns the amount of eEth the user recieves
+    /// @return returns the amount of eEth the user receives
     function unwrap(uint256 _weETHAmount) external returns (uint256) {
         require(_weETHAmount > 0, "Cannot unwrap a zero amount");
         uint256 eETHAmount = liquidityPool.amountForShare(_weETHAmount);

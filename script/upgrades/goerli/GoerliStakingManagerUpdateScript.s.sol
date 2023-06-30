@@ -20,7 +20,7 @@ contract StakingManagerUpgrade is Script {
         address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
 
         // mainnet
-        require(stakingManagerProxyAddress == 0x25e821b7197B146F7713C3b89B6A4D83516B912d, "stakingManagerProxyAddress incorrect see .env");
+        require(stakingManagerProxyAddress == 0x482f265d8D850fa6440e42b0B299C044caEB879a, "stakingManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -60,24 +60,16 @@ contract StakingManagerUpgrade is Script {
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
         string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/StakingManager/version.txt");
-        // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
-        uint256 globalVersion = _stringToUint(globalVersionString);
 
         localVersion++;
-        globalVersion++;
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
-            "release/logs/Upgrades/StakingManager/goerli/version.txt",
+            "release/logs/Upgrades/goerli/StakingManager/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
-        );
-        vm.writeFile(
-            "release/logs/Upgrades/goerli/version.txt",
-            string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
         // Writes the data to .release file

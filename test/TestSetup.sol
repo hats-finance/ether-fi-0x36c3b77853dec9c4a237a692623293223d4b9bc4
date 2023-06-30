@@ -294,7 +294,7 @@ contract TestSetup is Test {
         nftExchangeImplementation = new NFTExchange();
         nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation), "");
         nftExchangeInstance = NFTExchange(payable(nftExchangeProxy));
-        nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance));
+        nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance), address(managerInstance));
         nftExchangeInstance.updateAdmin(alice);
 
         vm.stopPrank();
@@ -517,7 +517,7 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         vm.prank(alice);
-        membershipManagerInstance.setUpForEap(rootMigration, requiredEapPointsPerEapDeposit);
+        membershipNftInstance.setUpForEap(rootMigration, requiredEapPointsPerEapDeposit);
     }
 
     function _merkleSetupMigration2() internal {

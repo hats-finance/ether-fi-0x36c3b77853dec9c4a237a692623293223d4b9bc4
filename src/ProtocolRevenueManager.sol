@@ -90,7 +90,7 @@ contract ProtocolRevenueManager is
     //--------------------------------------------------------------------------------------
 
     /// @notice Instantiates the interface of the node manager for integration
-    /// @dev Set manually due to cirular dependencies
+    /// @dev Set manually due to circular dependencies
     /// @param _etherFiNodesManager etherfi node manager address to set
     function setEtherFiNodesManagerAddress(address _etherFiNodesManager) external onlyOwner {
         require(_etherFiNodesManager != address(0), "No zero addresses");
@@ -99,7 +99,7 @@ contract ProtocolRevenueManager is
     }
 
     /// @notice Instantiates the interface of the auction manager for integration
-    /// @dev Set manually due to cirular dependencies
+    /// @dev Set manually due to circular dependencies
     /// @param _auctionManager auction manager address to set
     function setAuctionManagerAddress(address _auctionManager) external onlyOwner {
         require(_auctionManager != address(0), "No zero addresses");

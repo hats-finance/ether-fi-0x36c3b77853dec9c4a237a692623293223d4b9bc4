@@ -83,13 +83,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             isWhitelistedAndEligible(msg.sender, _merkleProof);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
-        if (msg.value > type(uint128).max) revert InvalidAmount();
+        if (msg.value > type(uint128).max || msg.value == 0) revert InvalidAmount();
 
         totalValueInLp += uint128(msg.value);
         uint256 share = _sharesForDepositAmount(msg.value);
-        if (share == 0) {
-            share = msg.value;
-        }
         eETH.mintShares(_recipient, share);
 
         emit Deposit(_recipient, msg.value);
@@ -101,13 +98,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param _amount the amount to withdraw from contract
     function withdraw(address _recipient, uint256 _amount) external {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
+        require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
         if (_amount > type(uint128).max) revert InvalidAmount();
 
         uint256 share = sharesForWithdrawalAmount(_amount);
-        eETH.burnShares(msg.sender, share);
 
         totalValueInLp -= uint128(_amount);
+
+        eETH.burnShares(msg.sender, share);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "Failed to send Ether");
@@ -116,7 +115,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /*
-     * During ether.fi's phase 1 roadmap,
+     * During ether.fi's phase 1 road map,
      * ether.fi's multi-sig will perform as a B-NFT holder which generates the validator keys and initiates the launch of validators
      * - {batchDepositWithBidIds, batchRegisterValidators} are used to launch the validators
      *  - ether.fi multi-sig should bring 2 ETH which is combined with 30 ETH from the liquidity pool to launch a validator
@@ -161,7 +160,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
     }
 
-    /// @notice Send the exit reqeusts as the T-NFT holder
+    /// @notice Send the exit requests as the T-NFT holder
     function sendExitRequests(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
@@ -180,10 +179,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /// @notice Rebase by ether.fi
-    /// @param _tvl total value locked in ether.fi liquidty pool
+    /// @param _tvl total value locked in ether.fi liquidity pool
     /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
     function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyAdmin {
         require(address(this).balance == _balanceInLp, "the LP balance has changed.");
+        require(getTotalPooledEther() > 0, "rebasing when there is no pooled ether is not allowed.");
         if (_tvl > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp = uint128(_tvl - _balanceInLp);
         totalValueInLp = uint128(_balanceInLp);
@@ -250,7 +250,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
         uint256 totalPooledEther = getTotalPooledEther() - _depositAmount;
         if (totalPooledEther == 0) {
-            return 0;
+            return _depositAmount;
         }
         return (_depositAmount * eETH.totalShares()) / totalPooledEther;
     }

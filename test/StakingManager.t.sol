@@ -1041,7 +1041,7 @@ contract StakingManagerTest is TestSetup {
         );
     }
 
-    function test_CorrectValidatorAttatchedToNft() public {
+    function test_CorrectValidatorAttachedToNft() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
 

@@ -243,7 +243,7 @@ contract AuctionManagerTest is TestSetup {
         vm.prank(alice);
         auctionInstance.disableWhitelist();
 
-        // Bob can still bid below min bid amount because he was whitlelisted
+        // Bob can still bid below min bid amount because he was whitelisted
         hoax(bob);
         uint256[] memory bobBidIds = auctionInstance.createBid{
             value: 0.001 ether

@@ -80,7 +80,7 @@ The second part of a merkle is the proof a specific address requires to perform 
         bytes32[] memory proofOne = merkle.getProof(data, 0);
 ```
 
-The getProof function generates a proof for a specific address in the data structure, hwoever, you need to pass it the name of the data structure as well as the index of the address you want to generate a proof for. So, in the above code, we are generating a proof for the address in position 0 of the data structured called 'data'. To follow the example above, if you wanted to generate proofs for all three addresses, it would look like this:
+The getProof function generates a proof for a specific address in the data structure, however, you need to pass it the name of the data structure as well as the index of the address you want to generate a proof for. So, in the above code, we are generating a proof for the address in position 0 of the data structured called 'data'. To follow the example above, if you wanted to generate proofs for all three addresses, it would look like this:
 
 ```zsh
         bytes32[] memory proofOne = merkle.getProof(data, 0);

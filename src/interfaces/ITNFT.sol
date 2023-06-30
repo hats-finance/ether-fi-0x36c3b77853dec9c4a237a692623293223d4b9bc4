@@ -6,7 +6,7 @@ import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721Upgradeable.sol"
 interface ITNFT is IERC721Upgradeable {
     function initialize() external;
 
-    function mint(address _reciever, uint256 _validatorId) external;
+    function mint(address _receiver, uint256 _validatorId) external;
 
     function upgradeTo(address _newImplementation) external;
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "../../../src/MembershipManager.sol";
 import "../../../src/MembershipNFT.sol";
+import "../../../src/EtherFiNodesManager.sol";
 import "../../../src/WeETH.sol";
 import "../../../src/EETH.sol";
 import "../../../src/NFTExchange.sol";
@@ -62,11 +63,13 @@ contract DeployPhaseOnePointFiveScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
+        bytes32[] memory emptyProof;
+
         address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
         address treasury = vm.envAddress("TREASURY_ADDRESS");
         address protocolRevenueManagerProxy = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
-        address tnft = vm.envAddress("TNFT");
+        address tnft = vm.envAddress("TNFT_PROXY_ADDRESS");
         address admin = vm.envAddress("ADMIN");
 
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
@@ -110,7 +113,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         nftExchangeImplementation = new NFTExchange();
         nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation),"");
         nftExchange = NFTExchange(address(nftExchangeProxy));
-        nftExchange.initialize(tnft, address(membershipNFT));
+        nftExchange.initialize(tnft, address(membershipNFT), address(etherFiNodesManagerProxyAddress));
 
         // Setup dependencies
         setUpAdmins(admin);
@@ -118,9 +121,17 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPool.setTokenAddress(address(eETH));
         liquidityPool.setMembershipManager(address(membershipManager));
         regulationsManager.initializeNewWhitelist(initialHash);
+        regulationsManager.confirmEligibility(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
+        membershipManager.setTopUpCooltimePeriod(28 days);
+        membershipManager.setFeeSplits(0, 100);
+
+        initializeTiers();
+        membershipManager.wrapEthBatch{value: 9.3 ether}(31, 0.3 ether, 0, emptyProof);
+        membershipManager.wrapEthBatch{value: 6.9 ether}(69, 0.1 ether, 0, emptyProof);
         membershipManager.pauseContract();
-        membershipManager.setTopUpCooltimePeriod(5 minutes);
+
+        EtherFiNodesManager nodesManager = EtherFiNodesManager(payable(etherFiNodesManagerProxyAddress));
 
         vm.stopBroadcast();
 
@@ -205,5 +216,12 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.updateAdmin(_admin);
         membershipNFT.updateAdmin(_admin);
         nftExchange.updateAdmin(_admin);
+    }
+
+    function initializeTiers() internal {
+        membershipManager.addNewTier(0, 1);
+        membershipManager.addNewTier(672, 2);
+        membershipManager.addNewTier(2016, 3);
+        membershipManager.addNewTier(4704, 4);
     }
 }

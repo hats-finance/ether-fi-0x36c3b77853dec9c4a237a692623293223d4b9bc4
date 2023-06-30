@@ -36,7 +36,7 @@ contract NFTExchangeTest is TestSetup {
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint256 aliceEapPoints = 100000;
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipManagerInstance.convertEapPoints(aliceEapPoints, 30 ether);
+        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -50,29 +50,28 @@ contract NFTExchangeTest is TestSetup {
         membershipNftInstance.setApprovalForAll(address(nftExchangeInstance), true);
 
         uint256[] memory mNftTokenIds = new uint256[](1);
+        uint256[] memory tNftTokenIds = new uint256[](1);
         address[] memory reservedBuyers = new address[](1);
         mNftTokenIds[0] = membershipNftTokenId;
+        tNftTokenIds[0] = tNftTokenId;
         reservedBuyers[0] = alice;
 
         // make a small withdrawal
         vm.startPrank(alice);
         uint256 withdrawalAmount = 0.1 ether;
         membershipManagerInstance.unwrapForEth(membershipNftTokenId, withdrawalAmount);
-        assertEq(membershipNftInstance.tokenTransferLocks(membershipNftTokenId), block.number + membershipManagerInstance.withdrawalLockBlocks());
+        assertEq(membershipNftInstance.transferLockedUntil(membershipNftTokenId), block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // fails because token is locked
         vm.expectRevert(MembershipNFT.RequireTokenUnlocked.selector);
-        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
 
         // wait for lock to expire
         vm.roll(block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // Owner lists it for sale
-        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
         vm.stopPrank();
-
-        uint256[] memory tNftTokenIds = new uint256[](1);
-        tNftTokenIds[0] = tNftTokenId;
 
         // Fail: Bob is not the reserved buyer
         vm.startPrank(bob);
@@ -130,6 +129,94 @@ contract NFTExchangeTest is TestSetup {
         membershipNftInstance.setApprovalForAll(address(nftExchangeInstance), false);
     }
 
+    function test_tradeFailsForWrongTNft() public {
+        // Alice has staked 32 ETH and is holding 1 pair of {B, T}-NFTs
+        uint256 tNftTokenId = _alice_stake();
+ 
+        // Owner mints a membership NFT holding 30 ETH
+        vm.deal(alice, 100 ether);
+        vm.startPrank(alice);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
+
+        // Owner prepares for the NFT; setting its (loyalty, tier) points
+        uint256 aliceEapPoints = 100000;
+        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        membershipManagerInstance.setPoints(membershipNftTokenId, loyaltyPoints, tierPoints);
+
+        assertEq(membershipNftInstance.loyaltyPointsOf(membershipNftTokenId), loyaltyPoints);
+        assertEq(membershipNftInstance.tierPointsOf(membershipNftTokenId), tierPoints);
+
+        // Owner approves the NFTExchange to transfer the membership NFT
+        vm.prank(alice);
+        membershipNftInstance.setApprovalForAll(address(nftExchangeInstance), true);
+
+        uint256[] memory mNftTokenIds = new uint256[](1);
+        uint256[] memory tNftTokenIds = new uint256[](1);
+        address[] memory reservedBuyers = new address[](1);
+        mNftTokenIds[0] = membershipNftTokenId;
+        tNftTokenIds[0] = tNftTokenId + 100;
+        reservedBuyers[0] = alice;
+
+        // Owner lists it for sale
+        vm.prank(alice);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
+
+        // Fail: Alice presented the different T-NFT !
+        vm.startPrank(alice);
+        vm.expectRevert("The T-NFT is not the target");
+        tNftTokenIds[0] = tNftTokenId;
+        nftExchangeInstance.buy(tNftTokenIds, mNftTokenIds);
+        vm.stopPrank();
+    }
+
+
+    function test_tradeFailsWhenValidatorIsNotLive() public {
+        // Alice has staked 32 ETH and is holding 1 pair of {B, T}-NFTs
+        uint256 tNftTokenId = _alice_stake();
+ 
+        // Owner mints a membership NFT holding 30 ETH
+        vm.deal(alice, 100 ether);
+        vm.startPrank(alice);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
+
+        // Owner prepares for the NFT; setting its (loyalty, tier) points
+        uint256 aliceEapPoints = 100000;
+        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        membershipManagerInstance.setPoints(membershipNftTokenId, loyaltyPoints, tierPoints);
+
+        assertEq(membershipNftInstance.loyaltyPointsOf(membershipNftTokenId), loyaltyPoints);
+        assertEq(membershipNftInstance.tierPointsOf(membershipNftTokenId), tierPoints);
+
+        // Owner approves the NFTExchange to transfer the membership NFT
+        vm.prank(alice);
+        membershipNftInstance.setApprovalForAll(address(nftExchangeInstance), true);
+
+        uint256[] memory mNftTokenIds = new uint256[](1);
+        uint256[] memory tNftTokenIds = new uint256[](1);
+        address[] memory reservedBuyers = new address[](1);
+        mNftTokenIds[0] = membershipNftTokenId;
+        tNftTokenIds[0] = tNftTokenId;
+        reservedBuyers[0] = alice;
+
+        // Owner lists it for sale
+        vm.startPrank(alice);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
+
+        // The node is marked as EVICTED
+        managerInstance.processNodeEvict(tNftTokenIds);
+
+        vm.expectRevert("The validator is not LIVE");
+        tNftTokenIds[0] = tNftTokenId;
+        nftExchangeInstance.buy(tNftTokenIds, mNftTokenIds);
+        vm.stopPrank();
+    }
+
     function test_delist() public {
         // Alice has staked 32 ETH and is holding 1 pair of {B, T}-NFTs
         uint256 tNftTokenId = _alice_stake();
@@ -141,7 +228,7 @@ contract NFTExchangeTest is TestSetup {
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint256 aliceEapPoints = 100000;
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipManagerInstance.convertEapPoints(aliceEapPoints, 30 ether);
+        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -156,21 +243,20 @@ contract NFTExchangeTest is TestSetup {
 
         // Owner lists it for sale
         uint256[] memory mNftTokenIds = new uint256[](1);
+        uint256[] memory tNftTokenIds = new uint256[](1);
         address[] memory reservedBuyers = new address[](1);
         mNftTokenIds[0] = membershipNftTokenId;
+        tNftTokenIds[0] = tNftTokenId;
         reservedBuyers[0] = alice;
 
         vm.prank(alice);
-        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
-
-        uint256[] memory tNftTokenIds = new uint256[](1);
-        tNftTokenIds[0] = tNftTokenId;
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
 
         vm.startPrank(alice);
         nftExchangeInstance.delist(mNftTokenIds);
         vm.stopPrank();
 
-        // Fail: Delisted
+        // Fail: De-listed
         vm.expectRevert("Token is not currently listed for sale");
         nftExchangeInstance.buy(tNftTokenIds, mNftTokenIds);
     }
@@ -184,7 +270,7 @@ contract NFTExchangeTest is TestSetup {
         reservedBuyers[0] = address(0);
 
         vm.expectRevert("Caller is not the admin");
-        nftExchangeInstance.listForSale(mNftTokenIds, reservedBuyers, 10);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
 
         vm.expectRevert("Caller is not the admin");
         nftExchangeInstance.delist(mNftTokenIds);

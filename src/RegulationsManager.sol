@@ -56,7 +56,7 @@ contract RegulationsManager is
     }
 
     /// @notice removes a user from the whitelist
-    /// @dev can be called by the owner or the user themself
+    /// @dev can be called by the owner or the user them self
     /// @param _user the user to remove from the whitelist
     function removeFromWhitelist(address _user) external whenNotPaused {
         require(
@@ -65,7 +65,7 @@ contract RegulationsManager is
         );
         require(
             isEligible[whitelistVersion][_user] == true,
-            "User is not whitelisted"
+            "User may be in a regulated country"
         );
 
         isEligible[whitelistVersion][_user] = false;

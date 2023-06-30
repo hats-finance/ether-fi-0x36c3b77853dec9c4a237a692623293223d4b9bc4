@@ -20,7 +20,7 @@ contract TNFTUpgrade is Script {
         address TNFTProxyAddress = vm.envAddress("TNFT_PROXY_ADDRESS");
 
         // mainnet
-        require(TNFTProxyAddress == 0x7B5ae07E2AF1C861BcC4736D23f5f66A61E0cA5e, "TNFTProxyAddress incorrect see .env");
+        require(TNFTProxyAddress == 0x0FE93205B6AdF89F5b9893F393dCf3260cb30bE0, "TNFTProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -60,24 +60,16 @@ contract TNFTUpgrade is Script {
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
         string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/TNFT/version.txt");
-        // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
 
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
-        uint256 globalVersion = _stringToUint(globalVersionString);
 
         localVersion++;
-        globalVersion++;
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
             "release/logs/Upgrades/goerli/TNFT/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
-        );
-        vm.writeFile(
-            "release/logs/Upgrades/goerli/version.txt",
-            string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
         // Writes the data to .release file
@@ -97,7 +89,7 @@ contract TNFTUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.TNFTImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "tnfts are amazing"
                 )
             )
         );

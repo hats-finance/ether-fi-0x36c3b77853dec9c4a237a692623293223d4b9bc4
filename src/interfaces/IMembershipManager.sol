@@ -39,6 +39,7 @@ interface IMembershipManager {
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) external payable;
 
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external;
+    function withdrawAndBurnForEth(uint256 _tokenId) external;
 
     function stakeForPoints(uint256 _tokenId, uint256 _amount) external;
     function unstakeForPoints(uint256 _tokenId, uint256 _amount) external;
@@ -50,13 +51,15 @@ interface IMembershipManager {
     // Getter functions
     function tokenDeposits(uint256) external view returns (uint128, uint128);
     function tokenData(uint256) external view returns (uint96, uint40, uint40, uint32, uint32, uint8, uint8);
+    function tierData(uint256) external view returns (uint96, uint96, uint40, uint24);
+
+    function rewardsGlobalIndex(uint8 _tier) external view returns (uint256);
     function allTimeHighDepositAmount(uint256 _tokenId) external view returns (uint256);
     function tierForPoints(uint40 _tierPoints) external view returns (uint8);
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) external view returns (bool);
     function pointsBoostFactor() external view returns (uint16);
     function pointsGrowthRate() external view returns (uint16);
     function maxDepositTopUpPercent() external view returns (uint8);
-    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) external view returns (uint40, uint40);
     function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory);
 
     function getImplementation() external view returns (address);
@@ -66,8 +69,9 @@ interface IMembershipManager {
     function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external;
     function distributeStakingRewards() external;
     function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256);
+    function updateTier(uint8 _tier, uint40 _requiredTierPoints, uint24 _weight) external;
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
-    function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external;
     function setMinDepositWei(uint56 _value) external;
     function setMaxDepositTopUpPercent(uint8 _percent) external;
+    function withdrawFees(uint256 _amount) external;
 }
