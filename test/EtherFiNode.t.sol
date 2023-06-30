@@ -452,7 +452,7 @@ contract EtherFiNodeTest is TestSetup {
         hoax(alice);
         managerInstance.markBeingSlashed(bidId);
         vm.expectRevert(
-            "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
+            "you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN."
         );
         managerInstance.partialWithdraw(bidId[0], true, true, true);
     }
