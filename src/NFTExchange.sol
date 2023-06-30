@@ -9,13 +9,14 @@ import "./interfaces/IEtherFiNode.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 
 
 /**
  * @title Escrow
  * @dev A contract for escrowing NFT trades between a multi-sig wallet and a staker.
  */
-contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract NFTExchange is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -76,7 +77,7 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @param _tnftTokenIds The token IDs of the T-NFTs to trade.
      * @param _mNftTokenIds The token IDs of the membership NFTs to purchase.
      */
-    function buy(uint256[] calldata _tnftTokenIds, uint256[] calldata _mNftTokenIds) external {
+    function buy(uint256[] calldata _tnftTokenIds, uint256[] calldata _mNftTokenIds) external nonReentrant {
         require(_tnftTokenIds.length == _mNftTokenIds.length, "Input arrays must be the same length");
         for (uint256 i = 0; i < _mNftTokenIds.length; i++) {
             uint256 tnftTokenId = _tnftTokenIds[i];
@@ -100,7 +101,7 @@ contract NFTExchange is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * @dev Allows the owner to delist membership NFTs from sale.
      * @param _mNftTokenIds The token IDs of the membership NFTs to delist.
      */
-    function delist(uint256[] calldata _mNftTokenIds)external onlyAdmin {
+    function delist(uint256[] calldata _mNftTokenIds) external onlyAdmin nonReentrant {
         for (uint256 i = 0; i < _mNftTokenIds.length; i++) {
             uint256 tokenId = _mNftTokenIds[i];
             require(reservedBuyers[tokenId] != address(0), "Token is not currently listed for sale");
