@@ -751,7 +751,7 @@ contract MembershipManagerTest is TestSetup {
 
         // make a small withdrawal
         membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
-        assertEq(membershipNftInstance.tokenTransferLocks(aliceToken), block.number + membershipManagerInstance.withdrawalLockBlocks());
+        assertEq(membershipNftInstance.transferLockedUntil(aliceToken), block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // fails because token is locked
         vm.expectRevert(MembershipNFT.RequireTokenUnlocked.selector);

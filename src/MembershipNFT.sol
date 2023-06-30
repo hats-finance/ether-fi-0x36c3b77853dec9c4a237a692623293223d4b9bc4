@@ -15,15 +15,15 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     IMembershipManager membershipManager;
 
     string private contractMetadataURI; /// @dev opensea contract-level metadata
-    uint256 public nextMintID;
-
-    bool public mintingPaused;
-
-    mapping(uint256 => uint256) public tokenTransferLocks;
 
     mapping (address => bool) public eapDepositProcessed;
     bytes32 public eapMerkleRoot;
     uint64[] public requiredEapPointsPerEapDeposit;
+
+    mapping(uint256 => NftData) public nftData;
+    uint32 public nextMintTokenId;
+    uint32 public maxTokenId;
+    bool public mintingPaused;
 
     address public admin;
 
@@ -34,6 +34,8 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     error DisallowZeroAddress();
     error MintingIsPaused();
     error InvalidEAPRollover();
+    error RequireTokenUnlocked();
+    error OnlyMembershipManagerContract();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -44,13 +46,14 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
-        nextMintID = 1;
+        nextMintTokenId = 1;
+        maxTokenId = type(uint32).max;
     }
 
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
-        if (mintingPaused) revert MintingIsPaused();
+        if (mintingPaused || nextMintTokenId > maxTokenId) revert MintingIsPaused();
 
-        uint256 tokenId = nextMintID++;
+        uint32 tokenId = nextMintTokenId++;
         _mint(_to, tokenId, _amount, "");
         return tokenId;
     }
@@ -60,12 +63,12 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
     /// @dev locks a token from being transferred for a number of blocks
-    function incrementLock(uint256 _tokenId, uint256 blocks) onlyMembershipManagerContract external {
-        uint256 target = block.number + blocks;
+    function incrementLock(uint256 _tokenId, uint32 _blocks) onlyMembershipManagerContract external {
+        uint32 target = uint32(block.number) + _blocks;
 
         // don't accidentally shorten an existing lock
-        if (tokenTransferLocks[_tokenId] < target) {
-            tokenTransferLocks[_tokenId] = target;
+        if (nftData[_tokenId].transferLockedUntil < target) {
+            nftData[_tokenId].transferLockedUntil = target;
             emit TokenLocked(_tokenId, target);
         }
     }
@@ -81,6 +84,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     //--------------------------------------------------------------------------------------
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
+
+    function setMaxTokenId(uint32 _maxTokenId) external onlyAdmin() {
+        maxTokenId = _maxTokenId;
+    }
 
     function setMembershipManager(address _address) external onlyOwner {
         membershipManager = IMembershipManager(_address);
@@ -115,7 +122,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
 
-    error RequireTokenUnlocked();
     function _beforeTokenTransfer(
         address _operator,
         address _from,
@@ -132,7 +138,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
         // prevent transfers if token is locked
         for (uint256 x; x < _ids.length; ++x) {
-            if (block.number < tokenTransferLocks[_ids[x]]) revert RequireTokenUnlocked();
+            if (block.number < nftData[_ids[x]].transferLockedUntil) revert RequireTokenUnlocked();
         }
     }
 
@@ -220,6 +226,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return _max(totalDeposit, membershipManager.allTimeHighDepositAmount(_tokenId));        
     }
 
+    function transferLockedUntil(uint256 _tokenId) external view returns (uint32) {
+        return nftData[_tokenId].transferLockedUntil;
+    }
+
     // Compute the points earnings of a user between [since, until) 
     // Assuming the user's balance didn't change in between [since, until)
     function membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) public view returns (uint40) {
@@ -235,11 +245,11 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         uint256 effectiveBalanceForEarningPoints = amounts + ((10000 + pointsBoostFactor) * amountStakedForPoints) / 10000;
         uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate / 10000;
 
-        // 0.001 ether   membership points earns 1     wei   points per day
-        // == 1  ether   membership points earns 1     kwei  points per day
-        // == 1  Million membership points earns 1     gwei  points per day
+        // 0.001         ether   earns 1     wei   points per day
+        // == 1          ether   earns 1     kwei  points per day
+        // == 1  Million ether   earns 1     gwei  points per day
         // type(uint40).max == 2^40 - 1 ~= 4 * (10 ** 12) == 1000 gwei
-        // - A user with 1 Million membership points can earn points for 1000 days
+        // - A user with 1 Million ether can earn points for 1000 days
         earning = _min((earning / 1 days) / 0.001 ether, type(uint40).max);
         return uint40(earning);
     }
@@ -269,7 +279,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return (_a > _b) ? _a : _b;
     }
 
-    error OnlyMembershipManagerContract();
     modifier onlyMembershipManagerContract() {
         if (msg.sender != address(membershipManager)) revert OnlyMembershipManagerContract();
         _;

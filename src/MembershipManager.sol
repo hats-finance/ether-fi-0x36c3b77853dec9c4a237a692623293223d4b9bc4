@@ -442,7 +442,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     * @return tokenId The unique ID of the newly minted NFT.
     */
     function _mintMembershipNFT(address _to, uint256 _amount, uint256 _amountForPoints, uint40 _loyaltyPoints, uint40 _tierPoints) internal returns (uint256) {
-        uint256 tokenId = membershipNFT.nextMintID();
+        uint256 tokenId = membershipNFT.nextMintTokenId();
         uint8 tier = tierForPoints(_tierPoints);
 
         tokenData[tokenId] = TokenData(tierData[tier].rewardsGlobalIndex, _loyaltyPoints, _tierPoints, uint32(block.timestamp), 0, tier, 0);
