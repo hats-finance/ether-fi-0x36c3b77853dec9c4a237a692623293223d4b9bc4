@@ -169,8 +169,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused {
         _requireTokenOwner(_tokenId);
 
-        claimPoints(_tokenId);
-        claimStakingRewards(_tokenId);
+        _claimPoints(_tokenId);
+        _claimStakingRewards(_tokenId);
 
         uint256 additionalDeposit = _topUpDeposit(_tokenId, _amount, _amountForPoints);
         liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
@@ -192,8 +192,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         // prevent transfers for several blocks after a withdrawal to prevent frontrunning
         membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
 
-        claimPoints(_tokenId);
-        claimStakingRewards(_tokenId);
+        _claimPoints(_tokenId);
+        _claimStakingRewards(_tokenId);
 
         if (!membershipNFT.isWithdrawable(_tokenId, _amount)) revert ExceededMaxWithdrawal();
 
@@ -215,7 +215,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
 
         // Claim all staking rewards before burn
-        claimStakingRewards(_tokenId);
+        _claimStakingRewards(_tokenId);
 
         uint256 feeAmount = burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
@@ -235,8 +235,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _requireTokenOwner(_tokenId);
         if (tokenDeposits[_tokenId].amounts < _amount) revert InsufficientBalance();
 
-        claimPoints(_tokenId);
-        claimStakingRewards(_tokenId);
+        _claimPoints(_tokenId);
+        _claimStakingRewards(_tokenId);
 
         _stakeForPoints(_tokenId, _amount);
 
@@ -251,8 +251,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _requireTokenOwner(_tokenId);
         if (tokenDeposits[_tokenId].amountStakedForPoints < _amount) revert InsufficientBalance();
 
-        claimPoints(_tokenId);
-        claimStakingRewards(_tokenId);
+        _claimPoints(_tokenId);
+        _claimStakingRewards(_tokenId);
 
         _unstakeForPoints(_tokenId, _amount);
 
@@ -269,8 +269,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
             return;
         }
 
-        claimPoints(_tokenId);
-        claimStakingRewards(_tokenId);
+        _claimPoints(_tokenId);
+        _claimStakingRewards(_tokenId);
 
         _claimTier(_tokenId, oldTier, newTier);
 
@@ -280,21 +280,16 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @notice Claims the accrued membership {loyalty, tier} points.
     /// @param _tokenId The ID of the membership NFT.
     function claimPoints(uint256 _tokenId) public whenNotPaused {
-        TokenData storage token = tokenData[_tokenId];
-        token.baseLoyaltyPoints = membershipNFT.loyaltyPointsOf(_tokenId);
-        token.baseTierPoints = membershipNFT.tierPointsOf(_tokenId);
-        token.prevPointsAccrualTimestamp = uint32(block.timestamp);
+        _claimPoints(_tokenId);
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Claims the staking rewards for a specific membership NFT.
     /// @dev This function allows users to claim the staking rewards earned by a specific membership NFT.
     /// @param _tokenId The ID of the membership NFT.
     function claimStakingRewards(uint256 _tokenId) public whenNotPaused {
-        TokenData storage token = tokenData[_tokenId];
-        uint256 tier = token.tier;
-        uint256 amount = (tierData[tier].rewardsGlobalIndex - token.rewardsLocalIndex) * tokenDeposits[_tokenId].amounts / 1 ether;
-        _incrementTokenDeposit(_tokenId, amount, 0);
-        token.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
+        _claimStakingRewards(_tokenId);
+        _emitNftUpdateEvent(_tokenId);
     }
 
     /// @notice Distributes staking rewards to eligible stakers.
@@ -586,6 +581,26 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         tokenData[_tokenId].rewardsLocalIndex = tierData[_newTier].rewardsGlobalIndex;
         tokenData[_tokenId].tier = _newTier;
+    }
+
+    /// @notice Claims the accrued membership {loyalty, tier} points.
+    /// @param _tokenId The ID of the membership NFT.
+    function _claimPoints(uint256 _tokenId) internal {
+        TokenData storage token = tokenData[_tokenId];
+        token.baseLoyaltyPoints = membershipNFT.loyaltyPointsOf(_tokenId);
+        token.baseTierPoints = membershipNFT.tierPointsOf(_tokenId);
+        token.prevPointsAccrualTimestamp = uint32(block.timestamp);
+    }
+
+    /// @notice Claims the staking rewards for a specific membership NFT.
+    /// @dev This function allows users to claim the staking rewards earned by a specific membership NFT.
+    /// @param _tokenId The ID of the membership NFT.
+    function _claimStakingRewards(uint256 _tokenId) internal {
+        TokenData storage token = tokenData[_tokenId];
+        uint256 tier = token.tier;
+        uint256 amount = (tierData[tier].rewardsGlobalIndex - token.rewardsLocalIndex) * tokenDeposits[_tokenId].amounts / 1 ether;
+        _incrementTokenDeposit(_tokenId, amount, 0);
+        token.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
     function _updateAllTimeHighDepositOf(uint256 _tokenId) internal {
