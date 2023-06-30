@@ -33,6 +33,9 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_wrapEthBatch() public {
+        vm.expectRevert(MembershipManager.OnlyAdmin.selector);
+        membershipManagerInstance.wrapEthBatch{value: 100 ether}(10, 10 ether, 0, aliceProof);
+
         vm.deal(alice, 100 ether);
         vm.prank(alice);
         uint256[] memory aliceTokens = membershipManagerInstance.wrapEthBatch{value: 100 ether}(10, 10 ether, 0, aliceProof);
