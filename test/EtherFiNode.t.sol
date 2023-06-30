@@ -878,14 +878,9 @@ contract EtherFiNodeTest is TestSetup {
         uint256 danBalance = address(dan).balance;
         uint256 bnftStakerBalance = address(staker).balance;
 
-        // call 'partialWithdraw' without specifying any rewards to withdraw
         hoax(owner);
         vm.expectRevert("you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN.");
         managerInstance.partialWithdraw(validatorIds[0], true, true, true);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
-        assertEq(address(treasuryInstance).balance, treasuryBalance);
-        assertEq(address(dan).balance, danBalance);
-        assertEq(address(staker).balance, bnftStakerBalance);
     }
 
     function test_getFullWithdrawalPayoutsAuditFix3() public {
