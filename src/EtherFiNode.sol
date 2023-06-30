@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
-    // TODO: reduce the size of these varaibles
+    // TODO: reduce the size of these variables
     uint256 public localRevenueIndex;
     uint256 public vestedAuctionRewards;
     string public ipfsHashForEncryptedValidatorKey;
@@ -31,13 +31,13 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Based on the sources where they come from, the staking rewards are split into
     ///  - those from the execution layer: transaction fees and MEV
-    ///  - those from the consensus layer: Pstaking rewards for attesting the state of the chain, 
-    ///    proposing a new block, or being selected in a validator sync committe
+    ///  - those from the consensus layer: staking rewards for attesting the state of the chain, 
+    ///    proposing a new block, or being selected in a validator sync committee
     ///  To receive the rewards from the execution layer, it should have 'receive()' function.
     receive() external payable {}
 
     function initialize(address _etherFiNodesManager) public {
-        require(stakingStartTimestamp == 0, "already initialised");
+        require(stakingStartTimestamp == 0, "already initialized");
         require(_etherFiNodesManager != address(0), "No zero addresses");
         stakingStartTimestamp = uint32(block.timestamp);
         etherFiNodesManager = _etherFiNodesManager;
@@ -84,7 +84,7 @@ contract EtherFiNode is IEtherFiNode {
     function markExited(
         uint32 _exitTimestamp
     ) external onlyEtherFiNodeManagerContract {
-        require(_exitTimestamp <= block.timestamp, "Invalid exit timesamp");
+        require(_exitTimestamp <= block.timestamp, "Invalid exit timestamp");
         _validatePhaseTransition(VALIDATOR_PHASE.EXITED);
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
@@ -141,7 +141,7 @@ contract EtherFiNode is IEtherFiNode {
     ) external onlyEtherFiNodeManagerContract {
         // the recipients of the funds must be able to receive the fund
         // For example, if it is a smart contract, 
-        // they should implement either recieve() or fallback() properly
+        // they should implement either receive() or fallback() properly
         // It's designed to prevent malicious actors from pausing the withdrawals
         bool sent;
         (sent, ) = payable(_operator).call{value: _operatorAmount}("");
@@ -160,7 +160,7 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Compute the payouts for {staking, protocol} rewards and vested auction fee to the individuals
     /// @param _beaconBalance the balance of the validator in Consensus Layer
-    /// @param _stakingRewards a flag to be set if the caller wants to compute the payouts for the stkaing rewards
+    /// @param _stakingRewards a flag to be set if the caller wants to compute the payouts for the staking rewards
     /// @param _protocolRewards a flag to be set if the caller wants to compute the payouts for the protocol rewards
     /// @param _vestedAuctionFee a flag to be set if the caller wants to compute the payouts for the vested auction fee
     /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
@@ -268,7 +268,7 @@ contract EtherFiNode is IEtherFiNode {
 
         // If there was the exit request from the T-NFT holder,
         // but the B-NFT holder did not serve it by sending the voluntary exit message for more than 14 days
-        // the node operator is incentivized to do so instead
+        // it incentivize's the node operator to do so instead
         // by
         //  - not sharing the staking rewards anymore with the node operator (see the below logic)
         //  - sharing the non-exit penalty with the node operator instead (~ 0.2 eth)
@@ -347,7 +347,7 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     /// @notice Given
-    ///         - the current balance of the valiator in Consensus Layer
+    ///         - the current balance of the validator in Consensus Layer
     ///         - the current balance of the ether fi node,
     ///         Compute the TVLs for {node operator, t-nft holder, b-nft holder, treasury}
     /// @param _beaconBalance the balance of the validator in Consensus Layer
@@ -412,7 +412,7 @@ contract EtherFiNode is IEtherFiNode {
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
     }
 
-    /// @notice Calculates values for payouts based on certain paramters
+    /// @notice Calculates values for payouts based on certain parameters
     /// @param _totalAmount The total amount to split
     /// @param _splits The splits for the staking rewards
     /// @param _scale The scale = SUM(_splits)

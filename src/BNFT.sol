@@ -32,14 +32,14 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     }
 
     /// @notice Mints NFT to required user
-    /// @dev Only through the staking contratc and not by an EOA
-    /// @param _reciever receiver of the NFT
+    /// @dev Only through the staking contract and not by an EOA
+    /// @param _receiver receiver of the NFT
     /// @param _validatorId the ID of the NFT
-    function mint(address _reciever, uint256 _validatorId) external onlyStakingManager {
-        _mint(_reciever, _validatorId);
+    function mint(address _receiver, uint256 _validatorId) external onlyStakingManager {
+        _mint(_receiver, _validatorId);
     }
     
-    //ERC721 function being overidden to make it soulbound
+    //ERC721 function being overridden to make it soulbound
     function _beforeTokenTransfer(
         address from,
         address, // to

@@ -29,7 +29,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     mapping (uint256 => uint256) public allTimeHighDepositAmount;
 
     uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
-    uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnigs per 1 membership token per day
+    uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnings per 1 membership token per day
     uint56 public minDepositGwei;
     uint8  public maxDepositTopUpPercent;
 
@@ -65,10 +65,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    error DissallowZeroAddress();
+    error DisallowZeroAddress();
 
     function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNft, address _treasury, address _protocolRevenueManager) external initializer {
-        if (_eEthAddress == address(0) || _liquidityPoolAddress == address(0) || _treasury == address(0) || _protocolRevenueManager == address(0) || _membershipNft == address(0)) revert DissallowZeroAddress();
+        if (_eEthAddress == address(0) || _liquidityPoolAddress == address(0) || _treasury == address(0) || _protocolRevenueManager == address(0) || _membershipNft == address(0)) revert DisallowZeroAddress();
 
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -619,7 +619,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     *
     * The rescaling of tier rewards is done based on the weight of each tier. 
     *
-    * @notice This function essentially pools all the staking rewards across tiers and redistributes them propoertional to the tier weights
+    * @notice This function essentially pools all the staking rewards across tiers and redistributes them proportional to the tier weights
     * @return globalIndex A uint96 array containing the updated global index for each tier.
     * @return adjustedShares A uint128 array containing the updated shares for each tier reflecting the amount of staked ETH in the liquidity pool.
     */

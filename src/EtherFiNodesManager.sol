@@ -226,9 +226,9 @@ contract EtherFiNodesManager is
 
     /// @notice Batch-process the rewards skimming
     /// @param _validatorIds A list of the validator Ids
-    /// @param _stakingRewards A bool value to indictae whether or not to include the staking rewards
-    /// @param _protocolRewards A bool value to indictae whether or not to include the protocol rewards
-    /// @param _vestedAuctionFee A bool value to indictae whether or not to include the auction fee rewards
+    /// @param _stakingRewards A bool value to indicate whether or not to include the staking rewards
+    /// @param _protocolRewards A bool value to indicate whether or not to include the protocol rewards
+    /// @param _vestedAuctionFee A bool value to indicate whether or not to include the auction fee rewards
     function partialWithdrawBatch(
         uint256[] calldata _validatorIds,
         bool _stakingRewards,
@@ -243,9 +243,9 @@ contract EtherFiNodesManager is
     /// @notice Batch-process the rewards skimming for the validator nodes belonging to the same operator
     /// @param _operator The address of the operator to withdraw from
     /// @param _validatorIds The ID's of the validators to be withdrawn from
-    /// @param _stakingRewards A bool value to indictae whether or not to include the staking rewards
-    /// @param _protocolRewards A bool value to indictae whether or not to include the protocol rewards
-    /// @param _vestedAuctionFee A bool value to indictae whether or not to include the auction fee rewards
+    /// @param _stakingRewards A bool value to indicate whether or not to include the staking rewards
+    /// @param _protocolRewards A bool value to indicate whether or not to include the protocol rewards
+    /// @param _vestedAuctionFee A bool value to indicate whether or not to include the auction fee rewards
     function partialWithdrawBatchGroupByOperator(
         address _operator,
         uint256[] memory _validatorIds,
@@ -326,7 +326,7 @@ contract EtherFiNodesManager is
         _distributePayouts(_validatorId, toTreasury, toOperator, toTnft, toBnft);
     }
 
-    /// @notice Process the full withdrawal fopr multiple validators
+    /// @notice Process the full withdrawal for multiple validators
     /// @param _validatorIds The validator Ids
     function fullWithdrawBatch(uint256[] calldata _validatorIds) external whenNotPaused {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -409,7 +409,7 @@ contract EtherFiNodesManager is
 
     /// @notice Sets the local revenue index for a specific node
     /// @param _validatorId id of the validator associated to this etherfi node
-    /// @param _localRevenueIndex renevue index to be set
+    /// @param _localRevenueIndex revenue index to be set
     function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) external payable onlyProtocolRevenueManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setLocalRevenueIndex{value: msg.value}(_localRevenueIndex);
@@ -451,7 +451,7 @@ contract EtherFiNodesManager is
     function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
-        // distribute the protocol reward from the ProtocolRevenueMgr contrac to the validator's etherfi node contract
+        // distribute the protocol reward from the ProtocolRevenueMgr contract to the validator's etherfi node contract
         uint256 amount = protocolRevenueManager.distributeAuctionRevenue(_validatorId);
 
         // Mark EXITED
@@ -474,7 +474,7 @@ contract EtherFiNodesManager is
     function _processNodeEvict(uint256 _validatorId) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
-        // distribute the protocol reward from the ProtocolRevenueMgr contrac to the validator's etherfi node contract
+        // distribute the protocol reward from the ProtocolRevenueMgr contract to the validator's etherfi node contract
         uint256 amount = protocolRevenueManager.distributeAuctionRevenue(_validatorId);
 
         // Mark EVICTED
@@ -509,7 +509,7 @@ contract EtherFiNodesManager is
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Fecthes the phase a specific node is in
+    /// @notice Fetches the phase a specific node is in
     /// @param _validatorId id of the validator associated to etherfi node
     /// @return validatorPhase the phase the node is in
     function phase(uint256 _validatorId) public view returns (IEtherFiNode.VALIDATOR_PHASE validatorPhase) {
@@ -517,7 +517,7 @@ contract EtherFiNodesManager is
         validatorPhase = IEtherFiNode(etherfiNode).phase();
     }
 
-    /// @notice Fecthes the ipfs hash for the encrypted key data from a specific node
+    /// @notice Fetches the ipfs hash for the encrypted key data from a specific node
     /// @param _validatorId id of the validator associated to etherfi node
     /// @return the ifs hash associated to the node
     function ipfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
@@ -587,9 +587,9 @@ contract EtherFiNodesManager is
     /// @notice Fetches the total rewards payout for the node for specific revenues
     /// @param _validatorId ID of the validator associated to etherfi node
     /// @param _beaconBalance the balance of the validator in Consensus Layer
-    /// @param _stakingRewards A bool value to indictae whether or not to include the staking rewards
-    /// @param _protocolRewards A bool value to indictae whether or not to include the protocol rewards
-    /// @param _vestedAuctionFee A bool value to indictae whether or not to include the auction fee rewards
+    /// @param _stakingRewards A bool value to indicate whether or not to include the staking rewards
+    /// @param _protocolRewards A bool value to indicate whether or not to include the protocol rewards
+    /// @param _vestedAuctionFee A bool value to indicate whether or not to include the auction fee rewards
     /// @return The payout for total rewards for the node
     function getRewardsPayouts(
         uint256 _validatorId,
