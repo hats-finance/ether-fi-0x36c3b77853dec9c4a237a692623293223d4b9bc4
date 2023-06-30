@@ -153,16 +153,16 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     function valueOf(uint256 _tokenId) public view returns (uint256) {
         (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
         (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
-        (uint96[] memory globalIndex, ) = membershipManager.calculateGlobalIndex();
-        uint256 rewards = (globalIndex[tier] - rewardsLocalIndex) * amounts / 1 ether;
+        (uint96 rewardsGlobalIndex,,, ) = membershipManager.tierData(tier);
+        uint256 rewards = (rewardsGlobalIndex - rewardsLocalIndex) * amounts / 1 ether;
         return amounts + rewards + amountStakedForPoints;
     }
 
     function accruedStakingRewardsOf(uint256 _tokenId) public view returns (uint256) {
         (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
         (uint128 amounts, ) = membershipManager.tokenDeposits(_tokenId);
-        (uint96[] memory globalIndex, ) = membershipManager.calculateGlobalIndex();
-        uint256 rewards = (globalIndex[tier] - rewardsLocalIndex) * amounts / 1 ether;
+        (uint96 rewardsGlobalIndex,,, ) = membershipManager.tierData(tier);
+        uint256 rewards = (rewardsGlobalIndex - rewardsLocalIndex) * amounts / 1 ether;
         return rewards;
     }
 
