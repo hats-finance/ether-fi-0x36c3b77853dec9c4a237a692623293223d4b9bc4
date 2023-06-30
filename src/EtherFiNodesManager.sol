@@ -205,8 +205,8 @@ contract EtherFiNodesManager is
             "etherfi node contract's balance is above 8 ETH. You should exit the node."
         );
         require(
-            IEtherFiNode(etherfiNode).phase() != IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED,
-            "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
+            IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE || IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN,
+            "you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN."
         );
         
         // Retrieve all possible rewards: {Staking, Protocol} rewards and the vested auction fee reward
@@ -273,8 +273,8 @@ contract EtherFiNodesManager is
                 "etherfi node contract's balance is above 8 ETH. You should exit the node."
             );
             require(
-                IEtherFiNode(etherfiNode).phase() != IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED,
-                "you cannot perform the partial withdraw while the node is being slashed. Exit the node."
+                IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE || IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN,
+                "you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN."
             );
 
             // 'beaconBalance == 32 ether' means there is no accrued staking rewards and no slashing penalties  
