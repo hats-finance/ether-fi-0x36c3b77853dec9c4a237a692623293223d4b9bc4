@@ -847,6 +847,47 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(toBnft, 0 ether);
     }
 
+    function test_partialWithdrawAfterExitFails() public {
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
+
+        uint256[] memory validatorIds = new uint256[](1);
+        validatorIds[0] = bidId[0];
+        uint32[] memory exitTimestamps = new uint32[](1);
+        exitTimestamps[0] = 1;
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
+        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
+
+
+        // 8. balance < 4 ether
+        vm.deal(etherfiNode, 4 ether + vestedAuctionFeeRewardsForStakers);
+
+        startHoax(alice);
+        assertEq(managerInstance.numberOfValidators(), 1);
+        managerInstance.processNodeExit(validatorIds, exitTimestamps);
+        assertEq(managerInstance.numberOfValidators(), 0);
+        vm.stopPrank();
+
+        
+        // Transfer the T-NFT to 'dan'
+        hoax(staker);
+        TNFTInstance.transferFrom(staker, dan, validatorIds[0]);
+
+        uint256 nodeOperatorBalance = address(nodeOperator).balance;
+        uint256 treasuryBalance = address(treasuryInstance).balance;
+        uint256 danBalance = address(dan).balance;
+        uint256 bnftStakerBalance = address(staker).balance;
+
+        // call 'partialWithdraw' without specifying any rewards to withdraw
+        hoax(owner);
+        vm.expectRevert("you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN.");
+        managerInstance.partialWithdraw(validatorIds[0], true, true, true);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
+        assertEq(address(treasuryInstance).balance, treasuryBalance);
+        assertEq(address(dan).balance, danBalance);
+        assertEq(address(staker).balance, bnftStakerBalance);
+    }
+
     function test_getFullWithdrawalPayoutsAuditFix3() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
