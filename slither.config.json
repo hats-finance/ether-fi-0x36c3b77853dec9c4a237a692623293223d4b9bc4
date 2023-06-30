@@ -1,3 +1,5 @@
 {
-    "filter_paths": "(script/|test/)"
+    "filter_paths": "(script/|test/)",
+    "printers_to_run": "human-summary"
+
 }

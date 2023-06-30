@@ -98,14 +98,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param _amount the amount to withdraw from contract
     function withdraw(address _recipient, uint256 _amount) external {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
+        require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
         if (_amount > type(uint128).max) revert InvalidAmount();
 
         uint256 share = sharesForWithdrawalAmount(_amount);
 
-        eETH.burnShares(msg.sender, share);
-
         totalValueInLp -= uint128(_amount);
+
+        eETH.burnShares(msg.sender, share);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "Failed to send Ether");
