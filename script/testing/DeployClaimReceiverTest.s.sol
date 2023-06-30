@@ -54,7 +54,7 @@ contract DeployClaimReceiverTestScript is Script {
 
         writeVersionFile();
 
-        // Set path to version file where current verion is recorded
+        // Set path to version file where current version is recorded
         /// @dev Initial version.txt and X.release files should be created manually
     }
 

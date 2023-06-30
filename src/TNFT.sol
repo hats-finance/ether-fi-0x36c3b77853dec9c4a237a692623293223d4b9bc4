@@ -34,11 +34,11 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     }
 
     /// @notice Mints NFT to required user
-    /// @dev Only through the staking contratc and not by an EOA
-    /// @param _reciever Receiver of the NFT
+    /// @dev Only through the staking contract and not by an EOA
+    /// @param _receiver Receiver of the NFT
     /// @param _validatorId The ID of the NFT
-    function mint(address _reciever, uint256 _validatorId) external onlyStakingManager {
-        _mint(_reciever, _validatorId);
+    function mint(address _receiver, uint256 _validatorId) external onlyStakingManager {
+        _mint(_receiver, _validatorId);
     }
 
     //--------------------------------------------------------------------------------------

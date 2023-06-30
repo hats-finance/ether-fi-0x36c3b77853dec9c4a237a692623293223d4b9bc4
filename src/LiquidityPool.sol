@@ -114,7 +114,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /*
-     * During ether.fi's phase 1 roadmap,
+     * During ether.fi's phase 1 road map,
      * ether.fi's multi-sig will perform as a B-NFT holder which generates the validator keys and initiates the launch of validators
      * - {batchDepositWithBidIds, batchRegisterValidators} are used to launch the validators
      *  - ether.fi multi-sig should bring 2 ETH which is combined with 30 ETH from the liquidity pool to launch a validator
@@ -159,7 +159,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
     }
 
-    /// @notice Send the exit reqeusts as the T-NFT holder
+    /// @notice Send the exit requests as the T-NFT holder
     function sendExitRequests(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 validatorId = _validatorIds[i];
@@ -178,7 +178,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /// @notice Rebase by ether.fi
-    /// @param _tvl total value locked in ether.fi liquidty pool
+    /// @param _tvl total value locked in ether.fi liquidity pool
     /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
     function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyAdmin {
         require(address(this).balance == _balanceInLp, "the LP balance has changed.");

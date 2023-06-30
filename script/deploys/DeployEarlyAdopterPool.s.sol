@@ -23,7 +23,7 @@ contract DeployEarlyAdopterPoolScript is Script {
 
         vm.stopBroadcast();
 
-        // Sets the variables to be wriiten to contract addresses.txt
+        // Sets the variables to be written to contract addresses.txt
         string memory earlyAdopterPoolAddress = Strings.toHexString(
             address(earlyAdopterPool)
         );
@@ -31,7 +31,7 @@ contract DeployEarlyAdopterPoolScript is Script {
         // Declare version Var
         uint256 version;
 
-        // Set path to version file where current verion is recorded
+        // Set path to version file where current version is recorded
         /// @dev Initial version.txt and X.release files should be created manually
         string memory versionPath = "release/logs/earlyAdopterPool/version.txt";
 

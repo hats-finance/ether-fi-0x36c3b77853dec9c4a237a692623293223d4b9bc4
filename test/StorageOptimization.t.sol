@@ -15,9 +15,9 @@ contract A {
     uint256 a7 = 8;
     uint256 a8 = 8;
 
-    function doSomething(uint256 _referecneCounterPerVariable) external view returns (uint256) {
+    function doSomething(uint256 _referenceCounterPerVariable) external view returns (uint256) {
         uint256 result;
-        for (uint i = 0; i < _referecneCounterPerVariable; i++) {
+        for (uint i = 0; i < _referenceCounterPerVariable; i++) {
             result += a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8;
         }
         return result;
@@ -35,9 +35,9 @@ contract B {
     uint16 a7 = 7;
     uint16 a8 = 8;
 
-    function doSomething(uint256 _referecneCounterPerVariable) external view returns (uint256) {
+    function doSomething(uint256 _referenceCounterPerVariable) external view returns (uint256) {
         uint256 result;
-        for (uint i = 0; i < _referecneCounterPerVariable; i++) {
+        for (uint i = 0; i < _referenceCounterPerVariable; i++) {
             result += a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8;
         }
         return result;

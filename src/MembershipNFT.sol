@@ -31,7 +31,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     event MintingPaused(bool isPaused);
     event TokenLocked(uint256 indexed _tokenId, uint256 until);
     
-    error DissallowZeroAddress();
+    error DisallowZeroAddress();
     error MintingIsPaused();
     error InvalidEAPRollover();
 
@@ -125,7 +125,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         bytes memory _data
     ) internal override {
 
-        // exempty mints and burns from checks
+        // empty mints and burns from checks
         if (_from == address(0x00) || _to == address(0x00)) {
             return;
         }

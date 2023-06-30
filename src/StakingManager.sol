@@ -181,7 +181,7 @@ contract StakingManager is
     }
 
     /// @notice Sets the EtherFi node manager contract
-    /// @param _nodesManagerAddress aaddress of the manager contract being set
+    /// @param _nodesManagerAddress address of the manager contract being set
     function setEtherFiNodesManagerAddress(address _nodesManagerAddress) public onlyOwner {
         require(address(nodesManager) == address(0), "Address already set");
         require(_nodesManagerAddress != address(0), "No zero addresses");
@@ -190,7 +190,7 @@ contract StakingManager is
     }
 
     /// @notice Sets the Liquidity pool contract address
-    /// @param _liquidityPoolAddress aaddress of the liquidity pool contract being set
+    /// @param _liquidityPoolAddress address of the liquidity pool contract being set
     function setLiquidityPoolAddress(address _liquidityPoolAddress) public onlyOwner {
         require(liquidityPoolContract == address(0), "Address already set");
         require(_liquidityPoolAddress != address(0), "No zero addresses");
@@ -307,7 +307,7 @@ contract StakingManager is
 
         auctionManager.processAuctionFeeTransfer(_validatorId);
 
-        // Let valiadatorId = nftTokenId
+        // Let validatorId = nftTokenId
         uint256 nftTokenId = _validatorId;
         TNFTInterfaceInstance.mint(_tNftRecipient, nftTokenId);
         BNFTInterfaceInstance.mint(_bNftRecipient, nftTokenId);

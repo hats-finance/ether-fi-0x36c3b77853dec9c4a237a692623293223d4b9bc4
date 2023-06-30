@@ -56,7 +56,7 @@ contract RegulationsManager is
     }
 
     /// @notice removes a user from the whitelist
-    /// @dev can be called by the owner or the user themself
+    /// @dev can be called by the owner or the user them self
     /// @param _user the user to remove from the whitelist
     function removeFromWhitelist(address _user) external whenNotPaused {
         require(

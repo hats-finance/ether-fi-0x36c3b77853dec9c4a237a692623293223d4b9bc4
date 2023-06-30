@@ -26,7 +26,7 @@ contract DeployTestDepositContractScript is Script {
             depositContract: address(depositContract)
         });
 
-        writeDepositcontract();
+        writeDepositContract();
     }
 
     function _stringToUint(
@@ -45,7 +45,7 @@ contract DeployTestDepositContractScript is Script {
         return val;
     }
 
-    function writeDepositcontract() internal {
+    function writeDepositContract() internal {
         // Read Current version
         string memory versionString = vm.readLine("release/logs/TestDepositContract/version.txt");
 

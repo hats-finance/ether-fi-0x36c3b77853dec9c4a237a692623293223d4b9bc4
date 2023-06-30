@@ -243,7 +243,7 @@ contract LargeScenariosTest is TestSetup {
 
         assertEq(managerInstance.numberOfValidators(), 9);
 
-        // Auction Revenue gets transfered
+        // Auction Revenue gets transferred
         // 0.005 ether * 8 bids = 0.04 ether
         assertEq(address(auctionInstance).balance, 0.645 ether - 0.04 ether);
 
@@ -282,7 +282,7 @@ contract LargeScenariosTest is TestSetup {
         );
         vm.stopPrank();
 
-        // Auction Revenue gets transfered
+        // Auction Revenue gets transferred
         // Because he used bobs bid of 0.002 ether
         assertEq(gregNode.balance, 0.001 ether);
         assertEq(address(auctionInstance).balance, 0.605 ether - 0.002 ether);

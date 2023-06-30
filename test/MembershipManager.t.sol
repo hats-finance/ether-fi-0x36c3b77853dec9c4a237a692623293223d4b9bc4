@@ -152,7 +152,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 1 gwei);
 
         // Alice earns 1000 gwei points for 1000 days (~= 3 years)
-        // Note taht 1000 gwei = 10 ** 12 gwei
+        // Note that 1000 gwei = 10 ** 12 gwei
         skip(999 days);
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 1000 gwei);
 
@@ -282,7 +282,7 @@ contract MembershipManagerTest is TestSetup {
         // Alice claims her funds after the snapshot has been taken. 
         // She then deposits her ETH into the MembershipManager and has her points allocated to her
 
-        // Acotrs deposit into EAP
+        // Actors deposit into EAP
         startHoax(alice);
         earlyAdopterPoolInstance.depositEther{value: 1 ether}();
         vm.stopPrank();
@@ -352,7 +352,7 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.distributeStakingRewards();
         vm.stopPrank();
 
-        // Check the blanace of Alice updated by the rebasing
+        // Check the balance of Alice updated by the rebasing
         assertEq(membershipNftInstance.valueOf(aliceToken), 0.5 ether + 0.5 ether);
 
         skip(28 days);
@@ -712,7 +712,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei / 2);
     }
 
-    // ether.fi multi-sig can manually set the poitns of an NFT
+    // ether.fi multi-sig can manually set the points of an NFT
     function test_setPoints() public {
         vm.deal(alice, 1 ether);
 
@@ -952,13 +952,13 @@ contract MembershipManagerTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 0 ether);
         assertEq(membershipNftInstance.balanceOf(alice, tokenId), 0);
 
-        uint256 treausryBalanceBefore = address(treasuryInstance).balance;
+        uint256 treasuryBalanceBefore = address(treasuryInstance).balance;
         uint256 prmBalanceBefore = address(protocolRevenueManagerInstance).balance;
 
         vm.prank(alice);
         membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee);
 
-        assertEq(address(treasuryInstance).balance, treausryBalanceBefore + (mintFee + upgradeFee + burnFee) * 20 / 100);
+        assertEq(address(treasuryInstance).balance, treasuryBalanceBefore + (mintFee + upgradeFee + burnFee) * 20 / 100);
         assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + (mintFee + upgradeFee + burnFee) * 80 / 100);
         assertEq(address(membershipManagerInstance).balance, 0 ether); // totalFeesAccumulated
     }
@@ -1000,7 +1000,7 @@ contract MembershipManagerTest is TestSetup {
         // For testing purposes, 
         // - Bob's NFT is upgraded to tier 1,
         // - while Alice's NFT remain tier 0
-        // Note that tier 0 and tier 1 have weight 1 and weight 2, respcetively.
+        // Note that tier 0 and tier 1 have weight 1 and weight 2, respectively.
         vm.startPrank(alice);
         membershipManagerInstance.setPoints(aliceToken, 0, 0);
         membershipManagerInstance.claimTier(aliceToken);
@@ -1009,7 +1009,7 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
 
         // The {Alice, Bob} NFTs contain 1 ether each
-        // - Memberhsip Manager contract has 2 ether (which backs the values of two NFTs)
+        // - Membership Manager contract has 2 ether (which backs the values of two NFTs)
         assertEq(membershipNftInstance.tierOf(aliceToken), 0); // tier 0, weight 1
         assertEq(membershipNftInstance.tierOf(bobToken), 1); // tier 1, weight 2
         assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether);

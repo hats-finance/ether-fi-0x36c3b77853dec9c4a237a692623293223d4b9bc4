@@ -16,7 +16,7 @@ contract EtherFiNodeTest is TestSetup {
 
         assertTrue(node.phase() == IEtherFiNode.VALIDATOR_PHASE.NOT_INITIALIZED);
 
-        vm.expectRevert("already initialised");
+        vm.expectRevert("already initialized");
         vm.prank(owner);
         node.initialize(address(managerInstance));
 
@@ -101,28 +101,28 @@ contract EtherFiNodeTest is TestSetup {
         safeInstance.setExitRequestTimestamp();
     }
 
-    function test_SetPhaseRevertsOnIcorrectCaller() public {
+    function test_SetPhaseRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setPhase(IEtherFiNode.VALIDATOR_PHASE.EXITED);
 
     }
 
-    function test_SetIpfsHashForEncryptedValidatorKeyRevertsOnIcorrectCaller() public {
+    function test_SetIpfsHashForEncryptedValidatorKeyRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setIpfsHashForEncryptedValidatorKey("_ipfsHash");
 
     }
 
-    function test_SetLocalRevenueIndexRevertsOnIcorrectCaller() public {
+    function test_SetLocalRevenueIndexRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setLocalRevenueIndex(1);
 
     }
 
-    function test_SetExitRequestTimestampRevertsOnIcorrectCaller() public {
+    function test_SetExitRequestTimestampRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setExitRequestTimestamp();
@@ -847,7 +847,7 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(toBnft, 0 ether);
     }
 
-    function test_getFullWithrdawalPayoutsAuditFix3() public {
+    function test_getFullWithdrawalPayoutsAuditFix3() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
@@ -896,7 +896,7 @@ contract EtherFiNodeTest is TestSetup {
         }
     }
 
-    function test_getFullWithrdawalPayoutsAuditFix2() public {
+    function test_getFullWithdrawalPayoutsAuditFix2() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
@@ -945,7 +945,7 @@ contract EtherFiNodeTest is TestSetup {
         }
     }
 
-    function test_getFullWithrdawalPayoutsAuditFix1() public {
+    function test_getFullWithdrawalPayoutsAuditFix1() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
@@ -1234,7 +1234,7 @@ contract EtherFiNodeTest is TestSetup {
         }
 
         // (Validator 'active_slashed', slashing penalty in CL = 0.5 ether)
-        // - slashing penalty [0, 0.5 ether] is paied by the B-NFT holder
+        // - slashing penalty [0, 0.5 ether] is paid by the B-NFT holder
         {
             uint256 beaconBalance = 31.5 ether;
 
@@ -1247,7 +1247,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // (Validator 'active_slashed', slashing penalty in CL = 1 ether)
         // - 0.5 ether of B-NFT holder is used as the insurance claim
-        // - While T-NFT receives 29.5 ether, the insurance will conver the loss 0.5 ether (manually)
+        // - While T-NFT receives 29.5 ether, the insurance will convert the loss 0.5 ether (manually)
         {
             uint256 beaconBalance = 31 ether;
 
@@ -1269,7 +1269,7 @@ contract EtherFiNodeTest is TestSetup {
         }
 
 
-        // The worst-case, 32 ether is all slahsed!
+        // The worst-case, 32 ether is all slashed!
         {
             uint256 beaconBalance = 0 ether;
 

@@ -256,7 +256,7 @@ contract NFTExchangeTest is TestSetup {
         nftExchangeInstance.delist(mNftTokenIds);
         vm.stopPrank();
 
-        // Fail: Delisted
+        // Fail: De-listed
         vm.expectRevert("Token is not currently listed for sale");
         nftExchangeInstance.buy(tNftTokenIds, mNftTokenIds);
     }
