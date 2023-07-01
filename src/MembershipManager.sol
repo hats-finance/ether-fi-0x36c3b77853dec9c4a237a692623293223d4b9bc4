@@ -28,8 +28,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     mapping (uint256 => uint256) public allTimeHighDepositAmount;
 
-    uint16 public pointsBoostFactor; // + (X / 10000) more points if staking rewards are sacrificed
-    uint16 public pointsGrowthRate; // + (X / 10000) kwei points earnings per 1 membership token per day
+    uint16 public pointsBoostFactor; // + (X / 10000) more points, if staking rewards are sacrificed
+    uint16 public pointsGrowthRate; // + (X / 10000) kwei points are earned per ETH per day
     uint56 public minDepositGwei;
     uint8  public maxDepositTopUpPercent;
 
