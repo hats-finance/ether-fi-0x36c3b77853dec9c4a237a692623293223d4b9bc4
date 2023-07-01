@@ -105,8 +105,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable whenNotPaused returns (uint256) {
-        if (_points == 0) revert InvalidEAPRollover();
-        if (msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2 || msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
+        if (_points == 0 || msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2 || msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
 
         membershipNFT.processDepositFromEapUser(msg.sender, _snapshotEthAmount, _points, _merkleProof);
         (uint40 loyaltyPoints, uint40 tierPoints) = membershipNFT.convertEapPoints(_points, _snapshotEthAmount);
@@ -137,8 +136,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 depositPerNFT = _amount + _amountForPoints;
         uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
 
-        if (depositPerNFT / 1 gwei < minDepositGwei) revert InvalidDeposit();
-        if (msg.value != ethNeededPerNFT) revert InvalidAllocation();
+        if (depositPerNFT / 1 gwei < minDepositGwei || msg.value != ethNeededPerNFT) revert InvalidDeposit();
 
         return _wrapEth(_amount, _amountForPoints, _merkleProof);
     }
@@ -150,8 +148,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 depositPerNFT = _amount + _amountForPoints;
         uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
 
-        if (depositPerNFT / 1 gwei < minDepositGwei) revert InvalidDeposit();
-        if (msg.value != _numNFTs * ethNeededPerNFT) revert InvalidAllocation();
+        if (depositPerNFT / 1 gwei < minDepositGwei || msg.value != _numNFTs * ethNeededPerNFT) revert InvalidDeposit();
 
         uint256[] memory tokenIds = new uint256[](_numNFTs);
         for (uint256 i = 0; i < _numNFTs; i++) {
@@ -737,6 +734,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (block.timestamp - uint256(prevTopUpTimestamp) < topUpCooltimePeriod) revert OncePerMonth();
         if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
         return true;
+    }
+
+    function numberOfTiers() external view returns (uint8) {
+        return uint8(tierData.length);
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
