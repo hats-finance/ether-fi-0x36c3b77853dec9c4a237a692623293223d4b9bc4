@@ -22,16 +22,16 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    IeETH public eETH; 
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
     IMembershipManager public membershipManager;
     ITNFT public tNft;
+    IeETH public eETH; 
 
+    bool public eEthliquidStakingOpened;
     uint128 public totalValueOutOfLp;
     uint128 public totalValueInLp;
-    bool public eEthliquidStakingOpened;
 
     address public admin;
 
