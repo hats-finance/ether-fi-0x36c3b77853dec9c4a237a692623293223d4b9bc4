@@ -567,8 +567,8 @@ contract EtherFiNodesManager is
 
     /// @notice Fetches the nodes non exit penalty amount
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the amount of the penalty
-    function getNonExitPenalty(uint256 _validatorId) public view returns (uint256) {
+    /// @return nonExitPenalty the amount of the penalty
+    function getNonExitPenalty(uint256 _validatorId) public view returns (uint256 nonExitPenalty) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         uint32 tNftExitRequestTimestamp = IEtherFiNode(etherfiNode).exitRequestTimestamp();
         uint32 bNftExitRequestTimestamp = IEtherFiNode(etherfiNode).exitTimestamp();
@@ -577,9 +577,12 @@ contract EtherFiNodesManager is
 
     /// @notice Fetches the staking rewards payout for a node
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the payout for staking rewards
+    /// @return toNodeOperator  the TVL for the Node Operator
+    /// @return toTnft          the TVL for the T-NFT holder
+    /// @return toBnft          the TVL for the B-NFT holder
+    /// @return toTreasury      the TVL for the Treasury
     function getStakingRewardsPayouts(uint256 _validatorId, uint256 _beaconBalance) 
-        public view returns (uint256, uint256, uint256, uint256) {
+        public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).getStakingRewardsPayouts(_beaconBalance, stakingRewardsSplit, SCALE);
     }
@@ -590,14 +593,17 @@ contract EtherFiNodesManager is
     /// @param _stakingRewards A bool value to indicate whether or not to include the staking rewards
     /// @param _protocolRewards A bool value to indicate whether or not to include the protocol rewards
     /// @param _vestedAuctionFee A bool value to indicate whether or not to include the auction fee rewards
-    /// @return The payout for total rewards for the node
+    /// @return toNodeOperator  the TVL for the Node Operator
+    /// @return toTnft          the TVL for the T-NFT holder
+    /// @return toBnft          the TVL for the B-NFT holder
+    /// @return toTreasury      the TVL for the Treasury
     function getRewardsPayouts(
         uint256 _validatorId,
         uint256 _beaconBalance,
         bool _stakingRewards,
         bool _protocolRewards,
         bool _vestedAuctionFee
-    ) public view returns (uint256, uint256, uint256, uint256) {
+    ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return
             IEtherFiNode(etherfiNode).getRewardsPayouts(
@@ -609,9 +615,12 @@ contract EtherFiNodesManager is
 
     /// @notice Fetches the full withdraw payouts
     /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the payout for full withdraws
+    /// @return toNodeOperator  the TVL for the Node Operator
+    /// @return toTnft          the TVL for the T-NFT holder
+    /// @return toBnft          the TVL for the B-NFT holder
+    /// @return toTreasury      the TVL for the Treasury
     function getFullWithdrawalPayouts(uint256 _validatorId) 
-        public view returns (uint256, uint256, uint256, uint256) {
+        public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         require(isExited(_validatorId), "validator node is not exited");
 
         // The full withdrawal payouts should be equal to the total TVL of the validator
@@ -639,7 +648,7 @@ contract EtherFiNodesManager is
         bool _protocolRewards,
         bool _vestedAuctionFee,
         bool _assumeFullyVested
-    ) public view returns (uint256, uint256, uint256, uint256) {
+    ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return  IEtherFiNode(etherfiNode).calculateTVL(
                     _beaconBalance,

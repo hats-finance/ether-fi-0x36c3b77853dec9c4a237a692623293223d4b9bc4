@@ -747,7 +747,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     //--------------------------------------------------------------------------------------
 
     // returns (mintFeeAmount, burnFeeAmount, upgradeFeeAmount)
-    function getFees() external view returns (uint256, uint256, uint256) {
+    function getFees() external view returns (uint256 mintFeeAmount, uint256 burnFeeAmount, uint256 upgradeFeeAmount) {
         return (uint256(mintFee) * 0.001 ether, uint256(burnFee) * 0.001 ether, uint256(upgradeFee) * 0.001 ether);
     }
 
