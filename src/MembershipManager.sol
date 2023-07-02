@@ -330,6 +330,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         token.baseLoyaltyPoints = _loyaltyPoints;
         token.baseTierPoints = _tierPoints;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
+        _claimTier(_tokenId);
     }
 
     error InvalidWithdraw();
