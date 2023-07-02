@@ -331,6 +331,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         token.baseTierPoints = _tierPoints;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
         _claimTier(_tokenId);
+        _emitNftUpdateEvent(_tokenId);
     }
 
     error InvalidWithdraw();
