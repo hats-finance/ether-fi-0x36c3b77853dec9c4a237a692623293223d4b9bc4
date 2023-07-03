@@ -20,13 +20,16 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
     IMembershipNFT public membershipNFT;
+    address public treasury;
+    address public protocolRevenueManager;
 
+    mapping (uint256 => uint256) public allTimeHighDepositAmount;
     mapping (uint256 => TokenDeposit) public tokenDeposits;
     mapping (uint256 => TokenData) public tokenData;
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
 
-    mapping (uint256 => uint256) public allTimeHighDepositAmount;
+    // [BEGIN] SLOT 261
 
     uint16 public pointsBoostFactor; // + (X / 10000) more points, if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points are earned per ETH per day
@@ -42,8 +45,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     uint32 public topUpCooltimePeriod;
     uint32 public withdrawalLockBlocks;
 
-    address public treasury;
-    address public protocolRevenueManager;
+    uint32 private __gap0;
+
+    // [END] SLOT 261 END
 
     address public admin;
  

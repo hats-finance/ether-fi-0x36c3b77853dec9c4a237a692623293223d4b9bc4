@@ -13,17 +13,17 @@ import "./interfaces/IMembershipNFT.sol";
 contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, IMembershipNFT {
 
     IMembershipManager membershipManager;
+    uint32 public nextMintTokenId;
+    uint32 public maxTokenId;
+    bool public mintingPaused;
+    uint24 __gap0;
 
-    string private contractMetadataURI; /// @dev opensea contract-level metadata
-
+    mapping(uint256 => NftData) public nftData;
     mapping (address => bool) public eapDepositProcessed;
     bytes32 public eapMerkleRoot;
     uint64[] public requiredEapPointsPerEapDeposit;
 
-    mapping(uint256 => NftData) public nftData;
-    uint32 public nextMintTokenId;
-    uint32 public maxTokenId;
-    bool public mintingPaused;
+    string private contractMetadataURI; /// @dev opensea contract-level metadata
 
     address public admin;
 
