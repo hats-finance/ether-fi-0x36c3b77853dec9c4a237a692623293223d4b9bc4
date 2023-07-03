@@ -86,6 +86,11 @@ contract ContractRegistry {
         return contracts[contractId].proxyAddress;
     }
 
+    function getImplementationAddress(string memory _name) external returns (address) {
+        uint256 contractId = nameToId[_name];
+        return contracts[contractId].implementationAddress;
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------

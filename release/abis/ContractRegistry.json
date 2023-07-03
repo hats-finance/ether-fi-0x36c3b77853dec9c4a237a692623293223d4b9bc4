@@ -102,6 +102,25 @@
         "type": "string"
       }
     ],
+    "name": "getImplementationAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_name",
+        "type": "string"
+      }
+    ],
     "name": "getProxyAddress",
     "outputs": [
       {

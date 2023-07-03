@@ -73,7 +73,7 @@ contract DeployPhaseOnePointFiveScript is Script {
 
         address stakingManagerProxyAddress = contractRegistry.getProxyAddress("Staking Manager");
         address etherFiNodesManagerProxyAddress = contractRegistry.getProxyAddress("EtherFi Nodes Manager");
-        address treasury = contractRegistry.getProxyAddress("Treasury");
+        address treasury = contractRegistry.getImplementationAddress("Treasury");
         address protocolRevenueManagerProxy = contractRegistry.getProxyAddress("Protocol Revenue Manager");
         address tnft = contractRegistry.getProxyAddress("TNFT");
         address admin = vm.envAddress("ADMIN");
@@ -140,11 +140,9 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.setFeeSplits(0, 100);
 
         initializeTiers();
-        membershipManager.wrapEthBatch{value: 9.3 ether}(31, 0.3 ether, 0, emptyProof);
-        membershipManager.wrapEthBatch{value: 6.9 ether}(69, 0.1 ether, 0, emptyProof);
+        //membershipManager.wrapEthBatch{value: 9.3 ether}(31, 0.3 ether, 0, emptyProof);
+        //membershipManager.wrapEthBatch{value: 6.9 ether}(69, 0.1 ether, 0, emptyProof);
         membershipManager.pauseContract();
-
-        EtherFiNodesManager nodesManager = EtherFiNodesManager(payable(etherFiNodesManagerProxyAddress));
 
         vm.stopBroadcast();
 
