@@ -87,6 +87,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         totalValueInLp += uint128(msg.value);
         uint256 share = _sharesForDepositAmount(msg.value);
+        if (share == 0) revert InvalidAmount();
         eETH.mintShares(_recipient, share);
 
         emit Deposit(_recipient, msg.value);

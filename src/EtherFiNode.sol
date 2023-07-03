@@ -228,6 +228,11 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _splits the splits for the staking rewards
     /// @param _scale the scale = SUM(_splits)
     ///
+    /// Note that since the smart contract running in the execution layer does not know the consensus layer data
+    /// such as the status and balance of the validator, 
+    /// the partial withdrawal assumes that the validator is in active & not being slashed + the beacon balance is 32 ether.
+    /// Therefore, you need to set _beaconBalance = 32 ether to see the same payouts for the partial withdrawal
+    ///
     /// @return toNodeOperator  the payout to the Node Operator
     /// @return toTnft          the payout to the T-NFT holder
     /// @return toBnft          the payout to the B-NFT holder
