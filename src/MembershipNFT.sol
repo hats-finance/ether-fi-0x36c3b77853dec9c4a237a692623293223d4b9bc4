@@ -259,7 +259,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     /// @param _eapPoints The amount of EAP points
     /// @param _ethAmount The amount of ETH deposit in the EAP (or converted amounts for ERC20s)
     function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
-        uint256 loyaltyPoints = _min(1e5 * _eapPoints / 1 days , type(uint40).max);        
+        uint256 loyaltyPoints = _min(_eapPoints, type(uint40).max);        
         uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
         uint8 tierId = 0;
         while (tierId < requiredEapPointsPerEapDeposit.length 
