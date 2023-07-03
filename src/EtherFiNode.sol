@@ -144,13 +144,13 @@ contract EtherFiNode is IEtherFiNode {
         // they should implement either receive() or fallback() properly
         // It's designed to prevent malicious actors from pausing the withdrawals
         bool sent;
-        (sent, ) = payable(_operator).call{value: _operatorAmount, gas: 12000}("");
+        (sent, ) = payable(_operator).call{value: _operatorAmount, gas: 2300}("");
         _treasuryAmount += (!sent) ? _operatorAmount : 0;
-        (sent, ) = payable(_tnftHolder).call{value: _tnftAmount, gas: 12000}("");
+        (sent, ) = payable(_tnftHolder).call{value: _tnftAmount, gas: 12000}(""); // to support 'receive' of LP
         _treasuryAmount += (!sent) ? _tnftAmount : 0;
-        (sent, ) = payable(_bnftHolder).call{value: _bnftAmount, gas: 12000}("");
+        (sent, ) = payable(_bnftHolder).call{value: _bnftAmount, gas: 2300}("");
         _treasuryAmount += (!sent) ? _bnftAmount : 0;
-        (sent, ) = _treasury.call{value: _treasuryAmount, gas: 12000}("");
+        (sent, ) = _treasury.call{value: _treasuryAmount, gas: 2300}("");
         require(sent, "Failed to send Ether");
     }
 
