@@ -13,17 +13,17 @@ import "./interfaces/IMembershipNFT.sol";
 contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, IMembershipNFT {
 
     IMembershipManager membershipManager;
+    uint32 public nextMintTokenId;
+    uint32 public maxTokenId;
+    bool public mintingPaused;
+    uint24 __gap0;
 
-    string private contractMetadataURI; /// @dev opensea contract-level metadata
-
+    mapping(uint256 => NftData) public nftData;
     mapping (address => bool) public eapDepositProcessed;
     bytes32 public eapMerkleRoot;
     uint64[] public requiredEapPointsPerEapDeposit;
 
-    mapping(uint256 => NftData) public nftData;
-    uint32 public nextMintTokenId;
-    uint32 public maxTokenId;
-    bool public mintingPaused;
+    string private contractMetadataURI; /// @dev opensea contract-level metadata
 
     address public admin;
 
@@ -153,16 +153,16 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     function valueOf(uint256 _tokenId) public view returns (uint256) {
         (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
         (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
-        (uint96[] memory globalIndex, ) = membershipManager.calculateGlobalIndex();
-        uint256 rewards = (globalIndex[tier] - rewardsLocalIndex) * amounts / 1 ether;
+        (uint96 rewardsGlobalIndex,,, ) = membershipManager.tierData(tier);
+        uint256 rewards = (rewardsGlobalIndex - rewardsLocalIndex) * amounts / 1 ether;
         return amounts + rewards + amountStakedForPoints;
     }
 
     function accruedStakingRewardsOf(uint256 _tokenId) public view returns (uint256) {
         (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
         (uint128 amounts, ) = membershipManager.tokenDeposits(_tokenId);
-        (uint96[] memory globalIndex, ) = membershipManager.calculateGlobalIndex();
-        uint256 rewards = (globalIndex[tier] - rewardsLocalIndex) * amounts / 1 ether;
+        (uint96 rewardsGlobalIndex,,, ) = membershipManager.tierData(tier);
+        uint256 rewards = (rewardsGlobalIndex - rewardsLocalIndex) * amounts / 1 ether;
         return rewards;
     }
 
@@ -259,7 +259,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     /// @param _eapPoints The amount of EAP points
     /// @param _ethAmount The amount of ETH deposit in the EAP (or converted amounts for ERC20s)
     function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
-        uint256 loyaltyPoints = _min(1e5 * _eapPoints / 1 days , type(uint40).max);        
+        uint256 loyaltyPoints = _min(_eapPoints, type(uint40).max);        
         uint256 eapPointsPerDeposit = _eapPoints / (_ethAmount / 0.001 ether);
         uint8 tierId = 0;
         while (tierId < requiredEapPointsPerEapDeposit.length 

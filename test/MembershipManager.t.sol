@@ -735,9 +735,7 @@ contract MembershipManagerTest is TestSetup {
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24 * 28);
-
         assertEq(membershipNftInstance.claimableTier(aliceToken), 1);
-        membershipManagerInstance.claimTier(aliceToken);
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
     }
 
@@ -1249,5 +1247,44 @@ contract MembershipManagerTest is TestSetup {
         vm.prank(alice);
         membershipManagerInstance.unPauseContract();
         assertEq(membershipManagerInstance.paused(), false);
+    }
+
+    function test_moveTierWithStakedForPoints() public {
+        vm.deal(alice, 100 ether);
+
+        vm.startPrank(alice);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 100 ether}(50 ether, 50 ether, aliceProof);
+        assertEq(membershipNftInstance.tierOf(aliceToken), 0);
+
+        (uint128 amounts, uint128 amountStakedForPoints) = membershipManagerInstance.tokenDeposits(aliceToken);
+        (, uint128 tier0Amounts) = membershipManagerInstance.tierDeposits(0);
+        (, uint128 tier1Amounts) = membershipManagerInstance.tierDeposits(1);
+        assertEq(amounts, 50 ether);
+        assertEq(amountStakedForPoints, 50 ether);
+        assertEq(tier0Amounts, 100 ether);
+        assertEq(tier1Amounts, 0);
+
+        membershipManagerInstance.setPoints(aliceToken, uint40(28 * kwei), uint40(24 * 28));
+        assertEq(membershipNftInstance.tierOf(aliceToken), 1);
+
+        (amounts, amountStakedForPoints) = membershipManagerInstance.tokenDeposits(aliceToken);
+        (, tier0Amounts) = membershipManagerInstance.tierDeposits(0);
+        (, tier1Amounts) = membershipManagerInstance.tierDeposits(1);
+        assertEq(amounts, 50 ether);
+        assertEq(amountStakedForPoints, 50 ether);
+        assertEq(tier0Amounts, 0);
+        assertEq(tier1Amounts, 100 ether);
+
+        membershipManagerInstance.unstakeForPoints(aliceToken, 50 ether);
+
+        (amounts, amountStakedForPoints) = membershipManagerInstance.tokenDeposits(aliceToken);
+        (, tier0Amounts) = membershipManagerInstance.tierDeposits(0);
+        (, tier1Amounts) = membershipManagerInstance.tierDeposits(1);
+        assertEq(amounts, 100 ether);
+        assertEq(amountStakedForPoints, 0 ether);
+        assertEq(tier0Amounts, 0);
+        assertEq(tier1Amounts, 100 ether);
+
+        vm.stopPrank();
     }
 }
