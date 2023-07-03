@@ -60,13 +60,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         totalValueInLp += uint128(msg.value);
     }
 
-    function receiveFunds() external payable {
-        require(totalValueOutOfLp >= msg.value, "rebase first before collecting the rewards");
-        if (msg.value > type(uint128).max) revert InvalidAmount();
-        totalValueOutOfLp -= uint128(msg.value);
-        totalValueInLp += uint128(msg.value);        
-    }
-
     function initialize(address _regulationsManager) external initializer {
         require(_regulationsManager != address(0), "No zero addresses");
 
