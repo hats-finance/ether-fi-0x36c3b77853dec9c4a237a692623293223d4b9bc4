@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "../../../src/EtherFiNodesManager.sol";
+import "../../../src/ContractRegistry.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract EtherFiNodesManagerUpgrade is Script {
@@ -14,10 +15,15 @@ contract EtherFiNodesManagerUpgrade is Script {
     }
 
     CriticalAddresses criticalAddresses;
+    ContractRegistry public contractRegistry;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address EtherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
+
+        address contractRegistryAddress = vm.envAddress("CONTRACT_REGISTRY");
+        contractRegistry = ContractRegistry(contractRegistryAddress);
+
+        address EtherFiNodesManagerProxyAddress = contractRegistry.getProxyAddress("EtherFi Nodes Manager");
 
         require(EtherFiNodesManagerProxyAddress == 0xB914b281260222c6C118FEBD78d5dbf4fD419Ffb, "EtherFiNodesManagerProxyAddress incorrect see .env");
 
@@ -28,6 +34,8 @@ contract EtherFiNodesManagerUpgrade is Script {
 
         EtherFiNodesManagerInstance.upgradeTo(address(EtherFiNodesManagerV2Implementation));
         EtherFiNodesManager EtherFiNodesManagerV2Instance = EtherFiNodesManager(payable(EtherFiNodesManagerProxyAddress));
+        
+        contractRegistry.updateContractImplementation(2, address(EtherFiNodesManagerV2Implementation));
 
         vm.stopBroadcast();
    
