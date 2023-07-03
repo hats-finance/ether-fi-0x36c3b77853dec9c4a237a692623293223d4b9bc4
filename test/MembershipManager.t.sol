@@ -735,9 +735,7 @@ contract MembershipManagerTest is TestSetup {
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24 * 28);
-
         assertEq(membershipNftInstance.claimableTier(aliceToken), 1);
-        membershipManagerInstance.claimTier(aliceToken);
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
     }
 
