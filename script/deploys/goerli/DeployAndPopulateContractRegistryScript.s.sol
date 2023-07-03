@@ -42,7 +42,7 @@ contract DeployAndPopulateContractRegistry is Script {
         contractRegistry.addContract(tnftProxy, tnftImplementation, "TNFT", 0);
         contractRegistry.addContract(bnftProxy, bnftImplementation, "BNFT", 0);
         contractRegistry.addContract(address(0), treasury, "Treasury", 0);
-        contractRegistry.addContract(address(0), nodeOperatorManager, "Node Operator Manager", 0);
+        contractRegistry.addContract(address(0), nodeOperatorManagerImplementation, "Node Operator Manager", 0);
 
         vm.stopBroadcast();
     }

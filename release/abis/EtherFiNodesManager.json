@@ -1109,19 +1109,6 @@
     "inputs": [
       {
         "internalType": "uint64",
-        "name": "_numberOfValidators",
-        "type": "uint64"
-      }
-    ],
-    "name": "setNumberOfValidators",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint64",
         "name": "_treasury",
         "type": "uint64"
       },

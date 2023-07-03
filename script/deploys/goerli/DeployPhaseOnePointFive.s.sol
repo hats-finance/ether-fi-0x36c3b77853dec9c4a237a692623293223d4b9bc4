@@ -67,20 +67,15 @@ contract DeployPhaseOnePointFiveScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         bytes32[] memory emptyProof;
+        
+        address contractRegistryAddress = vm.envAddress("CONTRACT_REGISTRY");
+        contractRegistry = ContractRegistry(contractRegistryAddress);
 
-        // address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
-        // address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
-        // address treasury = vm.envAddress("TREASURY_ADDRESS");
-        // address protocolRevenueManagerProxy = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
-        // address tnft = vm.envAddress("TNFT_PROXY_ADDRESS");
-
-        contractRegistry = new ContractRegistry();
-
-        address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
-        address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
-        address treasury = vm.envAddress("TREASURY_ADDRESS");
-        address protocolRevenueManagerProxy = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
-        address tnft = vm.envAddress("TNFT_PROXY_ADDRESS");
+        address stakingManagerProxyAddress = contractRegistry.getProxyAddress("Staking Manager");
+        address etherFiNodesManagerProxyAddress = contractRegistry.getProxyAddress("EtherFi Nodes Manager");
+        address treasury = contractRegistry.getProxyAddress("Treasury");
+        address protocolRevenueManagerProxy = contractRegistry.getProxyAddress("Protocol Revenue Manager");
+        address tnft = contractRegistry.getProxyAddress("TNFT");
         address admin = vm.envAddress("ADMIN");
 
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
@@ -92,6 +87,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation),"");
         regulationsManager = RegulationsManager(address(regulationsManagerProxy));
         regulationsManager.initialize();
+        contractRegistry.addContract(address(regulationsManagerProxy), address(regulationsManager), "Regulations Manager", 0);
 
         liquidityPoolImplementation = new LiquidityPool();
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
@@ -100,31 +96,37 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPool.setTnft(tnft);
         liquidityPool.setStakingManager(stakingManagerProxyAddress);
         liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
-        
+        contractRegistry.addContract(address(liquidityPoolProxy), address(liquidityPool), "Liquidity Pool", 0);
+
         eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation),"");
         eETH = EETH(address(eETHProxy));
         eETH.initialize(address(liquidityPool));
+        contractRegistry.addContract(address(eETHProxy), address(eETH), "eETH", 0);
 
         membershipNFTImplementation = new MembershipNFT();
         membershipNFTProxy = new UUPSProxy(address(membershipNFTImplementation),"");
         membershipNFT = MembershipNFT(payable(address(membershipNFTProxy)));
         membershipNFT.initialize(baseURI);
+        contractRegistry.addContract(address(membershipNFTProxy), address(membershipNFT), "Membership NFT", 0);
 
         membershipManagerImplementation = new MembershipManager();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation),"");
         membershipManager = MembershipManager(payable(address(membershipManagerProxy)));
         membershipManager.initialize(address(eETH), address(liquidityPool), address(membershipNFT), treasury, protocolRevenueManagerProxy);
+        contractRegistry.addContract(address(membershipManagerProxy), address(membershipManager), "Membership Manager", 0);
 
         weETHImplementation = new WeETH();
         weETHProxy = new UUPSProxy(address(weETHImplementation),"");
         weETH = WeETH(address(weETHProxy));
         weETH.initialize(address(liquidityPool), address(eETH));
+        contractRegistry.addContract(address(weETHProxy), address(weETH), "weETH", 0);
 
         nftExchangeImplementation = new NFTExchange();
         nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation),"");
         nftExchange = NFTExchange(address(nftExchangeProxy));
         nftExchange.initialize(tnft, address(membershipNFT), address(etherFiNodesManagerProxyAddress));
+        contractRegistry.addContract(address(nftExchangeProxy), address(nftExchange), "NFT Exchange", 0);
 
         // Setup dependencies
         setUpAdmins(admin);

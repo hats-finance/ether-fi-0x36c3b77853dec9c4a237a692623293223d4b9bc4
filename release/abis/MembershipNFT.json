@@ -6,7 +6,7 @@
   },
   {
     "inputs": [],
-    "name": "DissallowZeroAddress",
+    "name": "DisallowZeroAddress",
     "type": "error"
   },
   {
@@ -657,9 +657,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
-        "name": "blocks",
-        "type": "uint256"
+        "internalType": "uint32",
+        "name": "_blocks",
+        "type": "uint32"
       }
     ],
     "name": "incrementLock",
@@ -748,6 +748,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "maxTokenId",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -815,12 +828,31 @@
   },
   {
     "inputs": [],
-    "name": "nextMintID",
+    "name": "nextMintTokenId",
     "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "name": "nftData",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "transferLockedUntil",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -1006,6 +1038,19 @@
   {
     "inputs": [
       {
+        "internalType": "uint32",
+        "name": "_maxTokenId",
+        "type": "uint32"
+      }
+    ],
+    "name": "setMaxTokenId",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_address",
         "type": "address"
@@ -1121,16 +1166,16 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "_tokenId",
         "type": "uint256"
       }
     ],
-    "name": "tokenTransferLocks",
+    "name": "transferLockedUntil",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",

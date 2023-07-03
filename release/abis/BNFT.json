@@ -266,7 +266,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_reciever",
+        "name": "_receiver",
         "type": "address"
       },
       {
