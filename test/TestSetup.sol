@@ -109,6 +109,7 @@ contract TestSetup is Test {
     Attacker public attacker;
     RevertAttacker public revertAttacker;
     GasDrainAttacker public gasDrainAttacker;
+    NoAttacker public noAttacker;
 
     TVLOracle tvlOracle;
     
@@ -353,6 +354,7 @@ contract TestSetup is Test {
         attacker = new Attacker(address(liquidityPoolInstance));
         revertAttacker = new RevertAttacker();
         gasDrainAttacker = new GasDrainAttacker();
+        noAttacker = new NoAttacker();
 
         vm.stopPrank();
         

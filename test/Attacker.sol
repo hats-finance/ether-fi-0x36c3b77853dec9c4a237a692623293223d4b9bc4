@@ -48,3 +48,18 @@ contract GasDrainAttacker {
         c = 3;
     }
 }
+
+contract NoAttacker {
+    uint128 a;
+    uint128 b;
+
+    receive() external payable {
+        a += uint128(msg.value);
+        b += uint128(msg.value);
+    }
+
+    constructor() {
+        a = 1;
+        b = 2;
+    }
+}

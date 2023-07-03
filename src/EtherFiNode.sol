@@ -146,10 +146,10 @@ contract EtherFiNode is IEtherFiNode {
         bool sent;
         (sent, ) = payable(_operator).call{value: _operatorAmount, gas: 2300}("");
         _treasuryAmount += (!sent) ? _operatorAmount : 0;
-        (sent, ) = payable(_tnftHolder).call{value: _tnftAmount, gas: 12000}(""); // to support 'receive' of LP
-        _treasuryAmount += (!sent) ? _tnftAmount : 0;
         (sent, ) = payable(_bnftHolder).call{value: _bnftAmount, gas: 2300}("");
         _treasuryAmount += (!sent) ? _bnftAmount : 0;
+        (sent, ) = payable(_tnftHolder).call{value: _tnftAmount, gas: 12000}(""); // to support 'receive' of LP
+        _treasuryAmount += (!sent) ? _tnftAmount : 0;
         (sent, ) = _treasury.call{value: _treasuryAmount, gas: 2300}("");
         require(sent, "Failed to send Ether");
     }
