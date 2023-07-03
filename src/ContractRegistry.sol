@@ -7,7 +7,9 @@ contract ContractRegistry {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
+    //Network 0 = GOERLI, 1 = MAINNET
     struct ContractData {
+        uint256 network;
         uint256 version;
         uint256 lastModified;
         address proxyAddress;
@@ -20,19 +22,20 @@ contract ContractRegistry {
     mapping(string => uint256) public nameToId;
     uint256 public numberOfContracts;
 
-    address public admin;
+    address public owner;
 
     constructor() {
-        admin = msg.sender;
+        owner = msg.sender;
     }
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function addContract(address _proxy, address _implementation, string memory _name) external onlyAdmin {
+    function addContract(address _proxy, address _implementation, string memory _name, uint256 _network) external onlyOwner {
         require(_implementation != address(0), "Implementation cannot be zero addr");
         contracts[numberOfContracts] = ContractData({
+            network: _network,
             version: 1,
             lastModified: block.timestamp,
             proxyAddress: _proxy,
@@ -44,7 +47,7 @@ contract ContractRegistry {
         numberOfContracts++;
     }
 
-    function updateContractImplementation(uint256 _contractId, address _newImplementation) external onlyAdmin {
+    function updateContractImplementation(uint256 _contractId, address _newImplementation) external onlyOwner {
         ContractData storage contractData = contracts[_contractId];
         require(_contractId < numberOfContracts, "Invalid contract ID");
         require(contractData.isActive == true, "Contract discontinued");
@@ -55,12 +58,12 @@ contract ContractRegistry {
         contractData.implementationAddress = _newImplementation;
     }
 
-    function discontinueContract(uint256 _contractId) external onlyAdmin {
+    function discontinueContract(uint256 _contractId) external onlyOwner {
         require(contracts[_contractId].isActive == true, "Contract already discontinued");
         contracts[_contractId].isActive = false;
     }
 
-    function reviveContract(uint256 _contractId) external onlyAdmin {
+    function reviveContract(uint256 _contractId) external onlyOwner {
         require(contracts[_contractId].isActive == false, "Contract already active");
         contracts[_contractId].isActive = true;
     }
@@ -69,9 +72,9 @@ contract ContractRegistry {
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function setAdmin(address _newAdmin) external onlyAdmin {
-        require(_newAdmin != address(0), "Cannot be zero addr");
-        admin = _newAdmin;
+    function setOwner(address _newOwner) external onlyOwner {
+        require(_newOwner != address(0), "Cannot be zero addr");
+        owner = _newOwner;
     }
 
     //--------------------------------------------------------------------------------------
@@ -87,8 +90,8 @@ contract ContractRegistry {
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin function");
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner function");
         _;
     }
 }

@@ -9,6 +9,7 @@ import "../../../src/WeETH.sol";
 import "../../../src/EETH.sol";
 import "../../../src/NFTExchange.sol";
 import "../../../src/LiquidityPool.sol";
+import "../../../src/ContractRegistry.sol";
 import "../../../src/RegulationsManager.sol";
 import "../../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -47,6 +48,8 @@ contract DeployPhaseOnePointFiveScript is Script {
     NFTExchange public nftExchangeImplementation;
     NFTExchange public nftExchange;
 
+    ContractRegistry public contractRegistry;
+
     struct suiteAddresses {
         address weETH;
         address membershipManager;
@@ -64,6 +67,14 @@ contract DeployPhaseOnePointFiveScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         bytes32[] memory emptyProof;
+
+        // address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
+        // address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");
+        // address treasury = vm.envAddress("TREASURY_ADDRESS");
+        // address protocolRevenueManagerProxy = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
+        // address tnft = vm.envAddress("TNFT_PROXY_ADDRESS");
+
+        contractRegistry = new ContractRegistry();
 
         address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
         address etherFiNodesManagerProxyAddress = vm.envAddress("ETHERFI_NODES_MANAGER_PROXY_ADDRESS");

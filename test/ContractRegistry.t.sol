@@ -17,17 +17,18 @@ contract ContractRegistryTest is TestSetup {
     }
 
     function test_ContractInstantiatedCorrectly() public {
-        assertEq(contractRegistryInstance.admin(), address(owner));
+        assertEq(contractRegistryInstance.owner(), address(owner));
         assertEq(contractRegistryInstance.numberOfContracts(), 0);
     }
 
     function test_AddNewContract() public {
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Only owner function");
         vm.prank(alice);
         contractRegistryInstance.addContract(
             address(auctionManagerProxy),
             address(auctionInstance),
-            "Auction Manager"
+            "Auction Manager",
+            0
         );
 
         vm.startPrank(owner);
@@ -35,17 +36,20 @@ contract ContractRegistryTest is TestSetup {
         contractRegistryInstance.addContract(
             address(0),
             address(0),
-            "Auction Manager"
+            "Auction Manager",
+            0
         );
 
         vm.warp(20000);
         contractRegistryInstance.addContract(
             address(auctionManagerProxy),
             address(auctionInstance),
-            "Auction Manager"
+            "Auction Manager",
+            0
         );
 
         (
+            uint256 network,
             uint256 version,
             uint256 lastModified,
             address proxy,
@@ -53,7 +57,8 @@ contract ContractRegistryTest is TestSetup {
             bool isActive,
             string memory name
         ) = contractRegistryInstance.contracts(0);
-
+        
+        assertEq(network, 0);
         assertEq(version, 1);
         assertEq(lastModified, 20000);
         assertEq(proxy, address(auctionManagerProxy));
@@ -76,11 +81,12 @@ contract ContractRegistryTest is TestSetup {
         contractRegistryInstance.addContract(
             address(auctionManagerProxy),
             address(auctionInstance),
-            "Auction Manager"
+            "Auction Manager",
+            0
         );
         vm.stopPrank();
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Only owner function");
         vm.prank(alice);
         contractRegistryInstance.updateContractImplementation(
             0,
@@ -115,6 +121,7 @@ contract ContractRegistryTest is TestSetup {
         );
 
         (
+            uint256 network,
             uint256 version,
             uint256 lastModified,
             address proxy,
@@ -123,6 +130,8 @@ contract ContractRegistryTest is TestSetup {
             string memory name
         ) = contractRegistryInstance.contracts(0);
 
+        
+        assertEq(network, 0);
         assertEq(version, 2);
         assertEq(lastModified, 2500000);
         assertEq(proxy, address(auctionManagerProxy));
@@ -138,17 +147,18 @@ contract ContractRegistryTest is TestSetup {
         contractRegistryInstance.addContract(
             address(auctionManagerProxy),
             address(auctionInstance),
-            "Auction Manager"
+            "Auction Manager",
+            0
         );
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Only owner function");
         vm.prank(alice);
         contractRegistryInstance.discontinueContract(0);
 
         vm.startPrank(owner);
         contractRegistryInstance.discontinueContract(0);
 
-        (, , , , bool isActive, ) = contractRegistryInstance.contracts(0);
+        (, , , , , bool isActive, ) = contractRegistryInstance.contracts(0);
         assertEq(isActive, false);
 
         vm.expectRevert("Contract already discontinued");
@@ -161,10 +171,11 @@ contract ContractRegistryTest is TestSetup {
         contractRegistryInstance.addContract(
             address(auctionManagerProxy),
             address(auctionInstance),
-            "Auction Manager"
+            "Auction Manager",
+            0
         );
 
-        vm.expectRevert("Only admin function");
+        vm.expectRevert("Only owner function");
         vm.prank(alice);
         contractRegistryInstance.reviveContract(0);
 
@@ -174,26 +185,26 @@ contract ContractRegistryTest is TestSetup {
 
         contractRegistryInstance.discontinueContract(0);
 
-        (, , , , bool isActive, ) = contractRegistryInstance.contracts(0);
+        (, , , , , bool isActive, ) = contractRegistryInstance.contracts(0);
         assertEq(isActive, false);
 
         contractRegistryInstance.reviveContract(0);
-        (, , , , isActive, ) = contractRegistryInstance.contracts(0);
+        (, , , , , isActive, ) = contractRegistryInstance.contracts(0);
         assertEq(isActive, true);
     }
 
-    function test_SetAdmin() public {
-        vm.expectRevert("Only admin function");
+    function test_SetOwner() public {
+        vm.expectRevert("Only owner function");
         vm.prank(alice);
-        contractRegistryInstance.setAdmin(address(alice));
+        contractRegistryInstance.setOwner(address(alice));
 
         vm.startPrank(owner);
         vm.expectRevert("Cannot be zero addr");
-        contractRegistryInstance.setAdmin(address(0));
+        contractRegistryInstance.setOwner(address(0));
 
-        assertEq(contractRegistryInstance.admin(), address(owner));
+        assertEq(contractRegistryInstance.owner(), address(owner));
 
-        contractRegistryInstance.setAdmin(address(alice));
-        assertEq(contractRegistryInstance.admin(), address(alice));
+        contractRegistryInstance.setOwner(address(alice));
+        assertEq(contractRegistryInstance.owner(), address(alice));
     }
 }
