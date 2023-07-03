@@ -106,6 +106,10 @@ contract TestSetup is Test {
     EtherFiNode public node;
     Treasury public treasuryInstance;
 
+    Attacker public attacker;
+    RevertAttacker public revertAttacker;
+    GasDrainAttacker public gasDrainAttacker;
+
     TVLOracle tvlOracle;
     
     Merkle merkle;
@@ -346,6 +350,10 @@ contract TestSetup is Test {
         depositContractEth2 = IDepositContract(address(mockDepositContractEth2));
         stakingManagerInstance.registerEth2DepositContract(address(mockDepositContractEth2));
         
+        attacker = new Attacker(address(liquidityPoolInstance));
+        revertAttacker = new RevertAttacker();
+        gasDrainAttacker = new GasDrainAttacker();
+
         vm.stopPrank();
         
         _initializeMembershipTiers();

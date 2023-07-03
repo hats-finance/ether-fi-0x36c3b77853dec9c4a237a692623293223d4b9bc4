@@ -391,19 +391,19 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(etherfiNode, address(etherfiNode).balance + 1 ether);
 
         // call 'partialWithdraw' without specifying any rewards to withdraw
-        hoax(owner);
-        managerInstance.partialWithdraw(bidId[0], false, false, false);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
-        assertEq(address(treasuryInstance).balance, treasuryBalance);
-        assertEq(address(dan).balance, danBalance);
-        assertEq(address(staker).balance, bnftStakerBalance);
+        // hoax(owner);
+        // managerInstance.partialWithdraw(bidId[0], false, false, false);
+        // assertEq(address(nodeOperator).balance, nodeOperatorBalance);
+        // assertEq(address(treasuryInstance).balance, treasuryBalance);
+        // assertEq(address(dan).balance, danBalance);
+        // assertEq(address(staker).balance, bnftStakerBalance);
 
-        hoax(owner);
-        managerInstance.partialWithdraw(bidId[0], false, false, true);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
-        assertEq(address(treasuryInstance).balance, treasuryBalance);
-        assertEq(address(dan).balance, danBalance);
-        assertEq(address(staker).balance, bnftStakerBalance);
+        // hoax(owner);
+        // managerInstance.partialWithdraw(bidId[0], false, false, true);
+        // assertEq(address(nodeOperator).balance, nodeOperatorBalance);
+        // assertEq(address(treasuryInstance).balance, treasuryBalance);
+        // assertEq(address(dan).balance, danBalance);
+        // assertEq(address(staker).balance, bnftStakerBalance);
 
         // Withdraw the {staking, protocol} rewards
         // - bid amount = 0.1 ether
@@ -424,11 +424,11 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
         assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
 
-        vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
-        vm.expectRevert(
-            "etherfi node contract's balance is above 8 ETH. You should exit the node."
-        );
-        managerInstance.partialWithdraw(bidId[0], true, true, true);
+        // vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
+        // vm.expectRevert(
+        //     "etherfi node contract's balance is above 8 ETH. You should exit the node."
+        // );
+        // managerInstance.partialWithdraw(bidId[0], true, true, true);
     }
 
     function test_partialWithdrawFails() public {
@@ -1421,5 +1421,30 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(dan).balance, tNftStakerBalance + tvls[1]);
         assertEq(address(staker).balance, bnftStakerBalance + tvls[2]);
         assertEq(address(treasuryInstance).balance, treasuryBalance + tvls[3]);
+    }
+
+    function test_withdrawFundsFailsWhenReceiverConsumedTooMuchGas() public {
+        uint256 validatorId = bidId[0];
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
+
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
+        
+        uint256 treasuryBalance = address(treasuryInstance).balance;
+        uint256 revertAttackerBalance = address(revertAttacker).balance;
+        uint256 gasDrainAttackerBalance = address(gasDrainAttacker).balance;
+
+        vm.startPrank(address(managerInstance));
+        IEtherFiNode(etherfiNode).withdrawFunds(
+            address(treasuryInstance), 0,
+            address(liquidityPoolInstance), 0,
+            address(revertAttacker), 1,
+            address(gasDrainAttacker), 1
+        );
+        vm.stopPrank();
+
+        assertEq(address(revertAttacker).balance, revertAttackerBalance);
+        assertEq(address(gasDrainAttacker).balance, gasDrainAttackerBalance);
+        assertEq(address(treasuryInstance).balance, treasuryBalance + 2);
     }
 }

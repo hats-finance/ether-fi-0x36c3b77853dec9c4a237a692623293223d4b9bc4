@@ -178,7 +178,6 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(address(liquidityPoolInstance).balance, 2 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
 
-        Attacker attacker = new Attacker(address(liquidityPoolInstance));
         _transferTo(address(attacker), 1 ether);
         attacker.attack();
 
