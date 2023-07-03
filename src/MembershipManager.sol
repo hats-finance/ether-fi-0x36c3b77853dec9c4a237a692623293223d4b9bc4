@@ -234,9 +234,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
-
         _stakeForPoints(_tokenId, _amount);
-
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -250,9 +248,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
-
         _unstakeForPoints(_tokenId, _amount);
-
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -268,9 +264,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
-
         _claimTier(_tokenId, oldTier, newTier);
-
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -568,15 +562,15 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
             return;
         }
 
-        uint256 amount = _min(tokenDeposits[_tokenId].amounts, tierDeposits[_curTier].amounts);
-        uint256 share = liquidityPool.sharesForAmount(amount);
         uint256 amountStakedForPoints = tokenDeposits[_tokenId].amountStakedForPoints;
+        uint256 totalAmount = tokenDeposits[_tokenId].amounts + amountStakedForPoints;
+        uint256 share = liquidityPool.sharesForAmount(totalAmount);
 
         tierData[_curTier].amountStakedForPoints -= uint96(amountStakedForPoints);
-        _decrementTierDeposit(_curTier, amount, share);
+        _decrementTierDeposit(_curTier, totalAmount, share);
 
         tierData[_newTier].amountStakedForPoints += uint96(amountStakedForPoints);
-        _incrementTierDeposit(_newTier, amount, share);
+        _incrementTierDeposit(_newTier, totalAmount, share);
 
         tokenData[_tokenId].rewardsLocalIndex = tierData[_newTier].rewardsGlobalIndex;
         tokenData[_tokenId].tier = _newTier;
