@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "../../../src/AuctionManager.sol";
+import "../../../src/ContractRegistry.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract AuctionManagerUpgrade is Script {
@@ -14,10 +15,15 @@ contract AuctionManagerUpgrade is Script {
     }
 
     CriticalAddresses criticalAddresses;
+    ContractRegistry public contractRegistry;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address AuctionManagerProxyAddress = vm.envAddress("AUCTION_MANAGER_PROXY_ADDRESS");
+        
+        address contractRegistryAddress = vm.envAddress("CONTRACT_REGISTRY");
+        contractRegistry = ContractRegistry(contractRegistryAddress);
+        
+        address AuctionManagerProxyAddress = contractRegistry.getProxyAddress("Auction Manager");
 
         require(AuctionManagerProxyAddress == 0xAB5768448499250Bda8a29F35A3eE47FAD69Eb3C, "AuctionManagerProxyAddress incorrect see .env");
        
@@ -28,6 +34,8 @@ contract AuctionManagerUpgrade is Script {
 
         AuctionManagerInstance.upgradeTo(address(AuctionManagerV2Implementation));
         AuctionManager AuctionManagerV2Instance = AuctionManager(AuctionManagerProxyAddress);
+
+        contractRegistry.updateContractImplementation(0, address(AuctionManagerV2Implementation));
 
         vm.stopBroadcast();
 

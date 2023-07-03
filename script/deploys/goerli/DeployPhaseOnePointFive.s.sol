@@ -143,7 +143,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         //membershipManager.wrapEthBatch{value: 9.3 ether}(31, 0.3 ether, 0, emptyProof);
         //membershipManager.wrapEthBatch{value: 6.9 ether}(69, 0.1 ether, 0, emptyProof);
         membershipManager.pauseContract();
-
+        contractRegistry.setOwner(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39);
         vm.stopBroadcast();
 
         suiteAddressesStruct = suiteAddresses({
