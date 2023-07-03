@@ -267,22 +267,22 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toNodeOperator",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toTnft",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toBnft",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toTreasury",
         "type": "uint256"
       }
     ],
@@ -365,22 +365,22 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toNodeOperator",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toTnft",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toBnft",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toTreasury",
         "type": "uint256"
       }
     ],
@@ -412,7 +412,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "nonExitPenalty",
         "type": "uint256"
       }
     ],
@@ -451,22 +451,22 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toNodeOperator",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toTnft",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toBnft",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toTreasury",
         "type": "uint256"
       }
     ],
@@ -490,22 +490,22 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toNodeOperator",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toTnft",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toBnft",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "toTreasury",
         "type": "uint256"
       }
     ],
@@ -1101,19 +1101,6 @@
       }
     ],
     "name": "setNonExitPenaltyPrincipal",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint64",
-        "name": "_numberOfValidators",
-        "type": "uint64"
-      }
-    ],
-    "name": "setNumberOfValidators",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
