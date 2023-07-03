@@ -34,6 +34,7 @@ contract DeployAndPopulateContractRegistry is Script {
         address nodeOperatorManagerImplementation = vm.envAddress("NODE_OPERATOR_MANAGER_ADDRESS");
         address tnftImplementation = vm.envAddress("TNFT_IMPLEMENTATION_ADDRESS");
         address bnftImplementation = vm.envAddress("BNFT_IMPLEMENTATION_ADDRESS");
+        address earlyAdopterPoolImplementation = vm.envAddress("EARLY_ADOPTER_POOL");
 
         contractRegistry.addContract(auctionManagerProxyAddress, auctionManagerImplementationAddress, "Auction Manager", 0);
         contractRegistry.addContract(stakingManagerProxyAddress, stakingManagerImplementationAddress, "Staking Manager", 0);
@@ -43,6 +44,7 @@ contract DeployAndPopulateContractRegistry is Script {
         contractRegistry.addContract(bnftProxy, bnftImplementation, "BNFT", 0);
         contractRegistry.addContract(address(0), treasury, "Treasury", 0);
         contractRegistry.addContract(address(0), nodeOperatorManagerImplementation, "Node Operator Manager", 0);
+        contractRegistry.addContract(address(0), earlyAdopterPoolImplementation, "Early Adopter Pool", 1);
 
         vm.stopBroadcast();
     }
