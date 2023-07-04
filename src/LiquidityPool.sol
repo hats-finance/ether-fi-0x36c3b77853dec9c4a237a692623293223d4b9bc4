@@ -86,11 +86,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             isWhitelistedAndEligible(msg.sender, _merkleProof);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
-        if (msg.value > type(uint128).max || msg.value == 0) revert InvalidAmount();
-
+        
         totalValueInLp += uint128(msg.value);
         uint256 share = _sharesForDepositAmount(msg.value);
-        if (share == 0) revert InvalidAmount();
+        if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
+
         eETH.mintShares(_recipient, share);
 
         emit Deposit(_recipient, msg.value);
@@ -104,11 +104,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
-        if (_amount > type(uint128).max) revert InvalidAmount();
 
         uint256 share = sharesForWithdrawalAmount(_amount);
-
         totalValueInLp -= uint128(_amount);
+        if (_amount > type(uint128).max || _amount == 0 || share == 0) revert InvalidAmount();
 
         eETH.burnShares(msg.sender, share);
 
