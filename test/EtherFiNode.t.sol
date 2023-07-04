@@ -1422,4 +1422,33 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(staker).balance, bnftStakerBalance + tvls[2]);
         assertEq(address(treasuryInstance).balance, treasuryBalance + tvls[3]);
     }
+
+    function test_withdrawFundsFailsWhenReceiverConsumedTooMuchGas() public {
+        uint256 validatorId = bidId[0];
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
+
+        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
+        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
+        
+        uint256 treasuryBalance = address(treasuryInstance).balance;
+        uint256 noAttackerBalance = address(noAttacker).balance;
+        uint256 revertAttackerBalance = address(revertAttacker).balance;
+        uint256 gasDrainAttackerBalance = address(gasDrainAttacker).balance;
+
+        vm.startPrank(address(managerInstance));
+        IEtherFiNode(etherfiNode).withdrawFunds(
+            address(treasuryInstance), 0,
+            address(revertAttacker), 1,
+            address(noAttacker), 1,
+            address(gasDrainAttacker), 1
+        );
+        vm.stopPrank();
+
+        assertEq(address(revertAttacker).balance, revertAttackerBalance);
+        assertEq(address(noAttacker).balance, noAttackerBalance + 1);
+        assertEq(address(gasDrainAttacker).balance, gasDrainAttackerBalance);
+        assertEq(address(treasuryInstance).balance, treasuryBalance + 2);
+    }
+
+    
 }

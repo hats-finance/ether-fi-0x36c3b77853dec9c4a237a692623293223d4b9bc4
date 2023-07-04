@@ -468,17 +468,17 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "mintFeeAmount",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "burnFeeAmount",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "upgradeFeeAmount",
         "type": "uint256"
       }
     ],

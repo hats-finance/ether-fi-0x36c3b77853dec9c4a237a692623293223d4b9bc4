@@ -144,13 +144,13 @@ contract EtherFiNode is IEtherFiNode {
         // they should implement either receive() or fallback() properly
         // It's designed to prevent malicious actors from pausing the withdrawals
         bool sent;
-        (sent, ) = payable(_operator).call{value: _operatorAmount}("");
+        (sent, ) = payable(_operator).call{value: _operatorAmount, gas: 2300}("");
         _treasuryAmount += (!sent) ? _operatorAmount : 0;
-        (sent, ) = payable(_tnftHolder).call{value: _tnftAmount}("");
-        _treasuryAmount += (!sent) ? _tnftAmount : 0;
-        (sent, ) = payable(_bnftHolder).call{value: _bnftAmount}("");
+        (sent, ) = payable(_bnftHolder).call{value: _bnftAmount, gas: 2300}("");
         _treasuryAmount += (!sent) ? _bnftAmount : 0;
-        (sent, ) = _treasury.call{value: _treasuryAmount}("");
+        (sent, ) = payable(_tnftHolder).call{value: _tnftAmount, gas: 12000}(""); // to support 'receive' of LP
+        _treasuryAmount += (!sent) ? _tnftAmount : 0;
+        (sent, ) = _treasury.call{value: _treasuryAmount, gas: 2300}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -184,7 +184,7 @@ contract EtherFiNode is IEtherFiNode {
     )
         public
         view
-        returns (uint256, uint256, uint256, uint256)
+        returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury)
     {
         // (operator, tnft, bnft, treasury)
         uint256[] memory payouts = new uint256[](4);
@@ -227,6 +227,11 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _splits the splits for the staking rewards
     /// @param _scale the scale = SUM(_splits)
+    ///
+    /// Note that since the smart contract running in the execution layer does not know the consensus layer data
+    /// such as the status and balance of the validator, 
+    /// the partial withdrawal assumes that the validator is in active & not being slashed + the beacon balance is 32 ether.
+    /// Therefore, you need to set _beaconBalance = 32 ether to see the same payouts for the partial withdrawal
     ///
     /// @return toNodeOperator  the payout to the Node Operator
     /// @return toTnft          the payout to the T-NFT holder
@@ -368,7 +373,7 @@ contract EtherFiNode is IEtherFiNode {
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
-    ) public view returns (uint256, uint256, uint256, uint256) {
+    ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested);
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
@@ -417,15 +422,15 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _splits The splits for the staking rewards
     /// @param _scale The scale = SUM(_splits)
     ///
-    /// @return operator  the payout to the Node Operator
-    /// @return tnft          the payout to the T-NFT holder
-    /// @return bnft          the payout to the B-NFT holder
-    /// @return treasury      the payout to the Treasury
+    /// @return toNodeOperator  the payout to the Node Operator
+    /// @return toTnft          the payout to the T-NFT holder
+    /// @return toBnft          the payout to the B-NFT holder
+    /// @return toTreasury      the payout to the Treasury
     function calculatePayouts(
         uint256 _totalAmount,
         IEtherFiNodesManager.RewardsSplit memory _splits,
         uint256 _scale
-    ) public pure returns (uint256, uint256, uint256, uint256) {
+    ) public pure returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         require(
             _splits.nodeOperator +
                 _splits.tnft +
@@ -434,11 +439,11 @@ contract EtherFiNode is IEtherFiNode {
                 _scale,
             "Incorrect Splits"
         );
-        uint256 operator = (_totalAmount * _splits.nodeOperator) / _scale;
-        uint256 tnft = (_totalAmount * _splits.tnft) / _scale;
-        uint256 bnft = (_totalAmount * _splits.bnft) / _scale;
-        uint256 treasury = _totalAmount - (bnft + tnft + operator);
-        return (operator, tnft, bnft, treasury);
+        toNodeOperator = (_totalAmount * _splits.nodeOperator) / _scale;
+        toTnft = (_totalAmount * _splits.tnft) / _scale;
+        toBnft = (_totalAmount * _splits.bnft) / _scale;
+        toTreasury = _totalAmount - (toBnft + toTnft + toNodeOperator);
+        return (toNodeOperator, toTnft, toBnft, toTreasury);
     }
 
     /// @notice Calculate the principal for the T-NFT and B-NFT holders based on the balance
@@ -447,7 +452,7 @@ contract EtherFiNode is IEtherFiNode {
     /// @return toTnftPrincipal the principal for the T-NFT holder
     function calculatePrincipals(
         uint256 _balance
-    ) public pure returns (uint256, uint256) {
+    ) public pure returns (uint256 , uint256) {
         require(_balance <= 32 ether, "the total principal must be lower than 32 ether");
         uint256 toBnftPrincipal;
         uint256 toTnftPrincipal;

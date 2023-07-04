@@ -20,13 +20,16 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     IeETH public eETH;
     ILiquidityPool public liquidityPool;
     IMembershipNFT public membershipNFT;
+    address public treasury;
+    address public protocolRevenueManager;
 
+    mapping (uint256 => uint256) public allTimeHighDepositAmount;
     mapping (uint256 => TokenDeposit) public tokenDeposits;
     mapping (uint256 => TokenData) public tokenData;
     TierDeposit[] public tierDeposits;
     TierData[] public tierData;
 
-    mapping (uint256 => uint256) public allTimeHighDepositAmount;
+    // [BEGIN] SLOT 261
 
     uint16 public pointsBoostFactor; // + (X / 10000) more points, if staking rewards are sacrificed
     uint16 public pointsGrowthRate; // + (X / 10000) kwei points are earned per ETH per day
@@ -42,8 +45,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     uint32 public topUpCooltimePeriod;
     uint32 public withdrawalLockBlocks;
 
-    address public treasury;
-    address public protocolRevenueManager;
+    uint32 private __gap0;
+
+    // [END] SLOT 261 END
 
     address public admin;
  
@@ -234,9 +238,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
-
         _stakeForPoints(_tokenId, _amount);
-
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -250,9 +252,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
-
         _unstakeForPoints(_tokenId, _amount);
-
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -268,9 +268,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
-
         _claimTier(_tokenId, oldTier, newTier);
-
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -330,6 +328,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         token.baseLoyaltyPoints = _loyaltyPoints;
         token.baseTierPoints = _tierPoints;
         token.prevPointsAccrualTimestamp = uint32(block.timestamp);
+        _claimTier(_tokenId);
+        _emitNftUpdateEvent(_tokenId);
     }
 
     error InvalidWithdraw();
@@ -566,15 +566,15 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
             return;
         }
 
-        uint256 amount = _min(tokenDeposits[_tokenId].amounts, tierDeposits[_curTier].amounts);
-        uint256 share = liquidityPool.sharesForAmount(amount);
         uint256 amountStakedForPoints = tokenDeposits[_tokenId].amountStakedForPoints;
+        uint256 totalAmount = tokenDeposits[_tokenId].amounts + amountStakedForPoints;
+        uint256 share = liquidityPool.sharesForAmount(totalAmount);
 
         tierData[_curTier].amountStakedForPoints -= uint96(amountStakedForPoints);
-        _decrementTierDeposit(_curTier, amount, share);
+        _decrementTierDeposit(_curTier, totalAmount, share);
 
         tierData[_newTier].amountStakedForPoints += uint96(amountStakedForPoints);
-        _incrementTierDeposit(_newTier, amount, share);
+        _incrementTierDeposit(_newTier, totalAmount, share);
 
         tokenData[_tokenId].rewardsLocalIndex = tierData[_newTier].rewardsGlobalIndex;
         tokenData[_tokenId].tier = _newTier;
@@ -747,7 +747,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     //--------------------------------------------------------------------------------------
 
     // returns (mintFeeAmount, burnFeeAmount, upgradeFeeAmount)
-    function getFees() external view returns (uint256, uint256, uint256) {
+    function getFees() external view returns (uint256 mintFeeAmount, uint256 burnFeeAmount, uint256 upgradeFeeAmount) {
         return (uint256(mintFee) * 0.001 ether, uint256(burnFee) * 0.001 ether, uint256(upgradeFee) * 0.001 ether);
     }
 
