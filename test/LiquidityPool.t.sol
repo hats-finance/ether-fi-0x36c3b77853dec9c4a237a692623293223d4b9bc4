@@ -258,6 +258,7 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(newValidators.length, 2);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
         assertEq(address(stakingManagerInstance).balance, 64 ether);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 2);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](2);
@@ -289,6 +290,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(alice);
         liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
 
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 0);
         assertEq(address(stakingManagerInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
         assertEq(TNFTInstance.ownerOf(newValidators[0]), address(liquidityPoolInstance));

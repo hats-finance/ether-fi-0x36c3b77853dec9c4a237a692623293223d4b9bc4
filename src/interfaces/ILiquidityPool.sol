@@ -4,7 +4,9 @@ pragma solidity 0.8.13;
 import "./IStakingManager.sol";
 
 interface ILiquidityPool {
-    function totalValueInLp() external view returns (uint256);
+    function numPendingDeposits() external view returns (uint32);
+    function totalValueOutOfLp() external view returns (uint128);
+    function totalValueInLp() external view returns (uint128);
     function getTotalEtherClaimOf(address _user) external view returns (uint256);
     function getTotalPooledEther() external view returns (uint256);
     function sharesForAmount(uint256 _amount) external view returns (uint256);
