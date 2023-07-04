@@ -31,7 +31,7 @@ contract GoerliNFTExchangeUpgrade is Script {
 
         criticalAddresses = CriticalAddresses({
             nftExchangeProxy: nftExchangeProxyAddress,
-            nftExchangeImplementation: address(nftExchangeV2Instance)
+            nftExchangeImplementation: address(nftExchangeV2Implementation)
         });
 
         writeUpgradeVersionFile();
