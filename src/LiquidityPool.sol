@@ -30,10 +30,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IeETH public eETH; 
 
     bool public eEthliquidStakingOpened;
+
     uint128 public totalValueOutOfLp;
     uint128 public totalValueInLp;
 
     address public admin;
+
+    uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -137,6 +140,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         totalValueOutOfLp += uint128(amountFromLp);
         totalValueInLp -= uint128(amountFromLp);
+        numPendingDeposits += uint32(_numDeposits);
 
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numDeposits}(_candidateBidIds, _merkleProof);
 
@@ -158,7 +162,22 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         IStakingManager.DepositData[] calldata _depositData
         ) external onlyAdmin
     {
+        numPendingDeposits -= uint32(_validatorIds.length);
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
+    }
+
+    function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
+        uint256 returnAmount = 2 ether * _validatorIds.length;
+
+        totalValueOutOfLp += uint128(returnAmount);
+        numPendingDeposits -= uint32(_validatorIds.length);
+
+        stakingManager.batchCancelDeposit(_validatorIds);
+
+        totalValueInLp -= uint128(returnAmount);
+
+        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+        require(sent, "Failed to send Ether");
     }
 
     /// @notice Send the exit requests as the T-NFT holder
