@@ -52,7 +52,7 @@ contract AddressProviderTest is TestSetup {
             address implementation,
             bool isActive,
             string memory name
-        ) = addressProviderInstance.contracts(0);
+        ) = addressProviderInstance.contracts("AuctionManager");
         
         assertEq(version, 1);
         assertEq(lastModified, 20000);
@@ -60,13 +60,12 @@ contract AddressProviderTest is TestSetup {
         assertEq(implementation, address(auctionInstance));
         assertEq(isActive, false);
         assertEq(name, "AuctionManager");
-        assertEq(addressProviderInstance.nameToId("AuctionManager"), 0);
         assertEq(addressProviderInstance.numberOfContracts(), 1);
     }
 
     function test_UpdateContract() public {
         vm.startPrank(owner);
-        vm.expectRevert("Invalid contract ID");
+        vm.expectRevert("Contract doesn't exists");
         addressProviderInstance.updateContractImplementation(
             "AuctionManager",
             address(auctionInstance)
@@ -121,7 +120,7 @@ contract AddressProviderTest is TestSetup {
             address implementation,
             bool isDeprecated,
             string memory name
-        ) = addressProviderInstance.contracts(0);
+        ) = addressProviderInstance.contracts("AuctionManager");
 
         
         assertEq(version, 2);
@@ -149,7 +148,7 @@ contract AddressProviderTest is TestSetup {
         vm.startPrank(owner);
         addressProviderInstance.deactivateContract("AuctionManager");
 
-        (, , , , bool isDeprecated, ) = addressProviderInstance.contracts(0);
+        (, , , , bool isDeprecated, ) = addressProviderInstance.contracts("AuctionManager");
         assertEq(isDeprecated, true);
 
         vm.expectRevert("Contract already deprecated");
@@ -175,11 +174,11 @@ contract AddressProviderTest is TestSetup {
 
         addressProviderInstance.deactivateContract("AuctionManager");
 
-        (, , , , bool isDeprecated, ) = addressProviderInstance.contracts(0);
+        (, , , , bool isDeprecated, ) = addressProviderInstance.contracts("AuctionManager");
         assertEq(isDeprecated, true);
 
         addressProviderInstance.reactivateContract("AuctionManager");
-        (, , , , isDeprecated, ) = addressProviderInstance.contracts(0);
+        (, , , , isDeprecated, ) = addressProviderInstance.contracts("AuctionManager");
         assertEq(isDeprecated, false);
     }
 

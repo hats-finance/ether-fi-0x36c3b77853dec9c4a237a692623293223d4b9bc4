@@ -16,8 +16,7 @@ contract AddressProvider {
         string name;
     }
 
-    mapping(uint256 => ContractData) public contracts;
-    mapping(string => uint256) public nameToId;
+    mapping(string => ContractData) public contracts;
     uint256 public numberOfContracts;
 
     address public owner;
@@ -32,7 +31,8 @@ contract AddressProvider {
 
     function addContract(address _proxy, address _implementation, string memory _name) external onlyOwner {
         require(_implementation != address(0), "Implementation cannot be zero addr");
-        contracts[numberOfContracts] = ContractData({
+        require(contracts[_name].lastModified == 0, "Contract already exists");
+        contracts[_name] = ContractData({
             version: 1,
             lastModified: uint128(block.timestamp),
             proxyAddress: _proxy,
@@ -40,15 +40,12 @@ contract AddressProvider {
             isDeprecated: false,
             name: _name
         });
-        nameToId[_name] = numberOfContracts;
         numberOfContracts++;
     }
 
     function updateContractImplementation(string memory _name, address _newImplementation) external onlyOwner {
-        uint256 contractId = nameToId[_name];
-        ContractData storage contractData = contracts[contractId];
-    
-        require(contractId < numberOfContracts, "Invalid contract ID");
+        ContractData storage contractData = contracts[_name];
+        require(contractData.lastModified != 0, "Contract doesn't exists");
         require(contractData.isDeprecated == false, "Contract deprecated");
         require(_newImplementation != address(0), "Implementation cannot be zero addr");
 
@@ -58,15 +55,13 @@ contract AddressProvider {
     }
 
     function deactivateContract(string memory _name) external onlyOwner {
-        uint256 contractId = nameToId[_name];
-        require(contracts[contractId].isDeprecated == false, "Contract already deprecated");
-        contracts[contractId].isDeprecated = true;
+        require(contracts[_name].isDeprecated == false, "Contract already deprecated");
+        contracts[_name].isDeprecated = true;
     }
 
     function reactivateContract(string memory _name) external onlyOwner {
-        uint256 contractId = nameToId[_name];
-        require(contracts[contractId].isDeprecated == true, "Contract already active");
-        contracts[contractId].isDeprecated = false;
+        require(contracts[_name].isDeprecated == true, "Contract already active");
+        contracts[_name].isDeprecated = false;
     }
 
     //--------------------------------------------------------------------------------------
@@ -83,13 +78,11 @@ contract AddressProvider {
     //--------------------------------------------------------------------------------------
 
     function getProxyAddress(string memory _name) external returns (address) {
-        uint256 contractId = nameToId[_name];
-        return contracts[contractId].proxyAddress;
+        return contracts[_name].proxyAddress;
     }
 
     function getImplementationAddress(string memory _name) external returns (address) {
-        uint256 contractId = nameToId[_name];
-        return contracts[contractId].implementationAddress;
+        return contracts[_name].implementationAddress;
     }
 
     //--------------------------------------------------------------------------------------
