@@ -19,8 +19,6 @@ contract LiquidityPoolUpgrade is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address LiquidityPoolProxyAddress = vm.envAddress("LIQUIDITY_POOL_PROXY_ADDRESS");
 
-        //require(LiquidityPoolProxyAddress == , "LiquidityPoolProxyAddress incorrect see .env");
-
         vm.startBroadcast(deployerPrivateKey);
 
         LiquidityPool LiquidityPoolInstance = LiquidityPool(payable(LiquidityPoolProxyAddress));
@@ -58,24 +56,16 @@ contract LiquidityPoolUpgrade is Script {
     function writeUpgradeVersionFile() internal {
         // Read Local Current version
         string memory localVersionString = vm.readLine("release/logs/Upgrades/goerli/LiquidityPool/version.txt");
-        // Read Global Current version
-        string memory globalVersionString = vm.readLine("release/logs/Upgrades/goerli/version.txt");
-
+       
         // Cast string to uint256
         uint256 localVersion = _stringToUint(localVersionString);
-        uint256 globalVersion = _stringToUint(globalVersionString);
 
         localVersion++;
-        globalVersion++;
 
         // Overwrites the version.txt file with incremented version
         vm.writeFile(
             "release/logs/Upgrades/goerli/LiquidityPool/version.txt",
             string(abi.encodePacked(Strings.toString(localVersion)))
-        );
-        vm.writeFile(
-            "release/logs/Upgrades/goerli/version.txt",
-            string(abi.encodePacked(Strings.toString(globalVersion)))
         );
 
         // Writes the data to .release file
@@ -95,7 +85,7 @@ contract LiquidityPoolUpgrade is Script {
                     "\nNew Implementation Address: ",
                     Strings.toHexString(criticalAddresses.LiquidityPoolImplementation),
                     "\nOptional Comments: ", 
-                    "Comment Here"
+                    "Added extra functions"
                 )
             )
         );

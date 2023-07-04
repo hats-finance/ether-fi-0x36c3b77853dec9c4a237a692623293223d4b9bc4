@@ -61,7 +61,7 @@ upgrade-goerli-eeth :; forge clean && forge script script/upgrades/goerli/Goerli
 
 upgrade-goerli-etherfi_nodes_manager :; forge clean && forge script script/upgrades/goerli/GoerliEtherFiNodesManagerUpgradeScript.s.sol:EtherFiNodesManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-liquidity_pool :; forge clean && forge script script/upgrades/goerli/GoerliLiquidityPoolUpgradeScript.s.sol:LiquidityPoolUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-liquidity-pool :; forge clean && forge script script/upgrades/goerli/GoerliLiquidityPoolUpgradeScript.s.sol:LiquidityPoolUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-goerli-membership-manager :; forge clean && forge script script/upgrades/goerli/GoerliMembershipManagerUpgradeScript.s.sol:MembershipManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
