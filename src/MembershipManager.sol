@@ -212,8 +212,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _tokenId The ID of the membership NFT to unwrap
     function withdrawAndBurnForEth(uint256 _tokenId) public whenNotPaused {
         _requireTokenOwner(_tokenId);
-        // prevent transfers for several blocks after a withdrawal to prevent frontrunning
-        membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
 
         // Claim all staking rewards before burn
         _claimStakingRewards(_tokenId);
