@@ -8,7 +8,7 @@ import "../../../src/EtherFiNodesManager.sol";
 import "../../../src/WeETH.sol";
 import "../../../src/TNFT.sol";
 import "../../../src/EETH.sol";
-import "../../../src/helpers/MainnetAddressProvider.sol";
+import "../../../src/helpers/AddressProvider.sol";
 import "../../../src/NFTExchange.sol";
 import "../../../src/LiquidityPool.sol";
 import "../../../src/RegulationsManager.sol";
@@ -49,7 +49,7 @@ contract DeployPhaseOnePointFiveScript is Script {
     NFTExchange public nftExchangeImplementation;
     NFTExchange public nftExchange;
 
-    MainnetAddressProvider public addressProvider;
+    AddressProvider public addressProvider;
 
     struct suiteAddresses {
         address weETH;
@@ -70,7 +70,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         bytes32[] memory emptyProof;
 
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
-        addressProvider = MainnetAddressProvider(addressProviderAddress);
+        addressProvider = AddressProvider(addressProviderAddress);
 
         address stakingManagerProxyAddress = addressProvider.getProxyAddress("StakingManager");
         address etherFiNodesManagerProxyAddress = addressProvider.getProxyAddress("EtherFiNodesManager");

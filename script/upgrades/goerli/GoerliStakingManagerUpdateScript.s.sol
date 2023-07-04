@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "../../../src/StakingManager.sol";
-import "../../../src/helpers/GoerliAddressProvider.sol";
+import "../../../src/helpers/AddressProvider.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract StakingManagerUpgrade is Script {
@@ -15,13 +15,13 @@ contract StakingManagerUpgrade is Script {
     }
 
     CriticalAddresses criticalAddresses;
-    GoerliAddressProvider public addressProvider;
+    AddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
-        addressProvider = GoerliAddressProvider(addressProviderAddress);
+        addressProvider = AddressProvider(addressProviderAddress);
 
         address stakingManagerProxyAddress = addressProvider.getProxyAddress("StakingManager");
 
@@ -35,7 +35,7 @@ contract StakingManagerUpgrade is Script {
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
         StakingManager stakingManagerV2Instance = StakingManager(stakingManagerProxyAddress);
         
-        addressProvider.updateContractImplementation(1, address(stakingManagerV2Implementation));
+        addressProvider.updateContractImplementation("StakingManager", address(stakingManagerV2Implementation));
 
         vm.stopBroadcast();
         

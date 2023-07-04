@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "../../../src/TNFT.sol";
-import "../../../src/helpers/GoerliAddressProvider.sol";
+import "../../../src/helpers/AddressProvider.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract TNFTUpgrade is Script {
@@ -15,13 +15,13 @@ contract TNFTUpgrade is Script {
     }
 
     CriticalAddresses criticalAddresses;
-    GoerliAddressProvider public addressProvider;
+    AddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
-        addressProvider = GoerliAddressProvider(addressProviderAddress);
+        addressProvider = AddressProvider(addressProviderAddress);
 
         address TNFTProxyAddress = addressProvider.getProxyAddress("TNFT");
 
@@ -35,7 +35,7 @@ contract TNFTUpgrade is Script {
         TNFTInstance.upgradeTo(address(TNFTV2Implementation));
         TNFT TNFTV2Instance = TNFT(TNFTProxyAddress);
 
-        addressProvider.updateContractImplementation(4, address(TNFTV2Implementation));
+        addressProvider.updateContractImplementation("TNFT", address(TNFTV2Implementation));
 
         vm.stopBroadcast();
         

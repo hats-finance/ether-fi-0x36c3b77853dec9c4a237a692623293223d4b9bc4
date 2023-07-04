@@ -9,7 +9,7 @@ import "../../../src/WeETH.sol";
 import "../../../src/EETH.sol";
 import "../../../src/NFTExchange.sol";
 import "../../../src/LiquidityPool.sol";
-import "../../../src/helpers/GoerliAddressProvider.sol";
+import "../../../src/helpers/AddressProvider.sol";
 import "../../../src/RegulationsManager.sol";
 import "../../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -48,7 +48,7 @@ contract DeployPhaseOnePointFiveScript is Script {
     NFTExchange public nftExchangeImplementation;
     NFTExchange public nftExchange;
 
-    GoerliAddressProvider public addressProvider;
+    AddressProvider public addressProvider;
 
     struct suiteAddresses {
         address weETH;
@@ -69,7 +69,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         bytes32[] memory emptyProof;
         
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
-        addressProvider = GoerliAddressProvider(addressProviderAddress);
+        addressProvider = AddressProvider(addressProviderAddress);
 
         address stakingManagerProxyAddress = addressProvider.getProxyAddress("StakingManager");
         address etherFiNodesManagerProxyAddress = addressProvider.getProxyAddress("EtherFiNodesManager");
