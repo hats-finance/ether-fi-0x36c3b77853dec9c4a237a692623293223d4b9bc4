@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-contract ContractRegistry {
+contract MainnetAddressProvider {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    //Network 0 = GOERLI, 1 = MAINNET
     struct ContractData {
-        uint256 network;
-        uint256 version;
-        uint256 lastModified;
+        uint128 version;
+        uint128 lastModified;
         address proxyAddress;
         address implementationAddress;
-        bool isActive;
+        bool isDeprecated;
         string name;
     }
 
@@ -32,15 +30,14 @@ contract ContractRegistry {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function addContract(address _proxy, address _implementation, string memory _name, uint256 _network) external onlyOwner {
+    function addContract(address _proxy, address _implementation, string memory _name) external onlyOwner {
         require(_implementation != address(0), "Implementation cannot be zero addr");
         contracts[numberOfContracts] = ContractData({
-            network: _network,
             version: 1,
-            lastModified: block.timestamp,
+            lastModified: uint128(block.timestamp),
             proxyAddress: _proxy,
             implementationAddress: _implementation,
-            isActive: true,
+            isDeprecated: true,
             name: _name
         });
         nameToId[_name] = numberOfContracts;
@@ -50,22 +47,22 @@ contract ContractRegistry {
     function updateContractImplementation(uint256 _contractId, address _newImplementation) external onlyOwner {
         ContractData storage contractData = contracts[_contractId];
         require(_contractId < numberOfContracts, "Invalid contract ID");
-        require(contractData.isActive == true, "Contract discontinued");
+        require(contractData.isDeprecated == true, "Contract discontinued");
         require(_newImplementation != address(0), "Implementation cannot be zero addr");
 
-        contractData.lastModified = block.timestamp;
+        contractData.lastModified = uint128(block.timestamp);
         contractData.version += 1;
         contractData.implementationAddress = _newImplementation;
     }
 
-    function discontinueContract(uint256 _contractId) external onlyOwner {
-        require(contracts[_contractId].isActive == true, "Contract already discontinued");
-        contracts[_contractId].isActive = false;
+    function deactivateContract(uint256 _contractId) external onlyOwner {
+        require(contracts[_contractId].isDeprecated == true, "Contract already discontinued");
+        contracts[_contractId].isDeprecated = false;
     }
 
-    function reviveContract(uint256 _contractId) external onlyOwner {
-        require(contracts[_contractId].isActive == false, "Contract already active");
-        contracts[_contractId].isActive = true;
+    function reactivateContract(uint256 _contractId) external onlyOwner {
+        require(contracts[_contractId].isDeprecated == false, "Contract already active");
+        contracts[_contractId].isDeprecated = true;
     }
 
     //--------------------------------------------------------------------------------------

@@ -2,20 +2,20 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/ContractRegistry.sol";
+import "../../../src/helpers/GoerliAddressProvider.sol";
 
-contract DeployAndPopulateContractRegistry is Script {
+contract DeployAndPopulateAddressProvider is Script {
 
     /*---- Storage variables ----*/
 
-    ContractRegistry public contractRegistry;
+    GoerliAddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        contractRegistry = new ContractRegistry();
-        console.log(address(contractRegistry));
+        addressProvider = new GoerliAddressProvider();
+        console.log(address(addressProvider));
 
         /*---- Populate Registry ----*/
 
@@ -35,14 +35,14 @@ contract DeployAndPopulateContractRegistry is Script {
         address tnftImplementation = vm.envAddress("TNFT_IMPLEMENTATION_ADDRESS");
         address bnftImplementation = vm.envAddress("BNFT_IMPLEMENTATION_ADDRESS");
 
-        contractRegistry.addContract(auctionManagerProxyAddress, auctionManagerImplementationAddress, "Auction Manager", 0);
-        contractRegistry.addContract(stakingManagerProxyAddress, stakingManagerImplementationAddress, "Staking Manager", 0);
-        contractRegistry.addContract(etherFiNodesManagerProxyAddress, etherFiNodesManagerImplementationAddress, "EtherFi Nodes Manager", 0);
-        contractRegistry.addContract(protocolRevenueManagerProxy, protocolRevenueManagerImplementation, "Protocol Revenue Manager", 0);
-        contractRegistry.addContract(tnftProxy, tnftImplementation, "TNFT", 0);
-        contractRegistry.addContract(bnftProxy, bnftImplementation, "BNFT", 0);
-        contractRegistry.addContract(address(0), treasury, "Treasury", 0);
-        contractRegistry.addContract(address(0), nodeOperatorManagerImplementation, "Node Operator Manager", 0);
+        addressProvider.addContract(auctionManagerProxyAddress, auctionManagerImplementationAddress, "AuctionManager");
+        addressProvider.addContract(stakingManagerProxyAddress, stakingManagerImplementationAddress, "StakingManager");
+        addressProvider.addContract(etherFiNodesManagerProxyAddress, etherFiNodesManagerImplementationAddress, "EtherFiNodesManager");
+        addressProvider.addContract(protocolRevenueManagerProxy, protocolRevenueManagerImplementation, "ProtocolRevenueManager");
+        addressProvider.addContract(tnftProxy, tnftImplementation, "TNFT");
+        addressProvider.addContract(bnftProxy, bnftImplementation, "BNFT");
+        addressProvider.addContract(address(0), treasury, "Treasury");
+        addressProvider.addContract(address(0), nodeOperatorManagerImplementation, "NodeOperatorManager");
 
         vm.stopBroadcast();
     }

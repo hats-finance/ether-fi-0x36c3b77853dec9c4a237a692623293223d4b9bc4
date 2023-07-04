@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "../../../src/ProtocolRevenueManager.sol";
-import "../../../src/ContractRegistry.sol";
+import "../../../src/helpers/GoerliAddressProvider.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract ProtocolRevenueManagerUpgrade is Script {
@@ -15,15 +15,15 @@ contract ProtocolRevenueManagerUpgrade is Script {
     }
 
     CriticalAddresses criticalAddresses;
-    ContractRegistry public contractRegistry;
+    GoerliAddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        address contractRegistryAddress = vm.envAddress("CONTRACT_REGISTRY");
-        contractRegistry = ContractRegistry(contractRegistryAddress);
+        address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
+        addressProvider = GoerliAddressProvider(addressProviderAddress);
 
-        address ProtocolRevenueManagerProxyAddress = contractRegistry.getProxyAddress("Protocol Revenue Manager");
+        address ProtocolRevenueManagerProxyAddress = addressProvider.getProxyAddress("ProtocolRevenueManager");
 
         require(ProtocolRevenueManagerProxyAddress == 0xFafcc0041100a80Fce3bD52825A36F73Bf9Fd93a, "ProtocolRevenueManagerProxyAddress incorrect see .env");
 
@@ -35,7 +35,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
         ProtocolRevenueManagerInstance.upgradeTo(address(ProtocolRevenueManagerV2Implementation));
         ProtocolRevenueManager ProtocolRevenueManagerV2Instance = ProtocolRevenueManager(payable(ProtocolRevenueManagerProxyAddress));
         
-        contractRegistry.updateContractImplementation(3, address(ProtocolRevenueManagerV2Implementation));
+        addressProvider.updateContractImplementation(3, address(ProtocolRevenueManagerV2Implementation));
 
         vm.stopBroadcast();
         criticalAddresses = CriticalAddresses({

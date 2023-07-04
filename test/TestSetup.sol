@@ -23,7 +23,7 @@ import "../src/EarlyAdopterPool.sol";
 import "../src/TVLOracle.sol";
 import "../src/UUPSProxy.sol";
 import "../src/NFTExchange.sol";
-import "../src/ContractRegistry.sol";
+import "../src/helpers/GoerliAddressProvider.sol";
 import "./DepositDataGeneration.sol";
 import "./DepositContract.sol";
 import "./Attacker.sol";
@@ -76,7 +76,7 @@ contract TestSetup is Test {
     RegulationsManager public regulationsManagerImplementation;
 
     EarlyAdopterPool public earlyAdopterPoolInstance;
-    ContractRegistry public contractRegistryInstance;
+    GoerliAddressProvider public addressProviderInstance;
 
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
@@ -238,7 +238,7 @@ contract TestSetup is Test {
             address(cbEth)
         );
 
-        contractRegistryInstance = new ContractRegistry();
+        addressProviderInstance = new GoerliAddressProvider();
 
         liquidityPoolImplementation = new LiquidityPool();
         vm.expectRevert("Initializable: contract is already initialized");
