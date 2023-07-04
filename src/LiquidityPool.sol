@@ -166,6 +166,20 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
     }
 
+    function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
+        uint256 returnAmount = 2 ether * _validatorIds.length;
+
+        totalValueOutOfLp += uint128(returnAmount);
+        numPendingDeposits -= uint32(_validatorIds.length);
+
+        stakingManager.batchCancelDeposit(_validatorIds);
+
+        totalValueInLp -= uint128(returnAmount);
+
+        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+        require(sent, "Failed to send Ether");
+    }
+
     /// @notice Send the exit requests as the T-NFT holder
     function sendExitRequests(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {

@@ -298,6 +298,55 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(BNFTInstance.ownerOf(newValidators[0]), owner);
         assertEq(BNFTInstance.ownerOf(newValidators[1]), owner);
     }
+    
+    function test_batchCancelDeposit() public {
+        vm.deal(owner, 100 ether);
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            _ipfsHash,
+            5
+        );
+
+        hoax(alice);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
+        assertEq(bidIds.length, 2);
+
+        assertEq(liquidityPoolInstance.totalValueOutOfLp(), 0);
+        assertEq(liquidityPoolInstance.totalValueInLp(), 0);
+
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
+        vm.stopPrank();
+
+        assertEq(address(liquidityPoolInstance).balance, 60 ether);
+        assertEq(liquidityPoolInstance.totalValueOutOfLp(), 0);
+        assertEq(liquidityPoolInstance.totalValueInLp(), 60 ether);
+
+        uint256 aliceBalance = address(alice).balance;
+        bytes32[] memory proof = getWhitelistMerkleProof(9);
+        vm.prank(alice);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
+
+        assertEq(newValidators.length, 2);
+        assertEq(address(alice).balance, aliceBalance - 2 * 2 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0 ether);
+        assertEq(address(stakingManagerInstance).balance, 64 ether);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 2);
+        assertEq(liquidityPoolInstance.totalValueOutOfLp(), 60 ether);
+        assertEq(liquidityPoolInstance.totalValueInLp(), 0);
+
+        vm.prank(alice);
+        liquidityPoolInstance.batchCancelDeposit(newValidators);
+
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 0);
+        assertEq(liquidityPoolInstance.totalValueOutOfLp(), 0);
+        assertEq(liquidityPoolInstance.totalValueInLp(), 60 ether);
+        assertEq(address(alice).balance, aliceBalance);
+        assertEq(address(stakingManagerInstance).balance, 0 ether);
+        assertEq(address(liquidityPoolInstance).balance, 60 ether);
+    }
 
     function test_ProcessNodeExit() public {
         vm.deal(owner, 100 ether);
