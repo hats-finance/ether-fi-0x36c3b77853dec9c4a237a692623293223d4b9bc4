@@ -64,13 +64,13 @@ contract NFTExchangeTest is TestSetup {
 
         // fails because token is locked
         vm.expectRevert(MembershipNFT.RequireTokenUnlocked.selector);
-        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers);
 
         // wait for lock to expire
         vm.roll(block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // Owner lists it for sale
-        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers);
         vm.stopPrank();
 
         // Fail: Bob is not the reserved buyer
@@ -162,7 +162,7 @@ contract NFTExchangeTest is TestSetup {
 
         // Owner lists it for sale
         vm.prank(alice);
-        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers);
 
         // Fail: Alice presented the different T-NFT !
         vm.startPrank(alice);
@@ -206,7 +206,7 @@ contract NFTExchangeTest is TestSetup {
 
         // Owner lists it for sale
         vm.startPrank(alice);
-        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers);
 
         // The node is marked as EVICTED
         managerInstance.processNodeEvict(tNftTokenIds);
@@ -250,7 +250,7 @@ contract NFTExchangeTest is TestSetup {
         reservedBuyers[0] = alice;
 
         vm.prank(alice);
-        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers);
 
         vm.startPrank(alice);
         nftExchangeInstance.delist(mNftTokenIds);
@@ -270,7 +270,7 @@ contract NFTExchangeTest is TestSetup {
         reservedBuyers[0] = address(0);
 
         vm.expectRevert("Caller is not the admin");
-        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers, 10);
+        nftExchangeInstance.listForSale(mNftTokenIds, tNftTokenIds, reservedBuyers);
 
         vm.expectRevert("Caller is not the admin");
         nftExchangeInstance.delist(mNftTokenIds);

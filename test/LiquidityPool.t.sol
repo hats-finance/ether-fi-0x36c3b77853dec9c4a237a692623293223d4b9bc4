@@ -15,6 +15,24 @@ contract LiquidityPoolTest is TestSetup {
         bobProof = merkle.getProof(whiteListedAddresses, 4);
     }
 
+    function test_DepositOrWithdrawOfZeroFails() public {
+        vm.deal(alice, 1 ether);
+
+        vm.startPrank(alice);
+        stakingManagerInstance.disableWhitelist();
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        vm.expectRevert(LiquidityPool.InvalidAmount.selector);
+        liquidityPoolInstance.deposit{value: 0 ether}(alice, aliceProof);
+
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        vm.expectRevert(LiquidityPool.InvalidAmount.selector);
+        liquidityPoolInstance.withdraw(alice, 0);
+
+        vm.stopPrank();
+    }
+
     function test_StakingManagerLiquidityPool() public {
         vm.startPrank(alice);
         vm.deal(alice, 2 ether);
