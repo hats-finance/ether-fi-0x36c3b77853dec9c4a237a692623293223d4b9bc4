@@ -21,6 +21,9 @@ contract AddressProvider {
 
     address public owner;
 
+    event ContractAdded(address proxy, address implementation, string name);
+    event ContractUpgraded(address newImplementation, string name);
+
     constructor() {
         owner = msg.sender;
     }
@@ -46,6 +49,8 @@ contract AddressProvider {
             name: _name
         });
         numberOfContracts++;
+
+        emit ContractAdded(_proxy, _implementation, _name);
     }
 
     /// @notice Updates the contract implementation when an upgrade has happened
@@ -61,6 +66,8 @@ contract AddressProvider {
         contractData.lastModified = uint128(block.timestamp);
         contractData.version += 1;
         contractData.implementationAddress = _newImplementation;
+
+        emit ContractUpgraded(_newImplementation, _name);
     }
 
     /// @notice Deactivates a contract

@@ -6,6 +6,11 @@
   },
   {
     "inputs": [],
+    "name": "Deprecated",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "DisallowZeroAddress",
     "type": "error"
   },
@@ -52,6 +57,11 @@
   {
     "inputs": [],
     "name": "InvalidWithdraw",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotEnoughReservedRewards",
     "type": "error"
   },
   {
@@ -364,6 +374,11 @@
         "internalType": "uint128[]",
         "name": "",
         "type": "uint128[]"
+      },
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
       }
     ],
     "stateMutability": "view",
@@ -870,11 +885,6 @@
         "type": "uint96"
       },
       {
-        "internalType": "uint96",
-        "name": "amountStakedForPoints",
-        "type": "uint96"
-      },
-      {
         "internalType": "uint40",
         "name": "requiredTierPoints",
         "type": "uint40"
@@ -997,7 +1007,7 @@
       },
       {
         "internalType": "uint128",
-        "name": "amountStakedForPoints",
+        "name": "shares",
         "type": "uint128"
       }
     ],
@@ -1043,6 +1053,19 @@
     "name": "topUpDepositWithEth",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalReservedSharesForRewards",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
