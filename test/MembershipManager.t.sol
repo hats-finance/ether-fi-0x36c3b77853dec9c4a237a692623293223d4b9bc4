@@ -1208,15 +1208,17 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_bring_random_monkeys() public {
+        vm.deal(alice, 1 ether);
         vm.startPrank(alice);
         stakingManagerInstance.disableWhitelist();
         membershipManagerInstance.setTopUpCooltimePeriod(7 days);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0 ether, zeroProof);
         vm.stopPrank();
 
-        uint256 rounds = 20;
+        uint256 rounds = 50;
         uint256 moneyPerActor = 10000 ether;
         uint256 moneyPerRebase = 10 ether;
-        uint256 totalMoneySupply = moneyPerActor * actors.length + moneyPerRebase * rounds;
+        uint256 totalMoneySupply = 1 ether + moneyPerActor * actors.length + moneyPerRebase * rounds;
 
         uint256[] memory tokens = new uint256[](actors.length);
         for (uint256 i = 0; i < actors.length; i++) {
@@ -1297,7 +1299,6 @@ contract MembershipManagerTest is TestSetup {
         //     console.log("tierDeposits", i, share, amount);
         // }
         // console.log(counts[0], counts[1], counts[2], counts[3]);
-        // console.log("totalMoneySupply", totalMoneySupply);
         // console.log("address(liquidityPoolInstance).balance", address(liquidityPoolInstance).balance);
         // console.log("resting Rewards", liquidityPoolInstance.amountForShare(membershipManagerInstance.totalReservedSharesForRewards()));
         assertEq(totalActorsBalance + address(liquidityPoolInstance).balance, totalMoneySupply);

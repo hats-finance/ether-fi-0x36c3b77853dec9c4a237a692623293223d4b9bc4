@@ -427,7 +427,7 @@ contract TestSetup is Test {
     }
 
     function _initializePeople() internal {
-        for (uint i = 1000; i < 1000 + 16; i++) {
+        for (uint i = 1000; i < 1000 + 64; i++) {
             address actor = vm.addr(i);
             actors.push(actor);
             whitelistIndices.push(whiteListedAddresses.length);
