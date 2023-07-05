@@ -153,6 +153,7 @@ contract TestSetup is Test {
     bytes _ipfsHash = "ipfsHash";
 
     bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
+    bytes32[] zeroProof;
 
     function setUpTests() internal {
         vm.startPrank(owner);
