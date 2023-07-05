@@ -1294,13 +1294,6 @@ contract MembershipManagerTest is TestSetup {
             totalActorsBalance += address(actor).balance;
         }
 
-        // for (uint256 i = 0; i < 4; i++) {
-        //     (uint128 share, uint128 amount) = membershipManagerInstance.tierDeposits(i);
-        //     console.log("tierDeposits", i, share, amount);
-        // }
-        // console.log(counts[0], counts[1], counts[2], counts[3]);
-        // console.log("address(liquidityPoolInstance).balance", address(liquidityPoolInstance).balance);
-        // console.log("resting Rewards", liquidityPoolInstance.amountForShare(membershipManagerInstance.totalReservedSharesForRewards()));
         assertEq(totalActorsBalance + address(liquidityPoolInstance).balance, totalMoneySupply);
     }
 }
