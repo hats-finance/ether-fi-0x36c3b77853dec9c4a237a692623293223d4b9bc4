@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "../../../src/EtherFiNode.sol";
 import "../../../src/StakingManager.sol";
+import "../../../src/helpers/AddressProvider.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract EtherFiNodeUpgrade is Script {
@@ -14,10 +15,15 @@ contract EtherFiNodeUpgrade is Script {
     }
 
     CriticalAddresses criticalAddresses;
+    AddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
+
+        address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
+        addressProvider = AddressProvider(addressProviderAddress);
+
+        address stakingManagerProxyAddress = addressProvider.getProxyAddress("StakingManager");
 
         StakingManager stakingManager = StakingManager(stakingManagerProxyAddress);
 
@@ -25,6 +31,7 @@ contract EtherFiNodeUpgrade is Script {
 
         EtherFiNode etherFiNode = new EtherFiNode();
         stakingManager.upgradeEtherFiNode(address(etherFiNode));
+        addressProvider.updateContractImplementation("EtherFiNode", address(etherFiNode));
 
         vm.stopBroadcast();
 

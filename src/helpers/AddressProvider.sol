@@ -29,6 +29,11 @@ contract AddressProvider {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Adds contracts to the address provider that have already been deployed
+    /// @dev Only called by the contract owner
+    /// @param _proxy the proxy address of the contract we are adding
+    /// @param _implementation the implementation address of the contract we are adding
+    /// @param _name the name of the contract for reference
     function addContract(address _proxy, address _implementation, string memory _name) external onlyOwner {
         require(_implementation != address(0), "Implementation cannot be zero addr");
         require(contracts[_name].lastModified == 0, "Contract already exists");
@@ -43,6 +48,10 @@ contract AddressProvider {
         numberOfContracts++;
     }
 
+    /// @notice Updates the contract implementation when an upgrade has happened
+    /// @dev Only called by the contract owner
+    /// @param _name the contract identifier
+    /// @param _name the new implementation address of the contract
     function updateContractImplementation(string memory _name, address _newImplementation) external onlyOwner {
         ContractData storage contractData = contracts[_name];
         require(contractData.lastModified != 0, "Contract doesn't exists");
@@ -54,11 +63,17 @@ contract AddressProvider {
         contractData.implementationAddress = _newImplementation;
     }
 
+    /// @notice Deactivates a contract
+    /// @dev Only called by the contract owner
+    /// @param _name the contract identifier
     function deactivateContract(string memory _name) external onlyOwner {
         require(contracts[_name].isDeprecated == false, "Contract already deprecated");
         contracts[_name].isDeprecated = true;
     }
 
+    /// @notice Reactivates a contract
+    /// @dev Only called by the contract owner
+    /// @param _name the contract identifier
     function reactivateContract(string memory _name) external onlyOwner {
         require(contracts[_name].isDeprecated == true, "Contract already active");
         contracts[_name].isDeprecated = false;
@@ -68,6 +83,9 @@ contract AddressProvider {
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
+    /// @notice Facilitates the change of ownership
+    /// @dev Only called by the contract owner
+    /// @param _newOwner the address of the new owner
     function setOwner(address _newOwner) external onlyOwner {
         require(_newOwner != address(0), "Cannot be zero addr");
         owner = _newOwner;
@@ -77,11 +95,11 @@ contract AddressProvider {
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function getProxyAddress(string memory _name) external returns (address) {
+    function getProxyAddress(string memory _name) external view returns (address) {
         return contracts[_name].proxyAddress;
     }
 
-    function getImplementationAddress(string memory _name) external returns (address) {
+    function getImplementationAddress(string memory _name) external view returns (address) {
         return contracts[_name].implementationAddress;
     }
 
