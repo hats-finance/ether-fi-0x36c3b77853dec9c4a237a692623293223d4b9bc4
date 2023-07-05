@@ -5,7 +5,7 @@ interface IMembershipManager {
 
     struct TokenDeposit {
         uint128 amounts;
-        uint128 amountStakedForPoints;
+        uint128 shares;
     }
 
     struct TokenData {
@@ -25,7 +25,6 @@ interface IMembershipManager {
 
     struct TierData {
         uint96 rewardsGlobalIndex;
-        uint96 amountStakedForPoints;
         uint40 requiredTierPoints;
         uint24 weight;
     }
@@ -51,7 +50,8 @@ interface IMembershipManager {
     // Getter functions
     function tokenDeposits(uint256) external view returns (uint128, uint128);
     function tokenData(uint256) external view returns (uint96, uint40, uint40, uint32, uint32, uint8, uint8);
-    function tierData(uint256) external view returns (uint96, uint96, uint40, uint24);
+    function tierDeposits(uint256) external view returns (uint128, uint128);
+    function tierData(uint256) external view returns (uint96, uint40, uint24);
 
     function rewardsGlobalIndex(uint8 _tier) external view returns (uint256);
     function allTimeHighDepositAmount(uint256 _tokenId) external view returns (uint256);
@@ -60,7 +60,7 @@ interface IMembershipManager {
     function pointsBoostFactor() external view returns (uint16);
     function pointsGrowthRate() external view returns (uint16);
     function maxDepositTopUpPercent() external view returns (uint8);
-    function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory);
+    function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory, uint128);
     function numberOfTiers() external view returns (uint8);
     function getImplementation() external view returns (address);
 
