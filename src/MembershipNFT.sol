@@ -203,9 +203,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         (,,, uint32 prevPointsAccrualTimestamp,,,) = membershipManager.tokenData(_tokenId);
         uint256 tierPointsPerDay = 24; // 1 per an hour
         uint256 earnedPoints = (uint32(block.timestamp) - prevPointsAccrualTimestamp) * tierPointsPerDay / 1 days;
-        // uint256 effectiveBalanceForEarningPoints = amounts + ((10000 + membershipManager.pointsBoostFactor()) * amountStakedForPoints) / 10000;
-        uint256 effectiveBalanceForEarningPoints = amounts;
-        earnedPoints = earnedPoints * effectiveBalanceForEarningPoints / (amounts);
         return uint40(earnedPoints);
     }
 
@@ -238,8 +235,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         if (amounts == 0 || shares == 0) {
             return 0;
         }
-
-        uint16 pointsBoostFactor = membershipManager.pointsBoostFactor();
+        
         uint16 pointsGrowthRate = membershipManager.pointsGrowthRate();
 
         uint256 elapsed = _until - _since;
