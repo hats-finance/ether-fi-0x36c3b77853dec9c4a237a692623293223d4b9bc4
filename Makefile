@@ -45,6 +45,7 @@ deploy-goerli-tvlOracle:; forge clean && forge script script/deploys/goerli/Depl
 
 deploy-optimism-tvlOracle:; forge clean && forge script script/deploys/mainnet/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${OPTIMISM_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
+deploy-goerli-address-provider:; forge clean && forge script script/deploys/goerli/DeployAndPopulateAddressProviderScript.s.sol:DeployAndPopulateAddressProvider --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (GOERLI)
 upgrade-goerli-staking-manager :; forge clean && forge script script/upgrades/goerli/GoerliStakingManagerUpdateScript.s.sol:StakingManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh

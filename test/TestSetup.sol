@@ -23,6 +23,7 @@ import "../src/EarlyAdopterPool.sol";
 import "../src/TVLOracle.sol";
 import "../src/UUPSProxy.sol";
 import "../src/NFTExchange.sol";
+import "../src/helpers/AddressProvider.sol";
 import "./DepositDataGeneration.sol";
 import "./DepositContract.sol";
 import "./Attacker.sol";
@@ -75,6 +76,7 @@ contract TestSetup is Test {
     RegulationsManager public regulationsManagerImplementation;
 
     EarlyAdopterPool public earlyAdopterPoolInstance;
+    AddressProvider public addressProviderInstance;
 
     TNFT public TNFTImplementation;
     TNFT public TNFTInstance;
@@ -235,6 +237,8 @@ contract TestSetup is Test {
             address(sfrxEth),
             address(cbEth)
         );
+
+        addressProviderInstance = new AddressProvider();
 
         liquidityPoolImplementation = new LiquidityPool();
         vm.expectRevert("Initializable: contract is already initialized");

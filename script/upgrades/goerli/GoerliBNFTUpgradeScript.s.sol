@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "../../../src/BNFT.sol";
+import "../../../src/helpers/AddressProvider.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract BNFTUpgrade is Script {
@@ -14,10 +15,15 @@ contract BNFTUpgrade is Script {
     }
 
     CriticalAddresses criticalAddresses;
+    AddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address BNFTProxyAddress = vm.envAddress("BNFT_PROXY_ADDRESS");
+        
+        address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
+        addressProvider = AddressProvider(addressProviderAddress);
+        
+        address BNFTProxyAddress = addressProvider.getProxyAddress("BNFT");
 
         require(BNFTProxyAddress == 0x9F230a10e78343829888924B4c8CeA4F082586f9, "BNFTProxyAddress incorrect see .env");
 
@@ -29,6 +35,8 @@ contract BNFTUpgrade is Script {
         BNFTInstance.upgradeTo(address(BNFTV2Implementation));
         BNFT BNFTV2Instance = BNFT(BNFTProxyAddress);
 
+        addressProvider.updateContractImplementation("BNFT", address(BNFTV2Implementation));
+
         vm.stopBroadcast();
 
         criticalAddresses = CriticalAddresses({
@@ -36,7 +44,7 @@ contract BNFTUpgrade is Script {
             BNFTImplementation: address(BNFTV2Implementation)
         });
 
-         writeUpgradeVersionFile();
+        writeUpgradeVersionFile();
 
     }
 

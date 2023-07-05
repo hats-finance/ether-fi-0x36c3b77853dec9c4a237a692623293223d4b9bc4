@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "../../../src/ProtocolRevenueManager.sol";
+import "../../../src/helpers/AddressProvider.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract ProtocolRevenueManagerUpgrade is Script {
@@ -14,12 +15,16 @@ contract ProtocolRevenueManagerUpgrade is Script {
     }
 
     CriticalAddresses criticalAddresses;
+    AddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address ProtocolRevenueManagerProxyAddress = vm.envAddress("PROTOCOL_REVENUE_MANAGER_PROXY_ADDRESS");
 
-        // mainnet
+        address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
+        addressProvider = AddressProvider(addressProviderAddress);
+
+        address ProtocolRevenueManagerProxyAddress = addressProvider.getProxyAddress("ProtocolRevenueManager");
+
         require(ProtocolRevenueManagerProxyAddress == 0xFafcc0041100a80Fce3bD52825A36F73Bf9Fd93a, "ProtocolRevenueManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
@@ -29,6 +34,8 @@ contract ProtocolRevenueManagerUpgrade is Script {
 
         ProtocolRevenueManagerInstance.upgradeTo(address(ProtocolRevenueManagerV2Implementation));
         ProtocolRevenueManager ProtocolRevenueManagerV2Instance = ProtocolRevenueManager(payable(ProtocolRevenueManagerProxyAddress));
+        
+        addressProvider.updateContractImplementation("ProtocolRevenueManager", address(ProtocolRevenueManagerV2Implementation));
 
         vm.stopBroadcast();
         criticalAddresses = CriticalAddresses({
