@@ -374,11 +374,6 @@
         "internalType": "uint128[]",
         "name": "",
         "type": "uint128[]"
-      },
-      {
-        "internalType": "uint128",
-        "name": "",
-        "type": "uint128"
       }
     ],
     "stateMutability": "view",
@@ -426,33 +421,7 @@
         "type": "uint256"
       }
     ],
-    "name": "claimPoints",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimStakingRewards",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimTier",
+    "name": "claim",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -852,6 +821,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "sharesReservedForRewards",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -893,6 +875,11 @@
         "internalType": "uint24",
         "name": "weight",
         "type": "uint24"
+      },
+      {
+        "internalType": "uint96",
+        "name": "__gap",
+        "type": "uint96"
       }
     ],
     "stateMutability": "view",
@@ -910,12 +897,12 @@
     "outputs": [
       {
         "internalType": "uint128",
-        "name": "shares",
+        "name": "amounts",
         "type": "uint128"
       },
       {
         "internalType": "uint128",
-        "name": "amounts",
+        "name": "shares",
         "type": "uint128"
       }
     ],
@@ -1053,19 +1040,6 @@
     "name": "topUpDepositWithEth",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "totalReservedSharesForRewards",
-    "outputs": [
-      {
-        "internalType": "uint128",
-        "name": "",
-        "type": "uint128"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
