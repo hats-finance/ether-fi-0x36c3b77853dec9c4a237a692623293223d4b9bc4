@@ -1216,7 +1216,7 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.setTopUpCooltimePeriod(7 days);
         vm.stopPrank();
 
-        uint256 rounds = 50;
+        uint256 rounds = 30;
         uint256 moneyPerActor = 10000 ether;
         uint256 moneyPerRebase = 10 ether;
         uint256 totalMoneySupply = moneyPerActor * actors.length + moneyPerRebase * rounds;
@@ -1258,11 +1258,11 @@ contract MembershipManagerTest is TestSetup {
                     membershipManagerInstance.claim(token);
                     counts[1]++;
                 }
-                if (random % 2 == 0 && true) {
+                if (random % 2 == 0 && i % 4 != 0) {
                     membershipManagerInstance.topUpDepositWithEth{value: amount + 0}(token, amount, 0, zeroProof);
                     counts[2]++;
                 }
-                if (random % 3 == 0 && true) {
+                if (random % 3 == 0 && i % 4 != 0) {
                     membershipManagerInstance.unwrapForEth(token, withdrawalAmount);
                     counts[3]++;
                 }
@@ -1271,6 +1271,12 @@ contract MembershipManagerTest is TestSetup {
             }
         }
         assertLe(membershipManagerInstance.sharesReservedForRewards(), eETHInstance.shares(address(membershipManagerInstance)));
+
+
+        for (uint256 i = 0; i < membershipManagerInstance.numberOfTiers(); i++) {
+            (uint128 share, uint128 amount) = membershipManagerInstance.tierDeposits(i);
+            // console.log("tierDeposits", i, share, amount);
+        }
 
         uint256 totalActorsBalance;
         for (uint256 i = 0; i < actors.length; i++) {

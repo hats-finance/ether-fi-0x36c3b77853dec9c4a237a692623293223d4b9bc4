@@ -419,7 +419,7 @@ contract TestSetup is Test {
     function _initializeMembershipTiers() internal {
         uint40 requiredPointsForTier = 0;
         vm.startPrank(alice);
-        for (uint256 i = 0; i < 5 ; i++) {
+        for (uint256 i = 0; i < 5; i++) {
             requiredPointsForTier += uint40(28 * 24 * i);
             uint24 weight = uint24(i + 1);
             membershipManagerInstance.addNewTier(requiredPointsForTier, weight);
@@ -427,7 +427,7 @@ contract TestSetup is Test {
     }
 
     function _initializePeople() internal {
-        for (uint i = 1000; i < 1000 + 16; i++) {
+        for (uint i = 1000; i < 1000 + 36; i++) {
             address actor = vm.addr(i);
             actors.push(actor);
             whitelistIndices.push(whiteListedAddresses.length);
