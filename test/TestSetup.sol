@@ -239,7 +239,7 @@ contract TestSetup is Test {
             address(cbEth)
         );
 
-        addressProviderInstance = new AddressProvider();
+        addressProviderInstance = new AddressProvider(address(owner));
 
         liquidityPoolImplementation = new LiquidityPool();
         vm.expectRevert("Initializable: contract is already initialized");
