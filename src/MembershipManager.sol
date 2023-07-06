@@ -475,8 +475,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         // Rounding down in favor of the protocol
         // + Guard against the inflation attack
-        uint256 returnedAmount = _min(totalBalance, liquidityPool.amountForShare(deposit.shares));
-        return returnedAmount;
+        return _min(totalBalance, liquidityPool.amountForShare(deposit.shares));
     }
 
     function _withdraw(uint256 _tokenId, uint256 _amount) internal {
