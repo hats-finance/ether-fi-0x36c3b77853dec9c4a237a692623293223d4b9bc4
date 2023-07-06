@@ -285,7 +285,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _requireAdmin();
         if (tierDeposits.length >= type(uint8).max) revert TierLimitExceeded();
         tierDeposits.push(TierDeposit(0, 0));
-        tierData.push(TierData(0, _requiredTierPoints, _weight));
+        tierData.push(TierData(0, _requiredTierPoints, _weight, 0));
         return tierDeposits.length - 1;
     }
 
@@ -510,8 +510,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint128 newAmount = deposit.amounts + uint128(_amount);
         uint128 newShare = uint128(liquidityPool.sharesForAmount(newAmount));
         tierDeposits[_tier] = TierDeposit(
-            newShare,
-            newAmount
+            newAmount,
+            newShare
         );
     }
 
@@ -520,8 +520,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint128 newAmount = deposit.amounts - uint128(_amount);
         uint128 newShare = uint128(liquidityPool.sharesForAmount(newAmount));
         tierDeposits[_tier] = TierDeposit(
-            newShare,
-            newAmount
+            newAmount,
+            newShare
         );
     }
 

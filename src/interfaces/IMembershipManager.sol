@@ -19,14 +19,15 @@ interface IMembershipManager {
     }
 
     struct TierDeposit {
-        uint128 shares;
         uint128 amounts;
+        uint128 shares;
     }
 
     struct TierData {
         uint96 rewardsGlobalIndex;
         uint40 requiredTierPoints;
         uint24 weight;
+        uint96  __gap;
     }
 
     // State-changing functions
@@ -49,7 +50,7 @@ interface IMembershipManager {
     function tokenDeposits(uint256) external view returns (uint128, uint128);
     function tokenData(uint256) external view returns (uint96, uint40, uint40, uint32, uint32, uint8, uint8);
     function tierDeposits(uint256) external view returns (uint128, uint128);
-    function tierData(uint256) external view returns (uint96, uint40, uint24);
+    function tierData(uint256) external view returns (uint96, uint40, uint24, uint96);
 
     function rewardsGlobalIndex(uint8 _tier) external view returns (uint256);
     function allTimeHighDepositAmount(uint256 _tokenId) external view returns (uint256);
