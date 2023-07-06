@@ -1,4 +1,0 @@
-1
-Proxy Address: 0x8b71140ad2e5d1e7018d2a7f8a288bd3cd38916f
-New Implementation Address: 0xa198b536a92d9e8696c5c76e7298f09d18a270b5
-Optional Comments: The current 'proccessNodeExit' function does not take into account duplicate exits, we fixed this by adding a require to make sure the validator is in the LIVE phase

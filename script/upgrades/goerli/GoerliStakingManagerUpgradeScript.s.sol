@@ -2,12 +2,11 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/EtherFiNode.sol";
 import "../../../src/StakingManager.sol";
 import "../../../src/helpers/AddressProvider.sol";
 
-contract EtherFiNodeUpgrade is Script {
-
+contract StakingManagerUpgrade is Script {
+    
     AddressProvider public addressProvider;
 
     function run() external {
@@ -18,13 +17,14 @@ contract EtherFiNodeUpgrade is Script {
 
         address stakingManagerProxyAddress = addressProvider.getProxyAddress("StakingManager");
 
-        StakingManager stakingManager = StakingManager(stakingManagerProxyAddress);
-
         vm.startBroadcast(deployerPrivateKey);
 
-        EtherFiNode etherFiNode = new EtherFiNode();
-        stakingManager.upgradeEtherFiNode(address(etherFiNode));
-        addressProvider.updateContractImplementation("EtherFiNode", address(etherFiNode));
+        StakingManager stakingManagerInstance = StakingManager(stakingManagerProxyAddress);
+        StakingManager stakingManagerV2Implementation = new StakingManager();
+
+        stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
+        
+        addressProvider.updateContractImplementation("StakingManager", address(stakingManagerV2Implementation));
 
         vm.stopBroadcast();
     }
