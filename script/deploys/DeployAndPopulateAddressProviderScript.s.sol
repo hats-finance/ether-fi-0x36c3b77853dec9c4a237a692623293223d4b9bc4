@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract DeployAndPopulateAddressProvider is Script {
 
@@ -12,9 +12,10 @@ contract DeployAndPopulateAddressProvider is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address owner = vm.envAddress("ADMIN");
         vm.startBroadcast(deployerPrivateKey);
 
-        addressProvider = new AddressProvider();
+        addressProvider = new AddressProvider{salt: 0x6d61676963206d6f6e657920676f207570000000000000000000000000000000}(owner);
         console.log(address(addressProvider));
 
         /*---- Populate Registry ----*/
