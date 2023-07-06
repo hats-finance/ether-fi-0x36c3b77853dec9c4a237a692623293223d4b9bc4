@@ -81,7 +81,6 @@ upgrade-goerli-regulations_manager :; forge clean && forge script script/upgrade
 
 upgrade-goerli-weeth :; forge clean && forge script script/upgrades/goerli/GoerliWeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (MAINNET)
 
@@ -115,6 +114,7 @@ upgrade-regulations_manager :; forge clean && forge script script/upgrades/mainn
 
 upgrade-weeth :; forge clean && forge script script/upgrades/mainnet/MainnetWeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 update-admins:; forge clean && forge script script/specialized/UpdateAdminScripts.s.sol:UpdateAdmins --rpc-url ${GOERLI_RPC_URL} --broadcast -vvvv --slow
 
