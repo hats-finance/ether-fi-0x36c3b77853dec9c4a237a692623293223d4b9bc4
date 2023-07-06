@@ -71,8 +71,6 @@ upgrade-goerli-membership-manager :; forge clean && forge script script/upgrades
 
 upgrade-goerli-membership-nft :; forge clean && forge script script/upgrades/goerli/GoerliMembershipNFTUpgradeScript.s.sol:MembershipNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-node_operator_manager :; forge clean && forge script script/upgrades/goerli/GoerliNodeOperatorManagerUpgradeScript.s.sol:NodeOperatorManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
-
 upgrade-goerli-nft-exchange :; forge clean && forge script script/upgrades/goerli/GoerliNFTExchangeUpgradeScript.s.sol:NFTExchangeUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-goerli-protocol_revenue_manager :; forge clean && forge script script/upgrades/goerli/GoerliProtocolRevenueManagerUpgradeScript.s.sol:ProtocolRevenueManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
@@ -90,6 +88,8 @@ upgrade-staking-manager :; forge clean && forge script script/upgrades/mainnet/M
 
 upgrade-auction-manager :; forge clean && forge script script/upgrades/mainnet/MainnetAuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
+upgrade-goerli-etherfi-node :; forge clean && forge script script/upgrades/mainnet/MainnetEtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
 upgrade-bnft :; forge clean && forge script script/upgrades/mainnet/MainnetBNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-tnft :; forge clean && forge script script/upgrades/mainnet/MainnetTNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
@@ -103,8 +103,6 @@ upgrade-liquidity_pool :; forge clean && forge script script/upgrades/mainnet/Ma
 upgrade-membership-manager :; forge clean && forge script script/upgrades/mainnet/MainnetMembershipManagerUpgradeScript.s.sol:MembershipManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-membership-nft :; forge clean && forge script script/upgrades/mainnet/MainnetMembershipNFTUpgradeScript.s.sol:MembershipNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
-
-upgrade-node_operator_manager :; forge clean && forge script script/upgrades/mainnet/MainnetNodeOperatorManagerUpgradeScript.s.sol:NodeOperatorManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-nft-exchange :; forge clean && forge script script/upgrades/mainnet/MainnetNFTExchangeUpgradeScript.s.sol:NFTExchangeUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
