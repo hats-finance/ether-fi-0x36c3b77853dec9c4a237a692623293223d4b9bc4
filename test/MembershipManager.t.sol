@@ -1270,7 +1270,7 @@ contract MembershipManagerTest is TestSetup {
                 vm.stopPrank();
             }
         }
-        assertLe(membershipManagerInstance.totalSharesReservedForRewards(), eETHInstance.shares(address(membershipManagerInstance)));
+        assertLe(membershipManagerInstance.sharesReservedForRewards(), eETHInstance.shares(address(membershipManagerInstance)));
 
         uint256 totalActorsBalance;
         for (uint256 i = 0; i < actors.length; i++) {
@@ -1298,8 +1298,8 @@ contract MembershipManagerTest is TestSetup {
         // console.log(counts[0], counts[1], counts[2], counts[3]);
         // console.log("address(liquidityPoolInstance).balance", address(liquidityPoolInstance).balance);
         // console.log("eETHInstance.balanceOf(address(membershipManagerInstance))", eETHInstance.balanceOf(address(membershipManagerInstance)));
-        // console.log("resting Rewards", liquidityPoolInstance.amountForShare(membershipManagerInstance.totalSharesReservedForRewards()));
+        // console.log("resting Rewards", liquidityPoolInstance.amountForShare(membershipManagerInstance.sharesReservedForRewards()));
         assertEq(totalActorsBalance + address(liquidityPoolInstance).balance, totalMoneySupply);
-        assertLe(membershipManagerInstance.totalSharesReservedForRewards(), eETHInstance.shares(address(membershipManagerInstance)));
+        assertLe(membershipManagerInstance.sharesReservedForRewards(), eETHInstance.shares(address(membershipManagerInstance)));
     }
 }

@@ -61,7 +61,7 @@ interface IMembershipManager {
     function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory);
     function numberOfTiers() external view returns (uint8);
     function getImplementation() external view returns (address);
-    function totalSharesReservedForRewards() external view returns (uint128);
+    function sharesReservedForRewards() external view returns (uint128);
 
     // only Owner
     function setWithdrawalLockBlocks(uint32 _blocks) external;

@@ -50,7 +50,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     // [END] SLOT 261 END
 
-    uint128 public totalSharesReservedForRewards;
+    uint128 public sharesReservedForRewards;
 
     address public admin;
 
@@ -277,7 +277,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         }
 
         // Retricts the total amount of the withdrawable staking rewards
-        totalSharesReservedForRewards = uint128(eETH.shares(address(this))) - totalShares;
+        sharesReservedForRewards = uint128(eETH.shares(address(this))) - totalShares;
     }
 
     error TierLimitExceeded();
@@ -565,7 +565,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 amount = membershipNFT.accruedStakingRewardsOf(_tokenId);
         // Round-up in favor of safety of the protocol
         uint256 share = liquidityPool.sharesForWithdrawalAmount(amount);
-        if (share > totalSharesReservedForRewards) {
+        if (share > sharesReservedForRewards) {
             // This guard is against any malicious BIG withdrawal of staking rewards beyond limit
             // It may have some false alerts in thoery because the rounding-up in calculating the share.
             // But it is rare in practice.
@@ -573,7 +573,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         }
         _incrementTokenDeposit(_tokenId, amount);
         _incrementTierDeposit(tier, amount);
-        totalSharesReservedForRewards -= uint128(share);
+        sharesReservedForRewards -= uint128(share);
         token.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
