@@ -124,7 +124,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.setFeeSplits(0, 100);
 
         initializeTiers();
-        premint();
+        preMint();
         membershipManager.setFeeAmounts(0.05 ether, 0.05 ether, 0);
         membershipManager.pauseContract();
         
@@ -147,7 +147,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.addNewTier(4704, 4);
     }
 
-    function premint() internal {
+    function preMint() internal {
         bytes32[] memory emptyProof;
         uint256 minAmount = membershipManager.minimumAmountForMint();
         membershipManager.wrapEthBatch{value: 100 * minAmount}(100, minAmount, 0, emptyProof);
