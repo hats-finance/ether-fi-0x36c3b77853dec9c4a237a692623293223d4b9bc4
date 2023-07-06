@@ -43,9 +43,7 @@ interface IMembershipManager {
     function stakeForPoints(uint256 _tokenId, uint256 _amount) external;
     function unstakeForPoints(uint256 _tokenId, uint256 _amount) external;
 
-    function claimTier(uint256 _tokenId) external;
-    function claimPoints(uint256 _tokenId) external;
-    function claimStakingRewards(uint256 _tokenId) external;
+    function claim(uint256 _tokenId) external;
 
     // Getter functions
     function tokenDeposits(uint256) external view returns (uint128, uint128);
@@ -60,9 +58,10 @@ interface IMembershipManager {
     function pointsBoostFactor() external view returns (uint16);
     function pointsGrowthRate() external view returns (uint16);
     function maxDepositTopUpPercent() external view returns (uint8);
-    function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory, uint128);
+    function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory);
     function numberOfTiers() external view returns (uint8);
     function getImplementation() external view returns (address);
+    function totalSharesReservedForRewards() external view returns (uint128);
 
     // only Owner
     function setWithdrawalLockBlocks(uint32 _blocks) external;

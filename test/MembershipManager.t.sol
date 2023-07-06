@@ -61,9 +61,9 @@ contract MembershipManagerTest is TestSetup {
         // wait a few months and claim new tiers
         skip(100 days);
         vm.prank(alice);
-        membershipManagerInstance.claimTier(aliceToken);
+        membershipManagerInstance.claim(aliceToken);
         vm.prank(bob);
-        membershipManagerInstance.claimTier(bobToken);
+        membershipManagerInstance.claim(bobToken);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 2400);
         assertEq(membershipNftInstance.tierOf(aliceToken), 2);
         assertEq(membershipNftInstance.tierPointsOf(bobToken), 2400);
@@ -198,9 +198,9 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.claimableTier(tokenId), 1);
 
         // Alice sees that she can claim her tier 1, which is higher than her current tier 0
-        // By calling 'claimTier', Alice's tier gets upgraded to the tier 1
+        // By calling 'claim', Alice's tier gets upgraded to the tier 1
         assertEq(membershipNftInstance.claimableTier(tokenId), 1);
-        membershipManagerInstance.claimTier(tokenId);
+        membershipManagerInstance.claim(tokenId);
         assertEq(membershipNftInstance.tierOf(tokenId), 1);
 
         // Alice unwraps 0.5 membership points (which is 50% of her membership points holdings)
@@ -365,7 +365,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.claimableTier(aliceToken), 1);
         assertEq(membershipNftInstance.tierOf(aliceToken), 0);
 
-        membershipManagerInstance.claimTier(aliceToken);
+        membershipManagerInstance.claim(aliceToken);
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
         assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether);
 
@@ -399,12 +399,6 @@ contract MembershipManagerTest is TestSetup {
         uint256 bobRescaledRewards = bobWeightedRewards * sumRewards / sumWeightedRewards;
         assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether + aliceRescaledRewards - 1); // some rounding errors
         assertEq(membershipNftInstance.valueOf(bobToken), 2 ether + bobRescaledRewards - 1); // some rounding errors
-
-        // They claim the rewards
-        membershipManagerInstance.claimStakingRewards(aliceToken);
-        assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether + aliceRescaledRewards - 1); // some rounding errors
-        membershipManagerInstance.claimStakingRewards(bobToken);
-        assertEq(membershipNftInstance.valueOf(bobToken), 2 ether + bobRescaledRewards - 1); // some rounding errors
     }
 
     function test_OwnerPermissions() public {
@@ -436,7 +430,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(currentPoints, 6720); // force update if calculation logic changes
 
         assertEq(membershipNftInstance.claimableTier(aliceToken), 4);
-        membershipManagerInstance.claimTier(aliceToken);
+        membershipManagerInstance.claim(aliceToken);
         assertEq(membershipNftInstance.tierOf(aliceToken), 4);
 
         // points should get diluted by 25% & the tier is properly updated
@@ -717,7 +711,7 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
 
         skip(28 days);
-        membershipManagerInstance.claimTier(aliceToken);
+        membershipManagerInstance.claim(aliceToken);
 
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 28 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 28 * 24);
@@ -935,9 +929,9 @@ contract MembershipManagerTest is TestSetup {
         // Note that tier 0 and tier 1 have weight 1 and weight 2, respectively.
         vm.startPrank(alice);
         membershipManagerInstance.setPoints(aliceToken, 0, 0);
-        membershipManagerInstance.claimTier(aliceToken);
+        membershipManagerInstance.claim(aliceToken);
         membershipManagerInstance.setPoints(bobToken, 0, uint40(24 * 28));
-        membershipManagerInstance.claimTier(bobToken);
+        membershipManagerInstance.claim(bobToken);
         vm.stopPrank();
 
         // The {Alice, Bob} NFTs contain 1 ether each
@@ -1016,9 +1010,9 @@ contract MembershipManagerTest is TestSetup {
         // Note that tier 0 and tier 1 have weight 1 and weight 2, respcetively.
         vm.startPrank(alice);
         membershipManagerInstance.setPoints(aliceToken, 0, 0);
-        membershipManagerInstance.claimTier(aliceToken);
+        membershipManagerInstance.claim(aliceToken);
         membershipManagerInstance.setPoints(bobToken, 0, uint40(24 * 28));
-        membershipManagerInstance.claimTier(bobToken);
+        membershipManagerInstance.claim(bobToken);
         vm.stopPrank();
 
         // The {Alice, Bob} NFTs contain 1 ether each
@@ -1207,18 +1201,25 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
     }
 
+    function get_total_accrued_rewards(uint256[] memory tokens) internal returns (uint256) {
+        uint256 total = 0;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            total += membershipNftInstance.accruedStakingRewardsOf(tokens[i]);
+        }
+        return total;
+    }
+
     function test_bring_random_monkeys() public {
         vm.deal(alice, 1 ether);
         vm.startPrank(alice);
         stakingManagerInstance.disableWhitelist();
         membershipManagerInstance.setTopUpCooltimePeriod(7 days);
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0 ether, zeroProof);
         vm.stopPrank();
 
         uint256 rounds = 50;
         uint256 moneyPerActor = 10000 ether;
         uint256 moneyPerRebase = 10 ether;
-        uint256 totalMoneySupply = 1 ether + moneyPerActor * actors.length + moneyPerRebase * rounds;
+        uint256 totalMoneySupply = moneyPerActor * actors.length + moneyPerRebase * rounds;
 
         uint256[] memory tokens = new uint256[](actors.length);
         for (uint256 i = 0; i < actors.length; i++) {
@@ -1232,8 +1233,6 @@ contract MembershipManagerTest is TestSetup {
 
         uint256[] memory counts = new uint256[](10);
 
-        // There are 64 actors.
-        // So, the below involves 64 * (rounds) random txns
         for (uint256 round = 0; round < rounds; round++) {
             skip(7 days);
 
@@ -1250,20 +1249,15 @@ contract MembershipManagerTest is TestSetup {
                 address actor = actors[i];
                 uint256 token = tokens[i];
 
-                uint128 amount = uint128(round+1) * uint128(i+1) * 0.01 ether;
-                uint128 withdrawalAmount = uint128(round+1) * uint128(i+1) * 0.005 ether;
-                uint256 random = uint(keccak256(abi.encodePacked(actor, round, i))) % 100;
+                uint128 random = uint128(uint256(keccak256(abi.encodePacked(actor, round, i))) % type(uint128).max);
+                uint128 amount = random % 0.1 ether + 0.1 ether;
+                uint128 withdrawalAmount = random % 0.05 ether;
 
                 vm.startPrank(actor);
-                if (random % 3 == 0 && true) {
-                    membershipManagerInstance.claimStakingRewards(token);
-                    counts[0]++;
-                }
                 if (random % 4 == 0 && true) {
-                    membershipManagerInstance.claimTier(token);
+                    membershipManagerInstance.claim(token);
                     counts[1]++;
                 }
-
                 if (random % 2 == 0 && true) {
                     membershipManagerInstance.topUpDepositWithEth{value: amount + 0}(token, amount, 0, zeroProof);
                     counts[2]++;
@@ -1276,24 +1270,36 @@ contract MembershipManagerTest is TestSetup {
                 vm.stopPrank();
             }
         }
+        assertLe(membershipManagerInstance.totalSharesReservedForRewards(), eETHInstance.shares(address(membershipManagerInstance)));
 
         uint256 totalActorsBalance;
         for (uint256 i = 0; i < actors.length; i++) {
             address actor = actors[i];
             uint256 token = tokens[i];
 
-            uint256 beforeBalance = address(actor).balance;
-            uint256 valueOfToken = membershipNftInstance.valueOf(token);
+            uint256 expectedBalanceAfterWithdrawal = address(actor).balance + membershipNftInstance.valueOf(token);
 
             vm.startPrank(actor);
             membershipManagerInstance.withdrawAndBurnForEth(token);
             vm.stopPrank();
 
-            assertEq(address(actor).balance, beforeBalance + valueOfToken);
+            assertLe(address(actor).balance, expectedBalanceAfterWithdrawal);
+            assertGe(address(actor).balance, expectedBalanceAfterWithdrawal - 2); // rounding errors
 
             totalActorsBalance += address(actor).balance;
         }
 
+        for (uint256 i = 0; i < membershipManagerInstance.numberOfTiers(); i++) {
+            (uint128 share, uint128 amount) = membershipManagerInstance.tierDeposits(i);
+            // console.log("tierDeposits", i, share, amount);
+            assertEq(share, 0);
+            assertEq(amount, 0);
+        }
+        // console.log(counts[0], counts[1], counts[2], counts[3]);
+        // console.log("address(liquidityPoolInstance).balance", address(liquidityPoolInstance).balance);
+        // console.log("eETHInstance.balanceOf(address(membershipManagerInstance))", eETHInstance.balanceOf(address(membershipManagerInstance)));
+        // console.log("resting Rewards", liquidityPoolInstance.amountForShare(membershipManagerInstance.totalSharesReservedForRewards()));
         assertEq(totalActorsBalance + address(liquidityPoolInstance).balance, totalMoneySupply);
+        assertLe(membershipManagerInstance.totalSharesReservedForRewards(), eETHInstance.shares(address(membershipManagerInstance)));
     }
 }
