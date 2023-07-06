@@ -50,7 +50,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     // [END] SLOT 261 END
 
-    uint128 public totalReservedSharesForRewards;
+    uint128 public sharesReservedForRewards;
 
     address public admin;
 
@@ -247,10 +247,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         revert Deprecated();
     }
 
-    /// @notice Claims the tier.
+    /// @notice Claims {points, staking rewards} and update the tier, if needed.
     /// @param _tokenId The ID of the membership NFT.
     /// @dev This function allows users to claim the rewards + a new tier, if eligible.
-    function claimTier(uint256 _tokenId) public whenNotPaused {
+    function claim(uint256 _tokenId) public whenNotPaused {
         uint8 oldTier = tokenData[_tokenId].tier;
         uint8 newTier = membershipNFT.claimableTier(_tokenId);
         if (oldTier == newTier) {
@@ -263,32 +263,21 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _emitNftUpdateEvent(_tokenId);
     }
 
-    /// @notice Claims the accrued membership {loyalty, tier} points.
-    /// @param _tokenId The ID of the membership NFT.
-    function claimPoints(uint256 _tokenId) public whenNotPaused {
-        _claimPoints(_tokenId);
-        _emitNftUpdateEvent(_tokenId);
-    }
-
-    /// @notice Claims the staking rewards for a specific membership NFT.
-    /// @dev This function allows users to claim the staking rewards earned by a specific membership NFT.
-    /// @param _tokenId The ID of the membership NFT.
-    function claimStakingRewards(uint256 _tokenId) public whenNotPaused {
-        _claimStakingRewards(_tokenId);
-        _emitNftUpdateEvent(_tokenId);
-    }
-
     /// @notice Distributes staking rewards to eligible stakers.
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
     function distributeStakingRewards() external {
         _requireAdmin();
-        (uint96[] memory globalIndex, uint128[] memory adjustedShares, uint128 reservedSharesForRewards) = calculateGlobalIndex();
-        totalReservedSharesForRewards += reservedSharesForRewards;
+        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = calculateGlobalIndex();
+        uint128 totalShares = 0;
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             uint256 amounts = liquidityPool.amountForShare(adjustedShares[i]);
             tierDeposits[i].shares = adjustedShares[i];
             tierData[i].rewardsGlobalIndex = globalIndex[i];
+            totalShares += tierDeposits[i].shares;
         }
+
+        // Retricts the total amount of the withdrawable staking rewards
+        sharesReservedForRewards = uint128(eETH.shares(address(this))) - totalShares;
     }
 
     error TierLimitExceeded();
@@ -296,7 +285,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _requireAdmin();
         if (tierDeposits.length >= type(uint8).max) revert TierLimitExceeded();
         tierDeposits.push(TierDeposit(0, 0));
-        tierData.push(TierData(0, _requiredTierPoints, _weight));
+        tierData.push(TierData(0, _requiredTierPoints, _weight, 0));
         return tierDeposits.length - 1;
     }
 
@@ -484,7 +473,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _withdraw(_tokenId, totalBalance);
         membershipNFT.burn(msg.sender, _tokenId, 1);
 
-        return totalBalance;
+        // Rounding down in favor of the protocol
+        // + Guard against the inflation attack
+        return _min(totalBalance, liquidityPool.amountForShare(deposit.shares));
     }
 
     function _withdraw(uint256 _tokenId, uint256 _amount) internal {
@@ -519,8 +510,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint128 newAmount = deposit.amounts + uint128(_amount);
         uint128 newShare = uint128(liquidityPool.sharesForAmount(newAmount));
         tierDeposits[_tier] = TierDeposit(
-            newShare,
-            newAmount
+            newAmount,
+            newShare
         );
     }
 
@@ -529,8 +520,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint128 newAmount = deposit.amounts - uint128(_amount);
         uint128 newShare = uint128(liquidityPool.sharesForAmount(newAmount));
         tierDeposits[_tier] = TierDeposit(
-            newShare,
-            newAmount
+            newAmount,
+            newShare
         );
     }
 
@@ -572,12 +563,17 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         TokenData storage token = tokenData[_tokenId];
         uint256 tier = token.tier;
         uint256 amount = membershipNFT.accruedStakingRewardsOf(_tokenId);
-        uint256 share = liquidityPool.sharesForAmount(amount);
-        if (share > totalReservedSharesForRewards) revert NotEnoughReservedRewards();
-
+        // Round-up in favor of safety of the protocol
+        uint256 share = liquidityPool.sharesForWithdrawalAmount(amount);
+        if (share > sharesReservedForRewards) {
+            // This guard is against any malicious BIG withdrawal of staking rewards beyond limit
+            // It may have some false alerts in thoery because the rounding-up in calculating the share.
+            // But it is rare in practice.
+            revert NotEnoughReservedRewards();
+        }
         _incrementTokenDeposit(_tokenId, amount);
         _incrementTierDeposit(tier, amount);
-        totalReservedSharesForRewards -= uint128(share);
+        sharesReservedForRewards -= uint128(share);
         token.rewardsLocalIndex = tierData[tier].rewardsGlobalIndex;
     }
 
@@ -618,14 +614,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     * @return globalIndex A uint96 array containing the updated global index for each tier.
     * @return adjustedShares A uint128 array containing the updated shares for each tier reflecting the amount of staked ETH in the liquidity pool.
     */
-    function calculateGlobalIndex() public view returns (uint96[] memory, uint128[] memory, uint128) {
+    function calculateGlobalIndex() public view returns (uint96[] memory, uint128[] memory) {
         uint96[] memory globalIndex = new uint96[](tierDeposits.length);
         uint128[] memory adjustedShares = new uint128[](tierDeposits.length);
         uint256[] memory weightedTierRewards = new uint256[](tierDeposits.length);
         uint256[] memory tierRewards = new uint256[](tierDeposits.length);
         uint256 sumTierRewards = 0;
         uint256 sumWeightedTierRewards = 0;
-        uint128 reservedSharesForRewards = 0;
         for (uint256 i = 0; i < weightedTierRewards.length; i++) {
             TierDeposit memory deposit = tierDeposits[i];
             uint256 rebasedAmounts = liquidityPool.amountForShare(deposit.shares);
@@ -646,18 +641,16 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
                 if (shares > 0) {
                     uint256 rescaledTierRewards = weightedTierRewards[i] * sumTierRewards / sumWeightedTierRewards;
                     uint256 delta = 1 ether * rescaledTierRewards / shares;
-                    uint128 newShare = uint128(liquidityPool.sharesForAmount(tierDeposits[i].amounts));
 
-                    if (uint256(globalIndex[i]) + uint256(delta) > type(uint96).max || shares < newShare) revert IntegerOverflow();
+                    if (uint256(globalIndex[i]) + uint256(delta) > type(uint96).max) revert IntegerOverflow();
 
                     globalIndex[i] += uint96(delta);
-                    adjustedShares[i] = newShare;
-                    reservedSharesForRewards += uint128(shares - newShare);
+                    adjustedShares[i] = uint128(liquidityPool.sharesForAmount(tierDeposits[i].amounts));
                 }
             }
         }
 
-        return (globalIndex, adjustedShares, reservedSharesForRewards);
+        return (globalIndex, adjustedShares);
     }
 
     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
