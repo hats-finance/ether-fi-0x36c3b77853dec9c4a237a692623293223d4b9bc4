@@ -474,8 +474,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         membershipNFT.burn(msg.sender, _tokenId, 1);
 
         // Rounding down in favor of the protocol
-        uint256 returnedAmount = liquidityPool.amountForShare(deposit.shares);
-        return returnedAmount;
+        return liquidityPool.amountForShare(deposit.shares);
     }
 
     function _withdraw(uint256 _tokenId, uint256 _amount) internal {
