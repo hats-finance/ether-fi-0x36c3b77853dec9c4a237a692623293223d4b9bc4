@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import "forge-std/Script.sol";
 import "../../../src/MembershipManager.sol";
 import "../../../src/MembershipNFT.sol";
-import "../../../src/EtherFiNodesManager.sol";
 import "../../../src/WeETH.sol";
 import "../../../src/TNFT.sol";
 import "../../../src/EETH.sol";
@@ -13,10 +12,8 @@ import "../../../src/NFTExchange.sol";
 import "../../../src/LiquidityPool.sol";
 import "../../../src/RegulationsManager.sol";
 import "../../../src/UUPSProxy.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract DeployPhaseOnePointFiveScript is Script {
-    using Strings for string;
 
     /*---- Storage variables ----*/
 
@@ -50,18 +47,6 @@ contract DeployPhaseOnePointFiveScript is Script {
     NFTExchange public nftExchange;
 
     AddressProvider public addressProvider;
-
-    struct suiteAddresses {
-        address weETH;
-        address membershipManager;
-        address membershipNFT;
-        address eETH;
-        address liquidityPool;
-        address regulationsManager;
-        address nftExchange;
-    }
-
-    suiteAddresses suiteAddressesStruct;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -129,7 +114,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         nftExchange.initialize(tnft, address(membershipNFT), address(etherFiNodesManagerProxyAddress));
         addressProvider.addContract(address(nftExchangeProxy), address(nftExchange), "NFTExchange");
 
-        // Setup dependencies
         setUpAdmins(admin);
 
         liquidityPool.setTokenAddress(address(eETH));
@@ -147,80 +131,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         addressProvider.setOwner(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39);
 
         vm.stopBroadcast();
-
-        suiteAddressesStruct = suiteAddresses({
-            weETH: address(weETH),
-            membershipNFT: address(membershipNFT),
-            membershipManager: address(membershipManager),
-            eETH: address(eETH),
-            liquidityPool: address(liquidityPool),
-            regulationsManager: address(regulationsManager),
-            nftExchange: address(nftExchange)
-        });
-
-        writeSuiteVersionFile();
-    }
-
-    function _stringToUint(
-        string memory numString
-    ) internal pure returns (uint256) {
-        uint256 val = 0;
-        bytes memory stringBytes = bytes(numString);
-        for (uint256 i = 0; i < stringBytes.length; i++) {
-            uint256 exp = stringBytes.length - i;
-            bytes1 ival = stringBytes[i];
-            uint8 uval = uint8(ival);
-            uint256 jval = uval - uint256(0x30);
-
-            val += (uint256(jval) * (10 ** (exp - 1)));
-        }
-        return val;
-    }
-
-    function writeSuiteVersionFile() internal {
-        // Read Current version
-        string memory versionString = vm.readLine("release/logs/PhaseOnePointFive/mainnet/version.txt");
-
-        // Cast string to uint256
-        uint256 version = _stringToUint(versionString);
-
-        version++;
-
-        // Overwrites the version.txt file with incremented version
-        vm.writeFile(
-            "release/logs/PhaseOnePointFive/mainnet/version.txt",
-            string(abi.encodePacked(Strings.toString(version)))
-        );
-
-        // Writes the data to .release file
-        vm.writeFile(
-            string(
-                abi.encodePacked(
-                    "release/logs/PhaseOnePointFive/mainnet/",
-                    Strings.toString(version),
-                    ".release"
-                )
-            ),
-            string(
-                abi.encodePacked(
-                    Strings.toString(version),
-                    "\nWeETH: ",
-                    Strings.toHexString(suiteAddressesStruct.weETH),
-                    "\nMembershipManager: ",
-                    Strings.toHexString(suiteAddressesStruct.membershipManager),
-                    "\nMembershipNFT: ",
-                    Strings.toHexString(suiteAddressesStruct.membershipNFT),
-                    "\nEETH: ",
-                    Strings.toHexString(suiteAddressesStruct.eETH),
-                    "\nLiquidity Pool: ",
-                    Strings.toHexString(suiteAddressesStruct.liquidityPool),
-                    "\nRegulations Manager: ",
-                    Strings.toHexString(suiteAddressesStruct.regulationsManager),
-                    "\nNFT Exchange: ",
-                    Strings.toHexString(suiteAddressesStruct.nftExchange)
-                )
-            )
-        );
     }
 
     function setUpAdmins(address _admin) internal {
