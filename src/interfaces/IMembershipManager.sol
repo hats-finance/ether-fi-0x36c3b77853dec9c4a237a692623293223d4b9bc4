@@ -63,6 +63,7 @@ interface IMembershipManager {
     function numberOfTiers() external view returns (uint8);
     function getImplementation() external view returns (address);
     function sharesReservedForRewards() external view returns (uint128);
+    function minimumAmountForMint() external view returns (uint256);
 
     // only Owner
     function setWithdrawalLockBlocks(uint32 _blocks) external;

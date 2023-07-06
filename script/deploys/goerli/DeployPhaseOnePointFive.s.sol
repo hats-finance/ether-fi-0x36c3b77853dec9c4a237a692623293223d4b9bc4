@@ -124,8 +124,8 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.setFeeSplits(0, 100);
 
         initializeTiers();
-        membershipManager.wrapEthBatch{value: 9.3 ether}(31, 0.3 ether, 0, emptyProof);
-        membershipManager.wrapEthBatch{value: 6.9 ether}(69, 0.1 ether, 0, emptyProof);
+        premint();
+        membershipManager.setFeeAmounts(0.05 ether, 0.05 ether, 0);
         membershipManager.pauseContract();
         
         addressProvider.setOwner(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39);
@@ -145,5 +145,12 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManager.addNewTier(672, 2);
         membershipManager.addNewTier(2016, 3);
         membershipManager.addNewTier(4704, 4);
+    }
+
+    function premint() internal {
+        bytes32[] memory emptyProof;
+        uint256 minAmount = membershipManager.minimumAmountForMint();
+        membershipManager.wrapEthBatch{value: 31 * minAmount}(31, minAmount, 0, emptyProof);
+        membershipManager.wrapEthBatch{value: 69 * minAmount}(69, minAmount, 0, emptyProof);
     }
 }

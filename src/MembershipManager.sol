@@ -714,6 +714,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         return uint8(tierData.length);
     }
 
+    function minimumAmountForMint() external view returns (uint256) {
+        return uint256(1 gwei) * minDepositGwei;
+    }
+
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
