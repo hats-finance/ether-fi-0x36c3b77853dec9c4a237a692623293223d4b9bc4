@@ -24,8 +24,8 @@ contract AddressProvider {
     event ContractAdded(address proxy, address implementation, string name);
     event ContractUpgraded(address newImplementation, string name);
 
-    constructor() {
-        owner = msg.sender;
+    constructor(address _owner) {
+        owner = _owner;
     }
 
     //--------------------------------------------------------------------------------------

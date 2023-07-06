@@ -276,7 +276,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
             totalShares += tierDeposits[i].shares;
         }
 
-        // Retricts the total amount of the withdrawable staking rewards
+        // Restricts the total amount of the withdrawable staking rewards
         sharesReservedForRewards = uint128(eETH.shares(address(this))) - totalShares;
     }
 
@@ -567,7 +567,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 share = liquidityPool.sharesForWithdrawalAmount(amount);
         if (share > sharesReservedForRewards) {
             // This guard is against any malicious BIG withdrawal of staking rewards beyond limit
-            // It may have some false alerts in thoery because the rounding-up in calculating the share.
+            // It may have some false alerts in theory because the rounding-up in calculating the share.
             // But it is rare in practice.
             revert NotEnoughReservedRewards();
         }
