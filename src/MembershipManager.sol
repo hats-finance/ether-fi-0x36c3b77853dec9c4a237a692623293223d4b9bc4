@@ -299,15 +299,27 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     /// @notice Sets the points for a given Ethereum address.
     /// @dev This function allows the contract owner to set the points for a specific Ethereum address.
+    /// @param _tokenIds The ID of the membership NFT.
+    /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
+    /// @param _tierPoints The number of tier points to set for the specified NFT.
+    function setPointsBatch(uint256[] calldata _tokenIds, uint40[] calldata _loyaltyPoints, uint40[] calldata _tierPoints) external {
+        _requireAdmin();
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            uint256 tokenId = _tokenIds[i];
+            _setPoints(tokenId, _loyaltyPoints[i], _tierPoints[i]);
+            _claimTier(tokenId);
+            _emitNftUpdateEvent(tokenId);
+        }
+    }
+
+    /// @notice Sets the points for a given Ethereum address.
+    /// @dev This function allows the contract owner to set the points for a specific Ethereum address.
     /// @param _tokenId The ID of the membership NFT.
     /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
     /// @param _tierPoints The number of tier points to set for the specified NFT.
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external {
         _requireAdmin();
-        TokenData storage token = tokenData[_tokenId];
-        token.baseLoyaltyPoints = _loyaltyPoints;
-        token.baseTierPoints = _tierPoints;
-        token.prevPointsAccrualTimestamp = uint32(block.timestamp);
+        _setPoints(_tokenId, _loyaltyPoints, _tierPoints);
         _claimTier(_tokenId);
         _emitNftUpdateEvent(_tokenId);
     }
@@ -682,6 +694,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         token.baseTierPoints -= penalty;
         _claimTier(_tokenId);
+    }
+
+    function _setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) internal {
+        TokenData storage token = tokenData[_tokenId];
+        token.baseLoyaltyPoints = _loyaltyPoints;
+        token.baseTierPoints = _tierPoints;
+        token.prevPointsAccrualTimestamp = uint32(block.timestamp);
     }
 
     function _emitNftUpdateEvent(uint256 _tokenId) internal {
