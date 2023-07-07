@@ -64,16 +64,16 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
         unchecked {
             _approve(owner, _spender, currentAllowance - _decreaseAmount);
         }
-
         return true;
     }
 
     function transferFrom(address _sender, address _recipient, uint256 _amount) external override(IeETH, IERC20Upgradeable) returns (bool) {
         uint256 currentAllowance = allowances[_sender][msg.sender];
         require(currentAllowance >= _amount, "TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
-
+        unchecked {
+            _approve(_sender, msg.sender, currentAllowance - _amount);
+        }
         _transfer(_sender, _recipient, _amount);
-        _approve(_sender, msg.sender, currentAllowance - _amount);
         return true;
     }
 

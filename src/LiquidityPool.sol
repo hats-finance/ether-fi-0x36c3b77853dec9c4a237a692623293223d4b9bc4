@@ -30,10 +30,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IeETH public eETH; 
 
     bool public eEthliquidStakingOpened;
+
     uint128 public totalValueOutOfLp;
     uint128 public totalValueInLp;
 
     address public admin;
+
+    uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -83,11 +86,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             isWhitelistedAndEligible(msg.sender, _merkleProof);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
-        if (msg.value > type(uint128).max || msg.value == 0) revert InvalidAmount();
-
+        
         totalValueInLp += uint128(msg.value);
         uint256 share = _sharesForDepositAmount(msg.value);
-        if (share == 0) revert InvalidAmount();
+        if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
+
         eETH.mintShares(_recipient, share);
 
         emit Deposit(_recipient, msg.value);
@@ -101,11 +104,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
-        if (_amount > type(uint128).max) revert InvalidAmount();
 
         uint256 share = sharesForWithdrawalAmount(_amount);
-
         totalValueInLp -= uint128(_amount);
+        if (_amount > type(uint128).max || _amount == 0 || share == 0) revert InvalidAmount();
 
         eETH.burnShares(msg.sender, share);
 
@@ -137,6 +139,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         totalValueOutOfLp += uint128(amountFromLp);
         totalValueInLp -= uint128(amountFromLp);
+        numPendingDeposits += uint32(_numDeposits);
 
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numDeposits}(_candidateBidIds, _merkleProof);
 
@@ -158,7 +161,22 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         IStakingManager.DepositData[] calldata _depositData
         ) external onlyAdmin
     {
+        numPendingDeposits -= uint32(_validatorIds.length);
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
+    }
+
+    function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
+        uint256 returnAmount = 2 ether * _validatorIds.length;
+
+        totalValueOutOfLp += uint128(returnAmount);
+        numPendingDeposits -= uint32(_validatorIds.length);
+
+        stakingManager.batchCancelDeposit(_validatorIds);
+
+        totalValueInLp -= uint128(returnAmount);
+
+        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+        require(sent, "Failed to send Ether");
     }
 
     /// @notice Send the exit requests as the T-NFT holder

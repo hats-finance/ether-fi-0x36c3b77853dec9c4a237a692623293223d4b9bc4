@@ -6,7 +6,12 @@
   },
   {
     "inputs": [],
-    "name": "DissallowZeroAddress",
+    "name": "Deprecated",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DisallowZeroAddress",
     "type": "error"
   },
   {
@@ -56,6 +61,11 @@
   },
   {
     "inputs": [],
+    "name": "NotEnoughReservedRewards",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "OncePerMonth",
     "type": "error"
   },
@@ -71,6 +81,11 @@
   },
   {
     "inputs": [],
+    "name": "OutOfBound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "RequireTokenUnlocked",
     "type": "error"
   },
@@ -82,6 +97,11 @@
   {
     "inputs": [],
     "name": "UnexpectedTier",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WrongTokenMinted",
     "type": "error"
   },
   {
@@ -401,33 +421,7 @@
         "type": "uint256"
       }
     ],
-    "name": "claimPoints",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimStakingRewards",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimTier",
+    "name": "claim",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -458,17 +452,17 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "mintFeeAmount",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "burnFeeAmount",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "upgradeFeeAmount",
         "type": "uint256"
       }
     ],
@@ -568,6 +562,32 @@
         "internalType": "uint56",
         "name": "",
         "type": "uint56"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "minimumAmountForMint",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "numberOfTiers",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -681,6 +701,25 @@
   {
     "inputs": [
       {
+        "internalType": "uint8",
+        "name": "_tier",
+        "type": "uint8"
+      }
+    ],
+    "name": "rewardsGlobalIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_mintFeeAmount",
         "type": "uint256"
@@ -771,6 +810,29 @@
   {
     "inputs": [
       {
+        "internalType": "uint256[]",
+        "name": "_tokenIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint40[]",
+        "name": "_loyaltyPoints",
+        "type": "uint40[]"
+      },
+      {
+        "internalType": "uint40[]",
+        "name": "_tierPoints",
+        "type": "uint40[]"
+      }
+    ],
+    "name": "setPointsBatch",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint32",
         "name": "_newWaitTime",
         "type": "uint32"
@@ -792,6 +854,19 @@
     "name": "setWithdrawalLockBlocks",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "sharesReservedForRewards",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -828,11 +903,6 @@
         "type": "uint96"
       },
       {
-        "internalType": "uint96",
-        "name": "amountStakedForPoints",
-        "type": "uint96"
-      },
-      {
         "internalType": "uint40",
         "name": "requiredTierPoints",
         "type": "uint40"
@@ -841,6 +911,11 @@
         "internalType": "uint24",
         "name": "weight",
         "type": "uint24"
+      },
+      {
+        "internalType": "uint96",
+        "name": "__gap",
+        "type": "uint96"
       }
     ],
     "stateMutability": "view",
@@ -858,12 +933,12 @@
     "outputs": [
       {
         "internalType": "uint128",
-        "name": "shares",
+        "name": "amounts",
         "type": "uint128"
       },
       {
         "internalType": "uint128",
-        "name": "amounts",
+        "name": "shares",
         "type": "uint128"
       }
     ],
@@ -955,7 +1030,7 @@
       },
       {
         "internalType": "uint128",
-        "name": "amountStakedForPoints",
+        "name": "shares",
         "type": "uint128"
       }
     ],
@@ -1119,6 +1194,29 @@
   {
     "inputs": [
       {
+        "internalType": "uint8",
+        "name": "_tier",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint40",
+        "name": "_requiredTierPoints",
+        "type": "uint40"
+      },
+      {
+        "internalType": "uint24",
+        "name": "_weight",
+        "type": "uint24"
+      }
+    ],
+    "name": "updateTier",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "newImplementation",
         "type": "address"
@@ -1161,7 +1259,13 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      }
+    ],
     "name": "withdrawFees",
     "outputs": [],
     "stateMutability": "nonpayable",

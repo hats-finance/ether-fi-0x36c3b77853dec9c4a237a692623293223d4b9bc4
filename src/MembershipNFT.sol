@@ -47,7 +47,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
         nextMintTokenId = 1;
-        maxTokenId = type(uint32).max;
+        maxTokenId = 1000;
     }
 
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
@@ -152,17 +152,17 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     function valueOf(uint256 _tokenId) public view returns (uint256) {
         (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
-        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
+        (uint128 amounts,) = membershipManager.tokenDeposits(_tokenId);
         (uint96 rewardsGlobalIndex,,, ) = membershipManager.tierData(tier);
-        uint256 rewards = (rewardsGlobalIndex - rewardsLocalIndex) * amounts / 1 ether;
-        return amounts + rewards + amountStakedForPoints;
+        uint256 rewards = accruedStakingRewardsOf(_tokenId);
+        return amounts + rewards;
     }
 
     function accruedStakingRewardsOf(uint256 _tokenId) public view returns (uint256) {
         (uint96 rewardsLocalIndex,,,,, uint8 tier,) = membershipManager.tokenData(_tokenId);
-        (uint128 amounts, ) = membershipManager.tokenDeposits(_tokenId);
+        (uint128 amounts, uint128 shares) = membershipManager.tokenDeposits(_tokenId);
         (uint96 rewardsGlobalIndex,,, ) = membershipManager.tierData(tier);
-        uint256 rewards = (rewardsGlobalIndex - rewardsLocalIndex) * amounts / 1 ether;
+        uint256 rewards = uint256(rewardsGlobalIndex - rewardsLocalIndex) * shares / 1 ether;
         return rewards;
     }
 
@@ -196,15 +196,13 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
     function accruedTierPointsOf(uint256 _tokenId) public view returns (uint40) {
-        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
-        if (amounts == 0 && amountStakedForPoints == 0) {
+        (uint128 amounts, uint128 shares) = membershipManager.tokenDeposits(_tokenId);
+        if (amounts == 0 || shares == 0) {
             return 0;
         }
         (,,, uint32 prevPointsAccrualTimestamp,,,) = membershipManager.tokenData(_tokenId);
         uint256 tierPointsPerDay = 24; // 1 per an hour
         uint256 earnedPoints = (uint32(block.timestamp) - prevPointsAccrualTimestamp) * tierPointsPerDay / 1 days;
-        uint256 effectiveBalanceForEarningPoints = amounts + ((10000 + membershipManager.pointsBoostFactor()) * amountStakedForPoints) / 10000;
-        earnedPoints = earnedPoints * effectiveBalanceForEarningPoints / (amounts + amountStakedForPoints);
         return uint40(earnedPoints);
     }
 
@@ -214,15 +212,15 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     function isWithdrawable(uint256 _tokenId, uint256 _withdrawalAmount) public view returns (bool) {
         // cap withdrawals to 50% of lifetime max balance. Otherwise need to fully withdraw and burn NFT
-        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
-        uint256 totalDeposit = amounts + amountStakedForPoints;
+        (uint128 amounts,) = membershipManager.tokenDeposits(_tokenId);
+        uint256 totalDeposit = amounts;
         uint256 highestDeposit = allTimeHighDepositOf(_tokenId);
         return (totalDeposit - _withdrawalAmount >= highestDeposit / 2);
     }
 
     function allTimeHighDepositOf(uint256 _tokenId) public view returns (uint256) {
-        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
-        uint256 totalDeposit = amounts + amountStakedForPoints;
+        (uint128 amounts,) = membershipManager.tokenDeposits(_tokenId);
+        uint256 totalDeposit = amounts;
         return _max(totalDeposit, membershipManager.allTimeHighDepositAmount(_tokenId));        
     }
 
@@ -233,16 +231,15 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     // Compute the points earnings of a user between [since, until) 
     // Assuming the user's balance didn't change in between [since, until)
     function membershipPointsEarning(uint256 _tokenId, uint256 _since, uint256 _until) public view returns (uint40) {
-        (uint128 amounts, uint128 amountStakedForPoints) = membershipManager.tokenDeposits(_tokenId);
-        if (amounts == 0 && amountStakedForPoints == 0) {
+        (uint128 amounts, uint128 shares) = membershipManager.tokenDeposits(_tokenId);
+        if (amounts == 0 || shares == 0) {
             return 0;
         }
-
-        uint16 pointsBoostFactor = membershipManager.pointsBoostFactor();
+        
         uint16 pointsGrowthRate = membershipManager.pointsGrowthRate();
 
         uint256 elapsed = _until - _since;
-        uint256 effectiveBalanceForEarningPoints = amounts + ((10000 + pointsBoostFactor) * amountStakedForPoints) / 10000;
+        uint256 effectiveBalanceForEarningPoints = amounts;
         uint256 earning = effectiveBalanceForEarningPoints * elapsed * pointsGrowthRate / 10000;
 
         // 0.001         ether   earns 1     wei   points per day
@@ -267,7 +264,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
             tierId++;
         }
         tierId -= 1;
-        (,, uint40 requiredTierPoints, ) = membershipManager.tierData(tierId);
+        (,uint40 requiredTierPoints,, ) = membershipManager.tierData(tierId);
         return (uint40(loyaltyPoints), requiredTierPoints);
     }
 

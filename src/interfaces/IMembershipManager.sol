@@ -5,7 +5,7 @@ interface IMembershipManager {
 
     struct TokenDeposit {
         uint128 amounts;
-        uint128 amountStakedForPoints;
+        uint128 shares;
     }
 
     struct TokenData {
@@ -19,15 +19,15 @@ interface IMembershipManager {
     }
 
     struct TierDeposit {
-        uint128 shares;
         uint128 amounts;
+        uint128 shares;
     }
 
     struct TierData {
         uint96 rewardsGlobalIndex;
-        uint96 amountStakedForPoints;
         uint40 requiredTierPoints;
         uint24 weight;
+        uint96  __gap;
     }
 
     // State-changing functions
@@ -44,14 +44,13 @@ interface IMembershipManager {
     function stakeForPoints(uint256 _tokenId, uint256 _amount) external;
     function unstakeForPoints(uint256 _tokenId, uint256 _amount) external;
 
-    function claimTier(uint256 _tokenId) external;
-    function claimPoints(uint256 _tokenId) external;
-    function claimStakingRewards(uint256 _tokenId) external;
+    function claim(uint256 _tokenId) external;
 
     // Getter functions
     function tokenDeposits(uint256) external view returns (uint128, uint128);
     function tokenData(uint256) external view returns (uint96, uint40, uint40, uint32, uint32, uint8, uint8);
-    function tierData(uint256) external view returns (uint96, uint96, uint40, uint24);
+    function tierDeposits(uint256) external view returns (uint128, uint128);
+    function tierData(uint256) external view returns (uint96, uint40, uint24, uint96);
 
     function rewardsGlobalIndex(uint8 _tier) external view returns (uint256);
     function allTimeHighDepositAmount(uint256 _tokenId) external view returns (uint256);
@@ -63,6 +62,8 @@ interface IMembershipManager {
     function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory);
     function numberOfTiers() external view returns (uint8);
     function getImplementation() external view returns (address);
+    function sharesReservedForRewards() external view returns (uint128);
+    function minimumAmountForMint() external view returns (uint256);
 
     // only Owner
     function setWithdrawalLockBlocks(uint32 _blocks) external;

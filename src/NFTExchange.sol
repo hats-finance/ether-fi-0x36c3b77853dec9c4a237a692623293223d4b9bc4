@@ -58,9 +58,8 @@ contract NFTExchange is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
      * @param _mNftTokenIds The token IDs of the membership NFTs to list for sale.
      * @param _targetTNftTokenIds The token IDs of the T-NFTs to be traded for.
      * @param _reservedBuyers The addresses of the reserved buyers for each NFT.
-     * @param _blocks how many blocks to list the token for
      */
-    function listForSale(uint256[] calldata _mNftTokenIds, uint256[] calldata _targetTNftTokenIds, address[] calldata _reservedBuyers, uint256 _blocks) external onlyAdmin {
+    function listForSale(uint256[] calldata _mNftTokenIds, uint256[] calldata _targetTNftTokenIds, address[] calldata _reservedBuyers) external onlyAdmin {
         require(_mNftTokenIds.length == _reservedBuyers.length, "Input arrays must be the same length");
         for (uint256 i = 0; i < _mNftTokenIds.length; i++) {
             uint256 mNftTokenId = _mNftTokenIds[i];

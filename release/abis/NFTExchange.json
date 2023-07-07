@@ -136,6 +136,11 @@
         "internalType": "address",
         "name": "_membershipNft",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_nodesMgr",
+        "type": "address"
       }
     ],
     "name": "initialize",
@@ -151,14 +156,14 @@
         "type": "uint256[]"
       },
       {
+        "internalType": "uint256[]",
+        "name": "_targetTNftTokenIds",
+        "type": "uint256[]"
+      },
+      {
         "internalType": "address[]",
         "name": "_reservedBuyers",
         "type": "address[]"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_blocks",
-        "type": "uint256"
       }
     ],
     "name": "listForSale",
@@ -278,6 +283,25 @@
         "internalType": "contract IERC721",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "targetTNftTokenIds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
