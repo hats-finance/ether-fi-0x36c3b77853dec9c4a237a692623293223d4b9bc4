@@ -119,6 +119,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPool.setTokenAddress(address(eETH));
         liquidityPool.setMembershipManager(address(membershipManager));
         regulationsManager.initializeNewWhitelist(initialHash);
+        regulationsManager.confirmEligibility(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
         membershipManager.setTopUpCooltimePeriod(28 days);
         membershipManager.setFeeSplits(0, 100);        
@@ -127,8 +128,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         preMint();
         membershipManager.setFeeAmounts(0.05 ether, 0.05 ether, 0);
         membershipManager.pauseContract();
-
-        addressProvider.setOwner(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39);
 
         vm.stopBroadcast();
     }
