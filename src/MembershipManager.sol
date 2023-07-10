@@ -446,13 +446,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _incrementTierDeposit(tier, _amount + _amountForPoints);
     }
 
-    error OncePerMonth();
-
     function _topUpDeposit(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) internal returns (uint256) {
         // subtract fee from provided ether. Will revert if not enough eth provided
         uint256 upgradeFeeAmount = uint256(upgradeFee) * 0.001 ether;
         uint256 additionalDeposit = msg.value - upgradeFeeAmount;
-        canTopUp(_tokenId, additionalDeposit, _amount, _amountForPoints);
+        if (!canTopUp(_tokenId, additionalDeposit, _amount, _amountForPoints)) revert InvalidDeposit();
 
         TokenDeposit memory deposit = tokenDeposits[_tokenId];
         TokenData storage token = tokenData[_tokenId];
@@ -724,8 +722,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     function canTopUp(uint256 _tokenId, uint256 _totalAmount, uint128 _amount, uint128 _amountForPoints) public view returns (bool) {
         uint32 prevTopUpTimestamp = tokenData[_tokenId].prevTopUpTimestamp;
-        if (block.timestamp - uint256(prevTopUpTimestamp) < topUpCooltimePeriod) revert OncePerMonth();
-        if (_totalAmount != _amount + _amountForPoints) revert InvalidAllocation();
+        if (block.timestamp - uint256(prevTopUpTimestamp) < topUpCooltimePeriod) return false;
+        if (_totalAmount != _amount + _amountForPoints) return false;
         return true;
     }
 
