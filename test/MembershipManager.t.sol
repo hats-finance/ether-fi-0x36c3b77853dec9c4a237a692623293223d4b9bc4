@@ -472,7 +472,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(aliceToken), 8 ether + 1 ether);
 
         // can't top up again immediately
-        vm.expectRevert(MembershipManager.OncePerMonth.selector);
+        vm.expectRevert(MembershipManager.InvalidDeposit.selector);
         membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
 
         skip(28 days);
@@ -804,7 +804,7 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.topUpDepositWithEth{value: 0.1 ether}(aliceToken, 0.1 ether, 0, aliceProof);
 
         // attempt to provide in improper amount
-        vm.expectRevert(MembershipManager.InvalidAllocation.selector);
+        vm.expectRevert(MembershipManager.InvalidDeposit.selector);
         membershipManagerInstance.topUpDepositWithEth{value: 5 ether}(aliceToken, 0.1 ether, 0, aliceProof);
 
         // proper upgrade
