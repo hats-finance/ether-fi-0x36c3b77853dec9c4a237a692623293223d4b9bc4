@@ -10,6 +10,12 @@ import "../../src/helpers/AddressProvider.sol";
 import "../../src/NFTExchange.sol";
 import "../../src/LiquidityPool.sol";
 import "../../src/RegulationsManager.sol";
+import "../../src/EtherFiNodesManager.sol";
+import "../../src/ProtocolRevenueManager.sol";
+import "../../src/TNFT.sol";
+import "../../src/BNFT.sol";
+import "../../src/AuctionManager.sol";
+import "../../src/StakingManager.sol";
 
 contract TransferOwnership is Script {   
 
