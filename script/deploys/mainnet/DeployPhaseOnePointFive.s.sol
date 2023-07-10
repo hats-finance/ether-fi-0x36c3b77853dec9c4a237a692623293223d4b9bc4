@@ -62,7 +62,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         address treasury = addressProvider.getImplementationAddress("Treasury");
         address protocolRevenueManagerProxy = addressProvider.getProxyAddress("ProtocolRevenueManager");
         address tnft = addressProvider.getProxyAddress("TNFT");
-        address admin = vm.envAddress("ADMIN");
+        address admin = vm.envAddress("DEPLOYER");
 
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
 
