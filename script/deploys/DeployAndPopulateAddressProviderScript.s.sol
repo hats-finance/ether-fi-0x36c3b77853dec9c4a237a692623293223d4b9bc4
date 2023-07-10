@@ -39,7 +39,7 @@ contract DeployAndPopulateAddressProvider is Script {
         address owner = vm.envAddress("ADMIN");
         vm.startBroadcast(deployerPrivateKey);
 
-        addressProvider = new AddressProvider{salt: 0x6574686572666920697320617765736f6d650000000000000000000000000000}(owner);
+        addressProvider = new AddressProvider{salt: 0x727570657274206973206b696e67000000000000000000000000000000000000}(owner);
         console.log(address(addressProvider));
 
         /*---- Populate Registry ----*/
