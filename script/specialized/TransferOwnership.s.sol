@@ -23,6 +23,12 @@ contract TransferOwnership is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
+        address auctionManager = addressProvider.getProxyAddress("AuctionManager");
+        address stakingManager = addressProvider.getProxyAddress("StakingManager");
+        address protocolRevenueManager = addressProvider.getProxyAddress("ProtocolRevenueManager");
+        address tnft = addressProvider.getProxyAddress("TNFT");
+        address bnft = addressProvider.getProxyAddress("BNFT");
+        address etherfiNodesManager = addressProvider.getProxyAddress("EtherFiNodesManager");
         address membershipManager = addressProvider.getProxyAddress("MembershipManager");
         address membershipNFT = addressProvider.getProxyAddress("MembershipNFT");
         address weETH = addressProvider.getProxyAddress("WeETH");
@@ -40,6 +46,13 @@ contract TransferOwnership is Script {
         NFTExchange(nftExchange).transferOwnership(owner); 
         LiquidityPool(payable(liquidityPool)).transferOwnership(owner); 
         RegulationsManager(regulationsManager).transferOwnership(owner); 
+        AuctionManager(auctionManager).transferOwnership(owner); 
+        StakingManager(stakingManager).transferOwnership(owner); 
+        ProtocolRevenueManager(payable(protocolRevenueManager)).transferOwnership(owner); 
+        TNFT(tnft).transferOwnership(owner); 
+        BNFT(bnft).transferOwnership(owner); 
+        EtherFiNodesManager(payable(etherfiNodesManager)).transferOwnership(owner); 
+        addressProvider.setOwner(owner);
 
         vm.stopBroadcast();
     }
