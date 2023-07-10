@@ -36,7 +36,7 @@ contract DeployAndPopulateAddressProvider is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address owner = vm.envAddress("ADMIN");
+        address owner = vm.envAddress("DEPLOYER");
         vm.startBroadcast(deployerPrivateKey);
 
         addressProvider = new AddressProvider{salt: 0x0}(owner);
