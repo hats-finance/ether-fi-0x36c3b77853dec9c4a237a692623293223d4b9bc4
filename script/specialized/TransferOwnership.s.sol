@@ -31,7 +31,7 @@ contract TransferOwnership is Script {
         address liquidityPool = addressProvider.getProxyAddress("LiquidityPool");
         address regulationsManager = addressProvider.getProxyAddress("RegulationsManager");
 
-        address owner = vm.envAddress("OWNER");
+        address owner = vm.envAddress("GNOSIS");
 
         MembershipManager(payable(membershipManager)).transferOwnership(owner); 
         MembershipNFT(membershipNFT).transferOwnership(owner); 
