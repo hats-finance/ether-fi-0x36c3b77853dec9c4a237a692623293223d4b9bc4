@@ -92,7 +92,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         pointsGrowthRate = 10000;
         minDepositGwei = (0.1 ether / 1 gwei);
         maxDepositTopUpPercent = 20;
-        withdrawalLockBlocks = 100;
+        withdrawalLockBlocks = 3600;
 
         treasuryFeeSplitPercent = 0;
         protocolRevenueFeeSplitPercent = 100;
