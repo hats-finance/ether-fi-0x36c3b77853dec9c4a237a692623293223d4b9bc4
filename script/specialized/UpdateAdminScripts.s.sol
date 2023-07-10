@@ -37,7 +37,6 @@ contract UpdateAdmins is Script {
         address nftExchange = addressProvider.getProxyAddress("NFTExchange");
 
         address admin = vm.envAddress("ADMIN");
-
         EtherFiNodesManager(payable(etherFiNodesManager)).updateAdmin(admin); 
         ProtocolRevenueManager(payable(protocolRevenueManager)).updateAdmin(admin); 
         AuctionManager(auctionManager).updateAdmin(admin); 
