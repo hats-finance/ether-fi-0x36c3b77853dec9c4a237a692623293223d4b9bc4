@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/IMembershipNFT.sol";
-import "forge-std/console.sol";
+
 
 contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC1155Upgradeable, IMembershipNFT {
 
