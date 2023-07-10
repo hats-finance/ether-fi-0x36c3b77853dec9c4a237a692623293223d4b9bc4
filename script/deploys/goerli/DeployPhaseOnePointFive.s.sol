@@ -87,7 +87,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         eETHProxy = new UUPSProxy(address(eETHImplementation),"");
         eETH = EETH(address(eETHProxy));
         eETH.initialize(address(liquidityPool));
-        addressProvider.addContract(address(eETHProxy), address(eETHImplementation), "eETH");
+        addressProvider.addContract(address(eETHProxy), address(eETHImplementation), "EETH");
 
         membershipNFTImplementation = new MembershipNFT();
         membershipNFTProxy = new UUPSProxy(address(membershipNFTImplementation),"");
@@ -105,7 +105,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         weETHProxy = new UUPSProxy(address(weETHImplementation),"");
         weETH = WeETH(address(weETHProxy));
         weETH.initialize(address(liquidityPool), address(eETH));
-        addressProvider.addContract(address(weETHProxy), address(weETHImplementation), "weETH");
+        addressProvider.addContract(address(weETHProxy), address(weETHImplementation), "WeETH");
 
         nftExchangeImplementation = new NFTExchange();
         nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation),"");
