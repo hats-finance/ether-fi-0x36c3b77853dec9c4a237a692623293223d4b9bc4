@@ -332,7 +332,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Check that Alice has received membership points
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
-        assertEq(membershipNftInstance.tierOf(tokenId), 2); // Gold
+        assertEq(membershipNftInstance.tierOf(tokenId), 3); // Gold
         assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 2 ether);
     }
 
@@ -760,7 +760,7 @@ contract MembershipManagerTest is TestSetup {
         uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 1 ether, 103680, aliceProof);
         
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
-        assertEq(membershipNftInstance.tierOf(tokenId), 2);
+        assertEq(membershipNftInstance.tierOf(tokenId), 3);
 
         // Top-up with ETH
         membershipManagerInstance.topUpDepositWithEth{value: 0.2 ether}(tokenId, 0.2 ether, 0 ether, aliceProof);
@@ -1307,5 +1307,48 @@ contract MembershipManagerTest is TestSetup {
         // console.log("resting Rewards", liquidityPoolInstance.amountForShare(membershipManagerInstance.sharesReservedForRewards()));
         assertEq(totalActorsBalance + address(liquidityPoolInstance).balance, totalMoneySupply);
         assertLe(membershipManagerInstance.sharesReservedForRewards(), eETHInstance.shares(address(membershipManagerInstance)));
+    }
+
+    function test_eap_migration() public {
+        vm.startPrank(alice);
+        uint64[] memory newRequiredEapPointsPerEapDeposit = new uint64[](membershipManagerInstance.numberOfTiers());
+        newRequiredEapPointsPerEapDeposit[0] = 0;
+        newRequiredEapPointsPerEapDeposit[1] = 0; // 0.2
+        newRequiredEapPointsPerEapDeposit[2] = 1826; // 1825.5
+        newRequiredEapPointsPerEapDeposit[3] = 3222; // 3221.4
+        newRequiredEapPointsPerEapDeposit[4] = 10000000000;
+        membershipNftInstance.setUpForEap(rootMigration2, newRequiredEapPointsPerEapDeposit);
+
+        {
+            // random EAP degen just for Silver
+            uint256 eapPoints = 1;
+            uint256 ethAmount = 0.001 ether;
+            (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(eapPoints, ethAmount);
+            assertEq( membershipManagerInstance.tierForPoints(tierPoints), 1);
+        }
+
+        {
+            // 0x9b422e571eb2cb9837efdc4f9087194d65fb070a
+            uint256 eapPoints = 18255;
+            uint256 ethAmount = 1e17;
+            (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(eapPoints, ethAmount);
+            assertEq( membershipManagerInstance.tierForPoints(tierPoints), 1);
+        }
+
+        {
+            // 0x33bac50dfa950f79c59d85f9a4f07ca48f6e0b4c
+            uint256 eapPoints = 576263;
+            uint256 ethAmount = 32 * 1e18;
+            (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(eapPoints, ethAmount);
+            assertEq( membershipManagerInstance.tierForPoints(tierPoints), 2);
+        }
+
+        {
+            // 0xee1fe7053adf44f1daafe78afb05a5a032016458
+            uint256 eapPoints = 33602;
+            uint256 ethAmount = 1e17;
+            (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(eapPoints, ethAmount);
+            assertEq( membershipManagerInstance.tierForPoints(tierPoints), 3);
+        }
     }
 }
