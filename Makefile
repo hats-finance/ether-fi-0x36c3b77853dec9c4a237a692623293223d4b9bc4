@@ -121,6 +121,10 @@ update-goerli-admins:; forge clean && forge script script/specialized/UpdateAdmi
 
 update-admins:; forge clean && forge script script/specialized/UpdateAdminScripts.s.sol:UpdateAdmins --rpc-url ${MAINNET_RPC_URL} --broadcast -vvvv --slow
 
+update-goerli-implementation-addresses:; forge clean && forge script script/specialized/UpdateAddressProviderImplementationAddresses.s.sol:UpdateAddressProviderImplementationAddresses --rpc-url ${GOERLI_RPC_URL} --broadcast -vvvv --slow
+
+update-implementation-addresses:; forge clean && forge script script/specialized/UpdateAddressProviderImplementationAddresses.s.sol:UpdateAddressProviderImplementationAddresses --rpc-url ${MAINNET_RPC_URL} --broadcast -vvvv --slow
+
 transfer-goerli-ownership:; forge clean && forge script script/specialized/TransferOwnership.s.sol:TransferOwnership --rpc-url ${GOERLI_RPC_URL} --broadcast -vvvv --slow
 
 transfer-ownership:; forge clean && forge script script/specialized/TransferOwnership.s.sol:TransferOwnership --rpc-url ${MAINNET_RPC_URL} --broadcast -vvvv --slow
