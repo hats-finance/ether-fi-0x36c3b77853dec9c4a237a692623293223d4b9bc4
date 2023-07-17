@@ -15,7 +15,7 @@ contract TNFTUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address TNFTProxyAddress = addressProvider.getProxyAddress("TNFT");
+        address TNFTProxyAddress = addressProvider.getContractAddress("TNFT");
 
         require(TNFTProxyAddress == 0x0FE93205B6AdF89F5b9893F393dCf3260cb30bE0, "TNFTProxyAddress incorrect see .env");
 

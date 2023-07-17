@@ -32,14 +32,14 @@ contract AddressProviderTest is TestSetup {
         (
             uint256 version,
             uint256 lastModified,
-            address proxy,
+            address contractAddress,
             bool isActive,
             string memory name
         ) = addressProviderInstance.contracts("AuctionManager");
         
         assertEq(version, 1);
         assertEq(lastModified, 20000);
-        assertEq(proxy, address(auctionManagerProxy));
+        assertEq(contractAddress, address(auctionManagerProxy));
         assertEq(isActive, false);
         assertEq(name, "AuctionManager");
         assertEq(addressProviderInstance.numberOfContracts(), 1);
