@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+
 contract AddressProvider {
 
     //--------------------------------------------------------------------------------------
@@ -84,20 +86,16 @@ contract AddressProvider {
         return contracts[_name].contractAddress;
     }
 
-    function getImplementationAddress(string memory _name) external view returns (address) {
-         if(isProxy(contracts[_name].contractAddress)) {
-            return (contracts[_name].contractAddress);
+    function getImplementationAddress(string memory _name) external returns (address) {
+        address localContractAddress = contracts[_name].contractAddress;
+        (bool success, ) = localContractAddress.call(abi.encodeWithSignature("getImplementation()"));
+
+        if(success) {
+            (, bytes memory implementation) = localContractAddress.call(abi.encodeWithSignature("getImplementation()"));
+            return abi.decode(implementation, (address));
         } else {
             return address(0);
         }
-    }
-
-    //--------------------------------------------------------------------------------------
-    //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
-    //--------------------------------------------------------------------------------------
-
-    function isProxy(address _contract) internal view returns (bool) {
-
     }
 
     //--------------------------------------------------------------------------------------

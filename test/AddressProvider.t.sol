@@ -3,7 +3,15 @@ pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
 
+contract AuctionManagerV2Test is AuctionManager {
+    function isUpgraded() public pure returns(bool){
+        return true;
+    }
+}
+
 contract AddressProviderTest is TestSetup {
+
+    AuctionManagerV2Test public auctionManagerV2Instance;
 
     function setUp() public {
         setUpTests();
@@ -106,5 +114,31 @@ contract AddressProviderTest is TestSetup {
 
         addressProviderInstance.setOwner(address(alice));
         assertEq(addressProviderInstance.owner(), address(alice));
+    }
+
+    function test_GetImplementationAddress() public {
+        vm.startPrank(owner);
+        addressProviderInstance.addContract(
+            address(auctionManagerProxy),
+            "AuctionManager"
+        );
+        addressProviderInstance.addContract(
+            address(liquidityPoolProxy),
+            "LiquidityPool"
+        );
+        addressProviderInstance.addContract(
+            address(regulationsManagerProxy),
+            "RegulationsManager"
+        );
+
+        assertEq(addressProviderInstance.getImplementationAddress("LiquidityPool"), address(liquidityPoolImplementation));
+        assertEq(addressProviderInstance.getImplementationAddress("RegulationsManager"), address(regulationsManagerImplementation));
+        assertEq(addressProviderInstance.getImplementationAddress("AuctionManager"), address(auctionImplementation));
+
+        AuctionManagerV2Test auctionManagerV2Implementation = new AuctionManagerV2Test();
+        auctionInstance.upgradeTo(address(auctionManagerV2Implementation));
+
+        assertEq(addressProviderInstance.getImplementationAddress("AuctionManager"), address(auctionManagerV2Implementation));
+
     }
 }
