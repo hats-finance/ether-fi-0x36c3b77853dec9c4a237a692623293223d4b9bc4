@@ -24,8 +24,6 @@ contract TNFTUpgrade is Script {
 
         TNFTInstance.upgradeTo(address(TNFTV2Implementation));
 
-        addressProvider.updateContractImplementation("TNFT", address(TNFTV2Implementation));
-
         vm.stopBroadcast();
     }
 }

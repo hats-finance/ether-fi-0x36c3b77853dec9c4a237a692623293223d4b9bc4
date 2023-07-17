@@ -24,8 +24,6 @@ contract ProtocolRevenueManagerUpgrade is Script {
 
         ProtocolRevenueManagerInstance.upgradeTo(address(ProtocolRevenueManagerV2Implementation));
         
-        addressProvider.updateContractImplementation("ProtocolRevenueManager", address(ProtocolRevenueManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

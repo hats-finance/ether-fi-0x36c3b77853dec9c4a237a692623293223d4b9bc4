@@ -24,8 +24,6 @@ contract BNFTUpgrade is Script {
 
         BNFTInstance.upgradeTo(address(BNFTV2Implementation));
 
-        addressProvider.updateContractImplementation("BNFT", address(BNFTV2Implementation));
-
         vm.stopBroadcast();
     }
 }

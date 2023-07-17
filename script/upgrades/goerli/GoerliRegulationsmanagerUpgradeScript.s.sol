@@ -24,8 +24,6 @@ contract RegulationsManagerUpgrade is Script {
 
         RegulationsManagerInstance.upgradeTo(address(RegulationsManagerV2Implementation));
 
-        addressProvider.updateContractImplementation("RegulationsManager", address(RegulationsManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

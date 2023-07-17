@@ -24,8 +24,6 @@ contract LiquidityPoolUpgrade is Script {
 
         LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
         
-        addressProvider.updateContractImplementation("LiquidityPool", address(LiquidityPoolV2Implementation));
-
         vm.stopBroadcast();
     }
 }

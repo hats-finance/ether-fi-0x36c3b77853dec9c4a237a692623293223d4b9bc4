@@ -24,8 +24,6 @@ contract EETHUpgrade is Script {
 
         EETHInstance.upgradeTo(address(EETHV2Implementation));
 
-        addressProvider.updateContractImplementation("EETH", address(EETHV2Implementation));
-
         vm.stopBroadcast();
     }
 }

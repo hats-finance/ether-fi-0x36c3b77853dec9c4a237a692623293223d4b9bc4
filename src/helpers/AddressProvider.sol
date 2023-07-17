@@ -11,7 +11,6 @@ contract AddressProvider {
         uint128 version;
         uint128 lastModified;
         address proxyAddress;
-        address implementationAddress;
         bool isDeprecated;
         string name;
     }
@@ -21,8 +20,7 @@ contract AddressProvider {
 
     address public owner;
 
-    event ContractAdded(address proxy, address implementation, string name);
-    event ContractUpgraded(address newImplementation, string name);
+    event ContractAdded(address proxy, string name);
 
     constructor(address _owner) {
         owner = _owner;
@@ -35,39 +33,19 @@ contract AddressProvider {
     /// @notice Adds contracts to the address provider that have already been deployed
     /// @dev Only called by the contract owner
     /// @param _proxy the proxy address of the contract we are adding
-    /// @param _implementation the implementation address of the contract we are adding
     /// @param _name the name of the contract for reference
-    function addContract(address _proxy, address _implementation, string memory _name) external onlyOwner {
-        require(_implementation != address(0), "Implementation cannot be zero addr");
+    function addContract(address _proxy, string memory _name) external onlyOwner {
         require(contracts[_name].lastModified == 0, "Contract already exists");
         contracts[_name] = ContractData({
             version: 1,
             lastModified: uint128(block.timestamp),
             proxyAddress: _proxy,
-            implementationAddress: _implementation,
             isDeprecated: false,
             name: _name
         });
         numberOfContracts++;
 
-        emit ContractAdded(_proxy, _implementation, _name);
-    }
-
-    /// @notice Updates the contract implementation when an upgrade has happened
-    /// @dev Only called by the contract owner
-    /// @param _name the contract identifier
-    /// @param _name the new implementation address of the contract
-    function updateContractImplementation(string memory _name, address _newImplementation) external onlyOwner {
-        ContractData storage contractData = contracts[_name];
-        require(contractData.lastModified != 0, "Contract doesn't exists");
-        require(contractData.isDeprecated == false, "Contract deprecated");
-        require(_newImplementation != address(0), "Implementation cannot be zero addr");
-
-        contractData.lastModified = uint128(block.timestamp);
-        contractData.version += 1;
-        contractData.implementationAddress = _newImplementation;
-
-        emit ContractUpgraded(_newImplementation, _name);
+        emit ContractAdded(_proxy, _name);
     }
 
     /// @notice Deactivates a contract
@@ -107,7 +85,7 @@ contract AddressProvider {
     }
 
     function getImplementationAddress(string memory _name) external view returns (address) {
-        return contracts[_name].implementationAddress;
+        //TODO: Return getImplementation from the proxy contract
     }
 
     //--------------------------------------------------------------------------------------

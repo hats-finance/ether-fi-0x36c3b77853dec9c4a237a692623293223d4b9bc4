@@ -24,8 +24,6 @@ contract AuctionManagerUpgrade is Script {
 
         AuctionManagerInstance.upgradeTo(address(AuctionManagerV2Implementation));
 
-        addressProvider.updateContractImplementation("AuctionManager", address(AuctionManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

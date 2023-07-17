@@ -24,8 +24,6 @@ contract MembershipNFTUpgrade is Script {
 
         membershipNFTInstance.upgradeTo(address(membershipNFTV2Implementation));
         
-        addressProvider.updateContractImplementation("MembershipNFT", address(membershipNFTV2Implementation));
-
         vm.stopBroadcast();
     }
 }

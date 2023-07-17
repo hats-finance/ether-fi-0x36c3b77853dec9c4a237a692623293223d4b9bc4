@@ -24,8 +24,6 @@ contract EtherFiNodesManagerUpgrade is Script {
 
         EtherFiNodesManagerInstance.upgradeTo(address(EtherFiNodesManagerV2Implementation));
         
-        addressProvider.updateContractImplementation("EtherFiNodesManager", address(EtherFiNodesManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

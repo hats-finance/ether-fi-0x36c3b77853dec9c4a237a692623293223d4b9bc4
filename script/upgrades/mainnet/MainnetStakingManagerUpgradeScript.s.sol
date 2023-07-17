@@ -24,8 +24,6 @@ contract StakingManagerUpgrade is Script {
 
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
         
-        addressProvider.updateContractImplementation("StakingManager", address(stakingManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

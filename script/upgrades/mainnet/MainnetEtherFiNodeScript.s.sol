@@ -24,7 +24,6 @@ contract EtherFiNodeUpgrade is Script {
 
         EtherFiNode etherFiNode = new EtherFiNode();
         stakingManager.upgradeEtherFiNode(address(etherFiNode));
-        addressProvider.updateContractImplementation("EtherFiNode", address(etherFiNode));
 
         vm.stopBroadcast();
     }

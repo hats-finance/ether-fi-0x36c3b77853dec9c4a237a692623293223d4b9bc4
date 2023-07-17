@@ -24,8 +24,6 @@ contract WeEthUpgrade is Script {
 
         weEthInstance.upgradeTo(address(weEthV2Implementation));
 
-        addressProvider.updateContractImplementation("WeETH", address(weEthV2Implementation));
-
         vm.stopBroadcast();
     }
 }
