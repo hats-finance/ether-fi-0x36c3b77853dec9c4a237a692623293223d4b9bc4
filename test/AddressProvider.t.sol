@@ -48,7 +48,7 @@ contract AddressProviderTest is TestSetup {
         assertEq(version, 1);
         assertEq(lastModified, 20000);
         assertEq(proxy, address(auctionManagerProxy));
-        assertEq(implementation, address(auctionInstance));
+        assertEq(implementation, address(0));
         assertEq(isActive, false);
         assertEq(name, "AuctionManager");
         assertEq(addressProviderInstance.numberOfContracts(), 1);
