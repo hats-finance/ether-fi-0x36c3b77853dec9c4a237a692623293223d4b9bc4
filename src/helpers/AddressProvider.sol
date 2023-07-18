@@ -35,22 +35,20 @@ contract AddressProvider {
     /// @notice Adds contracts to the address provider that have already been deployed
     /// @dev Only called by the contract owner
     /// @param _proxy the proxy address of the contract we are adding
-    /// @param _implementation the implementation address of the contract we are adding
     /// @param _name the name of the contract for reference
-    function addContract(address _proxy, address _implementation, string memory _name) external onlyOwner {
-        require(_implementation != address(0), "Implementation cannot be zero addr");
+    function addContract(address _proxy, string memory _name) external onlyOwner {
         require(contracts[_name].lastModified == 0, "Contract already exists");
         contracts[_name] = ContractData({
             version: 1,
             lastModified: uint128(block.timestamp),
             proxyAddress: _proxy,
-            implementationAddress: _implementation,
+            implementationAddress: address(0),
             isDeprecated: false,
             name: _name
         });
         numberOfContracts++;
 
-        emit ContractAdded(_proxy, _implementation, _name);
+        emit ContractAdded(_proxy, address(0), _name);
     }
 
     /// @notice Updates the contract implementation when an upgrade has happened

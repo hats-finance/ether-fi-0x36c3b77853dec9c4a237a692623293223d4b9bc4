@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/RegulationsManager.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/RegulationsManager.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract RegulationsManagerUpgrade is Script {
     
@@ -23,8 +23,6 @@ contract RegulationsManagerUpgrade is Script {
         RegulationsManager RegulationsManagerV2Implementation = new RegulationsManager();
 
         RegulationsManagerInstance.upgradeTo(address(RegulationsManagerV2Implementation));
-
-        addressProvider.updateContractImplementation("RegulationsManager", address(RegulationsManagerV2Implementation));
 
         vm.stopBroadcast();
     }

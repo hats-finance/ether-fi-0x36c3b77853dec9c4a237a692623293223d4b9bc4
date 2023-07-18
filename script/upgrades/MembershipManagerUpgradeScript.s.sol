@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/MembershipManager.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/MembershipManager.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract MembershipManagerUpgrade is Script {
     
@@ -24,8 +24,6 @@ contract MembershipManagerUpgrade is Script {
 
         membershipManagerInstance.upgradeTo(address(membershipManagerV2Implementation));
         
-        addressProvider.updateContractImplementation("MembershipManager", address(membershipManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

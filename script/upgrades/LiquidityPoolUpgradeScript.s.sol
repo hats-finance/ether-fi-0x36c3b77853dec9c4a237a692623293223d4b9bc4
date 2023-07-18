@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/LiquidityPool.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/LiquidityPool.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract LiquidityPoolUpgrade is Script {
   
@@ -24,8 +24,6 @@ contract LiquidityPoolUpgrade is Script {
 
         LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
         
-        addressProvider.updateContractImplementation("LiquidityPool", address(LiquidityPoolV2Implementation));
-
         vm.stopBroadcast();
     }
 }

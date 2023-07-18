@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/MembershipNFT.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/MembershipNFT.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract MembershipNFTUpgrade is Script {
     
@@ -24,8 +24,6 @@ contract MembershipNFTUpgrade is Script {
 
         membershipNFTInstance.upgradeTo(address(membershipNFTV2Implementation));
         
-        addressProvider.updateContractImplementation("MembershipNFT", address(membershipNFTV2Implementation));
-
         vm.stopBroadcast();
     }
 }

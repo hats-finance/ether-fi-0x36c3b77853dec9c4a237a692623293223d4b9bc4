@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/EtherFiNode.sol";
-import "../../../src/StakingManager.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/EtherFiNode.sol";
+import "../../src/StakingManager.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract EtherFiNodeUpgrade is Script {
 
@@ -24,7 +24,6 @@ contract EtherFiNodeUpgrade is Script {
 
         EtherFiNode etherFiNode = new EtherFiNode();
         stakingManager.upgradeEtherFiNode(address(etherFiNode));
-        addressProvider.updateContractImplementation("EtherFiNode", address(etherFiNode));
 
         vm.stopBroadcast();
     }

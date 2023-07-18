@@ -26,22 +26,13 @@ contract AddressProviderTest is TestSetup {
         vm.prank(alice);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
-            address(auctionInstance),
             "AuctionManager"
         );
 
         vm.startPrank(owner);
-        vm.expectRevert("Implementation cannot be zero addr");
-        addressProviderInstance.addContract(
-            address(0),
-            address(0),
-            "AuctionManager"
-        );
-
         vm.warp(20000);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
-            address(auctionInstance),
             "AuctionManager"
         );
 
@@ -74,7 +65,6 @@ contract AddressProviderTest is TestSetup {
         vm.warp(20000);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
-            address(auctionInstance),
             "AuctionManager"
         );
         vm.stopPrank();
@@ -137,7 +127,6 @@ contract AddressProviderTest is TestSetup {
         vm.warp(20000);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
-            address(auctionInstance),
             "Auction Manager"
         );
 
@@ -160,7 +149,6 @@ contract AddressProviderTest is TestSetup {
         vm.warp(20000);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
-            address(auctionInstance),
             "Auction Manager"
         );
 

@@ -2,11 +2,11 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/EETH.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/NFTExchange.sol";
+import "../../src/helpers/AddressProvider.sol";
 
-contract EETHUpgrade is Script {
-    
+contract NFTExchangeUpgrade is Script {
+
     AddressProvider public addressProvider;
 
     function run() external {
@@ -14,17 +14,15 @@ contract EETHUpgrade is Script {
         
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
-
-        address EETHProxyAddress = addressProvider.getProxyAddress("EETH");
         
+        address NFTExchangeProxyAddress = addressProvider.getProxyAddress("NFTExchange");
+       
         vm.startBroadcast(deployerPrivateKey);
 
-        EETH EETHInstance = EETH(EETHProxyAddress);
-        EETH EETHV2Implementation = new EETH();
+        NFTExchange NFTExchangeInstance = NFTExchange(NFTExchangeProxyAddress);
+        NFTExchange NFTExchangeV2Implementation = new NFTExchange();
 
-        EETHInstance.upgradeTo(address(EETHV2Implementation));
-
-        addressProvider.updateContractImplementation("EETH", address(EETHV2Implementation));
+        NFTExchangeInstance.upgradeTo(address(NFTExchangeV2Implementation));
 
         vm.stopBroadcast();
     }

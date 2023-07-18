@@ -35,15 +35,15 @@ deploy-goerli-early-reward-pool :; @forge script script/deploys/DeployEarlyAdopt
 
 deploy-phase-1:; forge clean && forge script script/deploys/DeployPhaseOne.s.sol:DeployPhaseOne --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
-deploy-test-deposit-contract:; forge clean && forge script script/deploys/goerli/DeployTestDepositContract.s.sol:DeployTestDepositContractScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-test-deposit-contract:; forge clean && forge script script/deploys/testing/DeployTestDepositContract.s.sol:DeployTestDepositContractScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
-deploy-goerli-phase-1.5:; forge clean && forge script script/deploys/goerli/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFiveScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-goerli-phase-1.5:; forge clean && forge script script/deploys/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFiveScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
-deploy-mainnet-phase-1.5:; forge clean && forge script script/deploys/mainnet/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFiveScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-mainnet-phase-1.5:; forge clean && forge script script/deploys/DeployPhaseOnePointFive.s.sol:DeployPhaseOnePointFiveScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
-deploy-goerli-tvlOracle:; forge clean && forge script script/deploys/goerli/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-goerli-tvlOracle:; forge clean && forge script script/deploys/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
-deploy-optimism-tvlOracle:; forge clean && forge script script/deploys/mainnet/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${OPTIMISM_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+deploy-optimism-tvlOracle:; forge clean && forge script script/deploys/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${OPTIMISM_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
 deploy-goerli-address-provider:; forge clean && forge script script/deploys/DeployAndPopulateAddressProviderScript.s.sol:DeployAndPopulateAddressProvider --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
@@ -52,68 +52,68 @@ deploy-mainnet-address-provider:; forge clean && forge script script/deploys/Dep
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (GOERLI)
 
-upgrade-all-phase-one-goerli-contracts :;  forge clean && forge script script/upgrades/goerli/GoerliStakingManagerUpgradeScript.s.sol:StakingManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/goerli/GoerliAuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/goerli/GoerliEtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/goerli/GoerliBNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/goerli/GoerliTNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/goerli/GoerliEtherFiNodesManagerUpgradeScript.s.sol:EtherFiNodesManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/goerli/GoerliProtocolRevenueManagerUpgradeScript.s.sol:ProtocolRevenueManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-all-phase-one-goerli-contracts :;  forge clean && forge script script/upgrades/StakingManagerUpgradeScript.s.sol:StakingManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/AuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/EtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/BNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/TNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/EtherFiNodesManagerUpgradeScript.s.sol:EtherFiNodesManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/ProtocolRevenueManagerUpgradeScript.s.sol:ProtocolRevenueManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-staking-manager :; forge clean && forge script script/upgrades/goerli/GoerliStakingManagerUpgradeScript.s.sol:StakingManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-staking-manager :; forge clean && forge script script/upgrades/StakingManagerUpgradeScript.s.sol:StakingManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-auction-manager :; forge clean && forge script script/upgrades/goerli/GoerliAuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-auction-manager :; forge clean && forge script script/upgrades/AuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-etherfi-node :; forge clean && forge script script/upgrades/goerli/GoerliEtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-etherfi-node :; forge clean && forge script script/upgrades/EtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-bnft :; forge clean && forge script script/upgrades/goerli/GoerliBNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-bnft :; forge clean && forge script script/upgrades/BNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-tnft :; forge clean && forge script script/upgrades/goerli/GoerliTNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-tnft :; forge clean && forge script script/upgrades/TNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-eeth :; forge clean && forge script script/upgrades/goerli/GoerliEETHUpgradeScript.s.sol:EETHUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-eeth :; forge clean && forge script script/upgrades/EETHUpgradeScript.s.sol:EETHUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-etherfi_nodes_manager :; forge clean && forge script script/upgrades/goerli/GoerliEtherFiNodesManagerUpgradeScript.s.sol:EtherFiNodesManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-etherfi_nodes_manager :; forge clean && forge script script/upgrades/EtherFiNodesManagerUpgradeScript.s.sol:EtherFiNodesManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-liquidity_pool :; forge clean && forge script script/upgrades/goerli/GoerliLiquidityPoolUpgradeScript.s.sol:LiquidityPoolUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-liquidity_pool :; forge clean && forge script script/upgrades/LiquidityPoolUpgradeScript.s.sol:LiquidityPoolUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-membership-manager :; forge clean && forge script script/upgrades/goerli/GoerliMembershipManagerUpgradeScript.s.sol:MembershipManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-membership-manager :; forge clean && forge script script/upgrades/MembershipManagerUpgradeScript.s.sol:MembershipManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-membership-nft :; forge clean && forge script script/upgrades/goerli/GoerliMembershipNFTUpgradeScript.s.sol:MembershipNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-membership-nft :; forge clean && forge script script/upgrades/MembershipNFTUpgradeScript.s.sol:MembershipNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-nft-exchange :; forge clean && forge script script/upgrades/goerli/GoerliNFTExchangeUpgradeScript.s.sol:NFTExchangeUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-nft-exchange :; forge clean && forge script script/upgrades/NFTExchangeUpgradeScript.s.sol:NFTExchangeUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-protocol_revenue_manager :; forge clean && forge script script/upgrades/goerli/GoerliProtocolRevenueManagerUpgradeScript.s.sol:ProtocolRevenueManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-protocol_revenue_manager :; forge clean && forge script script/upgrades/ProtocolRevenueManagerUpgradeScript.s.sol:ProtocolRevenueManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-regulations_manager :; forge clean && forge script script/upgrades/goerli/GoerliRegulationsManagerUpgradeScript.s.sol:RegulationsManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-regulations_manager :; forge clean && forge script script/upgrades/RegulationsManagerUpgradeScript.s.sol:RegulationsManagerUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-weeth :; forge clean && forge script script/upgrades/goerli/GoerliWeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-weeth :; forge clean && forge script script/upgrades/WeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (MAINNET)
 
-upgrade-all-phase-one-contracts :;  forge clean && forge script script/upgrades/mainnet/MainnetStakingManagerUpgradeScript.s.sol:StakingManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/mainnet/MainnetAuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/mainnet/MainnetEtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/mainnet/MainnetBNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/mainnet/MainnetTNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/mainnet/MainnetEtherFiNodesManagerUpgradeScript.s.sol:EtherFiNodesManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/mainnet/MainnetProtocolRevenueManagerUpgradeScript.s.sol:ProtocolRevenueManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-all-phase-one-contracts :;  forge clean && forge script script/upgrades/StakingManagerUpgradeScript.s.sol:StakingManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/AuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/EtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/BNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/TNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/EtherFiNodesManagerUpgradeScript.s.sol:EtherFiNodesManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && forge script script/upgrades/ProtocolRevenueManagerUpgradeScript.s.sol:ProtocolRevenueManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-staking-manager :; forge clean && forge script script/upgrades/mainnet/MainnetStakingManagerUpgradeScript.s.sol:StakingManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-staking-manager :; forge clean && forge script script/upgrades/StakingManagerUpgradeScript.s.sol:StakingManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-auction-manager :; forge clean && forge script script/upgrades/mainnet/MainnetAuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-auction-manager :; forge clean && forge script script/upgrades/AuctionManagerUpgradeScript.s.sol:AuctionManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-etherfi-node :; forge clean && forge script script/upgrades/mainnet/MainnetEtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-etherfi-node :; forge clean && forge script script/upgrades/EtherFiNodeScript.s.sol:EtherFiNodeUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-bnft :; forge clean && forge script script/upgrades/mainnet/MainnetBNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-bnft :; forge clean && forge script script/upgrades/BNFTUpgradeScript.s.sol:BNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-tnft :; forge clean && forge script script/upgrades/mainnet/MainnetTNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-tnft :; forge clean && forge script script/upgrades/TNFTUpgradeScript.s.sol:TNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-eeth :; forge clean && forge script script/upgrades/mainnet/MainnetEETHUpgradeScript.s.sol:EETHUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-eeth :; forge clean && forge script script/upgrades/EETHUpgradeScript.s.sol:EETHUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-etherfi_nodes_manager :; forge clean && forge script script/upgrades/mainnet/MainnetEtherFiNodesManagerUpgradeScript.s.sol:EtherFiNodesManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-etherfi_nodes_manager :; forge clean && forge script script/upgrades/EtherFiNodesManagerUpgradeScript.s.sol:EtherFiNodesManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-liquidity_pool :; forge clean && forge script script/upgrades/mainnet/MainnetLiquidityPoolUpgradeScript.s.sol:LiquidityPoolUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-liquidity_pool :; forge clean && forge script script/upgrades/LiquidityPoolUpgradeScript.s.sol:LiquidityPoolUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-membership-manager :; forge clean && forge script script/upgrades/mainnet/MainnetMembershipManagerUpgradeScript.s.sol:MembershipManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-membership-manager :; forge clean && forge script script/upgrades/MembershipManagerUpgradeScript.s.sol:MembershipManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-membership-nft :; forge clean && forge script script/upgrades/mainnet/MainnetMembershipNFTUpgradeScript.s.sol:MembershipNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-membership-nft :; forge clean && forge script script/upgrades/MembershipNFTUpgradeScript.s.sol:MembershipNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-nft-exchange :; forge clean && forge script script/upgrades/mainnet/MainnetNFTExchangeUpgradeScript.s.sol:NFTExchangeUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-nft-exchange :; forge clean && forge script script/upgrades/NFTExchangeUpgradeScript.s.sol:NFTExchangeUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-protocol_revenue_manager :; forge clean && forge script script/upgrades/mainnet/MainnetProtocolRevenueManagerUpgradeScript.s.sol:ProtocolRevenueManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-protocol_revenue_manager :; forge clean && forge script script/upgrades/ProtocolRevenueManagerUpgradeScript.s.sol:ProtocolRevenueManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-regulations_manager :; forge clean && forge script script/upgrades/mainnet/MainnetRegulationsManagerUpgradeScript.s.sol:RegulationsManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-regulations_manager :; forge clean && forge script script/upgrades/RegulationsManagerUpgradeScript.s.sol:RegulationsManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-weeth :; forge clean && forge script script/upgrades/mainnet/MainnetWeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-weeth :; forge clean && forge script script/upgrades/WeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

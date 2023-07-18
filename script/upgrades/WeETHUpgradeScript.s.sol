@@ -2,11 +2,11 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/TNFT.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/WeETH.sol";
+import "../../src/helpers/AddressProvider.sol";
 
-contract TNFTUpgrade is Script {
-   
+contract WeEthUpgrade is Script {
+
     AddressProvider public addressProvider;
 
     function run() external {
@@ -15,16 +15,14 @@ contract TNFTUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address TNFTProxyAddress = addressProvider.getProxyAddress("TNFT");
+        address weEthProxyAddress = addressProvider.getProxyAddress("WeETH");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        TNFT TNFTInstance = TNFT(TNFTProxyAddress);
-        TNFT TNFTV2Implementation = new TNFT();
+        WeETH weEthInstance = WeETH(weEthProxyAddress);
+        WeETH weEthV2Implementation = new WeETH();
 
-        TNFTInstance.upgradeTo(address(TNFTV2Implementation));
-
-        addressProvider.updateContractImplementation("TNFT", address(TNFTV2Implementation));
+        weEthInstance.upgradeTo(address(weEthV2Implementation));
 
         vm.stopBroadcast();
     }

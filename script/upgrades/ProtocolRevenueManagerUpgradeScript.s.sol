@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/ProtocolRevenueManager.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/ProtocolRevenueManager.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract ProtocolRevenueManagerUpgrade is Script {
     
@@ -24,8 +24,6 @@ contract ProtocolRevenueManagerUpgrade is Script {
 
         ProtocolRevenueManagerInstance.upgradeTo(address(ProtocolRevenueManagerV2Implementation));
         
-        addressProvider.updateContractImplementation("ProtocolRevenueManager", address(ProtocolRevenueManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

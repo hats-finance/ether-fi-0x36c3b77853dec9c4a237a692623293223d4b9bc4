@@ -2,16 +2,15 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/MembershipManager.sol";
-import "../../../src/MembershipNFT.sol";
-import "../../../src/WeETH.sol";
-import "../../../src/TNFT.sol";
-import "../../../src/EETH.sol";
-import "../../../src/helpers/AddressProvider.sol";
-import "../../../src/NFTExchange.sol";
-import "../../../src/LiquidityPool.sol";
-import "../../../src/RegulationsManager.sol";
-import "../../../src/UUPSProxy.sol";
+import "../../src/MembershipManager.sol";
+import "../../src/MembershipNFT.sol";
+import "../../src/WeETH.sol";
+import "../../src/EETH.sol";
+import "../../src/NFTExchange.sol";
+import "../../src/LiquidityPool.sol";
+import "../../src/helpers/AddressProvider.sol";
+import "../../src/RegulationsManager.sol";
+import "../../src/UUPSProxy.sol";
 
 contract DeployPhaseOnePointFiveScript is Script {
 
@@ -53,7 +52,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         bytes32[] memory emptyProof;
-
+        
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
@@ -73,7 +72,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation),"");
         regulationsManager = RegulationsManager(address(regulationsManagerProxy));
         regulationsManager.initialize();
-        addressProvider.addContract(address(regulationsManagerProxy), address(regulationsManager), "RegulationsManager");
+        addressProvider.addContract(address(regulationsManagerProxy), "RegulationsManager");
 
         liquidityPoolImplementation = new LiquidityPool();
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
@@ -82,37 +81,37 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPool.setTnft(tnft);
         liquidityPool.setStakingManager(stakingManagerProxyAddress);
         liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
-        addressProvider.addContract(address(liquidityPoolProxy), address(liquidityPool), "LiquidityPool");
+        addressProvider.addContract(address(liquidityPoolProxy), "LiquidityPool");
 
         eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation),"");
         eETH = EETH(address(eETHProxy));
         eETH.initialize(address(liquidityPool));
-        addressProvider.addContract(address(eETHProxy), address(eETH), "EETH");
+        addressProvider.addContract(address(eETHProxy), "EETH");
 
         membershipNFTImplementation = new MembershipNFT();
         membershipNFTProxy = new UUPSProxy(address(membershipNFTImplementation),"");
         membershipNFT = MembershipNFT(payable(address(membershipNFTProxy)));
         membershipNFT.initialize(baseURI);
-        addressProvider.addContract(address(membershipNFTProxy), address(membershipNFT), "MembershipNFT");
+        addressProvider.addContract(address(membershipNFTProxy), "MembershipNFT");
 
         membershipManagerImplementation = new MembershipManager();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation),"");
         membershipManager = MembershipManager(payable(address(membershipManagerProxy)));
         membershipManager.initialize(address(eETH), address(liquidityPool), address(membershipNFT), treasury, protocolRevenueManagerProxy);
-        addressProvider.addContract(address(membershipManagerProxy), address(membershipManager), "MembershipManager");
+        addressProvider.addContract(address(membershipManagerProxy), "MembershipManager");
 
         weETHImplementation = new WeETH();
         weETHProxy = new UUPSProxy(address(weETHImplementation),"");
         weETH = WeETH(address(weETHProxy));
         weETH.initialize(address(liquidityPool), address(eETH));
-        addressProvider.addContract(address(weETHProxy), address(weETH), "WeETH");
+        addressProvider.addContract(address(weETHProxy), "WeETH");
 
         nftExchangeImplementation = new NFTExchange();
         nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation),"");
         nftExchange = NFTExchange(address(nftExchangeProxy));
         nftExchange.initialize(tnft, address(membershipNFT), address(etherFiNodesManagerProxyAddress));
-        addressProvider.addContract(address(nftExchangeProxy), address(nftExchange), "NFTExchange");
+        addressProvider.addContract(address(nftExchangeProxy), "NFTExchange");
 
         setUpAdmins(admin);
 
@@ -122,13 +121,13 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManager.confirmEligibility(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
         membershipManager.setTopUpCooltimePeriod(28 days);
-        membershipManager.setFeeSplits(0, 100);        
+        membershipManager.setFeeSplits(0, 100);
 
         initializeTiers();
         preMint();
         membershipManager.setFeeAmounts(0.05 ether, 0.05 ether, 0);
         membershipManager.pauseContract();
-
+        
         vm.stopBroadcast();
     }
 
@@ -140,7 +139,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         nftExchange.updateAdmin(_admin);
     }
 
-    // Update this before mainnet deploy
     function initializeTiers() internal {
         membershipManager.addNewTier(0, 1);
         membershipManager.addNewTier(672, 2);

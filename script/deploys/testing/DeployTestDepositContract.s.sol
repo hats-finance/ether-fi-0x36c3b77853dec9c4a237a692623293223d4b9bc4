@@ -2,29 +2,25 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/BNFT.sol";
+import "../../../test/DepositContract.sol";
 import "../../../src/helpers/AddressProvider.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract BNFTUpgrade is Script {
-  
+contract DeployTestDepositContractScript is Script {
+
     AddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
+
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
-        
-        address BNFTProxyAddress = addressProvider.getProxyAddress("BNFT");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        BNFT BNFTInstance = BNFT(BNFTProxyAddress);
-        BNFT BNFTV2Implementation = new BNFT();
-
-        BNFTInstance.upgradeTo(address(BNFTV2Implementation));
-
-        addressProvider.updateContractImplementation("BNFT", address(BNFTV2Implementation));
+        // Deploy contract
+        DepositContract depositContract = new DepositContract();
+        addressProvider.addContract(address(depositContract), "DepositContract");
 
         vm.stopBroadcast();
     }

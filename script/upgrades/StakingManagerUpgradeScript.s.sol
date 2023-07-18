@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/StakingManager.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/StakingManager.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract StakingManagerUpgrade is Script {
     
@@ -24,8 +24,6 @@ contract StakingManagerUpgrade is Script {
 
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
         
-        addressProvider.updateContractImplementation("StakingManager", address(stakingManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

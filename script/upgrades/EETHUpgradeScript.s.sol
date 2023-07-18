@@ -2,11 +2,11 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/BNFT.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/EETH.sol";
+import "../../src/helpers/AddressProvider.sol";
 
-contract BNFTUpgrade is Script {
-  
+contract EETHUpgrade is Script {
+    
     AddressProvider public addressProvider;
 
     function run() external {
@@ -14,17 +14,15 @@ contract BNFTUpgrade is Script {
         
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
-        
-        address BNFTProxyAddress = addressProvider.getProxyAddress("BNFT");
 
+        address EETHProxyAddress = addressProvider.getProxyAddress("EETH");
+        
         vm.startBroadcast(deployerPrivateKey);
 
-        BNFT BNFTInstance = BNFT(BNFTProxyAddress);
-        BNFT BNFTV2Implementation = new BNFT();
+        EETH EETHInstance = EETH(EETHProxyAddress);
+        EETH EETHV2Implementation = new EETH();
 
-        BNFTInstance.upgradeTo(address(BNFTV2Implementation));
-
-        addressProvider.updateContractImplementation("BNFT", address(BNFTV2Implementation));
+        EETHInstance.upgradeTo(address(EETHV2Implementation));
 
         vm.stopBroadcast();
     }
