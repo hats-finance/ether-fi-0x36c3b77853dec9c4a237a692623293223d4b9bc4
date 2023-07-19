@@ -2,7 +2,7 @@
 pragma solidity 0.8.13;
 
 interface MyInterface {
-    function getImplementation() external returns (address);
+    function getImplementation() external view returns (address);
 }
 
 contract AddressProvider {
@@ -81,7 +81,7 @@ contract AddressProvider {
         return contracts[_name].contractAddress;
     }
 
-    function getImplementationAddress(string memory _name) external returns (address) {
+    function getImplementationAddress(string memory _name) external view returns (address) {
         address localContractAddress = contracts[_name].contractAddress;
         try MyInterface(localContractAddress).getImplementation() {
             return MyInterface(localContractAddress).getImplementation();
