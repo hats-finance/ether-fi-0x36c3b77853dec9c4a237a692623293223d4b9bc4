@@ -125,6 +125,10 @@ contract NFTExchange is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
         admin = _newAdmin;
     }
 
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
+    }
+
     //--------------------------------------------------------------------------------------
     //------------------------------------  MODIFIER  --------------------------------------
     //--------------------------------------------------------------------------------------

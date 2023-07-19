@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-
 contract AddressProvider {
 
     //--------------------------------------------------------------------------------------
@@ -10,10 +8,7 @@ contract AddressProvider {
     //--------------------------------------------------------------------------------------
 
     struct ContractData {
-        uint128 version;
-        uint128 lastModified;
         address contractAddress;
-        bool isDeprecated;
         string name;
     }
 
@@ -23,6 +18,7 @@ contract AddressProvider {
     address public owner;
 
     event ContractAdded(address contractAddress, string name);
+    event ContractRemoved(address contractAddress, string name);
 
     constructor(address _owner) {
         owner = _owner;
@@ -37,12 +33,9 @@ contract AddressProvider {
     /// @param _contractAddress the proxy address of the contract we are adding
     /// @param _name the name of the contract for reference
     function addContract(address _contractAddress, string memory _name) external onlyOwner {
-        require(contracts[_name].lastModified == 0, "Contract already exists");
+        require(contracts[_name].contractAddress == address(0), "Contract already exists");
         contracts[_name] = ContractData({
-            version: 1,
-            lastModified: uint128(block.timestamp),
             contractAddress: _contractAddress,
-            isDeprecated: false,
             name: _name
         });
         numberOfContracts++;
@@ -50,20 +43,18 @@ contract AddressProvider {
         emit ContractAdded(_contractAddress, _name);
     }
 
-    /// @notice Deactivates a contract
+    /// @notice Removes a contract
     /// @dev Only called by the contract owner
-    /// @param _name the contract identifier
-    function deactivateContract(string memory _name) external onlyOwner {
-        require(contracts[_name].isDeprecated == false, "Contract already deprecated");
-        contracts[_name].isDeprecated = true;
-    }
+    /// @param _name the name of the contract for reference
+    function removeContract(string memory _name) external onlyOwner {
+        ContractData memory contractData = contracts[_name];
+        require(contracts[_name].contractAddress != address(0), "Contract does not exist");
+        
+        address contractAddress = contractData.contractAddress;
+        delete contracts[_name];
+        numberOfContracts--;
 
-    /// @notice Reactivates a contract
-    /// @dev Only called by the contract owner
-    /// @param _name the contract identifier
-    function reactivateContract(string memory _name) external onlyOwner {
-        require(contracts[_name].isDeprecated == true, "Contract already active");
-        contracts[_name].isDeprecated = false;
+        emit ContractRemoved(contractAddress, _name);
     }
 
     //--------------------------------------------------------------------------------------

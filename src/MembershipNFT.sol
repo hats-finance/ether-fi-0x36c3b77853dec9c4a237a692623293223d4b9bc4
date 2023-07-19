@@ -226,6 +226,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return _max(totalDeposit, membershipManager.allTimeHighDepositAmount(_tokenId));        
     }
 
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
+    }
+
     function transferLockedUntil(uint256 _tokenId) external view returns (uint32) {
         return nftData[_tokenId].transferLockedUntil;
     }

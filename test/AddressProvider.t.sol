@@ -38,67 +38,62 @@ contract AddressProviderTest is TestSetup {
         );
 
         (
-            uint256 version,
-            uint256 lastModified,
             address contractAddress,
-            bool isActive,
             string memory name
         ) = addressProviderInstance.contracts("AuctionManager");
         
-        assertEq(version, 1);
-        assertEq(lastModified, 20000);
         assertEq(contractAddress, address(auctionManagerProxy));
-        assertEq(isActive, false);
         assertEq(name, "AuctionManager");
         assertEq(addressProviderInstance.numberOfContracts(), 1);
     }
 
-    function test_DeactivateContract() public {
-        vm.prank(owner);
+    function test_RemoveContract() public {
+        vm.startPrank(owner);
         vm.warp(20000);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
-            "Auction Manager"
+            "AuctionManager"
         );
 
-        vm.expectRevert("Only owner function");
-        vm.prank(alice);
-        addressProviderInstance.deactivateContract("AuctionManager");
-
-        vm.startPrank(owner);
-        addressProviderInstance.deactivateContract("AuctionManager");
-
-        (, , , bool isDeprecated, ) = addressProviderInstance.contracts("AuctionManager");
-        assertEq(isDeprecated, true);
-
-        vm.expectRevert("Contract already deprecated");
-        addressProviderInstance.deactivateContract("AuctionManager");
-    }
-
-    function test_ReactivateContract() public {
-        vm.prank(owner);
-        vm.warp(20000);
         addressProviderInstance.addContract(
-            address(auctionManagerProxy),
-            "Auction Manager"
+            address(liquidityPoolProxy),
+            "LiquidityPool"
         );
+        vm.stopPrank();
 
         vm.expectRevert("Only owner function");
         vm.prank(alice);
-        addressProviderInstance.reactivateContract("AuctionManager");
+        addressProviderInstance.removeContract(
+            "AuctionManager"
+        );
 
         vm.startPrank(owner);
-        vm.expectRevert("Contract already active");
-        addressProviderInstance.reactivateContract("AuctionManager");
+        vm.expectRevert("Contract does not exist");
+        addressProviderInstance.removeContract(
+            "AuctionManage"
+        );
 
-        addressProviderInstance.deactivateContract("AuctionManager");
+        (
+            address contractAddress,
+            string memory name
+        ) = addressProviderInstance.contracts("AuctionManager");
+        
+        assertEq(contractAddress, address(auctionManagerProxy));
+        assertEq(name, "AuctionManager");
+        assertEq(addressProviderInstance.numberOfContracts(), 2);
 
-        (, , , bool isDeprecated, ) = addressProviderInstance.contracts("AuctionManager");
-        assertEq(isDeprecated, true);
+        addressProviderInstance.removeContract(
+            "AuctionManager"
+        );
 
-        addressProviderInstance.reactivateContract("AuctionManager");
-        (, , , isDeprecated, ) = addressProviderInstance.contracts("AuctionManager");
-        assertEq(isDeprecated, false);
+        (
+            contractAddress,
+            name
+        ) = addressProviderInstance.contracts("AuctionManager");
+
+        assertEq(contractAddress, address(0));
+        assertEq(addressProviderInstance.numberOfContracts(), 1);
+
     }
 
     function test_SetOwner() public {
