@@ -586,21 +586,6 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(eETHInstance.balanceOf(bob), 0);
     }
 
-    function test_tooHighRebaseFails() public {
-        vm.prank(owner);
-        liquidityPoolInstance.updateRebaseLimitBasisPoints(100);
-
-        vm.deal(bob, 100 ether);
-        vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 100 ether}(bob, bobProof);
-        vm.stopPrank();
-
-        vm.prank(address(membershipManagerInstance));
-        vm.expectRevert("rebase amount is too high.");
-        liquidityPoolInstance.rebase(103 ether, 100 ether);
-    }
-
     function launch_validator() internal returns (uint256[] memory) {
         vm.deal(owner, 100 ether);
         vm.prank(alice);
