@@ -15,7 +15,7 @@ contract WeEthUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address weEthProxyAddress = addressProvider.getProxyAddress("WeETH");
+        address weEthProxyAddress = addressProvider.getContractAddress("WeETH");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -23,8 +23,6 @@ contract WeEthUpgrade is Script {
         WeETH weEthV2Implementation = new WeETH();
 
         weEthInstance.upgradeTo(address(weEthV2Implementation));
-
-        addressProvider.updateContractImplementation("WeETH", address(weEthV2Implementation));
 
         vm.stopBroadcast();
     }

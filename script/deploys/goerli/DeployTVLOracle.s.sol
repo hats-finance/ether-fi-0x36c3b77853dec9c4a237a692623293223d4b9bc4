@@ -25,7 +25,7 @@ contract DeployTVLOracleScript is Script {
 
         // Deploy contract
         tvlOracle = new TVLOracle(tvlAggregatorAddress);
-        addressProvider.addContract(address(0), address(tvlOracle), "TVLOracle");
+        addressProvider.addContract(address(tvlOracle), "TVLOracle");
 
         vm.stopBroadcast();
     }

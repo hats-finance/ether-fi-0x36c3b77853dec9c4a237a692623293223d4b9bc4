@@ -15,7 +15,7 @@ contract TNFTUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address TNFTProxyAddress = addressProvider.getProxyAddress("TNFT");
+        address TNFTProxyAddress = addressProvider.getContractAddress("TNFT");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -23,8 +23,6 @@ contract TNFTUpgrade is Script {
         TNFT TNFTV2Implementation = new TNFT();
 
         TNFTInstance.upgradeTo(address(TNFTV2Implementation));
-
-        addressProvider.updateContractImplementation("TNFT", address(TNFTV2Implementation));
 
         vm.stopBroadcast();
     }

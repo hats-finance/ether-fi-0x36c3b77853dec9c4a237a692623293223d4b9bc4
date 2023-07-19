@@ -62,16 +62,16 @@ contract DeployAndPopulateAddressProvider is Script {
         contractImplementationAddresses.etherFiNode = vm.envAddress("ETHERFI_NODE");
         contractImplementationAddresses.earlyAdopterPool = vm.envAddress("EARLY_ADOPTER_POOL");
 
-        addressProvider.addContract(contractProxyAddresses.auctionManagerProxyAddress, contractImplementationAddresses.auctionManagerImplementationAddress, "AuctionManager");
-        addressProvider.addContract(contractProxyAddresses.stakingManagerProxyAddress, contractImplementationAddresses.stakingManagerImplementationAddress, "StakingManager");
-        addressProvider.addContract(contractProxyAddresses.etherFiNodesManagerProxyAddress, contractImplementationAddresses.etherFiNodesManagerImplementationAddress, "EtherFiNodesManager");
-        addressProvider.addContract(contractProxyAddresses.protocolRevenueManagerProxy, contractImplementationAddresses.protocolRevenueManagerImplementation, "ProtocolRevenueManager");
-        addressProvider.addContract(contractProxyAddresses.tnftProxy, contractImplementationAddresses.tnftImplementation, "TNFT");
-        addressProvider.addContract(contractProxyAddresses.bnftProxy, contractImplementationAddresses.bnftImplementation, "BNFT");
-        addressProvider.addContract(address(0), contractImplementationAddresses.treasury, "Treasury");
-        addressProvider.addContract(address(0), contractImplementationAddresses.nodeOperatorManagerImplementation, "NodeOperatorManager");
-        addressProvider.addContract(address(0), contractImplementationAddresses.etherFiNode, "EtherFiNode");
-        addressProvider.addContract(address(0), contractImplementationAddresses.earlyAdopterPool, "EarlyAdopterPool");
+        addressProvider.addContract(contractProxyAddresses.auctionManagerProxyAddress, "AuctionManager");
+        addressProvider.addContract(contractProxyAddresses.stakingManagerProxyAddress, "StakingManager");
+        addressProvider.addContract(contractProxyAddresses.etherFiNodesManagerProxyAddress, "EtherFiNodesManager");
+        addressProvider.addContract(contractProxyAddresses.protocolRevenueManagerProxy, "ProtocolRevenueManager");
+        addressProvider.addContract(contractProxyAddresses.tnftProxy, "TNFT");
+        addressProvider.addContract(contractProxyAddresses.bnftProxy, "BNFT");
+        addressProvider.addContract(contractImplementationAddresses.treasury, "Treasury");
+        addressProvider.addContract(contractImplementationAddresses.nodeOperatorManagerImplementation, "NodeOperatorManager");
+        addressProvider.addContract(contractImplementationAddresses.etherFiNode, "EtherFiNode");
+        addressProvider.addContract(contractImplementationAddresses.earlyAdopterPool, "EarlyAdopterPool");
 
         vm.stopBroadcast();
     }

@@ -15,7 +15,7 @@ contract BNFTUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
         
-        address BNFTProxyAddress = addressProvider.getProxyAddress("BNFT");
+        address BNFTProxyAddress = addressProvider.getContractAddress("BNFT");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -23,8 +23,6 @@ contract BNFTUpgrade is Script {
         BNFT BNFTV2Implementation = new BNFT();
 
         BNFTInstance.upgradeTo(address(BNFTV2Implementation));
-
-        addressProvider.updateContractImplementation("BNFT", address(BNFTV2Implementation));
 
         vm.stopBroadcast();
     }

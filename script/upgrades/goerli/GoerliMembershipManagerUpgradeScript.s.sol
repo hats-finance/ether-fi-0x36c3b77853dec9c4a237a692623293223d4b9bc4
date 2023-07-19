@@ -15,7 +15,7 @@ contract MembershipManagerUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
         
-        address membershipManagerProxy = addressProvider.getProxyAddress("MembershipManager");
+        address membershipManagerProxy = addressProvider.getContractAddress("MembershipManager");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -24,8 +24,6 @@ contract MembershipManagerUpgrade is Script {
 
         membershipManagerInstance.upgradeTo(address(membershipManagerV2Implementation));
         
-        addressProvider.updateContractImplementation("MembershipManager", address(membershipManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

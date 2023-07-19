@@ -15,7 +15,7 @@ contract StakingManagerUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address stakingManagerProxyAddress = addressProvider.getProxyAddress("StakingManager");
+        address stakingManagerProxyAddress = addressProvider.getContractAddress("StakingManager");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -24,8 +24,6 @@ contract StakingManagerUpgrade is Script {
 
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
         
-        addressProvider.updateContractImplementation("StakingManager", address(stakingManagerV2Implementation));
-
         vm.stopBroadcast();
     }
 }

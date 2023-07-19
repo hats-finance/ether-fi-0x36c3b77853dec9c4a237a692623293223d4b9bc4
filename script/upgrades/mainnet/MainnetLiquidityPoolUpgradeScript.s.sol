@@ -15,7 +15,7 @@ contract LiquidityPoolUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
         
-        address LiquidityPoolProxyAddress = addressProvider.getProxyAddress("LiquidityPool");
+        address LiquidityPoolProxyAddress = addressProvider.getContractAddress("LiquidityPool");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -24,8 +24,6 @@ contract LiquidityPoolUpgrade is Script {
 
         LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
         
-        addressProvider.updateContractImplementation("LiquidityPool", address(LiquidityPoolV2Implementation));
-
         vm.stopBroadcast();
     }
 }
