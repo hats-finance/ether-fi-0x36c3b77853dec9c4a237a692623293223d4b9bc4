@@ -38,6 +38,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
 
+    address public bNftTreasury;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -161,8 +163,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         IStakingManager.DepositData[] calldata _depositData
         ) external onlyAdmin
     {
+        require(bNftTreasury != address(0), "'bNftTreasury' cannot be address zero");
         numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, owner(), address(this), _depositData);
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, bNftTreasury, address(this), _depositData);
     }
 
     function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
@@ -256,6 +259,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function updateAdmin(address _newAdmin) external onlyOwner {
         require(_newAdmin != address(0), "Cannot be address zero");
         admin = _newAdmin;
+    }
+
+    function updateBNftTreasury(address _newTreasury) external onlyOwner {
+        require(_newTreasury != address(0), "Cannot be address zero");
+        bNftTreasury = _newTreasury;
     }
     
     //--------------------------------------------------------------------------------------

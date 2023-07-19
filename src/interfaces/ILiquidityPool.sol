@@ -31,4 +31,8 @@ interface ILiquidityPool {
     function setStakingManager(address _address) external;
     function setEtherFiNodesManager(address _nodeManager) external;
     function setMembershipManager(address _address) external;
+    function setTnft(address _address) external;
+    
+    function updateAdmin(address _newAdmin) external;
+    function updateBNftTreasury(address _newTreasury) external;
 }
