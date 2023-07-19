@@ -313,7 +313,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _tierPoints The number of tier points to set for the specified NFT.
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) public {
         _requireAdmin();
-        _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
         _setPoints(_tokenId, _loyaltyPoints, _tierPoints);
         _claimTier(_tokenId);
