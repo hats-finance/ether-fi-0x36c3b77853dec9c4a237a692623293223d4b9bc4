@@ -348,6 +348,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error InvalidWithdraw();
     function withdrawFees(uint256 _amount, address _recipient) external {
         _requireAdmin();
+        if (_recipient == address(0)) revert InvalidWithdraw();
         if (address(this).balance < _amount) revert InvalidWithdraw();
         (bool sent, ) = address(_recipient).call{value: _amount}("");
         if (!sent) revert InvalidWithdraw();

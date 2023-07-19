@@ -899,11 +899,17 @@ contract MembershipManagerTest is TestSetup {
         uint256 treasuryBalanceBefore = address(treasuryInstance).balance;
         uint256 prmBalanceBefore = address(protocolRevenueManagerInstance).balance;
 
-        vm.prank(alice);
+        vm.startPrank(alice);
+
+        // should fail if accidentally sending fees to zero address
+        vm.expectRevert(MembershipManager.InvalidWithdraw.selector);
+        membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee, address(0x0));
+
         membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee, address(protocolRevenueManagerInstance));
 
         assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + (mintFee + upgradeFee + burnFee));
         assertEq(address(membershipManagerInstance).balance, 0 ether); // totalFeesAccumulated
+        vm.stopPrank();
     }
 
     function test_SettingFeesFail() public {
