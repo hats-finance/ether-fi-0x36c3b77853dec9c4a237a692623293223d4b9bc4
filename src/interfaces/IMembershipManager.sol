@@ -41,9 +41,6 @@ interface IMembershipManager {
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external;
     function withdrawAndBurnForEth(uint256 _tokenId) external;
 
-    function stakeForPoints(uint256 _tokenId, uint256 _amount) external;
-    function unstakeForPoints(uint256 _tokenId, uint256 _amount) external;
-
     function claim(uint256 _tokenId) external;
 
     // Getter functions
@@ -72,6 +69,9 @@ interface IMembershipManager {
     function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256);
     function updateTier(uint8 _tier, uint40 _requiredTierPoints, uint24 _weight) external;
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
+    function setPointsBatch(uint256[] calldata _tokenIds, uint40[] calldata _loyaltyPoints, uint40[] calldata _tierPoints) external;
+    function recoverTierPointsForEap(uint256 _tokenId, uint32  _eapDepositBlockNumber) external;
+    function recoverTierPointsForEapBatch(uint256[] calldata _tokenIds, uint32[] calldata _eapDepositBlockNumbers) external;
     function setMinDepositWei(uint56 _value) external;
     function setMaxDepositTopUpPercent(uint8 _percent) external;
     function setTopUpCooltimePeriod(uint32 _newWaitTime) external;
