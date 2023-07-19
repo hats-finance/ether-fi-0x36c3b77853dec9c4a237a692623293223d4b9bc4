@@ -234,22 +234,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _emitNftUpdateEvent(_tokenId);
     }
 
-    /// @notice Sacrifice the staking rewards and earn more points
-    /// @dev This function allows users to stake their ETH to earn membership points faster.
-    /// @param _tokenId The ID of the membership NFT.
-    /// @param _amount The amount of ETH which sacrifices its staking rewards to earn points faster
-    function stakeForPoints(uint256 _tokenId, uint256 _amount) external whenNotPaused {
-        revert Deprecated();
-    }
-
-    /// @notice Unstakes ETH.
-    /// @dev This function allows users to un-do 'stakeForPoints'
-    /// @param _tokenId The ID of the membership NFT.
-    /// @param _amount The amount of ETH to unstake for staking rewards.
-    function unstakeForPoints(uint256 _tokenId, uint256 _amount) external whenNotPaused {
-        revert Deprecated();
-    }
-
     /// @notice Claims {points, staking rewards} and update the tier, if needed.
     /// @param _tokenId The ID of the membership NFT.
     /// @dev This function allows users to claim the rewards + a new tier, if eligible.
@@ -311,20 +295,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         tierData[_tier].weight = _weight;
     }
 
-    /// @notice Sets the points for a given Ethereum address.
-    /// @dev This function allows the contract owner to set the points for a specific Ethereum address.
-    /// @param _tokenIds The ID of the membership NFT.
+    /// @notice Sets the points for the given NFTs.
+    /// @dev This function allows the contract owner to set the points for specific NFTs.
+    /// @param _tokenIds The IDs of the membership NFT.
     /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
     /// @param _tierPoints The number of tier points to set for the specified NFT.
     function setPointsBatch(uint256[] calldata _tokenIds, uint40[] calldata _loyaltyPoints, uint40[] calldata _tierPoints) external {
-        _requireAdmin();
         for (uint256 i = 0; i < _tokenIds.length; i++) {
-            uint256 tokenId = _tokenIds[i];
-            _claimPoints(tokenId);     
-            _claimStakingRewards(tokenId);
-            _setPoints(tokenId, _loyaltyPoints[i], _tierPoints[i]);
-            _claimTier(tokenId);
-            _emitNftUpdateEvent(tokenId);
+            setPoints(_tokenIds[i], _loyaltyPoints[i], _tierPoints[i]);            
         }
     }
 
@@ -333,11 +311,36 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _tokenId The ID of the membership NFT.
     /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
     /// @param _tierPoints The number of tier points to set for the specified NFT.
-    function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external {
+    function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) public {
         _requireAdmin();
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
         _setPoints(_tokenId, _loyaltyPoints, _tierPoints);
+        _claimTier(_tokenId);
+        _emitNftUpdateEvent(_tokenId);
+    }
+
+    /// @notice Recover the tier points for a given NFT.
+    /// @param _tokenIds The IDs of the membership NFT.
+    /// @param _eapDepositBlockNumbers The block numbers at which the users deposited into the EAP
+    function recoverTierPointsForEapBatch(uint256[] calldata _tokenIds, uint32[] calldata _eapDepositBlockNumbers) external {
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            recoverTierPointsForEap(_tokenIds[i], _eapDepositBlockNumbers[i]);
+        }
+    }
+
+    /// @notice Recover the tier points for a given NFT.
+    /// @param _tokenId The ID of the membership NFT.
+    /// @param _eapDepositBlockNumber the block number at which the user deposited into the EAP
+    function recoverTierPointsForEap(uint256 _tokenId, uint32  _eapDepositBlockNumber) public {
+        _requireAdmin();
+
+        _claimPoints(_tokenId);
+        _claimStakingRewards(_tokenId);
+
+        uint40 newTierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
+        _setPoints(_tokenId, tokenData[_tokenId].baseLoyaltyPoints, newTierPoints);
+
         _claimTier(_tokenId);
         _emitNftUpdateEvent(_tokenId);
     }
