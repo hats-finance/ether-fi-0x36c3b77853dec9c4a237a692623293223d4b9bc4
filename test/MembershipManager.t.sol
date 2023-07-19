@@ -351,8 +351,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
         vm.stopPrank();
 
         // Check the balance of Alice updated by the rebasing
@@ -385,8 +384,7 @@ contract MembershipManagerTest is TestSetup {
 
         // More Staking rewards 1 ETH into LP
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
         vm.stopPrank();
 
         // Alice belongs to the tier 1 with the weight 2
@@ -954,8 +952,7 @@ contract MembershipManagerTest is TestSetup {
 
         // 1 ETH is earned as a staking rewards; 2 ETH has grown to 3 ETH.
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(2 ether + 1 ether, 2 ether);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(2 ether + 1 ether, 2 ether);
         vm.stopPrank();
 
         // The balance has grown accordingly
@@ -1059,8 +1056,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Target 50% APR Earnings in eETH!
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(eEthTVL, address(liquidityPoolInstance).balance);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(eEthTVL, address(liquidityPoolInstance).balance);
         vm.stopPrank();
 
         // The balance has grown accordingly
@@ -1239,8 +1235,7 @@ contract MembershipManagerTest is TestSetup {
             uint256 tvlInContract = address(liquidityPoolInstance).balance;
 
             vm.startPrank(alice);
-            liquidityPoolInstance.rebase(moneyPerRebase + tvlInContract, tvlInContract);
-            membershipManagerInstance.distributeStakingRewards();
+            membershipManagerInstance.rebase(moneyPerRebase + tvlInContract, tvlInContract);
             vm.stopPrank();
 
             _transferTo(address(liquidityPoolInstance), moneyPerRebase);

@@ -147,7 +147,7 @@ contract WeETHTest is TestSetup {
 
         //----------------------------------------------------------------------------------------------------------
 
-        vm.prank(alice);
+        vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(10 ether + 50 ether, 50 ether);
 
         _transferTo(address(liquidityPoolInstance), 10 ether);
@@ -171,7 +171,7 @@ contract WeETHTest is TestSetup {
 
         //----------------------------------------------------------------------------------------------------------
 
-        vm.prank(alice);
+        vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(60 ether + 50 ether, 60 ether);
 
         _transferTo(address(liquidityPoolInstance), 50 ether);   
@@ -213,7 +213,7 @@ contract WeETHTest is TestSetup {
         vm.stopPrank();
 
         // Rewards enter LP
-        vm.prank(alice);
+        vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(1 ether + 3 ether, 3 ether);
         _transferTo(address(liquidityPoolInstance), 1 ether);
         assertEq(address(liquidityPoolInstance).balance, 4 ether);

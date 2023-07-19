@@ -153,7 +153,7 @@ contract SmallScenariosTest is TestSetup {
         // EtherFi sets the accrued staking rewards in the Liquidity Pool.
         skip(1 days);
         
-        startHoax(alice);
+        startHoax(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(30 ether + 1 ether, 0 ether);
         vm.stopPrank();
         _transferTo(address(liquidityPoolInstance), 1 ether);

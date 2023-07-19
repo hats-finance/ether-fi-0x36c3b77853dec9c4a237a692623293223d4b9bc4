@@ -200,7 +200,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @notice Rebase by ether.fi
     /// @param _tvl total value locked in ether.fi liquidity pool
     /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
-    function rebase(uint256 _tvl, uint256 _balanceInLp) external onlyAdmin {
+    function rebase(uint256 _tvl, uint256 _balanceInLp) external {
+        require(msg.sender == address(membershipManager), "only membership manager can rebase");
         require(address(this).balance == _balanceInLp, "the LP balance has changed.");
         require(getTotalPooledEther() > 0, "rebasing when there is no pooled ether is not allowed.");
         if (_tvl > type(uint128).max) revert InvalidAmount();

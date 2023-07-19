@@ -263,9 +263,15 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _emitNftUpdateEvent(_tokenId);
     }
 
+    function rebase(uint256 _tvl, uint256 _balanceInLp) external {
+        _requireAdmin();
+        liquidityPool.rebase(_tvl, _balanceInLp);
+        _distributeStakingRewards();
+    }
+
     /// @notice Distributes staking rewards to eligible stakers.
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
-    function distributeStakingRewards() external {
+    function _distributeStakingRewards() internal {
         _requireAdmin();
         (uint96[] memory globalIndex, uint128[] memory adjustedShares) = calculateGlobalIndex();
         uint128 totalShares = 0;
