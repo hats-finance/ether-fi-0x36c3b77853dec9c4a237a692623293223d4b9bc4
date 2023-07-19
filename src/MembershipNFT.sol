@@ -75,9 +75,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         }
     }
 
-    function processDepositFromEapUser(address _user, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) onlyMembershipManagerContract external {
+    function processDepositFromEapUser(address _user, uint32  _eapDepositBlockNumber, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) onlyMembershipManagerContract external {
         if (eapDepositProcessed[_user] == true) revert InvalidEAPRollover();
-        bytes32 leaf = keccak256(abi.encodePacked(_user, _snapshotEthAmount, _points));
+        bytes32 leaf = keccak256(abi.encodePacked(_user,_snapshotEthAmount, _points, _eapDepositBlockNumber));
         if (!MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf)) revert InvalidEAPRollover(); 
 
         eapDepositProcessed[_user] = true;
@@ -253,21 +253,45 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return uint40(earning);
     }
 
-    /// @notice Converts meTokens points to EAP tokens.
-    /// @dev This function allows users to convert their EAP points to membership {loyalty, tier} tokens.
-    /// @param _eapPoints The amount of EAP points
-    /// @param _ethAmount The amount of ETH deposit in the EAP (or converted amounts for ERC20s)
-    function convertEapPoints(uint256 _eapPoints, uint256 _ethAmount) public view returns (uint40, uint40) {
-        uint256 loyaltyPoints = _min(_eapPoints, type(uint40).max);
-        uint256 eapPointsPerDeposit = 1e16 * _eapPoints / Math.sqrt(1e32 * _ethAmount / 0.001 ether);
-        uint8 tierId = 0;
-        while (tierId < requiredEapPointsPerEapDeposit.length 
-                && eapPointsPerDeposit >= requiredEapPointsPerEapDeposit[tierId]) {
-            tierId++;
+    function computeTierPointsForEap(uint32 _eapDepositBlockNumber) public view returns (uint40) {
+        uint8 numTiers = membershipManager.numberOfTiers();
+        uint32[] memory lastBlockNumbers = new uint32[](numTiers);
+        uint32 eapCloseBlockNumber = 17664247; // https://etherscan.io/tx/0x1ff2ade678bea8b4e5633841ff21390283e57bc50fced4dea54b11ebc929b10c
+        
+        lastBlockNumbers[0] = 0;
+        lastBlockNumbers[1] = eapCloseBlockNumber;
+        lastBlockNumbers[2] = 16970393; // https://etherscan.io/tx/0x65bc8e0e5c038fc1569c3b7d9663438696a1e261451a6a57d44373266eda5a19
+        lastBlockNumbers[3] = 16755015; // https://etherscan.io/tx/0xe579a56c6c1b1878b368836b682b8fa7c39fe54d6f07750158b570844597e5b4
+        
+        uint8 tierId;
+        if (_eapDepositBlockNumber <= lastBlockNumbers[3]) {
+            tierId = 3; // PLATINUM
+        } else if (_eapDepositBlockNumber <= lastBlockNumbers[2]) {
+            tierId = 2; // GOLD
+        } else if (_eapDepositBlockNumber <= lastBlockNumbers[1]) {
+            tierId = 1; // SILVER
+        } else {
+            tierId = 0; // BRONZE
         }
-        tierId -= 1;
-        (,uint40 requiredTierPoints,, ) = membershipManager.tierData(tierId);
-        return (uint40(loyaltyPoints), requiredTierPoints);
+        uint8 nextTierId = (tierId < numTiers - 1) ? tierId + 1 : tierId;
+
+        (,uint40 current,, ) = membershipManager.tierData(tierId);
+        (,uint40 next,, ) = membershipManager.tierData(nextTierId);
+
+        // Minimum tierPoints for the current tier
+        uint40 tierPoints = current;
+
+        // Linear projection of TierPoints within the tier
+        // so that the days in EAP is taken into account for the days remaining for the next tier
+        if (tierId != nextTierId) {
+            tierPoints += (next - current) * (lastBlockNumbers[tierId] - _eapDepositBlockNumber) / (lastBlockNumbers[tierId] - lastBlockNumbers[nextTierId]);
+        }
+
+        // They kept staking with us after the EAP ended
+        // One tier point per hour
+        tierPoints += (12 * (uint40(block.number) - eapCloseBlockNumber)) / 3600;
+
+        return tierPoints;
     }
 
     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {

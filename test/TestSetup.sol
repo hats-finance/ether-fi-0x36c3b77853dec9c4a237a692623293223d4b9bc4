@@ -542,7 +542,8 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     alice,
                     uint256(1 ether),
-                    uint256(103680)
+                    uint256(103680),
+                    uint32(16970393 - 10) // 10 blocks before the last gold
                 )
             )
         );
@@ -551,7 +552,8 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     bob,
                     uint256(2 ether),
-                    uint256(141738)
+                    uint256(141738),
+                    uint32(0)
                 )
             )
         );
@@ -560,7 +562,8 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     chad,
                     uint256(2 ether),
-                    uint256(139294)
+                    uint256(139294),
+                    uint32(0)
                 )
             )
         );
@@ -569,7 +572,8 @@ contract TestSetup is Test {
                 abi.encodePacked(
                     dan,
                     uint256(1 ether),
-                    uint256(96768)
+                    uint256(96768),
+                    uint32(0)
                 )
             )
         );

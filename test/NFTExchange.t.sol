@@ -35,12 +35,10 @@ contract NFTExchangeTest is TestSetup {
         uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
-        uint256 aliceEapPoints = 100000;
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
-        vm.stopPrank();
-
-        vm.prank(alice);
+        uint40 loyaltyPoints = 10000;
+        uint40 tierPoints = 1000;
         membershipManagerInstance.setPoints(membershipNftTokenId, loyaltyPoints, tierPoints);
+        vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(membershipNftTokenId), loyaltyPoints);
         assertEq(membershipNftInstance.tierPointsOf(membershipNftTokenId), tierPoints);
@@ -139,12 +137,10 @@ contract NFTExchangeTest is TestSetup {
         uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
-        uint256 aliceEapPoints = 100000;
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
-        vm.stopPrank();
-
-        vm.prank(alice);
+        uint40 loyaltyPoints = 10000;
+        uint40 tierPoints = 1000;
         membershipManagerInstance.setPoints(membershipNftTokenId, loyaltyPoints, tierPoints);
+        vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(membershipNftTokenId), loyaltyPoints);
         assertEq(membershipNftInstance.tierPointsOf(membershipNftTokenId), tierPoints);
@@ -183,12 +179,10 @@ contract NFTExchangeTest is TestSetup {
         uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
-        uint256 aliceEapPoints = 100000;
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
-        vm.stopPrank();
-
-        vm.prank(alice);
+        uint40 loyaltyPoints = 10000;
+        uint40 tierPoints = 1000;
         membershipManagerInstance.setPoints(membershipNftTokenId, loyaltyPoints, tierPoints);
+        vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(membershipNftTokenId), loyaltyPoints);
         assertEq(membershipNftInstance.tierPointsOf(membershipNftTokenId), tierPoints);
@@ -227,12 +221,10 @@ contract NFTExchangeTest is TestSetup {
         uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, ownerProof);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
-        uint256 aliceEapPoints = 100000;
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(aliceEapPoints, 30 ether);
-        vm.stopPrank();
-
-        vm.prank(alice);
+        uint40 loyaltyPoints = 10000;
+        uint40 tierPoints = 1000;
         membershipManagerInstance.setPoints(membershipNftTokenId, loyaltyPoints, tierPoints);
+        vm.stopPrank();
 
         assertEq(membershipNftInstance.loyaltyPointsOf(membershipNftTokenId), loyaltyPoints);
         assertEq(membershipNftInstance.tierPointsOf(membershipNftTokenId), tierPoints);
