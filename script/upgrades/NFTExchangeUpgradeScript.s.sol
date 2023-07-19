@@ -22,7 +22,7 @@ contract NFTExchangeUpgrade is Script {
         NFTExchange NFTExchangeInstance = NFTExchange(NFTExchangeProxyAddress);
         NFTExchange NFTExchangeV2Implementation = new NFTExchange();
 
-        NFTExchangeInstance.upgradeTo(address(NFTExchangeV2Implementation));
+        // NFTExchangeInstance.upgradeTo(address(NFTExchangeV2Implementation));
 
         vm.stopBroadcast();
     }
