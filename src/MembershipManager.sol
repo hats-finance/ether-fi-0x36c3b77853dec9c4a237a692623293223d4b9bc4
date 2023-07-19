@@ -251,21 +251,32 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _tokenId The ID of the membership NFT.
     /// @dev This function allows users to claim the rewards + a new tier, if eligible.
     function claim(uint256 _tokenId) public whenNotPaused {
-        uint8 oldTier = tokenData[_tokenId].tier;
-        uint8 newTier = membershipNFT.claimableTier(_tokenId);
-        if (oldTier == newTier) {
-            return;
-        }
-
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
-        _claimTier(_tokenId, oldTier, newTier);
+
+        uint8 oldTier = tokenData[_tokenId].tier;
+        uint8 newTier = membershipNFT.claimableTier(_tokenId);
+        if (oldTier != newTier) {
+            _claimTier(_tokenId, oldTier, newTier);
+        }
         _emitNftUpdateEvent(_tokenId);
+    }
+
+    function rebase(uint256 _tvl, uint256 _balanceInLp) external {
+        _requireAdmin();
+        liquidityPool.rebase(_tvl, _balanceInLp);
+        _distributeStakingRewards();
+    }
+
+    function claimBatch(uint256[] calldata _tokenIds) public whenNotPaused {
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            claim(_tokenIds[i]);
+        }
     }
 
     /// @notice Distributes staking rewards to eligible stakers.
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
-    function distributeStakingRewards() external {
+    function _distributeStakingRewards() internal {
         _requireAdmin();
         (uint96[] memory globalIndex, uint128[] memory adjustedShares) = calculateGlobalIndex();
         uint128 totalShares = 0;
@@ -306,6 +317,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _requireAdmin();
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             uint256 tokenId = _tokenIds[i];
+            _claimPoints(tokenId);     
+            _claimStakingRewards(tokenId);
             _setPoints(tokenId, _loyaltyPoints[i], _tierPoints[i]);
             _claimTier(tokenId);
             _emitNftUpdateEvent(tokenId);
@@ -319,27 +332,19 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _tierPoints The number of tier points to set for the specified NFT.
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external {
         _requireAdmin();
+        _claimPoints(_tokenId);
+        _claimStakingRewards(_tokenId);
         _setPoints(_tokenId, _loyaltyPoints, _tierPoints);
         _claimTier(_tokenId);
         _emitNftUpdateEvent(_tokenId);
     }
 
     error InvalidWithdraw();
-    function withdrawFees(uint256 _amount) external {
+    function withdrawFees(uint256 _amount, address _recipient) external {
         _requireAdmin();
         if (address(this).balance < _amount) revert InvalidWithdraw();
-        uint256 treasuryFees = _amount * treasuryFeeSplitPercent / 100;
-        uint256 protocolRevenueFees = _amount * protocolRevenueFeeSplitPercent / 100;
-
-        bool sent;
-        if (treasuryFees > 0) {
-            (sent, ) = address(treasury).call{value: treasuryFees}("");
-            if (!sent) revert InvalidWithdraw();
-        }
-        if (protocolRevenueFees > 0) {
-            (sent, ) = address(protocolRevenueManager).call{value: protocolRevenueFees}("");
-            if (!sent) revert InvalidWithdraw();
-        }
+        (bool sent, ) = address(_recipient).call{value: _amount}("");
+        if (!sent) revert InvalidWithdraw();
     }
 
     function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external {

@@ -351,8 +351,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
         vm.stopPrank();
 
         // Check the balance of Alice updated by the rebasing
@@ -385,8 +384,7 @@ contract MembershipManagerTest is TestSetup {
 
         // More Staking rewards 1 ETH into LP
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
         vm.stopPrank();
 
         // Alice belongs to the tier 1 with the weight 2
@@ -649,10 +647,15 @@ contract MembershipManagerTest is TestSetup {
         uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
         vm.stopPrank();
 
+        vm.startPrank(alice);
+        membershipManagerInstance.rebase(address(liquidityPoolInstance).balance * 2, address(liquidityPoolInstance).balance);
+        vm.stopPrank();
+
         // Alice earns 1 kwei per day by holding 1 membership points
         skip(1 days);
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24);
+        assertEq(membershipNftInstance.valueOf(aliceToken), 2 * 1 ether);
 
         // owner manually sets Alice's tier
         vm.prank(alice);
@@ -662,6 +665,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24 * 28);
         assertEq(membershipNftInstance.claimableTier(aliceToken), 1);
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
+        assertEq(membershipNftInstance.valueOf(aliceToken), 2 * 1 ether);
     }
 
     function test_lockToken() public {
@@ -882,10 +886,9 @@ contract MembershipManagerTest is TestSetup {
         uint256 prmBalanceBefore = address(protocolRevenueManagerInstance).balance;
 
         vm.prank(alice);
-        membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee);
+        membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee, address(protocolRevenueManagerInstance));
 
-        assertEq(address(treasuryInstance).balance, treasuryBalanceBefore + (mintFee + upgradeFee + burnFee) * 20 / 100);
-        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + (mintFee + upgradeFee + burnFee) * 80 / 100);
+        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + (mintFee + upgradeFee + burnFee));
         assertEq(address(membershipManagerInstance).balance, 0 ether); // totalFeesAccumulated
     }
 
@@ -954,8 +957,7 @@ contract MembershipManagerTest is TestSetup {
 
         // 1 ETH is earned as a staking rewards; 2 ETH has grown to 3 ETH.
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(2 ether + 1 ether, 2 ether);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(2 ether + 1 ether, 2 ether);
         vm.stopPrank();
 
         // The balance has grown accordingly
@@ -1049,7 +1051,7 @@ contract MembershipManagerTest is TestSetup {
         }
 
         vm.prank(alice);
-        membershipManagerInstance.withdrawFees(address(membershipManagerInstance).balance);
+        membershipManagerInstance.withdrawFees(address(membershipManagerInstance).balance, address(protocolRevenueManagerInstance));
 
         // An year passed
         skip(365 days);
@@ -1059,8 +1061,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Target 50% APR Earnings in eETH!
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(eEthTVL, address(liquidityPoolInstance).balance);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(eEthTVL, address(liquidityPoolInstance).balance);
         vm.stopPrank();
 
         // The balance has grown accordingly
@@ -1239,8 +1240,7 @@ contract MembershipManagerTest is TestSetup {
             uint256 tvlInContract = address(liquidityPoolInstance).balance;
 
             vm.startPrank(alice);
-            liquidityPoolInstance.rebase(moneyPerRebase + tvlInContract, tvlInContract);
-            membershipManagerInstance.distributeStakingRewards();
+            membershipManagerInstance.rebase(moneyPerRebase + tvlInContract, tvlInContract);
             vm.stopPrank();
 
             _transferTo(address(liquidityPoolInstance), moneyPerRebase);

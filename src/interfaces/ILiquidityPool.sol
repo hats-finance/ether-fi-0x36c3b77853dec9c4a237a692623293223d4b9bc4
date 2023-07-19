@@ -26,6 +26,7 @@ interface ILiquidityPool {
     function openEEthLiquidStaking() external;
     function closeEEthLiquidStaking() external;
 
+    function rebase(uint256 _tvl, uint256 _balanceInLp) external;
     function setTokenAddress(address _eETH) external;
     function setStakingManager(address _address) external;
     function setEtherFiNodesManager(address _nodeManager) external;
