@@ -125,10 +125,6 @@ contract AddressProviderTest is TestSetup {
             address(regulationsManagerProxy),
             "RegulationsManager"
         );
-        addressProviderInstance.addContract(
-            address(node),
-            "EtherFiNode"
-        );
 
         assertEq(addressProviderInstance.getImplementationAddress("LiquidityPool"), address(liquidityPoolImplementation));
         assertEq(addressProviderInstance.getImplementationAddress("RegulationsManager"), address(regulationsManagerImplementation));
