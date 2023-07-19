@@ -22,7 +22,7 @@ contract LiquidityPoolUpgrade is Script {
         LiquidityPool LiquidityPoolInstance = LiquidityPool(payable(LiquidityPoolProxyAddress));
         LiquidityPool LiquidityPoolV2Implementation = new LiquidityPool();
 
-        LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
+        // LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
         
         vm.stopBroadcast();
     }
