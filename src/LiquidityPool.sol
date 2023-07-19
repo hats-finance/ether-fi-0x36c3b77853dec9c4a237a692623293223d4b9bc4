@@ -210,7 +210,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     /// @notice swap T-NFTs for ETH
     /// @param _tokenIds the token Ids of T-NFTs
-    function swapTNftForEth(uint256[] calldata _tokenIds) external onlyAdmin {
+    function swapTNftForEth(uint256[] calldata _tokenIds) external onlyOwner {
         require(totalValueInLp >= 30 ether * _tokenIds.length, "not enough ETH in LP");
         uint128 amount = uint128(30 ether * _tokenIds.length);
         totalValueOutOfLp += amount;

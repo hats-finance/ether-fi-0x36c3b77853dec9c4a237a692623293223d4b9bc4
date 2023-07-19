@@ -113,7 +113,7 @@ contract NFTExchangeTest is TestSetup {
         // Success: Owner brings the T-NFT to the liquidity pool and gets 30 ETH
         vm.prank(owner);
         TNFTInstance.setApprovalForAll(address(liquidityPoolInstance), true);
-        vm.prank(alice);
+        vm.prank(owner);
         liquidityPoolInstance.swapTNftForEth(tNftTokenIds);
 
         // B-NFT still belongs to Alice
@@ -275,7 +275,7 @@ contract NFTExchangeTest is TestSetup {
         vm.expectRevert("Caller is not the admin");
         nftExchangeInstance.delist(mNftTokenIds);
 
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Ownable: caller is not the owner");
         liquidityPoolInstance.swapTNftForEth(tNftTokenIds);
     }
 
