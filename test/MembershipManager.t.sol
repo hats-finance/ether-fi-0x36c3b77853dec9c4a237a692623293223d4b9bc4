@@ -647,10 +647,15 @@ contract MembershipManagerTest is TestSetup {
         uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
         vm.stopPrank();
 
+        vm.startPrank(alice);
+        membershipManagerInstance.rebase(address(liquidityPoolInstance).balance * 2, address(liquidityPoolInstance).balance);
+        vm.stopPrank();
+
         // Alice earns 1 kwei per day by holding 1 membership points
         skip(1 days);
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24);
+        assertEq(membershipNftInstance.valueOf(aliceToken), 2 * 1 ether);
 
         // owner manually sets Alice's tier
         vm.prank(alice);
@@ -660,6 +665,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24 * 28);
         assertEq(membershipNftInstance.claimableTier(aliceToken), 1);
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
+        assertEq(membershipNftInstance.valueOf(aliceToken), 2 * 1 ether);
     }
 
     function test_lockToken() public {
