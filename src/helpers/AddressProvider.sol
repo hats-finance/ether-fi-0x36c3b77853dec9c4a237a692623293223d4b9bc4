@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-interface MyInterface {
+interface EtherFiProxy {
     function getImplementation() external view returns (address);
 }
 
@@ -83,8 +83,8 @@ contract AddressProvider {
 
     function getImplementationAddress(string memory _name) external view returns (address) {
         address localContractAddress = contracts[_name].contractAddress;
-        try MyInterface(localContractAddress).getImplementation() {
-            return MyInterface(localContractAddress).getImplementation();
+        try EtherFiProxy(localContractAddress).getImplementation() {
+            return EtherFiProxy(localContractAddress).getImplementation();
         } catch {
             return address(0);
         }
