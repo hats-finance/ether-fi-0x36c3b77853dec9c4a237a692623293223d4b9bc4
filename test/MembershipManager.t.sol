@@ -886,10 +886,9 @@ contract MembershipManagerTest is TestSetup {
         uint256 prmBalanceBefore = address(protocolRevenueManagerInstance).balance;
 
         vm.prank(alice);
-        membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee);
+        membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee, address(protocolRevenueManagerInstance));
 
-        assertEq(address(treasuryInstance).balance, treasuryBalanceBefore + (mintFee + upgradeFee + burnFee) * 20 / 100);
-        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + (mintFee + upgradeFee + burnFee) * 80 / 100);
+        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + (mintFee + upgradeFee + burnFee));
         assertEq(address(membershipManagerInstance).balance, 0 ether); // totalFeesAccumulated
     }
 
@@ -1052,7 +1051,7 @@ contract MembershipManagerTest is TestSetup {
         }
 
         vm.prank(alice);
-        membershipManagerInstance.withdrawFees(address(membershipManagerInstance).balance);
+        membershipManagerInstance.withdrawFees(address(membershipManagerInstance).balance, address(protocolRevenueManagerInstance));
 
         // An year passed
         skip(365 days);
