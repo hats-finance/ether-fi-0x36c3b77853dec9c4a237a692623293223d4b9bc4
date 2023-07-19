@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+interface EtherFiProxy {
+    function getImplementation() external view returns (address);
+}
+
 contract AddressProvider {
 
     //--------------------------------------------------------------------------------------
@@ -77,14 +81,11 @@ contract AddressProvider {
         return contracts[_name].contractAddress;
     }
 
-    function getImplementationAddress(string memory _name) external returns (address) {
+    function getImplementationAddress(string memory _name) external view returns (address) {
         address localContractAddress = contracts[_name].contractAddress;
-        (bool success, ) = localContractAddress.call(abi.encodeWithSignature("getImplementation()"));
-
-        if(success) {
-            (, bytes memory implementation) = localContractAddress.call(abi.encodeWithSignature("getImplementation()"));
-            return abi.decode(implementation, (address));
-        } else {
+        try EtherFiProxy(localContractAddress).getImplementation() returns (address result) {
+            return result;
+        } catch {
             return address(0);
         }
     }
