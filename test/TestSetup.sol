@@ -251,6 +251,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
         liquidityPoolInstance.setTnft(address(TNFTInstance));
         liquidityPoolInstance.updateAdmin(alice);
+        liquidityPoolInstance.updateRebaseLimitBasisPoints(10000);
 
         eETHImplementation = new EETH();
         vm.expectRevert("Initializable: contract is already initialized");

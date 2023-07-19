@@ -40,6 +40,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     address public bNftTreasury;
 
+    uint16 public rebaseLimitBasisPoints;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -207,6 +209,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(msg.sender == address(membershipManager), "only membership manager can rebase");
         require(address(this).balance == _balanceInLp, "the LP balance has changed.");
         require(getTotalPooledEther() > 0, "rebasing when there is no pooled ether is not allowed.");
+        require(_tvl <= (10000 + rebaseLimitBasisPoints) * getTotalPooledEther() / 10000, "rebase amount is too high.");
         if (_tvl > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp = uint128(_tvl - _balanceInLp);
         totalValueInLp = uint128(_balanceInLp);
@@ -264,6 +267,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function updateBNftTreasury(address _newTreasury) external onlyOwner {
         require(_newTreasury != address(0), "Cannot be address zero");
         bNftTreasury = _newTreasury;
+    }
+
+    function updateRebaseLimitBasisPoints(uint16 _rebaseLimitBasisPoints) external onlyOwner {
+        rebaseLimitBasisPoints = _rebaseLimitBasisPoints;
     }
     
     //--------------------------------------------------------------------------------------
