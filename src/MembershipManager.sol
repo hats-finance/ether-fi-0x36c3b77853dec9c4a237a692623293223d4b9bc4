@@ -104,12 +104,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @dev The deposit amount must be greater than or equal to what they deposited into the EAP
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
+    /// @param _eapDepositBlockNumber the block number at which the user deposited into the EAP
     /// @param _snapshotEthAmount exact balance that the user has in the merkle snapshot
     /// @param _points EAP points that the user has in the merkle snapshot
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function wrapEthForEap(
         uint256 _amount,
         uint256 _amountForPoints,
+        uint32  _eapDepositBlockNumber,
         uint256 _snapshotEthAmount,
         uint256 _points,
         bytes32[] calldata _merkleProof
@@ -117,7 +119,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (_points == 0 || msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2 || msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
 
         membershipNFT.processDepositFromEapUser(msg.sender, _snapshotEthAmount, _points, _merkleProof);
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNFT.convertEapPoints(_points, _snapshotEthAmount);
+        uint40 loyaltyPoints = uint40(_min(_points, type(uint40).max));
+        uint40 tierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
 
         bytes32[] memory zeroProof;
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), zeroProof);
