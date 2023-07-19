@@ -2,7 +2,7 @@
 pragma solidity 0.8.13;
 
 interface MyInterface {
-    function getImplementation() external;
+    function getImplementation() external returns (address);
 }
 
 contract AddressProvider {
@@ -84,8 +84,7 @@ contract AddressProvider {
     function getImplementationAddress(string memory _name) external returns (address) {
         address localContractAddress = contracts[_name].contractAddress;
         try MyInterface(localContractAddress).getImplementation() {
-            (, bytes memory implementation) = localContractAddress.call(abi.encodeWithSignature("getImplementation()"));
-            return abi.decode(implementation, (address));
+            return MyInterface(localContractAddress).getImplementation();
         } catch {
             return address(0);
         }
