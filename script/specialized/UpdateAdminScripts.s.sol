@@ -26,15 +26,15 @@ contract UpdateAdmins is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        address stakingManager = addressProvider.getProxyAddress("StakingManager");
-        address etherFiNodesManager = addressProvider.getProxyAddress("EtherFiNodesManager");
-        address protocolRevenueManager = addressProvider.getProxyAddress("ProtocolRevenueManager");
-        address auctionManager = addressProvider.getProxyAddress("AuctionManager");
-        address liquidityPool = addressProvider.getProxyAddress("LiquidityPool");
-        address regulationsManager = addressProvider.getProxyAddress("RegulationsManager");
-        address membershipNFT = addressProvider.getProxyAddress("MembershipNFT");
-        address membershipManager = addressProvider.getProxyAddress("MembershipManager");
-        address nftExchange = addressProvider.getProxyAddress("NFTExchange");
+        address stakingManager = addressProvider.getContractAddress("StakingManager");
+        address etherFiNodesManager = addressProvider.getContractAddress("EtherFiNodesManager");
+        address protocolRevenueManager = addressProvider.getContractAddress("ProtocolRevenueManager");
+        address auctionManager = addressProvider.getContractAddress("AuctionManager");
+        address liquidityPool = addressProvider.getContractAddress("LiquidityPool");
+        address regulationsManager = addressProvider.getContractAddress("RegulationsManager");
+        address membershipNFT = addressProvider.getContractAddress("MembershipNFT");
+        address membershipManager = addressProvider.getContractAddress("MembershipManager");
+        address nftExchange = addressProvider.getContractAddress("NFTExchange");
 
         address admin = vm.envAddress("ADMIN");
         EtherFiNodesManager(payable(etherFiNodesManager)).updateAdmin(admin); 

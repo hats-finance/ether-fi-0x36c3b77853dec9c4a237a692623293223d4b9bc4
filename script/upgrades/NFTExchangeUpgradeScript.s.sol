@@ -15,7 +15,7 @@ contract NFTExchangeUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
         
-        address NFTExchangeProxyAddress = addressProvider.getProxyAddress("NFTExchange");
+        address NFTExchangeProxyAddress = addressProvider.getContractAddress("NFTExchange");
        
         vm.startBroadcast(deployerPrivateKey);
 

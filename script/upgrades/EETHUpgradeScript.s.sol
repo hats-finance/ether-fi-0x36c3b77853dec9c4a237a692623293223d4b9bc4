@@ -15,7 +15,7 @@ contract EETHUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address EETHProxyAddress = addressProvider.getProxyAddress("EETH");
+        address EETHProxyAddress = addressProvider.getContractAddress("EETH");
         
         vm.startBroadcast(deployerPrivateKey);
 

@@ -1355,6 +1355,11 @@
         "type": "uint256"
       },
       {
+        "internalType": "uint32",
+        "name": "_eapDepositBlockNumber",
+        "type": "uint32"
+      },
+      {
         "internalType": "uint256",
         "name": "_snapshotEthAmount",
         "type": "uint256"

@@ -15,7 +15,7 @@ contract AuctionManagerUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address AuctionManagerProxyAddress = addressProvider.getProxyAddress("AuctionManager");
+        address AuctionManagerProxyAddress = addressProvider.getContractAddress("AuctionManager");
         
         vm.startBroadcast(deployerPrivateKey);
 
@@ -23,8 +23,6 @@ contract AuctionManagerUpgrade is Script {
         AuctionManager AuctionManagerV2Implementation = new AuctionManager();
 
         AuctionManagerInstance.upgradeTo(address(AuctionManagerV2Implementation));
-
-        addressProvider.updateContractImplementation("AuctionManager", address(AuctionManagerV2Implementation));
 
         vm.stopBroadcast();
     }

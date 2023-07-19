@@ -15,7 +15,7 @@ contract EtherFiNodesManagerUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address EtherFiNodesManagerProxyAddress = addressProvider.getProxyAddress("EtherFiNodesManager");
+        address EtherFiNodesManagerProxyAddress = addressProvider.getContractAddress("EtherFiNodesManager");
 
         vm.startBroadcast(deployerPrivateKey);
 
