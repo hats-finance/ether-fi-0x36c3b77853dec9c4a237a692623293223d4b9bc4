@@ -7,7 +7,7 @@ import "../../src/AuctionManager.sol";
 import "../../src/UUPSProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeployNodeOperatorManagerScript is Script {
+contract DeployNewNodeOperatorManagerScript is Script {
     using Strings for string;
         
     address auctionManagerProxyAddress = vm.envAddress("AUCTION_MANAGER_PROXY_ADDRESS");

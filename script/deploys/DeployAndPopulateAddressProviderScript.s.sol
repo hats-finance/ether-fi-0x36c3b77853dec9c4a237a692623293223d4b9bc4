@@ -51,14 +51,8 @@ contract DeployAndPopulateAddressProvider is Script {
         contractProxyAddresses.tnftProxy = vm.envAddress("TNFT_PROXY_ADDRESS");
         contractProxyAddresses.bnftProxy = vm.envAddress("BNFT_PROXY_ADDRESS");
 
-        contractImplementationAddresses.auctionManagerImplementationAddress = vm.envAddress("AUCTION_MANAGER_IMPLEMENTATION_ADDRESS");
-        contractImplementationAddresses.stakingManagerImplementationAddress = vm.envAddress("STAKING_MANAGER_IMPLEMENTATION_ADDRESS");
-        contractImplementationAddresses.etherFiNodesManagerImplementationAddress = vm.envAddress("ETHERFI_NODES_MANAGER_IMPLEMENTATION_ADDRESS");
         contractImplementationAddresses.treasury = vm.envAddress("TREASURY_ADDRESS");
-        contractImplementationAddresses.protocolRevenueManagerImplementation = vm.envAddress("PROTOCOL_REVENUE_MANAGER_IMPLEMENTATION_ADDRESS");
         contractImplementationAddresses.nodeOperatorManagerImplementation = vm.envAddress("NODE_OPERATOR_MANAGER_ADDRESS");
-        contractImplementationAddresses.tnftImplementation = vm.envAddress("TNFT_IMPLEMENTATION_ADDRESS");
-        contractImplementationAddresses.bnftImplementation = vm.envAddress("BNFT_IMPLEMENTATION_ADDRESS");
         contractImplementationAddresses.etherFiNode = vm.envAddress("ETHERFI_NODE");
         contractImplementationAddresses.earlyAdopterPool = vm.envAddress("EARLY_ADOPTER_POOL");
 

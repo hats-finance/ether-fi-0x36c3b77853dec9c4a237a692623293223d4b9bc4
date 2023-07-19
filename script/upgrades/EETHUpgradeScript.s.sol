@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/EETH.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/EETH.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract EETHUpgrade is Script {
     

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/EtherFiNodesManager.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/EtherFiNodesManager.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract EtherFiNodesManagerUpgrade is Script {
 

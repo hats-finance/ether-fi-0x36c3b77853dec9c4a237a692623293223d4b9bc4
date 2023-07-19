@@ -2,32 +2,25 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/UUPSProxy.sol";
-import "../../../src/TVLOracle.sol";
+import "../../../test/DepositContract.sol";
 import "../../../src/helpers/AddressProvider.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract DeployTVLOracleScript is Script {
+contract DeployTestDepositContractScript is Script {
 
-    /*---- Storage variables ----*/
-
-    TVLOracle public tvlOracle;
     AddressProvider public addressProvider;
 
-    address tvlOracleAddress;
-    
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
+
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
-        address tvlAggregatorAddress = vm.envAddress("TVL_AGGREGATOR_ADDRESS");
-        
         addressProvider = AddressProvider(addressProviderAddress);
 
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy contract
-        tvlOracle = new TVLOracle(tvlAggregatorAddress);
-        addressProvider.addContract(address(tvlOracle), "TVLOracle");
+        DepositContract depositContract = new DepositContract();
+        addressProvider.addContract(address(depositContract), "DepositContract");
 
         vm.stopBroadcast();
     }

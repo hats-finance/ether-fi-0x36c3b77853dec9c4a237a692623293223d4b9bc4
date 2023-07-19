@@ -2,27 +2,27 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/EETH.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/WeETH.sol";
+import "../../src/helpers/AddressProvider.sol";
 
-contract EETHUpgrade is Script {
-    
+contract WeEthUpgrade is Script {
+
     AddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
+
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address EETHProxyAddress = addressProvider.getContractAddress("EETH");
-        
+        address weEthProxyAddress = addressProvider.getContractAddress("WeETH");
+
         vm.startBroadcast(deployerPrivateKey);
 
-        EETH EETHInstance = EETH(EETHProxyAddress);
-        EETH EETHV2Implementation = new EETH();
+        WeETH weEthInstance = WeETH(weEthProxyAddress);
+        WeETH weEthV2Implementation = new WeETH();
 
-        EETHInstance.upgradeTo(address(EETHV2Implementation));
+        weEthInstance.upgradeTo(address(weEthV2Implementation));
 
         vm.stopBroadcast();
     }

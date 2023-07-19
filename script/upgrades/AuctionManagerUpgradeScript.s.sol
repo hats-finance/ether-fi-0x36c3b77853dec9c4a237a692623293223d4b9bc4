@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/AuctionManager.sol";
-import "../../../src/helpers/AddressProvider.sol";
+import "../../src/AuctionManager.sol";
+import "../../src/helpers/AddressProvider.sol";
 
 contract AuctionManagerUpgrade is Script {
 

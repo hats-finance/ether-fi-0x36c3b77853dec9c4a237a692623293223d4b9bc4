@@ -2,16 +2,15 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../../src/MembershipManager.sol";
-import "../../../src/MembershipNFT.sol";
-import "../../../src/WeETH.sol";
-import "../../../src/TNFT.sol";
-import "../../../src/EETH.sol";
-import "../../../src/helpers/AddressProvider.sol";
-import "../../../src/NFTExchange.sol";
-import "../../../src/LiquidityPool.sol";
-import "../../../src/RegulationsManager.sol";
-import "../../../src/UUPSProxy.sol";
+import "../../src/MembershipManager.sol";
+import "../../src/MembershipNFT.sol";
+import "../../src/WeETH.sol";
+import "../../src/EETH.sol";
+import "../../src/NFTExchange.sol";
+import "../../src/LiquidityPool.sol";
+import "../../src/helpers/AddressProvider.sol";
+import "../../src/RegulationsManager.sol";
+import "../../src/UUPSProxy.sol";
 
 contract DeployPhaseOnePointFiveScript is Script {
 
@@ -53,7 +52,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         bytes32[] memory emptyProof;
-
+        
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
@@ -122,13 +121,13 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManager.confirmEligibility(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
         membershipManager.setTopUpCooltimePeriod(28 days);
-        membershipManager.setFeeSplits(0, 100);        
+        membershipManager.setFeeSplits(0, 100);
 
         initializeTiers();
         preMint();
         membershipManager.setFeeAmounts(0.05 ether, 0.05 ether, 0);
         membershipManager.pauseContract();
-
+        
         vm.stopBroadcast();
     }
 
@@ -140,7 +139,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         nftExchange.updateAdmin(_admin);
     }
 
-    // Update this before mainnet deploy
     function initializeTiers() internal {
         membershipManager.addNewTier(0, 1);
         membershipManager.addNewTier(672, 2);
