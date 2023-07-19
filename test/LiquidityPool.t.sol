@@ -229,7 +229,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(owner, 100 ether);
         vm.prank(owner);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        vm.prank(alice);
+        vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(2 ether + 4 ether, 4 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
@@ -425,7 +425,7 @@ contract LiquidityPoolTest is TestSetup {
         slashingPenalties[0] = 0.5 ether;
         slashingPenalties[1] = 0.5 ether;
 
-        vm.prank(alice);
+        vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(64 ether - 1 ether, 0 ether);
 
         vm.expectRevert("validator node is not exited");
@@ -513,7 +513,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 100 ether);
-        vm.prank(alice);
+        vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(103 ether, 100 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 103 ether);
 
@@ -547,7 +547,7 @@ contract LiquidityPoolTest is TestSetup {
 
         uint256 eEthTVL = tvls[1];
 
-        vm.startPrank(alice);
+        vm.startPrank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(eEthTVL, 0 ether);
         vm.stopPrank();
 

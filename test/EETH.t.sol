@@ -68,7 +68,7 @@ contract EETHTest is TestSetup {
     /// @dev Tests eETH balanceOf and totalSupply functions as well
     function test_EEthRebaseFailsWhenThereIsNoPooledEther() public {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
-        vm.prank(alice);
+        vm.prank(address(membershipManagerInstance));
         vm.expectRevert("rebasing when there is no pooled ether is not allowed.");
         liquidityPoolInstance.rebase(10 ether, 0 ether);
     }
@@ -89,7 +89,7 @@ contract EETHTest is TestSetup {
         assertEq(eETHInstance.shares(alice), 10 ether);
 
         // Total pooled ether = 20
-        vm.prank(alice);
+        vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(20 ether, 10 ether);
         _transferTo(address(liquidityPoolInstance), 10 ether);
 
@@ -128,7 +128,7 @@ contract EETHTest is TestSetup {
         // Staking Rewards sent to liquidity pool
         /// vm.deal sets the balance of whoever its called on
         /// In this case 10 ether is added as reward 
-        vm.prank(alice);
+        vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(10 ether + 25 ether, 25 ether);
         _transferTo(address(liquidityPoolInstance), 10 ether);
 

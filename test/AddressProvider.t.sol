@@ -4,12 +4,13 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 
 contract AuctionManagerV2Test is AuctionManager {
-    function isUpgraded() public pure returns (bool) {
+    function isUpgraded() public pure returns(bool){
         return true;
     }
 }
 
 contract AddressProviderTest is TestSetup {
+
     AuctionManagerV2Test public auctionManagerV2Instance;
 
     function setUp() public {
@@ -26,160 +27,73 @@ contract AddressProviderTest is TestSetup {
         vm.prank(alice);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
-            address(auctionInstance),
             "AuctionManager"
         );
 
         vm.startPrank(owner);
-        vm.expectRevert("Implementation cannot be zero addr");
-        addressProviderInstance.addContract(
-            address(0),
-            address(0),
-            "AuctionManager"
-        );
-
         vm.warp(20000);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
-            address(auctionInstance),
             "AuctionManager"
         );
 
         (
-            uint256 version,
-            uint256 lastModified,
-            address proxy,
-            address implementation,
-            bool isActive,
+            address contractAddress,
             string memory name
         ) = addressProviderInstance.contracts("AuctionManager");
         
-        assertEq(version, 1);
-        assertEq(lastModified, 20000);
-        assertEq(proxy, address(auctionManagerProxy));
-        assertEq(implementation, address(auctionInstance));
-        assertEq(isActive, false);
+        assertEq(contractAddress, address(auctionManagerProxy));
         assertEq(name, "AuctionManager");
         assertEq(addressProviderInstance.numberOfContracts(), 1);
     }
 
-    function test_UpdateContract() public {
+    function test_RemoveContract() public {
         vm.startPrank(owner);
-        vm.expectRevert("Contract doesn't exists");
-        addressProviderInstance.updateContractImplementation(
-            "AuctionManager",
-            address(auctionInstance)
-        );
-
         vm.warp(20000);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
-            address(auctionInstance),
             "AuctionManager"
+        );
+
+        addressProviderInstance.addContract(
+            address(liquidityPoolProxy),
+            "LiquidityPool"
         );
         vm.stopPrank();
 
         vm.expectRevert("Only owner function");
         vm.prank(alice);
-        addressProviderInstance.updateContractImplementation(
-            "AuctionManager",
-            address(auctionInstance)
+        addressProviderInstance.removeContract(
+            "AuctionManager"
         );
 
         vm.startPrank(owner);
-        vm.expectRevert("Implementation cannot be zero addr");
-        addressProviderInstance.updateContractImplementation("AuctionManager", address(0));
-
-        addressProviderInstance.deactivateContract("AuctionManager");
-
-        vm.expectRevert("Contract deprecated");
-        addressProviderInstance.updateContractImplementation(
-            "AuctionManager",
-            address(auctionInstance)
-        );
-
-        addressProviderInstance.reactivateContract("AuctionManager");
-
-        AuctionManagerV2Test auctionManagerV2Implementation = new AuctionManagerV2Test();
-        auctionInstance.upgradeTo(address(auctionManagerV2Implementation));
-
-        auctionManagerV2Instance = AuctionManagerV2Test(
-            address(auctionManagerProxy)
-        );
-
-        vm.warp(2500000);
-        addressProviderInstance.updateContractImplementation(
-            "AuctionManager",
-            address(auctionManagerV2Instance)
+        vm.expectRevert("Contract does not exist");
+        addressProviderInstance.removeContract(
+            "AuctionManage"
         );
 
         (
-            uint256 version,
-            uint256 lastModified,
-            address proxy,
-            address implementation,
-            bool isDeprecated,
+            address contractAddress,
             string memory name
         ) = addressProviderInstance.contracts("AuctionManager");
-
         
-        assertEq(version, 2);
-        assertEq(lastModified, 2500000);
-        assertEq(proxy, address(auctionManagerProxy));
-        assertEq(implementation, address(auctionManagerV2Instance));
-        assertEq(isDeprecated, false);
+        assertEq(contractAddress, address(auctionManagerProxy));
         assertEq(name, "AuctionManager");
+        assertEq(addressProviderInstance.numberOfContracts(), 2);
+
+        addressProviderInstance.removeContract(
+            "AuctionManager"
+        );
+
+        (
+            contractAddress,
+            name
+        ) = addressProviderInstance.contracts("AuctionManager");
+
+        assertEq(contractAddress, address(0));
         assertEq(addressProviderInstance.numberOfContracts(), 1);
-    }
 
-    function test_DeactivateContract() public {
-        vm.prank(owner);
-        vm.warp(20000);
-        addressProviderInstance.addContract(
-            address(auctionManagerProxy),
-            address(auctionInstance),
-            "Auction Manager"
-        );
-
-        vm.expectRevert("Only owner function");
-        vm.prank(alice);
-        addressProviderInstance.deactivateContract("AuctionManager");
-
-        vm.startPrank(owner);
-        addressProviderInstance.deactivateContract("AuctionManager");
-
-        (, , , , bool isDeprecated, ) = addressProviderInstance.contracts("AuctionManager");
-        assertEq(isDeprecated, true);
-
-        vm.expectRevert("Contract already deprecated");
-        addressProviderInstance.deactivateContract("AuctionManager");
-    }
-
-    function test_ReactivateContract() public {
-        vm.prank(owner);
-        vm.warp(20000);
-        addressProviderInstance.addContract(
-            address(auctionManagerProxy),
-            address(auctionInstance),
-            "Auction Manager"
-        );
-
-        vm.expectRevert("Only owner function");
-        vm.prank(alice);
-        addressProviderInstance.reactivateContract("AuctionManager");
-
-        vm.startPrank(owner);
-        vm.expectRevert("Contract already active");
-        addressProviderInstance.reactivateContract("AuctionManager");
-
-        addressProviderInstance.deactivateContract("AuctionManager");
-
-        (, , , , bool isDeprecated, ) = addressProviderInstance.contracts("AuctionManager");
-        assertEq(isDeprecated, true);
-
-        addressProviderInstance.reactivateContract("AuctionManager");
-        (, , , , isDeprecated, ) = addressProviderInstance.contracts("AuctionManager");
-        assertEq(isDeprecated, false);
     }
 
     function test_SetOwner() public {
@@ -195,5 +109,31 @@ contract AddressProviderTest is TestSetup {
 
         addressProviderInstance.setOwner(address(alice));
         assertEq(addressProviderInstance.owner(), address(alice));
+    }
+
+    function test_GetImplementationAddress() public {
+        vm.startPrank(owner);
+        addressProviderInstance.addContract(
+            address(auctionManagerProxy),
+            "AuctionManager"
+        );
+        addressProviderInstance.addContract(
+            address(liquidityPoolProxy),
+            "LiquidityPool"
+        );
+        addressProviderInstance.addContract(
+            address(regulationsManagerProxy),
+            "RegulationsManager"
+        );
+
+        assertEq(addressProviderInstance.getImplementationAddress("LiquidityPool"), address(liquidityPoolImplementation));
+        assertEq(addressProviderInstance.getImplementationAddress("RegulationsManager"), address(regulationsManagerImplementation));
+        assertEq(addressProviderInstance.getImplementationAddress("AuctionManager"), address(auctionImplementation));
+
+        AuctionManagerV2Test auctionManagerV2Implementation = new AuctionManagerV2Test();
+        auctionInstance.upgradeTo(address(auctionManagerV2Implementation));
+
+        assertEq(addressProviderInstance.getImplementationAddress("AuctionManager"), address(auctionManagerV2Implementation));
+
     }
 }

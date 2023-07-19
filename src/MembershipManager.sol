@@ -104,20 +104,23 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @dev The deposit amount must be greater than or equal to what they deposited into the EAP
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
+    /// @param _eapDepositBlockNumber the block number at which the user deposited into the EAP
     /// @param _snapshotEthAmount exact balance that the user has in the merkle snapshot
     /// @param _points EAP points that the user has in the merkle snapshot
     /// @param _merkleProof array of hashes forming the merkle proof for the user
     function wrapEthForEap(
         uint256 _amount,
         uint256 _amountForPoints,
+        uint32  _eapDepositBlockNumber,
         uint256 _snapshotEthAmount,
         uint256 _points,
         bytes32[] calldata _merkleProof
     ) external payable whenNotPaused returns (uint256) {
         if (_points == 0 || msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2 || msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
 
-        membershipNFT.processDepositFromEapUser(msg.sender, _snapshotEthAmount, _points, _merkleProof);
-        (uint40 loyaltyPoints, uint40 tierPoints) = membershipNFT.convertEapPoints(_points, _snapshotEthAmount);
+        membershipNFT.processDepositFromEapUser(msg.sender, _eapDepositBlockNumber, _snapshotEthAmount, _points, _merkleProof);
+        uint40 loyaltyPoints = uint40(_min(_points, type(uint40).max));
+        uint40 tierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
 
         bytes32[] memory zeroProof;
         liquidityPool.deposit{value: msg.value}(msg.sender, address(this), zeroProof);
@@ -231,41 +234,36 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _emitNftUpdateEvent(_tokenId);
     }
 
-    /// @notice Sacrifice the staking rewards and earn more points
-    /// @dev This function allows users to stake their ETH to earn membership points faster.
-    /// @param _tokenId The ID of the membership NFT.
-    /// @param _amount The amount of ETH which sacrifices its staking rewards to earn points faster
-    function stakeForPoints(uint256 _tokenId, uint256 _amount) external whenNotPaused {
-        revert Deprecated();
-    }
-
-    /// @notice Unstakes ETH.
-    /// @dev This function allows users to un-do 'stakeForPoints'
-    /// @param _tokenId The ID of the membership NFT.
-    /// @param _amount The amount of ETH to unstake for staking rewards.
-    function unstakeForPoints(uint256 _tokenId, uint256 _amount) external whenNotPaused {
-        revert Deprecated();
-    }
-
     /// @notice Claims {points, staking rewards} and update the tier, if needed.
     /// @param _tokenId The ID of the membership NFT.
     /// @dev This function allows users to claim the rewards + a new tier, if eligible.
     function claim(uint256 _tokenId) public whenNotPaused {
-        uint8 oldTier = tokenData[_tokenId].tier;
-        uint8 newTier = membershipNFT.claimableTier(_tokenId);
-        if (oldTier == newTier) {
-            return;
-        }
-
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
-        _claimTier(_tokenId, oldTier, newTier);
+
+        uint8 oldTier = tokenData[_tokenId].tier;
+        uint8 newTier = membershipNFT.claimableTier(_tokenId);
+        if (oldTier != newTier) {
+            _claimTier(_tokenId, oldTier, newTier);
+        }
         _emitNftUpdateEvent(_tokenId);
+    }
+
+    function rebase(uint256 _tvl, uint256 _balanceInLp) external {
+        _requireAdmin();
+        liquidityPool.rebase(_tvl, _balanceInLp);
+        _distributeStakingRewards();
+    }
+
+    function claimBatch(uint256[] calldata _tokenIds) public whenNotPaused {
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            claim(_tokenIds[i]);
+        }
     }
 
     /// @notice Distributes staking rewards to eligible stakers.
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
-    function distributeStakingRewards() external {
+    function _distributeStakingRewards() internal {
         _requireAdmin();
         (uint96[] memory globalIndex, uint128[] memory adjustedShares) = calculateGlobalIndex();
         uint128 totalShares = 0;
@@ -297,18 +295,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         tierData[_tier].weight = _weight;
     }
 
-    /// @notice Sets the points for a given Ethereum address.
-    /// @dev This function allows the contract owner to set the points for a specific Ethereum address.
-    /// @param _tokenIds The ID of the membership NFT.
+    /// @notice Sets the points for the given NFTs.
+    /// @dev This function allows the contract owner to set the points for specific NFTs.
+    /// @param _tokenIds The IDs of the membership NFT.
     /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
     /// @param _tierPoints The number of tier points to set for the specified NFT.
     function setPointsBatch(uint256[] calldata _tokenIds, uint40[] calldata _loyaltyPoints, uint40[] calldata _tierPoints) external {
-        _requireAdmin();
         for (uint256 i = 0; i < _tokenIds.length; i++) {
-            uint256 tokenId = _tokenIds[i];
-            _setPoints(tokenId, _loyaltyPoints[i], _tierPoints[i]);
-            _claimTier(tokenId);
-            _emitNftUpdateEvent(tokenId);
+            setPoints(_tokenIds[i], _loyaltyPoints[i], _tierPoints[i]);            
         }
     }
 
@@ -317,29 +311,46 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _tokenId The ID of the membership NFT.
     /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
     /// @param _tierPoints The number of tier points to set for the specified NFT.
-    function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external {
+    function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) public {
         _requireAdmin();
+        _claimStakingRewards(_tokenId);
         _setPoints(_tokenId, _loyaltyPoints, _tierPoints);
         _claimTier(_tokenId);
         _emitNftUpdateEvent(_tokenId);
     }
 
-    error InvalidWithdraw();
-    function withdrawFees(uint256 _amount) external {
-        _requireAdmin();
-        if (address(this).balance < _amount) revert InvalidWithdraw();
-        uint256 treasuryFees = _amount * treasuryFeeSplitPercent / 100;
-        uint256 protocolRevenueFees = _amount * protocolRevenueFeeSplitPercent / 100;
+    /// @notice Recover the tier points for a given NFT.
+    /// @param _tokenIds The IDs of the membership NFT.
+    /// @param _eapDepositBlockNumbers The block numbers at which the users deposited into the EAP
+    function recoverTierPointsForEapBatch(uint256[] calldata _tokenIds, uint32[] calldata _eapDepositBlockNumbers) external {
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            recoverTierPointsForEap(_tokenIds[i], _eapDepositBlockNumbers[i]);
+        }
+    }
 
-        bool sent;
-        if (treasuryFees > 0) {
-            (sent, ) = address(treasury).call{value: treasuryFees}("");
-            if (!sent) revert InvalidWithdraw();
-        }
-        if (protocolRevenueFees > 0) {
-            (sent, ) = address(protocolRevenueManager).call{value: protocolRevenueFees}("");
-            if (!sent) revert InvalidWithdraw();
-        }
+    /// @notice Recover the tier points for a given NFT.
+    /// @param _tokenId The ID of the membership NFT.
+    /// @param _eapDepositBlockNumber the block number at which the user deposited into the EAP
+    function recoverTierPointsForEap(uint256 _tokenId, uint32  _eapDepositBlockNumber) public {
+        _requireAdmin();
+
+        _claimPoints(_tokenId);
+        _claimStakingRewards(_tokenId);
+
+        uint40 newTierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
+        _setPoints(_tokenId, tokenData[_tokenId].baseLoyaltyPoints, newTierPoints);
+
+        _claimTier(_tokenId);
+        _emitNftUpdateEvent(_tokenId);
+    }
+
+    error InvalidWithdraw();
+    function withdrawFees(uint256 _amount, address _recipient) external {
+        _requireAdmin();
+        if (_recipient == address(0)) revert InvalidWithdraw();
+        if (address(this).balance < _amount) revert InvalidWithdraw();
+        (bool sent, ) = address(_recipient).call{value: _amount}("");
+        if (!sent) revert InvalidWithdraw();
     }
 
     function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external {

@@ -254,6 +254,7 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.wrapEthForEap{value: 0.5 ether}(
             1 ether,
             0,
+            16970393 - 10,
             1 ether,
             103680,
             aliceProof
@@ -263,6 +264,7 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.wrapEthForEap{value: 3.0 ether}(
             1 ether,
             2 ether,
+            16970393 - 10,
             1 ether,
             103680,
             aliceProof
@@ -272,6 +274,7 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.wrapEthForEap{value: 1 ether}(
             1 ether,
             0,
+            16970393 - 10,
             1 ether,
             0,
             aliceProof
@@ -280,6 +283,9 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_EapMigrationWorks() public {
+        vm.warp(1689764603 - 8 weeks);
+        vm.roll(17726813 - (8 weeks) / 12);
+
         /// @notice This test uses ETH to test the withdrawal and deposit flow due to the complexity of deploying a local wETH/ERC20 pool for swaps
 
         // Alice claims her funds after the snapshot has been taken. 
@@ -304,6 +310,8 @@ contract MembershipManagerTest is TestSetup {
         vm.prank(alice);
         membershipNftInstance.setUpForEap(rootMigration2, requiredEapPointsPerEapDeposit);
 
+        vm.roll(17664247 + 1 weeks / 12);
+
         // Alice Withdraws
         vm.startPrank(alice);
         earlyAdopterPoolInstance.withdraw();
@@ -321,6 +329,7 @@ contract MembershipManagerTest is TestSetup {
         uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(
             2 ether,
             0,
+            16970393 - 10, // 10 blocks before the last gold
             1 ether,
             103680,
             aliceProof
@@ -332,7 +341,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Check that Alice has received membership points
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
-        assertEq(membershipNftInstance.tierOf(tokenId), 3); // Gold
+        assertEq(membershipNftInstance.tierOf(tokenId), 2); // Gold
         assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 2 ether);
     }
 
@@ -351,8 +360,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
         vm.stopPrank();
 
         // Check the balance of Alice updated by the rebasing
@@ -385,8 +393,7 @@ contract MembershipManagerTest is TestSetup {
 
         // More Staking rewards 1 ETH into LP
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
         vm.stopPrank();
 
         // Alice belongs to the tier 1 with the weight 2
@@ -649,10 +656,15 @@ contract MembershipManagerTest is TestSetup {
         uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
         vm.stopPrank();
 
+        vm.startPrank(alice);
+        membershipManagerInstance.rebase(address(liquidityPoolInstance).balance * 2, address(liquidityPoolInstance).balance);
+        vm.stopPrank();
+
         // Alice earns 1 kwei per day by holding 1 membership points
         skip(1 days);
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 1 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24);
+        assertEq(membershipNftInstance.valueOf(aliceToken), 2 * 1 ether);
 
         // owner manually sets Alice's tier
         vm.prank(alice);
@@ -662,6 +674,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 24 * 28);
         assertEq(membershipNftInstance.claimableTier(aliceToken), 1);
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
+        assertEq(membershipNftInstance.valueOf(aliceToken), 2 * 1 ether);
     }
 
     function test_lockToken() public {
@@ -731,6 +744,9 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_MixedDeposits() public {
+        vm.warp(1689764603 - 8 weeks);
+        vm.roll(17726813 - (8 weeks) / 12);
+
         // Alice claims her funds after the snapshot has been taken. 
         // She then deposits her ETH into the MembershipManager and has her points allocated to her
         // Then, she top-ups with ETH and eETH
@@ -751,16 +767,18 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(alice, 100 ether);
         bytes32[] memory aliceProof = merkleMigration2.getProof(dataForVerification2, 0);
 
+        vm.roll(17664247 + 1 weeks / 12);
+
         // Alice Withdraws
         vm.startPrank(alice);
         earlyAdopterPoolInstance.withdraw();
 
         // Alice Deposits into MembershipManager and receives membership points in return
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 1 ether, 103680, aliceProof);
+        uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 16970393 - 10, 1 ether, 103680, aliceProof);
         
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
-        assertEq(membershipNftInstance.tierOf(tokenId), 3);
+        assertEq(membershipNftInstance.tierOf(tokenId), 2); // Gold
 
         // Top-up with ETH
         membershipManagerInstance.topUpDepositWithEth{value: 0.2 ether}(tokenId, 0.2 ether, 0 ether, aliceProof);
@@ -881,12 +899,17 @@ contract MembershipManagerTest is TestSetup {
         uint256 treasuryBalanceBefore = address(treasuryInstance).balance;
         uint256 prmBalanceBefore = address(protocolRevenueManagerInstance).balance;
 
-        vm.prank(alice);
-        membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee);
+        vm.startPrank(alice);
 
-        assertEq(address(treasuryInstance).balance, treasuryBalanceBefore + (mintFee + upgradeFee + burnFee) * 20 / 100);
-        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + (mintFee + upgradeFee + burnFee) * 80 / 100);
+        // should fail if accidentally sending fees to zero address
+        vm.expectRevert(MembershipManager.InvalidWithdraw.selector);
+        membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee, address(0x0));
+
+        membershipManagerInstance.withdrawFees(mintFee + upgradeFee + burnFee, address(protocolRevenueManagerInstance));
+
+        assertEq(address(protocolRevenueManagerInstance).balance, prmBalanceBefore + (mintFee + upgradeFee + burnFee));
         assertEq(address(membershipManagerInstance).balance, 0 ether); // totalFeesAccumulated
+        vm.stopPrank();
     }
 
     function test_SettingFeesFail() public {
@@ -954,8 +977,7 @@ contract MembershipManagerTest is TestSetup {
 
         // 1 ETH is earned as a staking rewards; 2 ETH has grown to 3 ETH.
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(2 ether + 1 ether, 2 ether);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(2 ether + 1 ether, 2 ether);
         vm.stopPrank();
 
         // The balance has grown accordingly
@@ -1049,7 +1071,7 @@ contract MembershipManagerTest is TestSetup {
         }
 
         vm.prank(alice);
-        membershipManagerInstance.withdrawFees(address(membershipManagerInstance).balance);
+        membershipManagerInstance.withdrawFees(address(membershipManagerInstance).balance, address(protocolRevenueManagerInstance));
 
         // An year passed
         skip(365 days);
@@ -1059,8 +1081,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Target 50% APR Earnings in eETH!
         vm.startPrank(alice);
-        liquidityPoolInstance.rebase(eEthTVL, address(liquidityPoolInstance).balance);
-        membershipManagerInstance.distributeStakingRewards();
+        membershipManagerInstance.rebase(eEthTVL, address(liquidityPoolInstance).balance);
         vm.stopPrank();
 
         // The balance has grown accordingly
@@ -1239,8 +1260,7 @@ contract MembershipManagerTest is TestSetup {
             uint256 tvlInContract = address(liquidityPoolInstance).balance;
 
             vm.startPrank(alice);
-            liquidityPoolInstance.rebase(moneyPerRebase + tvlInContract, tvlInContract);
-            membershipManagerInstance.distributeStakingRewards();
+            membershipManagerInstance.rebase(moneyPerRebase + tvlInContract, tvlInContract);
             vm.stopPrank();
 
             _transferTo(address(liquidityPoolInstance), moneyPerRebase);
@@ -1310,45 +1330,47 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_eap_migration() public {
-        vm.startPrank(alice);
-        uint64[] memory newRequiredEapPointsPerEapDeposit = new uint64[](membershipManagerInstance.numberOfTiers());
-        newRequiredEapPointsPerEapDeposit[0] = 0;
-        newRequiredEapPointsPerEapDeposit[1] = 0; // 0.2
-        newRequiredEapPointsPerEapDeposit[2] = 1826; // 1825.5
-        newRequiredEapPointsPerEapDeposit[3] = 3222; // 3221.4
-        newRequiredEapPointsPerEapDeposit[4] = 10000000000;
-        membershipNftInstance.setUpForEap(rootMigration2, newRequiredEapPointsPerEapDeposit);
+        // Jul-19-2023 13:03:23
+        vm.warp(1689764603);
+        vm.roll(17726813);
 
         {
             // random EAP degen just for Silver
-            uint256 eapPoints = 1;
-            uint256 ethAmount = 0.001 ether;
-            (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(eapPoints, ethAmount);
+            uint40 tierPoints = membershipNftInstance.computeTierPointsForEap(17664247 - 1);
             assertEq( membershipManagerInstance.tierForPoints(tierPoints), 1);
         }
 
         {
             // 0x9b422e571eb2cb9837efdc4f9087194d65fb070a
-            uint256 eapPoints = 18255;
-            uint256 ethAmount = 1e17;
-            (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(eapPoints, ethAmount);
-            assertEq( membershipManagerInstance.tierForPoints(tierPoints), 1);
+            uint40 tierPoints = membershipNftInstance.computeTierPointsForEap(16744622);
+            assertEq( membershipManagerInstance.tierForPoints(tierPoints), 3);
         }
 
         {
             // 0x33bac50dfa950f79c59d85f9a4f07ca48f6e0b4c
-            uint256 eapPoints = 576263;
-            uint256 ethAmount = 32 * 1e18;
-            (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(eapPoints, ethAmount);
+            uint40 tierPoints = membershipNftInstance.computeTierPointsForEap(16926352);
             assertEq( membershipManagerInstance.tierForPoints(tierPoints), 2);
         }
 
         {
             // 0xee1fe7053adf44f1daafe78afb05a5a032016458
-            uint256 eapPoints = 33602;
-            uint256 ethAmount = 1e17;
-            (uint40 loyaltyPoints, uint40 tierPoints) = membershipNftInstance.convertEapPoints(eapPoints, ethAmount);
+            uint40 tierPoints = membershipNftInstance.computeTierPointsForEap(16726561);
             assertEq( membershipManagerInstance.tierForPoints(tierPoints), 3);
         }
+
+        {
+            // LAST person in Platinum
+            // 0x484af812ef1c1a1771f1101d09e749c24a7b56a3
+            uint40 tierPoints = membershipNftInstance.computeTierPointsForEap(16755015);
+            assertEq( membershipManagerInstance.tierForPoints(tierPoints), 3);
+        }
+
+        {
+            // LAST person in GOLD
+            // 0x48e5112d85a51014e5b46bcd1af740a957f5f629
+            uint40 tierPoints = membershipNftInstance.computeTierPointsForEap(16970393);
+            assertEq( membershipManagerInstance.tierForPoints(tierPoints), 2);
+        }
+        
     }
 }

@@ -422,8 +422,14 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "distributeStakingRewards",
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_tokenIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "claimBatch",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -687,6 +693,60 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tvl",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_balanceInLp",
+        "type": "uint256"
+      }
+    ],
+    "name": "rebase",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_eapDepositBlockNumber",
+        "type": "uint32"
+      }
+    ],
+    "name": "recoverTierPointsForEap",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_tokenIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "_eapDepositBlockNumbers",
+        "type": "uint32[]"
+      }
+    ],
+    "name": "recoverTierPointsForEapBatch",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
@@ -862,24 +922,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "stakeForPoints",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1132,24 +1174,6 @@
         "type": "uint256"
       }
     ],
-    "name": "unstakeForPoints",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
-    ],
     "name": "unwrapForEth",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -1259,6 +1283,11 @@
         "internalType": "uint256",
         "name": "_amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_recipient",
+        "type": "address"
       }
     ],
     "name": "withdrawFees",
@@ -1353,6 +1382,11 @@
         "internalType": "uint256",
         "name": "_amountForPoints",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_eapDepositBlockNumber",
+        "type": "uint32"
       },
       {
         "internalType": "uint256",
