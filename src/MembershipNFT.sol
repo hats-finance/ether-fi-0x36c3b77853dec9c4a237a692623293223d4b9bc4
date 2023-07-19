@@ -226,10 +226,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return _max(totalDeposit, membershipManager.allTimeHighDepositAmount(_tokenId));        
     }
 
-    function getImplementation() external view returns (address) {
-        return _getImplementation();
-    }
-
     function transferLockedUntil(uint256 _tokenId) external view returns (uint32) {
         return nftData[_tokenId].transferLockedUntil;
     }
@@ -282,9 +278,8 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         return (_a > _b) ? _a : _b;
     }
 
-    modifier onlyMembershipManagerContract() {
-        if (msg.sender != address(membershipManager)) revert OnlyMembershipManagerContract();
-        _;
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
     }
 
     //--------------------------------------------------------------------------------------
@@ -332,6 +327,11 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Caller is not the admin");
+        _;
+    }
+
+    modifier onlyMembershipManagerContract() {
+        if (msg.sender != address(membershipManager)) revert OnlyMembershipManagerContract();
         _;
     }
 }
