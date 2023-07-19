@@ -14,6 +14,7 @@ import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
+import "../src/EtherFiNode.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
 import "../src/WeETH.sol";
