@@ -118,7 +118,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     ) external payable whenNotPaused returns (uint256) {
         if (_points == 0 || msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2 || msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
 
-        membershipNFT.processDepositFromEapUser(msg.sender, _snapshotEthAmount, _points, _merkleProof);
+        membershipNFT.processDepositFromEapUser(msg.sender, _eapDepositBlockNumber, _snapshotEthAmount, _points, _merkleProof);
         uint40 loyaltyPoints = uint40(_min(_points, type(uint40).max));
         uint40 tierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
 

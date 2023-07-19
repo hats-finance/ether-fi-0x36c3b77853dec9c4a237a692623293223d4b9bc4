@@ -75,9 +75,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         }
     }
 
-    function processDepositFromEapUser(address _user, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) onlyMembershipManagerContract external {
+    function processDepositFromEapUser(address _user, uint32  _eapDepositBlockNumber, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) onlyMembershipManagerContract external {
         if (eapDepositProcessed[_user] == true) revert InvalidEAPRollover();
-        bytes32 leaf = keccak256(abi.encodePacked(_user, _snapshotEthAmount, _points));
+        bytes32 leaf = keccak256(abi.encodePacked(_user,_snapshotEthAmount, _points, _eapDepositBlockNumber));
         if (!MerkleProof.verify(_merkleProof, eapMerkleRoot, leaf)) revert InvalidEAPRollover(); 
 
         eapDepositProcessed[_user] = true;

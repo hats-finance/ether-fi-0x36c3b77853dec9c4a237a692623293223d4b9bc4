@@ -14,7 +14,7 @@ interface IMembershipNFT is IERC1155Upgradeable {
     function setMembershipManager(address _address) external;
     function computeTierPointsForEap(uint32 _eapDepositBlockNumber) external view returns (uint40);
     function setUpForEap(bytes32 _newMerkleRoot, uint64[] calldata _requiredEapPointsPerEapDeposit) external;
-    function processDepositFromEapUser(address _user, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) external;
+    function processDepositFromEapUser(address _user, uint32  _eapDepositBlockNumber, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) external;
     
     function incrementLock(uint256 _tokenId, uint32 _blocks) external;
     function mint(address _to, uint256 _amount) external returns (uint256);

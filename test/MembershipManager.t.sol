@@ -254,7 +254,7 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.wrapEthForEap{value: 0.5 ether}(
             1 ether,
             0,
-            1000,
+            16970393 - 10,
             1 ether,
             103680,
             aliceProof
@@ -264,7 +264,7 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.wrapEthForEap{value: 3.0 ether}(
             1 ether,
             2 ether,
-            1000,
+            16970393 - 10,
             1 ether,
             103680,
             aliceProof
@@ -274,7 +274,7 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerInstance.wrapEthForEap{value: 1 ether}(
             1 ether,
             0,
-            1000,
+            16970393 - 10,
             1 ether,
             0,
             aliceProof
@@ -771,10 +771,10 @@ contract MembershipManagerTest is TestSetup {
 
         // Alice Deposits into MembershipManager and receives membership points in return
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 16755015, 1 ether, 103680, aliceProof);
+        uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 16970393 - 10, 1 ether, 103680, aliceProof);
         
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
-        assertEq(membershipNftInstance.tierOf(tokenId), 3);
+        assertEq(membershipNftInstance.tierOf(tokenId), 2); // Gold
 
         // Top-up with ETH
         membershipManagerInstance.topUpDepositWithEth{value: 0.2 ether}(tokenId, 0.2 ether, 0 ether, aliceProof);
