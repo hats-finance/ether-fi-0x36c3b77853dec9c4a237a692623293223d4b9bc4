@@ -83,8 +83,8 @@ contract AddressProvider {
 
     function getImplementationAddress(string memory _name) external view returns (address) {
         address localContractAddress = contracts[_name].contractAddress;
-        try EtherFiProxy(localContractAddress).getImplementation() {
-            return EtherFiProxy(localContractAddress).getImplementation();
+        try EtherFiProxy(localContractAddress).getImplementation() returns (address result) {
+            return result;
         } catch {
             return address(0);
         }
