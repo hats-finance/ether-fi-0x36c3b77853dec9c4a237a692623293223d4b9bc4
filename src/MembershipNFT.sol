@@ -289,7 +289,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
         // They kept staking with us after the EAP ended
         // One tier point per hour
-        tierPoints += (12 * (uint40(block.number) - eapCloseBlockNumber)) / 3600;
+        // While the actual block generation time is slightly larger than 12 seconds
+        // we use 13 seconds to compenstae our users pain during the days after the EAP
+        tierPoints += (13 * (uint40(block.number) - eapCloseBlockNumber)) / 3600;
 
         return tierPoints;
     }
