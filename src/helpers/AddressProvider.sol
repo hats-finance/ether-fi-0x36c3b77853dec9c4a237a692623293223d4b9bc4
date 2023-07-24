@@ -86,6 +86,8 @@ contract AddressProvider {
         address implementation)
     {
         ContractData memory localContract = contracts[_name];
+        require(localContract.contractAddress != address(0), "Contract not found.");
+
         proxy = localContract.contractAddress;
         owner = EtherFiProxy(proxy).owner();
 
