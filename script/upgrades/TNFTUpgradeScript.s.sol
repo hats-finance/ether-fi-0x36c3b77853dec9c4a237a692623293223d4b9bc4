@@ -15,7 +15,7 @@ contract TNFTUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address TNFTProxyAddress = addressProvider.getContractAddress("TNFT");
+        (,, address TNFTProxyAddress, ) = addressProvider.getContractInformation("TNFT");
 
         vm.startBroadcast(deployerPrivateKey);
 

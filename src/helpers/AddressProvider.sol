@@ -3,6 +3,8 @@ pragma solidity 0.8.13;
 
 interface EtherFiProxy {
     function getImplementation() external view returns (address);
+    function owner() external view returns (address);
+    function admin() external view returns (address);
 }
 
 contract AddressProvider {
@@ -77,16 +79,26 @@ contract AddressProvider {
     //------------------------------------  GETTER  ----------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function getContractAddress(string memory _name) external view returns (address) {
-        return contracts[_name].contractAddress;
-    }
+    function getContractInformation(string memory _name) external view returns (
+        address admin, 
+        address owner, 
+        address proxy, 
+        address implementation)
+    {
+        ContractData memory localContract = contracts[_name];
+        proxy = localContract.contractAddress;
+        owner = EtherFiProxy(proxy).owner();
 
-    function getImplementationAddress(string memory _name) external view returns (address) {
-        address localContractAddress = contracts[_name].contractAddress;
-        try EtherFiProxy(localContractAddress).getImplementation() returns (address result) {
-            return result;
+        try EtherFiProxy(proxy).admin() returns (address result) {
+            admin = result;
         } catch {
-            return address(0);
+            admin = address(0);
+        } 
+
+        try EtherFiProxy(proxy).getImplementation() returns (address result) {
+            implementation = result;
+        } catch {
+            implementation = address(0);
         }
     }
 

@@ -111,7 +111,7 @@ contract AddressProviderTest is TestSetup {
         assertEq(addressProviderInstance.owner(), address(alice));
     }
 
-    function test_GetImplementationAddress() public {
+    function test_GetInformation() public {
         vm.startPrank(owner);
         addressProviderInstance.addContract(
             address(auctionManagerProxy),
@@ -125,15 +125,52 @@ contract AddressProviderTest is TestSetup {
             address(regulationsManagerProxy),
             "RegulationsManager"
         );
+        addressProviderInstance.addContract(
+            address(BNFTProxy),
+            "BNFT"
+        );
+        addressProviderInstance.addContract(
+            address(treasuryInstance),
+            "Treasury"
+        );
 
-        assertEq(addressProviderInstance.getImplementationAddress("LiquidityPool"), address(liquidityPoolImplementation));
-        assertEq(addressProviderInstance.getImplementationAddress("RegulationsManager"), address(regulationsManagerImplementation));
-        assertEq(addressProviderInstance.getImplementationAddress("AuctionManager"), address(auctionImplementation));
+        (address admin, address owner, address proxy, address implementation) = addressProviderInstance.getContractInformation("LiquidityPool");
+        assertEq(admin, liquidityPoolInstance.admin());
+        assertEq(owner, liquidityPoolInstance.owner());
+        assertEq(proxy, address(liquidityPoolProxy));
+        assertEq(implementation, address(liquidityPoolImplementation));
+
+        (admin, owner, proxy, implementation) = addressProviderInstance.getContractInformation("RegulationsManager");
+        assertEq(admin, regulationsManagerInstance.admin());
+        assertEq(owner, regulationsManagerInstance.owner());
+        assertEq(proxy, address(regulationsManagerProxy));
+        assertEq(implementation, address(regulationsManagerImplementation));
+        
+        (admin, owner, proxy, implementation) = addressProviderInstance.getContractInformation("AuctionManager");
+        assertEq(admin, auctionInstance.admin());
+        assertEq(owner, auctionInstance.owner());
+        assertEq(proxy, address(auctionManagerProxy));
+        assertEq(implementation, address(auctionImplementation));
 
         AuctionManagerV2Test auctionManagerV2Implementation = new AuctionManagerV2Test();
         auctionInstance.upgradeTo(address(auctionManagerV2Implementation));
 
-        assertEq(addressProviderInstance.getImplementationAddress("AuctionManager"), address(auctionManagerV2Implementation));
+        (admin, owner, proxy, implementation) = addressProviderInstance.getContractInformation("AuctionManager");
+        assertEq(admin, auctionInstance.admin());
+        assertEq(owner, auctionInstance.owner());
+        assertEq(proxy, address(auctionManagerProxy));
+        assertEq(implementation, address(auctionManagerV2Implementation));
 
+        (admin, owner, proxy, implementation) = addressProviderInstance.getContractInformation("BNFT");
+        assertEq(admin, address(0));
+        assertEq(owner, auctionInstance.owner());
+        assertEq(proxy, address(BNFTProxy));
+        assertEq(implementation, address(BNFTImplementation));
+
+        (admin, owner, proxy, implementation) = addressProviderInstance.getContractInformation("Treasury");
+        assertEq(admin, address(0));
+        assertEq(owner, treasuryInstance.owner());
+        assertEq(proxy, address(treasuryInstance));
+        assertEq(implementation, address(0));
     }
 }

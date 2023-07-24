@@ -15,7 +15,7 @@ contract MembershipNFTUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
         
-        address membershipNFTProxy = addressProvider.getContractAddress("MembershipNFT");
+        (,, address membershipNFTProxy, ) = addressProvider.getContractInformation("MembershipNFT");
 
         vm.startBroadcast(deployerPrivateKey);
 

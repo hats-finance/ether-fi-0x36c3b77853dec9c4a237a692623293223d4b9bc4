@@ -56,11 +56,11 @@ contract DeployPhaseOnePointFiveScript is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address stakingManagerProxyAddress = addressProvider.getContractAddress("StakingManager");
-        address etherFiNodesManagerProxyAddress = addressProvider.getContractAddress("EtherFiNodesManager");
-        address treasury = addressProvider.getImplementationAddress("Treasury");
-        address protocolRevenueManagerProxy = addressProvider.getContractAddress("ProtocolRevenueManager");
-        address tnft = addressProvider.getContractAddress("TNFT");
+        (,, address stakingManagerProxyAddress, ) = addressProvider.getContractInformation("StakingManager");
+        (,, address etherFiNodesManagerProxyAddress, ) = addressProvider.getContractInformation("EtherFiNodesManager");
+        (,,, address treasury) = addressProvider.getContractInformation("Treasury");
+        (,, address protocolRevenueManagerProxy,) = addressProvider.getContractInformation("ProtocolRevenueManager");
+        (,, address tnft,) = addressProvider.getContractInformation("TNFT");
         address admin = vm.envAddress("DEPLOYER");
 
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");

@@ -16,7 +16,7 @@ contract EtherFiNodeUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address stakingManagerProxyAddress = addressProvider.getContractAddress("StakingManager");
+        (,, address stakingManagerProxyAddress, ) = addressProvider.getContractInformation("StakingManager");
 
         StakingManager stakingManager = StakingManager(stakingManagerProxyAddress);
 

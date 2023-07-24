@@ -29,19 +29,19 @@ contract TransferOwnership is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        address auctionManager = addressProvider.getContractAddress("AuctionManager");
-        address stakingManager = addressProvider.getContractAddress("StakingManager");
-        address protocolRevenueManager = addressProvider.getContractAddress("ProtocolRevenueManager");
-        address tnft = addressProvider.getContractAddress("TNFT");
-        address bnft = addressProvider.getContractAddress("BNFT");
-        address etherfiNodesManager = addressProvider.getContractAddress("EtherFiNodesManager");
-        address membershipManager = addressProvider.getContractAddress("MembershipManager");
-        address membershipNFT = addressProvider.getContractAddress("MembershipNFT");
-        address weETH = addressProvider.getContractAddress("WeETH");
-        address eETH = addressProvider.getContractAddress("EETH");
-        address nftExchange = addressProvider.getContractAddress("NFTExchange");
-        address liquidityPool = addressProvider.getContractAddress("LiquidityPool");
-        address regulationsManager = addressProvider.getContractAddress("RegulationsManager");
+        (,, address auctionManager,) = addressProvider.getContractInformation("AuctionManager");
+        (,, address stakingManager,) = addressProvider.getContractInformation("StakingManager");
+        (,, address protocolRevenueManager,) = addressProvider.getContractInformation("ProtocolRevenueManager");
+        (,, address tnft,) = addressProvider.getContractInformation("TNFT");
+        (,, address bnft,) = addressProvider.getContractInformation("BNFT");
+        (,, address etherfiNodesManager,) = addressProvider.getContractInformation("EtherFiNodesManager");
+        (,, address membershipManager,) = addressProvider.getContractInformation("MembershipManager");
+        (,, address membershipNFT,) = addressProvider.getContractInformation("MembershipNFT");
+        (,, address weETH,) = addressProvider.getContractInformation("WeETH");
+        (,, address eETH,) = addressProvider.getContractInformation("EETH");
+        (,, address nftExchange,) = addressProvider.getContractInformation("NFTExchange");
+        (,, address liquidityPool,) = addressProvider.getContractInformation("LiquidityPool");
+        (,, address regulationsManager,) = addressProvider.getContractInformation("RegulationsManager");
 
         address owner = vm.envAddress("GNOSIS");
 

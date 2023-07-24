@@ -26,15 +26,15 @@ contract UpdateAdmins is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        address stakingManager = addressProvider.getContractAddress("StakingManager");
-        address etherFiNodesManager = addressProvider.getContractAddress("EtherFiNodesManager");
-        address protocolRevenueManager = addressProvider.getContractAddress("ProtocolRevenueManager");
-        address auctionManager = addressProvider.getContractAddress("AuctionManager");
-        address liquidityPool = addressProvider.getContractAddress("LiquidityPool");
-        address regulationsManager = addressProvider.getContractAddress("RegulationsManager");
-        address membershipNFT = addressProvider.getContractAddress("MembershipNFT");
-        address membershipManager = addressProvider.getContractAddress("MembershipManager");
-        address nftExchange = addressProvider.getContractAddress("NFTExchange");
+        (,, address stakingManager,) = addressProvider.getContractInformation("StakingManager");
+        (,, address etherFiNodesManager,) = addressProvider.getContractInformation("EtherFiNodesManager");
+        (,, address protocolRevenueManager,) = addressProvider.getContractInformation("ProtocolRevenueManager");
+        (,, address auctionManager,) = addressProvider.getContractInformation("AuctionManager");
+        (,, address liquidityPool,) = addressProvider.getContractInformation("LiquidityPool");
+        (,, address regulationsManager,) = addressProvider.getContractInformation("RegulationsManager");
+        (,, address membershipNFT,) = addressProvider.getContractInformation("MembershipNFT");
+        (,, address membershipManager,) = addressProvider.getContractInformation("MembershipManager");
+        (,, address nftExchange,) = addressProvider.getContractInformation("NFTExchange");
 
         address admin = vm.envAddress("ADMIN");
         EtherFiNodesManager(payable(etherFiNodesManager)).updateAdmin(admin); 

@@ -15,7 +15,7 @@ contract RegulationsManagerUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address RegulationsManagerProxyAddress = addressProvider.getContractAddress("RegulationsManager");
+        (,, address RegulationsManagerProxyAddress, ) = addressProvider.getContractInformation("RegulationsManager");
 
         vm.startBroadcast(deployerPrivateKey);
 

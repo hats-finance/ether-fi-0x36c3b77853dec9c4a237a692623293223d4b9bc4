@@ -15,7 +15,7 @@ contract ProtocolRevenueManagerUpgrade is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address ProtocolRevenueManagerProxyAddress = addressProvider.getContractAddress("ProtocolRevenueManager");
+        (,, address ProtocolRevenueManagerProxyAddress, ) = addressProvider.getContractInformation("ProtocolRevenueManager");
 
         vm.startBroadcast(deployerPrivateKey);
 
