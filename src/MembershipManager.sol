@@ -748,6 +748,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
+    function verify(bytes memory _sig) internal pure returns (bool) {
+        
+    }
+
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
