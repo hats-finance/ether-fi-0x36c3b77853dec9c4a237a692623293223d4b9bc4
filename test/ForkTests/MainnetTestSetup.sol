@@ -59,7 +59,7 @@ contract MainnetTestSetup is Test {
     address bob = vm.addr(3);
 
     function setUpTests() internal {
-        
+
         addressProviderInstance = AddressProvider(vm.envAddress("CONTRACT_REGISTRY"));
         etherfiNodesManagerInstance = EtherFiNodesManager(payable(addressProviderInstance.getContractAddress("EtherFiNodesManager")));
         stakingManagerInstance = StakingManager(addressProviderInstance.getContractAddress("StakingManager"));

@@ -8,12 +8,21 @@ contract MembershipManagerMainnetTest is MainnetTestSetup {
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
 
+    //Fork ID
     uint256 mainnetFork;
+
+    //Fork URL
     string MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
 
     function setUp() public {
+
+        //Creating the fork
         mainnetFork = vm.createFork(MAINNET_RPC_URL);
+
+        //Selecting the fork
         vm.selectFork(mainnetFork);
+
+        //Must come after your create and select the fork
         setUpTests();
     }
 
@@ -29,17 +38,26 @@ contract MembershipManagerMainnetTest is MainnetTestSetup {
         console.log(membershipManagerInstance.sharesReservedForRewards());
     }
 
-    // function test_EapRoll() public {
-    //     console.log(membershipNFTInstance.nextMintTokenId());
+    //Using a random users data before they rolled
+    function test_EapRoll() public {
+        vm.startPrank(0x256DC7A9CDDAc88c9C80AF0445eCEa056d2298dD);
 
-    //     uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: }(_amount, _amountForPoints, _eapDepositBlockNumber, _snapshotEthAmount, _points, _merkleProof);
-    //     console.log(membershipNFTInstance.nextMintTokenId());
+        //Moving to a specific block
+        vm.rollFork(17666762);
 
-    //     (, uint40 baseLoyaltyPoints,,,,,) = membershipManagerInstance.tokenData(tokenId);
-    //     assertEq(baseLoyaltyPoints, _points);
-    // }
+        //Fetching current data
+        console.log(membershipNFTInstance.nextMintTokenId());
+
+        //uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 0.1 ether}(100000000000000000, 0, 16979693, 100000000000000000, 52758, proof);
+        console.log(membershipNFTInstance.nextMintTokenId());
+
+        //(, uint40 baseLoyaltyPoints,,,,,) = membershipManagerInstance.tokenData(tokenId);
+        //assertEq(baseLoyaltyPoints, 16979693);
+    }
 
     function test_Rebase() public {
+
+        //Using alice and giving her ETH
         vm.deal(alice, 100 ether);
         uint256 LPBalanceBeforeAliceDeposit = address(liquidityPoolInstance).balance;
         uint256 regulationsManagerBalanceBeforeAliceDeposit = address(membershipManagerInstance).balance;
@@ -112,5 +130,6 @@ contract MembershipManagerMainnetTest is MainnetTestSetup {
 
         console.log("Alice tokens value is now: ", membershipNFTInstance.valueOf(aliceToken));
         console.log("Bob tokens value is now: ", membershipNFTInstance.valueOf(bobToken));
+
     }
 }
