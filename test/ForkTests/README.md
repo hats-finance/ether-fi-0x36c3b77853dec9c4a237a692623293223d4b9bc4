@@ -33,6 +33,8 @@ mainnetFork = vm.createFork(vm.envString("MAINNET_RPC_URL"));
     1. When we want to test certain functionality, we need to select the fork we would like to use as the current state 
 3. activeFork()
     1. Returns the ID of the currently active fork
+4. makePersistent()
+    1. Data amongst different forks are not constant unless both networks are in the exact same sate. If we want data in our current contract to be stored across different forks, we can use this command to persist the state so when we change forks, we know what our storage looks like.
 
 As long as we have an active fork we can simply run our tests as we usually do but without the fork-url section:
 
