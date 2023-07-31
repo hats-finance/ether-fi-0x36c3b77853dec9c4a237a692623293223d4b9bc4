@@ -24,12 +24,10 @@ contract MembershipManagerTest is TestSetup {
     function setUp() public {
         setUpTests();
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
@@ -262,7 +260,6 @@ contract MembershipManagerTest is TestSetup {
 
         // Alice confirms eligibility
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.expectRevert(MembershipManager.InvalidEAPRollover.selector);
         membershipManagerInstance.wrapEthForEap{value: 0.5 ether}(
@@ -341,7 +338,6 @@ contract MembershipManagerTest is TestSetup {
         );
         vm.deal(alice, 100 ether);
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         
         uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(
             2 ether,
@@ -792,7 +788,6 @@ contract MembershipManagerTest is TestSetup {
         earlyAdopterPoolInstance.withdraw();
 
         // Alice Deposits into MembershipManager and receives membership points in return
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 16970393 - 10, 1 ether, 103680, aliceProof, aliceSignature);
         
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
@@ -1158,7 +1153,6 @@ contract MembershipManagerTest is TestSetup {
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 60 ether}(bobSignature, bob, bobProof);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();

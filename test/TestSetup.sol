@@ -437,9 +437,6 @@ contract TestSetup is Test {
             actorsPK.push(i);
             whitelistIndices.push(whiteListedAddresses.length);
             whiteListedAddresses.push(keccak256(abi.encodePacked(actor)));
-            vm.startPrank(actor);
-            regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-            vm.stopPrank();
         }
 
         vm.startPrank(alice);
