@@ -2,18 +2,34 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract WeETHTest is TestSetup {
+
+    using ECDSA for bytes32;
 
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
     bytes32[] public gregProof;
+
+    bytes aliceSignature;
+    bytes bobSignature;
+    bytes gregSignature;
 
     function setUp() public {
         setUpTests();
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
         gregProof = merkle.getProof(whiteListedAddresses, 8);
+
+        string memory message = "I agree to the terms";
+        bytes32 signedMessage = keccak256(abi.encodePacked(message)).toEthSignedMessageHash();
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, signedMessage);
+        aliceSignature = abi.encodePacked(r, s, v);
+        (v, r, s) = vm.sign(3, signedMessage);
+        bobSignature = abi.encodePacked(r, s, v);
+        (v, r, s) = vm.sign(7, signedMessage);
+        gregSignature = abi.encodePacked(r, s, v);
     }
 
     function test_WrapEETHFailsIfZeroAmount() public {
@@ -26,7 +42,7 @@ contract WeETHTest is TestSetup {
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(bobSignature, bob, bobProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -36,7 +52,7 @@ contract WeETHTest is TestSetup {
         // Total pooled ether = 20
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(aliceSignature, alice, aliceProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
@@ -66,7 +82,7 @@ contract WeETHTest is TestSetup {
         // Total pooled ether = 10
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(bobSignature, bob, bobProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -75,7 +91,7 @@ contract WeETHTest is TestSetup {
         // Total pooled ether = 20
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(aliceSignature, alice, aliceProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
@@ -107,7 +123,7 @@ contract WeETHTest is TestSetup {
     function test_MultipleDepositsAndFunctionalityWorksCorrectly() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(aliceSignature, alice, aliceProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -120,7 +136,7 @@ contract WeETHTest is TestSetup {
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 5 ether}(bobSignature, bob, bobProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 15 ether);
@@ -134,7 +150,7 @@ contract WeETHTest is TestSetup {
 
         startHoax(greg);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 35 ether}(greg, gregProof);
+        liquidityPoolInstance.deposit{value: 35 ether}(gregSignature, greg, gregProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 50 ether);
@@ -193,14 +209,14 @@ contract WeETHTest is TestSetup {
         // Alice deposits into LP
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 2 ether}(aliceSignature, alice, aliceProof);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         vm.stopPrank();
 
         // Bob deposits into LP
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(bobSignature, bob, bobProof);
         assertEq(eETHInstance.balanceOf(bob), 1 ether);
         vm.stopPrank();
 

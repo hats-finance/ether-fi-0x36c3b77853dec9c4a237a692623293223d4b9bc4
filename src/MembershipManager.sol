@@ -114,7 +114,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint32  _eapDepositBlockNumber,
         uint256 _snapshotEthAmount,
         uint256 _points,
-        bytes32[] calldata _merkleProof
+        bytes32[] calldata _merkleProof,
+        bytes memory _sig
     ) external payable whenNotPaused returns (uint256) {
         if (_points == 0 || msg.value < _snapshotEthAmount || msg.value > _snapshotEthAmount * 2 || msg.value != _amount + _amountForPoints) revert InvalidEAPRollover();
 
@@ -123,7 +124,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint40 tierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
 
         bytes32[] memory zeroProof;
-        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), zeroProof);
+        liquidityPool.deposit{value: msg.value}(_sig, msg.sender, address(this), zeroProof);
 
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
@@ -143,17 +144,17 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof Array of hashes forming the merkle proof for the user.
     /// @return tokenId The ID of the minted membership NFT.
-    function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused returns (uint256) {
+    function wrapEth(bytes memory _sig, uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused returns (uint256) {
         uint256 feeAmount = mintFee * 0.001 ether;
         uint256 depositPerNFT = _amount + _amountForPoints;
         uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
 
         if (depositPerNFT / 1 gwei < minDepositGwei || msg.value != ethNeededPerNFT) revert InvalidDeposit();
 
-        return _wrapEth(_amount, _amountForPoints, _merkleProof);
+        return _wrapEth(_sig, _amount, _amountForPoints, _merkleProof);
     }
 
-    function wrapEthBatch(uint256 _numNFTs, uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused returns (uint256[] memory) {
+    function wrapEthBatch(bytes memory _sig, uint256 _numNFTs, uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused returns (uint256[] memory) {
         _requireAdmin();
 
         uint256 feeAmount = mintFee * 0.001 ether;
@@ -164,7 +165,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         uint256[] memory tokenIds = new uint256[](_numNFTs);
         for (uint256 i = 0; i < _numNFTs; i++) {
-            tokenIds[i] = _wrapEth(_amount, _amountForPoints, _merkleProof);
+            tokenIds[i] = _wrapEth(_sig, _amount, _amountForPoints, _merkleProof);
         }
         return tokenIds;
     }
@@ -175,14 +176,14 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @param _merkleProof array of hashes forming the merkle proof for the user
-    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused {
+    function topUpDepositWithEth(bytes memory _sig, uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused {
         _requireTokenOwner(_tokenId);
 
         _claimPoints(_tokenId);
         _claimStakingRewards(_tokenId);
 
         uint256 additionalDeposit = _topUpDeposit(_tokenId, _amount, _amountForPoints);
-        liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
+        liquidityPool.deposit{value: additionalDeposit}(_sig, msg.sender, address(this), _merkleProof);
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -481,8 +482,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         return additionalDeposit;
     }
 
-    function _wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) internal returns (uint256) {
-        liquidityPool.deposit{value: _amount + _amountForPoints}(msg.sender, address(this), _merkleProof);
+    function _wrapEth(bytes memory _sig, uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) internal returns (uint256) {
+        liquidityPool.deposit{value: _amount + _amountForPoints}(_sig, msg.sender, address(this), _merkleProof);
         uint256 tokenId = _mintMembershipNFT(msg.sender, _amount, _amountForPoints, 0, 0);
         _emitNftUpdateEvent(tokenId);
         return tokenId;

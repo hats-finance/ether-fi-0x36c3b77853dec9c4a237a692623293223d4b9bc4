@@ -40,6 +40,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     address public bNftTreasury;
 
+    mapping(uint256 => bytes32) public messageHashes;
+    uint256 public versionNumber;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -74,18 +77,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         eEthliquidStakingOpened = false;
     }
 
-    function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
-        deposit(_user, _user, _merkleProof);
+    function deposit(bytes memory _sig, address _user, bytes32[] calldata _merkleProof) external payable {
+        deposit(_sig, _user, _user, _merkleProof);
     }
 
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
+    function deposit(bytes memory _sig, address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
         if(msg.sender == address(membershipManager)) {
-            isWhitelistedAndEligible(_user, _merkleProof);
+            isWhitelistedAndEligible(_sig, _user, _merkleProof);
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
-            isWhitelistedAndEligible(msg.sender, _merkleProof);
+            isWhitelistedAndEligible(_sig, msg.sender, _merkleProof);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
         
@@ -261,18 +264,52 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         admin = _newAdmin;
     }
 
+    function setNewVersionHash(bytes32 _messageHash) public onlyAdmin {
+        messageHashes[versionNumber] = _messageHash;
+        versionNumber++;
+    }
+
     function updateBNftTreasury(address _newTreasury) external onlyOwner {
         require(_newTreasury != address(0), "Cannot be address zero");
         bNftTreasury = _newTreasury;
+    }
+
+    function verify(address _user, bytes32 _message, bytes memory _signature) public view returns (bool) {
+        bytes32 ethSignedMessageHash = getEthSignedMessageHash(_message);
+
+        return recoverSigner(ethSignedMessageHash, _signature) == _user;
+    }
+
+    function getEthSignedMessageHash(bytes32 _messageHash) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash));
+    }
+
+    function recoverSigner(bytes32 _ethSignedMessageHash, bytes memory _signature) public pure returns (address) {
+        (bytes32 r, bytes32 s, uint8 v) = splitSignature(_signature);
+
+        return ecrecover(_ethSignedMessageHash, v, r, s);
+    }
+
+    function splitSignature(bytes memory sig) public pure returns (bytes32 r, bytes32 s, uint8 v) {
+        require(sig.length == 65, "Invalid signature");
+
+        assembly {
+            // first 32 bytes, after the length prefix
+            r := mload(add(sig, 32))
+            // second 32 bytes
+            s := mload(add(sig, 64))
+            // final byte
+            v := byte(0, mload(add(sig, 96)))
+        }
     }
     
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
+    function isWhitelistedAndEligible(bytes memory _signature, address _user, bytes32[] calldata _merkleProof) internal view{
         stakingManager.verifyWhitelisted(_user, _merkleProof);
-        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
+        require(verify(_user, messageHashes[versionNumber - 1], _signature), "User did not sign");
     }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {

@@ -3,8 +3,11 @@ pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
 import "forge-std/console2.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract MembershipManagerTest is TestSetup {
+
+    using ECDSA for bytes32;
 
     bytes32[] public aliceProof;
     bytes32[] public danProof;
@@ -12,6 +15,11 @@ contract MembershipManagerTest is TestSetup {
     bytes32[] public bobProof;
     bytes32[] public ownerProof;
     bytes32[] public emptyProof;
+
+    bytes aliceSignature;
+    bytes bobSignature;
+    bytes32 signedMessage;
+    string message = "I agree to the terms";
 
     function setUp() public {
         setUpTests();
@@ -30,15 +38,21 @@ contract MembershipManagerTest is TestSetup {
         shoneeProof = merkle.getProof(whiteListedAddresses, 11);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
+
+        signedMessage = keccak256(abi.encodePacked(message)).toEthSignedMessageHash();
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, signedMessage);
+        aliceSignature = abi.encodePacked(r, s, v);
+        (v, r, s) = vm.sign(3, signedMessage);
+        bobSignature = abi.encodePacked(r, s, v);
     }
 
     function test_wrapEthBatch() public {
         vm.expectRevert(MembershipManager.OnlyAdmin.selector);
-        membershipManagerInstance.wrapEthBatch{value: 100 ether}(10, 10 ether, 0, aliceProof);
+        membershipManagerInstance.wrapEthBatch{value: 100 ether}(aliceSignature, 10, 10 ether, 0, aliceProof);
 
         vm.deal(alice, 100 ether);
         vm.prank(alice);
-        uint256[] memory aliceTokens = membershipManagerInstance.wrapEthBatch{value: 100 ether}(10, 10 ether, 0, aliceProof);
+        uint256[] memory aliceTokens = membershipManagerInstance.wrapEthBatch{value: 100 ether}(aliceSignature, 10, 10 ether, 0, aliceProof);
         for (uint256 i = 0; i < aliceTokens.length; i++) {
             assertEq(membershipNftInstance.valueOf(aliceTokens[i]), 10 ether);
         }
@@ -49,9 +63,9 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(bob, 100 ether);
 
         vm.prank(alice);
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 100 ether}(100 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 100 ether}(aliceSignature, 100 ether, 0, aliceProof);
         vm.prank(bob);
-        uint256 bobToken = membershipManagerInstance.wrapEth{value: 100 ether}(100 ether, 0, bobProof);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 100 ether}(bobSignature, 100 ether, 0, bobProof);
         // NFT's points start from 0
         assertEq(membershipNftInstance.loyaltyPointsOf(aliceToken), 0);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 0);
@@ -104,7 +118,7 @@ contract MembershipManagerTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints an NFT with 2 points by wrapping 2 ETH and starts earning points
-        uint256 tokenId = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
+        uint256 tokenId = membershipManagerInstance.wrapEth{value: 2 ether}(aliceSignature, 2 ether, 0, aliceProof);
         assertEq(alice.balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 2 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
@@ -147,7 +161,7 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(alice, 1_000_000 ether);
 
         vm.startPrank(alice);
-        uint256 tokenId = membershipManagerInstance.wrapEth{value: 1_000_000 ether}(1_000_000 ether, 0, aliceProof);
+        uint256 tokenId = membershipManagerInstance.wrapEth{value: 1_000_000 ether}(aliceSignature, 1_000_000 ether, 0, aliceProof);
 
         // (1 gwei = 10^9)
         // Alice earns 1 gwei points a day
@@ -178,7 +192,7 @@ contract MembershipManagerTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice deposits 1 ETH and mints 1 membership points.
-        uint256 tokenId = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        uint256 tokenId = membershipManagerInstance.wrapEth{value: 1 ether}(aliceSignature, 1 ether, 0, aliceProof);
 
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 0);
         assertEq(membershipNftInstance.claimableTier(tokenId), 0);
@@ -257,7 +271,8 @@ contract MembershipManagerTest is TestSetup {
             16970393 - 10,
             1 ether,
             103680,
-            aliceProof
+            aliceProof,
+            aliceSignature
         );
 
         vm.expectRevert(MembershipManager.InvalidEAPRollover.selector);
@@ -267,7 +282,8 @@ contract MembershipManagerTest is TestSetup {
             16970393 - 10,
             1 ether,
             103680,
-            aliceProof
+            aliceProof,
+            aliceSignature
         );
 
         vm.expectRevert(MembershipManager.InvalidEAPRollover.selector);
@@ -277,7 +293,8 @@ contract MembershipManagerTest is TestSetup {
             16970393 - 10,
             1 ether,
             0,
-            aliceProof
+            aliceProof,
+            aliceSignature
         );
         vm.stopPrank();
     }
@@ -332,7 +349,8 @@ contract MembershipManagerTest is TestSetup {
             16970393 - 10, // 10 blocks before the last gold
             1 ether,
             103680,
-            aliceProof
+            aliceProof,
+            aliceSignature
         );
         vm.stopPrank();
 
@@ -351,7 +369,7 @@ contract MembershipManagerTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice deposits 0.5 ETH and mints 0.5 membership points.
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 0.5 ether}(0.5 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 0.5 ether}(aliceSignature, 0.5 ether, 0, aliceProof);
         assertEq(address(liquidityPoolInstance).balance, 0.5 ether);
         vm.stopPrank();
 
@@ -380,7 +398,7 @@ contract MembershipManagerTest is TestSetup {
         // Bob in
         vm.deal(bob, 2 ether);
         vm.startPrank(bob);
-        uint256 bobToken = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, bobProof);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 2 ether}(bobSignature, 2 ether, 0, bobProof);
         vm.stopPrank();
 
         // Alice belongs to the Tier 1, Bob belongs to the Tier 0
@@ -430,7 +448,7 @@ contract MembershipManagerTest is TestSetup {
         // alice doubles her deposit and should get penalized
         vm.startPrank(alice);
 
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(aliceSignature, 1 ether, 0, aliceProof);
         skip(28 days * 10);
 
         uint256 currentPoints = membershipNftInstance.tierPointsOf(aliceToken);
@@ -441,7 +459,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierOf(aliceToken), 4);
 
         // points should get diluted by 25% & the tier is properly updated
-        membershipManagerInstance.topUpDepositWithEth{value: 3 ether}(aliceToken, 3 ether, 0 ether, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 3 ether}(aliceSignature, aliceToken, 3 ether, 0 ether, aliceProof);
         uint256 dilutedPoints = membershipNftInstance.tierPointsOf(aliceToken);
         assertEq(dilutedPoints , currentPoints / 4);
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
@@ -452,14 +470,14 @@ contract MembershipManagerTest is TestSetup {
         // bob does a 15% top up and should not get penalized
         vm.startPrank(bob);
 
-        uint256 bobToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, bobProof);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 1 ether}(bobSignature, 1 ether, 0, bobProof);
         skip(28 days * 10);
 
         currentPoints = membershipNftInstance.tierPointsOf(bobToken);
         assertEq(currentPoints, 6720); // force update if calculation logic changes
 
         // points should not get diluted
-        membershipManagerInstance.topUpDepositWithEth{value: 0.15 ether}(bobToken, 0.15 ether, 0 ether, bobProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 0.15 ether}(bobSignature, bobToken, 0.15 ether, 0 ether, bobProof);
         dilutedPoints = membershipNftInstance.tierPointsOf(bobToken);
         assertEq(dilutedPoints , currentPoints); 
 
@@ -471,21 +489,21 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(bob, 100 ether);
 
         vm.startPrank(alice);
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 8 ether}(8 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 8 ether}(aliceSignature, 8 ether, 0, aliceProof);
 
         skip(28 days);
 
-        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceSignature, aliceToken, 1 ether, 0, aliceProof);
         assertEq(membershipNftInstance.valueOf(aliceToken), 8 ether + 1 ether);
 
         // can't top up again immediately
         vm.expectRevert(MembershipManager.InvalidDeposit.selector);
-        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceSignature, aliceToken, 1 ether, 0 ether, aliceProof);
 
         skip(28 days);
 
         // deposit is larger so should be able to top up more
-        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceToken, 1 ether, 0 ether, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 1 ether}(aliceSignature, aliceToken, 1 ether, 0 ether, aliceProof);
         assertEq(membershipNftInstance.valueOf(aliceToken), 9 ether + 1 ether);
 
         skip(28 days);
@@ -506,7 +524,7 @@ contract MembershipManagerTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints an membership points by wrapping 2 ETH starts earning points
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 2 ether}(aliceSignature, 2 ether, 0, aliceProof);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(membershipNftInstance.valueOf(aliceToken), 2 ether);
 
@@ -558,7 +576,7 @@ contract MembershipManagerTest is TestSetup {
         vm.startPrank(alice);
 
         // Alice deposits 10 ETH and mints 10 membership points.
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 10 ether}(aliceSignature, 10 ether, 0, aliceProof);
 
         // 10 ETH to the LP
         // 10 eETH to the membership points contract
@@ -578,10 +596,10 @@ contract MembershipManagerTest is TestSetup {
 
         // cannot deposit more than minimum
         vm.expectRevert(MembershipManager.InvalidDeposit.selector);
-        membershipManagerInstance.wrapEth{value: 0.01 ether}(0.01 ether, 0, aliceProof);
+        membershipManagerInstance.wrapEth{value: 0.01 ether}(aliceSignature, 0.01 ether, 0, aliceProof);
 
         // should get entirely new token with a 2nd deposit
-        uint256 token2 = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
+        uint256 token2 = membershipManagerInstance.wrapEth{value: 2 ether}(aliceSignature, 2 ether, 0, aliceProof);
         assert(aliceToken != token2);
 
         assertEq(address(liquidityPoolInstance).balance, 12 ether);
@@ -613,7 +631,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Henry tries to mint but fails because he is not whitelisted.
         vm.expectRevert("User is not whitelisted");
-        uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, emptyProof);
+        uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(aliceSignature, 10 ether, 0, emptyProof);
 
         //Giving 12 Ether to shonee
         vm.deal(shonee, 12 ether);
@@ -623,8 +641,8 @@ contract MembershipManagerTest is TestSetup {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 11);
 
         // Now shonee cant mint because she is not registered, even though she is whitelisted
-        vm.expectRevert("User is not eligible to participate");
-        Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, shoneeProof);
+        vm.expectRevert("User did not sign");
+        Token = membershipManagerInstance.wrapEth{value: 10 ether}(aliceSignature, 10 ether, 0, shoneeProof);
     }
 
     function test_UpdatingPointsGrowthRate() public {
@@ -632,7 +650,7 @@ contract MembershipManagerTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints 1 membership points by wrapping 1 ETH starts earning points
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(aliceSignature, 1 ether, 0, aliceProof);
         vm.stopPrank();
 
         // Alice earns 1 kwei per day by holding 1 membership points
@@ -653,7 +671,7 @@ contract MembershipManagerTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints 1 membership points by wrapping 1 ETH starts earning points
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(aliceSignature, 1 ether, 0, aliceProof);
         vm.stopPrank();
 
         vm.startPrank(alice);
@@ -683,7 +701,7 @@ contract MembershipManagerTest is TestSetup {
         vm.startPrank(alice);
 
         // Alice mints 1 NFT
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(aliceSignature, 1 ether, 0, aliceProof);
 
         // make a small withdrawal
         membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
@@ -720,7 +738,7 @@ contract MembershipManagerTest is TestSetup {
 
         vm.startPrank(alice);
         // Alice mints 1 membership points by wrapping 1 ETH starts earning points
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(aliceSignature, 1 ether, 0, aliceProof);
         vm.stopPrank();
 
         skip(28 days);
@@ -775,13 +793,13 @@ contract MembershipManagerTest is TestSetup {
 
         // Alice Deposits into MembershipManager and receives membership points in return
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 16970393 - 10, 1 ether, 103680, aliceProof);
+        uint256 tokenId = membershipManagerInstance.wrapEthForEap{value: 2 ether}(2 ether, 0, 16970393 - 10, 1 ether, 103680, aliceProof, aliceSignature);
         
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
         assertEq(membershipNftInstance.tierOf(tokenId), 2); // Gold
 
         // Top-up with ETH
-        membershipManagerInstance.topUpDepositWithEth{value: 0.2 ether}(tokenId, 0.2 ether, 0 ether, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 0.2 ether}(aliceSignature, tokenId, 0.2 ether, 0 ether, aliceProof);
         assertEq(membershipNftInstance.valueOf(tokenId), 2.2 ether);
 
         skip(28 days);
@@ -814,19 +832,19 @@ contract MembershipManagerTest is TestSetup {
         vm.startPrank(alice);
 
         // mint
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 2 ether}(2 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 2 ether}(aliceSignature, 2 ether, 0, aliceProof);
         skip(30 days);
 
         // attempt to top up without paying fee
         vm.expectRevert();
-        membershipManagerInstance.topUpDepositWithEth{value: 0.1 ether}(aliceToken, 0.1 ether, 0, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 0.1 ether}(aliceSignature, aliceToken, 0.1 ether, 0, aliceProof);
 
         // attempt to provide in improper amount
         vm.expectRevert(MembershipManager.InvalidDeposit.selector);
-        membershipManagerInstance.topUpDepositWithEth{value: 5 ether}(aliceToken, 0.1 ether, 0, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 5 ether}(aliceSignature, aliceToken, 0.1 ether, 0, aliceProof);
 
         // proper upgrade
-        membershipManagerInstance.topUpDepositWithEth{value: 0.6 ether}(aliceToken, 0.1 ether, 0, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 0.6 ether}(aliceSignature, aliceToken, 0.1 ether, 0, aliceProof);
 
         // assert that token balance increased by expected value and that contract received the mint fee
         (uint256 depositAmount,) = membershipManagerInstance.tokenDeposits(aliceToken);
@@ -853,7 +871,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Mint NFT
         vm.prank(alice);
-        uint256 tokenId = membershipManagerInstance.wrapEth{value: 2 ether + mintFee}(2 ether, 0, aliceProof);
+        uint256 tokenId = membershipManagerInstance.wrapEth{value: 2 ether + mintFee}(aliceSignature, 2 ether, 0, aliceProof);
         (uint256 amount,) = membershipManagerInstance.tokenDeposits(tokenId);
 
         assertEq(amount, 2 ether);
@@ -867,7 +885,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Top-up
         vm.prank(alice);
-        membershipManagerInstance.topUpDepositWithEth{value: 1 ether + upgradeFee}(tokenId, 1 ether, 0, aliceProof);
+        membershipManagerInstance.topUpDepositWithEth{value: 1 ether + upgradeFee}(aliceSignature, tokenId, 1 ether, 0, aliceProof);
 
         assertEq(address(liquidityPoolInstance).balance, 3 ether);
         assertEq(address(membershipManagerInstance).balance, mintFee + upgradeFee); // totalFeesAccumulated
@@ -942,9 +960,9 @@ contract MembershipManagerTest is TestSetup {
         
         // Both Alice & Bob mint the NFT with 1 ether
         vm.prank(alice);
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(aliceSignature, 1 ether, 0, aliceProof);
         vm.prank(bob);
-        uint256 bobToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, bobProof);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 1 ether}(bobSignature, 1 ether, 0, bobProof);
 
         // For testing purposes, 
         // - Bob's NFT is upgraded to tier 1,
@@ -1022,9 +1040,9 @@ contract MembershipManagerTest is TestSetup {
         
         // Both Alice & Bob mint the NFT with 1 ether
         vm.prank(alice);
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether + fee}(1 ether, 0, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether + fee}(aliceSignature, 1 ether, 0, aliceProof);
         vm.prank(bob);
-        uint256 bobToken = membershipManagerInstance.wrapEth{value: 1 ether + fee}(1 ether, 0, bobProof);
+        uint256 bobToken = membershipManagerInstance.wrapEth{value: 1 ether + fee}(bobSignature, 1 ether, 0, bobProof);
 
         // For testing purposes, 
         // - Bob's NFT is upgraded to tier 1,
@@ -1064,7 +1082,7 @@ contract MembershipManagerTest is TestSetup {
             for (uint256 i = 0; i < howManyMintsForFiftyPercentAPR; i++) {
                 vm.deal(alice, 1 ether + fee);
                 vm.startPrank(alice);
-                uint256 t = membershipManagerInstance.wrapEth{value: 1 ether + fee}(1 ether, 0, aliceProof);
+                uint256 t = membershipManagerInstance.wrapEth{value: 1 ether + fee}(aliceSignature, 1 ether, 0, aliceProof);
                 membershipManagerInstance.withdrawAndBurnForEth(t);
                 vm.stopPrank();
             }
@@ -1141,7 +1159,7 @@ contract MembershipManagerTest is TestSetup {
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 60 ether}(bobSignature, bob, bobProof);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();
 
@@ -1199,7 +1217,7 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(alice, 100 ether);
 
         vm.startPrank(alice);
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 50 ether}(50 ether, 0 ether, aliceProof);
+        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 50 ether}(aliceSignature, 50 ether, 0 ether, aliceProof);
         assertEq(membershipNftInstance.tierOf(aliceToken), 0);
 
         (uint128 amounts,) = membershipManagerInstance.tokenDeposits(aliceToken);
@@ -1248,7 +1266,10 @@ contract MembershipManagerTest is TestSetup {
             vm.deal(actor, moneyPerActor);
 
             vm.startPrank(actor);
-            tokens[i] = membershipManagerInstance.wrapEth{value: 100 ether}(100 ether, 0 ether, zeroProof);
+            console.log(actorsPK[i]);
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(actorsPK[i], signedMessage);
+            bytes memory sig = abi.encodePacked(r, s, v);
+            tokens[i] = membershipManagerInstance.wrapEth{value: 100 ether}(sig, 100 ether, 0 ether, zeroProof);
             vm.stopPrank();
         }
 
@@ -1273,13 +1294,16 @@ contract MembershipManagerTest is TestSetup {
                 uint128 amount = random % 0.1 ether + 0.1 ether;
                 uint128 withdrawalAmount = random % 0.05 ether;
 
+                (uint8 v, bytes32 r, bytes32 s) = vm.sign(actorsPK[i], signedMessage);
+                bytes memory sig = abi.encodePacked(r, s, v);
+
                 vm.startPrank(actor);
                 if (random % 4 == 0 && true) {
                     membershipManagerInstance.claim(token);
                     counts[1]++;
                 }
                 if (random % 2 == 0 && i % 4 != 0) {
-                    membershipManagerInstance.topUpDepositWithEth{value: amount + 0}(token, amount, 0, zeroProof);
+                    membershipManagerInstance.topUpDepositWithEth{value: amount + 0}(sig, token, amount, 0, zeroProof);
                     counts[2]++;
                 }
                 if (random % 3 == 0 && i % 4 != 0) {

@@ -2,14 +2,23 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract SmallScenariosTest is TestSetup {
+
+    using ECDSA for bytes32;
+
     uint256[] public slippageArray;
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
     bytes32[] public chadProof;
     bytes32[] public danProof;
     bytes32[] public ownerProof;
+
+    bytes aliceSignature;
+    bytes bobSignature;
+    bytes chadSignature;
+    bytes ownerSignature;
 
     function setUp() public {
         setUpTests();
@@ -19,6 +28,17 @@ contract SmallScenariosTest is TestSetup {
         chadProof = merkle.getProof(whiteListedAddresses, 5);
         danProof = merkle.getProof(whiteListedAddresses, 6);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
+
+        string memory message = "I agree to the terms";
+        bytes32 signedMessage = keccak256(abi.encodePacked(message)).toEthSignedMessageHash();
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, signedMessage);
+        aliceSignature = abi.encodePacked(r, s, v);
+        (v, r, s) = vm.sign(3, signedMessage);
+        bobSignature = abi.encodePacked(r, s, v);
+        (v, r, s) = vm.sign(4, signedMessage);
+        chadSignature = abi.encodePacked(r, s, v);
+        (v, r, s) = vm.sign(1, signedMessage);
+        ownerSignature = abi.encodePacked(r, s, v);
     }
     
     /*
@@ -50,7 +70,7 @@ contract SmallScenariosTest is TestSetup {
         /// Alice confirms she is not a US or Canadian citizen and deposits 10 ETH into the pool.
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(aliceSignature, alice, aliceProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -65,7 +85,7 @@ contract SmallScenariosTest is TestSetup {
         regulationsManagerInstance.confirmEligibility("INCORRECT HASH");
 
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 5 ether}(bobSignature, bob, bobProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 15 ether);
@@ -103,7 +123,7 @@ contract SmallScenariosTest is TestSetup {
         /// Chad confirms he is not a US or Canadian citizen and deposits 17 ether into Pool
         startHoax(chad);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 15 ether}(chad, chadProof);
+        liquidityPoolInstance.deposit{value: 15 ether}(chadSignature, chad, chadProof);
         vm.stopPrank();
 
         // Chad's 15 ETH + Alice's 10ETH + Bob's 5ETH
@@ -188,7 +208,7 @@ contract SmallScenariosTest is TestSetup {
         vm.startPrank(owner);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 32 ether}(owner, ownerProof);
+        liquidityPoolInstance.deposit{value: 32 ether}(ownerSignature, owner, ownerProof);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether + 32 ether);
         assertEq(address(liquidityPoolInstance).balance, 32 ether + 1 ether);
         vm.stopPrank();

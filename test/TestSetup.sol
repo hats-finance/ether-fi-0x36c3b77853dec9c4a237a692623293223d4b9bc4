@@ -14,7 +14,6 @@ import "../src/ProtocolRevenueManager.sol";
 import "../src/BNFT.sol";
 import "../src/TNFT.sol";
 import "../src/Treasury.sol";
-import "../src/EtherFiNode.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
 import "../src/WeETH.sol";
@@ -31,8 +30,8 @@ import "./Attacker.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 
-
 contract TestSetup is Test {
+
     uint256 constant public kwei = 10 ** 3;
     uint256 public slippageLimit = 50;
 
@@ -148,6 +147,7 @@ contract TestSetup is Test {
     address shonee = vm.addr(1200);
 
     address[] public actors;
+    uint256[] public actorsPK;
     uint256[] public whitelistIndices;
 
     bytes aliceIPFSHash = "AliceIPFS";
@@ -346,8 +346,10 @@ contract TestSetup is Test {
 
         vm.stopPrank();
 
-        vm.prank(alice);
+        vm.startPrank(alice);
         liquidityPoolInstance.openEEthLiquidStaking();
+        liquidityPoolInstance.setNewVersionHash(keccak256(abi.encodePacked("I agree to the terms")));
+        vm.stopPrank();
 
         vm.startPrank(owner);
 
@@ -432,6 +434,7 @@ contract TestSetup is Test {
         for (uint i = 1000; i < 1000 + 36; i++) {
             address actor = vm.addr(i);
             actors.push(actor);
+            actorsPK.push(i);
             whitelistIndices.push(whiteListedAddresses.length);
             whiteListedAddresses.push(keccak256(abi.encodePacked(actor)));
             vm.startPrank(actor);

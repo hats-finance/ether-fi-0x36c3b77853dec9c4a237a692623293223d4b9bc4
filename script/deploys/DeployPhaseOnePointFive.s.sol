@@ -47,6 +47,8 @@ contract DeployPhaseOnePointFiveScript is Script {
 
     AddressProvider public addressProvider;
 
+    bytes signature;
+
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
@@ -62,6 +64,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         address protocolRevenueManagerProxy = addressProvider.getContractAddress("ProtocolRevenueManager");
         address tnft = addressProvider.getContractAddress("TNFT");
         address admin = vm.envAddress("DEPLOYER");
+        signature = vm.envBytes("SIGNATURE");
 
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
 
@@ -149,6 +152,6 @@ contract DeployPhaseOnePointFiveScript is Script {
     function preMint() internal {
         bytes32[] memory emptyProof;
         uint256 minAmount = membershipManager.minimumAmountForMint();
-        membershipManager.wrapEthBatch{value: 100 * minAmount}(100, minAmount, 0, emptyProof);
+        membershipManager.wrapEthBatch{value: 100 * minAmount}(signature, 100, minAmount, 0, emptyProof);
     }
 }

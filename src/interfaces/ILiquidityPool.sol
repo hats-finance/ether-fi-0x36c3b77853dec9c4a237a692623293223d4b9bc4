@@ -14,8 +14,8 @@ interface ILiquidityPool {
     function amountForShare(uint256 _share) external view returns (uint256);
     function eEthliquidStakingOpened() external view returns (bool);
 
-    function deposit(address _user, bytes32[] calldata _merkleProof) external payable;
-    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) external payable;
+    function deposit(bytes memory sig, address _user, bytes32[] calldata _merkleProof) external payable;
+    function deposit(bytes memory sig, address _user, address _recipient, bytes32[] calldata _merkleProof) external payable;
     function withdraw(address _recipient, uint256 _amount) external;
 
     function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof) external payable returns (uint256[] memory);

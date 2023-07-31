@@ -1,11 +1,17 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract EETHTest is TestSetup {
 
+    using ECDSA for bytes32;
+
     bytes32[] public aliceProof;
     bytes32[] public bobProof;
+
+    bytes aliceSignature;
+    bytes bobSignature;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -15,6 +21,12 @@ contract EETHTest is TestSetup {
         setUpTests();
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
+        string memory message = "I agree to the terms";
+        bytes32 signedMessage = keccak256(abi.encodePacked(message)).toEthSignedMessageHash();
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, signedMessage);
+        aliceSignature = abi.encodePacked(r, s, v);
+        (v, r, s) = vm.sign(3, signedMessage);
+        bobSignature = abi.encodePacked(r, s, v);
     }
 
     function test_EETHInitializedCorrectly() public {
@@ -80,7 +92,7 @@ contract EETHTest is TestSetup {
         // Total pooled ether = 10
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(aliceSignature, alice, aliceProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -104,7 +116,7 @@ contract EETHTest is TestSetup {
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 5 ether}(bobSignature, bob, bobProof);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 25 ether);
@@ -150,7 +162,7 @@ contract EETHTest is TestSetup {
     function test_TransferWithAmount() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(aliceSignature, alice, aliceProof);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -184,7 +196,7 @@ contract EETHTest is TestSetup {
     function test_TransferWithZero() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(aliceSignature, alice, aliceProof);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -253,7 +265,7 @@ contract EETHTest is TestSetup {
     function test_TransferFromWithAmount() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(aliceSignature, alice, aliceProof);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -285,7 +297,7 @@ contract EETHTest is TestSetup {
     function test_TransferFromWithZero() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(aliceSignature, alice, aliceProof);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
