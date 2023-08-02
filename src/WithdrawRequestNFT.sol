@@ -4,6 +4,8 @@ pragma solidity 0.8.13;
 import "@openzeppelin-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "./interfaces/IeETH.sol";
+import "./interfaces/ILiquidityPool.sol";
 
 contract WithdrawRequestNFT is ERC721Upgradeable, OwnableUpgradeable {
     using Counters for Counters.Counter;
@@ -11,35 +13,49 @@ contract WithdrawRequestNFT is ERC721Upgradeable, OwnableUpgradeable {
     struct WithdrawRequest {
         uint96  amountOfEEth;
         uint96  shareOfEEth;
-        bool    isFinalized;
-        bool    isClaimed;
+        bool    isValid;
     }
 
     Counters.Counter private _requestIds;
     mapping(uint256 => WithdrawRequest) private _requests;
     uint256 private _nextRequestId = 1;
     address public admin;
-    address public liquidityPool;
+    uint256 public lastFinalizedRequestId;
+    ILiquidityPool public liquidityPool;
+    IeETH public eETH; 
 
     constructor() ERC721Upgradeable() {
         admin = msg.sender;
     }
 
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester) external payable {
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester) external payable onlyLiquidtyPool {
         uint256 requestId = _nextRequestId;
         _nextRequestId++;
-        _requests[requestId] = WithdrawRequest(amountOfEEth, shareOfEEth, false, false);
-        _safeMint(msg.sender, requestId);
+        _requests[requestId] = WithdrawRequest(amountOfEEth, shareOfEEth, true);
+        _safeMint(requester, requestId);
     }
 
-    function claimWithdraw(uint256 requestId) external {
-        WithdrawRequest storage request = _requests[requestId];
-        require(request.requester == msg.sender, "Not authorized to claim");
-        require(address(this).balance >= request.amount, "Insufficient funds");
-        _burn(requestId);
-        payable(msg.sender).transfer(request.amount);
-        delete _requests[requestId];
+    function claimWithdraw(uint256 tokenId) external {
+        require(tokenId <= _nextRequestId, "Request does not exist");
+        require(tokenId <= lastFinalizedRequestId, "Request is not finalized");
+        require(ownerOf(tokenId) != msg.sender, "Not the owner of the NFT");
+
+        WithdrawRequest storage request = _requests[tokenId];
+        require(!request.isValid, "Request is not valid");
+
+        // send the lesser value of the originally requested amount of eEth or the current eEth value of the shares
+        uint256 amountForShares = liquidityPool.amountForShare(request.shareOfEEth);
+        uint256 amountToTransfer = (request.amountOfEEth < amountForShares) ? request.amountOfEEth : amountForShares;
+        require(amountToTransfer > 0, "Amount to transfer is zero");
+
+        // transfer eth to requester
+        address owner = ownerOf(tokenId);
+        liquidityPool.withdraw(owner, amountToTransfer);
+        _burn(tokenId);
+        delete _requests[tokenId];
     }
+    
+    // add function to transfer accumulated shares to admin
 
     function getRequest(uint256 requestId) external view returns (WithdrawRequest memory) {
         return _requests[requestId];
@@ -49,13 +65,22 @@ contract WithdrawRequestNFT is ERC721Upgradeable, OwnableUpgradeable {
         return _nextRequestId;
     }
 
-    function finalizeRequests(uint256 upperBound) external onlyAdmin() {
-        for (uint256 i = 1; i <= upperBound; i++) {
-            WithdrawRequest storage request = _requests[i];
-            if (!request.isFinalized) {
-                request.isFinalized = true;
-            }
-        }
+    function finalizeRequests(uint256 requestId) external onlyAdmin {
+        lastFinalizedRequestId = requestId;
+    }
+
+    function invalidateRequest(uint256 requestId) external onlyAdmin {
+        _requests[requestId].isValid = false;
+    }
+
+    function updateLiquidityPool(address _newLiquidityPool) external onlyAdmin {
+        require(_newLiquidityPool != address(0), "Cannot be address zero");
+        liquidityPool = ILiquidityPool(_newLiquidityPool);
+    }
+
+    function updateEEth(address _newEEth) external onlyAdmin {
+        require(_newEEth != address(0), "Cannot be address zero");
+        eETH = IeETH(_newEEth);
     }
 
     function updateAdmin(address _newAdmin) external onlyOwner {
@@ -63,13 +88,13 @@ contract WithdrawRequestNFT is ERC721Upgradeable, OwnableUpgradeable {
         admin = _newAdmin;
     }
 
-    function updateLiqudityPool(address _newLiquidityPool) external onlyAdmin {
-        require(_newLiquidityPool != address(0), "Cannot be address zero");
-        liquidityPool = _newLiquidityPool;
-    }
-
     modifier onlyAdmin() {
         require(msg.sender == admin, "Caller is not the admin");
+        _;
+    }
+
+    modifier onlyLiquidtyPool() {
+        require(msg.sender == address(liquidityPool), "Caller is not the liquidity pool");
         _;
     }
 }

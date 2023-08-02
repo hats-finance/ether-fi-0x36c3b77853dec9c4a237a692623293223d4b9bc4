@@ -216,9 +216,31 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _emitNftUpdateEvent(_tokenId);
     }
 
+    function unwrapForEEth(uint256 _tokenId, uint256 _amount) external whenNotPaused {
+        _requireTokenOwner(_tokenId);
+        if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
+
+        // prevent transfers for several blocks after a withdrawal to prevent frontrunning
+        membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
+
+        _claimPoints(_tokenId);
+        _claimStakingRewards(_tokenId);
+
+        if (!membershipNFT.isWithdrawable(_tokenId, _amount)) revert ExceededMaxWithdrawal();
+
+        uint256 prevAmount = tokenDeposits[_tokenId].amounts;
+        _updateAllTimeHighDepositOf(_tokenId);
+        _withdraw(_tokenId, _amount);
+        _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
+
+        liquidityPool.requestWithdraw(address(msg.sender), _amount);
+
+        _emitNftUpdateEvent(_tokenId);
+    }
+
     /// @notice withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
-    function withdrawAndBurnForEth(uint256 _tokenId) public whenNotPaused {
+    function withdrawAndBurnForEth(uint256 _tokenId) external whenNotPaused {
         _requireTokenOwner(_tokenId);
 
         // Claim all staking rewards before burn
@@ -231,6 +253,22 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         liquidityPool.withdraw(address(this), totalBalance);
         (bool sent, ) = address(msg.sender).call{value: totalBalance - feeAmount}("");
         if (!sent) revert InvalidWithdraw();
+        _emitNftUpdateEvent(_tokenId);
+    }
+
+    /// @notice request to withdraw the entire balance of this NFT and burn it
+    /// @param _tokenId The ID of the membership NFT to unwrap
+    function withdrawAndBurnForEEth(uint256 _tokenId) external whenNotPaused {
+        _requireTokenOwner(_tokenId);
+
+        // Claim all staking rewards before burn
+        _claimStakingRewards(_tokenId);
+
+        uint256 feeAmount = burnFee * 0.001 ether;
+        uint256 totalBalance = _withdrawAndBurn(_tokenId);
+        if (totalBalance < feeAmount) revert InsufficientBalance();
+
+        liquidityPool.requestWithdraw(msg.sender, totalBalance - feeAmount);
         _emitNftUpdateEvent(_tokenId);
     }
 
