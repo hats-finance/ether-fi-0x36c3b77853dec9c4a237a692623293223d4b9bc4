@@ -23,6 +23,7 @@ import "../src/MembershipNFT.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/TVLOracle.sol";
 import "../src/UUPSProxy.sol";
+import "../src/WithdrawRequestNFT.sol";
 import "../src/NFTExchange.sol";
 import "../src/helpers/AddressProvider.sol";
 import "./DepositDataGeneration.sol";
@@ -55,6 +56,7 @@ contract TestSetup is Test {
     UUPSProxy public membershipManagerProxy;
     UUPSProxy public membershipNftProxy;
     UUPSProxy public nftExchangeProxy;
+    UUPSProxy public withdrawRequestNFTProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -99,6 +101,9 @@ contract TestSetup is Test {
 
     MembershipNFT public membershipNftImplementation;
     MembershipNFT public membershipNftInstance;
+
+    WithdrawRequestNFT public withdrawRequestNFTImplementation;
+    WithdrawRequestNFT public withdrawRequestNFTInstance;
 
     NFTExchange public nftExchangeImplementation;
     NFTExchange public nftExchangeInstance;
@@ -285,6 +290,12 @@ contract TestSetup is Test {
         membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
         membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
         membershipNftInstance.updateAdmin(alice);
+
+        withdrawRequestNFTImplementation = new WithdrawRequestNFT();
+        withdrawRequestNFTProxy = new UUPSProxy(address(withdrawRequestNFTImplementation), "");
+        withdrawRequestNFTInstance = WithdrawRequestNFT(payable(withdrawRequestNFTProxy));
+        withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)));
+        withdrawRequestNFTInstance.updateAdmin(alice);
         
         membershipManagerImplementation = new MembershipManager();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation), "");

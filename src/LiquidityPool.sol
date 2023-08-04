@@ -130,7 +130,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
 
         uint256 shares = sharesForWithdrawalAmount(amount);
-        withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(shares), recipient);
+        withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(shares), payable(recipient));
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(recipient, address(withdrawRequestNFT), amount);
     }

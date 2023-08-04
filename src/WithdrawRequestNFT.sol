@@ -2,12 +2,13 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract WithdrawRequestNFT is ERC721Upgradeable, OwnableUpgradeable {
+contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     using Counters for Counters.Counter;
 
     struct WithdrawRequest {
@@ -18,14 +19,28 @@ contract WithdrawRequestNFT is ERC721Upgradeable, OwnableUpgradeable {
 
     Counters.Counter private _requestIds;
     mapping(uint256 => WithdrawRequest) private _requests;
-    uint256 private _nextRequestId = 1;
+    uint256 private _nextRequestId;
     address public admin;
     uint256 public lastFinalizedRequestId;
     ILiquidityPool public liquidityPool;
     IeETH public eETH; 
 
-    constructor() ERC721Upgradeable() {
-        admin = msg.sender;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address _liquidityPoolAddress, address _eEthAddress) initializer external {
+        require(_liquidityPoolAddress != address(0), "No zero addresses");
+        require(_eEthAddress != address(0), "No zero addresses");
+        __ERC721_init("Withdraw Request NFT", "WithdrawRequestNFT");
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+
+        liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+        eETH = IeETH(_eEthAddress);
+        _nextRequestId = 1;
     }
 
     function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester) external payable onlyLiquidtyPool {
@@ -41,7 +56,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, OwnableUpgradeable {
         require(ownerOf(tokenId) != msg.sender, "Not the owner of the NFT");
 
         WithdrawRequest storage request = _requests[tokenId];
-        require(!request.isValid, "Request is not valid");
+        require(request.isValid, "Request is not valid");
 
         // send the lesser value of the originally requested amount of eEth or the current eEth value of the shares
         uint256 amountForShares = liquidityPool.amountForShare(request.shareOfEEth);
@@ -59,6 +74,10 @@ contract WithdrawRequestNFT is ERC721Upgradeable, OwnableUpgradeable {
 
     function getRequest(uint256 requestId) external view returns (WithdrawRequest memory) {
         return _requests[requestId];
+    }
+
+    function requestIsFinalized(uint256 requestId) external view returns (bool) {
+        return requestId <= lastFinalizedRequestId;
     }
 
     function getNextRequestId() external view returns (uint256) {
@@ -87,6 +106,8 @@ contract WithdrawRequestNFT is ERC721Upgradeable, OwnableUpgradeable {
         require(_newAdmin != address(0), "Cannot be address zero");
         admin = _newAdmin;
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Caller is not the admin");

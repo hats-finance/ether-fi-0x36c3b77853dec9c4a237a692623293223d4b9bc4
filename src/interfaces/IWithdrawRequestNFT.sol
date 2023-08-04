@@ -9,9 +9,11 @@ interface IWithdrawRequestNFT {
         bool    isClaimed;
     }
 
+    function initialize() external;
     function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester) external payable;
     function claimWithdraw(uint256 requestId) external returns (WithdrawRequest memory);
     function getRequest(uint256 requestId) external view returns (WithdrawRequest memory);
+    function requestIsFinalized(uint256 requestId) external view returns (bool);
     function getNextRequestId() external view returns (uint256);
     function finalizeRequests(uint256 upperBound) external;
     function updateAdmin(address _newAdmin) external;
