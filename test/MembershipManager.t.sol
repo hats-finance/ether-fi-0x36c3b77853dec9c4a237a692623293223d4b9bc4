@@ -71,25 +71,25 @@ contract MembershipManagerTest is TestSetup {
 
         // alice unwraps 1% and should lose 1 tier.
         vm.prank(alice);
-        membershipManagerInstance.unwrapForEth(aliceToken, 1 ether);
+        membershipManagerInstance.requestWithdraw(aliceToken, 1 ether);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 28 * 24 * 1); // booted to start of previous tier == 672
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
 
         // Bob attempts to unwrap 80% this is disallowed without burning the NFT
         vm.startPrank(bob);
         vm.expectRevert(MembershipManager.ExceededMaxWithdrawal.selector);
-        membershipManagerInstance.unwrapForEth(bobToken, 80 ether);
+        membershipManagerInstance.requestWithdraw(bobToken, 80 ether);
         vm.expectRevert(MembershipManager.ExceededMaxWithdrawal.selector);
-        membershipManagerInstance.unwrapForEth(bobToken, 80 ether);
+        membershipManagerInstance.requestWithdraw(bobToken, 80 ether);
         assertEq(membershipNftInstance.tierPointsOf(bobToken), 2400);
         assertEq(membershipNftInstance.tierOf(bobToken), 2);
 
         // Bob should be unable to burn a token that doesn't belong to him
         vm.expectRevert(MembershipManager.OnlyTokenOwner.selector);
-        membershipManagerInstance.withdrawAndBurnForEth(aliceToken);
+        membershipManagerInstance.requestWithdrawAndBurn(aliceToken);
 
         // Bob burns the NFT extracting remaining value
-        membershipManagerInstance.withdrawAndBurnForEth(bobToken);
+        membershipManagerInstance.requestWithdrawAndBurn(bobToken);
         assertEq(bob.balance, 100 ether);
         assertEq(membershipNftInstance.balanceOf(bob, bobToken), 0);
 
@@ -120,7 +120,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(tokenId), 24);
 
         // Alice's NFT unwraps 1 membership points to 1 ETH
-        membershipManagerInstance.unwrapForEth(tokenId, 1 ether);
+        membershipManagerInstance.requestWithdraw(tokenId, 1 ether);
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 2 * kwei);
         assertEq(membershipNftInstance.tierPointsOf(tokenId), 0);
         assertEq(membershipNftInstance.valueOf(tokenId), 1 ether);
@@ -136,7 +136,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(tokenId), 24 * 2);
 
         // Alice's NFT unwraps all her remaining membership points, burning the NFT
-        membershipManagerInstance.withdrawAndBurnForEth(tokenId);
+        membershipManagerInstance.requestWithdrawAndBurn(tokenId);
         assertEq(membershipNftInstance.balanceOf(alice, tokenId), 0); 
         assertEq(alice.balance, 2 ether);
         vm.stopPrank();
@@ -204,7 +204,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.tierOf(tokenId), 1);
 
         // Alice unwraps 0.5 membership points (which is 50% of her membership points holdings)
-        membershipManagerInstance.unwrapForEth(tokenId, 0.5 ether);
+        membershipManagerInstance.requestWithdraw(tokenId, 0.5 ether);
 
         // Tier gets penalized by unwrapping
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 28 * kwei);
@@ -500,7 +500,7 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
     }
 
-    function test_unwrapForEth() public {
+    function test_requestWithdraw() public {
         vm.deal(alice, 2 ether);
         assertEq(alice.balance, 2 ether);
 
@@ -511,13 +511,13 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(aliceToken), 2 ether);
 
         // Alice burns membership points directly for ETH
-        membershipManagerInstance.unwrapForEth(aliceToken, 1 ether);
+        membershipManagerInstance.requestWithdraw(aliceToken, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
         assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether);
         assertEq(alice.balance, 1 ether);
 
         vm.expectRevert(MembershipManager.InsufficientLiquidity.selector);
-        membershipManagerInstance.unwrapForEth(aliceToken, 5 ether);
+        membershipManagerInstance.requestWithdraw(aliceToken, 5 ether);
     }
 
 
@@ -686,7 +686,7 @@ contract MembershipManagerTest is TestSetup {
         uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
 
         // make a small withdrawal
-        membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
+        membershipManagerInstance.requestWithdraw(aliceToken, 0.1 ether);
         assertEq(membershipNftInstance.transferLockedUntil(aliceToken), block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // fails because token is locked
@@ -697,10 +697,10 @@ contract MembershipManagerTest is TestSetup {
         vm.roll(block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // withdraw should succeed
-        membershipManagerInstance.unwrapForEth(aliceToken, 0.1 ether);
+        membershipManagerInstance.requestWithdraw(aliceToken, 0.1 ether);
 
         // withdraw and burn should succeed
-        membershipManagerInstance.withdrawAndBurnForEth(aliceToken);
+        membershipManagerInstance.requestWithdrawAndBurn(aliceToken);
 
         vm.stopPrank();
 
@@ -876,7 +876,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Withdraw
         vm.prank(alice);
-        membershipManagerInstance.unwrapForEth(tokenId, 1 ether);
+        membershipManagerInstance.requestWithdraw(tokenId, 1 ether);
 
         assertEq(address(liquidityPoolInstance).balance, 2 ether);
         assertEq(address(membershipManagerInstance).balance, mintFee + upgradeFee); // totalFeesAccumulated
@@ -886,7 +886,7 @@ contract MembershipManagerTest is TestSetup {
         // Burn NFT
         uint256 aliceBalBefore = alice.balance;
         vm.prank(alice);
-        membershipManagerInstance.withdrawAndBurnForEth(tokenId);
+        membershipManagerInstance.requestWithdrawAndBurn(tokenId);
         (amount,) = membershipManagerInstance.tokenDeposits(tokenId);
 
         assertEq(address(alice).balance, aliceBalBefore + 2 ether - burnFee);
@@ -1065,7 +1065,7 @@ contract MembershipManagerTest is TestSetup {
                 vm.deal(alice, 1 ether + fee);
                 vm.startPrank(alice);
                 uint256 t = membershipManagerInstance.wrapEth{value: 1 ether + fee}(1 ether, 0, aliceProof);
-                membershipManagerInstance.withdrawAndBurnForEth(t);
+                membershipManagerInstance.requestWithdrawAndBurn(t);
                 vm.stopPrank();
             }
         }
@@ -1283,7 +1283,7 @@ contract MembershipManagerTest is TestSetup {
                     counts[2]++;
                 }
                 if (random % 3 == 0 && i % 4 != 0) {
-                    membershipManagerInstance.unwrapForEth(token, withdrawalAmount);
+                    membershipManagerInstance.requestWithdraw(token, withdrawalAmount);
                     counts[3]++;
                 }
     
@@ -1306,7 +1306,7 @@ contract MembershipManagerTest is TestSetup {
             uint256 expectedBalanceAfterWithdrawal = address(actor).balance + membershipNftInstance.valueOf(token);
 
             vm.startPrank(actor);
-            membershipManagerInstance.withdrawAndBurnForEth(token);
+            membershipManagerInstance.requestWithdrawAndBurn(token);
             vm.stopPrank();
 
             assertLe(address(actor).balance, expectedBalanceAfterWithdrawal);
