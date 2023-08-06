@@ -28,12 +28,16 @@ contract WithdrawRequestNFTTest is TestSetup {
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.balanceOf(address(bob)), 10 ether);
 
         uint96 amountOfEEth = 1 ether;
-        uint96 shareOfEEth = 1 ether;
+        // uint96 shareOfEEth = 1 ether;
 
-        vm.prank(address(liquidityPoolInstance));
-        withdrawRequestNFTInstance.requestWithdraw(amountOfEEth, shareOfEEth, bob);
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+
+        vm.prank(bob);
+        liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         uint256 requestId = withdrawRequestNFTInstance.getNextRequestId() - 1;
         WithdrawRequestNFT.WithdrawRequest memory request = withdrawRequestNFTInstance.getRequest(requestId);
@@ -54,14 +58,20 @@ contract WithdrawRequestNFTTest is TestSetup {
         uint96 amountOfEEth = 1 ether;
         uint96 shareOfEEth = 1 ether;
 
-        vm.prank(address(liquidityPoolInstance));
-        withdrawRequestNFTInstance.requestWithdraw(amountOfEEth, shareOfEEth, bob);
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+
+        vm.prank(bob);
+        liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         uint256 requestId1 = withdrawRequestNFTInstance.getNextRequestId() - 1;
         assertEq(requestId1, 1, "Request id should be 1");
 
-        vm.prank(address(liquidityPoolInstance));
-        withdrawRequestNFTInstance.requestWithdraw(amountOfEEth, shareOfEEth, bob);
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+
+        vm.prank(bob);
+        liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         uint256 requestId2 = withdrawRequestNFTInstance.getNextRequestId() - 1;
         assertEq(requestId2, 2, "Request id should be 2");
@@ -78,8 +88,11 @@ contract WithdrawRequestNFTTest is TestSetup {
         uint96 amountOfEEth = 1 ether;
         uint96 shareOfEEth = 1 ether;
 
-        vm.prank(address(liquidityPoolInstance));
-        withdrawRequestNFTInstance.requestWithdraw(amountOfEEth, shareOfEEth, bob);
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+
+        vm.prank(bob);
+        liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         uint256 requestId = withdrawRequestNFTInstance.getNextRequestId() - 1;
         bool earlyRequestIsFinalized = withdrawRequestNFTInstance.requestIsFinalized(requestId);
@@ -104,10 +117,12 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
 
         uint96 amountOfEEth = 1 ether;
-        uint96 shareOfEEth = 1 ether;
 
-        vm.prank(address(liquidityPoolInstance));
-        withdrawRequestNFTInstance.requestWithdraw(amountOfEEth, shareOfEEth, bob);
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+
+        vm.prank(bob);
+        liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         uint256 requestId = withdrawRequestNFTInstance.getNextRequestId() - 1;
 
@@ -129,10 +144,12 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
 
         uint96 amountOfEEth = 1 ether;
-        uint96 shareOfEEth = 1 ether;
 
-        vm.prank(address(liquidityPoolInstance));
-        withdrawRequestNFTInstance.requestWithdraw(amountOfEEth, shareOfEEth, bob);
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+
+        vm.prank(bob);
+        liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         uint256 requestId = withdrawRequestNFTInstance.getNextRequestId() - 1;
         bool requestIsFinalized = withdrawRequestNFTInstance.requestIsFinalized(requestId);
@@ -152,17 +169,21 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
 
         uint96 amountOfEEth = 1 ether;
-        uint96 shareOfEEth = 1 ether;
 
-        vm.prank(address(liquidityPoolInstance));
-        withdrawRequestNFTInstance.requestWithdraw(amountOfEEth, shareOfEEth, bob);
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+
+        vm.prank(bob);
+        liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         uint256 requestId = withdrawRequestNFTInstance.getNextRequestId() - 1;
+
+        assertEq(withdrawRequestNFTInstance.balanceOf(bob), 1, "Bobs balance should be 1");
 
         vm.prank(alice);
         withdrawRequestNFTInstance.finalizeRequests(requestId);
 
-        vm.prank(address(liquidityPoolInstance));
+        vm.prank(bob);
         withdrawRequestNFTInstance.claimWithdraw(requestId);
 
         // bobs balance of eth should be 9?

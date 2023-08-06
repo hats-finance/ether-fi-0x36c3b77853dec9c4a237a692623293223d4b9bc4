@@ -291,11 +291,14 @@ contract TestSetup is Test {
         membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
         membershipNftInstance.updateAdmin(alice);
 
+
         withdrawRequestNFTImplementation = new WithdrawRequestNFT();
         withdrawRequestNFTProxy = new UUPSProxy(address(withdrawRequestNFTImplementation), "");
         withdrawRequestNFTInstance = WithdrawRequestNFT(payable(withdrawRequestNFTProxy));
         withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)));
         withdrawRequestNFTInstance.updateAdmin(alice);
+
+        liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
         
         membershipManagerImplementation = new MembershipManager();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation), "");

@@ -130,7 +130,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
 
         uint256 shares = sharesForWithdrawalAmount(amount);
-        withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(shares), payable(recipient));
+        withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(shares), recipient);
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(recipient, address(withdrawRequestNFT), amount);
     }
@@ -268,6 +268,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function setTnft(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         tNft = ITNFT(_address);
+    }
+
+    function setWithdrawRequestNFT(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        withdrawRequestNFT = IWithdrawRequestNFT(_address);
     }
 
     /// @notice Updates the address of the admin
