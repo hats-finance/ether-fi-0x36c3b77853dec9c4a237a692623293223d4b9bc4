@@ -40,6 +40,8 @@ interface IMembershipManager {
 
     function unwrapForEth(uint256 _tokenId, uint256 _amount) external;
     function withdrawAndBurnForEth(uint256 _tokenId) external;
+    function requestWithdraw(uint256 _tokenId, uint256 _amount) external;
+    function requestWithdrawAndBurn(uint256 _tokenId) external;
 
     function claim(uint256 _tokenId) external;
 

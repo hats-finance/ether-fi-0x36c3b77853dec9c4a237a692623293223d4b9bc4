@@ -216,7 +216,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _emitNftUpdateEvent(_tokenId);
     }
 
-    function unwrapForEEth(uint256 _tokenId, uint256 _amount) external whenNotPaused {
+    function requestWithdraw(uint256 _tokenId, uint256 _amount) external whenNotPaused {
         _requireTokenOwner(_tokenId);
         if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
 
@@ -258,7 +258,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     /// @notice request to withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to unwrap
-    function withdrawAndBurnForEEth(uint256 _tokenId) external whenNotPaused {
+    function requestWithdrawAndBurn(uint256 _tokenId) external whenNotPaused {
         _requireTokenOwner(_tokenId);
 
         // Claim all staking rewards before burn
