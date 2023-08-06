@@ -5,12 +5,11 @@ interface IWithdrawRequestNFT {
     struct WithdrawRequest {
         uint96  amountOfEEth;
         uint96  shareOfEEth;
-        bool    isFinalized;
-        bool    isClaimed;
+        bool    isValid;
     }
 
     function initialize() external;
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester) external payable;
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester) external payable returns (uint256);
     function claimWithdraw(uint256 requestId) external returns (WithdrawRequest memory);
     function getRequest(uint256 requestId) external view returns (WithdrawRequest memory);
     function requestIsFinalized(uint256 requestId) external view returns (bool);

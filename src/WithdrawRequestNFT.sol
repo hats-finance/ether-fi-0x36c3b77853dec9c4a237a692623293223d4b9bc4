@@ -43,11 +43,12 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         _nextRequestId = 1;
     }
 
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient) external payable onlyLiquidtyPool {
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient) external payable onlyLiquidtyPool returns (uint256) {
         uint256 requestId = _nextRequestId;
         _nextRequestId++;
         _requests[requestId] = WithdrawRequest(amountOfEEth, shareOfEEth, true);
         _safeMint(recipient, requestId);
+        return requestId;
     }
 
     function claimWithdraw(uint256 tokenId) external {

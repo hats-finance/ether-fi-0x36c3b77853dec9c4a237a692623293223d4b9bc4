@@ -125,14 +125,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Transfers the amount of eETH from msg.senders account to the WithdrawRequestNFT contract & mints an NFT to the msg.sender
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
-    function requestWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen {
+    function requestWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
         require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
 
         uint256 shares = sharesForWithdrawalAmount(amount);
-        withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(shares), recipient);
+        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(shares), recipient);
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(recipient, address(withdrawRequestNFT), amount);
+        return requestId;
     }
 
     /*
