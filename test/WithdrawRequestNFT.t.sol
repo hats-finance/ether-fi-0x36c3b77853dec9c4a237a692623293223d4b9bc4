@@ -166,6 +166,8 @@ contract WithdrawRequestNFTTest is TestSetup {
         liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
         vm.stopPrank();
 
+        uint256 bobsStartingBalance = address(bob).balance;
+
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
 
         uint96 amountOfEEth = 1 ether;
@@ -179,6 +181,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         uint256 requestId = withdrawRequestNFTInstance.getNextRequestId() - 1;
 
         assertEq(withdrawRequestNFTInstance.balanceOf(bob), 1, "Bobs balance should be 1");
+        assertEq(withdrawRequestNFTInstance.ownerOf(requestId), bob, "Bobs should own the NFT");
 
         vm.prank(alice);
         withdrawRequestNFTInstance.finalizeRequests(requestId);
@@ -186,8 +189,9 @@ contract WithdrawRequestNFTTest is TestSetup {
         vm.prank(bob);
         withdrawRequestNFTInstance.claimWithdraw(requestId);
 
+        uint256 bobsEndingBalance = address(bob).balance;
         // bobs balance of eth should be 9?
-        assertEq(address(bob).balance, 9 ether, "Bobs balance should be 9 ether");
+        assertEq(bobsEndingBalance, bobsStartingBalance + 1 ether, "Bobs balance should be 1 ether higher");
     }
 
     function testUpdateLiquidityPool() public {

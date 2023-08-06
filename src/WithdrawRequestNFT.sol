@@ -53,7 +53,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     function claimWithdraw(uint256 tokenId) external {
         require(tokenId <= _nextRequestId, "Request does not exist");
         require(tokenId <= lastFinalizedRequestId, "Request is not finalized");
-        require(ownerOf(tokenId) != msg.sender, "Not the owner of the NFT");
+        require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
 
         WithdrawRequest storage request = _requests[tokenId];
         require(request.isValid, "Request is not valid");
