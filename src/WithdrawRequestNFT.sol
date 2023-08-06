@@ -64,8 +64,8 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         require(amountToTransfer > 0, "Amount to transfer is zero");
 
         // transfer eth to requester
-        address owner = ownerOf(tokenId);
-        liquidityPool.withdraw(owner, amountToTransfer);
+        address recipient = ownerOf(tokenId);
+        liquidityPool.withdraw(recipient, amountToTransfer);
         _burn(tokenId);
         delete _requests[tokenId];
     }

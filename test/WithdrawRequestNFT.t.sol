@@ -143,31 +143,31 @@ contract WithdrawRequestNFTTest is TestSetup {
         withdrawRequestNFTInstance.claimWithdraw(requestId);
     }
 
-    // function test_ValidClaimWithdraw() public {
-    //     startHoax(bob);
-    //     regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-    //     liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
-    //     vm.stopPrank();
+    function test_ValidClaimWithdraw() public {
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        vm.stopPrank();
 
-    //     assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
 
-    //     uint96 amountOfEEth = 1 ether;
-    //     uint96 shareOfEEth = 1 ether;
+        uint96 amountOfEEth = 1 ether;
+        uint96 shareOfEEth = 1 ether;
 
-    //     vm.prank(address(liquidityPoolInstance));
-    //     withdrawRequestNFTInstance.requestWithdraw(amountOfEEth, shareOfEEth, bob);
+        vm.prank(address(liquidityPoolInstance));
+        withdrawRequestNFTInstance.requestWithdraw(amountOfEEth, shareOfEEth, bob);
 
-    //     uint256 requestId = withdrawRequestNFTInstance.getNextRequestId() - 1;
+        uint256 requestId = withdrawRequestNFTInstance.getNextRequestId() - 1;
 
-    //     vm.prank(alice);
-    //     withdrawRequestNFTInstance.finalizeRequests(requestId);
+        vm.prank(alice);
+        withdrawRequestNFTInstance.finalizeRequests(requestId);
 
-    //     vm.prank(address(liquidityPoolInstance));
-    //     withdrawRequestNFTInstance.claimWithdraw(requestId);
+        vm.prank(address(liquidityPoolInstance));
+        withdrawRequestNFTInstance.claimWithdraw(requestId);
 
-    //     // bobs balance of eth should be 9?
-    //     assertEq(address(bob).balance, 9 ether, "Bobs balance should be 9 ether");
-    // }
+        // bobs balance of eth should be 9?
+        assertEq(address(bob).balance, 9 ether, "Bobs balance should be 9 ether");
+    }
 
     function testUpdateLiquidityPool() public {
         address newLiquidityPool = address(0x456);
