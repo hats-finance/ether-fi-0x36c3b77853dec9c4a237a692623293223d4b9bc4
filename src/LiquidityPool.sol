@@ -127,10 +127,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @param amount the requested amount to withdraw from contract
     function requestWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
+        require(recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
 
-        uint256 shares = sharesForWithdrawalAmount(amount);
-        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(shares), recipient);
+        uint256 share = sharesForWithdrawalAmount(amount);
+        if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
+
+        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(recipient, address(withdrawRequestNFT), amount);
         return requestId;

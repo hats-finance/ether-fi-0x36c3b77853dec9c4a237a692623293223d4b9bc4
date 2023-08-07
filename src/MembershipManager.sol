@@ -211,6 +211,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
+        // send EETH to recipient before requesting withdraw?
         liquidityPool.requestWithdraw(address(msg.sender), _amount);
 
         _emitNftUpdateEvent(_tokenId);

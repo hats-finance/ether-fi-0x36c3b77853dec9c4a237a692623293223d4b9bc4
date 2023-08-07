@@ -31,7 +31,6 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(bob)), 10 ether);
 
         uint96 amountOfEEth = 1 ether;
-        // uint96 shareOfEEth = 1 ether;
 
         vm.prank(bob);
         eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
@@ -55,7 +54,6 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
 
         uint96 amountOfEEth = 1 ether;
-        uint96 shareOfEEth = 1 ether;
 
         vm.prank(bob);
         eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
@@ -180,7 +178,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         withdrawRequestNFTInstance.claimWithdraw(requestId);
 
         uint256 bobsEndingBalance = address(bob).balance;
-        // bobs balance of eth should be 9?
+
         assertEq(bobsEndingBalance, bobsStartingBalance + 1 ether, "Bobs balance should be 1 ether higher");
     }
 
