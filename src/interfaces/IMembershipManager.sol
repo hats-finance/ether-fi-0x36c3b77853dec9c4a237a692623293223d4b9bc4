@@ -56,7 +56,6 @@ interface IMembershipManager {
     function pointsBoostFactor() external view returns (uint16);
     function pointsGrowthRate() external view returns (uint16);
     function maxDepositTopUpPercent() external view returns (uint8);
-    function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory);
     function numberOfTiers() external view returns (uint8);
     function getImplementation() external view returns (address);
     function sharesReservedForRewards() external view returns (uint128);
