@@ -207,8 +207,8 @@ contract SmallScenariosTest is TestSetup {
         vm.prank(chad);
         withdrawRequestNFTInstance.claimWithdraw(withdrawRequestId);
 
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 47.5 ether); // 63 - 15.5 = 47.5
-        assertEq(address(liquidityPoolInstance).balance, 17.5 ether); // 33 - 15.5 = 17.5
+        assert(liquidityPoolInstance.getTotalPooledEther() >= 47.5 ether); // 63 - 15.5 = 47.5
+        assert(address(liquidityPoolInstance).balance >= 17.5 ether); // 33 - 15.5 = 17.5
 
         // EtherFi sends an exit request for a node to be exited to reclaim the 32 ether sent to the pool for withdrawals
         {
@@ -244,7 +244,9 @@ contract SmallScenariosTest is TestSetup {
 
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.333333333333333333 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.166666666666666665 ether);
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 0 ether);
+
+        // Chad may have 1 wei less due to rounding errors
+        assert(liquidityPoolInstance.getTotalEtherClaimOf(chad) <= 1);
     }
 
     /*------ AUCTION / STAKER FLOW ------*/

@@ -107,7 +107,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(_recipient != address(0), "Cannot withdraw to zero address");
-        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
+        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH to withdraw");
 
         uint256 share = sharesForWithdrawalAmount(_amount);
         totalValueInLp -= uint128(_amount);
