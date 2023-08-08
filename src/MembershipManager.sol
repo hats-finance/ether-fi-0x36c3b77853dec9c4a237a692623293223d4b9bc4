@@ -11,6 +11,8 @@ import "./interfaces/IMembershipManager.sol";
 import "./interfaces/IMembershipNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 
+import "./libraries/GlobalIndexLibrary.sol";
+
 
 contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable, IMembershipManager {
 
@@ -265,7 +267,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
     function _distributeStakingRewards() internal {
         _requireAdmin();
-        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = calculateGlobalIndex();
+        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = globalIndexLibrary.calculateGlobalIndex(tierDeposits.length, address(this), address(liquidityPool));
         uint128 totalShares = 0;
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             uint256 amounts = liquidityPool.amountForShare(adjustedShares[i]);
@@ -617,62 +619,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     error IntegerOverflow();
-
-    /**
-    * @dev This function calculates the global index and adjusted shares for each tier used for reward distribution.
-    *
-    * The function performs the following steps:
-    * 1. Iterates over each tier, computing rebased amounts, tier rewards, weighted tier rewards.
-    * 2. Sums all the tier rewards and the weighted tier rewards.
-    * 3. If there are any weighted tier rewards, it iterates over each tier to perform the following actions:
-    *    a. Computes the amounts eligible for rewards.
-    *    b. If there are amounts eligible for rewards, 
-    *       it calculates rescaled tier rewards and updates the global index and adjusted shares for the tier.
-    *
-    * The rescaling of tier rewards is done based on the weight of each tier. 
-    *
-    * @notice This function essentially pools all the staking rewards across tiers and redistributes them proportional to the tier weights
-    * @return globalIndex A uint96 array containing the updated global index for each tier.
-    * @return adjustedShares A uint128 array containing the updated shares for each tier reflecting the amount of staked ETH in the liquidity pool.
-    */
-    function calculateGlobalIndex() public view returns (uint96[] memory, uint128[] memory) {
-        uint96[] memory globalIndex = new uint96[](tierDeposits.length);
-        uint128[] memory adjustedShares = new uint128[](tierDeposits.length);
-        uint256[] memory weightedTierRewards = new uint256[](tierDeposits.length);
-        uint256[] memory tierRewards = new uint256[](tierDeposits.length);
-        uint256 sumTierRewards = 0;
-        uint256 sumWeightedTierRewards = 0;
-        for (uint256 i = 0; i < weightedTierRewards.length; i++) {
-            TierDeposit memory deposit = tierDeposits[i];
-            uint256 rebasedAmounts = liquidityPool.amountForShare(deposit.shares);
-            if (rebasedAmounts >= deposit.amounts) {
-                tierRewards[i] = rebasedAmounts - deposit.amounts;
-                weightedTierRewards[i] = tierData[i].weight * tierRewards[i];
-            }
-            globalIndex[i] = tierData[i].rewardsGlobalIndex;
-            adjustedShares[i] = tierDeposits[i].shares;
-
-            sumTierRewards += tierRewards[i];
-            sumWeightedTierRewards += weightedTierRewards[i];
-        }
-
-        if (sumWeightedTierRewards > 0) {
-            for (uint256 i = 0; i < weightedTierRewards.length; i++) {
-                uint256 shares = tierDeposits[i].shares;
-                if (shares > 0) {
-                    uint256 rescaledTierRewards = weightedTierRewards[i] * sumTierRewards / sumWeightedTierRewards;
-                    uint256 delta = 1 ether * rescaledTierRewards / shares;
-
-                    if (uint256(globalIndex[i]) + uint256(delta) > type(uint96).max) revert IntegerOverflow();
-
-                    globalIndex[i] += uint96(delta);
-                    adjustedShares[i] = uint128(liquidityPool.sharesForAmount(tierDeposits[i].amounts));
-                }
-            }
-        }
-
-        return (globalIndex, adjustedShares);
-    }
 
     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
         return (_a > _b) ? _b : _a;
