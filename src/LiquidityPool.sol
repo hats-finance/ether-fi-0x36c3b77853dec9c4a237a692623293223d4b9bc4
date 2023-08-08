@@ -104,7 +104,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to the recipient
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
-    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestNFT {
+    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
@@ -134,8 +134,21 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
 
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
-        // transfer shares to WithdrawRequestNFT contract
+        // transfer shares to WithdrawRequestNFT contract from this contract
         eETH.transferFrom(recipient, address(withdrawRequestNFT), amount);
+        return requestId;
+    }
+
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen returns (uint256) {
+        require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
+        require(recipient != address(0), "Cannot withdraw to zero address");
+
+        uint256 share = sharesForWithdrawalAmount(amount);
+        if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
+
+        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
+        // transfer shares to WithdrawRequestNFT contract
+        eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
         return requestId;
     }
 
@@ -371,8 +384,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _;
     }
 
-    modifier onlyWithdrawRequestNFT() {
-        require(msg.sender == address(withdrawRequestNFT), "Caller is not the WithdrawRequestNFT");
+    modifier onlyWithdrawRequestOrMembershipManager() {
+        require(msg.sender == address(withdrawRequestNFT) || msg.sender == address(membershipManager), "Caller is not the WithdrawRequestNFT or MembershipManager");
         _;
     }
 }
