@@ -17,7 +17,6 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         bool    isValid;
     }
 
-    Counters.Counter private _requestIds;
     mapping(uint256 => WithdrawRequest) private _requests;
     uint256 private _nextRequestId;
     address public admin;
@@ -77,7 +76,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         return _requests[requestId];
     }
 
-    function requestIsFinalized(uint256 requestId) external view returns (bool) {
+    function isFinalized(uint256 requestId) external view returns (bool) {
         return requestId <= lastFinalizedRequestId;
     }
 

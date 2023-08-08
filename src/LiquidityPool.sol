@@ -26,7 +26,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     IEtherFiNodesManager public nodesManager;
     IRegulationsManager public regulationsManager;
     IMembershipManager public membershipManager;
-    IWithdrawRequestNFT public withdrawRequestNFT;
     ITNFT public tNft;
     IeETH public eETH; 
 
@@ -40,6 +39,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
 
     address public bNftTreasury;
+    IWithdrawRequestNFT public withdrawRequestNFT;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------

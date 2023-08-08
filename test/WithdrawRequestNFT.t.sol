@@ -88,7 +88,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         vm.prank(bob);
         uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
-        bool earlyRequestIsFinalized = withdrawRequestNFTInstance.requestIsFinalized(requestId);
+        bool earlyRequestIsFinalized = withdrawRequestNFTInstance.isFinalized(requestId);
         assertFalse(earlyRequestIsFinalized, "Request should not be Finalized");
 
         vm.prank(alice);
@@ -97,7 +97,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         WithdrawRequestNFT.WithdrawRequest memory request = withdrawRequestNFTInstance.getRequest(requestId);
         assertEq(request.amountOfEEth, 1 ether, "Amount of eEth should match");
 
-        bool requestIsFinalized = withdrawRequestNFTInstance.requestIsFinalized(requestId);
+        bool requestIsFinalized = withdrawRequestNFTInstance.isFinalized(requestId);
         assertTrue(requestIsFinalized, "Request should be finalized");
     }
 
@@ -117,7 +117,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         vm.prank(bob);
         uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
-        bool requestIsFinalized = withdrawRequestNFTInstance.requestIsFinalized(requestId);
+        bool requestIsFinalized = withdrawRequestNFTInstance.isFinalized(requestId);
         assertFalse(requestIsFinalized, "Request should not be finalized");
 
         WithdrawRequestNFT.WithdrawRequest memory request = withdrawRequestNFTInstance.getRequest(requestId);
@@ -142,7 +142,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         vm.prank(bob);
         uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
-        bool requestIsFinalized = withdrawRequestNFTInstance.requestIsFinalized(requestId);
+        bool requestIsFinalized = withdrawRequestNFTInstance.isFinalized(requestId);
         assertFalse(requestIsFinalized, "Request should not be finalized");
 
         vm.expectRevert("Request is not finalized");

@@ -1342,7 +1342,7 @@ contract MembershipManagerTest is TestSetup {
             withdrawRequestNFTInstance.claimWithdraw(requestId);
 
             assertLe(address(actor).balance, expectedBalanceAfterWithdrawal);
-            assertGe(address(actor).balance, expectedBalanceAfterWithdrawal - 5); // rounding errors
+            assertGe(address(actor).balance, expectedBalanceAfterWithdrawal - 3); // rounding errors
 
             totalActorsBalance += address(actor).balance;
         }
