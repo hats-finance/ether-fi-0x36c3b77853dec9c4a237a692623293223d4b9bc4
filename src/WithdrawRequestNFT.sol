@@ -66,10 +66,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
         // transfer eth to requester
         address recipient = ownerOf(tokenId);
-        uint256 roundedBalance = eETH.balanceOf(address(this));
-        // allow for rounding errors
-        uint amount = (roundedBalance < amountToTransfer && roundedBalance > (amountToTransfer - 10)) ? roundedBalance : amountToTransfer;
-        liquidityPool.withdraw(recipient, amount);
+        liquidityPool.withdraw(recipient, amountToTransfer);
         _burn(tokenId);
         delete _requests[tokenId];
     }

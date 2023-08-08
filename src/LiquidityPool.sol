@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
@@ -130,7 +129,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
 
-        uint256 share = sharesForWithdrawalAmount(amount);
+        uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
 
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
@@ -143,7 +142,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
         require(recipient != address(0), "Cannot withdraw to zero address");
 
-        uint256 share = sharesForWithdrawalAmount(amount);
+        uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
 
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
