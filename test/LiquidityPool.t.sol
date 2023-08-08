@@ -634,4 +634,36 @@ contract LiquidityPoolTest is TestSetup {
     
         return newValidators;
     }
+
+    function test_SubmitBnftRequest() public {
+        vm.startPrank(alice);
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.addToWhitelist(address(greg));
+        vm.stopPrank();
+
+        hoax(bob);
+        vm.expectRevert("User is not whitelisted");
+        liquidityPoolInstance.submitBnftRequest{value: 8 ether}(4);
+        
+        startHoax(greg);
+        vm.expectRevert("Above max slot size");
+        liquidityPoolInstance.submitBnftRequest{value: 10 ether}(5);
+
+        vm.expectRevert("Insufficient value");
+        liquidityPoolInstance.submitBnftRequest{value: 7 ether}(4);
+
+        liquidityPoolInstance.submitBnftRequest{value: 8 ether}(4);
+
+        vm.expectRevert("User already has request");
+        liquidityPoolInstance.submitBnftRequest{value: 8 ether}(4);
+
+        (uint128 Id, uint64 numberOfSlots, uint64 numberOfDeposits, address owner) = liquidityPoolInstance.requestQueue(1);
+        assertEq(Id, 0);
+        assertEq(numberOfSlots, 4);
+        assertEq(numberOfDeposits, 0);
+        assertEq(owner, address(greg));
+        assertEq(liquidityPoolInstance.numberOfRequests(), 1);
+        assertEq(address(liquidityPoolInstance).balance, 8 ether);
+        assertEq(liquidityPoolInstance.hasActiveRequest(address(greg)), true);
+    }
 }

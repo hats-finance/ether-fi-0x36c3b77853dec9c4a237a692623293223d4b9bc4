@@ -40,12 +40,32 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     address public bNftTreasury;
 
+    mapping(uint128 => BnftRequest) public requestQueue;
+    mapping(address => bool) public hasActiveRequest;
+    mapping(address => bool) public whitelistedAddresses;
+
+    uint128 public numberOfRequests;
+    uint64 public first;
+    uint64 public last;
+    uint128 public maxRequestSize;
+
+    struct BnftRequest {
+        uint128 Id;
+        uint8 numberOfSlots;
+        uint8 numberOfDeposits;
+        address owner;
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, address recipient, uint256 amount);
+    event AddedToWhitelist(address userAddress);
+    event RemovedFromWhitelist(address userAddress);
+    event RequestQueued(uint128 Id, address owner);
+    event RequestDequeued(uint128 Id, address owner);
 
     error InvalidAmount();
 
@@ -67,6 +87,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function initialize(address _regulationsManager) external initializer {
         require(_regulationsManager != address(0), "No zero addresses");
+
+        first = 1;
 
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -182,6 +204,24 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(sent, "Failed to send Ether");
     }
 
+    function submitBnftRequest(uint8 _size) public payable {
+        require(_size <= maxRequestSize, "Above max slot size");
+        require(msg.value == _size * 2 ether, "Insufficient value");
+        require(hasActiveRequest[msg.sender] == false, "User already has request");
+        require(whitelistedAddresses[msg.sender] == true, "User is not whitelisted");
+
+        BnftRequest memory request = BnftRequest({
+            Id: numberOfRequests,
+            numberOfSlots: _size,
+            numberOfDeposits: 0,
+            owner: msg.sender
+        });
+
+        hasActiveRequest[msg.sender] = true;
+        numberOfRequests++;
+        enqueue(request);
+    }
+
     /// @notice Send the exit requests as the T-NFT holder
     function sendExitRequests(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -265,7 +305,29 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(_newTreasury != address(0), "Cannot be address zero");
         bNftTreasury = _newTreasury;
     }
-    
+
+    function setMaxBnftSlotSize(uint128 _newSize) external onlyAdmin {
+        maxRequestSize = _newSize;
+    }
+
+    /// @notice Adds an address to the whitelist
+    /// @param _address Address of the user to add
+    function addToWhitelist(address _address) external onlyAdmin {
+        require(whitelistedAddresses[_address] == false, "User already whitelisted");
+        whitelistedAddresses[_address] = true;
+
+        emit AddedToWhitelist(_address);
+    }
+
+    /// @notice Removed an address from the whitelist
+    /// @param _address Address of the user to remove
+    function removeFromWhitelist(address _address) external onlyAdmin {
+        require(whitelistedAddresses[_address] == true, "User not whitelisted");
+        whitelistedAddresses[_address] = false;
+
+        emit RemovedFromWhitelist(_address);
+    }
+
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -281,6 +343,24 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             return _depositAmount;
         }
         return (_depositAmount * eETH.totalShares()) / totalPooledEther;
+    }
+
+    function enqueue(BnftRequest memory data) internal {
+        last += 1;
+        requestQueue[last] = data;
+
+        emit RequestQueued(data.Id, data.owner);
+    }
+
+    function dequeue() internal returns (BnftRequest memory data) {
+        require(last >= first);  // non-empty requestQueue
+
+        data = requestQueue[first];
+
+        delete requestQueue[first];
+        first += 1;
+
+        emit RequestDequeued(data.Id, data.owner);
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
