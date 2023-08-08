@@ -192,11 +192,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error InsufficientLiquidity();
     error RequireTokenUnlocked();
 
-    /// @notice Unwraps membership points tokens for ETH.
-    /// @dev This function allows users to unwrap their membership tokens and receive ETH in return.
-    /// @param _tokenId The ID of the membership NFT to unwrap.
-    /// @param _amount The amount of membership tokens to unwrap.
-    function unwrapForEth(uint256 _tokenId, uint256 _amount) external whenNotPaused {
+    /// @notice Requests exchange of membership points tokens for ETH.
+    /// @dev This function allows users to request exchange of membership tokens to ETH.
+    /// @param _tokenId The ID of the membership NFT.
+    /// @param _amount The amount of membership tokens to exchange.
+    function requestWithdraw(uint256 _tokenId, uint256 _amount) external whenNotPaused returns (uint256) {
         _requireTokenOwner(_tokenId);
         if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
 
@@ -213,14 +213,17 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
 
-        liquidityPool.withdraw(address(msg.sender), _amount);
+        // send EETH to recipient before requesting withdraw?
+        eETH.approve(address(liquidityPool), _amount);
+        uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(address(msg.sender), _amount);
 
         _emitNftUpdateEvent(_tokenId);
+        return withdrawTokenId;
     }
 
-    /// @notice withdraw the entire balance of this NFT and burn it
-    /// @param _tokenId The ID of the membership NFT to unwrap
-    function withdrawAndBurnForEth(uint256 _tokenId) public whenNotPaused {
+    /// @notice request to withdraw the entire balance of this NFT and burn it
+    /// @param _tokenId The ID of the membership NFT to liquidate
+    function requestWithdrawAndBurn(uint256 _tokenId) external whenNotPaused returns (uint256) {
         _requireTokenOwner(_tokenId);
 
         // Claim all staking rewards before burn
@@ -230,10 +233,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
         if (totalBalance < feeAmount) revert InsufficientBalance();
 
-        liquidityPool.withdraw(address(this), totalBalance);
-        (bool sent, ) = address(msg.sender).call{value: totalBalance - feeAmount}("");
-        if (!sent) revert InvalidWithdraw();
+        eETH.approve(address(liquidityPool), totalBalance);
+        if (feeAmount > 0) liquidityPool.withdraw(address(this), feeAmount);
+        uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(msg.sender, totalBalance - feeAmount);
         _emitNftUpdateEvent(_tokenId);
+        return withdrawTokenId;
     }
 
     /// @notice Claims {points, staking rewards} and update the tier, if needed.

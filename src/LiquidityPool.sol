@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
@@ -16,6 +15,7 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
+import "./interfaces/IWithdrawRequestNFT.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -39,6 +39,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
 
     address public bNftTreasury;
+    IWithdrawRequestNFT public withdrawRequestNFT;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -102,7 +103,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to the recipient
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
-    function withdraw(address _recipient, uint256 _amount) external {
+    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
@@ -117,6 +118,37 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(sent, "Failed to send Ether");
 
         emit Withdraw(msg.sender, _recipient, _amount);
+    }
+
+    /// @notice request withdraw from pool and receive a WithdrawRequestNFT
+    /// @dev Transfers the amount of eETH from msg.senders account to the WithdrawRequestNFT contract & mints an NFT to the msg.sender
+    /// @param recipient the recipient who will be issued the NFT
+    /// @param amount the requested amount to withdraw from contract
+    function requestWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen returns (uint256) {
+        require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
+        require(recipient != address(0), "Cannot withdraw to zero address");
+        require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
+
+        uint256 share = sharesForAmount(amount);
+        if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
+
+        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
+        // transfer shares to WithdrawRequestNFT contract from this contract
+        eETH.transferFrom(recipient, address(withdrawRequestNFT), amount);
+        return requestId;
+    }
+
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen returns (uint256) {
+        require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
+        require(recipient != address(0), "Cannot withdraw to zero address");
+
+        uint256 share = sharesForAmount(amount);
+        if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
+
+        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
+        // transfer shares to WithdrawRequestNFT contract
+        eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
+        return requestId;
     }
 
     /*
@@ -254,6 +286,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         tNft = ITNFT(_address);
     }
 
+    function setWithdrawRequestNFT(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        withdrawRequestNFT = IWithdrawRequestNFT(_address);
+    }
+
     /// @notice Updates the address of the admin
     /// @param _newAdmin the new address to set as admin
     function updateAdmin(address _newAdmin) external onlyOwner {
@@ -343,6 +380,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Caller is not the admin");
+        _;
+    }
+
+    modifier onlyWithdrawRequestOrMembershipManager() {
+        require(msg.sender == address(withdrawRequestNFT) || msg.sender == address(membershipManager), "Caller is not the WithdrawRequestNFT or MembershipManager");
         _;
     }
 }

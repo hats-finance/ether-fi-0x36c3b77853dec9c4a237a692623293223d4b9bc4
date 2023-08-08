@@ -28,7 +28,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
 
         vm.expectRevert(LiquidityPool.InvalidAmount.selector);
-        liquidityPoolInstance.withdraw(alice, 0);
+        liquidityPoolInstance.requestWithdraw(alice, 0);
 
         vm.stopPrank();
     }
@@ -99,13 +99,24 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        liquidityPoolInstance.withdraw(alice, 2 ether);
+        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
+        uint256 aliceReqId = liquidityPoolInstance.requestWithdraw(alice, 2 ether);
+        withdrawRequestNFTInstance.finalizeRequests(aliceReqId);
+        withdrawRequestNFTInstance.claimWithdraw(aliceReqId);
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(alice.balance, 2 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        liquidityPoolInstance.withdraw(bob, 2 ether);
+        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
+        uint256 bobReqId = liquidityPoolInstance.requestWithdraw(bob, 2 ether);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        withdrawRequestNFTInstance.finalizeRequests(bobReqId);
+
+        vm.startPrank(bob);
+        withdrawRequestNFTInstance.claimWithdraw(bobReqId);
         assertEq(eETHInstance.balanceOf(bob), 0);
         assertEq(bob.balance, 3 ether);
         vm.stopPrank();
@@ -119,8 +130,9 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         startHoax(alice);
+        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
         vm.expectRevert("Not enough eETH");
-        liquidityPoolInstance.withdraw(alice, 2 ether);
+        liquidityPoolInstance.requestWithdraw(alice, 2 ether);
     }
 
     function test_WithdrawFailsNotInitializedToken() public {
@@ -578,8 +590,15 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(eETHInstance.balanceOf(bob), eEthTVL);
 
         vm.startPrank(bob);
-        liquidityPoolInstance.withdraw(msg.sender, eEthTVL);
+        eETHInstance.approve(address(liquidityPoolInstance), eEthTVL);
+        uint256 bobRequestId = liquidityPoolInstance.requestWithdraw(bob, eEthTVL);
         vm.stopPrank();
+
+        vm.prank(alice);
+        withdrawRequestNFTInstance.finalizeRequests(bobRequestId);
+
+        vm.prank(bob);
+        withdrawRequestNFTInstance.claimWithdraw(bobRequestId);
 
         assertEq(address(liquidityPoolInstance).balance, 0);
         assertEq(eETHInstance.totalSupply(), 0);
