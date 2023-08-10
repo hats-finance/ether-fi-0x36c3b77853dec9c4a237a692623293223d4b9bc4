@@ -32,6 +32,9 @@ import "./Attacker.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 
+import "../src/MembershipManagerV0.sol";
+
+
 
 contract TestSetup is Test {
     uint256 constant public kwei = 10 ** 3;
@@ -96,8 +99,11 @@ contract TestSetup is Test {
     WeETH public weEthImplementation;
     WeETH public weEthInstance;
 
-    MembershipManager public membershipManagerImplementation;
-    MembershipManager public membershipManagerInstance;
+    MembershipManagerV0 public membershipManagerImplementation;
+    MembershipManagerV0 public membershipManagerInstance;
+
+    MembershipManager public membershipManagerV1Implementation;
+    MembershipManager public membershipManagerV1Instance;
 
     MembershipNFT public membershipNftImplementation;
     MembershipNFT public membershipNftInstance;
@@ -300,9 +306,9 @@ contract TestSetup is Test {
 
         liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
         
-        membershipManagerImplementation = new MembershipManager();
+        membershipManagerImplementation = new MembershipManagerV0();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation), "");
-        membershipManagerInstance = MembershipManager(payable(membershipManagerProxy));
+        membershipManagerInstance = MembershipManagerV0(payable(membershipManagerProxy));
         membershipManagerInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance), address(treasuryInstance), address(protocolRevenueManagerInstance));
         membershipManagerInstance.updateAdmin(alice);
 
