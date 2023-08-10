@@ -1405,4 +1405,35 @@ contract MembershipManagerTest is TestSetup {
         }
         
     }
+
+    function test_update_tier() public {
+        vm.startPrank(alice);
+        membershipManagerInstance.updateTier(0, 0, 10);
+        membershipManagerInstance.updateTier(1, 1, 15);
+        membershipManagerInstance.updateTier(2, 2, 20);
+        membershipManagerInstance.updateTier(3, 3, 25);
+        membershipManagerInstance.updateTier(4, 4, 30);
+        vm.stopPrank();
+
+        vm.deal(alice, 5 ether);
+        uint256[] memory tokens = new uint256[](5);
+        vm.startPrank(alice);
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokens[i] = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+            membershipManagerInstance.setPoints(tokens[i], 0, uint40(i));
+            assertEq(membershipNftInstance.tierOf(tokens[i]), uint40(i));
+        }
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        membershipManagerInstance.rebase(5 ether + 1 ether, 5 ether);
+        vm.stopPrank();
+        
+        assertEq(membershipNftInstance.valueOf(tokens[0]), 1 ether + 1 ether * uint256(10) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[1]), 1 ether + 1 ether * uint256(15) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[2]), 1 ether + 1 ether * uint256(20) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[3]), 1 ether + 1 ether * uint256(25) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[4]), 1 ether + 1 ether * uint256(30) / uint256(100));
+    }
 }
