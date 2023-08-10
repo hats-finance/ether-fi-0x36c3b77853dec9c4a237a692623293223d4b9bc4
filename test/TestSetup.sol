@@ -18,7 +18,7 @@ import "../src/EtherFiNode.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
 import "../src/WeETH.sol";
-import "../src/MembershipManager.sol";
+import "../src/MembershipManagerV1.sol";
 import "../src/MembershipNFT.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/TVLOracle.sol";
@@ -32,7 +32,7 @@ import "./Attacker.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 
-import "../src/MembershipManagerV0.sol";
+import "../src/MembershipManager.sol";
 
 
 
@@ -99,8 +99,11 @@ contract TestSetup is Test {
     WeETH public weEthImplementation;
     WeETH public weEthInstance;
 
-    MembershipManagerV0 public membershipManagerImplementation;
-    MembershipManagerV0 public membershipManagerInstance;
+    MembershipManager public membershipManagerImplementation;
+    MembershipManager public membershipManagerInstance;
+
+    MembershipManagerV1 public membershipManagerV1Implementation;
+    MembershipManagerV1 public membershipManagerV1Instance;
 
     MembershipNFT public membershipNftImplementation;
     MembershipNFT public membershipNftInstance;
@@ -303,9 +306,9 @@ contract TestSetup is Test {
 
         liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
         
-        membershipManagerImplementation = new MembershipManagerV0();
+        membershipManagerImplementation = new MembershipManager();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation), "");
-        membershipManagerInstance = MembershipManagerV0(payable(membershipManagerProxy));
+        membershipManagerInstance = MembershipManager(payable(membershipManagerProxy));
         membershipManagerInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance), address(treasuryInstance), address(protocolRevenueManagerInstance));
         membershipManagerInstance.updateAdmin(alice);
 
