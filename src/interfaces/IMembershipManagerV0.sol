@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-interface IMembershipManagerV1 {
+interface IMembershipManagerV0 {
 
     struct TokenDeposit {
         uint128 amounts;

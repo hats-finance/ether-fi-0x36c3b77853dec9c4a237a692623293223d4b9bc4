@@ -7,14 +7,14 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 
 import "./interfaces/IeETH.sol";
-import "./interfaces/IMembershipManagerV1.sol";
+import "./interfaces/IMembershipManagerV0.sol";
 import "./interfaces/IMembershipNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 
 import "./libraries/GlobalIndexLibrary.sol";
 
 
-contract MembershipManagerV1 is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable, IMembershipManagerV1 {
+contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable, IMembershipManagerV0 {
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------

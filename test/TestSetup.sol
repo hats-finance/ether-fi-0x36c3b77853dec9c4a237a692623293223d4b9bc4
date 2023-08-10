@@ -18,7 +18,7 @@ import "../src/EtherFiNode.sol";
 import "../src/LiquidityPool.sol";
 import "../src/EETH.sol";
 import "../src/WeETH.sol";
-import "../src/MembershipManagerV1.sol";
+import "../src/MembershipManager.sol";
 import "../src/MembershipNFT.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/TVLOracle.sol";
@@ -32,7 +32,7 @@ import "./Attacker.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 
-import "../src/MembershipManager.sol";
+import "../src/MembershipManagerV0.sol";
 
 
 
@@ -99,11 +99,11 @@ contract TestSetup is Test {
     WeETH public weEthImplementation;
     WeETH public weEthInstance;
 
-    MembershipManager public membershipManagerImplementation;
-    MembershipManager public membershipManagerInstance;
+    MembershipManagerV0 public membershipManagerImplementation;
+    MembershipManagerV0 public membershipManagerInstance;
 
-    MembershipManagerV1 public membershipManagerV1Implementation;
-    MembershipManagerV1 public membershipManagerV1Instance;
+    MembershipManager public membershipManagerV1Implementation;
+    MembershipManager public membershipManagerV1Instance;
 
     MembershipNFT public membershipNftImplementation;
     MembershipNFT public membershipNftInstance;
@@ -306,9 +306,9 @@ contract TestSetup is Test {
 
         liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
         
-        membershipManagerImplementation = new MembershipManager();
+        membershipManagerImplementation = new MembershipManagerV0();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation), "");
-        membershipManagerInstance = MembershipManager(payable(membershipManagerProxy));
+        membershipManagerInstance = MembershipManagerV0(payable(membershipManagerProxy));
         membershipManagerInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance), address(treasuryInstance), address(protocolRevenueManagerInstance));
         membershipManagerInstance.updateAdmin(alice);
 
