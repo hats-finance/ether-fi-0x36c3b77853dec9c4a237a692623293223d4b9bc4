@@ -635,26 +635,107 @@ contract LiquidityPoolTest is TestSetup {
         return newValidators;
     }
 
-    function test_Math() public {
-        
-        for (uint i = 1; i <= 100; i++) {
-            address actor = vm.addr(i);
-            vm.prank(actor);
-            liquidityPoolInstance.addBnftHolder();
-        }
+    function test_DutyForWeek() public {
 
-        console.log(liquidityPoolInstance.bnftHolders(2));
-
-        vm.deal(alice, 2000 ether);
         vm.startPrank(alice);
+        liquidityPoolInstance.addToWhitelist(alice);
+        liquidityPoolInstance.addToWhitelist(greg);
+        liquidityPoolInstance.addToWhitelist(bob);
+        liquidityPoolInstance.addToWhitelist(owner);
+        liquidityPoolInstance.addToWhitelist(shonee);
+        liquidityPoolInstance.addToWhitelist(dan);
+        liquidityPoolInstance.addToWhitelist(elvis);
+        liquidityPoolInstance.addToWhitelist(henry);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(greg);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(bob);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(owner);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(shonee);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(dan);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(elvis);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(henry);
+        liquidityPoolInstance.addBnftHolder();
+
+        vm.deal(alice, 100000 ether);
+        vm.startPrank(alice);
+        vm.warp(400);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.setMaxBnftSlotSize(4);
-        liquidityPoolInstance.deposit{value: 200 ether}(address(alice), aliceProof);
-        liquidityPoolInstance.assignWeeklyBnftHolders();
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
 
-        console.log(liquidityPoolInstance.numberOfValidatorsToSpawn());
-        console.log(liquidityPoolInstance.numberOfValidatorsPerWeeklyHolder(0));
-        console.log(liquidityPoolInstance.numberOfValidatorsPerWeeklyHolder(1));
+        console.log("First Index:", firstIndex);
+        console.log("Last Index:", lastIndex);
+        console.log("Last index Num Of Val:", lastIndexNumOfValidators);
 
+        vm.warp(641616845);
+        liquidityPoolInstance.deposit{value: 630 ether}(address(alice), aliceProof);
+        (firstIndex, lastIndex, lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+
+        console.log("First Index:", firstIndex);
+        console.log("Last Index:", lastIndex);
+        console.log("Last index Num Of Val:", lastIndexNumOfValidators);
+    }
+
+    function test_DepositAsBnftHolder() public {
+        vm.startPrank(alice);
+        liquidityPoolInstance.addToWhitelist(alice);
+        liquidityPoolInstance.addToWhitelist(greg);
+        liquidityPoolInstance.addToWhitelist(bob);
+        liquidityPoolInstance.addToWhitelist(owner);
+        liquidityPoolInstance.addToWhitelist(shonee);
+        liquidityPoolInstance.addToWhitelist(dan);
+        liquidityPoolInstance.addToWhitelist(elvis);
+        liquidityPoolInstance.addToWhitelist(henry);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(greg);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(bob);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(owner);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(shonee);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(dan);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(elvis);
+        liquidityPoolInstance.addBnftHolder();
+        vm.prank(henry);
+        liquidityPoolInstance.addBnftHolder();
+
+        vm.deal(alice, 100000 ether);
+        vm.startPrank(alice);
+        vm.warp(400);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+
+        vm.stopPrank();
+        vm.deal(bob, 10 ether);
+        vm.prank(bob);
+        vm.expectRevert("Incorrect holder");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(3);
+
+        vm.deal(bob, 10 ether);
+        vm.prank(bob);
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(2);
+
+        vm.deal(owner, 10 ether);
+        vm.prank(owner);
+        vm.expectRevert("Incorrect value");
+        liquidityPoolInstance.depositAsBnftHolder{value: 6 ether}(3);
     }
 }

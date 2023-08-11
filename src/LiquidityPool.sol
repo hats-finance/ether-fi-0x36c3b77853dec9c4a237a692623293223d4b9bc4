@@ -42,8 +42,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     address public bNftTreasury;
 
     address[] public bnftHolders;
-    address[] public weeklyHolders;
-    uint256[] public numberOfValidatorsPerWeeklyHolder;
     mapping(address => bool) public whitelistedAddresses;
     uint128 public max_validators_per_owner;
     uint128 public number_seconds_per_week;
@@ -197,42 +195,50 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function addBnftHolder() public payable {
-        //require(whitelistedAddresses[msg.sender] == true, "User is not whitelisted");
+        require(whitelistedAddresses[msg.sender] == true, "User is not whitelisted");
 
         bnftHolders.push(msg.sender);
     }
 
-    function assignWeeklyBnftHolders() public onlyAdmin {
-        address[] memory localBnftHoldersArray = bnftHolders;
+    //User needs to know their _index, can get this from FE. Just call the array and run a simple loop
+    function depositAsBnftHolder(uint256 _index) external payable {
+        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
+        require(_index >= firstIndex && _index <= lastIndex, "Not assigned");
+        require(msg.sender == bnftHolders[_index], "Incorrect holder");
 
-        uint256 numberOfActiveSlots = bnftHolders.length;
-
-        uint256 index = uint256(keccak256(abi.encodePacked(block.timestamp / number_seconds_per_week))) % numberOfActiveSlots;
-        uint256 numValidatorsToCreate = numberOfValidatorsToSpawn();
-
-        address[] memory chosenBnftPlayers = new address[](7);
-        uint256[] memory numberOfValidators = new uint256[](7);
-
-        uint256 x = 0;
-
-        while (numValidatorsToCreate > 0) {
-            console.log("X value:", x);
-            console.log("Number of validators left to create: ", numValidatorsToCreate);
-
-            chosenBnftPlayers[x] = localBnftHoldersArray[index];
-            numberOfValidators[x] = _min(numValidatorsToCreate, max_validators_per_owner);
-
-            numValidatorsToCreate -= _min(numValidatorsToCreate, max_validators_per_owner);
-            index = (index + 1) % numberOfActiveSlots;
-            x++;
+        uint256 numberOfValidatorsToSpin = 4;
+        if(_index == lastIndex) {
+            numberOfValidatorsToSpin = lastIndexNumOfValidators;
         }
 
-        weeklyHolders = chosenBnftPlayers;
-        numberOfValidatorsPerWeeklyHolder = numberOfValidators;
+        require(msg.value == numberOfValidatorsToSpin * 2 ether, "Incorrect value");
+
+        //TODO: Call deposit on staking manager
     }
 
-    function numberOfValidatorsToSpawn() public view returns (uint256) {
-        return getTotalPooledEther() / 30 ether;
+    function dutyForWeek() public returns (uint256, uint128, uint128) {
+        uint128 lastIndex;
+        uint128 lastIndexNumberOfValidators = 4;
+
+        address[] memory localBnftHoldersArray = bnftHolders;
+
+        uint256 index = _getSlotIndex(localBnftHoldersArray);
+        uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
+
+        if(numValidatorsToCreate % max_validators_per_owner == 0) {
+            uint128 size = numValidatorsToCreate / max_validators_per_owner;
+            lastIndex = _fetchLastIndex(size, index, localBnftHoldersArray);
+        } else {
+            uint128 size = (numValidatorsToCreate / max_validators_per_owner) + 1;
+            lastIndex = _fetchLastIndex(size, index, localBnftHoldersArray);
+            lastIndexNumberOfValidators = numValidatorsToCreate % max_validators_per_owner;
+        }
+
+        return (index, lastIndex, lastIndexNumberOfValidators);
+    }
+
+    function numberOfValidatorsToSpawn() public view returns (uint128) {
+        return uint128(getTotalPooledEther() / 30 ether);
     }
 
     /// @notice Send the exit requests as the T-NFT holder
@@ -344,6 +350,19 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function _getSlotIndex(address[] memory _localBnftHoldersArray) internal view returns (uint256) {
+        uint256 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
+        return uint256(keccak256(abi.encodePacked(block.timestamp / number_seconds_per_week))) % numberOfActiveSlots;
+    }
+
+    function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal view returns (uint128 lastIndex){
+        lastIndex = uint128(_index) + _size - 1;
+        if(lastIndex > _localBnftHoldersArray.length) {
+            uint128 diff = lastIndex - uint128(_localBnftHoldersArray.length);
+            lastIndex = uint128(0) + diff;
+        }
+    }
 
     function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
         stakingManager.verifyWhitelisted(_user, _merkleProof);
