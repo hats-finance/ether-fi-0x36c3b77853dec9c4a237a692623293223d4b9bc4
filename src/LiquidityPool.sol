@@ -54,8 +54,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event Withdraw(address indexed sender, address recipient, uint256 amount);
     event AddedToWhitelist(address userAddress);
     event RemovedFromWhitelist(address userAddress);
-    event RequestQueued(uint128 Id, address owner);
-    event RequestDequeued(uint128 Id, address owner);
 
     error InvalidAmount();
 
