@@ -206,7 +206,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         bnftHolders.push(msg.sender);
 
-        if(holdersUpdate.timestamp < ) {
+        if(holdersUpdate.timestamp < uint128(_getCurrentWeekStartTimestamp())) {
             holdersUpdate.startOfSlotNumOwners = uint128(bnftHolders.length);
         }
         holdersUpdate.timestamp = uint128(block.timestamp);
@@ -250,6 +250,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return (index, lastIndex, lastIndexNumberOfValidators);
     }
 
+    // Just using for testing
+    // TODO remove and use oracle
     function numberOfValidatorsToSpawn() public view returns (uint128) {
         return uint128(getTotalPooledEther() / 30 ether);
     }
@@ -364,29 +366,29 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _getCurrentWeekStartTimestamp() internal returns (uint128) {
+    function _getCurrentWeekStartTimestamp() internal returns (uint256) {
         return block.timestamp - (block.timestamp % 604800);
     }
 
     function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
         if(_lastIndex < _firstIndex) {
-            require((_index >= 0 && _index <= _lastIndex)  || (_index >= _firstIndex && _index <= bnftHolders.length), "Not assigned");
+            require(_index <= _lastIndex || _index >= _firstIndex, "Not assigned");
         }else {
             require(_index >= _firstIndex && _index <= _lastIndex, "Not assigned");
         }
     }
 
-    function _getSlotIndex(address[] memory _localBnftHoldersArray) internal view returns (uint256) {
+    function _getSlotIndex(address[] memory _localBnftHoldersArray) internal returns (uint256) {
         uint256 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
-        if(holdersUpdate.timestamp > 0) {
+        if(holdersUpdate.timestamp > uint128(_getCurrentWeekStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
         }
         return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots;
     }
 
-    function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal view returns (uint128 lastIndex){
+    function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
         uint128 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
-        if(holdersUpdate.timestamp > 0) {
+        if(holdersUpdate.timestamp > uint128(_getCurrentWeekStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
         }
         //uint128 holdersArrayLength = uint128(_localBnftHoldersArray.length);
