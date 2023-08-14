@@ -206,7 +206,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         bnftHolders.push(msg.sender);
 
-        if(holdersUpdate.timestamp < uint128(_getCurrentWeekStartTimestamp())) {
+        if(holdersUpdate.timestamp < uint128(_getCurrentSchedulingStartTimestamp())) {
             holdersUpdate.startOfSlotNumOwners = uint128(bnftHolders.length);
         }
         holdersUpdate.timestamp = uint128(block.timestamp);
@@ -380,7 +380,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function _getSlotIndex(address[] memory _localBnftHoldersArray) internal returns (uint256) {
         uint256 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
-        if(holdersUpdate.timestamp > uint128(_getCurrentWeekStartTimestamp())) {
+        if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
         }
         return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots;
@@ -388,7 +388,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
         uint128 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
-        if(holdersUpdate.timestamp > uint128(_getCurrentWeekStartTimestamp())) {
+        if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
         }
         //uint128 holdersArrayLength = uint128(_localBnftHoldersArray.length);
