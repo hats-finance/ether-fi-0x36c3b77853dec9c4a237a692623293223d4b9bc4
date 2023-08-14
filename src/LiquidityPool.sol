@@ -366,8 +366,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _getCurrentWeekStartTimestamp() internal returns (uint256) {
-        return block.timestamp - (block.timestamp % 604800);
+    function _getCurrentSchedulingStartTimestamp() internal returns (uint256) {
+        return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
     function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
