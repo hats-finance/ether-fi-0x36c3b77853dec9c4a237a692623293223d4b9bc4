@@ -717,30 +717,30 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(alice, 100000 ether);
         vm.startPrank(alice);
-        vm.warp(400);
+        vm.warp(13431561615);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.setMaxBnftSlotSize(4);
         liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+        (uint256 firstIndex, uint128 lastIndex,) = liquidityPoolInstance.dutyForWeek();
 
         vm.stopPrank();
         vm.deal(bob, 10 ether);
         vm.prank(bob);
         vm.expectRevert("Incorrect holder");
-        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(3);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
 
         vm.deal(bob, 10 ether);
         vm.prank(bob);
         vm.expectRevert("Not assigned");
         liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(2);
 
-        vm.deal(owner, 10 ether);
-        vm.prank(owner);
+        vm.deal(henry, 10 ether);
+        vm.prank(henry);
         vm.expectRevert("Incorrect value");
-        liquidityPoolInstance.depositAsBnftHolder{value: 6 ether}(3);
+        liquidityPoolInstance.depositAsBnftHolder{value: 6 ether}(7);
 
         vm.startPrank(alice);
-        vm.warp(400);
-        liquidityPoolInstance.deposit{value: 700 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 300 ether}(address(alice), aliceProof);
         liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(0);
         vm.stopPrank();
 
@@ -748,13 +748,21 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(henry);
         liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
 
-        vm.deal(greg, 10 ether);
-        vm.prank(greg);
-        liquidityPoolInstance.depositAsBnftHolder{value: 6 ether}(1);
-
+        vm.deal(bob, 10 ether);
         vm.prank(bob);
+        liquidityPoolInstance.depositAsBnftHolder{value: 4 ether}(2);
+
+        vm.prank(alice);
         vm.expectRevert("Not assigned");
-        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(2);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(3);
+
+        vm.prank(shonee);
+        liquidityPoolInstance.addBnftHolder();
+
+        vm.prank(shonee);
+        vm.deal(shonee, 10 ether);
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
     }
 
     function test_DepositAsBnftHolderWithLargeSet() public {
