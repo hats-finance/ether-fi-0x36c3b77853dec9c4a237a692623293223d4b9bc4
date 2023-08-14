@@ -148,6 +148,7 @@ contract TestSetup is Test {
     address shonee = vm.addr(1200);
 
     address[] public actors;
+    address[] public bnftHoldersArray;
     uint256[] public whitelistIndices;
 
     bytes aliceIPFSHash = "AliceIPFS";

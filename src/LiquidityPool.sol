@@ -200,7 +200,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //User needs to know their _index, can get this from FE. Just call the array and run a simple loop
     function depositAsBnftHolder(uint256 _index) external payable {
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
-        require(_index >= firstIndex && _index <= lastIndex, "Not assigned");
+
+        if(lastIndex < firstIndex) {
+            require((_index >= 0 && _index <= lastIndex)  || (_index >= firstIndex && _index <= bnftHolders.length), "Not assigned");
+        }else {
+            require(_index >= firstIndex && _index <= lastIndex, "Not assigned");
+        }
+
         require(msg.sender == bnftHolders[_index], "Incorrect holder");
 
         uint256 numberOfValidatorsToSpin = max_validators_per_owner;
@@ -356,7 +362,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal view returns (uint128 lastIndex){
         uint128 holdersArrayLength = uint128(_localBnftHoldersArray.length);
         uint128 tempLastIndex = uint128(_index) + _size - 1;
-        
+
         lastIndex = (tempLastIndex + holdersArrayLength) % holdersArrayLength;
     }
 

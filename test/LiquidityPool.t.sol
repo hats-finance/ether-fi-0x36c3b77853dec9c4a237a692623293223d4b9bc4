@@ -737,5 +737,55 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(owner);
         vm.expectRevert("Incorrect value");
         liquidityPoolInstance.depositAsBnftHolder{value: 6 ether}(3);
+
+        vm.startPrank(alice);
+        vm.warp(400);
+        liquidityPoolInstance.deposit{value: 700 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(0);
+        vm.stopPrank();
+
+        vm.deal(henry, 10 ether);
+        vm.prank(henry);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
+
+        vm.deal(greg, 10 ether);
+        vm.prank(greg);
+        liquidityPoolInstance.depositAsBnftHolder{value: 6 ether}(1);
+
+        vm.prank(bob);
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(2);
+    }
+
+    function test_DepositAsBnftHolderWithLargeSet() public {
+        for (uint i = 1; i <= 1000; i++) {
+            address actor = vm.addr(i);
+            bnftHoldersArray.push(actor);
+            vm.deal(actor, 1000 ether);
+            vm.prank(alice);
+            liquidityPoolInstance.addToWhitelist(actor);
+            vm.prank(actor);
+            liquidityPoolInstance.addBnftHolder();
+        }
+
+        vm.deal(alice, 100000 ether);
+        vm.startPrank(alice);
+        vm.warp(6161);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.deposit{value: 77000 ether}(address(alice), aliceProof);
+        vm.stopPrank();
+
+        vm.deal(bnftHoldersArray[962], 10 ether);
+        vm.prank(bnftHoldersArray[962]);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(962);
+
+        vm.prank(bnftHoldersArray[600]);
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(600);
+
+        vm.deal(bnftHoldersArray[588], 10 ether);
+        vm.prank(bnftHoldersArray[588]);
+        liquidityPoolInstance.depositAsBnftHolder{value: 4 ether}(588);
     }
 }
