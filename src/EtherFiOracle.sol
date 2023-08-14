@@ -16,6 +16,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint32[] approvedValidators;
         uint32[] exitedValidators;
         uint32[] slashedValidators;
+        uint32[] evictedValidators;
         uint32[] withdrawalRequestsToInvalidate;
         uint32 lastFinalizedWithdrawalRequestId;
     }
@@ -174,6 +175,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
                 _report.approvedValidators,
                 _report.exitedValidators,
                 _report.slashedValidators,
+                _report.evictedValidators,
                 _report.withdrawalRequestsToInvalidate,
                 _report.lastFinalizedWithdrawalRequestId
             )
