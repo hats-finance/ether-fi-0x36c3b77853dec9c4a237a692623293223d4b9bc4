@@ -354,11 +354,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal view returns (uint128 lastIndex){
-        lastIndex = uint128(_index) + _size - 1;
-        if(lastIndex > _localBnftHoldersArray.length) {
-            uint128 diff = lastIndex - uint128(_localBnftHoldersArray.length);
-            lastIndex = uint128(0) + diff;
-        }
+        uint128 holdersArrayLength = uint128(_localBnftHoldersArray.length);
+        uint128 tempLastIndex = uint128(_index) + _size - 1;
+        
+        lastIndex = (tempLastIndex + holdersArrayLength) % holdersArrayLength;
     }
 
     function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
