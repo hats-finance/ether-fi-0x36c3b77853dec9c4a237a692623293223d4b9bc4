@@ -45,6 +45,16 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint128 public max_validators_per_owner;
     uint128 public schedulingPeriodInSeconds;
 
+    // Necessary to preserve "statelessness" of dutyForWeek().
+    // Handles case where new users join/leave holder list during an active slot
+    struct HoldersUpdate {
+        uint128 timestamp;
+        uint128 startOfSlotNumOwners;
+    }
+    
+    HoldersUpdate holdersUpdate;
+
+
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -195,17 +205,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(whitelistedAddresses[msg.sender] == true, "User is not whitelisted");
 
         bnftHolders.push(msg.sender);
+
+        if(holdersUpdate.timestamp < ) {
+            holdersUpdate.startOfSlotNumOwners = uint128(bnftHolders.length);
+        }
+        holdersUpdate.timestamp = uint128(block.timestamp);
     }
 
     //User needs to know their _index, can get this from FE. Just call the array and run a simple loop
     function depositAsBnftHolder(uint256 _index) external payable {
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
-
-        if(lastIndex < firstIndex) {
-            require((_index >= 0 && _index <= lastIndex)  || (_index >= firstIndex && _index <= bnftHolders.length), "Not assigned");
-        }else {
-            require(_index >= firstIndex && _index <= lastIndex, "Not assigned");
-        }
+        _isAssigned(firstIndex, lastIndex, _index);
 
         require(msg.sender == bnftHolders[_index], "Incorrect holder");
 
@@ -354,16 +364,35 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
+    function _getCurrentWeekStartTimestamp() internal returns (uint128) {
+        return block.timestamp - (block.timestamp % 604800);
+    }
+
+    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
+        if(_lastIndex < _firstIndex) {
+            require((_index >= 0 && _index <= _lastIndex)  || (_index >= _firstIndex && _index <= bnftHolders.length), "Not assigned");
+        }else {
+            require(_index >= _firstIndex && _index <= _lastIndex, "Not assigned");
+        }
+    }
+
     function _getSlotIndex(address[] memory _localBnftHoldersArray) internal view returns (uint256) {
         uint256 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
+        if(holdersUpdate.timestamp > 0) {
+            numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
+        }
         return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots;
     }
 
     function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal view returns (uint128 lastIndex){
-        uint128 holdersArrayLength = uint128(_localBnftHoldersArray.length);
+        uint128 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
+        if(holdersUpdate.timestamp > 0) {
+            numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
+        }
+        //uint128 holdersArrayLength = uint128(_localBnftHoldersArray.length);
         uint128 tempLastIndex = uint128(_index) + _size - 1;
-
-        lastIndex = (tempLastIndex + holdersArrayLength) % holdersArrayLength;
+        //lastIndex = (tempLastIndex + holdersArrayLength) % holdersArrayLength;
+        lastIndex = (tempLastIndex + numberOfActiveSlots) % numberOfActiveSlots;
     }
 
     function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
