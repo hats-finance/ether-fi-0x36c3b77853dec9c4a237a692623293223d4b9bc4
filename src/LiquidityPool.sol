@@ -43,7 +43,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     address[] public bnftHolders;
     mapping(address => bool) public whitelistedAddresses;
     uint128 public max_validators_per_owner;
-    uint128 public number_seconds_per_week;
+    uint128 public schedulingPeriodInSeconds;
 
 
     //--------------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
         eEthliquidStakingOpened = false;
-        number_seconds_per_week = 604800;
+        schedulingPeriodInSeconds = 604800;
     }
 
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
@@ -203,7 +203,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(_index >= firstIndex && _index <= lastIndex, "Not assigned");
         require(msg.sender == bnftHolders[_index], "Incorrect holder");
 
-        uint256 numberOfValidatorsToSpin = 4;
+        uint256 numberOfValidatorsToSpin = max_validators_per_owner;
         if(_index == lastIndex) {
             numberOfValidatorsToSpin = lastIndexNumOfValidators;
         }
@@ -215,7 +215,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function dutyForWeek() public returns (uint256, uint128, uint128) {
         uint128 lastIndex;
-        uint128 lastIndexNumberOfValidators = 4;
+        uint128 lastIndexNumberOfValidators = max_validators_per_owner;
 
         address[] memory localBnftHoldersArray = bnftHolders;
 
@@ -350,7 +350,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function _getSlotIndex(address[] memory _localBnftHoldersArray) internal view returns (uint256) {
         uint256 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
-        return uint256(keccak256(abi.encodePacked(block.timestamp / number_seconds_per_week))) % numberOfActiveSlots;
+        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots;
     }
 
     function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal view returns (uint128 lastIndex){
