@@ -770,22 +770,25 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(alice, 100000 ether);
         vm.startPrank(alice);
-        vm.warp(6161);
+        vm.warp(1684181656753);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.setMaxBnftSlotSize(4);
         liquidityPoolInstance.deposit{value: 77000 ether}(address(alice), aliceProof);
         vm.stopPrank();
 
-        vm.deal(bnftHoldersArray[962], 10 ether);
-        vm.prank(bnftHoldersArray[962]);
-        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(962);
+        (uint256 firstIndex, uint128 lastIndex, uint128 numOfValidatorsForLastIndex) = liquidityPoolInstance.dutyForWeek();
 
-        vm.prank(bnftHoldersArray[600]);
+        vm.deal(bnftHoldersArray[firstIndex], 10 ether);
+        vm.prank(bnftHoldersArray[firstIndex]);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(firstIndex);
+
+        vm.prank(bnftHoldersArray[firstIndex - 1]);
         vm.expectRevert("Not assigned");
-        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(600);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(firstIndex - 1);
 
-        vm.deal(bnftHoldersArray[588], 10 ether);
-        vm.prank(bnftHoldersArray[588]);
-        liquidityPoolInstance.depositAsBnftHolder{value: 4 ether}(588);
+        vm.deal(bnftHoldersArray[lastIndex], 10 ether);
+        vm.prank(bnftHoldersArray[lastIndex]);
+        uint256 amount = 2 ether * numOfValidatorsForLastIndex;
+        liquidityPoolInstance.depositAsBnftHolder{value: amount}(lastIndex);
     }
 }
