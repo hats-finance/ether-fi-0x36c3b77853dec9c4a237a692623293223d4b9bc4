@@ -340,6 +340,18 @@ contract TestSetup is Test {
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
         etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
         etherFiOracleInstance.initialize(2, 32, 12, 1);
+        
+        etherFiOracleInstance.setOracleReportPeriod(100);
+
+        uint32[] memory approvedValidators = new uint32(1);
+        uint32[] memory exitedValidators = new uint32(1);
+        uint32[] memory slashedValidators = new uint32(1);
+        uint32[] memory withdrawalRequestsToInvalidate = new uint32(1);
+        EtherFiOracle.OracleReport memory reportArPeriod1 = EtherFiOracle.OracleReport(1, 1, 100, 1, 100, 200000, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        EtherFiOracle.OracleReport memory reportArPeriod2A = EtherFiOracle.OracleReport(1, 101, 200, 101, 200, 200000, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        EtherFiOracle.OracleReport memory reportArPeriod2B = EtherFiOracle.OracleReport(1, 101, 200, 101, 200, 200001, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        EtherFiOracle.OracleReport memory reportArPeriod3 = EtherFiOracle.OracleReport(1, 101, 300, 101, 300, 200000, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        EtherFiOracle.OracleReport memory reportArPeriod4 = EtherFiOracle.OracleReport(1, 301, 400, 301, 400, 200000, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
 
         vm.stopPrank();
 

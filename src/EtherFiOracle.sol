@@ -73,6 +73,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         GENESIS_TIME = _genesisTime;
     }
 
+    // should we return consensusReached here? otherwise we can't know the consensus state on chain
     function submitReport(OracleReport calldata _report) external {
         verifyReport(_report);
 
@@ -100,7 +101,8 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function slotForNextReport() public view returns (uint32) {
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
         uint32 pastSlot = lastPublishedReportRefSlot;
-        uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot) * reportPeriodSlot;
+        // Here we should +1
+        uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot + 1) * reportPeriodSlot;
         uint32 _slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
         return _slotForNextReport;
     }
@@ -154,6 +156,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return uint32((timestamp - GENESIS_TIME) / SECONDS_PER_SLOT);
     }
 
+    // how about make this function public?
     function _generateReportHash(OracleReport calldata _report) internal pure returns (bytes32) {
         bytes32 chunk1 = keccak256(
             abi.encode(
