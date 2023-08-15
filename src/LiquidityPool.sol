@@ -208,6 +208,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bnftHolders.push(msg.sender);
     }
 
+    function deRegisterBnftHolder(uint256 _index) external {
+        require(msg.sender == admin || msg.sender == bnftHolders[_index], "Incorrect Caller");
+        bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
+        bnftHolders.pop();
+    }
+
     function depositAsBnftHolder(uint256 _index) external payable {
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);

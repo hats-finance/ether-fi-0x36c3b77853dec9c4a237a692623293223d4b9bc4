@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
-import "forge-std/console.sol";
 
 contract LiquidityPoolTest is TestSetup {
 
@@ -842,7 +841,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.depositAsBnftHolder{value: amount}(lastIndex);
     }
 
-    function test_SelectionWhenMaxBnftValidatorChanges() public {
+    function test_DepositWhenMaxBnftValidatorChanges() public {
         
         //Sets up the list of BNFT holders
         setUpBnftHolders();
@@ -909,6 +908,82 @@ contract LiquidityPoolTest is TestSetup {
         //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
         vm.expectRevert("Not assigned");
         liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
+    }
+
+    function test_DeRegisterBnftHolder() public {
+        setUpBnftHolders();
+
+        assertEq(liquidityPoolInstance.bnftHolders(3), owner);
+        assertEq(liquidityPoolInstance.bnftHolders(7), henry);
+        assertEq(liquidityPoolInstance.bnftHolders(2), bob);
+
+        vm.prank(alice);
+        liquidityPoolInstance.deRegisterBnftHolder(3);
+
+        assertEq(liquidityPoolInstance.bnftHolders(3), henry);
+
+        vm.prank(bob);
+        liquidityPoolInstance.deRegisterBnftHolder(2);
+
+        assertEq(liquidityPoolInstance.bnftHolders(2), elvis);
+    }
+
+    function test_DeRegisterBnftHolderIfIncorrectCaller() public {
+        setUpBnftHolders();
+
+        vm.prank(bob);
+        vm.expectRevert("Incorrect Caller");
+        liquidityPoolInstance.deRegisterBnftHolder(3);
+    }
+
+    function test_DepositWhenUserDeRegisters() public {
+        
+        //Sets up the list of BNFT holders
+        setUpBnftHolders();
+
+        vm.startPrank(alice);
+
+        //Move to a random time in the future
+        vm.warp(1431561615);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 630 ether}(address(alice), aliceProof);
+
+        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
+        liquidityPoolInstance.dutyForWeek();
+
+        vm.stopPrank();
+
+        vm.prank(address(membershipManagerInstance));
+
+        //Membership manager rebases to trigger the update of the active number of slots
+        liquidityPoolInstance.rebase(700 ether, 630 ether);
+
+        //With the current timestamps and data, the following is true
+        //First Index = 5 
+        //Last Index = 2
+        //Num Validators For Last = 1
+
+        vm.prank(alice);
+        //Alice deposits and her index is 0 (the last index), allowing her to deposit for 2 validators
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(0);
+
+        vm.prank(henry);
+        //Henry deposits and his index is 7, allowing him to deposit
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
+
+        vm.prank(owner);
+        //Owner de registers themselves
+        liquidityPoolInstance.deRegisterBnftHolder(3);
+
+        vm.prank(henry);
+        //Henry attempts to deposit, however, due to his index being 3 after the swap he is not assigned
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(3);
     }
 
     function setUpBnftHolders() internal {
