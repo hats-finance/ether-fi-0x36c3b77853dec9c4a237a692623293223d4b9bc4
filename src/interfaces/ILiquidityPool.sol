@@ -17,6 +17,8 @@ interface ILiquidityPool {
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable;
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) external payable;
     function withdraw(address _recipient, uint256 _amount) external;
+    function requestWithdraw(address recipient, uint256 amount) external returns (uint256);
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount) external returns (uint256);
 
     function batchDepositWithBidIds(uint256 _numDeposits, uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof) external payable returns (uint256[] memory);
     function batchRegisterValidators(bytes32 _depositRoot, uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _depositData) external;
@@ -32,6 +34,7 @@ interface ILiquidityPool {
     function setEtherFiNodesManager(address _nodeManager) external;
     function setMembershipManager(address _address) external;
     function setTnft(address _address) external;
+    function setWithdrawRequestNFT(address _address) external; 
     
     function updateAdmin(address _newAdmin) external;
     function updateBNftTreasury(address _newTreasury) external;

@@ -27,7 +27,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
 
         vm.expectRevert(LiquidityPool.InvalidAmount.selector);
-        liquidityPoolInstance.withdraw(alice, 0);
+        liquidityPoolInstance.requestWithdraw(alice, 0);
 
         vm.stopPrank();
     }
@@ -98,13 +98,24 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        liquidityPoolInstance.withdraw(alice, 2 ether);
+        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
+        uint256 aliceReqId = liquidityPoolInstance.requestWithdraw(alice, 2 ether);
+        withdrawRequestNFTInstance.finalizeRequests(aliceReqId);
+        withdrawRequestNFTInstance.claimWithdraw(aliceReqId);
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
         assertEq(alice.balance, 2 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        liquidityPoolInstance.withdraw(bob, 2 ether);
+        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
+        uint256 bobReqId = liquidityPoolInstance.requestWithdraw(bob, 2 ether);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        withdrawRequestNFTInstance.finalizeRequests(bobReqId);
+
+        vm.startPrank(bob);
+        withdrawRequestNFTInstance.claimWithdraw(bobReqId);
         assertEq(eETHInstance.balanceOf(bob), 0);
         assertEq(bob.balance, 3 ether);
         vm.stopPrank();
@@ -118,8 +129,9 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         startHoax(alice);
+        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
         vm.expectRevert("Not enough eETH");
-        liquidityPoolInstance.withdraw(alice, 2 ether);
+        liquidityPoolInstance.requestWithdraw(alice, 2 ether);
     }
 
     function test_WithdrawFailsNotInitializedToken() public {
@@ -577,8 +589,15 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(eETHInstance.balanceOf(bob), eEthTVL);
 
         vm.startPrank(bob);
-        liquidityPoolInstance.withdraw(msg.sender, eEthTVL);
+        eETHInstance.approve(address(liquidityPoolInstance), eEthTVL);
+        uint256 bobRequestId = liquidityPoolInstance.requestWithdraw(bob, eEthTVL);
         vm.stopPrank();
+
+        vm.prank(alice);
+        withdrawRequestNFTInstance.finalizeRequests(bobRequestId);
+
+        vm.prank(bob);
+        withdrawRequestNFTInstance.claimWithdraw(bobRequestId);
 
         assertEq(address(liquidityPoolInstance).balance, 0);
         assertEq(eETHInstance.totalSupply(), 0);
@@ -634,19 +653,14 @@ contract LiquidityPoolTest is TestSetup {
         return newValidators;
     }
 
-    function test_AddBnftHolder() public {
-        //Allow Alice to add users to whitelist
-        vm.startPrank(alice);
-        liquidityPoolInstance.addToWhitelist(alice);
-        liquidityPoolInstance.addToWhitelist(greg);
-        vm.stopPrank();
+    function test_RegisterAsBnftHolder() public {
 
         //Move past one week
         vm.warp(804650);
 
         //Let Alice sign up as a BNFT holder
         vm.prank(alice);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder(alice);
 
         (uint128 timestamp, uint128 numOfActiveHolders) = liquidityPoolInstance.holdersUpdate();
 
@@ -657,20 +671,13 @@ contract LiquidityPoolTest is TestSetup {
         vm.warp(1609250);
 
         //Let Greg sign up as a BNFT holder
-        vm.prank(greg);
-        liquidityPoolInstance.addBnftHolder();
+        vm.prank(alice);
+        liquidityPoolInstance.registerAsBnftHolder(greg);
 
         (timestamp, numOfActiveHolders) = liquidityPoolInstance.holdersUpdate();
 
         assertEq(timestamp, 1609250);
         assertEq(numOfActiveHolders, 1);
-    }
-
-    function test_AddBnftHolderFailsWhenNotWhitelisted() public {
-        //Let Alice sign up as a BNFT holder
-        vm.prank(alice);
-        vm.expectRevert("User is not whitelisted");
-        liquidityPoolInstance.addBnftHolder();
     }
 
     function test_DutyForWeek() public {
@@ -688,16 +695,23 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
-        vm.warp(641616845);
+        vm.warp(13431561615);
 
-        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+        assertEq(firstIndex, 7);
+        assertEq(lastIndex, 7);
+        assertEq(lastIndexNumOfValidators, 4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 630 ether}(address(alice), aliceProof);
         
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        liquidityPoolInstance.dutyForWeek();
+        (firstIndex, lastIndex, lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+
+        assertEq(firstIndex, 7);
+        assertEq(lastIndex, 5);
+        assertEq(lastIndexNumOfValidators, 1);
+
     }
     
 
@@ -725,7 +739,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(bob);
 
         //Making sure a user cannot deposit using another user's index
-        vm.expectRevert("Incorrect holder");
+        vm.expectRevert("Incorrect Caller");
         liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
 
         vm.prank(bob);
@@ -741,18 +755,13 @@ contract LiquidityPoolTest is TestSetup {
         vm.expectRevert("Incorrect value");
         liquidityPoolInstance.depositAsBnftHolder{value: 6 ether}(7);
 
-        vm.prank(alice);
-
-        //Alice adds Chad to the whitelist
-        liquidityPoolInstance.addToWhitelist(chad);
-
         //Move way more in the future
         vm.warp(33431561615);
-        vm.prank(chad);
+        vm.prank(alice);
 
         //This triggers the number of active holders to be updated to include the previous bnft holders
         //However, Chad will not be included in this weeks duty
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder(chad);
 
         vm.startPrank(alice);
         
@@ -781,6 +790,14 @@ contract LiquidityPoolTest is TestSetup {
         //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
         vm.expectRevert("Not assigned");
         liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
+
+        //Move a week forward to make sure Chad is now eligible
+        vm.warp(33533146001);
+
+        liquidityPoolInstance.dutyForWeek();
+
+        vm.prank(chad);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
     }
 
     function test_DepositAsBnftHolderWithLargeSet() public {
@@ -791,9 +808,7 @@ contract LiquidityPoolTest is TestSetup {
             bnftHoldersArray.push(actor);
             vm.deal(actor, 1000 ether);
             vm.prank(alice);
-            liquidityPoolInstance.addToWhitelist(actor);
-            vm.prank(actor);
-            liquidityPoolInstance.addBnftHolder();
+            liquidityPoolInstance.registerAsBnftHolder(actor);
         }
 
         vm.startPrank(alice);
@@ -809,11 +824,6 @@ contract LiquidityPoolTest is TestSetup {
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 77000 ether}(address(alice), aliceProof);
         vm.stopPrank();
-
-        vm.prank(address(membershipManagerInstance));
-
-        //Membership manager rebases to trigger the update of the active number of slots
-        liquidityPoolInstance.rebase(100000 ether, 77000 ether);
 
         //Call duty for the week, and in this example, the data is:
         //First Index = 682
@@ -869,18 +879,15 @@ contract LiquidityPoolTest is TestSetup {
         //Set the max number of validators per holder to 6
         liquidityPoolInstance.setMaxBnftSlotSize(6);
 
-        //Alice adds Chad to the whitelist
-        liquidityPoolInstance.addToWhitelist(chad);
-
         vm.stopPrank();
 
         //Move way more in the future
         vm.warp(33431561615);
-        vm.prank(chad);
+        vm.prank(alice);
 
         //This triggers the number of active holders to be updated to include the previous bnft holders
         //However, Chad will not be included in this weeks duty
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder(chad);
 
         vm.startPrank(alice);
         
@@ -959,11 +966,6 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.stopPrank();
 
-        vm.prank(address(membershipManagerInstance));
-
-        //Membership manager rebases to trigger the update of the active number of slots
-        liquidityPoolInstance.rebase(700 ether, 630 ether);
-
         //With the current timestamps and data, the following is true
         //First Index = 5 
         //Last Index = 2
@@ -981,40 +983,38 @@ contract LiquidityPoolTest is TestSetup {
         //Owner de registers themselves
         liquidityPoolInstance.deRegisterBnftHolder(3);
 
-        vm.prank(henry);
+        vm.prank(elvis);
         //Henry attempts to deposit, however, due to his index being 3 after the swap he is not assigned
         vm.expectRevert("Not assigned");
-        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(3);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(6);
+    }
+
+    function test_UpdateSchedulingPeriod() public {
+        assertEq(liquidityPoolInstance.schedulingPeriodInSeconds(), 604800);
+
+        vm.prank(alice);
+        liquidityPoolInstance.setSchedulingPeriodInSeconds(100000);
+
+        assertEq(liquidityPoolInstance.schedulingPeriodInSeconds(), 100000);
+    }
+
+    function test_UpdateSchedulingPeriodFailsIfNotAdmin() public {
+        vm.prank(bob);
+        vm.expectRevert("Caller is not the admin");
+        liquidityPoolInstance.setSchedulingPeriodInSeconds(100000);
     }
 
     function setUpBnftHolders() internal {
         vm.startPrank(alice);
-        liquidityPoolInstance.addToWhitelist(alice);
-        liquidityPoolInstance.addToWhitelist(greg);
-        liquidityPoolInstance.addToWhitelist(bob);
-        liquidityPoolInstance.addToWhitelist(owner);
-        liquidityPoolInstance.addToWhitelist(shonee);
-        liquidityPoolInstance.addToWhitelist(dan);
-        liquidityPoolInstance.addToWhitelist(elvis);
-        liquidityPoolInstance.addToWhitelist(henry);
+        liquidityPoolInstance.registerAsBnftHolder(alice);
+        liquidityPoolInstance.registerAsBnftHolder(greg);
+        liquidityPoolInstance.registerAsBnftHolder(bob);
+        liquidityPoolInstance.registerAsBnftHolder(owner);
+        liquidityPoolInstance.registerAsBnftHolder(shonee);
+        liquidityPoolInstance.registerAsBnftHolder(dan);
+        liquidityPoolInstance.registerAsBnftHolder(elvis);
+        liquidityPoolInstance.registerAsBnftHolder(henry);
         vm.stopPrank();
-
-        vm.prank(alice);
-        liquidityPoolInstance.addBnftHolder();
-        vm.prank(greg);
-        liquidityPoolInstance.addBnftHolder();
-        vm.prank(bob);
-        liquidityPoolInstance.addBnftHolder();
-        vm.prank(owner);
-        liquidityPoolInstance.addBnftHolder();
-        vm.prank(shonee);
-        liquidityPoolInstance.addBnftHolder();
-        vm.prank(dan);
-        liquidityPoolInstance.addBnftHolder();
-        vm.prank(elvis);
-        liquidityPoolInstance.addBnftHolder();
-        vm.prank(henry);
-        liquidityPoolInstance.addBnftHolder();
 
         vm.deal(alice, 100000 ether);
         vm.deal(greg, 100000 ether);
