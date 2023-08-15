@@ -53,7 +53,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint128 startOfSlotNumOwners;
     }
     
-    HoldersUpdate holdersUpdate;
+    HoldersUpdate public holdersUpdate;
 
 
 
@@ -205,15 +205,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function addBnftHolder() public payable {
         require(whitelistedAddresses[msg.sender] == true, "User is not whitelisted");
 
-        bnftHolders.push(msg.sender);
-
         if(holdersUpdate.timestamp < uint128(_getCurrentSchedulingStartTimestamp())) {
             holdersUpdate.startOfSlotNumOwners = uint128(bnftHolders.length);
         }
         holdersUpdate.timestamp = uint128(block.timestamp);
+
+        bnftHolders.push(msg.sender);
     }
 
-    //User needs to know their _index, can get this from FE. Just call the array and run a simple loop
     function depositAsBnftHolder(uint256 _index) external payable {
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
@@ -366,35 +365,33 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
+    function _getNumberActiveSlots(address[] memory _localBnftHoldersArray) internal returns (uint256 numberOfActiveSlots) {
+        numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
+        if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
+            numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
+        }
+    }
+
     function _getCurrentSchedulingStartTimestamp() internal returns (uint256) {
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
     function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
         if(_lastIndex < _firstIndex) {
-            require(_index <= _lastIndex || _index >= _firstIndex, "Not assigned");
+            require(_index <= _lastIndex || (_index >= _firstIndex && _index < holdersUpdate.startOfSlotNumOwners), "Not assigned");
         }else {
             require(_index >= _firstIndex && _index <= _lastIndex, "Not assigned");
         }
     }
 
     function _getSlotIndex(address[] memory _localBnftHoldersArray) internal returns (uint256) {
-        uint256 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
-        if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
-            numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
-        }
-        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots;
+        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % _getNumberActiveSlots(_localBnftHoldersArray);
     }
 
     function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
-        uint128 numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
-        if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
-            numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
-        }
-        //uint128 holdersArrayLength = uint128(_localBnftHoldersArray.length);
+        uint256 numSlots = _getNumberActiveSlots(_localBnftHoldersArray);
         uint128 tempLastIndex = uint128(_index) + _size - 1;
-        //lastIndex = (tempLastIndex + holdersArrayLength) % holdersArrayLength;
-        lastIndex = (tempLastIndex + numberOfActiveSlots) % numberOfActiveSlots;
+        lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
 
     function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
