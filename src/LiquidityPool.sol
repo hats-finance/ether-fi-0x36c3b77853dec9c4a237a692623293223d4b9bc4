@@ -342,7 +342,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit UpdatedSchedulingPeriod(_schedulingPeriodInSeconds);
     }
 
-    function numberOfActiveSlots(address[] memory _localBnftHoldersArray) public returns (uint256 numberOfActiveSlots) {
+    function numberOfActiveSlots(address[] memory _localBnftHoldersArray) public view returns (uint256 numberOfActiveSlots) {
         numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
         if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
@@ -360,11 +360,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         holdersUpdate.timestamp = uint128(block.timestamp);
     }
 
-    function _getCurrentSchedulingStartTimestamp() internal returns (uint256) {
+    function _getCurrentSchedulingStartTimestamp() internal view returns (uint256) {
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
-    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal {
+    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
         if(_lastIndex < _firstIndex) {
             require(_index <= _lastIndex || (_index >= _firstIndex && _index < numberOfActiveSlots(bnftHolders)), "Not assigned");
         }else {
