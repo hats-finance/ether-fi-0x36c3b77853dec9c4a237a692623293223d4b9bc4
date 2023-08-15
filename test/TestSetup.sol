@@ -146,6 +146,7 @@ contract TestSetup is Test {
     address henry = vm.addr(8);
     address liquidityPool = vm.addr(9);
     address shonee = vm.addr(1200);
+    address jess = vm.addr(1201);
 
     address[] public actors;
     address[] public bnftHoldersArray;
@@ -458,6 +459,7 @@ contract TestSetup is Test {
         nodeOperatorManagerInstance.addToWhitelist(greg);
         nodeOperatorManagerInstance.addToWhitelist(address(liquidityPoolInstance));
         nodeOperatorManagerInstance.addToWhitelist(owner);
+        nodeOperatorManagerInstance.addToWhitelist(henry);
     }
 
     function _merkleSetupMigration() internal {

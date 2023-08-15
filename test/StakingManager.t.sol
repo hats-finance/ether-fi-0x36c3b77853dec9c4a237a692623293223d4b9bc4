@@ -71,7 +71,8 @@ contract StakingManagerTest is TestSetup {
         vm.expectRevert("User is not whitelisted");
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            alice
         );
         stakingManagerInstance.disableWhitelist();
         vm.stopPrank();
@@ -79,7 +80,8 @@ contract StakingManagerTest is TestSetup {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         IStakingManager.DepositData[]
@@ -141,7 +143,8 @@ contract StakingManagerTest is TestSetup {
         vm.expectRevert("Insufficient staking amount");
         stakingManagerInstance.batchDepositWithBidIds{value: 0.033 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
     }
 
@@ -165,7 +168,8 @@ contract StakingManagerTest is TestSetup {
         vm.expectRevert("No bids available at the moment");
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
     }
 
@@ -188,7 +192,8 @@ contract StakingManagerTest is TestSetup {
         vm.expectRevert("No bid Ids provided");
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
     }
 
@@ -227,7 +232,8 @@ contract StakingManagerTest is TestSetup {
         vm.expectRevert("Pausable: paused");
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            alice
         );
     }
 
@@ -266,7 +272,8 @@ contract StakingManagerTest is TestSetup {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(auctionInstance.numberOfActiveBids(), 19);
 
@@ -322,7 +329,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(auctionInstance.numberOfActiveBids(), 19);
 
@@ -356,7 +364,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray2,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         assertEq(
@@ -394,7 +403,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         vm.stopPrank();
@@ -424,7 +434,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
@@ -470,7 +481,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         vm.stopPrank();
 
@@ -501,7 +513,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
@@ -586,7 +599,7 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[9] = 20;
 
         uint256[] memory processedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 128 ether}(bidIdArray, proof);
+            .batchDepositWithBidIds{value: 128 ether}(bidIdArray, proof, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](4);
@@ -693,7 +706,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         assertEq(address(auctionInstance).balance, 3 ether);
@@ -726,7 +740,7 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[3] = 7;
 
         uint256[] memory processedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 128 ether}(bidIdArray, proof);
+            .batchDepositWithBidIds{value: 128 ether}(bidIdArray, proof, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](4);
@@ -830,7 +844,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         assertEq(address(auctionInstance).balance, 3 ether);
@@ -860,7 +875,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         vm.stopPrank();
 
@@ -889,7 +905,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         stakingManagerInstance.batchCancelDeposit(bidId);
 
@@ -916,7 +933,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
@@ -963,7 +981,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         vm.prank(owner);
@@ -995,7 +1014,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         uint256 depositorBalance = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
             .balance;
@@ -1061,7 +1081,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
@@ -1098,7 +1119,8 @@ contract StakingManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray2,
-            proof2
+            proof2,
+            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
         );
 
         etherFiNode = managerInstance.etherfiNodeAddress(2);
@@ -1181,10 +1203,10 @@ contract StakingManagerTest is TestSetup {
         );
 
         hoax(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, proof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, proof, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
         vm.expectEmit(true, false, false, true);
-        vm.prank(alice);
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         emit DepositCancelled(bidId1[0]);
         stakingManagerInstance.batchCancelDeposit(bidId1);
     }
@@ -1205,7 +1227,7 @@ contract StakingManagerTest is TestSetup {
         );
 
         startHoax(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, proof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, proof, alice);
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
@@ -1251,7 +1273,7 @@ contract StakingManagerTest is TestSetup {
         );
 
         startHoax(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 128 ether}(bidIds, proof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 128 ether}(bidIds, proof, alice);
     }
 
     function test_CanOnlySetAddressesOnce() public {

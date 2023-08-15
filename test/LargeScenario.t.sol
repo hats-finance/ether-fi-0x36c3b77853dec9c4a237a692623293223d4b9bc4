@@ -51,18 +51,21 @@ contract LargeScenariosTest is TestSetup {
             value: 0.05 ether
         }(10, 0.005 ether);
         assertEq(aliceBidIds.length, 10);
+
         hoax(bob);
         uint256[] memory bobBidIds = auctionInstance.createBid{
             value: 0.1 ether
         }(50, 0.002 ether);
         assertEq(bobBidIds.length, 50);
+
         hoax(chad);
         uint256[] memory chadBidIds = auctionInstance.createBid{
             value: 0.5 ether
         }(100, 0.005 ether);
         assertEq(chadBidIds.length, 100);
+
         vm.expectRevert("Only whitelisted addresses");
-        hoax(henry);
+        hoax(jess);
         auctionInstance.createBid{value: 0.5 ether}(100, 0.005 ether);
 
         assertEq(address(auctionInstance).balance, 0.65 ether);
@@ -70,7 +73,7 @@ contract LargeScenariosTest is TestSetup {
         /// Actors Stake
         hoax(dan);
         uint256[] memory danProcessedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 32 ether}(aliceBidIds, danProof);
+            .batchDepositWithBidIds{value: 32 ether}(aliceBidIds, danProof, dan);
         assertEq(danProcessedBidIds.length, 1);
         assertEq(danProcessedBidIds[0], aliceBidIds[0]);
         address staker = stakingManagerInstance.bidIdToStaker(
@@ -94,7 +97,7 @@ contract LargeScenariosTest is TestSetup {
         // 10 Deposits but only 9 bids
         uint256 balanceBefore = elvis.balance;
         uint256[] memory elvisProcessedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 320 ether}(aliceBidIds, elvisProof);
+            .batchDepositWithBidIds{value: 320 ether}(aliceBidIds, elvisProof, elvis);
         assertEq(elvisProcessedBidIds.length, 9);
         // staking manager balance should be 320 ether. 320 ether - 32 ether (1 deposit) + 32 ether from previous deposit
         assertEq(address(stakingManagerInstance).balance, 320 ether);
@@ -129,7 +132,7 @@ contract LargeScenariosTest is TestSetup {
 
         hoax(greg);
         uint256[] memory gregProcessedBidIds = stakingManagerInstance
-            .batchDepositWithBidIds{value: 32 ether}(bobBidIds, gregProof);
+            .batchDepositWithBidIds{value: 32 ether}(bobBidIds, gregProof, greg);
         assertEq(gregProcessedBidIds.length, 1);
 
         IStakingManager.DepositData[]

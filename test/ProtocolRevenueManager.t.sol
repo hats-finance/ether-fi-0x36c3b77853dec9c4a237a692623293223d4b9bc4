@@ -88,7 +88,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
         vm.expectRevert("No Active Validator");
         (sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");
         assertTrue(sent);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, aliceProof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, aliceProof, alice);
 
         vm.expectRevert("No Active Validator");
         (sent, ) = address(protocolRevenueManagerInstance).call{value: 1 ether}("");
@@ -140,7 +140,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1 ether
         );
 
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, proof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, proof, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
 
         IStakingManager.DepositData[]
@@ -191,7 +191,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1,
             1 ether
         );
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof, alice);
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -233,7 +233,7 @@ contract ProtocolRevenueManagerTest is TestSetup {
             1,
             1 ether
         );
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds2, proof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds2, proof, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
         IStakingManager.DepositData[]
             memory depositDataArray2 = new IStakingManager.DepositData[](1);
@@ -299,7 +299,8 @@ contract ProtocolRevenueManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            aliceProof
+            aliceProof,
+            alice
         );
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(

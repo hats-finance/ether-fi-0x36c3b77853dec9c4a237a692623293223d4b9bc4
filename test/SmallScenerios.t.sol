@@ -312,7 +312,8 @@ contract SmallScenariosTest is TestSetup {
         startHoax(dan);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            danProof
+            danProof,
+            dan
         );
 
         (amount, , , isActive) = auctionInstance.bids(chadBidIds[4]);
@@ -358,7 +359,8 @@ contract SmallScenariosTest is TestSetup {
 
         uint256[] memory gregProcessedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 192 ether}(
             bidIdArray2,
-            gregProof
+            gregProof,
+            greg
         );
 
         staker = stakingManagerInstance.bidIdToStaker(bobBidIds[2]);

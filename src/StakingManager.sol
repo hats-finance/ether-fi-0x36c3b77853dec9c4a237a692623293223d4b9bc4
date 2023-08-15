@@ -94,7 +94,7 @@ contract StakingManager is
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof)
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker)
         external payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
     {
         verifyWhitelisted(msg.sender, _merkleProof);
@@ -117,7 +117,7 @@ contract StakingManager is
                 auctionManager.updateSelectedBidInformation(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
-                _processDeposit(bidId);
+                _processDeposit(bidId, _staker);
             }
         }
 
@@ -329,8 +329,8 @@ contract StakingManager is
 
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId The bid that won the right to the deposit
-    function _processDeposit(uint256 _bidId) internal {
-        bidIdToStaker[_bidId] = msg.sender;
+    function _processDeposit(uint256 _bidId, address _staker) internal {
+        bidIdToStaker[_bidId] = _staker;
         uint256 validatorId = _bidId;
         address etherfiNode = createEtherfiNode(validatorId);
         nodesManager.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED);

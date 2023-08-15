@@ -16,6 +16,7 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
+import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -164,7 +165,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         totalValueInLp -= uint128(amountFromLp);
         numPendingDeposits += uint32(_numDeposits);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numDeposits}(_candidateBidIds, _merkleProof);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numDeposits}(_candidateBidIds, _merkleProof, address(this));
 
         if (_numDeposits > newValidators.length) {
             uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
@@ -187,6 +188,40 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(bNftTreasury != address(0), "'bNftTreasury' cannot be address zero");
         numPendingDeposits -= uint32(_validatorIds.length);
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, bNftTreasury, address(this), _depositData);
+    }
+
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
+        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
+        _isAssigned(firstIndex, lastIndex, _index);
+        require(msg.sender == bnftHolders[_index], "Incorrect holder");
+
+        uint256 numberOfValidatorsToSpin = max_validators_per_owner;
+        if(_index == lastIndex) {
+            numberOfValidatorsToSpin = lastIndexNumOfValidators;
+        }
+
+        require(msg.value == numberOfValidatorsToSpin * 2 ether, "Incorrect value");
+        require(totalValueInLp + msg.value >= 32 ether * numberOfValidatorsToSpin, "Not enough balance");
+
+        uint256 amountFromLp = 30 ether * numberOfValidatorsToSpin;
+        if (amountFromLp > type(uint128).max) revert InvalidAmount();
+
+        totalValueOutOfLp += uint128(amountFromLp);
+        totalValueInLp -= uint128(amountFromLp);
+        numPendingDeposits += uint32(numberOfValidatorsToSpin);
+
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender);
+
+        if (numberOfValidatorsToSpin > newValidators.length) {
+            uint256 returnAmount = 2 ether * (numberOfValidatorsToSpin - newValidators.length);
+            totalValueOutOfLp += uint128(returnAmount);
+            totalValueInLp -= uint128(returnAmount);
+
+            (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+            require(sent, "Failed to send Ether");
+        }
+        
+        return newValidators;
     }
 
     function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
@@ -218,21 +253,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bnftHolders.pop();
 
         emit BnftHolderDeregistered(_index);
-    }
-
-    function depositAsBnftHolder(uint256 _index) external payable {
-        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
-        _isAssigned(firstIndex, lastIndex, _index);
-        require(msg.sender == bnftHolders[_index], "Incorrect holder");
-
-        uint256 numberOfValidatorsToSpin = max_validators_per_owner;
-        if(_index == lastIndex) {
-            numberOfValidatorsToSpin = lastIndexNumOfValidators;
-        }
-
-        require(msg.value == numberOfValidatorsToSpin * 2 ether, "Incorrect value");
-
-        //TODO: Call deposit on staking manager
     }
 
     function dutyForWeek() public returns (uint256, uint128, uint128) {
@@ -392,6 +412,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
+        console.log(_firstIndex);
+        console.log(_lastIndex);
+        console.log(_index);
         if(_lastIndex < _firstIndex) {
             require(_index <= _lastIndex || (_index >= _firstIndex && _index < holdersUpdate.startOfSlotNumOwners), "Not assigned");
         }else {
