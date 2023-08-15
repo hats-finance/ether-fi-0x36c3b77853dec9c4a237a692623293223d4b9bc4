@@ -41,7 +41,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     address public bNftTreasury;
 
     address[] public bnftHolders;
-    mapping(address => bool) public whitelistedAddresses;
     uint128 public max_validators_per_owner;
     uint128 public schedulingPeriodInSeconds;
 
@@ -202,11 +201,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(sent, "Failed to send Ether");
     }
 
-    function registerAsBnftHolder() public payable {
-        require(whitelistedAddresses[msg.sender] == true, "User is not whitelisted");
-
+    function registerAsBnftHolder(address _user) public onlyAdmin {
         _checkHoldersUpdateStatus();
-        bnftHolders.push(msg.sender);
+        bnftHolders.push(_user);
     }
 
     function depositAsBnftHolder(uint256 _index) external payable {
@@ -337,24 +334,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function setMaxBnftSlotSize(uint128 _newSize) external onlyAdmin {
         max_validators_per_owner = _newSize;
-    }
-
-    /// @notice Adds an address to the whitelist
-    /// @param _address Address of the user to add
-    function addToWhitelist(address _address) external onlyAdmin {
-        require(whitelistedAddresses[_address] == false, "User already whitelisted");
-        whitelistedAddresses[_address] = true;
-
-        emit AddedToWhitelist(_address);
-    }
-
-    /// @notice Removed an address from the whitelist
-    /// @param _address Address of the user to remove
-    function removeFromWhitelist(address _address) external onlyAdmin {
-        require(whitelistedAddresses[_address] == true, "User not whitelisted");
-        whitelistedAddresses[_address] = false;
-
-        emit RemovedFromWhitelist(_address);
     }
 
     function setSchedulingPeriodInSeconds(uint128 _schedulingPeriodInSeconds) external onlyAdmin {
