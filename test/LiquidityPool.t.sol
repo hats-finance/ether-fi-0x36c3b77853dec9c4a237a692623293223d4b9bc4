@@ -802,10 +802,6 @@ contract LiquidityPoolTest is TestSetup {
         vm.warp(1684181656753);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
-        //Alice re-adds herself as a BNFT holder to set the active number of slots
-        //This needs to change, we need to have a way to update the active number of slots other than someone adding them self
-        liquidityPoolInstance.addBnftHolder();
-
         //Set the max number of validators per holder to 4
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
@@ -813,6 +809,11 @@ contract LiquidityPoolTest is TestSetup {
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 77000 ether}(address(alice), aliceProof);
         vm.stopPrank();
+
+        vm.prank(address(membershipManagerInstance));
+
+        //Membership manager rebases to trigger the update of the active number of slots
+        liquidityPoolInstance.rebase(100000 ether, 77000 ether);
 
         //Call duty for the week, and in this example, the data is:
         //First Index = 682

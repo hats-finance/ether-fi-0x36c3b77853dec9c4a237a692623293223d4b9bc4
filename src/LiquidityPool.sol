@@ -205,11 +205,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function addBnftHolder() public payable {
         require(whitelistedAddresses[msg.sender] == true, "User is not whitelisted");
 
-        if(holdersUpdate.timestamp < uint128(_getCurrentSchedulingStartTimestamp())) {
-            holdersUpdate.startOfSlotNumOwners = uint128(bnftHolders.length);
-        }
-        holdersUpdate.timestamp = uint128(block.timestamp);
-
+        _checkHoldersUpdateStatus();
         bnftHolders.push(msg.sender);
     }
 
@@ -283,6 +279,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (_tvl > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp = uint128(_tvl - _balanceInLp);
         totalValueInLp = uint128(_balanceInLp);
+        _checkHoldersUpdateStatus();
     }
 
     /// @notice swap T-NFTs for ETH
@@ -364,6 +361,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function _checkHoldersUpdateStatus() internal {
+        if(holdersUpdate.timestamp < uint128(_getCurrentSchedulingStartTimestamp())) {
+            holdersUpdate.startOfSlotNumOwners = uint128(bnftHolders.length);
+        }
+        holdersUpdate.timestamp = uint128(block.timestamp);
+    }
 
     function _getNumberActiveSlots(address[] memory _localBnftHoldersArray) internal returns (uint256 numberOfActiveSlots) {
         numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
