@@ -841,6 +841,75 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.depositAsBnftHolder{value: amount}(lastIndex);
     }
 
+    function test_SelectionWhenMaxBnftValidatorChanges() public {
+        
+        //Sets up the list of BNFT holders
+        setUpBnftHolders();
+
+        vm.startPrank(alice);
+
+        //Move to a random time in the future
+        vm.warp(13431561615);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+
+        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
+        liquidityPoolInstance.dutyForWeek();
+
+        vm.stopPrank();
+        
+        vm.startPrank(alice);
+
+        //Set the max number of validators per holder to 6
+        liquidityPoolInstance.setMaxBnftSlotSize(6);
+
+        //Alice adds Chad to the whitelist
+        liquidityPoolInstance.addToWhitelist(chad);
+
+        vm.stopPrank();
+
+        //Move way more in the future
+        vm.warp(33431561615);
+        vm.prank(chad);
+
+        //This triggers the number of active holders to be updated to include the previous bnft holders
+        //However, Chad will not be included in this weeks duty
+        liquidityPoolInstance.addBnftHolder();
+
+        vm.startPrank(alice);
+        
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 370 ether}(address(alice), aliceProof);
+
+        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
+        liquidityPoolInstance.dutyForWeek();
+
+        //With the current timestamps and data, the following is true
+        //First Index = 5 
+        //Last Index = 7
+        //Num Validators For Last = 4
+        vm.stopPrank();
+
+        vm.prank(henry);
+        //Henry deposits and his index is 7, meaning he is last and deposits 4 * 2 ether
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
+
+        vm.prank(elvis);
+        //Elvis deposits and his index is 6, allowing him to deposit
+        liquidityPoolInstance.depositAsBnftHolder{value: 12 ether}(6);
+
+        vm.prank(chad);
+
+        //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
+    }
+
     function setUpBnftHolders() internal {
         vm.startPrank(alice);
         liquidityPoolInstance.addToWhitelist(alice);
@@ -879,6 +948,5 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(elvis, 100000 ether);
         vm.deal(henry, 100000 ether);
         vm.deal(chad, 100000 ether);
-
     }
 }
