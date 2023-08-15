@@ -825,11 +825,6 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 77000 ether}(address(alice), aliceProof);
         vm.stopPrank();
 
-        vm.prank(address(membershipManagerInstance));
-
-        //Membership manager rebases to trigger the update of the active number of slots
-        liquidityPoolInstance.rebase(100000 ether, 77000 ether);
-
         //Call duty for the week, and in this example, the data is:
         //First Index = 682
         //Last Index = 323
