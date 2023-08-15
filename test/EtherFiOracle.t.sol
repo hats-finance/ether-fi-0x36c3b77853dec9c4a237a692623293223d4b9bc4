@@ -19,18 +19,27 @@ contract EtherFiOracleTest is TestSetup {
 
     function test_verifyReport() public {
         // [timestamp = 1, period 1]
-        // add alice in the committee
-        etherFiOracleInstance.addCommitteeMember(alice);
+        
         // bob isn't in the committee, should revert
         vm.expectRevert("You don't need to submit a report");
         vm.prank(bob);
         etherFiOracleInstance.submitReport(reportArPeriod1);
+
         // add bob in the committee
+        // add alice in the committee
+        etherFiOracleInstance.addCommitteeMember(alice);
         etherFiOracleInstance.addCommitteeMember(bob);
+
         // alice submits the period 1 report
         vm.prank(alice);
         etherFiOracleInstance.submitReport(reportArPeriod1);
+
         // alice submits another period 1 report
+        vm.expectRevert("You don't need to submit a report");
+        vm.prank(alice);
+        etherFiOracleInstance.submitReport(reportArPeriod1);
+
+        // alice submits another report
         vm.expectRevert("You don't need to submit a report");
         vm.prank(alice);
         etherFiOracleInstance.submitReport(reportArPeriod1);
@@ -41,6 +50,11 @@ contract EtherFiOracleTest is TestSetup {
         vm.expectRevert("Report is for wrong slotFrom");
         vm.prank(alice);
         etherFiOracleInstance.submitReport(reportArPeriod3);
+
+        // alice submits period 1 report
+        vm.expectRevert("Report is for wrong slotFrom");
+        vm.prank(alice);
+        etherFiOracleInstance.submitReport(reportArPeriod1);
 
         // Test Report Epoch is not finalized yet?????
     }
@@ -77,32 +91,32 @@ contract EtherFiOracleTest is TestSetup {
         etherFiOracleInstance.addCommitteeMember(bob);
         // alice submits the period 1 report
         vm.prank(alice);
-        etherFiOracleInstance.submitReport(reportArPeriod1);
-        // TODO: assertEq(consensusReached, false)
+        bool consensusReached = etherFiOracleInstance.submitReport(reportArPeriod1);
+        assertEq(consensusReached, false);
         // bob submits the period 1 report
         vm.prank(bob);
-        etherFiOracleInstance.submitReport(reportArPeriod1);
-        // TODO: assertEq(consensusReached, true)
+        consensusReached = etherFiOracleInstance.submitReport(reportArPeriod1);
+        assertEq(consensusReached, true);
 
         skip(100 * 12 seconds);
         // [timestamp = 1201, period 2]
         // alice submits the period 2 report
         vm.prank(alice);
-        etherFiOracleInstance.submitReport(reportArPeriod2A);
-        // TODO: assertEq(consensusReached, false)
+        consensusReached = etherFiOracleInstance.submitReport(reportArPeriod2A);
+        assertEq(consensusReached, false);
         // bob submits a different period 2 report
         vm.prank(bob);
-        etherFiOracleInstance.submitReport(reportArPeriod2B);
-        // TODO: assertEq(consensusReached, false)
+        consensusReached = etherFiOracleInstance.submitReport(reportArPeriod2B);
+        assertEq(consensusReached, false);
 
         skip(100 * 12 seconds);
         // [timestamp = 2401, period 3]
         vm.prank(alice);
-        etherFiOracleInstance.submitReport(reportArPeriod3);
-        // TODO: assertEq(consensusReached, false)
+        consensusReached = etherFiOracleInstance.submitReport(reportArPeriod3);
+        assertEq(consensusReached, false);
         vm.prank(bob);
-        etherFiOracleInstance.submitReport(reportArPeriod3);
-        // TODO: assertEq(consensusReached, true)
+        consensusReached = etherFiOracleInstance.submitReport(reportArPeriod3);
+        assertEq(consensusReached, true);
     }
 
 

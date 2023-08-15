@@ -29,6 +29,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     struct ConsensusState {
         uint32 support; // how many supports?
+        bool consensusReached; // if the consensus is reached for this report
     }
 
     mapping(address => CommitteeMemberState) public committeeMemberStates; // committee member wallet address to its State
@@ -75,7 +76,9 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     // should we return consensusReached here? otherwise we can't know the consensus state on chain
-    function submitReport(OracleReport calldata _report) external {
+    // YES, add one
+    // TODO: update the consensusReached flag.
+    function submitReport(OracleReport calldata _report) external returns (bool) {
         verifyReport(_report);
 
         bytes32 hash = _generateReportHash(_report);
@@ -92,8 +95,11 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         // if the consensus reaches
         bool consensusReached = (consenState.support == quorumSize);
         if (consensusReached) {
+            consenState.consensusReached = true;
             _publishReport(_report, hash);
         }
+
+        return consensusReached;
     }
 
     // Given the last published report AND the current slot number,
@@ -138,6 +144,10 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(reportEpoch <= currEpoch - 2, "Report Epoch is not finalized yet");
     }
 
+    function consensusReached(bytes32 _hash) public view returns (bool) {
+        return consensusStates[_hash].consensusReached;
+    }
+
     function _publishReport(OracleReport calldata _report, bytes32 _hash) internal {
         lastPublishedReportRefSlot = _report.refSlotTo;
         lastPublishedReportRefBlock = _report.refBlockTo;
@@ -157,8 +167,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return uint32((timestamp - GENESIS_TIME) / SECONDS_PER_SLOT);
     }
 
-    // how about make this function public?
-    function _generateReportHash(OracleReport calldata _report) internal pure returns (bytes32) {
+    function _generateReportHash(OracleReport calldata _report) public pure returns (bytes32) {
         bytes32 chunk1 = keccak256(
             abi.encode(
                 _report.consensusVersion,
