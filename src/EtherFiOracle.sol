@@ -81,7 +81,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function submitReport(OracleReport calldata _report) external returns (bool) {
         verifyReport(_report);
 
-        bytes32 hash = _generateReportHash(_report);
+        bytes32 hash = generateReportHash(_report);
 
         // update the member state
         CommitteeMemberState storage memberState = committeeMemberStates[msg.sender];
@@ -107,11 +107,8 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
     function slotForNextReport() public view returns (uint32) {
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
-        uint32 pastSlot = lastPublishedReportRefSlot;
-        // Here we should +1
-        uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot + 1) * reportPeriodSlot;
-        uint32 _slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
-        return _slotForNextReport;
+        uint32 GENESIS_SLOT = 0;
+        return GENESIS_SLOT + ((currSlot - GENESIS_SLOT) / reportPeriodSlot) * reportPeriodSlot;
     }
 
     // For generating the next report, the starting & ending points need to be specified.
@@ -132,10 +129,10 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(shouldSubmitReport(msg.sender), "You don't need to submit a report");
 
         (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = blockStampForNextReport();
-        require(_report.refSlotFrom != slotFrom, "Report is for wrong slotFrom");
-        require(_report.refSlotTo != slotTo, "Report is for wrong slotTo");
-        require(_report.refBlockFrom != blockFrom, "Report is for wrong blockFrom");
-        require(_report.refBlockTo >= block.number, "Report is for wrong blcokTo");
+        require(_report.refSlotFrom == slotFrom, "Report is for wrong slotFrom");
+        require(_report.refSlotTo == slotTo, "Report is for wrong slotTo");
+        require(_report.refBlockFrom == blockFrom, "Report is for wrong blockFrom");
+        require(_report.refBlockTo < block.number, "Report is for wrong blockTo");
 
         // If two epochs in a row are justified, the current_epoch - 2 is considered finalized
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
@@ -167,7 +164,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return uint32((timestamp - GENESIS_TIME) / SECONDS_PER_SLOT);
     }
 
-    function _generateReportHash(OracleReport calldata _report) public pure returns (bytes32) {
+    function generateReportHash(OracleReport calldata _report) public pure returns (bytes32) {
         bytes32 chunk1 = keccak256(
             abi.encode(
                 _report.consensusVersion,
