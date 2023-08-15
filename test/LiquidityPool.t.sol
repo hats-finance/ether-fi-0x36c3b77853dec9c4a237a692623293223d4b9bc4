@@ -653,4 +653,306 @@ contract LiquidityPoolTest is TestSetup {
     
         return newValidators;
     }
+
+    function test_RegisterAsBnftHolder() public {
+
+        //Move past one week
+        vm.warp(804650);
+
+        //Let Alice sign up as a BNFT holder
+        vm.prank(alice);
+        liquidityPoolInstance.registerAsBnftHolder(alice);
+
+        (uint128 timestamp, uint128 numOfActiveHolders) = liquidityPoolInstance.holdersUpdate();
+
+        assertEq(timestamp, 804650);
+        assertEq(numOfActiveHolders, 0);
+
+        //Move another week ahead to reset the active holders
+        vm.warp(1609250);
+
+        //Let Greg sign up as a BNFT holder
+        vm.prank(alice);
+        liquidityPoolInstance.registerAsBnftHolder(greg);
+
+        (timestamp, numOfActiveHolders) = liquidityPoolInstance.holdersUpdate();
+
+        assertEq(timestamp, 1609250);
+        assertEq(numOfActiveHolders, 1);
+    }
+
+    function test_DutyForWeek() public {
+
+        //Sets up the list of BNFT holders
+        setUpBnftHolders();
+
+        vm.startPrank(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+
+        //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
+        vm.warp(13431561615);
+
+        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+        assertEq(firstIndex, 7);
+        assertEq(lastIndex, 7);
+        assertEq(lastIndexNumOfValidators, 4);
+
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 630 ether}(address(alice), aliceProof);
+        
+        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
+        (firstIndex, lastIndex, lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+
+        assertEq(firstIndex, 7);
+        assertEq(lastIndex, 5);
+        assertEq(lastIndexNumOfValidators, 1);
+
+    }
+
+    function test_DepositAsBnftHolderSimple() public {
+        
+        //Sets up the list of BNFT holders
+        setUpBnftHolders();
+
+        vm.startPrank(alice);
+
+        //Move to a random time in the future
+        vm.warp(13431561615);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+
+        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
+        liquidityPoolInstance.dutyForWeek();
+
+        vm.stopPrank();
+        vm.prank(bob);
+
+        //Making sure a user cannot deposit using another user's index
+        vm.expectRevert("Incorrect Caller");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
+
+        vm.prank(bob);
+
+        //Making sure a user cannot deposit if they are not assigned
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(2);
+
+        vm.prank(henry);
+
+        //Making sure if a user is assigned they send in the correct amount (This will be updated 
+        //as we will allow users to specify how many validator they want to spin up)
+        vm.expectRevert("Incorrect value");
+        liquidityPoolInstance.depositAsBnftHolder{value: 6 ether}(7);
+
+        //Move way more in the future
+        vm.warp(33431561615);
+        vm.prank(alice);
+
+        //This triggers the number of active holders to be updated to include the previous bnft holders
+        //However, Chad will not be included in this weeks duty
+        liquidityPoolInstance.registerAsBnftHolder(chad);
+
+        vm.startPrank(alice);
+        
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 300 ether}(address(alice), aliceProof);
+
+        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
+        liquidityPoolInstance.dutyForWeek();
+
+        //With the current timestamps and data, the following is true
+        //First Index = 5 
+        //Last Index = 0
+        //Num Validators For Last = 2
+
+        //Alice deposits and her index is 0 (the last index), allowing her to deposit for 2 validators
+        liquidityPoolInstance.depositAsBnftHolder{value: 4 ether}(0);
+        vm.stopPrank();
+
+        vm.prank(henry);
+
+        //Henry deposits and his index is 7, allowing him to deposit
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
+
+        vm.prank(chad);
+
+        //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
+
+        //Move a week forward to make sure Chad is now eligible
+        vm.warp(33533146001);
+
+        liquidityPoolInstance.dutyForWeek();
+
+        vm.prank(chad);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
+    }
+
+    function test_DepositAsBnftHolderWithLargeSet() public {
+
+        //Add 1000 people to the BNFT holder array
+        for (uint i = 1; i <= 1000; i++) {
+            address actor = vm.addr(i);
+            bnftHoldersArray.push(actor);
+            vm.deal(actor, 1000 ether);
+            vm.prank(alice);
+            liquidityPoolInstance.registerAsBnftHolder(actor);
+        }
+
+        vm.startPrank(alice);
+
+        //Move to a random period in time
+        vm.warp(1684181656753);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        vm.deal(alice, 100000 ether);
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 77000 ether}(address(alice), aliceProof);
+        vm.stopPrank();
+
+        //Call duty for the week, and in this example, the data is:
+        //First Index = 682
+        //Last Index = 323
+        //Num Validators For Last = 2
+        (uint256 firstIndex, uint128 lastIndex, uint128 numOfValidatorsForLastIndex) = liquidityPoolInstance.dutyForWeek();
+
+        //Give the user in the first index position funds
+        vm.deal(bnftHoldersArray[firstIndex], 10 ether);
+        vm.prank(bnftHoldersArray[firstIndex]);
+
+        //Allow the user in the first index position to deposit 
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(firstIndex);
+
+        vm.prank(bnftHoldersArray[firstIndex - 1]);
+
+        //User who is one short of the assigned first index attempts to deposit but fails
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(firstIndex - 1);
+
+        vm.deal(bnftHoldersArray[lastIndex], 10 ether);
+        vm.prank(bnftHoldersArray[lastIndex]);
+
+        //User who is last in the selection deposits with the correct amount of funds
+        uint256 amount = 2 ether * numOfValidatorsForLastIndex;
+        liquidityPoolInstance.depositAsBnftHolder{value: amount}(lastIndex);
+    }
+
+    function test_SelectionWhenMaxBnftValidatorChanges() public {
+        
+        //Sets up the list of BNFT holders
+        setUpBnftHolders();
+
+        vm.startPrank(alice);
+
+        //Move to a random time in the future
+        vm.warp(13431561615);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+
+        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
+        liquidityPoolInstance.dutyForWeek();
+
+        vm.stopPrank();
+        
+        vm.startPrank(alice);
+
+        //Set the max number of validators per holder to 6
+        liquidityPoolInstance.setMaxBnftSlotSize(6);
+
+        vm.stopPrank();
+
+        //Move way more in the future
+        vm.warp(33431561615);
+        vm.prank(alice);
+
+        //This triggers the number of active holders to be updated to include the previous bnft holders
+        //However, Chad will not be included in this weeks duty
+        liquidityPoolInstance.registerAsBnftHolder(chad);
+
+        vm.startPrank(alice);
+        
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 370 ether}(address(alice), aliceProof);
+
+        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
+        liquidityPoolInstance.dutyForWeek();
+
+        //With the current timestamps and data, the following is true
+        //First Index = 5 
+        //Last Index = 7
+        //Num Validators For Last = 4
+        vm.stopPrank();
+
+        vm.prank(henry);
+        //Henry deposits and his index is 7, meaning he is last and deposits 4 * 2 ether
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
+
+        vm.prank(elvis);
+        //Elvis deposits and his index is 6, allowing him to deposit
+        liquidityPoolInstance.depositAsBnftHolder{value: 12 ether}(6);
+
+        vm.prank(chad);
+
+        //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
+        vm.expectRevert("Not assigned");
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
+    }
+
+    function test_UpdateSchedulingPeriod() public {
+        assertEq(liquidityPoolInstance.schedulingPeriodInSeconds(), 604800);
+
+        vm.prank(alice);
+        liquidityPoolInstance.setSchedulingPeriodInSeconds(100000);
+
+        assertEq(liquidityPoolInstance.schedulingPeriodInSeconds(), 100000);
+    }
+
+    function test_UpdateSchedulingPeriodFailsIfNotAdmin() public {
+        vm.prank(bob);
+        vm.expectRevert("Caller is not the admin");
+        liquidityPoolInstance.setSchedulingPeriodInSeconds(100000);
+    }
+
+    function setUpBnftHolders() internal {
+        vm.startPrank(alice);
+        liquidityPoolInstance.registerAsBnftHolder(alice);
+        liquidityPoolInstance.registerAsBnftHolder(greg);
+        liquidityPoolInstance.registerAsBnftHolder(bob);
+        liquidityPoolInstance.registerAsBnftHolder(owner);
+        liquidityPoolInstance.registerAsBnftHolder(shonee);
+        liquidityPoolInstance.registerAsBnftHolder(dan);
+        liquidityPoolInstance.registerAsBnftHolder(elvis);
+        liquidityPoolInstance.registerAsBnftHolder(henry);
+        vm.stopPrank();
+
+        vm.deal(alice, 100000 ether);
+        vm.deal(greg, 100000 ether);
+        vm.deal(bob, 100000 ether);
+        vm.deal(owner, 100000 ether);
+        vm.deal(shonee, 100000 ether);
+        vm.deal(dan, 100000 ether);
+        vm.deal(elvis, 100000 ether);
+        vm.deal(henry, 100000 ether);
+        vm.deal(chad, 100000 ether);
+    }
 }

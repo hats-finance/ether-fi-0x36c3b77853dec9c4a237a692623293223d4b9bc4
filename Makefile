@@ -17,7 +17,7 @@ update:; forge update
 
 build:; forge build
 
-test :; forge test --fork-url ${RPC_API_KEY} --etherscan-api-key ${ETHERSCAN_API_KEY}
+test :; forge test 
 
 snapshot :; forge snapshot
 

@@ -41,12 +41,30 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     address public bNftTreasury;
     IWithdrawRequestNFT public withdrawRequestNFT;
 
+    address[] public bnftHolders;
+    uint128 public max_validators_per_owner;
+    uint128 public schedulingPeriodInSeconds;
+
+    // Necessary to preserve "statelessness" of dutyForWeek().
+    // Handles case where new users join/leave holder list during an active slot
+    struct HoldersUpdate {
+        uint128 timestamp;
+        uint128 startOfSlotNumOwners;
+    }
+    
+    HoldersUpdate public holdersUpdate;
+
+
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, address recipient, uint256 amount);
+    event AddedToWhitelist(address userAddress);
+    event RemovedFromWhitelist(address userAddress);
+    event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
 
     error InvalidAmount();
 
@@ -73,6 +91,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
         eEthliquidStakingOpened = false;
+        schedulingPeriodInSeconds = 604800;
     }
 
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
@@ -214,6 +233,53 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(sent, "Failed to send Ether");
     }
 
+    function registerAsBnftHolder(address _user) public onlyAdmin {
+        _checkHoldersUpdateStatus();
+        bnftHolders.push(_user);
+    }
+
+    function depositAsBnftHolder(uint256 _index) external payable {
+        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
+        _isAssigned(firstIndex, lastIndex, _index);
+        require(msg.sender == bnftHolders[_index], "Incorrect Caller");
+
+        uint256 numberOfValidatorsToSpin = max_validators_per_owner;
+        if(_index == lastIndex) {
+            numberOfValidatorsToSpin = lastIndexNumOfValidators;
+        }
+
+        require(msg.value == numberOfValidatorsToSpin * 2 ether, "Incorrect value");
+
+        //TODO: Call deposit on staking manager
+    }
+
+    function dutyForWeek() public returns (uint256, uint128, uint128) {
+        uint128 lastIndex;
+        uint128 lastIndexNumberOfValidators = max_validators_per_owner;
+
+        address[] memory localBnftHoldersArray = bnftHolders;
+
+        uint256 index = _getSlotIndex(localBnftHoldersArray);
+        uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
+
+        if(numValidatorsToCreate % max_validators_per_owner == 0) {
+            uint128 size = numValidatorsToCreate / max_validators_per_owner;
+            lastIndex = _fetchLastIndex(size, index, localBnftHoldersArray);
+        } else {
+            uint128 size = (numValidatorsToCreate / max_validators_per_owner) + 1;
+            lastIndex = _fetchLastIndex(size, index, localBnftHoldersArray);
+            lastIndexNumberOfValidators = numValidatorsToCreate % max_validators_per_owner;
+        }
+
+        return (index, lastIndex, lastIndexNumberOfValidators);
+    }
+
+    // Just using for testing
+    // TODO remove and use oracle
+    function numberOfValidatorsToSpawn() public view returns (uint128) {
+        return uint128(getTotalPooledEther() / 30 ether);
+    }
+
     /// @notice Send the exit requests as the T-NFT holder
     function sendExitRequests(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -302,10 +368,56 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(_newTreasury != address(0), "Cannot be address zero");
         bNftTreasury = _newTreasury;
     }
-    
+
+    function setMaxBnftSlotSize(uint128 _newSize) external onlyAdmin {
+        max_validators_per_owner = _newSize;
+    }
+
+    function setSchedulingPeriodInSeconds(uint128 _schedulingPeriodInSeconds) external onlyAdmin {
+        schedulingPeriodInSeconds = _schedulingPeriodInSeconds;
+
+        emit UpdatedSchedulingPeriod(_schedulingPeriodInSeconds);
+    }
+
+    function numberOfActiveSlots(address[] memory _localBnftHoldersArray) public view returns (uint256 numberOfActiveSlots) {
+        numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
+        if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
+            numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
+        }
+    }
+
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function _checkHoldersUpdateStatus() internal {
+        if(holdersUpdate.timestamp < uint128(_getCurrentSchedulingStartTimestamp())) {
+            holdersUpdate.startOfSlotNumOwners = uint128(bnftHolders.length);
+        }
+        holdersUpdate.timestamp = uint128(block.timestamp);
+    }
+
+    function _getCurrentSchedulingStartTimestamp() internal view returns (uint256) {
+        return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
+    }
+
+    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
+        if(_lastIndex < _firstIndex) {
+            require(_index <= _lastIndex || (_index >= _firstIndex && _index < numberOfActiveSlots(bnftHolders)), "Not assigned");
+        }else {
+            require(_index >= _firstIndex && _index <= _lastIndex, "Not assigned");
+        }
+    }
+
+    function _getSlotIndex(address[] memory _localBnftHoldersArray) internal returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots(_localBnftHoldersArray);
+    }
+
+    function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
+        uint256 numSlots = numberOfActiveSlots(_localBnftHoldersArray);
+        uint128 tempLastIndex = uint128(_index) + _size - 1;
+        lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
+    }
 
     function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
         stakingManager.verifyWhitelisted(_user, _merkleProof);
@@ -365,6 +477,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             return 0;
         }
         return (_share * getTotalPooledEther()) / totalShares;
+    }
+
+     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
+        return (_a > _b) ? _b : _a;
     }
 
     function getImplementation() external view returns (address) {return _getImplementation();}
