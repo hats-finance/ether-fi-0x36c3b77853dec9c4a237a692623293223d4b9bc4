@@ -412,9 +412,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
-        console.log(_firstIndex);
-        console.log(_lastIndex);
-        console.log(_index);
         if(_lastIndex < _firstIndex) {
             require(_index <= _lastIndex || (_index >= _firstIndex && _index < holdersUpdate.startOfSlotNumOwners), "Not assigned");
         }else {
