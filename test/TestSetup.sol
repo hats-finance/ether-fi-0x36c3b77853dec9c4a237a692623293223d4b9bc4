@@ -23,6 +23,7 @@ import "../src/MembershipNFT.sol";
 import "../src/EarlyAdopterPool.sol";
 import "../src/TVLOracle.sol";
 import "../src/UUPSProxy.sol";
+import "../src/WithdrawRequestNFT.sol";
 import "../src/NFTExchange.sol";
 import "../src/helpers/AddressProvider.sol";
 import "./DepositDataGeneration.sol";
@@ -31,9 +32,11 @@ import "./Attacker.sol";
 import "../lib/murky/src/Merkle.sol";
 import "./TestERC20.sol";
 
+import "../src/MembershipManagerV0.sol";
+import "../src/EtherFiOracle.sol";
 
 contract TestSetup is Test {
-    uint256 constant public kwei = 10 ** 3;
+    uint256 public constant kwei = 10 ** 3;
     uint256 public slippageLimit = 50;
 
     TestERC20 public rETH;
@@ -55,6 +58,8 @@ contract TestSetup is Test {
     UUPSProxy public membershipManagerProxy;
     UUPSProxy public membershipNftProxy;
     UUPSProxy public nftExchangeProxy;
+    UUPSProxy public withdrawRequestNFTProxy;
+    UUPSProxy public etherFiOracleProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -87,24 +92,33 @@ contract TestSetup is Test {
 
     LiquidityPool public liquidityPoolImplementation;
     LiquidityPool public liquidityPoolInstance;
-    
+
     EETH public eETHImplementation;
     EETH public eETHInstance;
 
     WeETH public weEthImplementation;
     WeETH public weEthInstance;
 
-    MembershipManager public membershipManagerImplementation;
-    MembershipManager public membershipManagerInstance;
+    MembershipManagerV0 public membershipManagerImplementation;
+    MembershipManagerV0 public membershipManagerInstance;
+
+    MembershipManager public membershipManagerV1Implementation;
+    MembershipManager public membershipManagerV1Instance;
 
     MembershipNFT public membershipNftImplementation;
     MembershipNFT public membershipNftInstance;
+
+    WithdrawRequestNFT public withdrawRequestNFTImplementation;
+    WithdrawRequestNFT public withdrawRequestNFTInstance;
 
     NFTExchange public nftExchangeImplementation;
     NFTExchange public nftExchangeInstance;
 
     NodeOperatorManager public nodeOperatorManagerImplementation;
     NodeOperatorManager public nodeOperatorManagerInstance;
+
+    EtherFiOracle public etherFiOracleImplementation;
+    EtherFiOracle public etherFiOracleInstance;
 
     EtherFiNode public node;
     Treasury public treasuryInstance;
@@ -115,7 +129,7 @@ contract TestSetup is Test {
     NoAttacker public noAttacker;
 
     TVLOracle tvlOracle;
-    
+
     Merkle merkle;
     bytes32 root;
 
@@ -214,7 +228,7 @@ contract TestSetup is Test {
         regulationsManagerImplementation = new RegulationsManager();
         vm.expectRevert("Initializable: contract is already initialized");
         regulationsManagerImplementation.initialize();
-        
+
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
         regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
         regulationsManagerInstance.initialize();
@@ -287,11 +301,25 @@ contract TestSetup is Test {
         membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
         membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
         membershipNftInstance.updateAdmin(alice);
-        
-        membershipManagerImplementation = new MembershipManager();
+
+        withdrawRequestNFTImplementation = new WithdrawRequestNFT();
+        withdrawRequestNFTProxy = new UUPSProxy(address(withdrawRequestNFTImplementation), "");
+        withdrawRequestNFTInstance = WithdrawRequestNFT(payable(withdrawRequestNFTProxy));
+        withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)));
+        withdrawRequestNFTInstance.updateAdmin(alice);
+
+        liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
+
+        membershipManagerImplementation = new MembershipManagerV0();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation), "");
-        membershipManagerInstance = MembershipManager(payable(membershipManagerProxy));
-        membershipManagerInstance.initialize(address(eETHInstance), address(liquidityPoolInstance), address(membershipNftInstance), address(treasuryInstance), address(protocolRevenueManagerInstance));
+        membershipManagerInstance = MembershipManagerV0(payable(membershipManagerProxy));
+        membershipManagerInstance.initialize(
+            address(eETHInstance),
+            address(liquidityPoolInstance),
+            address(membershipNftInstance),
+            address(treasuryInstance),
+            address(protocolRevenueManagerInstance)
+        );
         membershipManagerInstance.updateAdmin(alice);
 
         vm.stopPrank();
@@ -303,12 +331,17 @@ contract TestSetup is Test {
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
 
         tvlOracle = new TVLOracle(alice);
-        
+
         nftExchangeImplementation = new NFTExchange();
         nftExchangeProxy = new UUPSProxy(address(nftExchangeImplementation), "");
         nftExchangeInstance = NFTExchange(payable(nftExchangeProxy));
         nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance), address(managerInstance));
         nftExchangeInstance.updateAdmin(alice);
+
+        etherFiOracleImplementation = new EtherFiOracle();
+        etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
+        etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
+        etherFiOracleInstance.initialize(2, 32, 12, 1);
 
         vm.stopPrank();
 
@@ -318,10 +351,10 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         _merkleSetup();
-        
+
         vm.startPrank(owner);
         _merkleSetupMigration();
-        
+
         vm.startPrank(owner);
         _merkleSetupMigration2();
 
@@ -359,14 +392,14 @@ contract TestSetup is Test {
         // depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b); // Goerli testnet deposit contract
         depositContractEth2 = IDepositContract(address(mockDepositContractEth2));
         stakingManagerInstance.registerEth2DepositContract(address(mockDepositContractEth2));
-        
+
         attacker = new Attacker(address(liquidityPoolInstance));
         revertAttacker = new RevertAttacker();
         gasDrainAttacker = new GasDrainAttacker();
         noAttacker = new NoAttacker();
 
         vm.stopPrank();
-        
+
         _initializeMembershipTiers();
         vm.stopPrank();
 
@@ -376,21 +409,9 @@ contract TestSetup is Test {
     function _merkleSetup() internal {
         merkle = new Merkle();
 
-        whiteListedAddresses.push(
-            keccak256(
-                abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)
-            )
-        );
-        whiteListedAddresses.push(
-            keccak256(
-                abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)
-            )
-        );
-        whiteListedAddresses.push(
-            keccak256(
-                abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)
-            )
-        );
+        whiteListedAddresses.push(keccak256(abi.encodePacked(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931)));
+        whiteListedAddresses.push(keccak256(abi.encodePacked(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf)));
+        whiteListedAddresses.push(keccak256(abi.encodePacked(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B)));
 
         whiteListedAddresses.push(keccak256(abi.encodePacked(alice)));
 
@@ -431,7 +452,7 @@ contract TestSetup is Test {
     }
 
     function _initializePeople() internal {
-        for (uint i = 1000; i < 1000 + 36; i++) {
+        for (uint256 i = 1000; i < 1000 + 36; i++) {
             address actor = vm.addr(i);
             actors.push(actor);
             whitelistIndices.push(whiteListedAddresses.length);
@@ -466,15 +487,7 @@ contract TestSetup is Test {
         merkleMigration = new Merkle();
         dataForVerification.push(
             keccak256(
-                abi.encodePacked(
-                    alice,
-                    uint256(0),
-                    uint256(10),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(400)
-                )
+                abi.encodePacked(alice, uint256(0), uint256(10), uint256(0), uint256(0), uint256(0), uint256(400))
             )
         );
         dataForVerification.push(
@@ -492,48 +505,24 @@ contract TestSetup is Test {
         );
         dataForVerification.push(
             keccak256(
-                abi.encodePacked(
-                    chad,
-                    uint256(0),
-                    uint256(10),
-                    uint256(0),
-                    uint256(50),
-                    uint256(0),
-                    uint256(9464)
-                )
+                abi.encodePacked(chad, uint256(0), uint256(10), uint256(0), uint256(50), uint256(0), uint256(9464))
             )
         );
         dataForVerification.push(
             keccak256(
-                abi.encodePacked(
-                    bob,
-                    uint256(0.1 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(400)
-                )
+                abi.encodePacked(bob, uint256(0.1 ether), uint256(0), uint256(0), uint256(0), uint256(0), uint256(400))
             )
         );
         dataForVerification.push(
             keccak256(
-                abi.encodePacked(
-                    dan,
-                    uint256(0.1 ether),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(0),
-                    uint256(800)
-                )
+                abi.encodePacked(dan, uint256(0.1 ether), uint256(0), uint256(0), uint256(0), uint256(0), uint256(800))
             )
         );
         rootMigration = merkleMigration.getRoot(dataForVerification);
         requiredEapPointsPerEapDeposit.push(0);
         requiredEapPointsPerEapDeposit.push(0); // we want all EAP users to be at least Silver
-        requiredEapPointsPerEapDeposit.push(100); 
-        requiredEapPointsPerEapDeposit.push(400); 
+        requiredEapPointsPerEapDeposit.push(100);
+        requiredEapPointsPerEapDeposit.push(400);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -552,36 +541,9 @@ contract TestSetup is Test {
                 )
             )
         );
-        dataForVerification2.push(
-            keccak256(
-                abi.encodePacked(
-                    bob,
-                    uint256(2 ether),
-                    uint256(141738),
-                    uint32(0)
-                )
-            )
-        );
-        dataForVerification2.push(
-            keccak256(
-                abi.encodePacked(
-                    chad,
-                    uint256(2 ether),
-                    uint256(139294),
-                    uint32(0)
-                )
-            )
-        );
-        dataForVerification2.push(
-            keccak256(
-                abi.encodePacked(
-                    dan,
-                    uint256(1 ether),
-                    uint256(96768),
-                    uint32(0)
-                )
-            )
-        );
+        dataForVerification2.push(keccak256(abi.encodePacked(bob, uint256(2 ether), uint256(141738), uint32(0))));
+        dataForVerification2.push(keccak256(abi.encodePacked(chad, uint256(2 ether), uint256(139294), uint32(0))));
+        dataForVerification2.push(keccak256(abi.encodePacked(dan, uint256(1 ether), uint256(96768), uint32(0))));
 
         rootMigration2 = merkleMigration2.getRoot(dataForVerification2);
     }
@@ -594,7 +556,7 @@ contract TestSetup is Test {
     function _transferTo(address _recipient, uint256 _amount) internal {
         vm.deal(owner, address(owner).balance + _amount);
         vm.prank(owner);
-        (bool sent, ) = payable(_recipient).call{value: _amount}("");
+        (bool sent,) = payable(_recipient).call{value: _amount}("");
         assertEq(sent, true);
     }
 }

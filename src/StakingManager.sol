@@ -102,7 +102,7 @@ contract StakingManager is
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
         require(numberOfDeposits <= maxBatchDepositSize, "Batch too large");
-        require( auctionManager.numberOfActiveBids() >= numberOfDeposits, "No bids available at the moment");
+        require(auctionManager.numberOfActiveBids() >= numberOfDeposits, "No bids available at the moment");
 
         uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
         uint256 processedBidIdsCount = 0;
