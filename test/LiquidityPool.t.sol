@@ -788,6 +788,14 @@ contract LiquidityPoolTest is TestSetup {
         //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
         vm.expectRevert("Not assigned");
         liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
+
+        //Move a week forward to make sure Chad is now eligible
+        vm.warp(33533146001);
+
+        liquidityPoolInstance.dutyForWeek();
+
+        vm.prank(chad);
+        liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
     }
 
     function test_DepositAsBnftHolderWithLargeSet() public {

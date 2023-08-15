@@ -279,7 +279,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (_tvl > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp = uint128(_tvl - _balanceInLp);
         totalValueInLp = uint128(_balanceInLp);
-        _checkHoldersUpdateStatus();
     }
 
     /// @notice swap T-NFTs for ETH
@@ -386,9 +385,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
-    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
+    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal {
         if(_lastIndex < _firstIndex) {
-            require(_index <= _lastIndex || (_index >= _firstIndex && _index < holdersUpdate.startOfSlotNumOwners), "Not assigned");
+            require(_index <= _lastIndex || (_index >= _firstIndex && _index < numberOfActiveSlots(bnftHolders)), "Not assigned");
         }else {
             require(_index >= _firstIndex && _index <= _lastIndex, "Not assigned");
         }
