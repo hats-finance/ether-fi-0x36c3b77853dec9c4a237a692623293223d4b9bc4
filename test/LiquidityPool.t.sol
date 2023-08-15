@@ -635,7 +635,7 @@ contract LiquidityPoolTest is TestSetup {
         return newValidators;
     }
 
-    function test_AddBnftHolder() public {
+    function test_RegisterAsBnftHolder() public {
         //Allow Alice to add users to whitelist
         vm.startPrank(alice);
         liquidityPoolInstance.addToWhitelist(alice);
@@ -647,7 +647,7 @@ contract LiquidityPoolTest is TestSetup {
 
         //Let Alice sign up as a BNFT holder
         vm.prank(alice);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
 
         (uint128 timestamp, uint128 numOfActiveHolders) = liquidityPoolInstance.holdersUpdate();
 
@@ -659,7 +659,7 @@ contract LiquidityPoolTest is TestSetup {
 
         //Let Greg sign up as a BNFT holder
         vm.prank(greg);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
 
         (timestamp, numOfActiveHolders) = liquidityPoolInstance.holdersUpdate();
 
@@ -667,11 +667,11 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(numOfActiveHolders, 1);
     }
 
-    function test_AddBnftHolderFailsWhenNotWhitelisted() public {
+    function test_RegisterAsBnftHolderFailsWhenNotWhitelisted() public {
         //Let Alice sign up as a BNFT holder
         vm.prank(alice);
         vm.expectRevert("User is not whitelisted");
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
     }
 
     function test_DutyForWeek() public {
@@ -691,14 +691,21 @@ contract LiquidityPoolTest is TestSetup {
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
         vm.warp(13431561615);
 
-        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+        assertEq(firstIndex, 7);
+        assertEq(lastIndex, 7);
+        assertEq(lastIndexNumOfValidators, 4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 630 ether}(address(alice), aliceProof);
         
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        liquidityPoolInstance.dutyForWeek();
+        (firstIndex, lastIndex, lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+
+        assertEq(firstIndex, 7);
+        assertEq(lastIndex, 5);
+        assertEq(lastIndexNumOfValidators, 1);
+
     }
 
     function test_DepositAsBnftHolderSimple() public {
@@ -725,7 +732,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(bob);
 
         //Making sure a user cannot deposit using another user's index
-        vm.expectRevert("Incorrect holder");
+        vm.expectRevert("Incorrect Caller");
         liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(7);
 
         vm.prank(bob);
@@ -752,7 +759,7 @@ contract LiquidityPoolTest is TestSetup {
 
         //This triggers the number of active holders to be updated to include the previous bnft holders
         //However, Chad will not be included in this weeks duty
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
 
         vm.startPrank(alice);
         
@@ -793,7 +800,7 @@ contract LiquidityPoolTest is TestSetup {
             vm.prank(alice);
             liquidityPoolInstance.addToWhitelist(actor);
             vm.prank(actor);
-            liquidityPoolInstance.addBnftHolder();
+            liquidityPoolInstance.registerAsBnftHolder();
         }
 
         vm.startPrank(alice);
@@ -880,7 +887,7 @@ contract LiquidityPoolTest is TestSetup {
 
         //This triggers the number of active holders to be updated to include the previous bnft holders
         //However, Chad will not be included in this weeks duty
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
 
         vm.startPrank(alice);
         
@@ -911,6 +918,21 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.depositAsBnftHolder{value: 8 ether}(8);
     }
 
+    function test_UpdateSchedulingPeriod() public {
+        assertEq(liquidityPoolInstance.schedulingPeriodInSeconds(), 604800);
+
+        vm.prank(alice);
+        liquidityPoolInstance.setSchedulingPeriodInSeconds(100000);
+
+        assertEq(liquidityPoolInstance.schedulingPeriodInSeconds(), 100000);
+    }
+
+    function test_UpdateSchedulingPeriodFailsIfNotAdmin() public {
+        vm.prank(bob);
+        vm.expectRevert("Caller is not the admin");
+        liquidityPoolInstance.setSchedulingPeriodInSeconds(100000);
+    }
+
     function setUpBnftHolders() internal {
         vm.startPrank(alice);
         liquidityPoolInstance.addToWhitelist(alice);
@@ -924,21 +946,21 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.prank(alice);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
         vm.prank(greg);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
         vm.prank(bob);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
         vm.prank(owner);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
         vm.prank(shonee);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
         vm.prank(dan);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
         vm.prank(elvis);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
         vm.prank(henry);
-        liquidityPoolInstance.addBnftHolder();
+        liquidityPoolInstance.registerAsBnftHolder();
 
         vm.deal(alice, 100000 ether);
         vm.deal(greg, 100000 ether);

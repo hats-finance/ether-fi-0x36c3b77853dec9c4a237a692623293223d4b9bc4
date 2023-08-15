@@ -64,6 +64,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event Withdraw(address indexed sender, address recipient, uint256 amount);
     event AddedToWhitelist(address userAddress);
     event RemovedFromWhitelist(address userAddress);
+    event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
 
     error InvalidAmount();
 
@@ -201,7 +202,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(sent, "Failed to send Ether");
     }
 
-    function addBnftHolder() public payable {
+    function registerAsBnftHolder() public payable {
         require(whitelistedAddresses[msg.sender] == true, "User is not whitelisted");
 
         _checkHoldersUpdateStatus();
@@ -211,7 +212,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function depositAsBnftHolder(uint256 _index) external payable {
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
-        require(msg.sender == bnftHolders[_index], "Incorrect holder");
+        require(msg.sender == bnftHolders[_index], "Incorrect Caller");
 
         uint256 numberOfValidatorsToSpin = max_validators_per_owner;
         if(_index == lastIndex) {
@@ -357,6 +358,19 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit RemovedFromWhitelist(_address);
     }
 
+    function setSchedulingPeriodInSeconds(uint128 _schedulingPeriodInSeconds) external onlyAdmin {
+        schedulingPeriodInSeconds = _schedulingPeriodInSeconds;
+
+        emit UpdatedSchedulingPeriod(_schedulingPeriodInSeconds);
+    }
+
+    function numberOfActiveSlots(address[] memory _localBnftHoldersArray) public returns (uint256 numberOfActiveSlots) {
+        numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
+        if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
+            numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
+        }
+    }
+
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -366,13 +380,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             holdersUpdate.startOfSlotNumOwners = uint128(bnftHolders.length);
         }
         holdersUpdate.timestamp = uint128(block.timestamp);
-    }
-
-    function _getNumberActiveSlots(address[] memory _localBnftHoldersArray) internal returns (uint256 numberOfActiveSlots) {
-        numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
-        if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
-            numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
-        }
     }
 
     function _getCurrentSchedulingStartTimestamp() internal returns (uint256) {
@@ -388,11 +395,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _getSlotIndex(address[] memory _localBnftHoldersArray) internal returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % _getNumberActiveSlots(_localBnftHoldersArray);
+        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots(_localBnftHoldersArray);
     }
 
     function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
-        uint256 numSlots = _getNumberActiveSlots(_localBnftHoldersArray);
+        uint256 numSlots = numberOfActiveSlots(_localBnftHoldersArray);
         uint128 tempLastIndex = uint128(_index) + _size - 1;
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
