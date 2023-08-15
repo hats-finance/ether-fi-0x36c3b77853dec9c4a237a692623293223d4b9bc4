@@ -689,7 +689,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
-        vm.warp(641616845);
+        vm.warp(13431561615);
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         liquidityPoolInstance.dutyForWeek();
