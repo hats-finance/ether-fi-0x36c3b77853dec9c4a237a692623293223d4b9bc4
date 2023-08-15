@@ -699,6 +699,7 @@ contract LiquidityPoolTest is TestSetup {
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         liquidityPoolInstance.dutyForWeek();
     }
+    
 
     function test_DepositAsBnftHolderSimple() public {
         
