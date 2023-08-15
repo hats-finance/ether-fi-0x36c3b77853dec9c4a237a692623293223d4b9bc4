@@ -64,6 +64,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event Withdraw(address indexed sender, address recipient, uint256 amount);
     event AddedToWhitelist(address userAddress);
     event RemovedFromWhitelist(address userAddress);
+    event BnftHolderDeregistered(uint256 index);
+    event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
 
     error InvalidAmount();
@@ -236,6 +238,16 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function registerAsBnftHolder(address _user) public onlyAdmin {
         _checkHoldersUpdateStatus();
         bnftHolders.push(_user);
+
+        emit BnftHolderRegistered(msg.sender);
+    }
+
+    function deRegisterBnftHolder(uint256 _index) external {
+        require(msg.sender == admin || msg.sender == bnftHolders[_index], "Incorrect Caller");
+        bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
+        bnftHolders.pop();
+
+        emit BnftHolderDeregistered(_index);
     }
 
     function depositAsBnftHolder(uint256 _index) external payable {
