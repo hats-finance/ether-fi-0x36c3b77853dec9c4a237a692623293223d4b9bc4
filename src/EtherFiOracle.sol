@@ -107,8 +107,10 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
     function slotForNextReport() public view returns (uint32) {
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
-        uint32 GENESIS_SLOT = 0;
-        return GENESIS_SLOT + ((currSlot - GENESIS_SLOT) / reportPeriodSlot) * reportPeriodSlot;
+        uint32 pastSlot = lastPublishedReportRefSlot;
+        uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot) * reportPeriodSlot;
+        uint32 _slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
+        return _slotForNextReport;
     }
 
     // For generating the next report, the starting & ending points need to be specified.
@@ -141,7 +143,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(reportEpoch <= currEpoch - 2, "Report Epoch is not finalized yet");
     }
 
-    function consensusReached(bytes32 _hash) public view returns (bool) {
+    function isConsensusReached(bytes32 _hash) public view returns (bool) {
         return consensusStates[_hash].consensusReached;
     }
 
