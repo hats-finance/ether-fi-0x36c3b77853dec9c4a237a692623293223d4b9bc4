@@ -29,6 +29,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     struct ConsensusState {
         uint32 support; // how many supports?
+        bool consensusReached; // if the consensus is reached for this report
     }
 
     mapping(address => CommitteeMemberState) public committeeMemberStates; // committee member wallet address to its State
@@ -74,10 +75,13 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         GENESIS_TIME = _genesisTime;
     }
 
-    function submitReport(OracleReport calldata _report) external {
+    // should we return consensusReached here? otherwise we can't know the consensus state on chain
+    // YES, add one
+    // TODO: update the consensusReached flag.
+    function submitReport(OracleReport calldata _report) external returns (bool) {
         verifyReport(_report);
 
-        bytes32 hash = _generateReportHash(_report);
+        bytes32 hash = generateReportHash(_report);
 
         // update the member state
         CommitteeMemberState storage memberState = committeeMemberStates[msg.sender];
@@ -91,8 +95,11 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         // if the consensus reaches
         bool consensusReached = (consenState.support == quorumSize);
         if (consensusReached) {
+            consenState.consensusReached = true;
             _publishReport(_report, hash);
         }
+
+        return consensusReached;
     }
 
     // Given the last published report AND the current slot number,
@@ -124,16 +131,20 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(shouldSubmitReport(msg.sender), "You don't need to submit a report");
 
         (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = blockStampForNextReport();
-        require(_report.refSlotFrom != slotFrom, "Report is for wrong slotFrom");
-        require(_report.refSlotTo != slotTo, "Report is for wrong slotTo");
-        require(_report.refBlockFrom != blockFrom, "Report is for wrong blockFrom");
-        require(_report.refBlockTo >= block.number, "Report is for wrong blcokTo");
+        require(_report.refSlotFrom == slotFrom, "Report is for wrong slotFrom");
+        require(_report.refSlotTo == slotTo, "Report is for wrong slotTo");
+        require(_report.refBlockFrom == blockFrom, "Report is for wrong blockFrom");
+        require(_report.refBlockTo < block.number, "Report is for wrong blockTo");
 
         // If two epochs in a row are justified, the current_epoch - 2 is considered finalized
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / 32);
         uint32 reportEpoch = (_report.refSlotTo / 32);
         require(reportEpoch <= currEpoch - 2, "Report Epoch is not finalized yet");
+    }
+
+    function isConsensusReached(bytes32 _hash) public view returns (bool) {
+        return consensusStates[_hash].consensusReached;
     }
 
     function _publishReport(OracleReport calldata _report, bytes32 _hash) internal {
@@ -155,7 +166,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return uint32((timestamp - GENESIS_TIME) / SECONDS_PER_SLOT);
     }
 
-    function _generateReportHash(OracleReport calldata _report) internal pure returns (bytes32) {
+    function generateReportHash(OracleReport calldata _report) public pure returns (bytes32) {
         bytes32 chunk1 = keccak256(
             abi.encode(
                 _report.consensusVersion,
