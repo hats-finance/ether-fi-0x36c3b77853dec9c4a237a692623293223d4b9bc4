@@ -170,6 +170,11 @@ contract TestSetup is Test {
     bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
     bytes32[] zeroProof;
 
+    EtherFiOracle.OracleReport reportAtPeriod2A;
+    EtherFiOracle.OracleReport reportAtPeriod2B;
+    EtherFiOracle.OracleReport reportAtPeriod3;
+    EtherFiOracle.OracleReport reportAtPeriod4;
+
     function setUpTests() internal {
         vm.startPrank(owner);
 
@@ -340,6 +345,18 @@ contract TestSetup is Test {
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
         etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
         etherFiOracleInstance.initialize(2, 32, 12, 1);
+        
+        etherFiOracleInstance.setOracleReportPeriod(1000);
+
+        uint32[] memory approvedValidators = new uint32[](1);
+        uint32[] memory exitedValidators = new uint32[](1);
+        uint32[] memory slashedValidators = new uint32[](1);
+        uint32[] memory withdrawalRequestsToInvalidate = new uint32[](1);
+        uint32[] memory evictedValidators = new uint32[](1);
+        reportAtPeriod2A = EtherFiOracle.OracleReport(1, 1, 1000, 1, 1000, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod2B = EtherFiOracle.OracleReport(1, 1, 1000, 1, 1000, 200001, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod3 = EtherFiOracle.OracleReport(1, 1, 2000, 1, 2000, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod4 = EtherFiOracle.OracleReport(1, 2001, 3000, 2001, 3000, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
 
         vm.stopPrank();
 
