@@ -124,7 +124,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Transfers the amount of eETH from msg.senders account to the WithdrawRequestNFT contract & mints an NFT to the msg.sender
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
-    function requestWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen returns (uint256) {
+    function requestWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
         require(recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
@@ -138,7 +138,23 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return requestId;
     }
 
-    function requestMembershipNFTWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen returns (uint256) {
+    struct PermitInput {
+        uint256 value;
+        uint256 deadline;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    } 
+
+    function requestWithdrawWithPermit(uint256 _amount, address _owner, PermitInput calldata _permit)
+        external
+        returns (uint256)
+    {
+        eETH.permit(msg.sender, address(this), _permit.value, _permit.deadline, _permit.v, _permit.r, _permit.s);
+        return requestWithdraw(_owner, _amount);
+    }
+
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
         require(recipient != address(0), "Cannot withdraw to zero address");
 
@@ -149,6 +165,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
         return requestId;
+    }
+
+    function requestMembershipNFTWithdrawWithPermit(address _owner, uint256 amount, PermitInput calldata _permit)
+        external returns (uint256) 
+    {
+        eETH.permit(msg.sender, address(this), _permit.value, _permit.deadline, _permit.v, _permit.r, _permit.s);
+        return requestMembershipNFTWithdraw(_owner, amount);
     }
 
     /*
