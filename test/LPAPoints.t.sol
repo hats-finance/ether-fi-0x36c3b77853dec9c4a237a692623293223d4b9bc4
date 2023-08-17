@@ -10,7 +10,7 @@ contract LPAPointsTest is Test {
     address admin;
     address plebian;
 
-    event PointsPurchased(address indexed buyer, uint256 amountWei);
+    event PointsPurchased(address indexed buyer, uint256 indexed tokenId, uint256 amountWei);
 
     function setUp() public {
         admin = address(0x01234);
@@ -25,46 +25,19 @@ contract LPAPointsTest is Test {
 
         vm.startPrank(plebian);
 
-        vm.expectEmit(true, false, false, true);
-        emit PointsPurchased(plebian, 0.5 ether);
-        pointsContract.purchasePoints{value: 0.5 ether}();
+        vm.expectEmit(true, true, false, true);
+        emit PointsPurchased(plebian, 1, 0.5 ether);
+        pointsContract.purchasePoints{value: 0.5 ether}(1);
         assertEq(address(pointsContract).balance, 0.5 ether);
 
-        vm.expectEmit(true, false, false, true);
-        emit PointsPurchased(plebian, 0.3 ether);
-        pointsContract.purchasePoints{value: 0.3 ether}();
+        vm.expectEmit(true, true, false, true);
+        emit PointsPurchased(plebian, 1337, 0.3 ether);
+        pointsContract.purchasePoints{value: 0.3 ether}(1337);
         assertEq(address(pointsContract).balance, 0.8 ether);
 
-        vm.expectEmit(true, false, false, true);
-        emit PointsPurchased(plebian, 0.2 ether);
-        pointsContract.purchasePoints{value: 0.2 ether}();
-        assertEq(address(pointsContract).balance, 1.0 ether);
-
-        vm.stopPrank();
-    }
-
-    function test_purchaseViaReceive() public {
-
-        vm.deal(plebian, 1 ether);
-
-        vm.startPrank(plebian);
-
-        vm.expectEmit(true, false, false, true);
-        emit PointsPurchased(plebian, 0.5 ether);
-        (bool success, ) = address(pointsContract).call{value: 0.5 ether}("");
-        assertTrue(success); // get rid of warnings :)
-        assertEq(address(pointsContract).balance, 0.5 ether);
-
-        vm.expectEmit(true, false, false, true);
-        emit PointsPurchased(plebian, 0.3 ether);
-        (success, ) = address(pointsContract).call{value: 0.3 ether}("");
-        assertTrue(success);
-        assertEq(address(pointsContract).balance, 0.8 ether);
-
-        vm.expectEmit(true, false, false, true);
-        emit PointsPurchased(plebian, 0.2 ether);
-        (success, ) = address(pointsContract).call{value: 0.2 ether}("");
-        assertTrue(success);
+        vm.expectEmit(true, true, false, true);
+        emit PointsPurchased(plebian, 9999, 0.2 ether);
+        pointsContract.purchasePoints{value: 0.2 ether}(9999);
         assertEq(address(pointsContract).balance, 1.0 ether);
 
         vm.stopPrank();
@@ -73,7 +46,7 @@ contract LPAPointsTest is Test {
     function test_withdrawFunds() public {
         vm.deal(plebian, 1 ether);
         vm.startPrank(plebian);
-        pointsContract.purchasePoints{value: 0.5 ether}();
+        pointsContract.purchasePoints{value: 0.5 ether}(1);
         assertEq(address(pointsContract).balance, 0.5 ether);
 
         // should fail
@@ -81,9 +54,11 @@ contract LPAPointsTest is Test {
         pointsContract.withdrawFunds(payable(plebian));
         vm.stopPrank();
 
+        address receiverAddress = address(0x12121212);
+
         vm.startPrank(admin); 
-        pointsContract.withdrawFunds(payable(admin));
-        assertEq(admin.balance, 0.5 ether);
+        pointsContract.withdrawFunds(payable(receiverAddress));
+        assertEq(receiverAddress.balance, 0.5 ether);
         assertEq(address(pointsContract).balance, 0 ether);
         vm.stopPrank();
 

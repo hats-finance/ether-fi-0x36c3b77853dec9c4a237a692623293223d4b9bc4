@@ -5,14 +5,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract LPAPoints is Ownable {
 
-    event PointsPurchased(address indexed buyer, uint256 amountWei);
+    event PointsPurchased(address indexed buyer, uint256 indexed tokenId, uint256 amountWei);
 
-    function purchasePoints() external payable {
-        emit PointsPurchased(msg.sender, msg.value);
-    }
-
-    receive() external payable {
-        emit PointsPurchased(msg.sender, msg.value);
+    function purchasePoints(uint256 tokenId) external payable {
+        emit PointsPurchased(msg.sender, tokenId, msg.value);
     }
 
     //-----------------------------------------------------------------------------
