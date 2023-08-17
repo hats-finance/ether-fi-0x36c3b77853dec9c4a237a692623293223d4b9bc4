@@ -168,7 +168,7 @@ contract StakingManager is
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x],_bNftRecipient, _tNftRecipient, _depositData[x]);    
+            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x]);    
         }  
     }
 

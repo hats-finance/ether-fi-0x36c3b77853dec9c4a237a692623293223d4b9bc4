@@ -187,7 +187,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32[] calldata _merkleProof
         ) payable external onlyAdmin returns (uint256[] memory) {
 
-        return batchDeposit(_candidateBidIds, _merkleProof, address(this), _numDeposits, msg.value, msg.sender);
+        return _batchDeposit(_candidateBidIds, _merkleProof, address(this), _numDeposits, msg.value, msg.sender);
     }
 
     function batchRegisterValidators(
@@ -201,6 +201,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, bNftTreasury, address(this), _depositData);
     }
 
+    function batchRegisterAsBnftHolder(
+        bytes32 _depositRoot,
+        uint256[] calldata _validatorIds,
+        IStakingManager.DepositData[] calldata _depositData
+    ) external {
+        numPendingDeposits -= uint32(_validatorIds.length);
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData);
+    }
+
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
@@ -211,7 +220,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             numberOfValidatorsToSpin = lastIndexNumOfValidators;
         }
 
-        return batchDeposit(_candidateBidIds, _merkleProof, msg.sender, numberOfValidatorsToSpin, msg.value, msg.sender);
+        return _batchDeposit(_candidateBidIds, _merkleProof, msg.sender, numberOfValidatorsToSpin, msg.value, msg.sender);
     }
 
     function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
@@ -380,7 +389,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function batchDeposit(
+    function _batchDeposit(
         uint256[] calldata _candidateBidIds, 
         bytes32[] calldata _merkleProof, 
         address _staker, 
