@@ -12,7 +12,7 @@ contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
     // TODO: reduce the size of these variables
-    uint256 public vestedAuctionRewards;
+//    uint256 public vestedAuctionRewards;
     string public ipfsHashForEncryptedValidatorKey;
     uint32 public exitRequestTimestamp;
     uint32 public exitTimestamp;
@@ -92,25 +92,6 @@ contract EtherFiNode is IEtherFiNode {
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
 
-    function receiveVestedRewardsForStakers()
-        external
-        payable
-        onlyProtocolRevenueManagerContract
-    {
-        require(
-            vestedAuctionRewards == 0,
-            "already received the vested auction fee reward"
-        );
-        vestedAuctionRewards = msg.value;
-    }
-
-    /// @notice Sets the vested auction rewards variable to 0 to show the auction fee has been withdrawn
-    function processVestedAuctionFeeWithdrawal() external onlyEtherFiNodeManagerContract {
-        if (_getClaimableVestedRewards(false) > 0) {
-            vestedAuctionRewards = 0;
-        }
-    }
-
     /// @notice Sends funds to the rewards manager
     /// @param _amount The value calculated in the etherfi node manager to send to the rewards manager
     function moveRewardsToManager(
@@ -149,11 +130,9 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Compute the payouts for staking rewards and vested auction fee to the individuals
+    /// @notice Compute the payouts for staking rewards to the individuals
     /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _stakingRewards a flag to be set if the caller wants to compute the payouts for the staking rewards
-    /// @param _vestedAuctionFee a flag to be set if the caller wants to compute the payouts for the vested auction fee
-    /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
     /// @param _SRsplits the splits for the Staking Rewards
     /// @param _PRsplits the splits for the Protocol Rewards
     /// @param _scale the scale
@@ -165,8 +144,6 @@ contract EtherFiNode is IEtherFiNode {
     function getRewardsPayouts(
         uint256 _beaconBalance,
         bool _stakingRewards,
-        bool _vestedAuctionFee,
-        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
@@ -189,13 +166,6 @@ contract EtherFiNode is IEtherFiNode {
             payouts[1] += tmps[1];
             payouts[2] += tmps[2];
             payouts[3] += tmps[3];
-        }
-
-        if (_vestedAuctionFee) {
-            uint256 rewards = _getClaimableVestedRewards(_assumeFullyVested);
-            uint256 toTnft = (rewards * 29) / 32;
-            payouts[1] += toTnft; // 29 / 32
-            payouts[2] += rewards - toTnft; // 3 / 32
         }
 
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
@@ -229,7 +199,7 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        uint256 stakingBalance = _beaconBalance + getWithdrawableAmount(true, false, false);
+        uint256 stakingBalance = _beaconBalance + getWithdrawableAmount(true);
         uint256 rewards;
 
         // If (Staking Principal + Staking Rewards >= 32 ether), the validator is running in a normal state
@@ -317,19 +287,17 @@ contract EtherFiNode is IEtherFiNode {
     function calculateTVL(
         uint256 _beaconBalance,
         bool _stakingRewards,
-        bool _vestedAuctionFee,
-        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
-        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards, _vestedAuctionFee, _assumeFullyVested);
+        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards);
 
-        // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
+        // Compute the payouts for the rewards = (staking rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
         uint256[] memory payouts = new uint256[](4); // (toNodeOperator, toTnft, toBnft, toTreasury)
         (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(_beaconBalance, 
-                                                                            _stakingRewards, _vestedAuctionFee, _assumeFullyVested,
+                                                                            _stakingRewards,
                                                                              _SRsplits, _PRsplits, _scale);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
@@ -360,7 +328,7 @@ contract EtherFiNode is IEtherFiNode {
 
         require(
             payouts[0] + payouts[1] + payouts[2] + payouts[3] ==
-                _beaconBalance + getWithdrawableAmount(_stakingRewards, _vestedAuctionFee, _assumeFullyVested),
+                _beaconBalance + getWithdrawableAmount(_stakingRewards),
             "Incorrect Amount"
         );
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
@@ -429,15 +397,10 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Compute the withdrawable amount from the node
     /// @param _stakingRewards a flag to include the withdrawable amount for the staking principal + rewards
-    /// @param _vestedAuctionFee a flag to include the withdrawable amount for the vested auction fee
-    /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
-    function getWithdrawableAmount(bool _stakingRewards, bool _vestedAuctionFee, bool _assumeFullyVested) public view returns (uint256) {
+    function getWithdrawableAmount(bool _stakingRewards) public view returns (uint256) {
         uint256 balance = 0;
         if (_stakingRewards) {
-            balance += address(this).balance - vestedAuctionRewards;
-        }
-        if (_vestedAuctionFee) {
-            balance += _getClaimableVestedRewards(_assumeFullyVested);
+            balance += address(this).balance;
         }
         return balance;
     }
@@ -466,25 +429,6 @@ contract EtherFiNode is IEtherFiNode {
         }
 
         require(pass, "Invalid phase transition");
-    }
-    
-    function _getClaimableVestedRewards(bool _assumeFullyVested) internal view returns (uint256) {
-        if (vestedAuctionRewards == 0) {
-            return 0;
-        }
-        uint256 vestingPeriodInDays = IProtocolRevenueManager(
-            _protocolRevenueManagerAddress()
-        ).auctionFeeVestingPeriodForStakersInDays();
-        uint256 daysPassed = _getDaysPassedSince(
-            stakingStartTimestamp,
-            uint32(block.timestamp)
-        );
-        bool fullyVested = _assumeFullyVested || daysPassed >= vestingPeriodInDays;
-        if (fullyVested || phase == VALIDATOR_PHASE.EVICTED) {
-            return vestedAuctionRewards;
-        } else {
-            return 0;
-        }
     }
 
     function _getDaysPassedSince(

@@ -342,15 +342,15 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdraw(0, true, true, true);
+        managerInstance.partialWithdraw(0, true);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatch(ids, true, true, true);
+        managerInstance.partialWithdrawBatch(ids, true);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids, true, true, true);
+        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids, true);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");

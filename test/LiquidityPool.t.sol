@@ -534,7 +534,7 @@ contract LiquidityPoolTest is TestSetup {
         for (uint256 i = 0; i < validatorIds.length; i++) {
             uint256 beaconBalance = 16 ether * (i + 1) + 1 ether;
             (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury)
-                = managerInstance.calculateTVL(validatorIds[i], beaconBalance, true, true, true, true);
+                = managerInstance.calculateTVL(validatorIds[i], beaconBalance, true);
             tvls[0] += toNodeOperator;
             tvls[1] += toTnft;
             tvls[2] += toBnft;

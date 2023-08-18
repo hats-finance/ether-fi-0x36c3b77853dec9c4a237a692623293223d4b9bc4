@@ -56,8 +56,6 @@ interface IEtherFiNode {
 
     function exitTimestamp() external view returns (uint32);
 
-    function vestedAuctionRewards() external view returns (uint256);
-
     function calculatePayouts(
         uint256 _totalAmount,
         IEtherFiNodesManager.RewardsSplit memory _splits,
@@ -78,8 +76,6 @@ interface IEtherFiNode {
     function getRewardsPayouts(
         uint256 _beaconBalance,
         bool _stakingRewards,
-        bool _vestedAuctionFee,
-        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
@@ -88,8 +84,6 @@ interface IEtherFiNode {
     function calculateTVL(
         uint256 _beaconBalance,
         bool _stakingRewards,
-        bool _vestedAuctionFee,
-        bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
@@ -107,10 +101,6 @@ interface IEtherFiNode {
     function markExited(uint32 _exitTimestamp) external;
 
     function markEvicted() external;
-
-    function receiveVestedRewardsForStakers() external payable;
-
-    function processVestedAuctionFeeWithdrawal() external;
 
     // Withdraw Rewards
     function moveRewardsToManager(uint256 _amount) external;

@@ -153,7 +153,7 @@ contract RewardsSkimmingTest is TestSetup {
         _deals();
         startHoax(operators[0]);
         for (uint i = 0; i < num_stakers/2; i++) {
-            managerInstance.partialWithdraw(validatorIds[i], true, false, false);
+            managerInstance.partialWithdraw(validatorIds[i], true);
         }
         vm.stopPrank();
     }
@@ -161,7 +161,7 @@ contract RewardsSkimmingTest is TestSetup {
     function test_partialWithdrawBatchGroupByOperator() public {
         _deals();
         startHoax(operators[0]);
-        managerInstance.partialWithdrawBatchGroupByOperator(operators[0], validatorIdsOfMixedTNftHolders, true, false, false);
+        managerInstance.partialWithdrawBatchGroupByOperator(operators[0], validatorIdsOfMixedTNftHolders, true);
         vm.stopPrank();
     }
 

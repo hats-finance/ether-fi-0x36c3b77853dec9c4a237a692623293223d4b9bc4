@@ -1108,6 +1108,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(tier2_apr_bp, 0); // 00.00% for tier 2 with weight 3, because there is no deposited ETH in tier 2
     }
 
+    //TODO(Dave): remove unused params
     function calculateAggregatedTVL(
             uint256[] memory _validatorIds,
             bool _stakingRewards,
@@ -1120,7 +1121,7 @@ contract MembershipManagerTest is TestSetup {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 beaconBalance = 32 ether;
             (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury)
-                = managerInstance.calculateTVL(_validatorIds[i], beaconBalance, _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested);
+                = managerInstance.calculateTVL(_validatorIds[i], beaconBalance, _stakingRewards);
             tvls[0] += toNodeOperator;
             tvls[1] += toTnft;
             tvls[2] += toBnft;
