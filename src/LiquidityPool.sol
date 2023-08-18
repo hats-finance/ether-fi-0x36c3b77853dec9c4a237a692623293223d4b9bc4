@@ -160,13 +160,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function requestMembershipNFTWithdrawWithPermit(address _owner, uint256 amount, PermitInput calldata _permit)
-        external returns (uint256) 
-    {
-        eETH.permit(msg.sender, address(this), _permit.value, _permit.deadline, _permit.v, _permit.r, _permit.s);
-        return requestMembershipNFTWithdraw(_owner, amount);
-    }
-
     /*
      * During ether.fi's phase 1 road map,
      * ether.fi's multi-sig will perform as a B-NFT holder which generates the validator keys and initiates the launch of validators
