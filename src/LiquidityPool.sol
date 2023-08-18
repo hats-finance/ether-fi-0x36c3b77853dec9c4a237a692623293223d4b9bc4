@@ -16,8 +16,9 @@ import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
+import "./interfaces/ILiquidityPool.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -138,15 +139,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return requestId;
     }
 
-    struct PermitInput {
-        uint256 value;
-        uint256 deadline;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-    } 
-
-    function requestWithdrawWithPermit(uint256 _amount, address _owner, PermitInput calldata _permit)
+    function requestWithdrawWithPermit(address _owner, uint256 _amount, PermitInput calldata _permit)
         external
         returns (uint256)
     {

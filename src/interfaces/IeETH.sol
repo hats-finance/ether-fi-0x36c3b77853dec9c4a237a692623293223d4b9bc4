@@ -19,13 +19,5 @@ interface IeETH {
     function increaseAllowance(address _spender, uint256 _increaseAmount) external returns (bool);
     function decreaseAllowance(address _spender, uint256 _decreaseAmount) external returns (bool);
 
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external;
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external;
 }
