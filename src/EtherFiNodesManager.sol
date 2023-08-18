@@ -407,14 +407,6 @@ contract EtherFiNodesManager is
         IEtherFiNode(etherfiNode).setIpfsHashForEncryptedValidatorKey(_ipfs);
     }
 
-    /// @notice Sets the local revenue index for a specific node
-    /// @param _validatorId id of the validator associated to this etherfi node
-    /// @param _localRevenueIndex revenue index to be set
-    function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex) external payable onlyProtocolRevenueManagerContract {
-        address etherfiNode = etherfiNodeAddress[_validatorId];
-        IEtherFiNode(etherfiNode).setLocalRevenueIndex{value: msg.value}(_localRevenueIndex);
-    }
-
     /// @notice Increments the number of validators by a certain amount
     /// @param _count how many new validators to increment by
     function incrementNumberOfValidators(uint64 _count) external onlyStakingManagerContract {
@@ -445,7 +437,6 @@ contract EtherFiNodesManager is
     /// @notice Once the node's exit is observed, the protocol calls this function:
     ///         - mark it EXITED
     ///         - distribute the protocol (auction) revenue
-    ///         - stop sharing the protocol revenue; by setting their local revenue index to '0'
     /// @param _validatorId the validator ID
     /// @param _exitTimestamp the exit timestamp
     function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
@@ -456,9 +447,6 @@ contract EtherFiNodesManager is
 
         // Mark EXITED
         IEtherFiNode(etherfiNode).markExited(_exitTimestamp);
-
-        // Reset its local revenue index to 0, which indicates that no accrued protocol revenue exists
-        IEtherFiNode(etherfiNode).setLocalRevenueIndex(0);
 
         // Distribute the payouts for the protocol rewards
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
@@ -480,8 +468,6 @@ contract EtherFiNodesManager is
         // Mark EVICTED
         IEtherFiNode(etherfiNode).markEvicted();
 
-        // Reset its local revenue index to 0, which indicates that no accrued protocol revenue exists
-        IEtherFiNode(etherfiNode).setLocalRevenueIndex(0);
         IEtherFiNode(etherfiNode).processVestedAuctionFeeWithdrawal();
 
         numberOfValidators -= 1;
@@ -523,14 +509,6 @@ contract EtherFiNodesManager is
     function ipfsHashForEncryptedValidatorKey(uint256 _validatorId) external view returns (string memory) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey();
-    }
-
-    /// @notice Fetches the local revenue index of a specific node
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return the local revenue index for the node
-    function localRevenueIndex(uint256 _validatorId) external view returns (uint256) {
-        address etherfiNode = etherfiNodeAddress[_validatorId];
-        return IEtherFiNode(etherfiNode).localRevenueIndex();
     }
 
     /// @notice Fetches the vested auction rewards of a specific node
@@ -608,7 +586,7 @@ contract EtherFiNodesManager is
         return
             IEtherFiNode(etherfiNode).getRewardsPayouts(
                 _beaconBalance,
-                _stakingRewards, _protocolRewards, _vestedAuctionFee, false,
+                _stakingRewards, _vestedAuctionFee, false,
                 stakingRewardsSplit, protocolRewardsSplit, SCALE
             );
     }
@@ -652,7 +630,7 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return  IEtherFiNode(etherfiNode).calculateTVL(
                     _beaconBalance,
-                    _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested,
+                    _stakingRewards, _vestedAuctionFee, _assumeFullyVested,
                     stakingRewardsSplit, protocolRewardsSplit, SCALE
                 );
     }

@@ -12,7 +12,6 @@ contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
     // TODO: reduce the size of these variables
-    uint256 public localRevenueIndex;
     uint256 public vestedAuctionRewards;
     string public ipfsHashForEncryptedValidatorKey;
     uint32 public exitRequestTimestamp;
@@ -62,14 +61,6 @@ contract EtherFiNode is IEtherFiNode {
         string calldata _ipfsHash
     ) external onlyEtherFiNodeManagerContract {
         ipfsHashForEncryptedValidatorKey = _ipfsHash;
-    }
-
-    /// @notice Set the local revenue index
-    /// @param _localRevenueIndex the value of the local index to set
-    function setLocalRevenueIndex(
-        uint256 _localRevenueIndex
-    ) external payable onlyEtherFiNodeManagerContract {
-        localRevenueIndex = _localRevenueIndex;
     }
 
     /// @notice Sets the exit request timestamp
@@ -158,10 +149,9 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Compute the payouts for {staking, protocol} rewards and vested auction fee to the individuals
+    /// @notice Compute the payouts for staking rewards and vested auction fee to the individuals
     /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _stakingRewards a flag to be set if the caller wants to compute the payouts for the staking rewards
-    /// @param _protocolRewards a flag to be set if the caller wants to compute the payouts for the protocol rewards
     /// @param _vestedAuctionFee a flag to be set if the caller wants to compute the payouts for the vested auction fee
     /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
     /// @param _SRsplits the splits for the Staking Rewards
@@ -175,7 +165,6 @@ contract EtherFiNode is IEtherFiNode {
     function getRewardsPayouts(
         uint256 _beaconBalance,
         bool _stakingRewards,
-        bool _protocolRewards,
         bool _vestedAuctionFee,
         bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
@@ -194,17 +183,6 @@ contract EtherFiNode is IEtherFiNode {
             (tmps[0], tmps[1], tmps[2], tmps[3]) = getStakingRewardsPayouts(
                 _beaconBalance,
                 _SRsplits,
-                _scale
-            );
-            payouts[0] += tmps[0];
-            payouts[1] += tmps[1];
-            payouts[2] += tmps[2];
-            payouts[3] += tmps[3];
-        }
-
-        if (_protocolRewards) {
-            (tmps[0], tmps[1], tmps[2], tmps[3]) = getProtocolRewardsPayouts(
-                _PRsplits,
                 _scale
             );
             payouts[0] += tmps[0];
@@ -251,7 +229,7 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        uint256 stakingBalance = _beaconBalance + getWithdrawableAmount(true, false, false, false);
+        uint256 stakingBalance = _beaconBalance + getWithdrawableAmount(true, false, false);
         uint256 rewards;
 
         // If (Staking Principal + Staking Rewards >= 32 ether), the validator is running in a normal state
@@ -289,34 +267,6 @@ contract EtherFiNode is IEtherFiNode {
         }
 
         return (operator, tnft, bnft, treasury);
-    }
-
-    /// @notice Fetch the accrued protocol rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
-    /// @param _splits the splits for the protocol rewards
-    /// @param _scale the scale = SUM(_splits)
-    ///
-    /// @return toNodeOperator  the payout to the Node Operator
-    /// @return toTnft          the payout to the T-NFT holder
-    /// @return toBnft          the payout to the B-NFT holder
-    /// @return toTreasury      the payout to the Treasury
-    function getProtocolRewardsPayouts(
-        IEtherFiNodesManager.RewardsSplit memory _splits,
-        uint256 _scale
-    )
-        public
-        view
-        returns (
-            uint256 toNodeOperator,
-            uint256 toTnft,
-            uint256 toBnft,
-            uint256 toTreasury
-        )
-    {
-        uint256 rewards = getWithdrawableAmount(false, true, false, false);
-        if (rewards == 0) {
-            return (0, 0, 0, 0);
-        }
-        return calculatePayouts(rewards, _splits, _scale);
     }
 
     /// @notice Compute the non exit penalty for the b-nft holder
@@ -367,20 +317,19 @@ contract EtherFiNode is IEtherFiNode {
     function calculateTVL(
         uint256 _beaconBalance,
         bool _stakingRewards,
-        bool _protocolRewards,
         bool _vestedAuctionFee,
         bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
-        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested);
+        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards, _vestedAuctionFee, _assumeFullyVested);
 
         // Compute the payouts for the rewards = (staking rewards + vested auction fee rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
         uint256[] memory payouts = new uint256[](4); // (toNodeOperator, toTnft, toBnft, toTreasury)
         (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(_beaconBalance, 
-                                                                            _stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested,
+                                                                            _stakingRewards, _vestedAuctionFee, _assumeFullyVested,
                                                                              _SRsplits, _PRsplits, _scale);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
@@ -411,7 +360,7 @@ contract EtherFiNode is IEtherFiNode {
 
         require(
             payouts[0] + payouts[1] + payouts[2] + payouts[3] ==
-                _beaconBalance + getWithdrawableAmount(_stakingRewards, _protocolRewards, _vestedAuctionFee, _assumeFullyVested),
+                _beaconBalance + getWithdrawableAmount(_stakingRewards, _vestedAuctionFee, _assumeFullyVested),
             "Incorrect Amount"
         );
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
@@ -480,17 +429,12 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Compute the withdrawable amount from the node
     /// @param _stakingRewards a flag to include the withdrawable amount for the staking principal + rewards
-    /// @param _protocolRewards a flag to include the withdrawable amount for the protocol rewards
     /// @param _vestedAuctionFee a flag to include the withdrawable amount for the vested auction fee
     /// @param _assumeFullyVested a flag to include the vested rewards assuming the vesting schedules are completed
-    function getWithdrawableAmount(bool _stakingRewards, bool _protocolRewards, bool _vestedAuctionFee, bool _assumeFullyVested) public view returns (uint256) {
+    function getWithdrawableAmount(bool _stakingRewards, bool _vestedAuctionFee, bool _assumeFullyVested) public view returns (uint256) {
         uint256 balance = 0;
         if (_stakingRewards) {
             balance += address(this).balance - vestedAuctionRewards;
-        }
-        if (_protocolRewards && localRevenueIndex > 0) {
-            uint256 globalRevenueIndex = IProtocolRevenueManager(_protocolRevenueManagerAddress()).globalRevenueIndex();
-            balance += globalRevenueIndex - localRevenueIndex;
         }
         if (_vestedAuctionFee) {
             balance += _getClaimableVestedRewards(_assumeFullyVested);

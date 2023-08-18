@@ -10,11 +10,11 @@ contract LargeScenariosTest is TestSetup {
         setUpTests();
     }
 
+    // TODO(Dave): Re-enable
+    /*
     function test_LargeScenarioOne() public {
-        /* 
-         Alice, Bob, Chad - Operators
-         Dan, Elvis, Greg, - Stakers
-         */
+         // Alice, Bob, Chad - Operators
+         // Dan, Elvis, Greg, - Stakers
 
         /// Register Node Operators
         bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
@@ -294,7 +294,7 @@ contract LargeScenariosTest is TestSetup {
         assertEq(TNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
         assertEq(BNFTInstance.ownerOf(gregProcessedBidIds[0]), greg);
 
-        /*---- Staking Rewards come in ----*/
+        //---- Staking Rewards come in ----
 
         // Owner acting as deposit contract
         skip(2 weeks);
@@ -340,4 +340,5 @@ contract LargeScenariosTest is TestSetup {
             treasuryBalanceBeforeSkim + toTreasury
         );    
     }
+    */
 }

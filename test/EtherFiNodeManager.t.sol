@@ -165,12 +165,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         managerInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(bidId[0], "_ipfsHash");
     }
 
-    function test_setEtherFiNodeLocalRevenueIndexRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only protocol revenue manager contract function");
-        vm.prank(owner);
-        managerInstance.setEtherFiNodeLocalRevenueIndex(bidId[0], 1);
-    }
-
     function test_RegisterEtherFiNodeRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only staking manager contract function");
         vm.prank(owner);

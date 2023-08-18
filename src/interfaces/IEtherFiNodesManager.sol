@@ -35,8 +35,6 @@ interface IEtherFiNodesManager {
         uint256 _validatorId
     ) external view returns (string memory);
 
-    function localRevenueIndex(uint256 _validatorId) external returns (uint256);
-
     function vestedAuctionRewards(
         uint256 _validatorId
     ) external returns (uint256);
@@ -137,11 +135,6 @@ interface IEtherFiNodesManager {
         uint256 _validatorId,
         string calldata _ipfs
     ) external;
-
-    function setEtherFiNodeLocalRevenueIndex(
-        uint256 _validatorId,
-        uint256 _localRevenueIndex
-    ) external payable;
 
     function sendExitRequest(uint256 _validatorId) external;
     function batchSendExitRequest(uint256[] calldata _validatorIds) external;

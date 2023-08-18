@@ -50,8 +50,6 @@ interface IEtherFiNode {
         view
         returns (string memory);
 
-    function localRevenueIndex() external view returns (uint256);
-
     function stakingStartTimestamp() external view returns (uint32);
 
     function exitRequestTimestamp() external view returns (uint32);
@@ -72,11 +70,6 @@ interface IEtherFiNode {
         uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);
 
-    function getProtocolRewardsPayouts(
-        IEtherFiNodesManager.RewardsSplit memory _splits,
-        uint256 _scale
-    ) external view returns (uint256, uint256, uint256, uint256);
-
     function getNonExitPenalty(
         uint32 _tNftExitRequestTimestamp, 
         uint32 _bNftExitRequestTimestamp
@@ -85,7 +78,6 @@ interface IEtherFiNode {
     function getRewardsPayouts(
         uint256 _beaconBalance,
         bool _stakingRewards,
-        bool _protocolRewards,
         bool _vestedAuctionFee,
         bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
@@ -96,7 +88,6 @@ interface IEtherFiNode {
     function calculateTVL(
         uint256 _beaconBalance,
         bool _stakingRewards,
-        bool _protocolRewards,
         bool _vestedAuctionFee,
         bool _assumeFullyVested,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
@@ -110,8 +101,6 @@ interface IEtherFiNode {
     function setIpfsHashForEncryptedValidatorKey(
         string calldata _ipfs
     ) external;
-
-    function setLocalRevenueIndex(uint256 _localRevenueIndex) external payable;
 
     function setExitRequestTimestamp() external;
 

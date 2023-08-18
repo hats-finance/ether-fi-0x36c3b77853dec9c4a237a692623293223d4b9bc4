@@ -115,13 +115,6 @@ contract EtherFiNodeTest is TestSetup {
 
     }
 
-    function test_SetLocalRevenueIndexRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only EtherFiNodeManager Contract");
-        vm.prank(owner);
-        safeInstance.setLocalRevenueIndex(1);
-
-    }
-
     function test_SetExitRequestTimestampRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
