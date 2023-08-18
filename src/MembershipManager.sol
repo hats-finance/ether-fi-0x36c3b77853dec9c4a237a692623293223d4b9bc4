@@ -196,7 +196,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _amount The amount of membership tokens to exchange.
     function requestWithdraw(uint256 _tokenId, uint256 _amount) external whenNotPaused returns (uint256) {
         _requireTokenOwner(_tokenId);
-        if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
 
         // prevent transfers for several blocks after a withdrawal to prevent frontrunning
         membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
