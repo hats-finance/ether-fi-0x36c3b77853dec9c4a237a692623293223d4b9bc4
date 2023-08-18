@@ -174,22 +174,20 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function batchRegisterValidators(
         bytes32 _depositRoot,
-        uint256[] calldata _validatorIds,
-        IStakingManager.DepositData[] calldata _depositData
-        ) external onlyAdmin
+        uint256[] calldata _validatorIds
+    ) external onlyAdmin
     {
         require(bNftTreasury != address(0), "'bNftTreasury' cannot be address zero");
         numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, bNftTreasury, address(this), _depositData);
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, bNftTreasury, address(this));
     }
 
     function batchRegisterAsBnftHolder(
         bytes32 _depositRoot,
-        uint256[] calldata _validatorIds,
-        IStakingManager.DepositData[] calldata _depositData
+        uint256[] calldata _validatorIds
     ) external {
         numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData);
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this));
     }
 
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){

@@ -58,7 +58,7 @@ contract StakingManager is
     event StakeDeposit(address indexed staker, uint256 bidId, address withdrawSafe);
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(address indexed operator, address indexed bNftOwner, address indexed tNftOwner, 
-                              uint256 validatorId, bytes validatorPubKey, string ipfsHashForEncryptedValidatorKey);
+                              uint256 validatorId);
     event WhitelistDisabled();
     event WhitelistEnabled();
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
@@ -149,14 +149,12 @@ contract StakingManager is
     /// @param _depositData Array of data structures to hold all data needed for depositing to the beacon chain
     function batchRegisterValidators(
         bytes32 _depositRoot,
-        uint256[] calldata _validatorId,
-        DepositData[] calldata _depositData
+        uint256[] calldata _validatorId
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
-        require(_validatorId.length == _depositData.length, "Array lengths must match");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
+            _registerValidator(_validatorId[x], msg.sender, msg.sender);
         }
     }
 
@@ -170,14 +168,12 @@ contract StakingManager is
         bytes32 _depositRoot,
         uint256[] calldata _validatorId,
         address _bNftRecipient, 
-        address _tNftRecipient,
-        DepositData[] calldata _depositData
+        address _tNftRecipient
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
-        require(_validatorId.length == _depositData.length, "Array lengths must match");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x]);    
+            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient);    
         }  
     }
 
@@ -302,17 +298,12 @@ contract StakingManager is
     /// however, instead of the validator key, it will include the IPFS hash
     /// containing the validator key encrypted by the corresponding node operator's public key
     function _registerValidator(
-        uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData
+        uint256 _validatorId, address _bNftRecipient, address _tNftRecipient
     ) internal {
         require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");        
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
 
-        // Deposit to the Beacon Chain
-        bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
-        depositContractEth2.deposit{value: stakeAmount}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, _depositData.depositDataRoot);
-
         nodesManager.incrementNumberOfValidators(1);
-        nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         auctionManager.processAuctionFeeTransfer(_validatorId);
 
@@ -325,10 +316,19 @@ contract StakingManager is
             auctionManager.getBidOwner(_validatorId),
             _bNftRecipient,
             _tNftRecipient,
-            _validatorId,
-            _depositData.publicKey,
-            _depositData.ipfsHashForEncryptedValidatorKey
+            _validatorId
         );
+    }
+
+    function batchApproveRegistration(uint256[] memory  _validatorId, DepositData[] calldata _depositData) external onlyAdmin {
+        require(_validatorId.length == _depositData.length, "Array lengths must match");
+
+        for (uint256 x; x < _validatorId.length; ++x) {
+             // Deposit to the Beacon Chain
+            bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
+            depositContractEth2.deposit{value: stakeAmount}(_depositData[x].publicKey, withdrawalCredentials, _depositData[x].signature, _depositData[x].depositDataRoot);
+            nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId[x], _depositData[x].ipfsHashForEncryptedValidatorKey);
+        }  
     }
 
     function registerEth2DepositContract(address _address) public onlyOwner {
