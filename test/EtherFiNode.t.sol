@@ -346,8 +346,8 @@ contract EtherFiNodeTest is TestSetup {
 
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
-        assertEq(address(etherFiNode).balance, 0.05 ether);
-        assertTrue(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]) > 0);
+        assertEq(address(etherFiNode).balance, 0.00 ether); // node no longer receives auction revenue
+        assertTrue(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]) == 0);
 
         uint256 auctionRevenueRewards = protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]);
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
@@ -358,8 +358,8 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EVICTED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
         assertEq(address(etherFiNode).balance, 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]), 0);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.05 ether + auctionRevenueRewards);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]), 0); // nodes no longer accrue auction revenue
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance + auctionRevenueRewards);
     }
 
     function test_partialWithdraw() public {
@@ -389,7 +389,7 @@ contract EtherFiNodeTest is TestSetup {
 
 
         // Withdraw the {staking, protocol} rewards
-        // - bid amount = 0.1 ether
+        // - bid amount = 0 ether (Auction revenue no longer distributed to nodes)
         //   - 50 % ether is vested for the stakers
         //   - 50 % ether is shared across all validators
         //     - 25 % to treasury, 25% to node operator, the rest to the stakers
@@ -398,14 +398,14 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.partialWithdraw(bidId[0], true);
         assertEq(
             address(nodeOperator).balance,
-            nodeOperatorBalance + (1 ether * 5) / 100 + (0.1 ether * 50 * 25) / (100 * 100)
+            nodeOperatorBalance + (1 ether * 5) / 100 + (0.0 ether * 50 * 25) / (100 * 100)
         );
         assertEq(
             address(treasuryInstance).balance,
-            treasuryBalance + (1 ether * 5 ) / 100 + (0.1 ether * 50 * 25) / (100 * 100)
+            treasuryBalance + (1 ether * 5 ) / 100 + (0.0 ether * 50 * 25) / (100 * 100)
         );
-        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
-        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
+        assertEq(address(dan).balance, danBalance + 0.815625000000000000 ether);
+        assertEq(address(staker).balance, bnftStakerBalance + 0.084375000000000000 ether);
 
         vm.deal(etherfiNode, 8.0 ether);
         vm.expectRevert(
