@@ -16,8 +16,9 @@ import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
+import "./interfaces/ILiquidityPool.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -145,7 +146,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Transfers the amount of eETH from msg.senders account to the WithdrawRequestNFT contract & mints an NFT to the msg.sender
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
-    function requestWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen returns (uint256) {
+    function requestWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
         require(recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
@@ -159,7 +160,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return requestId;
     }
 
-    function requestMembershipNFTWithdraw(address recipient, uint256 amount) external whenLiquidStakingOpen returns (uint256) {
+    function requestWithdrawWithPermit(address _owner, uint256 _amount, PermitInput calldata _permit)
+        external
+        returns (uint256)
+    {
+        eETH.permit(msg.sender, address(this), _permit.value, _permit.deadline, _permit.v, _permit.r, _permit.s);
+        return requestWithdraw(_owner, _amount);
+    }
+
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
         require(recipient != address(0), "Cannot withdraw to zero address");
 

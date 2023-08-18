@@ -4,16 +4,24 @@ pragma solidity 0.8.13;
 import "@openzeppelin-upgradeable/contracts/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/utils/cryptography/EIP712Upgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/utils/CountersUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/draft-IERC20PermitUpgradeable.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
+contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC20PermitUpgradeable, EIP712Upgradeable, IeETH {
+    using CountersUpgradeable for CountersUpgradeable.Counter;
     ILiquidityPool public liquidityPool;
 
     uint256 public totalShares;
     mapping (address => uint256) public shares;
     mapping (address => mapping (address => uint256)) public allowances;
+    mapping (address => CountersUpgradeable.Counter) private _nonces;
+
+    bytes32 private constant _PERMIT_TYPEHASH =
+        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     // [STATE-CHANGING FUNCTIONS]
     constructor() { _disableInitializers(); }
@@ -77,6 +85,27 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
         return true;
     }
 
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public virtual override(IeETH, IERC20PermitUpgradeable) {
+        require(block.timestamp <= deadline, "ERC20Permit: expired deadline");
+
+        bytes32 structHash = keccak256(abi.encode(_PERMIT_TYPEHASH, owner, spender, value, _useNonce(owner), deadline));
+
+        bytes32 hash = _hashTypedDataV4(structHash);
+
+        address signer = ECDSAUpgradeable.recover(hash, v, r, s);
+        require(signer == owner, "ERC20Permit: invalid signature");
+
+        _approve(owner, spender, value);
+    }
+
     // [INTERNAL FUNCTIONS] 
     function _transfer(address _sender, address _recipient, uint256 _amount) internal {
         uint256 _sharesToTransfer = liquidityPool.sharesForAmount(_amount);
@@ -105,6 +134,12 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
         address newImplementation
     ) internal override onlyOwner {}
 
+    function _useNonce(address owner) internal virtual returns (uint256 current) {
+        CountersUpgradeable.Counter storage nonce = _nonces[owner];
+        current = nonce.current();
+        nonce.increment();
+    }
+
     // [GETTERS]
     function name() public pure returns (string memory) { return "ether.fi ETH"; }
     function symbol() public pure returns (string memory) { return "eETH"; }
@@ -120,6 +155,14 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IeETH {
 
     function getImplementation() external view returns (address) {
         return _getImplementation();
+    }
+
+    function nonces(address owner) public view virtual override returns (uint256) {
+        return _nonces[owner].current();
+    }
+
+    function DOMAIN_SEPARATOR() external view override returns (bytes32) {
+        return _domainSeparatorV4();
     }
 
     // [MODIFIERS]
