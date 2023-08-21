@@ -318,12 +318,13 @@ contract StakingManager is
     /// @param _bNftRecipient The address to receive the minted B-NFT
     /// @param _tNftRecipient The address to receive the minted T-NFT
     /// @param _depositData Data structure to hold all data needed for depositing to the beacon chain
+    /// @param _staker Data structure to hold all data needed for depositing to the beacon chain
     /// however, instead of the validator key, it will include the IPFS hash
     /// containing the validator key encrypted by the corresponding node operator's public key
     function _registerValidator(
-        uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData, address _user
+        uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData, address _staker
     ) internal {
-        require(bidIdToStaker[_validatorId] == _user, "Not deposit owner");   
+        require(bidIdToStaker[_validatorId] == _staker, "Not deposit owner");   
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
 
         // Deposit to the Beacon Chain
