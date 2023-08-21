@@ -38,6 +38,11 @@ contract AuctionManager is
 
     address public admin;
 
+    // new state variables for phase 2
+    address public membershipNFTContractAddress;
+    uint256 public accumulatedRevenue;
+    uint256 public accumulatedRevenueThreshold;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -68,6 +73,8 @@ contract AuctionManager is
         maxBidAmount = 5 ether;
         numberOfBids = 1;
         whitelistEnabled = true;
+        accumulatedRevenue = 0;
+        accumulatedRevenueThreshold = 10 ether;
 
         nodeOperatorManager = INodeOperatorManager(_nodeOperatorManagerContract);
 
@@ -185,14 +192,22 @@ contract AuctionManager is
         emit BidReEnteredAuction(_bidId);
     }
 
-    /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
+    /// @notice Transfer the auction fee received from the node operator to the membership NFT contract when above the threshold
     /// @dev Called by registerValidator() in StakingManager.sol
     /// @param _bidId the ID of the validator
     function processAuctionFeeTransfer(
         uint256 _bidId
     ) external onlyStakingManagerContract {
         uint256 amount = bids[_bidId].amount;
-        protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
+ 
+        uint256 newAccumulatedRevenue = accumulatedRevenue + amount;
+        if (newAccumulatedRevenue >= accumulatedRevenueThreshold) {
+            (bool sent, ) = membershipNFTContractAddress.call{value: newAccumulatedRevenue}("");
+            require(sent, "Failed to send Ether");
+            accumulatedRevenue = 0;
+        } else {
+            accumulatedRevenue = newAccumulatedRevenue;
+        }
     }
 
     /// @notice Disables the whitelisting phase of the bidding
@@ -293,6 +308,16 @@ contract AuctionManager is
         stakingManagerContractAddress = _stakingManagerContractAddress;
     }
 
+
+    /// @notice Sets the membership NFT contract address
+    /// @dev Needed to transfer accumulated revenue to the membership NFT contract
+    /// @param _membershipNFTContractAddress new MembershiptNFT contract address
+    function setMembershipNFTContractAddress(address _membershipNFTContractAddress) external onlyOwner {
+        require(membershipNFTContractAddress == address(0), "Address already set");
+        require(_membershipNFTContractAddress != address(0), "No zero addresses");
+        membershipNFTContractAddress = _membershipNFTContractAddress;
+    }
+
     /// @notice Updates the minimum bid price for a non-whitelisted bidder
     /// @param _newMinBidAmount the new amount to set the minimum bid price as
     function setMinBidPrice(uint64 _newMinBidAmount) external onlyAdmin {
@@ -306,6 +331,12 @@ contract AuctionManager is
     function setMaxBidPrice(uint64 _newMaxBidAmount) external onlyAdmin {
         require(_newMaxBidAmount > minBidAmount, "Min bid exceeds max bid");
         maxBidAmount = _newMaxBidAmount;
+    }
+
+    /// @notice Updates the accumulated revenue threshold that will trigger a transfer to MembershipNFT contract
+    /// @param _newThreshold the new threshold to set
+    function setAccumulatedRevenueThreshold(uint256 _newThreshold) external onlyAdmin {
+        accumulatedRevenueThreshold = _newThreshold;
     }
 
     /// @notice Updates the minimum bid price for a whitelisted address

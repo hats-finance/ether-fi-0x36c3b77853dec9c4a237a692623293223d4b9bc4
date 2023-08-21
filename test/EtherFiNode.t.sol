@@ -78,20 +78,10 @@ contract EtherFiNodeTest is TestSetup {
 
         safeInstance = EtherFiNode(payable(etherFiNode));
 
-        assertEq(address(etherFiNode).balance, 0.05 ether);
+        assertEq(address(etherFiNode).balance, 0 ether);
         assertEq(
-            managerInstance.vestedAuctionRewards(bidId[0]),
-            0.05 ether
-        );
-        assertEq(
-            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
-                bidId[0]
-            ),
-            0.05 ether
-        );
-        assertEq(
-            protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.05 ether + 1
+            auctionInstance.accumulatedRevenue(),
+            0.1 ether
         );
     }
 

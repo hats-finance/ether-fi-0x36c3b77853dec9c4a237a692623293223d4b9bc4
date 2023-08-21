@@ -305,6 +305,7 @@ contract TestSetup is Test {
         membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
         membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
         membershipNftInstance.updateAdmin(alice);
+        auctionInstance.setMembershipNFTContractAddress(address(membershipNftImplementation));
 
         withdrawRequestNFTImplementation = new WithdrawRequestNFT();
         withdrawRequestNFTProxy = new UUPSProxy(address(withdrawRequestNFTImplementation), "");
