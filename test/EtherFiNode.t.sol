@@ -133,10 +133,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
-        assertEq(
-            protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.05 ether + 1
-        );
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
         bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
@@ -209,37 +206,19 @@ contract EtherFiNodeTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        
+
         depositDataArray[0] = depositData;
 
         startHoax(bob);
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, depositDataArray);
         vm.stopPrank();
 
-        assertEq(
-            protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.15 ether + 1
-        );
-        assertEq(
-            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
-            0.15 ether
-        );
-        assertEq(
-            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
-                bidId1[0]
-            ),
-            0.1 ether
-        );
-        assertEq(
-            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
-                bidId2[0]
-            ),
-            0
-        );
-        assertEq(
-            address(managerInstance.etherfiNodeAddress(bidId1[0])).balance,
-            0.2 ether
-        );
+        // protocolRevenue manager no longer gets auction revenue
+        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1[0]), 0);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2[0]), 0);
+        assertEq(address(managerInstance.etherfiNodeAddress(bidId1[0])).balance, 0);
 
         etherFiNode = managerInstance.etherfiNodeAddress(bidId2[0]);
 
@@ -267,26 +246,10 @@ contract EtherFiNodeTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId2, depositDataArray2);
         vm.stopPrank();
 
-        assertEq(
-            address(managerInstance.etherfiNodeAddress(bidId2[0])).balance,
-            0.15 ether
-        );
-        assertEq(
-            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1),
-            0.2 ether
-        );
-        assertEq(
-            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
-                bidId1[0]
-            ),
-            0.15 ether
-        );
-        assertEq(
-            protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(
-                bidId2[0]
-            ),
-            0.05 ether
-        );
+        assertEq(address(managerInstance.etherfiNodeAddress(bidId2[0])).balance, 0);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1[0]), 0);
+        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2[0]), 0);
     }
 
     function test_markExitedWorksCorrectly() public {
