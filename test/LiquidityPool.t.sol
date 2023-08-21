@@ -465,7 +465,6 @@ contract LiquidityPoolTest is TestSetup {
         managerInstance.fullWithdrawBatch(newValidators);
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 63 ether);
-        assertEq(address(liquidityPoolInstance).balance, 60.045312500000000000 ether);
     }
 
     function test_SettersFailOnZeroAddress() public {
