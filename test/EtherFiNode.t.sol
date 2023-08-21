@@ -1459,6 +1459,7 @@ contract EtherFiNodeTest is TestSetup {
     function test_withdrawFundsFailsWhenReceiverConsumedTooMuchGas() public {
         uint256 validatorId = bidId[0];
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
+        vm.deal(address(etherfiNode), 3 ether); // need to give node some eth because it no longer has auction revenue
 
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
@@ -1483,5 +1484,4 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(treasuryInstance).balance, treasuryBalance + 2);
     }
 
-    
 }
