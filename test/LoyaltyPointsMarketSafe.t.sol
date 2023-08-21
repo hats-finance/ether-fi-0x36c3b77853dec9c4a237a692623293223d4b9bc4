@@ -2,11 +2,11 @@
 pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/LPAPoints.sol";
+import "../src/LoyaltyPointsMarketSafe.sol";
 
-contract LPAPointsTest is Test {
+contract LoyaltyPointsMarketSafeTest is Test {
 
-    LPAPoints pointsContract;
+    LoyaltyPointsMarketSafe pointsContract;
     address admin;
     address plebian;
 
@@ -17,7 +17,7 @@ contract LPAPointsTest is Test {
         plebian = address(0x4321);
 
         vm.prank(admin);
-        pointsContract = new LPAPoints(1.0 gwei);
+        pointsContract = new LoyaltyPointsMarketSafe(1.0 gwei);
     }
 
     function test_purchasePoints() public {
