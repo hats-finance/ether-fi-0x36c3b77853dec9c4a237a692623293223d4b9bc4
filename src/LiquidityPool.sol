@@ -172,16 +172,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return requestId;
     }
 
-    function batchRegisterValidators(
-        bytes32 _depositRoot,
-        uint256[] calldata _validatorIds
-    ) external onlyAdmin
-    {
-        require(bNftTreasury != address(0), "'bNftTreasury' cannot be address zero");
-        numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, bNftTreasury, address(this));
-    }
-
     function batchRegisterAsBnftHolder(
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds
