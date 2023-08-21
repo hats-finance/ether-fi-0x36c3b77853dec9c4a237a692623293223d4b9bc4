@@ -209,7 +209,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData,
-        bytes[] calldata _signature
+        bytes[] calldata signaturesForApprovalDeposit
     ) external {
         require(_validatorIds.length == _depositData.length, "Array lengths must match");
 
@@ -217,7 +217,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
 
         for(uint256 x; x < _validatorIds.length; x++) {
-            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signature[x], _depositData[x].publicKey);
+            emit BatchRegisteredAsBnftHolder(_validatorIds[x], signaturesForApprovalDeposit[x], _depositData[x].publicKey);
         }
     }
 
