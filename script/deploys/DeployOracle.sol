@@ -25,9 +25,9 @@ contract DeployOracleScript is Script {
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
         etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
 
-        etherFiOracleInstance.initialize(1, 75, 32, 12, beacon_genesis_time);
+        etherFiOracleInstance.initialize(1, 96, 32, 12, beacon_genesis_time);
         // etherFiOracleInstance.initialize(2, 7200, 12, beacon_genesis_time);
-        // 75 slots = 15 mins, 7200 slots = 225 epochs = 1day
+        // 96 slots = 19.2 mins, 7200 slots = 225 epochs = 1day
 
         addressProvider.addContract(address(etherFiOracleProxy), "EtherFiOracle");
 
