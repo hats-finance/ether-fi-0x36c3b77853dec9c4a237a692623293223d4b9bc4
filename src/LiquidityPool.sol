@@ -65,7 +65,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event BnftHolderDeregistered(uint256 index);
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
-    event BatchRegisterAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey);
+    event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey);
 
     error InvalidAmount();
 
@@ -217,7 +217,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
 
         for(uint256 x; x < _validatorIds.length; x++) {
-            emit BatchRegisterAsBnftHolder(_validatorIds[x], _signature[x], _depositData[x].publicKey);
+            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signature[x], _depositData[x].publicKey);
         }
     }
 
