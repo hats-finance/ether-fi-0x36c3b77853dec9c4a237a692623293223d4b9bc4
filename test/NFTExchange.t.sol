@@ -305,7 +305,7 @@ contract NFTExchangeTest is TestSetup {
 
         depositDataArray[0] = depositData;
 
-        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, alice, alice, depositDataArray);
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, alice, alice, depositDataArray, alice);
         assertEq(BNFTInstance.ownerOf(bidId1[0]), alice);
         assertEq(TNFTInstance.ownerOf(bidId1[0]), alice);
 

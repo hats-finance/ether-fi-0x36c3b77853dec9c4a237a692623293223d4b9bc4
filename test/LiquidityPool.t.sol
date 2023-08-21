@@ -772,7 +772,11 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 300 ether}(address(alice), aliceProof);
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex, uint128 numForLastIndex) = liquidityPoolInstance.dutyForWeek();
+
+        assertEq(firstIndex, 5);
+        assertEq(lastIndex, 0);
+        assertEq(numForLastIndex, 2);
 
         //With the current timestamps and data, the following is true
         //First Index = 5 
@@ -783,10 +787,17 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, aliceProof, 0);
         vm.stopPrank();
 
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 2);
+
         vm.prank(henry);
 
         //Henry deposits and his index is 7, allowing him to deposit
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, henryProof, 7);
+        uint256[] memory validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, henryProof, 7);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 6);
+        assertEq(validators[0], 3);
+        assertEq(validators[1], 4);
+        assertEq(validators[2], 5);
+        assertEq(validators[3], 6);
 
         vm.prank(chad);
 
@@ -842,6 +853,8 @@ contract LiquidityPoolTest is TestSetup {
 
         //Allow the user in the first index position to deposit 
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, firstIndexPlayerProof, firstIndex);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 4);
+
         vm.stopPrank();
 
         vm.startPrank(liquidityPoolInstance.bnftHolders(firstIndex - 1));
@@ -857,6 +870,7 @@ contract LiquidityPoolTest is TestSetup {
         //User who is last in the selection deposits with the correct amount of funds
         uint256 amount = 2 ether * numOfValidatorsForLastIndex;
         liquidityPoolInstance.batchDepositAsBnftHolder{value: amount}(bidIds, lastIndexPlayerProof, lastIndex);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 4 + numOfValidatorsForLastIndex);
         vm.stopPrank();
     }
 
@@ -918,11 +932,14 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(henry);
         //Henry deposits and his index is 7, meaning he is last and deposits 4 * 2 ether
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, henryProof, 7);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 4);
+
         vm.stopPrank();
 
         vm.startPrank(elvis);
         //Elvis deposits and his index is 6, allowing him to deposit
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 12 ether}(bidIds, elvisProof, 6);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 10);
         vm.stopPrank();
 
         vm.startPrank(chad);

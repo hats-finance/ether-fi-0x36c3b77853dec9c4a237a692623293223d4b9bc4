@@ -54,8 +54,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     
     HoldersUpdate public holdersUpdate;
 
-
-
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -172,14 +170,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return requestId;
     }
 
-    function batchRegisterAsBnftHolder(
-        bytes32 _depositRoot,
-        uint256[] calldata _validatorIds
-    ) external {
-        numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this));
-    }
-
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
@@ -213,6 +203,16 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         
         return newValidators;
     }
+
+    function batchRegisterAsBnftHolder(
+        bytes32 _depositRoot,
+        uint256[] calldata _validatorIds,
+        IStakingManager.DepositData[] calldata _depositData
+    ) external {
+        numPendingDeposits -= uint32(_validatorIds.length);
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
+    }
+
 
     function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
         uint256 returnAmount = 2 ether * _validatorIds.length;
