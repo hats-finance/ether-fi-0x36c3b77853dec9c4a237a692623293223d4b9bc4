@@ -181,53 +181,47 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    /*
-     * During ether.fi's phase 1 road map,
-     * ether.fi's multi-sig will perform as a B-NFT holder which generates the validator keys and initiates the launch of validators
-     * - {batchDepositWithBidIds, batchRegisterValidators} are used to launch the validators
-     *  - ether.fi multi-sig should bring 2 ETH which is combined with 30 ETH from the liquidity pool to launch a validator
-     * - {processNodeExit, sendExitRequests} are used to perform operational tasks to manage the liquidity
-    */
+    function batchRegisterAsBnftHolder(
+        bytes32 _depositRoot,
+        uint256[] calldata _validatorIds,
+        IStakingManager.DepositData[] calldata _depositData
+    ) external {
+        numPendingDeposits -= uint32(_validatorIds.length);
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData);
+    }
 
-    /// @notice ether.fi multi-sig (Owner) brings 2 ETH which is combined with 30 ETH from the liquidity pool and deposits 32 ETH into StakingManager
-    function batchDepositWithBidIds(
-        uint256 _numDeposits, 
-        uint256[] calldata _candidateBidIds, 
-        bytes32[] calldata _merkleProof
-        ) payable external onlyAdmin returns (uint256[] memory) {
-        require(msg.value == 2 ether * _numDeposits, "B-NFT holder must deposit 2 ETH per validator");
-        require(totalValueInLp + msg.value >= 32 ether * _numDeposits, "Not enough balance");
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
+        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
+        _isAssigned(firstIndex, lastIndex, _index);
+        require(msg.sender == bnftHolders[_index], "Incorrect Caller");
 
-        uint256 amountFromLp = 30 ether * _numDeposits;
+        uint256 numberOfValidatorsToSpin = max_validators_per_owner;
+        if(_index == lastIndex) {
+            numberOfValidatorsToSpin = lastIndexNumOfValidators;
+        }
+
+        require(msg.value == numberOfValidatorsToSpin * 2 ether, "B-NFT holder must deposit 2 ETH per validator");
+        require(totalValueInLp + msg.value >= 32 ether * numberOfValidatorsToSpin, "Not enough balance");
+
+        uint256 amountFromLp = 30 ether * numberOfValidatorsToSpin;
         if (amountFromLp > type(uint128).max) revert InvalidAmount();
 
         totalValueOutOfLp += uint128(amountFromLp);
         totalValueInLp -= uint128(amountFromLp);
-        numPendingDeposits += uint32(_numDeposits);
+        numPendingDeposits += uint32(numberOfValidatorsToSpin);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numDeposits}(_candidateBidIds, _merkleProof);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender);
 
-        if (_numDeposits > newValidators.length) {
-            uint256 returnAmount = 2 ether * (_numDeposits - newValidators.length);
+        if (numberOfValidatorsToSpin > newValidators.length) {
+            uint256 returnAmount = 2 ether * (numberOfValidatorsToSpin - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
             totalValueInLp -= uint128(returnAmount);
 
-            (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+            (bool sent, ) = msg.sender.call{value: returnAmount}("");
             require(sent, "Failed to send Ether");
         }
         
         return newValidators;
-    }
-
-    function batchRegisterValidators(
-        bytes32 _depositRoot,
-        uint256[] calldata _validatorIds,
-        IStakingManager.DepositData[] calldata _depositData
-        ) external onlyAdmin
-    {
-        require(bNftTreasury != address(0), "'bNftTreasury' cannot be address zero");
-        numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, bNftTreasury, address(this), _depositData);
     }
 
     function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
@@ -257,21 +251,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         bnftHolders.pop();
 
         emit BnftHolderDeregistered(_index);
-    }
-
-    function depositAsBnftHolder(uint256 _index) external payable {
-        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
-        _isAssigned(firstIndex, lastIndex, _index);
-        require(msg.sender == bnftHolders[_index], "Incorrect Caller");
-
-        uint256 numberOfValidatorsToSpin = max_validators_per_owner;
-        if(_index == lastIndex) {
-            numberOfValidatorsToSpin = lastIndexNumOfValidators;
-        }
-
-        require(msg.value == numberOfValidatorsToSpin * 2 ether, "Incorrect value");
-
-        //TODO: Call deposit on staking manager
     }
 
     function dutyForWeek() public returns (uint256, uint128, uint128) {
