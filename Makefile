@@ -86,6 +86,8 @@ upgrade-goerli-regulations_manager :; forge clean && forge script script/upgrade
 
 upgrade-goerli-weeth :; forge clean && forge script script/upgrades/WeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
+upgrade-goerli-etherfi_oracle :; forge clean && forge script script/upgrades/EtherFiOracleUpgradeScript.s.sol:EtherFiOracleUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (MAINNET)
 
@@ -118,6 +120,8 @@ upgrade-protocol_revenue_manager :; forge clean && forge script script/upgrades/
 upgrade-regulations_manager :; forge clean && forge script script/upgrades/RegulationsManagerUpgradeScript.s.sol:RegulationsManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-weeth :; forge clean && forge script script/upgrades/WeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
+upgrade-etherfi_oracle :; forge clean && forge script script/upgrades/EtherFiOracleUpgradeScript.s.sol:EtherFiOracleUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
