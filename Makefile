@@ -49,6 +49,10 @@ deploy-goerli-address-provider:; forge clean && forge script script/deploys/Depl
 
 deploy-mainnet-address-provider:; forge clean && forge script script/deploys/DeployAndPopulateAddressProviderScript.s.sol:DeployAndPopulateAddressProvider --rpc-url ${MAINNET_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
+deploy-goerli-oracle:; forge clean && forge script script/deploys/DeployOracle.sol:DeployOracleScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+
+deploy-mainnet-oracle:; forge clean && forge script script/deploys/DeployOracle.s.sol:DeployOracleScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (GOERLI)
 
