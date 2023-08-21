@@ -194,7 +194,7 @@ contract StakingManager is
 
             // Deposit to the Beacon Chain
             bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
-            depositContractEth2.deposit{value: stakeAmount}(depData.publicKey, withdrawalCredentials, depData.signature, depData.depositDataRoot);
+            depositContractEth2.deposit{value: stakeAmount - 1 ether}(depData.publicKey, withdrawalCredentials, depData.signature, depData.depositDataRoot);
             nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId[x], depData.ipfsHashForEncryptedValidatorKey);
         }  
     }
@@ -333,6 +333,11 @@ contract StakingManager is
         nodesManager.incrementNumberOfValidators(1);
 
         auctionManager.processAuctionFeeTransfer(_validatorId);
+        
+        // Deposit to the Beacon Chain
+        bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
+        depositContractEth2.deposit{value: 1 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, _depositData.depositDataRoot);
+        nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         // Let validatorId = nftTokenId
         uint256 nftTokenId = _validatorId;
