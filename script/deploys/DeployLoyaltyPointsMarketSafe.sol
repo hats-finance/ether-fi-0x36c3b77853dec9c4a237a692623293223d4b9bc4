@@ -8,7 +8,7 @@ import "../../src/helpers/AddressProvider.sol";
 
 contract DeployLoyaltyPointsMarketSafeScript is Script {
 
-    LoyaltyPointsMarketSafe public lpaPoints;
+    LoyaltyPointsMarketSafe public lpaMarketSafe;
     AddressProvider public addressProvider;
 
     function run() external {
@@ -20,9 +20,9 @@ contract DeployLoyaltyPointsMarketSafeScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
 
-        lpaPoints = new LoyaltyPointsMarketSafe(1500000000000);
+        lpaMarketSafe = new LoyaltyPointsMarketSafe(1500000000000);
 
-        addressProvider.addContract(address(lpaPoints), "LoyaltyPointsMarketSafe");
+        addressProvider.addContract(address(lpaMarketSafe), "LoyaltyPointsMarketSafe");
 
         vm.stopBroadcast();
     }
