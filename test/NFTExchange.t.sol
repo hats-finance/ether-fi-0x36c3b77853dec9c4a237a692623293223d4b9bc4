@@ -57,7 +57,9 @@ contract NFTExchangeTest is TestSetup {
         // make a small withdrawal
         vm.startPrank(alice);
         uint256 withdrawalAmount = 0.1 ether;
-        membershipManagerInstance.unwrapForEth(membershipNftTokenId, withdrawalAmount);
+        uint256 requestId = membershipManagerInstance.requestWithdraw(membershipNftTokenId, withdrawalAmount);
+        withdrawRequestNFTInstance.finalizeRequests(requestId);
+        withdrawRequestNFTInstance.claimWithdraw(requestId);
         assertEq(membershipNftInstance.transferLockedUntil(membershipNftTokenId), block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // fails because token is locked
@@ -282,7 +284,7 @@ contract NFTExchangeTest is TestSetup {
 
         vm.deal(alice, 32 ether);
         vm.startPrank(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, proof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, proof, alice);
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
