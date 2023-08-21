@@ -204,6 +204,11 @@
     "outputs": [
       {
         "internalType": "bool",
+        "name": "registered",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
         "name": "enabled",
         "type": "bool"
       },
@@ -240,6 +245,19 @@
         "internalType": "bool",
         "name": "consensusReached",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "consensusVersion",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -347,19 +365,24 @@
         "type": "uint32"
       },
       {
-        "internalType": "uint64",
+        "internalType": "uint32",
+        "name": "_reportPeriodSlot",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
         "name": "_slotsPerEpoch",
-        "type": "uint64"
+        "type": "uint32"
       },
       {
-        "internalType": "uint64",
+        "internalType": "uint32",
         "name": "_secondsPerSlot",
-        "type": "uint64"
+        "type": "uint32"
       },
       {
-        "internalType": "uint64",
+        "internalType": "uint32",
         "name": "_genesisTime",
-        "type": "uint64"
+        "type": "uint32"
       }
     ],
     "name": "initialize",
@@ -381,6 +404,45 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lastHandledReportRefSlot",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lastPublishedReportRefBlock",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lastPublishedReportRefSlot",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -432,7 +494,46 @@
   },
   {
     "inputs": [],
+    "name": "quorumSize",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reportPeriodSlot",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_consensusVersion",
+        "type": "uint32"
+      }
+    ],
+    "name": "setConsensusVersion",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
