@@ -3,10 +3,10 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "../../src/UUPSProxy.sol";
-import "../../src/LPAPoints.sol";
+import "../../src/LoyaltyPointsMarketSafe.sol";
 import "../../src/helpers/AddressProvider.sol";
 
-contract DeployLPAPointsScript is Script {
+contract DeployLoyaltyPointsMarketSafeScript is Script {
 
     LPAPoints public lpaPoints;
     AddressProvider public addressProvider;
@@ -22,7 +22,7 @@ contract DeployLPAPointsScript is Script {
 
         lpaPoints = new LPAPoints(1000000000000);
 
-        addressProvider.addContract(address(lpaPoints), "LPAPoints");
+        addressProvider.addContract(address(lpaPoints), "LoyaltyPointsMarketSafe");
 
         vm.stopBroadcast();
     }

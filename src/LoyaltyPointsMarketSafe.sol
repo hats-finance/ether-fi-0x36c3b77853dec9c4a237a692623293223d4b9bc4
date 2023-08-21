@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract LPAPoints is Ownable {
+contract LoyaltyPointsMarketSafe is Ownable {
 
     event PointsPurchased(address indexed buyer, uint256 indexed tokenId, uint256 amountWei, uint256 weiPerPoint);
 
