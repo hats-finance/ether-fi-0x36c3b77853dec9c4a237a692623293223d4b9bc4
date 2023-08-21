@@ -65,6 +65,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event BnftHolderDeregistered(uint256 index);
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
+    event BatchRegisterAsBnftHolder(bytes signature, bytes pubKey);
 
     error InvalidAmount();
 
@@ -207,12 +208,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function batchRegisterAsBnftHolder(
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
-        IStakingManager.DepositData[] calldata _depositData
+        IStakingManager.DepositData[] calldata _depositData,
+        bytes[] calldata _signature
     ) external {
+        require(_validatorIds.length == _depositData.length, "Array lengths must match");
+
         numPendingDeposits -= uint32(_validatorIds.length);
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
-    }
 
+        for(uint256 x; x < _validatorIds.length; x++) {
+            emit BatchRegisterAsBnftHolder(_signature[x], _depositData[x].publicKey);
+        }
+    }
 
     function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
         uint256 returnAmount = 2 ether * _validatorIds.length;

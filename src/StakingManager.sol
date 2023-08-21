@@ -20,7 +20,7 @@ import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
-import "forge-std/console.sol";
+import "./libraries/DepositRootGenerator.sol";
 
 contract StakingManager is
     Initializable,
@@ -51,8 +51,6 @@ contract StakingManager is
     mapping(uint256 => address) public bidIdToStaker;
 
     address public admin;
-
-    mapping(uint256 => DepositData) public depositData;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -159,7 +157,6 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            depositData[_validatorId[x]] = _depositData[x];
             _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x], msg.sender);
         }
     }
@@ -182,20 +179,19 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            depositData[_validatorId[x]] = _depositData[x];
             _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _user);    
         }  
     }
 
-    function batchApproveRegistration(uint256[] memory _validatorId) external onlyAdmin {
+    function batchApproveRegistration(
+        uint256[] memory _validatorId, 
+        bytes[] calldata _pubKey,
+        bytes[] calldata _signature
+    ) external onlyAdmin {
         for (uint256 x; x < _validatorId.length; ++x) {
-            
-            DepositData memory depData = depositData[_validatorId[x]];
-
             // Deposit to the Beacon Chain
             bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
-            depositContractEth2.deposit{value: stakeAmount - 1 ether}(depData.publicKey, withdrawalCredentials, depData.signature, depData.depositDataRoot);
-            nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId[x], depData.ipfsHashForEncryptedValidatorKey);
+            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether));
         }  
     }
 
@@ -336,7 +332,7 @@ contract StakingManager is
         
         // Deposit to the Beacon Chain
         bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
-        depositContractEth2.deposit{value: 1 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, _depositData.depositDataRoot);
+        depositContractEth2.deposit{value: 1 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, 1 ether));
         nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         // Let validatorId = nftTokenId
@@ -396,10 +392,14 @@ contract StakingManager is
     /// @param _amount the amount to refund the depositor
     function _refundDeposit(address _depositOwner, uint256 _amount) internal {
         (bool sent, ) = _depositOwner.call{value: _amount}("");
-        require(sent, "Failed to send Ether");
+        require(sent, "Failed to send Ether"); 
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    function generateDepositRoot() internal returns (bytes32){
+
+    }
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------
