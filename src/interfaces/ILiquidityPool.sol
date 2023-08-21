@@ -21,7 +21,7 @@ interface ILiquidityPool {
     function requestMembershipNFTWithdraw(address recipient, uint256 amount) external returns (uint256);
 
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory);
-    function batchRegisterAsBnftHolder(bytes32 _depositRoot, uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _depositData, bytes memory signature) external;
+    function batchRegisterAsBnftHolder(bytes32 _depositRoot, uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _depositData) external;
     function batchCancelDeposit(uint256[] calldata _validatorIds) external;
     function sendExitRequests(uint256[] calldata _validatorIds) external;
 
