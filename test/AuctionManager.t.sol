@@ -58,7 +58,8 @@ contract AuctionManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         vm.stopPrank();
 
@@ -90,7 +91,8 @@ contract AuctionManagerTest is TestSetup {
         bidIdArray[0] = bidId1[0];
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
 
         vm.stopPrank();
@@ -129,7 +131,8 @@ contract AuctionManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
         );
         assertEq(auctionInstance.numberOfActiveBids(), 1);
 
@@ -199,7 +202,7 @@ contract AuctionManagerTest is TestSetup {
             5
         );
 
-        assertFalse(nodeOperatorManagerInstance.isWhitelisted(henry));
+        assertFalse(nodeOperatorManagerInstance.isWhitelisted(jess));
         assertTrue(nodeOperatorManagerInstance.isWhitelisted(alice));
 
         hoax(alice);
@@ -237,7 +240,7 @@ contract AuctionManagerTest is TestSetup {
         assertTrue(auctionInstance.whitelistEnabled());
 
         vm.expectRevert("Only whitelisted addresses");
-        hoax(henry);
+        hoax(jess);
         auctionInstance.createBid{value: 0.01 ether}(1, 0.01 ether);
 
         assertEq(auctionInstance.numberOfActiveBids(), 5);
@@ -262,9 +265,9 @@ contract AuctionManagerTest is TestSetup {
 
         assertEq(auctionInstance.numberOfActiveBids(), 6);
 
-        // henry cannot bid below the min bid amount because he was not whitelisted
+        // jess cannot bid below the min bid amount because he was not whitelisted
         vm.expectRevert("Incorrect bid value");
-        hoax(henry);
+        hoax(jess);
         uint256[] memory henryBidIds = auctionInstance.createBid{
             value: 0.001 ether
         }(1, 0.001 ether);
@@ -287,7 +290,7 @@ contract AuctionManagerTest is TestSetup {
         auctionInstance.enableWhitelist();
 
         vm.expectRevert("Only whitelisted addresses");
-        hoax(henry);
+        hoax(jess);
         auctionInstance.createBid{value: 0.01 ether}(1, 0.01 ether);
 
         hoax(bob);
@@ -338,7 +341,7 @@ contract AuctionManagerTest is TestSetup {
         auctionInstance.createBid{value: 0.00001 ether}(1, 0.00001 ether);
 
         vm.expectRevert("Incorrect bid value");
-        hoax(henry);
+        hoax(jess);
         auctionInstance.createBid{value: 0.001 ether}(1, 0.001 ether);
 
         vm.expectRevert("Incorrect bid value");
@@ -714,7 +717,7 @@ contract AuctionManagerTest is TestSetup {
         auctionInstance.processAuctionFeeTransfer(bid1Ids[0]);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory processedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bid1Ids, proofAddress1);
+        uint256[] memory processedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bid1Ids, proofAddress1, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
 
@@ -824,7 +827,7 @@ contract AuctionManagerTest is TestSetup {
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(1, 0.2 ether);
 
         startHoax(bob);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, aliceProof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, aliceProof, bob);
 
         vm.expectEmit(true, false, false, true);
         emit BidReEnteredAuction(bidIds[0]);
