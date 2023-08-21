@@ -7,6 +7,13 @@ import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
 contract EtherFiNodeTest is TestSetup {
 
+    // from EtherFiNodesManager.sol
+    uint256 TreasureRewardSplit = 50_000;
+    uint256 NodeOperatorRewardSplit = 50_000;
+    uint256 TNFTRewardSplit = 815_625;
+    uint256 BNFTRewardSplit = 84_375;
+    uint256 RewardSplitDivisor = 1_000_000;
+
     uint256[] bidId;
     EtherFiNode safeInstance;
 
@@ -475,16 +482,6 @@ contract EtherFiNodeTest is TestSetup {
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
         address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
-        // TODO(dave): no rewards?
-        /*
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode)
-            .vestedAuctionRewards();
-        assertEq(
-            vestedAuctionFeeRewardsForStakers,
-            address(etherfiNode).balance
-        );
-        */
-
         // Simulate the rewards distribution from the beacon chain
         vm.deal(etherfiNode, address(etherfiNode).balance + 1 ether);
 
@@ -504,49 +501,34 @@ contract EtherFiNodeTest is TestSetup {
 
         hoax(owner);
         managerInstance.partialWithdraw(bidId[0], true);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
+        uint256 nodeOperatorBalance2 = address(nodeOperator).balance;
+        console2.log(nodeOperatorBalance2);
+        console2.log(nodeOperatorBalance2 - nodeOperatorBalance);
+        // node operator gets nothing because took longer than 14 days
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
         assertEq(
             address(treasuryInstance).balance,
-            treasuryBalance + 0.05 ether + 0.05 ether + 0.0125 ether
+            treasuryBalance + 0.05 ether + 0.05 ether // 5% rewards + 5% rewards that would have gone to node operator
         );
-        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
-        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
 
-        // No rewards left after calling the 'partialWithdraw'
+        // dan should recieve the T-NFT share
+        uint256 danExpectedStakingRewards = 1 ether * TNFTRewardSplit / RewardSplitDivisor;
+        assertEq(address(dan).balance, danBalance + danExpectedStakingRewards);
+
+        uint256 bnftExpectedStakingRewards = 1 ether * BNFTRewardSplit / RewardSplitDivisor;
+        assertEq(address(staker).balance, bnftStakerBalance + bnftExpectedStakingRewards);
+
+        // No additional rewards if call 'partialWithdraw' again
+        uint256 withdrawnOperatorBalance = address(nodeOperator).balance;
+        uint256 withdrawnTreasuryBalance = address(treasuryInstance).balance;
+        uint256 withdrawnDanBalance = dan.balance;
+        uint256 withdrawnBNFTBalance = address(staker).balance;
         hoax(owner);
         managerInstance.partialWithdraw(bidId[0], true);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
-        assertEq(
-            address(treasuryInstance).balance,
-            treasuryBalance + 0.05 ether + 0.05 ether + 0.0125 ether
-        );
-        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether);
-        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether);
-
-        // TODO(Dave): rework?
-        /*
-        assertEq(address(etherfiNode).balance, vestedAuctionFeeRewardsForStakers);
-
-
-        // Withdraw the vested auction fee reward
-        vm.warp(block.timestamp + (1 + 6 * 28 * 24 * 3600));
-        hoax(owner);
-        managerInstance.partialWithdraw(bidId[0], true, true, true);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance + 0.0125 ether);
-        assertEq(
-            address(treasuryInstance).balance,
-            treasuryBalance + 0.05 ether + 0.05 ether + 0.0125 ether
-        );
-        assertEq(address(dan).balance, danBalance + 0.838281250000000000 ether + 0.045312500000000000 ether);
-        assertEq(address(staker).balance, bnftStakerBalance + 0.086718750000000000 ether + 0.004687500000000000 ether);
-        assertEq(address(etherfiNode).balance, 0);
-
-        vm.deal(etherfiNode, 8 ether + vestedAuctionFeeRewardsForStakers);
-        vm.expectRevert(
-            "etherfi node contract's balance is above 8 ETH. You should exit the node."
-        );
-        managerInstance.partialWithdraw(bidId[0], true, true, true);
-        */
+        assertEq(address(nodeOperator).balance, withdrawnOperatorBalance);
+        assertEq(address(treasuryInstance).balance, withdrawnTreasuryBalance);
+        assertEq(address(dan).balance, withdrawnDanBalance);
+        assertEq(address(staker).balance, withdrawnBNFTBalance);
     }
 
     function test_getFullWithdrawalPayoutsFails() public {
