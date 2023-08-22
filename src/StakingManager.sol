@@ -157,7 +157,7 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x], msg.sender, true);
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x], msg.sender, 32 ether);
         }
     }
 
@@ -179,7 +179,7 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _staker, false);    
+            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _staker, 1 ether);    
         }  
     }
 
@@ -327,19 +327,17 @@ contract StakingManager is
         address _tNftRecipient, 
         DepositData calldata _depositData, 
         address _staker,
-        bool _delegatedStaker
+        uint256 _depositAmount
     ) internal {
-        require(bidIdToStaker[_validatorId] == _staker, "Not deposit owner");   
+        require(bidIdToStaker[_validatorId] == _staker, "Not deposit owner");
+        bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
+        bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, _depositAmount);
+        require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
+
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
 
         // Deposit to the Beacon Chain
-        bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
-
-        if(_delegatedStaker) {
-            depositContractEth2.deposit{value: 32 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, 32 ether));
-        } else {
-            depositContractEth2.deposit{value: 1 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, 1 ether));
-        }
+        depositContractEth2.deposit{value: _depositAmount}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositDataRoot);
         nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         nodesManager.incrementNumberOfValidators(1);
