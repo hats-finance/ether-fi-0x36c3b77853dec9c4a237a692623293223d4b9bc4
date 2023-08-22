@@ -20,7 +20,9 @@ contract DeployLoyaltyPointsMarketSafeScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
 
-        lpaMarketSafe = new LoyaltyPointsMarketSafe(1500000000000);
+        // for us to start off selling 15k points for 0.01 ETH
+        // 666666666666 seems like the correct place to start
+        lpaMarketSafe = new LoyaltyPointsMarketSafe(666666666666);
 
         addressProvider.addContract(address(lpaMarketSafe), "LoyaltyPointsMarketSafe");
 
