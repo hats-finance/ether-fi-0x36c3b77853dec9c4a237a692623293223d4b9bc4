@@ -129,7 +129,8 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function shouldSubmitReport(address _member) public view returns (bool) {
-        if (!committeeMemberStates[msg.sender].enabled) return false;
+        require(committeeMemberStates[_member].registered, "You are not registered as the Oracle committee member");
+        require(committeeMemberStates[_member].enabled, "You are disabled");
         return slotForNextReport() > committeeMemberStates[_member].lastReportRefSlot;
     }
 

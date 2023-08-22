@@ -24,7 +24,7 @@ contract EtherFiOracleTest is TestSetup {
 
         // chad is not a commitee member
         vm.prank(chad);
-        vm.expectRevert("You don't need to submit a report");
+        vm.expectRevert("You are not registered as the Oracle committee member");
         etherFiOracleInstance.submitReport(reportAtPeriod2A);
 
         // chad is added to the committee
@@ -53,7 +53,7 @@ contract EtherFiOracleTest is TestSetup {
 
         // chad fails to submit a report
         vm.prank(chad);
-        vm.expectRevert("You don't need to submit a report");
+        vm.expectRevert("You are disabled");
         etherFiOracleInstance.submitReport(reportAtPeriod3);
     }
 
