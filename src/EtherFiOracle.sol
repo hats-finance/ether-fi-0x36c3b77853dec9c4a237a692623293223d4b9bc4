@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
+
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+
 
 contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     struct OracleReport {
@@ -39,6 +41,8 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint32 public consensusVersion; // the version of the consensus
     uint32 public quorumSize; // the required supports to reach the consensus
     uint32 public reportPeriodSlot; // the period of the oracle report in # of slots
+    uint32 public numCommitteeMembers; // the total number of committee members
+    uint32 public numActiveCommitteeMembers; // the number of active (enabled) committee members
 
     uint32 public lastPublishedReportRefSlot; // the ref slot of the last published report
     uint32 public lastPublishedReportRefBlock; // the ref block of the last published report
@@ -201,13 +205,31 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return keccak256(abi.encodePacked(chunk1, chunk2));
     }
 
-    function addCommitteeMember(address _address) public onlyOwner {
+    // only admin
+    function addCommitteeMember(address _address) public {
         require(committeeMemberStates[_address].registered == false, "Already registered");
+        numCommitteeMembers++;
+        numActiveCommitteeMembers++;
         committeeMemberStates[_address] = CommitteeMemberState(true, true, 0, 0);
     }
 
-    function manageCommitteeMember(address _address, bool _enabled) public onlyOwner {
+    // only admin
+    function removeCommitteeMember(address _address) public {
+        require(committeeMemberStates[_address].registered == true, "Not registered");
+        numCommitteeMembers--;
+        delete committeeMemberStates[_address];
+    }
+
+    // only admin
+    function manageCommitteeMember(address _address, bool _enabled) public {
+        require(committeeMemberStates[_address].registered == true, "Not registered");
+        require(committeeMemberStates[_address].enabled != _enabled, "Already in the target state");
         committeeMemberStates[_address].enabled = _enabled;
+        if (_enabled) {
+            numActiveCommitteeMembers++;
+        } else {
+            numActiveCommitteeMembers--;
+        }
     }
 
     function setQuorumSize(uint32 _quorumSize) public onlyOwner {
