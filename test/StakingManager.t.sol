@@ -20,6 +20,12 @@ contract StakingManagerTest is TestSetup {
         string ipfsHashForEncryptedValidatorKey
     );
 
+    uint256[] public processedBids;
+    uint256[] public validatorArray;
+    uint256[] public bidIds;
+    bytes[] public sig;
+    address public etherFiNode;
+
     function setUp() public {
         setUpTests();
     }
@@ -78,14 +84,14 @@ contract StakingManagerTest is TestSetup {
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 10);
 
         startHoax(alice);
-        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
+        bidIds = auctionInstance.createBid{value: 1 ether}(
             10,
             0.1 ether
         );
         vm.stopPrank();
         
         startHoax(alice);
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
+        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
 
         assertEq(stakingManagerInstance.bidIdToStaker(1), alice);
         assertEq(stakingManagerInstance.bidIdToStaker(2), alice);
@@ -94,46 +100,8 @@ contract StakingManagerTest is TestSetup {
     }
 
     function test_RegisterAsBNFTHolder() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
-        vm.startPrank(alice);
-        liquidityPoolInstance.registerAsBnftHolder(alice);
-        liquidityPoolInstance.registerAsBnftHolder(greg);
-
-        vm.deal(alice, 100000 ether);
-        vm.deal(greg, 100000 ether);
-
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-
-        //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
-
-        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
-        vm.stopPrank();
-
-        //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
-        vm.warp(12431561615);
-
-        liquidityPoolInstance.dutyForWeek();
-       
-        vm.prank(chad);
-        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 10);
-
-        startHoax(chad);
-        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
-            10,
-            0.1 ether
-        );
-        vm.stopPrank();
         
-        startHoax(alice);
-        uint256[] memory processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
-
-        assertEq(stakingManagerInstance.bidIdToStaker(1), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(2), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(3), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(4), alice);
+        test_DepositFromBNFTHolder();
 
         assertEq(processedBids[0], 1);
         assertEq(processedBids[1], 2);
@@ -160,13 +128,13 @@ contract StakingManagerTest is TestSetup {
 
         depositDataArray[0] = depositData;
 
-        uint256[] memory validatorArray = new uint256[](1);
+        validatorArray = new uint256[](1);
         validatorArray[0] = processedBids[0];
 
         assertEq(BNFTInstance.balanceOf(alice), 0);
         assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 0);
 
-        bytes[] memory sig = new bytes[](1);
+        sig = new bytes[](1);
         sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
 
         liquidityPoolInstance.batchRegisterAsBnftHolder(zeroRoot, validatorArray, depositDataArray, sig);
@@ -177,85 +145,8 @@ contract StakingManagerTest is TestSetup {
     }
 
     function test_ApproveRegistration() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
-        vm.startPrank(alice);
-        liquidityPoolInstance.registerAsBnftHolder(alice);
-        liquidityPoolInstance.registerAsBnftHolder(greg);
-
-        vm.deal(alice, 100000 ether);
-        vm.deal(greg, 100000 ether);
-
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-
-        //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
-
-        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
-        vm.stopPrank();
-
-        //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
-        vm.warp(12431561615);
-
-        liquidityPoolInstance.dutyForWeek();
-       
-        vm.prank(chad);
-        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 10);
-
-        startHoax(chad);
-        uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(
-            10,
-            0.1 ether
-        );
-        vm.stopPrank();
-        
-        startHoax(alice);
-        uint256[] memory processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
-
-        assertEq(address(managerInstance).balance, 0);
-        assertEq(address(stakingManagerInstance).balance, 128 ether);
-
-        assertEq(stakingManagerInstance.bidIdToStaker(1), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(2), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(3), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(4), alice);
-
-        assertEq(processedBids[0], 1);
-        assertEq(processedBids[1], 2);
-        assertEq(processedBids[2], 3);
-        assertEq(processedBids[3], 4);
-
-        IStakingManager.DepositData[]
-            memory depositDataArray = new IStakingManager.DepositData[](1);
-
-        address etherFiNode = managerInstance.etherfiNodeAddress(1);
-        bytes32 root = depGen.generateDepositRoot(
-            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-            managerInstance.generateWithdrawalCredentials(etherFiNode),
-            1 ether
-        );
-        IStakingManager.DepositData memory depositData = IStakingManager
-            .DepositData({
-                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-                depositDataRoot: root,
-                ipfsHashForEncryptedValidatorKey: "test_ipfs"
-            });
-
-        depositDataArray[0] = depositData;
-
-        uint256[] memory validatorArray = new uint256[](1);
-        validatorArray[0] = processedBids[0];
-
-        assertEq(BNFTInstance.balanceOf(alice), 0);
-        assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 0);
-
-        bytes[] memory sig = new bytes[](1);
-        sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
-
-        liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), validatorArray, depositDataArray, sig);
+        test_RegisterAsBNFTHolder();
 
         assertEq(managerInstance.numberOfValidators(), 1);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 3);
