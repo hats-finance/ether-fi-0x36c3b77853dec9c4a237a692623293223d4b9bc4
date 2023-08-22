@@ -157,7 +157,7 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x], msg.sender);
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x], msg.sender, true);
         }
     }
 
@@ -179,7 +179,7 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _staker);    
+            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _staker, false);    
         }  
     }
 
@@ -322,14 +322,24 @@ contract StakingManager is
     /// however, instead of the validator key, it will include the IPFS hash
     /// containing the validator key encrypted by the corresponding node operator's public key
     function _registerValidator(
-        uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData, address _staker
+        uint256 _validatorId, 
+        address _bNftRecipient, 
+        address _tNftRecipient, 
+        DepositData calldata _depositData, 
+        address _staker,
+        bool _delegatedStaker
     ) internal {
         require(bidIdToStaker[_validatorId] == _staker, "Not deposit owner");   
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
 
         // Deposit to the Beacon Chain
         bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
-        depositContractEth2.deposit{value: 1 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, 1 ether));
+
+        if(_delegatedStaker) {
+            depositContractEth2.deposit{value: 32 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, 32 ether));
+        } else {
+            depositContractEth2.deposit{value: 1 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, 1 ether));
+        }
         nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         nodesManager.incrementNumberOfValidators(1);
@@ -396,10 +406,6 @@ contract StakingManager is
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
-
-    function generateDepositRoot() internal returns (bytes32){
-
-    }
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------

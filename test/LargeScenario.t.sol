@@ -168,7 +168,7 @@ contract LargeScenariosTest is TestSetup {
         vm.stopPrank();
 
         // Check that 1 ETH has been deposited into the Beacon Chain
-        assertEq(address(stakingManagerInstance).balance, 319 ether);
+        assertEq(address(stakingManagerInstance).balance, 288 ether);
 
         // Check node state and NFT Owners
         assertTrue(
@@ -229,7 +229,7 @@ contract LargeScenariosTest is TestSetup {
         );
         vm.stopPrank();
 
-        assertEq(address(stakingManagerInstance).balance, 311 ether);
+        assertEq(address(stakingManagerInstance).balance, 32 ether);
 
         // Check nodes state and NFT Owners
         for (uint256 i = 0; i < newElvisProcessedBidIds.length; i++) {

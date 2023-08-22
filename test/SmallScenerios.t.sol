@@ -429,6 +429,6 @@ contract SmallScenariosTest is TestSetup {
         assertEq(address(auctionInstance).balance, 5.2 ether);
         assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether);
         assertEq(managerInstance.numberOfValidators(), 5);
-        assertEq(address(stakingManagerInstance).balance, 155 ether);
+        assertEq(address(stakingManagerInstance).balance, 0 ether);
     }
 }
