@@ -650,14 +650,11 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_getFullWithdrawalPayoutsAuditFix3() public {
-        // TODO(Dave): rework no vesting
-        /*
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
         startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
@@ -665,11 +662,10 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(managerInstance.numberOfValidators(), 0);
         vm.stopPrank();
 
-        vm.deal(etherfiNode, 32.04 ether + vestedAuctionFeeRewardsForStakers);
-        assertEq(
-            address(etherfiNode).balance,
-            32.09000000000000000 ether
-        ); 
+        uint256 stakingRewards = 0.04 ether;
+        vm.deal(etherfiNode, 32 ether + stakingRewards);
+
+        assertEq(address(etherfiNode).balance, 32 ether + stakingRewards);
 
         {
             (uint256 toNodeOperator,
@@ -678,27 +674,27 @@ contract EtherFiNodeTest is TestSetup {
             uint256 toTreasury
             ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
 
-            assertEq(toNodeOperator, 0.002 ether);
-            assertEq(toTnft, 30.032625000000000000 ether);
-            assertEq(toBnft, 2.003375000000000000 ether);
-            assertEq(toTreasury, 0.002 ether);
+            assertEq(toNodeOperator, stakingRewards * NodeOperatorRewardSplit / RewardSplitDivisor);
+            assertEq(toTnft, 30 ether + stakingRewards * TNFTRewardSplit / RewardSplitDivisor);
+            assertEq(toBnft, 2 ether + stakingRewards * BNFTRewardSplit / RewardSplitDivisor);
+            assertEq(toTreasury, stakingRewards * TreasuryRewardSplit / RewardSplitDivisor);
         }
 
         skip(6 * 7 * 4 days);
 
-        {         
+        // auction rewards no longer vest so should be the same as above
+        {
             (uint256 toNodeOperator,
             uint256 toTnft,
             uint256 toBnft,
             uint256 toTreasury
             ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
 
-            assertEq(toNodeOperator, 0.002 ether);
-            assertEq(toTnft, 30.077937500000000000 ether);
-            assertEq(toBnft, 2.008062500000000000 ether);
-            assertEq(toTreasury, 0.002 ether);   
+            assertEq(toNodeOperator, stakingRewards * NodeOperatorRewardSplit / RewardSplitDivisor);
+            assertEq(toTnft, 30 ether + stakingRewards * TNFTRewardSplit / RewardSplitDivisor);
+            assertEq(toBnft, 2 ether + stakingRewards * BNFTRewardSplit / RewardSplitDivisor);
+            assertEq(toTreasury, stakingRewards * TreasuryRewardSplit / RewardSplitDivisor);
         }
-        */
     }
 
     function test_getFullWithdrawalPayoutsAuditFix2() public {
