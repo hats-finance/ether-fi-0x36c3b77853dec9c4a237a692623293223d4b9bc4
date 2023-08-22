@@ -769,14 +769,11 @@ contract EtherFiNodeTest is TestSetup {
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly2()
         public
     {
-        // TODO(Dave): rework no vesting
-        /*
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = uint32(block.timestamp) + (1 + 7 * 86400);
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
         hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -787,14 +784,15 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
 
-        vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
+        // simulate staking rewards
+        uint256 stakingRewards = 1 ether;
+        vm.deal(etherfiNode, 32 ether + stakingRewards);
 
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
-        assertEq(toNodeOperator, 0.242017155218870000 ether);
-        assertEq(toTreasury, 0.05 ether);
-        assertEq(toTnft, 30.815625000000000000 ether);
-        assertEq(toBnft, 2.084375000000000000 ether - nonExitPenalty);
-        */
+        assertEq(toNodeOperator, nonExitPenalty + (stakingRewards * NodeOperatorRewardSplit / RewardSplitDivisor));
+        assertEq(toTreasury, stakingRewards * TreasuryRewardSplit / RewardSplitDivisor);
+        assertEq(toTnft, 30 ether + (stakingRewards * TNFTRewardSplit / RewardSplitDivisor));
+        assertEq(toBnft, 2 ether - nonExitPenalty + (stakingRewards * BNFTRewardSplit / RewardSplitDivisor));
     }
 
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly4()
