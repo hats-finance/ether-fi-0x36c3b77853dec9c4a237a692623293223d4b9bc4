@@ -53,6 +53,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
     
     HoldersUpdate public holdersUpdate;
+    mapping(StakingTag => StakingTagInformation) public stakingTypeInformation;
+
+    enum StakingTag {
+        UNDEFINED,
+        EETH,
+        ETHER_FAN
+    }
+
+    struct StakingTagInformation {
+        uint256 amount;
+        uint256 numberOfValidators;
+    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -104,9 +116,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
         if(msg.sender == address(membershipManager)) {
             isWhitelistedAndEligible(_user, _merkleProof);
+            stakingTypeInformation[StakingTag.ETHER_FAN].amount += msg.value;
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
             isWhitelistedAndEligible(msg.sender, _merkleProof);
+            stakingTypeInformation[StakingTag.EETH].amount += msg.value;
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
         
@@ -127,6 +141,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
+
+        // TODO: Relook at this logic, possible arithmetic underflow when withdraw amount > current amount
+        // if(msg.sender == address(membershipManager)) {
+        //     stakingTypeInformation[StakingTag.ETHER_FAN].amount -= _amount;
+        // }else {
+        //     stakingTypeInformation[StakingTag.EETH].amount -= _amount;
+        // }
 
         uint256 share = sharesForWithdrawalAmount(_amount);
         totalValueInLp -= uint128(_amount);
