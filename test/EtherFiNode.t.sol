@@ -617,8 +617,6 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_partialWithdrawAfterExitFails() public {
-        // TODO(Dave): rework no vesting
-        /*
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
 
@@ -627,11 +625,9 @@ contract EtherFiNodeTest is TestSetup {
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
-
 
         // 8. balance < 4 ether
-        vm.deal(etherfiNode, 4 ether + vestedAuctionFeeRewardsForStakers);
+        vm.deal(etherfiNode, 4 ether);
 
         startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
@@ -639,7 +635,6 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(managerInstance.numberOfValidators(), 0);
         vm.stopPrank();
 
-        
         // Transfer the T-NFT to 'dan'
         hoax(staker);
         TNFTInstance.transferFrom(staker, dan, validatorIds[0]);
@@ -651,8 +646,7 @@ contract EtherFiNodeTest is TestSetup {
 
         hoax(owner);
         vm.expectRevert("you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN.");
-        managerInstance.partialWithdraw(validatorIds[0], true, true, true);
-        */
+        managerInstance.partialWithdraw(validatorIds[0], true);
     }
 
     function test_getFullWithdrawalPayoutsAuditFix3() public {
