@@ -175,6 +175,7 @@ contract StakingManager is
         DepositData[] calldata _depositData,
         address _staker
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
+        require(msg.sender == liquidityPoolContract, "Only LiquidityPool can call this function");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
@@ -191,8 +192,11 @@ contract StakingManager is
         for (uint256 x; x < _validatorId.length; ++x) {
             // Deposit to the Beacon Chain
             bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
-            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether));
-        }  
+            bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, 31 ether);
+            // TODO: will revisit this later; should we have on-chain verification as well for depositDataRoot?
+            // require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
+            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], depositDataRoot);        
+        }
     }
 
     /// @notice Cancels a user's deposits
