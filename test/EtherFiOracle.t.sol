@@ -48,7 +48,7 @@ contract EtherFiOracleTest is TestSetup {
         (registered, enabled, lastReportRefSlot, numReports) = etherFiOracleInstance.committeeMemberStates(chad);
         assertEq(registered, true);
         assertEq(enabled, false);
-        assertEq(lastReportRefSlot, 1024);
+        assertEq(lastReportRefSlot, 1023);
         assertEq(numReports, 1);
 
         // chad fails to submit a report
@@ -60,21 +60,25 @@ contract EtherFiOracleTest is TestSetup {
     function test_epoch_not_finzlied() public {
         vm.startPrank(alice);
 
-        // The report `reportAtPeriod2A` is for slot 1024 = epoch 32
-        // Which can be submitted after the slot 1088 = epoch 34
+        // https://www.blocknative.com/blog/anatomy-of-a-slot#4
+        // The report `reportAtPeriod2A` is for slot 1023 (epoch 31)
+        // Which can be submitted when the slot >= 1088 (epoch 34)
 
-        // At timpestamp = 12301, blocknumber = 1025, epoch = 32
-        _moveClock(1024 + 1);
+        // Epoch = 30       31        32        33        34
+        // Slot  = 960      992       1024      1056      1088
+
+        // At timpestamp = 12289, blocknumber = 1024, epoch = 32
+        _moveClock(1024);
         vm.expectRevert("Report Epoch is not finalized yet");
         etherFiOracleInstance.submitReport(reportAtPeriod2A);
 
-        // At timpestamp = 12685, blocknumber = 1057, epoch = 33
+        // At timpestamp = 12673, blocknumber = 1056, epoch = 33
         _moveClock(1 * slotsPerEpoch);
         vm.expectRevert("Report Epoch is not finalized yet");
         etherFiOracleInstance.submitReport(reportAtPeriod2A);
 
         // At timpestamp = 13045, blocknumber = 1087, epoch = 33
-        _moveClock(30);
+        _moveClock(31);
         vm.expectRevert("Report Epoch is not finalized yet");
         etherFiOracleInstance.submitReport(reportAtPeriod2A);
 
@@ -212,7 +216,7 @@ contract EtherFiOracleTest is TestSetup {
 
         // Now it's period 4
         _moveClock(1024);
-        
+
         vm.prank(alice);
         consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod4);
         assertEq(consensusReached, false);

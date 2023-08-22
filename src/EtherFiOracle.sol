@@ -108,30 +108,19 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return consensusReached;
     }
 
-    // Given the last published report AND the current slot number,
-    // Return the next report's slot that we are waiting for
-    // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
-    function slotForNextReport() public view returns (uint32) {
-        uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
-        uint32 pastSlot = lastPublishedReportRefSlot;
-        uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot) * reportPeriodSlot;
-        uint32 _slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
-        return _slotForNextReport;
-    }
-
     // For generating the next report, the starting & ending points need to be specified.
     // The report should include data for the specified slot and block ranges (inclusive)
     function blockStampForNextReport() public view returns (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) {
-        slotFrom = lastPublishedReportRefSlot + 1;
-        slotTo = slotForNextReport();
-        blockFrom = lastPublishedReportRefBlock + 1;
+        slotFrom = lastPublishedReportRefSlot == 0 ? 0 : lastPublishedReportRefSlot + 1;
+        slotTo = _slotForNextReport();
+        blockFrom = lastPublishedReportRefBlock == 0 ? 0 : lastPublishedReportRefBlock + 1;
         // `blockTo` can't be decided since a slot may not have any block (`missed slot`)
     }
 
     function shouldSubmitReport(address _member) public view returns (bool) {
         require(committeeMemberStates[_member].registered, "You are not registered as the Oracle committee member");
         require(committeeMemberStates[_member].enabled, "You are disabled");
-        return slotForNextReport() > committeeMemberStates[_member].lastReportRefSlot;
+        return _slotForNextReport() > committeeMemberStates[_member].lastReportRefSlot;
     }
 
     function verifyReport(OracleReport calldata _report) public view {
@@ -149,7 +138,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 reportEpoch = (_report.refSlotTo / SLOTS_PER_EPOCH);
-        require(reportEpoch <= currEpoch - 2, "Report Epoch is not finalized yet");
+        require(reportEpoch < currEpoch - 2, "Report Epoch is not finalized yet");
     }
 
     function isConsensusReached(bytes32 _hash) public view returns (bool) {
@@ -169,6 +158,17 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             _report.refBlockTo,
             _hash
             );
+    }
+
+    // Given the last published report AND the current slot number,
+    // Return the next report's `slotTo` that we are waiting for
+    // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
+    function _slotForNextReport() internal view returns (uint32) {
+        uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
+        uint32 pastSlot = lastPublishedReportRefSlot == 0 ? 0 : lastPublishedReportRefSlot + 1;
+        uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot) * reportPeriodSlot;
+        uint32 __slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
+        return __slotForNextReport - 1;
     }
 
     function _computeSlotAtTimestamp(uint256 timestamp) public view returns (uint32) {
