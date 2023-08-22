@@ -133,6 +133,71 @@ contract NodeOperatorManagerTest is TestSetup {
          vm.expectRevert("Address already set");
          nodeOperatorManagerInstance.setAuctionContractAddress(
              address(0)
-         );
-     }
+        );
+    }
+
+    function test_SetStakingTypeApprovals() public {
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceIPFS_Hash,
+            uint64(10)
+        );
+
+        vm.prank(bob);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            aliceIPFS_Hash,
+            uint64(10)
+        );
+
+        address[] memory users = new address[](2);
+        users[0] = address(alice);
+        users[1] = address(bob);
+
+        address[] memory incorrectUsers = new address[](1);
+        users[0] = address(alice);
+
+        LiquidityPool.StakingTag[] memory approvedTags = new LiquidityPool.StakingTag[](2);
+        approvedTags[0] = LiquidityPool.StakingTag.EETH;
+        approvedTags[1] = LiquidityPool.StakingTag.ETHER_FAN;
+
+        bool[] memory approvals = new bool[](2);
+        approvals[0] = false;
+        approvals[1] = true;
+
+        bool[] memory incorrectApprovals = new bool[](1);
+        approvals[0] = false;
+
+        vm.prank(greg);
+        vm.expectRevert("Caller is not the admin");
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
+
+        vm.startPrank(alice);
+        vm.expectRevert("Invalid array lengths");
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, incorrectApprovals);
+
+        vm.expectRevert("Invalid array lengths");
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(incorrectUsers, approvedTags, approvals);
+
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
+
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), LiquidityPool.StakingTag.EETH), false);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), LiquidityPool.StakingTag.ETHER_FAN), false);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), LiquidityPool.StakingTag.EETH), false);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), LiquidityPool.StakingTag.ETHER_FAN), true);
+
+        //Lets update again and make sure it changes
+        approvals[0] = true;
+        approvals[1] = true;
+
+        approvedTags[0] = LiquidityPool.StakingTag.EETH;
+        approvedTags[1] = LiquidityPool.StakingTag.EETH;
+
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
+
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), LiquidityPool.StakingTag.EETH), true);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), LiquidityPool.StakingTag.ETHER_FAN), false);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), LiquidityPool.StakingTag.EETH), true);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), LiquidityPool.StakingTag.ETHER_FAN), true);
+
+    }
 }
