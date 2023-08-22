@@ -18,7 +18,6 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint32[] approvedValidators;
         uint32[] exitedValidators;
         uint32[] slashedValidators;
-        uint32[] evictedValidators;
         uint32[] withdrawalRequestsToInvalidate;
         uint32 lastFinalizedWithdrawalRequestId;
     }
@@ -124,7 +123,9 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function shouldSubmitReport(address _member) public view returns (bool) {
         require(committeeMemberStates[_member].registered, "You are not registered as the Oracle committee member");
         require(committeeMemberStates[_member].enabled, "You are disabled");
-        return _slotForNextReport() > committeeMemberStates[_member].lastReportRefSlot;
+        uint32 slot = _slotForNextReport();
+        require(_isFinalized(slot), "Report Epoch is not finalized yet");
+        return slot > committeeMemberStates[_member].lastReportRefSlot;
     }
 
     function verifyReport(OracleReport calldata _report) public view {
@@ -147,6 +148,13 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function isConsensusReached(bytes32 _hash) public view returns (bool) {
         return consensusStates[_hash].consensusReached;
+    }
+
+    function _isFinalized(uint32 _slot) internal view returns (bool) {
+        uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
+        uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
+        uint32 slotEpoch = (_slot / SLOTS_PER_EPOCH);
+        return slotEpoch < currEpoch - 2;
     }
 
     function _publishReport(OracleReport calldata _report, bytes32 _hash) internal {
@@ -196,7 +204,6 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
                 _report.approvedValidators,
                 _report.exitedValidators,
                 _report.slashedValidators,
-                _report.evictedValidators,
                 _report.withdrawalRequestsToInvalidate,
                 _report.lastFinalizedWithdrawalRequestId
             )

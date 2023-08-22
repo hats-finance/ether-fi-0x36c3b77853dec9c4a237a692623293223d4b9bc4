@@ -357,13 +357,12 @@ contract TestSetup is Test {
         uint32[] memory exitedValidators = new uint32[](1);
         uint32[] memory slashedValidators = new uint32[](1);
         uint32[] memory withdrawalRequestsToInvalidate = new uint32[](1);
-        uint32[] memory evictedValidators = new uint32[](1);
-        reportAtPeriod2A = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod2B = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3 = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3A = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3B = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod4 = EtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod2A = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod2B = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod3 = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod3A = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod3B = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod4 = EtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, approvedValidators, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
 
         vm.stopPrank();
 
