@@ -40,8 +40,8 @@ contract AuctionManager is
 
     // new state variables for phase 2
     address public membershipManagerContractAddress;
-    uint256 public accumulatedRevenue;
-    uint256 public accumulatedRevenueThreshold;
+    uint128 public accumulatedRevenue;
+    uint128 public accumulatedRevenueThreshold;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -200,20 +200,20 @@ contract AuctionManager is
     ) external onlyStakingManagerContract {
         uint256 amount = bids[_bidId].amount;
         uint256 newAccumulatedRevenue = accumulatedRevenue + amount;
-
         if (newAccumulatedRevenue >= accumulatedRevenueThreshold) {
+            accumulatedRevenue = 0;
             (bool sent, ) = membershipManagerContractAddress.call{value: newAccumulatedRevenue}("");
             require(sent, "Failed to send Ether");
-            accumulatedRevenue = 0;
         } else {
-            accumulatedRevenue = newAccumulatedRevenue;
+            accumulatedRevenue = uint128(newAccumulatedRevenue);
         }
     }
 
     function transferAccumulatedRevenue() external onlyAdmin {
-        (bool sent, ) = membershipManagerContractAddress.call{value: accumulatedRevenue}("");
-        require(sent, "Failed to send Ether");
+        uint256 transferAmount = accumulatedRevenue;
         accumulatedRevenue = 0;
+        (bool sent, ) = membershipManagerContractAddress.call{value: transferAmount}("");
+        require(sent, "Failed to send Ether");
     }
 
     /// @notice Disables the whitelisting phase of the bidding
@@ -341,7 +341,7 @@ contract AuctionManager is
 
     /// @notice Updates the accumulated revenue threshold that will trigger a transfer to MembershipNFT contract
     /// @param _newThreshold the new threshold to set
-    function setAccumulatedRevenueThreshold(uint256 _newThreshold) external onlyAdmin {
+    function setAccumulatedRevenueThreshold(uint128 _newThreshold) external onlyAdmin {
         accumulatedRevenueThreshold = _newThreshold;
     }
 
