@@ -63,8 +63,8 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event ConsensusVersionUpdated(uint32 newConsensusVersion);
     event OracleReportPeriodUpdated(uint32 newOracleReportPeriod);
 
-    event ReportPublishsed(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash);
-    event ReportSubmitted(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash, address committeeMembe);
+    event ReportPublished(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash);
+    event ReportSubmitted(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash, address committeeMember);
 
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -171,7 +171,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         lastPublishedReportRefBlock = _report.refBlockTo;
 
         // emit report published event
-        emit ReportPublishsed(
+        emit ReportPublished(
             _report.consensusVersion,
             _report.refSlotFrom,
             _report.refSlotTo,
