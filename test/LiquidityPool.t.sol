@@ -33,6 +33,18 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
     }
 
+    function calculatePermitDigest(owner, spender, value, nonce, deadline, domainSeparator) public view returns (bytes32) {
+        bytes32 permitTypehash = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                hex"1901",
+                domainSeparator,
+                keccak256(abi.encode(permitTypehash, owner, spender, value, nonces[owner]++, deadline))
+            )
+        );
+        return digest;
+    }
+
     function test_DepositOrWithdrawOfZeroFails() public {
         vm.deal(alice, 1 ether);
 
@@ -117,7 +129,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
+        // eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
         uint256 aliceReqId = liquidityPoolInstance.requestWithdraw(alice, 2 ether);
         withdrawRequestNFTInstance.finalizeRequests(aliceReqId);
         withdrawRequestNFTInstance.claimWithdraw(aliceReqId);
@@ -126,7 +138,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(bob);
-        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
+        // eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
         uint256 bobReqId = liquidityPoolInstance.requestWithdraw(bob, 2 ether);
         vm.stopPrank();
 
