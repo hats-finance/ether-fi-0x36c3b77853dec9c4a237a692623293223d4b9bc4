@@ -21,7 +21,6 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 import "./libraries/DepositRootGenerator.sol";
-import "forge-std/console.sol";
 
 contract StakingManager is
     Initializable,
