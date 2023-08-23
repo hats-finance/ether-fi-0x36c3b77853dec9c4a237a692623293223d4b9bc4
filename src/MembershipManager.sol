@@ -69,8 +69,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _disableInitializers();
     }
 
-    receive() external payable {}
-
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------

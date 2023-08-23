@@ -707,9 +707,9 @@ contract AuctionManagerTest is TestSetup {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bid1Ids = auctionInstance.createBid{value: 1 ether}(
+        uint256[] memory bid1Ids = auctionInstance.createBid{value: 0.1 ether}(
             1,
-            1 ether
+            0.1 ether
         );
 
         vm.prank(owner);
@@ -742,7 +742,7 @@ contract AuctionManagerTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(zeroRoot, processedBidIds, depositDataArray);
 
         assertEq(etherFiNode.balance, 0 ether);
-        assertEq(auctionInstance.accumulatedRevenue(), 1 ether);
+        assertEq(auctionInstance.accumulatedRevenue(), 0.1 ether);
     }
 
     function test_SetMaxBidAmount() public {
@@ -887,9 +887,9 @@ contract AuctionManagerTest is TestSetup {
 
         startHoax(alice);
 
-        uint256[] memory bidId = auctionInstance.createBid{value: 5 ether}(
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.5 ether}(
             1,
-            5 ether
+            0.5 ether
         );
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof);
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
@@ -920,13 +920,13 @@ contract AuctionManagerTest is TestSetup {
         );
         vm.stopPrank();
 
-        assertEq(auctionInstance.accumulatedRevenue(), 5 ether);
+        assertEq(auctionInstance.accumulatedRevenue(), 0.5 ether);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
-        uint256[] memory bidIds2 = auctionInstance.createBid{value: 5 ether}(
+        uint256[] memory bidIds2 = auctionInstance.createBid{value: 0.7 ether}(
             1,
-            5 ether
+            0.7 ether
         );
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds2, proof);
 
@@ -962,6 +962,7 @@ contract AuctionManagerTest is TestSetup {
             0 ether
         );
 
-        assertEq(address(membershipNftInstance).balance, 10 ether);
+        assertEq(address(membershipManagerInstance).balance, 1.2 ether);
     }
+    
 }

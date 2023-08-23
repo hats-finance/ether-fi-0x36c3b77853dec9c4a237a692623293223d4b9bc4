@@ -41,4 +41,6 @@ interface IAuctionManager {
     ) external;
 
     function setAccumulatedRevenueThreshold(uint256 _newThreshold) external;
+
+    function transferAccumulatedRevenue() external;
 }

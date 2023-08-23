@@ -39,7 +39,7 @@ contract AuctionManager is
     address public admin;
 
     // new state variables for phase 2
-    address public membershipNFTContractAddress;
+    address public membershipManagerContractAddress;
     uint256 public accumulatedRevenue;
     uint256 public accumulatedRevenueThreshold;
 
@@ -74,7 +74,7 @@ contract AuctionManager is
         numberOfBids = 1;
         whitelistEnabled = true;
         accumulatedRevenue = 0;
-        accumulatedRevenueThreshold = 10 ether;
+        accumulatedRevenueThreshold = 1 ether;
 
         nodeOperatorManager = INodeOperatorManager(_nodeOperatorManagerContract);
 
@@ -202,12 +202,18 @@ contract AuctionManager is
  
         uint256 newAccumulatedRevenue = accumulatedRevenue + amount;
         if (newAccumulatedRevenue >= accumulatedRevenueThreshold) {
-            (bool sent, ) = membershipNFTContractAddress.call{value: newAccumulatedRevenue}("");
+            (bool sent, ) = membershipManagerContractAddress.call{value: newAccumulatedRevenue}("");
             require(sent, "Failed to send Ether");
             accumulatedRevenue = 0;
         } else {
             accumulatedRevenue = newAccumulatedRevenue;
         }
+    }
+
+    function transferAccumulatedRevenue() external onlyAdmin {
+        (bool sent, ) = membershipManagerContractAddress.call{value: accumulatedRevenue}("");
+        require(sent, "Failed to send Ether");
+        accumulatedRevenue = 0;
     }
 
     /// @notice Disables the whitelisting phase of the bidding
@@ -309,13 +315,13 @@ contract AuctionManager is
     }
 
 
-    /// @notice Sets the membership NFT contract address
-    /// @dev Needed to transfer accumulated revenue to the membership NFT contract
-    /// @param _membershipNFTContractAddress new MembershiptNFT contract address
-    function setMembershipNFTContractAddress(address _membershipNFTContractAddress) external onlyOwner {
-        require(membershipNFTContractAddress == address(0), "Address already set");
-        require(_membershipNFTContractAddress != address(0), "No zero addresses");
-        membershipNFTContractAddress = _membershipNFTContractAddress;
+    /// @notice Sets the membership manager contract address
+    /// @dev Needed to transfer accumulated revenue to the membership manager contract
+    /// @param _membershipManagerContractAddress new MembershiptManager contract address
+    function setMembershipManagerContractAddress(address _membershipManagerContractAddress) external onlyOwner {
+        require(membershipManagerContractAddress == address(0), "Address already set");
+        require(_membershipManagerContractAddress != address(0), "No zero addresses");
+        membershipManagerContractAddress = _membershipManagerContractAddress;
     }
 
     /// @notice Updates the minimum bid price for a non-whitelisted bidder
