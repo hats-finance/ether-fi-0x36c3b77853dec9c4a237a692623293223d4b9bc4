@@ -3,7 +3,6 @@ pragma solidity 0.8.13;
 
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
-import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
