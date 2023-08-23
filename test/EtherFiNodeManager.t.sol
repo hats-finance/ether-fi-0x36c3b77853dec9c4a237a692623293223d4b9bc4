@@ -166,12 +166,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         managerInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(bidId[0], "_ipfsHash");
     }
 
-    function test_setEtherFiNodeLocalRevenueIndexRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only protocol revenue manager contract function");
-        vm.prank(owner);
-        managerInstance.setEtherFiNodeLocalRevenueIndex(bidId[0], 1);
-    }
-
     function test_RegisterEtherFiNodeRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only staking manager contract function");
         vm.prank(owner);
@@ -349,15 +343,15 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdraw(0, true, true, true);
+        managerInstance.partialWithdraw(0, true);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatch(ids, true, true, true);
+        managerInstance.partialWithdrawBatch(ids, true);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids, true, true, true);
+        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids, true);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");

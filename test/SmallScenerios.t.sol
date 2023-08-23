@@ -411,7 +411,7 @@ contract SmallScenariosTest is TestSetup {
             address gregNode = managerInstance.etherfiNodeAddress(
                 gregProcessedBidIds[i]
             );
-            assertEq(gregNode.balance, 0.1 ether);
+            assertEq(gregNode.balance, 0 ether); // nodes no longer receive auction revenue
         }
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
@@ -427,7 +427,8 @@ contract SmallScenariosTest is TestSetup {
         }
 
         assertEq(address(auctionInstance).balance, 5.2 ether);
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether);
+        //assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether); // TODO(Dave): protocolRevenueManager will be deprecated
+
         assertEq(managerInstance.numberOfValidators(), 5);
         assertEq(address(stakingManagerInstance).balance, 0 ether);
     }

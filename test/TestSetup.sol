@@ -332,6 +332,7 @@ contract TestSetup is Test {
             address(protocolRevenueManagerInstance)
         );
         membershipManagerInstance.updateAdmin(alice);
+        auctionInstance.setMembershipManagerContractAddress(address(membershipManagerInstance));
 
         etherFiOracleImplementation = new EtherFiOracle();
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
