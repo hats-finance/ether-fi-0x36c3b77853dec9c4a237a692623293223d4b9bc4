@@ -435,8 +435,7 @@ contract EtherFiNodeTest is TestSetup {
         hoax(owner);
         managerInstance.partialWithdraw(bidId[0], true);
         uint256 nodeOperatorBalance2 = address(nodeOperator).balance;
-        console2.log(nodeOperatorBalance2);
-        console2.log(nodeOperatorBalance2 - nodeOperatorBalance);
+
         // node operator gets nothing because took longer than 14 days
         assertEq(address(nodeOperator).balance, nodeOperatorBalance);
         assertEq(
@@ -503,7 +502,6 @@ contract EtherFiNodeTest is TestSetup {
 
 
     function test_getFullWithdrawalPayoutsWorksCorrectly1() public {
-        //TODO(Dave): rework now that no vesting
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
@@ -877,14 +875,12 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly5() public {
-        // TODO(Dave): rework no vesting
-        /*
+
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = uint32(block.timestamp) + (1 + 28 * 86400);
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
         hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -896,7 +892,15 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
 
-        vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
+
+        uint256 stakingRewards = 1 ether;
+        vm.deal(etherfiNode, 32 ether + stakingRewards);
+
+        // Treasury gets the excess penalty reward after the node operator hits the 0.2 eth cap
+        // Treasury also gets the base reward of the node operator since its over 14 days
+        uint256 baseTreasuryPayout = (1 ether * TreasuryRewardSplit / RewardSplitDivisor);
+        uint256 baseNodeOperatorPayout = (1 ether * NodeOperatorRewardSplit / RewardSplitDivisor);
+        uint256 expectedTreasuryPayout = baseTreasuryPayout + baseNodeOperatorPayout + (nonExitPenalty - 0.2 ether);
 
         (
             uint256 toNodeOperator,
@@ -905,10 +909,9 @@ contract EtherFiNodeTest is TestSetup {
             uint256 toTreasury
         ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0.2 ether);
-        assertEq(toTreasury, 0.473804794831376551 ether);
-        assertEq(toTnft, 30.815625000000000000 ether);
-        assertEq(toBnft, 1.510570205168623449 ether);
-        */
+        assertEq(toTreasury, expectedTreasuryPayout);
+        assertEq(toTnft, 30 ether + (stakingRewards *TNFTRewardSplit / RewardSplitDivisor));
+        assertEq(toBnft, 2 ether - nonExitPenalty + (stakingRewards * BNFTRewardSplit / RewardSplitDivisor));
     }
 
     function test_sendEthToEtherFiNodeContractSucceeds() public {
@@ -1060,27 +1063,6 @@ contract EtherFiNodeTest is TestSetup {
 
             assertEq(beaconBalance, toNodeOperator + toTnft + toBnft + toTreasury);
         }
-
-        // Check the TVL for vested auction fee rewards
-        // TODO(Dave): rework no vesting
-        /*
-        {
-            uint256 beaconBalance = 0 ether;
-            uint256 vestedRewards = managerInstance.vestedAuctionRewards(validatorId);
-
-            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, false, false, true, true);
-            assertEq(toNodeOperator, 0 ether);
-            assertEq(toTreasury, 0 ether);
-            assertEq(toTnft, 0.0453125 ether);
-            assertEq(toBnft, 0.0046875 ether);
-            tvls[0] += toNodeOperator;
-            tvls[1] += toTnft;
-            tvls[2] += toBnft;
-            tvls[3] += toTreasury;
-
-            assertEq(vestedRewards, toNodeOperator + toTnft + toBnft + toTreasury);
-        }
-        */
 
         // Confirm the total TVL
         {

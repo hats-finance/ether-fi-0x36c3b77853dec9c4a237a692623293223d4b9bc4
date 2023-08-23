@@ -11,7 +11,8 @@ contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
     // TODO: reduce the size of these variables
-//    uint256 public vestedAuctionRewards;
+    uint256 public DEPRECATED_localRevenueIndex;
+    uint256 public DEPRECATED_vestedAuctionRewards;
     string public ipfsHashForEncryptedValidatorKey;
     uint32 public exitRequestTimestamp;
     uint32 public exitTimestamp;
