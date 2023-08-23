@@ -199,8 +199,8 @@ contract AuctionManager is
         uint256 _bidId
     ) external onlyStakingManagerContract {
         uint256 amount = bids[_bidId].amount;
- 
         uint256 newAccumulatedRevenue = accumulatedRevenue + amount;
+
         if (newAccumulatedRevenue >= accumulatedRevenueThreshold) {
             (bool sent, ) = membershipManagerContractAddress.call{value: newAccumulatedRevenue}("");
             require(sent, "Failed to send Ether");

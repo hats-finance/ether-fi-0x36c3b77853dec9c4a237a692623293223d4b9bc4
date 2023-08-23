@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
-import "forge-std/console.sol";
 
 contract StakingManagerTest is TestSetup {
     event StakeDeposit(
@@ -546,8 +545,8 @@ contract StakingManagerTest is TestSetup {
         // assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether); // protocolRevenueManager is being deprecated
         assertEq(selectedBidId, 1);
         assertEq(managerInstance.numberOfValidators(), 1);
-        assertEq(address(managerInstance).balance, 0 ether);
-        assertEq(address(auctionInstance).balance, 0);
+        assertEq(address(managerInstance).balance, 0 ether, "EtherFiNode manager balance should be 0");
+        assertEq(address(auctionInstance).balance, 0.1 ether, "Auction balance should be 0.1");
 
         address operatorAddress = auctionInstance.getBidOwner(bidId[0]);
         assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -598,6 +597,7 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[8] = 19;
         bidIdArray[9] = 20;
 
+        // only the first 4 bids will be processed because of the 128 ether limit
         uint256[] memory processedBidIds = stakingManagerInstance
             .batchDepositWithBidIds{value: 128 ether}(bidIdArray, proof, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
@@ -622,14 +622,16 @@ contract StakingManagerTest is TestSetup {
             });
         }
 
-        assertEq(address(auctionInstance).balance, 3 ether);
+        assertEq(address(auctionInstance).balance, 3 ether, "Auction balance should be 3");
+
         stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), 
             processedBidIds,
             depositDataArray
         );
 
-        //assertEq(address(protocolRevenueManagerInstance).balance, 0.2 ether); // protocolRevenueManager is being deprecated
-        assertEq(address(auctionInstance).balance, 2.6 ether);
+        assertEq(auctionInstance.accumulatedRevenue(), 0.4 ether, "Auction accumulated revenue should be 0.4");
+        assertEq(address(auctionInstance).balance, 3 ether, "Auction balance should be 4");
+        assertEq(address(membershipManagerInstance).balance, 0 ether, "MembershipManager balance should be 1");
 
         assertEq(
             BNFTInstance.ownerOf(processedBidIds[0]),
