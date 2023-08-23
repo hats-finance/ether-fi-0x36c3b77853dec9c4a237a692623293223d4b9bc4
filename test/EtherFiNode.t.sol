@@ -839,14 +839,11 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly3() public {
-        // TODO(Dave): rework no vesting
-        /*
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = uint32(block.timestamp) + (1 + 28 * 86400);
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
         hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -859,8 +856,14 @@ contract EtherFiNodeTest is TestSetup {
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
         assertGe(nonExitPenalty, 0.5 ether);
 
-        vm.deal(etherfiNode, 33 ether + vestedAuctionFeeRewardsForStakers);
+        // Treasury gets the excess penalty reward after the node operator hits the 0.2 eth cap
+        // Treasury also gets the base reward of the node operator since its over 14 days
+        uint256 baseTreasuryPayout = (1 ether * TreasuryRewardSplit / RewardSplitDivisor);
+        uint256 baseNodeOperatorPayout = (1 ether * NodeOperatorRewardSplit / RewardSplitDivisor);
+        uint256 expectedTreasuryPayout = baseTreasuryPayout + baseNodeOperatorPayout + (nonExitPenalty - 0.2 ether);
 
+        uint256 stakingRewards = 1 ether;
+        vm.deal(etherfiNode, 32 ether + stakingRewards);
         (
             uint256 toNodeOperator,
             uint256 toTnft,
@@ -868,10 +871,9 @@ contract EtherFiNodeTest is TestSetup {
             uint256 toTreasury
         ) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(toNodeOperator, 0.2 ether);
-        assertEq(toTreasury, 0.473804794831376551 ether);
-        assertEq(toTnft, 30.815625000000000000 ether);
-        assertEq(toBnft, 2.084375000000000000 ether - nonExitPenalty);
-        */
+        assertEq(toTreasury, expectedTreasuryPayout);
+        assertEq(toTnft, 30 ether + (stakingRewards * TNFTRewardSplit / RewardSplitDivisor));
+        assertEq(toBnft, 2 ether - nonExitPenalty + (stakingRewards * BNFTRewardSplit / RewardSplitDivisor));
     }
 
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly5() public {
