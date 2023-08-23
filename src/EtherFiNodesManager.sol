@@ -31,14 +31,14 @@ contract EtherFiNodesManager is
 
     address public treasuryContract;
     address public stakingManagerContract;
-    address public protocolRevenueManagerContract;
+    address public DEPRECATED_protocolRevenueManagerContract;
 
     mapping(uint256 => address) public etherfiNodeAddress;
 
     TNFT public tnft;
     BNFT public bnft;
     IAuctionManager public auctionManager;
-    IProtocolRevenueManager public protocolRevenueManager;
+    IProtocolRevenueManager public DEPRECATED_protocolRevenueManager;
 
     //Holds the data for the revenue splits depending on where the funds are received from
     RewardsSplit public stakingRewardsSplit;
@@ -98,10 +98,8 @@ contract EtherFiNodesManager is
 
         treasuryContract = _treasuryContract;
         stakingManagerContract = _stakingManagerContract;
-        protocolRevenueManagerContract = _protocolRevenueManagerContract;
 
         auctionManager = IAuctionManager(_auctionContract);
-        protocolRevenueManager = IProtocolRevenueManager(_protocolRevenueManagerContract);
         tnft = TNFT(_tnftContract);
         bnft = BNFT(_bnftContract);
 
@@ -412,34 +410,21 @@ contract EtherFiNodesManager is
 
     /// @notice Once the node's exit is observed, the protocol calls this function:
     ///         - mark it EXITED
-    ///         - distribute the protocol (auction) revenue
     /// @param _validatorId the validator ID
     /// @param _exitTimestamp the exit timestamp
     function _processNodeExit(uint256 _validatorId, uint32 _exitTimestamp) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
-        // distribute the protocol reward from the ProtocolRevenueMgr contract to the validator's etherfi node contract
-        uint256 amount = protocolRevenueManager.distributeAuctionRevenue(_validatorId);
-
         // Mark EXITED
         IEtherFiNode(etherfiNode).markExited(_exitTimestamp);
 
-        // Distribute the payouts for the protocol rewards
-        (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
-            = IEtherFiNode(etherfiNode).calculatePayouts(amount, protocolRewardsSplit, SCALE);
-
         numberOfValidators -= 1;
-
-        _distributePayouts(_validatorId, toTreasury, toOperator, toTnft, toBnft);
 
         emit NodeExitProcessed(_validatorId);
     }
 
     function _processNodeEvict(uint256 _validatorId) internal {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-
-        // distribute the protocol reward from the ProtocolRevenueMgr contract to the validator's etherfi node contract
-        uint256 amount = protocolRevenueManager.distributeAuctionRevenue(_validatorId);
 
         // Mark EVICTED
         IEtherFiNode(etherfiNode).markEvicted();
@@ -621,11 +606,6 @@ contract EtherFiNodesManager is
 
     modifier onlyStakingManagerContract() {
         require(msg.sender == stakingManagerContract, "Only staking manager contract function");
-        _;
-    }
-
-    modifier onlyProtocolRevenueManagerContract() {
-        require(msg.sender == protocolRevenueManagerContract, "Only protocol revenue manager contract function");
         _;
     }
 

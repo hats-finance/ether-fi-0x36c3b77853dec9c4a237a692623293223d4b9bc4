@@ -442,12 +442,6 @@ contract EtherFiNode is IEtherFiNode {
         return uint256(timeElapsed / (24 * 3_600));
     }
 
-    function _protocolRevenueManagerAddress() internal view returns (address) {
-        return
-            IEtherFiNodesManager(etherFiNodesManager)
-                .protocolRevenueManagerContract();
-    }
-
     function implementation() external view returns (address) {
         bytes32 slot = bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1);
         address implementationVariable;
@@ -471,11 +465,4 @@ contract EtherFiNode is IEtherFiNode {
         _;
     }
 
-    modifier onlyProtocolRevenueManagerContract() {
-        require(
-            msg.sender == _protocolRevenueManagerAddress(),
-            "Only protocol revenue manager contract function"
-        );
-        _;
-    }
 }

@@ -74,8 +74,6 @@ interface IEtherFiNodesManager {
         uint256 _validatorId
     ) external view returns (uint256, uint256, uint256, uint256);
 
-    function protocolRevenueManagerContract() external view returns (address);
-
     // Non-VIEW functions
     function initialize(
         address _treasuryContract,
