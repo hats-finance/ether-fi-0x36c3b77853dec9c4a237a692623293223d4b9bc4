@@ -92,22 +92,18 @@ contract EtherFiOracleTest is TestSetup {
     function test_wrong_consensus_version() public {
         _moveClock(1024 + 2 * slotsPerEpoch);
 
-        // Consensus Version = 0
-        vm.prank(owner);
-        etherFiOracleInstance.setConsensusVersion(0);
-
-        // alice submits the period 2 report with wrong consensus version
+        // alice submits the period 2 report with consensus version = 2
         vm.prank(alice);
         vm.expectRevert("Report is for wrong consensusVersion");
-        etherFiOracleInstance.submitReport(reportAtPeriod2B);
+        etherFiOracleInstance.submitReport(reportAtPeriod2C);
 
-       // Consensus Version = 1
+       // Update the Consensus Version to 2
         vm.prank(owner);
-        etherFiOracleInstance.setConsensusVersion(1);
+        etherFiOracleInstance.setConsensusVersion(2);
 
         // alice submits the period 2 report
         vm.prank(alice);
-        etherFiOracleInstance.submitReport(reportAtPeriod2A);
+        etherFiOracleInstance.submitReport(reportAtPeriod2C);
     }
 
     function test_verifyReport() public {

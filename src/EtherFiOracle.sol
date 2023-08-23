@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
+
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+
 
 contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     struct OracleReport {
@@ -13,10 +15,10 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint32 refBlockFrom;
         uint32 refBlockTo;
         int256 accruedRewards;
-        uint32[] approvedValidators;
+        uint32[] validatorsToApprove;
+        uint32[] validatorsToExit;
         uint32[] exitedValidators;
         uint32[] slashedValidators;
-        uint32[] evictedValidators;
         uint32[] withdrawalRequestsToInvalidate;
         uint32 lastFinalizedWithdrawalRequestId;
     }
@@ -40,6 +42,9 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint32 public quorumSize; // the required supports to reach the consensus
     uint32 public reportPeriodSlot; // the period of the oracle report in # of slots
 
+    uint32 public numCommitteeMembers; // the total number of committee members
+    uint32 public numActiveCommitteeMembers; // the number of active (enabled) committee members
+
     uint32 public lastPublishedReportRefSlot; // the ref slot of the last published report
     uint32 public lastPublishedReportRefBlock; // the ref block of the last published report
 
@@ -48,18 +53,19 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     /// Chain specification
     uint32 internal SLOTS_PER_EPOCH;
     uint32 internal SECONDS_PER_SLOT;
-    uint32 internal GENESIS_TIME;
+    uint32 internal BEACON_GENESIS_TIME;
 
-    // emit when the report is published, the admin node will subscribe to this event
-    event ReportPublishsed(
-        uint16 consensusVersion,
-        uint32 refSlotFrom,
-        uint32 refSlotTo,
-        uint32 refBlockFrom,
-        uint32 refBlockTo,
-        bytes32 hash
-    );
+
+    event CommitteeMemberAdded(address member);
+    event CommitteeMemberRemoved(address member);
+    event CommitteeMemberUpdated(address member, bool enabled);
     event QuorumUpdated(uint32 newQuorumSize);
+    event ConsensusVersionUpdated(uint32 newConsensusVersion);
+    event OracleReportPeriodUpdated(uint32 newOracleReportPeriod);
+
+    event ReportPublishsed(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash);
+    event ReportSubmitted(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash, address committeeMembe);
+
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -78,16 +84,14 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         quorumSize = _quorumSize;
         SLOTS_PER_EPOCH = _slotsPerEpoch;
         SECONDS_PER_SLOT = _secondsPerSlot;
-        GENESIS_TIME = _genesisTime;
+        BEACON_GENESIS_TIME = _genesisTime;
     }
 
-    // should we return consensusReached here? otherwise we can't know the consensus state on chain
-    // YES, add one
-    // TODO: update the consensusReached flag.
     function submitReport(OracleReport calldata _report) external returns (bool) {
+        require(shouldSubmitReport(msg.sender), "You don't need to submit a report");
         verifyReport(_report);
 
-        bytes32 hash = generateReportHash(_report);
+        bytes32 reportHash = generateReportHash(_report);
 
         // update the member state
         CommitteeMemberState storage memberState = committeeMemberStates[msg.sender];
@@ -95,15 +99,25 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         memberState.numReports++;
 
         // update the consensus state
-        ConsensusState storage consenState = consensusStates[hash];
+        ConsensusState storage consenState = consensusStates[reportHash];
         consenState.support++;
 
         // if the consensus reaches
         bool consensusReached = (consenState.support == quorumSize);
         if (consensusReached) {
             consenState.consensusReached = true;
-            _publishReport(_report, hash);
+            _publishReport(_report, reportHash);
         }
+
+        emit ReportSubmitted(
+            _report.consensusVersion,
+            _report.refSlotFrom,
+            _report.refSlotTo,
+            _report.refBlockFrom,
+            _report.refBlockTo,
+            reportHash,
+            msg.sender
+            );
 
         return consensusReached;
     }
@@ -120,12 +134,12 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function shouldSubmitReport(address _member) public view returns (bool) {
         require(committeeMemberStates[_member].registered, "You are not registered as the Oracle committee member");
         require(committeeMemberStates[_member].enabled, "You are disabled");
-        return _slotForNextReport() > committeeMemberStates[_member].lastReportRefSlot;
+        uint32 slot = _slotForNextReport();
+        require(_isFinalized(slot), "Report Epoch is not finalized yet");
+        return slot > committeeMemberStates[_member].lastReportRefSlot;
     }
 
     function verifyReport(OracleReport calldata _report) public view {
-        require(shouldSubmitReport(msg.sender), "You don't need to submit a report");
-
         require(_report.consensusVersion == consensusVersion, "Report is for wrong consensusVersion");
 
         (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = blockStampForNextReport();
@@ -143,6 +157,13 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function isConsensusReached(bytes32 _hash) public view returns (bool) {
         return consensusStates[_hash].consensusReached;
+    }
+
+    function _isFinalized(uint32 _slot) internal view returns (bool) {
+        uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
+        uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
+        uint32 slotEpoch = (_slot / SLOTS_PER_EPOCH);
+        return slotEpoch < currEpoch - 2;
     }
 
     function _publishReport(OracleReport calldata _report, bytes32 _hash) internal {
@@ -172,7 +193,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _computeSlotAtTimestamp(uint256 timestamp) public view returns (uint32) {
-        return uint32((timestamp - GENESIS_TIME) / SECONDS_PER_SLOT);
+        return uint32((timestamp - BEACON_GENESIS_TIME) / SECONDS_PER_SLOT);
     }
 
     function generateReportHash(OracleReport calldata _report) public pure returns (bytes32) {
@@ -189,10 +210,10 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         bytes32 chunk2 = keccak256(
             abi.encode(
-                _report.approvedValidators,
+                _report.validatorsToApprove,
+                _report.validatorsToExit,
                 _report.exitedValidators,
                 _report.slashedValidators,
-                _report.evictedValidators,
                 _report.withdrawalRequestsToInvalidate,
                 _report.lastFinalizedWithdrawalRequestId
             )
@@ -201,26 +222,57 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return keccak256(abi.encodePacked(chunk1, chunk2));
     }
 
-    function addCommitteeMember(address _address) public onlyOwner {
+    // only admin
+    function addCommitteeMember(address _address) public {
         require(committeeMemberStates[_address].registered == false, "Already registered");
+        numCommitteeMembers++;
+        numActiveCommitteeMembers++;
         committeeMemberStates[_address] = CommitteeMemberState(true, true, 0, 0);
+
+        emit CommitteeMemberAdded(_address);
     }
 
-    function manageCommitteeMember(address _address, bool _enabled) public onlyOwner {
+    // only admin
+    function removeCommitteeMember(address _address) public {
+        require(committeeMemberStates[_address].registered == true, "Not registered");
+        numCommitteeMembers--;
+        delete committeeMemberStates[_address];
+
+        emit CommitteeMemberRemoved(_address);
+    }
+
+    // only admin
+    function manageCommitteeMember(address _address, bool _enabled) public {
+        require(committeeMemberStates[_address].registered == true, "Not registered");
+        require(committeeMemberStates[_address].enabled != _enabled, "Already in the target state");
         committeeMemberStates[_address].enabled = _enabled;
+        if (_enabled) {
+            numActiveCommitteeMembers++;
+        } else {
+            numActiveCommitteeMembers--;
+        }
+
+        emit CommitteeMemberUpdated(_address, _enabled);
     }
 
     function setQuorumSize(uint32 _quorumSize) public onlyOwner {
         quorumSize = _quorumSize;
+
         emit QuorumUpdated(_quorumSize);
     }
 
     function setOracleReportPeriod(uint32 _reportPeriodSlot) public onlyOwner {
+        require(reportPeriodSlot % SLOTS_PER_EPOCH == 0, "Report period must be a multiple of the epoch");
         reportPeriodSlot = _reportPeriodSlot;
+
+        emit OracleReportPeriodUpdated(reportPeriodSlot);
     }
 
     function setConsensusVersion(uint32 _consensusVersion) public onlyOwner {
+        require(_consensusVersion > consensusVersion, "New consensus version must be greater than the current one");
         consensusVersion = _consensusVersion;
+
+        emit ConsensusVersionUpdated(_consensusVersion);
     }
 
     function getImplementation() external view returns (address) {
