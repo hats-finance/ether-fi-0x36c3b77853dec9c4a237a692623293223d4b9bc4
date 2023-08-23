@@ -38,7 +38,6 @@ contract EtherFiNodeTest is TestSetup {
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
@@ -121,7 +120,6 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
         bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
@@ -203,11 +201,6 @@ contract EtherFiNodeTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, depositDataArray);
         vm.stopPrank();
 
-        // protocolRevenue manager no longer gets auction revenue
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1[0]), 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2[0]), 0);
         assertEq(address(managerInstance.etherfiNodeAddress(bidId1[0])).balance, 0);
 
         etherFiNode = managerInstance.etherfiNodeAddress(bidId2[0]);
@@ -237,9 +230,6 @@ contract EtherFiNodeTest is TestSetup {
         vm.stopPrank();
 
         assertEq(address(managerInstance.etherfiNodeAddress(bidId2[0])).balance, 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1[0]), 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2[0]), 0);
     }
 
     function test_markExitedWorksCorrectly() public {
@@ -307,9 +297,7 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
         assertEq(address(etherFiNode).balance, 0.00 ether); // node no longer receives auction revenue
-        assertTrue(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]) == 0);
 
-        uint256 auctionRevenueRewards = protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]);
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
 
         vm.prank(alice);
@@ -318,8 +306,7 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EVICTED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
         assertEq(address(etherFiNode).balance, 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]), 0); // nodes no longer accrue auction revenue
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance + auctionRevenueRewards);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
     }
 
     function test_partialWithdraw() public {
