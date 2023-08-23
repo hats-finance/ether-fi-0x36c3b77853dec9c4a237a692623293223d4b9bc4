@@ -121,7 +121,6 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManager.confirmEligibility(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
         membershipManager.setTopUpCooltimePeriod(28 days);
-        membershipManager.setFeeSplits(0, 100);
 
         initializeTiers();
         preMint();

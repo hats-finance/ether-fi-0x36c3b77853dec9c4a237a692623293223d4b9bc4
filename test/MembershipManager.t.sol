@@ -816,7 +816,6 @@ contract MembershipManagerTest is TestSetup {
         // setup fees
         vm.startPrank(alice);
         membershipManagerInstance.setFeeAmounts(0 ether, 0 ether, 0.5 ether);
-        membershipManagerInstance.setFeeSplits(20, 80);
 
         (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerInstance.getFees();
         assertEq(mintFee, 0 ether);
@@ -936,8 +935,6 @@ contract MembershipManagerTest is TestSetup {
         vm.startPrank(owner);
         vm.expectRevert(MembershipManager.OnlyAdmin.selector);
         membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether, 0 ether);
-        vm.expectRevert(MembershipManager.OnlyAdmin.selector);
-        membershipManagerInstance.setFeeSplits(20, 80);
         vm.stopPrank();
 
         vm.startPrank(alice);
@@ -946,12 +943,6 @@ contract MembershipManagerTest is TestSetup {
 
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
         membershipManagerInstance.setFeeAmounts(0, 0.001 ether * uint256(type(uint16).max) + 1, 0 ether);
-
-        vm.expectRevert(MembershipManager.InvalidAmount.selector);
-        membershipManagerInstance.setFeeSplits(10, 80);
-
-        vm.expectRevert(MembershipManager.InvalidAmount.selector);
-        membershipManagerInstance.setFeeSplits(21, 80);
 
         vm.stopPrank();
     }

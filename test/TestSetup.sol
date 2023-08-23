@@ -405,7 +405,6 @@ contract TestSetup is Test {
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
 
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
 
         protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
