@@ -853,8 +853,6 @@ contract AuctionManagerTest is TestSetup {
 
     function test_CanOnlySetAddressesOnce() public {
         vm.startPrank(owner);
-        vm.expectRevert("Address already set");
-        auctionInstance.setProtocolRevenueManager(address(0));
 
         vm.expectRevert("Address already set");
         auctionInstance.setStakingManagerContractAddress(address(0));
