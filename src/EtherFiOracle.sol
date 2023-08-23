@@ -16,7 +16,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint32 refBlockTo;
         int256 accruedRewards;
         uint32[] validatorsToApprove;
-        uint32[] validatorsToExit;
+        uint32[] liquidityPoolValidatorsToExit;
         uint32[] exitedValidators;
         uint32[] slashedValidators;
         uint32[] withdrawalRequestsToInvalidate;
@@ -102,13 +102,6 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         ConsensusState storage consenState = consensusStates[reportHash];
         consenState.support++;
 
-        // if the consensus reaches
-        bool consensusReached = (consenState.support == quorumSize);
-        if (consensusReached) {
-            consenState.consensusReached = true;
-            _publishReport(_report, reportHash);
-        }
-
         emit ReportSubmitted(
             _report.consensusVersion,
             _report.refSlotFrom,
@@ -118,6 +111,13 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             reportHash,
             msg.sender
             );
+
+        // if the consensus reaches
+        bool consensusReached = (consenState.support == quorumSize);
+        if (consensusReached) {
+            consenState.consensusReached = true;
+            _publishReport(_report, reportHash);
+        }
 
         return consensusReached;
     }
@@ -211,7 +211,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32 chunk2 = keccak256(
             abi.encode(
                 _report.validatorsToApprove,
-                _report.validatorsToExit,
+                _report.liquidityPoolValidatorsToExit,
                 _report.exitedValidators,
                 _report.slashedValidators,
                 _report.withdrawalRequestsToInvalidate,
