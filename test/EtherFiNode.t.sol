@@ -798,14 +798,11 @@ contract EtherFiNodeTest is TestSetup {
     function test_getFullWithdrawalPayoutsWorksWithNonExitPenaltyCorrectly4()
         public
     {
-        // TODO(Dave): rework no vesting
-        /*
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = uint32(block.timestamp) + 28 * 86400;
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
-        uint256 vestedAuctionFeeRewardsForStakers = IEtherFiNode(etherfiNode).vestedAuctionRewards();
 
         hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -817,15 +814,20 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         uint256 nonExitPenalty = managerInstance.getNonExitPenalty(bidId[0]);
 
+        // see EtherFiNode.sol:calculateTVL()
+        // principle calculation is decreased because balance < 16 ether. See EtherFiNode.sol:calculatePrincipals()
+        // this is min(nonExitPenalty, BNFTPrinciple)
+        uint256 expectedAppliedPenalty = 625 * 4 ether / 10_000;
+
         // the node got slashed seriously
-        vm.deal(etherfiNode, 4 ether + vestedAuctionFeeRewardsForStakers);
+        vm.deal(etherfiNode, 4 ether);
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = managerInstance.getFullWithdrawalPayouts(validatorIds[0]);
         assertEq(nonExitPenalty, 0.573804794831376551 ether);
-        assertEq(toNodeOperator, 0.2 ether);
-        assertEq(toTreasury, 0.05 ether);
+
+        assertEq(toNodeOperator, 0.2 ether); // incentive for nodeOperator from NonExitPenalty caps at 0.2 ether
+        assertEq(toTreasury, expectedAppliedPenalty - 0.2 ether); // treasury gets excess penalty if node operator delays too long
         assertEq(toTnft, 3.750000000000000000 ether);
-        assertEq(toBnft, 0);
-        */
+        assertEq(toBnft, 0); // BNFT has been fully penalized for not exiting
     }
 
     function test_markExitedFails() public {

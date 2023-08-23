@@ -7,7 +7,6 @@ import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
-
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
