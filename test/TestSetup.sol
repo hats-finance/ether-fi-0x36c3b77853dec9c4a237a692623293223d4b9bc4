@@ -174,8 +174,14 @@ contract TestSetup is Test {
 
     EtherFiOracle.OracleReport reportAtPeriod2A;
     EtherFiOracle.OracleReport reportAtPeriod2B;
+    EtherFiOracle.OracleReport reportAtPeriod2C;
     EtherFiOracle.OracleReport reportAtPeriod3;
+    EtherFiOracle.OracleReport reportAtPeriod3A;
+    EtherFiOracle.OracleReport reportAtPeriod3B;
     EtherFiOracle.OracleReport reportAtPeriod4;
+
+    int256 slotsPerEpoch = 32;
+    int256 secondsPerSlot = 12;
 
     function setUpTests() internal {
         vm.startPrank(owner);
@@ -328,6 +334,11 @@ contract TestSetup is Test {
         membershipManagerInstance.updateAdmin(alice);
         auctionInstance.setMembershipManagerContractAddress(address(membershipManagerInstance));
 
+        etherFiOracleImplementation = new EtherFiOracle();
+        etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
+        etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
+        etherFiOracleInstance.initialize(2, 1024, 32, 12, 1);
+        
         vm.stopPrank();
 
         vm.prank(alice);
@@ -344,22 +355,18 @@ contract TestSetup is Test {
         nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance), address(managerInstance));
         nftExchangeInstance.updateAdmin(alice);
 
-        etherFiOracleImplementation = new EtherFiOracle();
-        etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
-        etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
-        etherFiOracleInstance.initialize(2, 32, 12, 1);
-        
-        etherFiOracleInstance.setOracleReportPeriod(1000);
-
-        uint32[] memory approvedValidators = new uint32[](1);
+        uint32[] memory validatorsToApprove = new uint32[](1);
+        uint32[] memory validatorsToExit = new uint32[](1);
         uint32[] memory exitedValidators = new uint32[](1);
         uint32[] memory slashedValidators = new uint32[](1);
         uint32[] memory withdrawalRequestsToInvalidate = new uint32[](1);
-        uint32[] memory evictedValidators = new uint32[](1);
-        reportAtPeriod2A = EtherFiOracle.OracleReport(1, 1, 1000, 1, 1000, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod2B = EtherFiOracle.OracleReport(1, 1, 1000, 1, 1000, 200001, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3 = EtherFiOracle.OracleReport(1, 1, 2000, 1, 2000, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod4 = EtherFiOracle.OracleReport(1, 2001, 3000, 2001, 3000, 200000, approvedValidators, exitedValidators, slashedValidators, evictedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod2A = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod2B = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod2C = EtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod3 = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod3A = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod3B = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod4 = EtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
 
         vm.stopPrank();
 
@@ -576,5 +583,11 @@ contract TestSetup is Test {
         vm.prank(owner);
         (bool sent,) = payable(_recipient).call{value: _amount}("");
         assertEq(sent, true);
+    }
+
+    function _moveClock(int256 numSlots) internal {
+        assertEq(numSlots > 0, true);
+        vm.warp(block.timestamp + uint256(numSlots * 12 seconds));
+        vm.roll(block.number + uint256(numSlots));
     }
 }

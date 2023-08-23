@@ -741,6 +741,7 @@ contract AuctionManagerTest is TestSetup {
 
         stakingManagerInstance.batchRegisterValidators(zeroRoot, processedBidIds, depositDataArray);
 
+        // Auction Revenue is no longer distributed to nodes
         assertEq(etherFiNode.balance, 0 ether);
         assertEq(auctionInstance.accumulatedRevenue(), 0.1 ether);
     }

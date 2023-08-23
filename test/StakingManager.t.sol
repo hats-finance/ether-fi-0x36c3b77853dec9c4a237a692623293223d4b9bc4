@@ -543,7 +543,7 @@ contract StakingManagerTest is TestSetup {
         uint256 selectedBidId = bidId[0];
         etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
+        // assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether); // protocolRevenueManager is being deprecated
         assertEq(selectedBidId, 1);
         assertEq(managerInstance.numberOfValidators(), 1);
         assertEq(address(managerInstance).balance, 0 ether);
@@ -628,7 +628,7 @@ contract StakingManagerTest is TestSetup {
             depositDataArray
         );
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.2 ether);
+        //assertEq(address(protocolRevenueManagerInstance).balance, 0.2 ether); // protocolRevenueManager is being deprecated
         assertEq(address(auctionInstance).balance, 2.6 ether);
 
         assertEq(
