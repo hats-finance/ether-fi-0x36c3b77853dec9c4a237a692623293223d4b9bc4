@@ -125,7 +125,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to the recipient
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
-    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager {
+    /// it returns the amount of shares burned
+    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager returns (uint256) {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
@@ -140,6 +141,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(sent, "Failed to send Ether");
 
         emit Withdraw(msg.sender, _recipient, _amount);
+        return share;
     }
 
     /// @notice request withdraw from pool and receive a WithdrawRequestNFT
