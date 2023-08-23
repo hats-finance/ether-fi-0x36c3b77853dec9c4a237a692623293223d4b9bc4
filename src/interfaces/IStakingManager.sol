@@ -17,7 +17,7 @@ interface IStakingManager {
     function initialize(address _auctionAddress) external;
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
     function setLiquidityPoolAddress(address _liquidityPoolAddress) external;
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof) external payable returns (uint256[] memory);
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker) external payable returns (uint256[] memory);
     
     function batchRegisterValidators(bytes32 _depositRoot, uint256[] calldata _validatorId, DepositData[] calldata _depositData) external;
 

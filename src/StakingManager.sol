@@ -97,12 +97,21 @@ contract StakingManager is
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof)
         external payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
     {
+        return batchDepositWithBidIds(_candidateBidIds, _merkleProof, msg.sender);
+    }
+
+    /// @notice Allows depositing multiple stakes at once
+    /// @param _candidateBidIds IDs of the bids to be matched with each stake
+    /// @return Array of the bid IDs that were processed and assigned
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker)
+        public payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
+    {
         verifyWhitelisted(msg.sender, _merkleProof);
 
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
         require(numberOfDeposits <= maxBatchDepositSize, "Batch too large");
-        require( auctionManager.numberOfActiveBids() >= numberOfDeposits, "No bids available at the moment");
+        require(auctionManager.numberOfActiveBids() >= numberOfDeposits, "No bids available at the moment");
 
         uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
         uint256 processedBidIdsCount = 0;
@@ -117,7 +126,7 @@ contract StakingManager is
                 auctionManager.updateSelectedBidInformation(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
-                _processDeposit(bidId);
+                _processDeposit(bidId, _staker);
             }
         }
 
@@ -168,7 +177,7 @@ contract StakingManager is
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x],_bNftRecipient, _tNftRecipient, _depositData[x]);    
+            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x]);    
         }  
     }
 
@@ -329,8 +338,8 @@ contract StakingManager is
 
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId The bid that won the right to the deposit
-    function _processDeposit(uint256 _bidId) internal {
-        bidIdToStaker[_bidId] = msg.sender;
+    function _processDeposit(uint256 _bidId, address _staker) internal {
+        bidIdToStaker[_bidId] = _staker;
         uint256 validatorId = _bidId;
         address etherfiNode = createEtherfiNode(validatorId);
         nodesManager.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED);

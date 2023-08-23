@@ -17,7 +17,7 @@ update:; forge update
 
 build:; forge build
 
-test :; forge test --fork-url ${RPC_API_KEY} --etherscan-api-key ${ETHERSCAN_API_KEY}
+test :; forge test 
 
 snapshot :; forge snapshot
 
@@ -43,11 +43,19 @@ deploy-mainnet-phase-1.5:; forge clean && forge script script/deploys/DeployPhas
 
 deploy-goerli-tvlOracle:; forge clean && forge script script/deploys/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
+deploy-goerli-lpaPoints:; forge clean && forge script script/deploys/DeployLoyaltyPointsMarketSafe.sol:DeployLoyaltyPointsMarketSafeScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+
+deploy-mainnet-lpaPoints:; forge clean && forge script script/deploys/DeployLoyaltyPointsMarketSafe.sol:DeployLoyaltyPointsMarketSafeScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+
 deploy-optimism-tvlOracle:; forge clean && forge script script/deploys/DeployTVLOracle.s.sol:DeployTVLOracleScript --rpc-url ${OPTIMISM_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
 deploy-goerli-address-provider:; forge clean && forge script script/deploys/DeployAndPopulateAddressProviderScript.s.sol:DeployAndPopulateAddressProvider --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
 deploy-mainnet-address-provider:; forge clean && forge script script/deploys/DeployAndPopulateAddressProviderScript.s.sol:DeployAndPopulateAddressProvider --rpc-url ${MAINNET_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+
+deploy-goerli-oracle:; forge clean && forge script script/deploys/DeployOracle.sol:DeployOracleScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
+
+deploy-mainnet-oracle:; forge clean && forge script script/deploys/DeployOracle.s.sol:DeployOracleScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (GOERLI)
@@ -82,6 +90,8 @@ upgrade-goerli-regulations_manager :; forge clean && forge script script/upgrade
 
 upgrade-goerli-weeth :; forge clean && forge script script/upgrades/WeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
+upgrade-goerli-etherfi_oracle :; forge clean && forge script script/upgrades/EtherFiOracleUpgradeScript.s.sol:EtherFiOracleUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (MAINNET)
 
@@ -114,6 +124,8 @@ upgrade-protocol_revenue_manager :; forge clean && forge script script/upgrades/
 upgrade-regulations_manager :; forge clean && forge script script/upgrades/RegulationsManagerUpgradeScript.s.sol:RegulationsManagerUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-weeth :; forge clean && forge script script/upgrades/WeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
+upgrade-etherfi_oracle :; forge clean && forge script script/upgrades/EtherFiOracleUpgradeScript.s.sol:EtherFiOracleUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

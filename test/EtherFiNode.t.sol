@@ -45,7 +45,8 @@ contract EtherFiNodeTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof2
+            proof2,
+            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -149,7 +150,8 @@ contract EtherFiNodeTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            bobProof
+            bobProof,
+            bob
         );
 
         hoax(dan);
@@ -158,7 +160,8 @@ contract EtherFiNodeTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            danProof
+            danProof,
+            dan
         );
 
         {

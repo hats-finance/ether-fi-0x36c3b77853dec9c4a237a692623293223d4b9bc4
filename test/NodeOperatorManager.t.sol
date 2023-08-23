@@ -55,16 +55,16 @@ contract NodeOperatorManagerTest is TestSetup {
             uint64(10)
         );
         
-        assertEq(nodeOperatorManagerInstance.isWhitelisted(henry), false);
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(jess), false);
         vm.stopPrank();
 
         vm.expectRevert("Caller is not the admin");
         vm.prank(owner);
-        nodeOperatorManagerInstance.addToWhitelist(henry);
+        nodeOperatorManagerInstance.addToWhitelist(jess);
 
         vm.prank(alice);
-        nodeOperatorManagerInstance.addToWhitelist(henry);
-        assertEq(nodeOperatorManagerInstance.isWhitelisted(henry), true);
+        nodeOperatorManagerInstance.addToWhitelist(jess);
+        assertEq(nodeOperatorManagerInstance.isWhitelisted(jess), true);
     }
 
     function test_CanRemoveAddressFromWhitelist() public {
