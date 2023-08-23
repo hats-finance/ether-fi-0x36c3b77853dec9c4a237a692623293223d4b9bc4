@@ -21,6 +21,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 import "./libraries/DepositRootGenerator.sol";
+import "forge-std/console.sol";
 
 contract StakingManager is
     Initializable,
@@ -203,7 +204,15 @@ contract StakingManager is
     /// @param _validatorIds the IDs of the validators deposits to cancel
     function batchCancelDeposit(uint256[] calldata _validatorIds) public whenNotPaused nonReentrant {
         for (uint256 x; x < _validatorIds.length; ++x) {
-            _cancelDeposit(_validatorIds[x]);    
+            _cancelDeposit(_validatorIds[x], msg.sender);    
+        }  
+    }
+
+    /// @notice Cancels a user's deposits
+    /// @param _validatorIds the IDs of the validators deposits to cancel
+    function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) public whenNotPaused nonReentrant {
+        for (uint256 x; x < _validatorIds.length; ++x) {
+            _cancelDeposit(_validatorIds[x], _caller);    
         }  
     }
 
@@ -374,8 +383,8 @@ contract StakingManager is
 
     /// @notice Cancels a users stake
     /// @param _validatorId the ID of the validator deposit to cancel
-    function _cancelDeposit(uint256 _validatorId) internal {
-        require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
+    function _cancelDeposit(uint256 _validatorId, address _caller) internal {
+        require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
 
         bidIdToStaker[_validatorId] = address(0);
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.CANCELLED);

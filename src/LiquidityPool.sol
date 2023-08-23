@@ -16,6 +16,7 @@ import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
+import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -209,7 +210,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
         IStakingManager.DepositData[] calldata _depositData,
-        bytes[] calldata signaturesForApprovalDeposit
+        bytes[] calldata _signaturesForApprovalDeposit
     ) external {
         require(_validatorIds.length == _depositData.length, "Array lengths must match");
 
@@ -217,7 +218,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
 
         for(uint256 x; x < _validatorIds.length; x++) {
-            emit BatchRegisteredAsBnftHolder(_validatorIds[x], signaturesForApprovalDeposit[x], _depositData[x].publicKey);
+            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _depositData[x].publicKey);
         }
     }
 
@@ -227,7 +228,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         totalValueOutOfLp += uint128(returnAmount);
         numPendingDeposits -= uint32(_validatorIds.length);
 
-        stakingManager.batchCancelDeposit(_validatorIds);
+        stakingManager.batchCancelDepositAsBnftHolder(_validatorIds, msg.sender);
 
         totalValueInLp -= uint128(returnAmount);
 
