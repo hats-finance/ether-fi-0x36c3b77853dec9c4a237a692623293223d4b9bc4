@@ -144,7 +144,7 @@ contract LargeScenariosTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(danNode),
-            1 ether
+            32 ether
         );
         IStakingManager.DepositData memory depositData = IStakingManager
             .DepositData({
@@ -167,7 +167,7 @@ contract LargeScenariosTest is TestSetup {
         );
         vm.stopPrank();
 
-        // Check that 1 ETH has been deposited into the Beacon Chain
+        // Check that 32 ETH has been deposited into the Beacon Chain
         assertEq(address(stakingManagerInstance).balance, 288 ether);
 
         // Check node state and NFT Owners
@@ -204,7 +204,7 @@ contract LargeScenariosTest is TestSetup {
                 hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
                 managerInstance.generateWithdrawalCredentials(node),
-                1 ether
+                32 ether
             );
             depositDataArray[i] = IStakingManager.DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -266,7 +266,7 @@ contract LargeScenariosTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(gregNode),
-            1 ether
+            32 ether
         );
         depositData = IStakingManager.DepositData({
             publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
