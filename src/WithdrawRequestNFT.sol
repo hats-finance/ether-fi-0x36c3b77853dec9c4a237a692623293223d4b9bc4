@@ -46,7 +46,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         _nextRequestId++;
         _requests[requestId] = WithdrawRequest(amountOfEEth, shareOfEEth, true);
         _safeMint(recipient, requestId);
-        
+
         emit WithdrawRequestCreated(uint32(requestId), amountOfEEth, shareOfEEth, recipient);
         return requestId;
     }
@@ -63,16 +63,16 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         uint256 amountForShares = liquidityPool.amountForShare(request.shareOfEEth);
         uint256 amountToTransfer = (request.amountOfEEth < amountForShares) ? request.amountOfEEth : amountForShares;
         require(amountToTransfer > 0, "Amount to transfer is zero");
-        uint256 shareToBurn = liquidityPool.sharesForWithdrawalAmount(amountToTransfer);
+        liquidityPool.sharesForWithdrawalAmount(amountToTransfer);
 
         // transfer eth to requester
         address recipient = ownerOf(tokenId);
         _burn(tokenId);
         delete _requests[tokenId];
 
-        liquidityPool.withdraw(recipient, amountToTransfer);
+        uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToTransfer);
 
-        emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, shareToBurn, recipient);
+        emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient);
     }
     
     // add function to transfer accumulated shares to admin
