@@ -102,13 +102,6 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         ConsensusState storage consenState = consensusStates[reportHash];
         consenState.support++;
 
-        // if the consensus reaches
-        bool consensusReached = (consenState.support == quorumSize);
-        if (consensusReached) {
-            consenState.consensusReached = true;
-            _publishReport(_report, reportHash);
-        }
-
         emit ReportSubmitted(
             _report.consensusVersion,
             _report.refSlotFrom,
@@ -118,6 +111,13 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             reportHash,
             msg.sender
             );
+
+        // if the consensus reaches
+        bool consensusReached = (consenState.support == quorumSize);
+        if (consensusReached) {
+            consenState.consensusReached = true;
+            _publishReport(_report, reportHash);
+        }
 
         return consensusReached;
     }
