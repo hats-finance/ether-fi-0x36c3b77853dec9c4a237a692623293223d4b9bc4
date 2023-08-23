@@ -63,7 +63,6 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         uint256 amountForShares = liquidityPool.amountForShare(request.shareOfEEth);
         uint256 amountToTransfer = (request.amountOfEEth < amountForShares) ? request.amountOfEEth : amountForShares;
         require(amountToTransfer > 0, "Amount to transfer is zero");
-        liquidityPool.sharesForWithdrawalAmount(amountToTransfer);
 
         // transfer eth to requester
         address recipient = ownerOf(tokenId);
