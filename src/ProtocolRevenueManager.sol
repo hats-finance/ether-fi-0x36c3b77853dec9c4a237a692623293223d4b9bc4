@@ -63,15 +63,7 @@ contract ProtocolRevenueManager is
     /// @param _validatorId the validator ID
     function addAuctionRevenue(uint256 _validatorId) external payable onlyAuctionManager nonReentrant {
         require(etherFiNodesManager.numberOfValidators() > 0, "No Active Validator");
-        require(etherFiNodesManager.localRevenueIndex(_validatorId) == 0, "addAuctionRevenue is already processed for the validator.");
-        uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers * msg.value) / 100;
-        uint256 amountToProtocol = msg.value - amountVestedForStakers;
-        address etherfiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
-        uint256 globalIndexlocal = globalRevenueIndex;
-
-        globalRevenueIndex += amountToProtocol / etherFiNodesManager.numberOfValidators();
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalIndexlocal);
-        IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: amountVestedForStakers}();
+        // TODO(Dave): re-implement
     }
 
     /// @notice Distribute the accrued rewards to the validator
@@ -80,9 +72,9 @@ contract ProtocolRevenueManager is
         if (etherFiNodesManager.isExited(_validatorId) || etherFiNodesManager.isFullyWithdrawn(_validatorId) || etherFiNodesManager.isEvicted(_validatorId)) {
             return 0;
         }
-        uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(_validatorId, globalRevenueIndex);
-        return amount;
+        
+        // TODO(Dave): re-implement
+        return 0;
     }
 
     //--------------------------------------------------------------------------------------
@@ -143,6 +135,8 @@ contract ProtocolRevenueManager is
     /// @notice Compute the accrued rewards for a validator
     /// @param _validatorId id of the validator
     function getAccruedAuctionRevenueRewards(uint256 _validatorId) public view returns (uint256) {
+        //TODO(Dave): reimplement
+        /*
         address etherFiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
         uint256 localRevenueIndex = IEtherFiNode(etherFiNode).localRevenueIndex();   
         if (localRevenueIndex == 0) {
@@ -150,6 +144,8 @@ contract ProtocolRevenueManager is
         }
         uint256 amount = globalRevenueIndex - localRevenueIndex;
         return amount;
+        */
+       return 0;
     }
 
     /// @notice Fetches the address of the implementation contract currently being used by the proxy

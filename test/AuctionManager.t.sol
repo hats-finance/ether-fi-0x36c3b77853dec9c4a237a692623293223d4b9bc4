@@ -738,7 +738,8 @@ contract AuctionManagerTest is TestSetup {
 
         stakingManagerInstance.batchRegisterValidators(zeroRoot, processedBidIds, depositDataArray);
 
-        assertEq(etherFiNode.balance, 0.5 ether);
+        // Auction Revenue is no longer distributed to nodes
+        assertEq(etherFiNode.balance, 0.0 ether);
     }
 
     function test_SetMaxBidAmount() public {

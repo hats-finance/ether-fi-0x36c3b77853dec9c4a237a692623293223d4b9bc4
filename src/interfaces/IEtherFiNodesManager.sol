@@ -35,12 +35,6 @@ interface IEtherFiNodesManager {
         uint256 _validatorId
     ) external view returns (string memory);
 
-    function localRevenueIndex(uint256 _validatorId) external returns (uint256);
-
-    function vestedAuctionRewards(
-        uint256 _validatorId
-    ) external returns (uint256);
-
     function generateWithdrawalCredentials(
         address _address
     ) external view returns (bytes memory);
@@ -48,16 +42,13 @@ interface IEtherFiNodesManager {
     function getWithdrawalCredentials(
         uint256 _validatorId
     ) external view returns (bytes memory);
-    
+
     function calculateTVL(
         uint256 _validatorId,
         uint256 _beaconBalance,
-        bool _stakingRewards,
-        bool _protocolRewards,
-        bool _vestedAuctionFee,
-        bool _assumeFullyVested
+        bool _stakingRewards
     ) external view returns (uint256, uint256, uint256, uint256);
-    
+
     function isExitRequested(uint256 _validatorId) external view returns (bool);
 
     function isExited(uint256 _validatorId) external view returns (bool);
@@ -76,9 +67,7 @@ interface IEtherFiNodesManager {
     function getRewardsPayouts(
         uint256 _validatorId,
         uint256 _beaconBalance,
-        bool _stakingRewards,
-        bool _protocolRewards,
-        bool _vestedAuctionFee
+        bool _stakingRewards
     ) external view returns (uint256, uint256, uint256, uint256);
 
     function getFullWithdrawalPayouts(
@@ -138,11 +127,6 @@ interface IEtherFiNodesManager {
         string calldata _ipfs
     ) external;
 
-    function setEtherFiNodeLocalRevenueIndex(
-        uint256 _validatorId,
-        uint256 _localRevenueIndex
-    ) external payable;
-
     function sendExitRequest(uint256 _validatorId) external;
     function batchSendExitRequest(uint256[] calldata _validatorIds) external;
 
@@ -153,24 +137,18 @@ interface IEtherFiNodesManager {
 
     function partialWithdraw(
         uint256 _validatorId,
-        bool _stakingRewards,
-        bool _protocolRewards,
-        bool _vestedAuctionFee
+        bool _stakingRewards
     ) external;
 
     function partialWithdrawBatch(
         uint256[] calldata _validatorIds,
-        bool _stakingRewards,
-        bool _protocolRewards,
-        bool _vestedAuctionFee
+        bool _stakingRewards
     ) external;
 
     function partialWithdrawBatchGroupByOperator(
         address _operator,
         uint256[] memory _validatorIds,
-        bool _stakingRewards,
-        bool _protocolRewards,
-        bool _vestedAuctionFee
+        bool _stakingRewards
     ) external;
 
     function fullWithdraw(uint256 _validatorId) external;
