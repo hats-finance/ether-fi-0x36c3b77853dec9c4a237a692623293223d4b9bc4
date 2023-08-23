@@ -10,7 +10,7 @@ contract LargeScenariosTest is TestSetup {
         setUpTests();
     }
 
-    // TODO(Dave): Re-enable
+    // TODO(Dave,Brett): Re-enable after new rewards routing is finalized
     /*
     function test_LargeScenarioOne() public {
          // Alice, Bob, Chad - Operators
@@ -178,15 +178,6 @@ contract LargeScenariosTest is TestSetup {
         assertEq(BNFTInstance.ownerOf(danProcessedBidIds[0]), dan);
 
         assertEq(managerInstance.numberOfValidators(), 1);
-
-        // Auction Rewards get distributed
-        assertEq(address(auctionInstance).balance, 0.65 ether - 0.005 ether);
-        assertEq(danNode.balance, 0.0025 ether);
-        assertEq(
-            protocolRevenueManagerInstance.globalRevenueIndex(),
-            0.0025 ether + 1
-        );
-        assertEq(IEtherFiNode(danNode).localRevenueIndex(), 1);
 
         /// Elvis batch registers validators
         // Generate Elvis's deposit data
