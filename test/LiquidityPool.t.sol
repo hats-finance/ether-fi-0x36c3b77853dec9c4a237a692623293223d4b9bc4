@@ -1045,6 +1045,30 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setSchedulingPeriodInSeconds(100000);
     }
 
+    function test_SetStakingTypeTargetWeights() public {
+        (,, uint128 eEthTargetWeight) = liquidityPoolInstance.stakingTypeInformation(LiquidityPool.StakingTag.EETH);
+        (,, uint128 etherFanTargetWeight) = liquidityPoolInstance.stakingTypeInformation(LiquidityPool.StakingTag.ETHER_FAN);
+
+        assertEq(eEthTargetWeight, 0);
+        assertEq(etherFanTargetWeight, 0);
+
+        vm.prank(bob);
+        vm.expectRevert("Caller is not the admin");
+        liquidityPoolInstance.setStakingTargetWeights(50, 50);
+
+        vm.startPrank(alice);
+        vm.expectRevert("Invalid weights");
+        liquidityPoolInstance.setStakingTargetWeights(50, 51);
+
+        liquidityPoolInstance.setStakingTargetWeights(61, 39);
+
+        (,, eEthTargetWeight) = liquidityPoolInstance.stakingTypeInformation(LiquidityPool.StakingTag.EETH);
+        (,, etherFanTargetWeight) = liquidityPoolInstance.stakingTypeInformation(LiquidityPool.StakingTag.ETHER_FAN);
+
+        assertEq(eEthTargetWeight, 61);
+        assertEq(etherFanTargetWeight, 39);
+    }
+
     function setUpBnftHolders() internal {
         vm.startPrank(alice);
         liquidityPoolInstance.registerAsBnftHolder(alice);

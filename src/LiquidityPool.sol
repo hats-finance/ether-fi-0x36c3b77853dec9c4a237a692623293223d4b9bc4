@@ -62,8 +62,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     struct StakingTagInformation {
-        uint256 amount;
-        uint256 numberOfValidators;
+        uint256 amountOfFundsInPool;
+        uint128 numberOfValidators;
+        uint128 targetWeight;
     }
 
     //--------------------------------------------------------------------------------------
@@ -78,6 +79,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey);
+    event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
 
     error InvalidAmount();
 
@@ -105,6 +107,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         regulationsManager = IRegulationsManager(_regulationsManager);
         eEthliquidStakingOpened = false;
         schedulingPeriodInSeconds = 604800;
+
+        //_initializeTypes();
     }
 
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
@@ -116,11 +120,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
         if(msg.sender == address(membershipManager)) {
             isWhitelistedAndEligible(_user, _merkleProof);
-            stakingTypeInformation[StakingTag.ETHER_FAN].amount += msg.value;
+            stakingTypeInformation[StakingTag.ETHER_FAN].amountOfFundsInPool += msg.value;
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
             isWhitelistedAndEligible(msg.sender, _merkleProof);
-            stakingTypeInformation[StakingTag.EETH].amount += msg.value;
+            stakingTypeInformation[StakingTag.EETH].amountOfFundsInPool += msg.value;
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
         
@@ -144,9 +148,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         // TODO: Relook at this logic, possible arithmetic underflow when withdraw amount > current amount
         // if(msg.sender == address(membershipManager)) {
-        //     stakingTypeInformation[StakingTag.ETHER_FAN].amount -= _amount;
+        //     stakingTypeInformation[StakingTag.ETHER_FAN].amountOfFundsInPool -= _amount;
         // }else {
-        //     stakingTypeInformation[StakingTag.EETH].amount -= _amount;
+        //     stakingTypeInformation[StakingTag.EETH].amountOfFundsInPool -= _amount;
         // }
 
         uint256 share = sharesForWithdrawalAmount(_amount);
@@ -404,6 +408,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         }
     }
 
+    function setStakingTargetWeights(uint128 _eEthWeight, uint128 _etherFanWeight) external onlyAdmin {
+        require(_eEthWeight + _etherFanWeight == 100, "Invalid weights");
+
+        stakingTypeInformation[StakingTag.EETH].targetWeight = _eEthWeight;
+        stakingTypeInformation[StakingTag.ETHER_FAN].targetWeight = _etherFanWeight;
+
+        emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
+    }
+
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -500,6 +513,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
         return (_a > _b) ? _b : _a;
     }
+
+    // function _initializeTypes() internal {
+    //     stakingTypeInformation[StakingTag.EETH] = 
+    // }
 
     function getImplementation() external view returns (address) {return _getImplementation();}
 
