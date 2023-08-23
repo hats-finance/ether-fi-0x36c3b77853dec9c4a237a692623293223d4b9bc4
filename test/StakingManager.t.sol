@@ -56,7 +56,8 @@ contract StakingManagerTest is TestSetup {
         assertEq(keccak256(withdrawalCredential), keccak256(trueOne));
     }
 
-    function test_DepositFromBNFTHolder() public {
+    function test_ApproveRegistration() public {
+
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.startPrank(alice);
@@ -79,11 +80,9 @@ contract StakingManagerTest is TestSetup {
         vm.warp(12431561615);
 
         liquidityPoolInstance.dutyForWeek();
-       
-        vm.prank(alice);
-        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 10);
 
         startHoax(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 1000);
         bidIds = auctionInstance.createBid{value: 1 ether}(
             10,
             0.1 ether
@@ -92,21 +91,6 @@ contract StakingManagerTest is TestSetup {
         
         startHoax(alice);
         processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
-
-        assertEq(stakingManagerInstance.bidIdToStaker(1), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(2), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(3), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(4), alice);
-    }
-
-    function test_RegisterAsBNFTHolder() public {
-        
-        test_DepositFromBNFTHolder();
-
-        assertEq(processedBids[0], 1);
-        assertEq(processedBids[1], 2);
-        assertEq(processedBids[2], 3);
-        assertEq(processedBids[3], 4);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
@@ -131,27 +115,10 @@ contract StakingManagerTest is TestSetup {
         validatorArray = new uint256[](1);
         validatorArray[0] = processedBids[0];
 
-        assertEq(BNFTInstance.balanceOf(alice), 0);
-        assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 0);
-
         sig = new bytes[](1);
         sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
 
         liquidityPoolInstance.batchRegisterAsBnftHolder(zeroRoot, validatorArray, depositDataArray, sig);
-
-        assertEq(liquidityPoolInstance.numPendingDeposits(), 3);
-        assertEq(BNFTInstance.balanceOf(alice), 1);
-        assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 1);
-    }
-
-    function test_ApproveRegistration() public {
-
-        test_RegisterAsBNFTHolder();
-
-        assertEq(managerInstance.numberOfValidators(), 1);
-        assertEq(liquidityPoolInstance.numPendingDeposits(), 3);
-        assertEq(BNFTInstance.balanceOf(alice), 1);
-        assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 1);
         vm.stopPrank();
 
         bytes[] memory pubKey = new bytes[](1);
