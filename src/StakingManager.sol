@@ -157,7 +157,7 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x], msg.sender, true);
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x], msg.sender, 32 ether);
         }
     }
 
@@ -175,11 +175,12 @@ contract StakingManager is
         DepositData[] calldata _depositData,
         address _staker
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
+        require(msg.sender == liquidityPoolContract, "Only LiquidityPool can call this function");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _staker, false);    
+            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _staker, 1 ether);    
         }  
     }
 
@@ -191,15 +192,26 @@ contract StakingManager is
         for (uint256 x; x < _validatorId.length; ++x) {
             // Deposit to the Beacon Chain
             bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
-            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether));
-        }  
+            bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
+            // TODO: will revisit this later; should we have on-chain verification as well for depositDataRoot?
+            // require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
+            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], depositDataRoot);        
+        }
     }
 
     /// @notice Cancels a user's deposits
     /// @param _validatorIds the IDs of the validators deposits to cancel
     function batchCancelDeposit(uint256[] calldata _validatorIds) public whenNotPaused nonReentrant {
         for (uint256 x; x < _validatorIds.length; ++x) {
-            _cancelDeposit(_validatorIds[x]);    
+            _cancelDeposit(_validatorIds[x], msg.sender);    
+        }  
+    }
+
+    /// @notice Cancels a user's deposits
+    /// @param _validatorIds the IDs of the validators deposits to cancel
+    function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) public whenNotPaused nonReentrant {
+        for (uint256 x; x < _validatorIds.length; ++x) {
+            _cancelDeposit(_validatorIds[x], _caller);    
         }  
     }
 
@@ -327,19 +339,17 @@ contract StakingManager is
         address _tNftRecipient, 
         DepositData calldata _depositData, 
         address _staker,
-        bool _delegatedStaker
+        uint256 _depositAmount
     ) internal {
-        require(bidIdToStaker[_validatorId] == _staker, "Not deposit owner");   
+        require(bidIdToStaker[_validatorId] == _staker, "Not deposit owner");
+        bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
+        bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, _depositAmount);
+        require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
+
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
 
         // Deposit to the Beacon Chain
-        bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
-
-        if(_delegatedStaker) {
-            depositContractEth2.deposit{value: 32 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, 32 ether));
-        } else {
-            depositContractEth2.deposit{value: 1 ether}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, 1 ether));
-        }
+        depositContractEth2.deposit{value: _depositAmount}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositDataRoot);
         nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
         nodesManager.incrementNumberOfValidators(1);
@@ -372,8 +382,8 @@ contract StakingManager is
 
     /// @notice Cancels a users stake
     /// @param _validatorId the ID of the validator deposit to cancel
-    function _cancelDeposit(uint256 _validatorId) internal {
-        require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
+    function _cancelDeposit(uint256 _validatorId, address _caller) internal {
+        require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
 
         bidIdToStaker[_validatorId] = address(0);
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.CANCELLED);
