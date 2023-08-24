@@ -21,18 +21,13 @@ contract DeployOracleScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
 
-        addressProvider.removeContract("EtherFiOracle");
-
         etherFiOracleImplementation = new EtherFiOracle();
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
         etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
 
-        etherFiOracleInstance.initialize(1, 128, 32, 12, beacon_genesis_time);
+        etherFiOracleInstance.initialize(1, 96, 32, 12, beacon_genesis_time);
         // etherFiOracleInstance.initialize(2, 7200, 12, beacon_genesis_time);
         // 96 slots = 19.2 mins, 7200 slots = 225 epochs = 1day
-
-        etherFiOracleInstance.addCommitteeMember(address(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39));
-        etherFiOracleInstance.addCommitteeMember(address(0x601B37004f2A6B535a6cfBace0f88D2d534aCcD8));
 
         addressProvider.addContract(address(etherFiOracleProxy), "EtherFiOracle");
 
