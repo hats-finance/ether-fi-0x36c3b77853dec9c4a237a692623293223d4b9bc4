@@ -75,14 +75,12 @@ interface IEtherFiNode {
 
     function getRewardsPayouts(
         uint256 _beaconBalance,
-        bool _stakingRewards,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);
 
     function calculateTVL(
         uint256 _beaconBalance,
-        bool _stakingRewards,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);

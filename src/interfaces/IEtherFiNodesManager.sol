@@ -45,8 +45,7 @@ interface IEtherFiNodesManager {
 
     function calculateTVL(
         uint256 _validatorId,
-        uint256 _beaconBalance,
-        bool _stakingRewards
+        uint256 _beaconBalance
     ) external view returns (uint256, uint256, uint256, uint256);
 
     function isExitRequested(uint256 _validatorId) external view returns (bool);
@@ -66,8 +65,7 @@ interface IEtherFiNodesManager {
 
     function getRewardsPayouts(
         uint256 _validatorId,
-        uint256 _beaconBalance,
-        bool _stakingRewards
+        uint256 _beaconBalance
     ) external view returns (uint256, uint256, uint256, uint256);
 
     function getFullWithdrawalPayouts(
@@ -135,20 +133,13 @@ interface IEtherFiNodesManager {
 
     function markBeingSlashed(uint256[] calldata _validatorIds) external;
 
-    function partialWithdraw(
-        uint256 _validatorId,
-        bool _stakingRewards
-    ) external;
+    function partialWithdraw(uint256 _validatorId) external;
 
-    function partialWithdrawBatch(
-        uint256[] calldata _validatorIds,
-        bool _stakingRewards
-    ) external;
+    function partialWithdrawBatch(uint256[] calldata _validatorIds) external;
 
     function partialWithdrawBatchGroupByOperator(
         address _operator,
-        uint256[] memory _validatorIds,
-        bool _stakingRewards
+        uint256[] memory _validatorIds
     ) external;
 
     function fullWithdraw(uint256 _validatorId) external;

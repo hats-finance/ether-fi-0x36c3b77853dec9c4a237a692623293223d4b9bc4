@@ -191,10 +191,7 @@ contract EtherFiNodesManager is
 
     /// @notice Process the rewards skimming
     /// @param _validatorId The validator Id
-    function partialWithdraw(
-        uint256 _validatorId,
-        bool _stakingRewards
-    ) public nonReentrant whenNotPaused {
+    function partialWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         require(
             address(etherfiNode).balance < 8 ether,
@@ -204,35 +201,29 @@ contract EtherFiNodesManager is
             IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE || IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN,
             "you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN."
         );
-        
+
         // Retrieve all possible rewards: {Staking, Protocol} rewards and the vested auction fee reward
         // 'beaconBalance == 32 ether' means there is no accrued staking rewards and no slashing penalties  
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury ) 
-            = getRewardsPayouts(_validatorId, 32 ether, _stakingRewards);
+            = getRewardsPayouts(_validatorId, 32 ether);
 
         _distributePayouts(_validatorId, toTreasury, toOperator, toTnft, toBnft);
     }
 
     /// @notice Batch-process the rewards skimming
     /// @param _validatorIds A list of the validator Ids
-    /// @param _stakingRewards A bool value to indicate whether or not to include the staking rewards
-    function partialWithdrawBatch(
-        uint256[] calldata _validatorIds,
-        bool _stakingRewards
-    ) external whenNotPaused{
+    function partialWithdrawBatch(uint256[] calldata _validatorIds) external whenNotPaused{
         for (uint256 i = 0; i < _validatorIds.length; i++) {
-            partialWithdraw( _validatorIds[i], _stakingRewards);
+            partialWithdraw( _validatorIds[i]);
         }
     }
 
     /// @notice Batch-process the rewards skimming for the validator nodes belonging to the same operator
     /// @param _operator The address of the operator to withdraw from
     /// @param _validatorIds The ID's of the validators to be withdrawn from
-    /// @param _stakingRewards A bool value to indicate whether or not to include the staking rewards
     function partialWithdrawBatchGroupByOperator(
         address _operator,
-        uint256[] memory _validatorIds,
-        bool _stakingRewards
+        uint256[] memory _validatorIds
     ) external nonReentrant whenNotPaused{
         uint256 totalOperatorAmount;
         uint256 totalTreasuryAmount;
@@ -260,7 +251,7 @@ contract EtherFiNodesManager is
 
             // 'beaconBalance == 32 ether' means there is no accrued staking rewards and no slashing penalties  
             (payouts[0], payouts[1], payouts[2], payouts[3])
-                = getRewardsPayouts(_validatorId, 32 ether, _stakingRewards);
+                = getRewardsPayouts(_validatorId, 32 ether);
 
             IEtherFiNode(etherfiNode).moveRewardsToManager(payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
@@ -519,21 +510,18 @@ contract EtherFiNodesManager is
     /// @notice Fetches the total rewards payout for the node for specific revenues
     /// @param _validatorId ID of the validator associated to etherfi node
     /// @param _beaconBalance the balance of the validator in Consensus Layer
-    /// @param _stakingRewards A bool value to indicate whether or not to include the staking rewards
     /// @return toNodeOperator  the TVL for the Node Operator
     /// @return toTnft          the TVL for the T-NFT holder
     /// @return toBnft          the TVL for the B-NFT holder
     /// @return toTreasury      the TVL for the Treasury
     function getRewardsPayouts(
         uint256 _validatorId,
-        uint256 _beaconBalance,
-        bool _stakingRewards
+        uint256 _beaconBalance
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return
             IEtherFiNode(etherfiNode).getRewardsPayouts(
                 _beaconBalance,
-                _stakingRewards,
                 stakingRewardsSplit,
                 SCALE
             );
@@ -552,13 +540,12 @@ contract EtherFiNodesManager is
         // The full withdrawal payouts should be equal to the total TVL of the validator
         // 'beaconBalance' should be 0 since the validator must be in 'withdrawal_done' status
         // - it will get provably verified once we have EIP 4788
-        return calculateTVL(_validatorId, 0, true);
+        return calculateTVL(_validatorId, 0);
     }
 
     /// @notice Compute the TVLs for {node operator, t-nft holder, b-nft holder, treasury}
     /// @param _validatorId id of the validator associated to etherfi node
     /// @param _beaconBalance the balance of the validator in Consensus Layer
-    /// @param _stakingRewards a flag to include the withdrawable amount for the staking principal + rewards
     ///
     /// @return toNodeOperator  the TVL for the Node Operator
     /// @return toTnft          the TVL for the T-NFT holder
@@ -566,13 +553,11 @@ contract EtherFiNodesManager is
     /// @return toTreasury      the TVL for the Treasury
     function calculateTVL(
         uint256 _validatorId,
-        uint256 _beaconBalance,
-        bool _stakingRewards
+        uint256 _beaconBalance
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return  IEtherFiNode(etherfiNode).calculateTVL(
                     _beaconBalance,
-                    _stakingRewards,
                     stakingRewardsSplit,
                     SCALE
                 );
