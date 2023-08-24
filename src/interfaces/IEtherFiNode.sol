@@ -77,7 +77,6 @@ interface IEtherFiNode {
         uint256 _beaconBalance,
         bool _stakingRewards,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);
 
