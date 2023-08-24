@@ -20,6 +20,7 @@ import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
+import "./libraries/DepositRootGenerator.sol";
 
 contract StakingManager is
     Initializable,
@@ -152,11 +153,11 @@ contract StakingManager is
         uint256[] calldata _validatorId,
         DepositData[] calldata _depositData
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
-        require(_validatorId.length == _depositData.length, "Array lengths must match");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
+        require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x]);
+            _registerValidator(_validatorId[x], msg.sender, msg.sender, _depositData[x], msg.sender, 32 ether);
         }
     }
 
@@ -171,21 +172,46 @@ contract StakingManager is
         uint256[] calldata _validatorId,
         address _bNftRecipient, 
         address _tNftRecipient,
-        DepositData[] calldata _depositData
+        DepositData[] calldata _depositData,
+        address _staker
     ) public whenNotPaused nonReentrant verifyDepositState(_depositRoot) {
-        require(_validatorId.length == _depositData.length, "Array lengths must match");
+        require(msg.sender == liquidityPoolContract, "Only LiquidityPool can call this function");
         require(_validatorId.length <= maxBatchDepositSize, "Too many validators");
+        require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x]);    
+            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _staker, 1 ether);    
         }  
+    }
+
+    function batchApproveRegistration(
+        uint256[] memory _validatorId, 
+        bytes[] calldata _pubKey,
+        bytes[] calldata _signature
+    ) external onlyAdmin {
+        for (uint256 x; x < _validatorId.length; ++x) {
+            // Deposit to the Beacon Chain
+            bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
+            bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
+            // TODO: will revisit this later; should we have on-chain verification as well for depositDataRoot?
+            // require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
+            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], depositDataRoot);        
+        }
     }
 
     /// @notice Cancels a user's deposits
     /// @param _validatorIds the IDs of the validators deposits to cancel
     function batchCancelDeposit(uint256[] calldata _validatorIds) public whenNotPaused nonReentrant {
         for (uint256 x; x < _validatorIds.length; ++x) {
-            _cancelDeposit(_validatorIds[x]);    
+            _cancelDeposit(_validatorIds[x], msg.sender);    
+        }  
+    }
+
+    /// @notice Cancels a user's deposits
+    /// @param _validatorIds the IDs of the validators deposits to cancel
+    function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) public whenNotPaused nonReentrant {
+        for (uint256 x; x < _validatorIds.length; ++x) {
+            _cancelDeposit(_validatorIds[x], _caller);    
         }  
     }
 
@@ -290,6 +316,11 @@ contract StakingManager is
         admin = _newAdmin;
     }
 
+    function registerEth2DepositContract(address _address) public onlyOwner {
+        require(_address != address(0), "No zero addresses");
+        depositContractEth2 = IDepositContract(_address);
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
@@ -299,23 +330,31 @@ contract StakingManager is
     /// @param _bNftRecipient The address to receive the minted B-NFT
     /// @param _tNftRecipient The address to receive the minted T-NFT
     /// @param _depositData Data structure to hold all data needed for depositing to the beacon chain
+    /// @param _staker User who has begun the registration chain of transactions
     /// however, instead of the validator key, it will include the IPFS hash
     /// containing the validator key encrypted by the corresponding node operator's public key
     function _registerValidator(
-        uint256 _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData calldata _depositData
+        uint256 _validatorId, 
+        address _bNftRecipient, 
+        address _tNftRecipient, 
+        DepositData calldata _depositData, 
+        address _staker,
+        uint256 _depositAmount
     ) internal {
-        require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");        
+        require(bidIdToStaker[_validatorId] == _staker, "Not deposit owner");
+        bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
+        bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, _depositAmount);
+        require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
+
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
 
         // Deposit to the Beacon Chain
-        bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
-        depositContractEth2.deposit{value: stakeAmount}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, _depositData.depositDataRoot);
-
-        nodesManager.incrementNumberOfValidators(1);
+        depositContractEth2.deposit{value: _depositAmount}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositDataRoot);
         nodesManager.setEtherFiNodeIpfsHashForEncryptedValidatorKey(_validatorId, _depositData.ipfsHashForEncryptedValidatorKey);
 
+        nodesManager.incrementNumberOfValidators(1);
         auctionManager.processAuctionFeeTransfer(_validatorId);
-
+        
         // Let validatorId = nftTokenId
         uint256 nftTokenId = _validatorId;
         TNFTInterfaceInstance.mint(_tNftRecipient, nftTokenId);
@@ -331,11 +370,6 @@ contract StakingManager is
         );
     }
 
-    function registerEth2DepositContract(address _address) public onlyOwner {
-        require(_address != address(0), "No zero addresses");
-        depositContractEth2 = IDepositContract(_address);
-    }
-
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId The bid that won the right to the deposit
     function _processDeposit(uint256 _bidId, address _staker) internal {
@@ -348,8 +382,8 @@ contract StakingManager is
 
     /// @notice Cancels a users stake
     /// @param _validatorId the ID of the validator deposit to cancel
-    function _cancelDeposit(uint256 _validatorId) internal {
-        require(bidIdToStaker[_validatorId] == msg.sender, "Not deposit owner");
+    function _cancelDeposit(uint256 _validatorId, address _caller) internal {
+        require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
 
         bidIdToStaker[_validatorId] = address(0);
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.CANCELLED);
@@ -378,7 +412,7 @@ contract StakingManager is
     /// @param _amount the amount to refund the depositor
     function _refundDeposit(address _depositOwner, uint256 _amount) internal {
         (bool sent, ) = _depositOwner.call{value: _amount}("");
-        require(sent, "Failed to send Ether");
+        require(sent, "Failed to send Ether"); 
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
