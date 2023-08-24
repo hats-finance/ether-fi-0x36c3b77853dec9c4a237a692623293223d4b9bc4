@@ -9,11 +9,11 @@ interface IEtherFiOracle {
         uint32 refBlockFrom;
         uint32 refBlockTo;
         int256 accruedRewards;
-        uint32[] validatorsToApprove;
-        uint32[] liquidityPoolValidatorsToExit;
-        uint32[] exitedValidators;
-        uint32[] slashedValidators;
-        uint32[] withdrawalRequestsToInvalidate;
+        uint256[] validatorsToApprove;
+        uint256[] liquidityPoolValidatorsToExit;
+        uint256[] exitedValidators;
+        uint256[] slashedValidators;
+        uint256[] withdrawalRequestsToInvalidate;
         uint32 lastFinalizedWithdrawalRequestId;
         uint32 eEthTargetAllocationWeight;
         uint32 etherFanTargetAllocationWeight;
@@ -38,7 +38,6 @@ interface IEtherFiOracle {
     function numActiveCommitteeMembers() external view returns (uint32);
     function lastPublishedReportRefSlot() external view returns (uint32);
     function lastPublishedReportRefBlock() external view returns (uint32);
-    function lastHandledReportRefSlot() external view returns (uint32);
 
     function submitReport(OracleReport calldata _report) external returns (bool);
     function shouldSubmitReport(address _member) external view returns (bool);

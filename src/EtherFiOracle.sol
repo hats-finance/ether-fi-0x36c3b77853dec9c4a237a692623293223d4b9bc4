@@ -18,20 +18,16 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     uint32 public quorumSize; // the required supports to reach the consensus
     uint32 public reportPeriodSlot; // the period of the oracle report in # of slots
 
-    uint32 public numCommitteeMembers; // the total number of committee members
-    uint32 public numActiveCommitteeMembers; // the number of active (enabled) committee members
-
     uint32 public lastPublishedReportRefSlot; // the ref slot of the last published report
     uint32 public lastPublishedReportRefBlock; // the ref block of the last published report
-
-    uint32 public lastHandledReportRefSlot;
 
     /// Chain specification
     uint32 internal SLOTS_PER_EPOCH;
     uint32 internal SECONDS_PER_SLOT;
     uint32 internal BEACON_GENESIS_TIME;
 
-
+    uint32 public numCommitteeMembers; // the total number of committee members
+    uint32 public numActiveCommitteeMembers; // the number of active (enabled) committee members
 
     event CommitteeMemberAdded(address member);
     event CommitteeMemberRemoved(address member);
