@@ -764,15 +764,19 @@ contract LiquidityPoolTest is TestSetup {
         //Num Validators For Last = 1
         (uint256 firstIndex, uint128 lastIndex, uint128 numOfValidatorsForLastIndex) = liquidityPoolInstance.dutyForWeek();
 
+        (address firstIndexAddress, ) = liquidityPoolInstance.bnftHolders(firstIndex);
+        (address firstDeductOneIndexAddress, ) = liquidityPoolInstance.bnftHolders(firstIndex - 1);
+        (address lastIndexAddress, ) = liquidityPoolInstance.bnftHolders(lastIndex);
+
         vm.startPrank(alice);
-        nodeOperatorManagerInstance.addToWhitelist(liquidityPoolInstance.bnftHolders(firstIndex));
-        nodeOperatorManagerInstance.addToWhitelist(liquidityPoolInstance.bnftHolders(firstIndex - 1));
-        nodeOperatorManagerInstance.addToWhitelist(liquidityPoolInstance.bnftHolders(lastIndex));
+        nodeOperatorManagerInstance.addToWhitelist(firstIndexAddress);
+        nodeOperatorManagerInstance.addToWhitelist(firstDeductOneIndexAddress);
+        nodeOperatorManagerInstance.addToWhitelist(lastIndexAddress);
         vm.stopPrank();
 
         //Give the user in the first index position funds
-        vm.deal(liquidityPoolInstance.bnftHolders(firstIndex), 10 ether);
-        vm.startPrank(liquidityPoolInstance.bnftHolders(firstIndex));
+        vm.deal(firstIndexAddress, 10 ether);
+        vm.startPrank(firstIndexAddress);
 
         //Allow the user in the first index position to deposit 
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, firstIndexPlayerProof, firstIndex);
@@ -780,15 +784,15 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.stopPrank();
 
-        vm.startPrank(liquidityPoolInstance.bnftHolders(firstIndex - 1));
+        vm.startPrank(firstDeductOneIndexAddress);
 
         //User who is one short of the assigned first index attempts to deposit but fails
         vm.expectRevert("Not assigned");
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, beforeFirstIndexPlayerProof, firstIndex - 1);
         vm.stopPrank();
 
-        vm.deal(liquidityPoolInstance.bnftHolders(lastIndex), 10 ether);
-        vm.startPrank(liquidityPoolInstance.bnftHolders(lastIndex));
+        vm.deal(lastIndexAddress, 10 ether);
+        vm.startPrank(lastIndexAddress);
 
         //User who is last in the selection deposits with the correct amount of funds
         uint256 amount = 2 ether * numOfValidatorsForLastIndex;
@@ -875,19 +879,27 @@ contract LiquidityPoolTest is TestSetup {
     function test_DeRegisterBnftHolder() public {
         setUpBnftHolders();
 
-        assertEq(liquidityPoolInstance.bnftHolders(3), owner);
-        assertEq(liquidityPoolInstance.bnftHolders(7), henry);
-        assertEq(liquidityPoolInstance.bnftHolders(2), bob);
+        (address ownerIndexAddress, ) = liquidityPoolInstance.bnftHolders(3);
+        (address henryIndexAddress, ) = liquidityPoolInstance.bnftHolders(7);
+        (address bobIndexAddress, ) = liquidityPoolInstance.bnftHolders(2);
+
+        assertEq(ownerIndexAddress, owner);
+        assertEq(henryIndexAddress, henry);
+        assertEq(bobIndexAddress, bob);
 
         vm.prank(alice);
         liquidityPoolInstance.deRegisterBnftHolder(3);
 
-        assertEq(liquidityPoolInstance.bnftHolders(3), henry);
+        (henryIndexAddress, ) = liquidityPoolInstance.bnftHolders(3);
+
+        assertEq(henryIndexAddress, henry);
 
         vm.prank(bob);
         liquidityPoolInstance.deRegisterBnftHolder(2);
 
-        assertEq(liquidityPoolInstance.bnftHolders(2), elvis);
+        (address elvisIndexAddress, ) = liquidityPoolInstance.bnftHolders(2);
+
+        assertEq(elvisIndexAddress, elvis);
     }
 
     function test_DeRegisterBnftHolderIfIncorrectCaller() public {
@@ -1051,6 +1063,59 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(liquidityPoolInstance.numPendingDeposits(), 3);
         assertEq(BNFTInstance.balanceOf(alice), 1);
         assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 1);
+    }
+
+    function test_DepositFromBNFTHolderTwice() public {
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+
+        vm.startPrank(alice);
+        liquidityPoolInstance.registerAsBnftHolder(alice);
+        liquidityPoolInstance.registerAsBnftHolder(greg);
+
+        vm.deal(alice, 100000 ether);
+        vm.deal(greg, 100000 ether);
+
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 240 ether}(address(alice), aliceProof);
+        vm.stopPrank();
+
+        //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
+        vm.warp(12431561615);
+
+        liquidityPoolInstance.dutyForWeek();
+
+        startHoax(alice);
+        bidIds = auctionInstance.createBid{value: 1 ether}(
+            10,
+            0.1 ether
+        );
+        vm.stopPrank();
+        
+        startHoax(alice);
+        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
+
+        assertEq(stakingManagerInstance.bidIdToStaker(11), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(12), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(13), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(14), alice);
+
+        assertEq(stakingManagerInstance.bidIdToStaker(15), address(0));
+        assertEq(stakingManagerInstance.bidIdToStaker(16), address(0));
+        assertEq(stakingManagerInstance.bidIdToStaker(17), address(0));
+        assertEq(stakingManagerInstance.bidIdToStaker(18), address(0));
+
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
+
+        assertEq(stakingManagerInstance.bidIdToStaker(15), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(16), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(17), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(18), alice);
+
     }
 
     function setUpBnftHolders() internal {
