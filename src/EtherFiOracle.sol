@@ -256,16 +256,19 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function setQuorumSize(uint32 _quorumSize) public onlyOwner {
+        // TODO enable the below for mainnet
+        // require(_quorumSize > 1, "Quorum size must be greater than 1");
         quorumSize = _quorumSize;
 
         emit QuorumUpdated(_quorumSize);
     }
 
     function setOracleReportPeriod(uint32 _reportPeriodSlot) public onlyOwner {
-        require(reportPeriodSlot % SLOTS_PER_EPOCH == 0, "Report period must be a multiple of the epoch");
+        require(_reportPeriodSlot != 0, "Report period cannot be zero");
+        require(_reportPeriodSlot % SLOTS_PER_EPOCH == 0, "Report period must be a multiple of the epoch");
         reportPeriodSlot = _reportPeriodSlot;
 
-        emit OracleReportPeriodUpdated(reportPeriodSlot);
+        emit OracleReportPeriodUpdated(_reportPeriodSlot);
     }
 
     function setConsensusVersion(uint32 _consensusVersion) public onlyOwner {
