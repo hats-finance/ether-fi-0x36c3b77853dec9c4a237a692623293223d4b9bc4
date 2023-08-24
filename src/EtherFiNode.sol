@@ -129,29 +129,6 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Compute the payouts for staking rewards to the individuals
-    /// @param _beaconBalance the balance of the validator in Consensus Layer
-    /// @param _SRsplits the splits for the Staking Rewards
-    /// @param _scale the scale
-    ///
-    /// @return toNodeOperator  the payout to the Node Operator
-    /// @return toTnft          the payout to the T-NFT holder
-    /// @return toBnft          the payout to the B-NFT holder
-    /// @return toTreasury      the payout to the Treasury
-    function getRewardsPayouts(
-        uint256 _beaconBalance,
-        IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        uint256 _scale
-    )
-        public
-        view
-        returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury)
-    {
-        //TODO(Dave): do we still want this function
-        (toNodeOperator, toTnft, toBnft, toTreasury) = getStakingRewardsPayouts(_beaconBalance,_SRsplits,_scale);
-        return (toNodeOperator, toTnft, toBnft, toTreasury);
-    }
-
     /// @notice Fetch the accrued staking rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
     /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _splits the splits for the staking rewards
@@ -274,7 +251,7 @@ contract EtherFiNode is IEtherFiNode {
         // Compute the payouts for the rewards = (staking rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
         uint256[] memory payouts = new uint256[](4); // (toNodeOperator, toTnft, toBnft, toTreasury)
-        (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(_beaconBalance, _SRsplits, _scale);
+        (payouts[0], payouts[1], payouts[2], payouts[3]) = getStakingRewardsPayouts(_beaconBalance, _SRsplits, _scale);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs

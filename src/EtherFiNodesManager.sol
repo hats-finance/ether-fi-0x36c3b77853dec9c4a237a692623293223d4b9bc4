@@ -520,7 +520,7 @@ contract EtherFiNodesManager is
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return
-            IEtherFiNode(etherfiNode).getRewardsPayouts(
+            IEtherFiNode(etherfiNode).getStakingRewardsPayouts(
                 _beaconBalance,
                 stakingRewardsSplit,
                 SCALE
