@@ -34,6 +34,8 @@ import "./TestERC20.sol";
 
 import "../src/MembershipManagerV0.sol";
 import "../src/EtherFiOracle.sol";
+import "../src/EtherFiAdmin.sol";
+
 
 contract TestSetup is Test {
     uint256 public constant kwei = 10 ** 3;
@@ -60,6 +62,7 @@ contract TestSetup is Test {
     UUPSProxy public nftExchangeProxy;
     UUPSProxy public withdrawRequestNFTProxy;
     UUPSProxy public etherFiOracleProxy;
+    UUPSProxy public etherFiAdminProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -119,6 +122,9 @@ contract TestSetup is Test {
 
     EtherFiOracle public etherFiOracleImplementation;
     EtherFiOracle public etherFiOracleInstance;
+
+    EtherFiAdmin public etherFiAdminImplementation;
+    EtherFiAdmin public etherFiAdminInstance;
 
     EtherFiNode public node;
     Treasury public treasuryInstance;
@@ -355,11 +361,24 @@ contract TestSetup is Test {
         nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance), address(managerInstance));
         nftExchangeInstance.updateAdmin(alice);
 
-        uint32[] memory validatorsToApprove = new uint32[](1);
-        uint32[] memory validatorsToExit = new uint32[](1);
-        uint32[] memory exitedValidators = new uint32[](1);
-        uint32[] memory slashedValidators = new uint32[](1);
-        uint32[] memory withdrawalRequestsToInvalidate = new uint32[](1);
+        etherFiAdminImplementation = new EtherFiAdmin();
+        etherFiAdminProxy = new UUPSProxy(address(etherFiAdminImplementation), "");
+        etherFiAdminInstance = EtherFiAdmin(payable(etherFiAdminProxy));
+        etherFiAdminInstance.initialize(
+            address(etherFiOracleInstance),
+            address(stakingManagerInstance),
+            address(auctionInstance),
+            address(managerInstance),
+            address(liquidityPoolInstance),
+            address(membershipManagerInstance),
+            address(withdrawRequestNFTInstance)
+        );
+
+        uint256[] memory validatorsToApprove = new uint256[](1);
+        uint256[] memory validatorsToExit = new uint256[](1);
+        uint256[] memory exitedValidators = new uint256[](1);
+        uint256[] memory slashedValidators = new uint256[](1);
+        uint256[] memory withdrawalRequestsToInvalidate = new uint256[](1);
         reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
         reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
         reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);

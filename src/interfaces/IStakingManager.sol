@@ -23,6 +23,8 @@ interface IStakingManager {
 
     function batchRegisterValidators(bytes32 _depositRoot, uint256[] calldata _validatorId, address _bNftRecipient, address _tNftRecipient, DepositData[] calldata _depositData, address _user) external;
 
+    function batchApproveRegistration(uint256[] memory _validatorId, bytes[] calldata _pubKey, bytes[] calldata _signature) external;
+
     function batchCancelDeposit(uint256[] calldata _validatorIds) external;
 
     function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) external;

@@ -135,6 +135,8 @@ interface IEtherFiNodesManager {
         uint32[] calldata _exitTimestamp
     ) external;
 
+    function markBeingSlashed(uint256[] calldata _validatorIds) external;
+
     function partialWithdraw(
         uint256 _validatorId,
         bool _stakingRewards
