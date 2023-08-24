@@ -221,5 +221,11 @@ contract EtherFiOracleTest is TestSetup {
         assertEq(consensusReached, true);
     }
 
+    function test_set_oracle_report_period() public {
+        vm.startPrank(owner);
+        vm.expectRevert("Report period must be a multiple of the epoch");
+        etherFiOracleInstance.setOracleReportPeriod(127);
+        vm.stopPrank();
+    }
 
 }

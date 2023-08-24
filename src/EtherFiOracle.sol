@@ -262,10 +262,10 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function setOracleReportPeriod(uint32 _reportPeriodSlot) public onlyOwner {
-        require(reportPeriodSlot % SLOTS_PER_EPOCH == 0, "Report period must be a multiple of the epoch");
+        require(_reportPeriodSlot % SLOTS_PER_EPOCH == 0, "Report period must be a multiple of the epoch");
         reportPeriodSlot = _reportPeriodSlot;
 
-        emit OracleReportPeriodUpdated(reportPeriodSlot);
+        emit OracleReportPeriodUpdated(_reportPeriodSlot);
     }
 
     function setConsensusVersion(uint32 _consensusVersion) public onlyOwner {
