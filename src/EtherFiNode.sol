@@ -274,7 +274,6 @@ contract EtherFiNode is IEtherFiNode {
     ///         Compute the TVLs for {node operator, t-nft holder, b-nft holder, treasury}
     /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _SRsplits the splits for the Staking Rewards
-    /// @param _PRsplits the splits for the Protocol Rewards
     /// @param _scale the scale
     ///
     /// @return toNodeOperator  the payout to the Node Operator
@@ -285,7 +284,6 @@ contract EtherFiNode is IEtherFiNode {
         uint256 _beaconBalance,
         bool _stakingRewards,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards);
