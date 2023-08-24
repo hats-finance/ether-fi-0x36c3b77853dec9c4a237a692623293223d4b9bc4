@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
+import "../src/LiquidityPool.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
@@ -29,6 +30,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     mapping(address => KeyData) public addressToOperatorData;
     mapping(address => bool) private whitelistedAddresses;
     mapping(address => bool) public registered;
+    mapping(address => mapping(LiquidityPool.SourceOfFunds => bool)) public operatorApprovedTags;
     address public admin;
 
     //--------------------------------------------------------------------------------------
@@ -64,7 +66,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
 
         addressToOperatorData[msg.sender] = keyData;
         registered[msg.sender] = true;
-        
+
         emit OperatorRegistered(
             keyData.totalKeys,
             keyData.keysUsed,
@@ -88,6 +90,18 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         uint64 ipfsIndex = keyData.keysUsed;
         keyData.keysUsed++;
         return ipfsIndex;
+    }
+
+    function batchUpdateOperatorsApprovedTags(
+        address[] memory _users, 
+        LiquidityPool.SourceOfFunds[] memory _approvedTags, 
+        bool[] memory _approvals
+    ) external onlyAdmin {
+        require(_users.length == _approvedTags.length && _users.length == _approvals.length, "Invalid array lengths");
+        
+        for(uint256 x; x < _approvedTags.length; x++) {
+            operatorApprovedTags[_users[x]][_approvedTags[x]] = _approvals[x];
+        }
     }
 
     /// @notice Adds an address to the whitelist
