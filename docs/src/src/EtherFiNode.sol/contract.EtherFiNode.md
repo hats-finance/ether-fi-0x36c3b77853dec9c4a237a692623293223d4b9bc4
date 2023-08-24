@@ -172,48 +172,6 @@ function withdrawFunds(
 ) external onlyEtherFiNodeManagerContract;
 ```
 
-### getRewardsPayouts
-
-compute the payouts for {staking, protocol} rewards and vested auction fee to the individuals
-
-
-```solidity
-function getRewardsPayouts(
-    bool _stakingRewards,
-    bool _protocolRewards,
-    bool _vestedAuctionFee,
-    IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-    uint256 _SRscale,
-    IEtherFiNodesManager.RewardsSplit memory _PRsplits,
-    uint256 _PRscale
-)
-    public
-    view
-    onlyEtherFiNodeManagerContract
-    returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`_stakingRewards`|`bool`|a flag to be set if the caller wants to compute the payouts for the stkaing rewards|
-|`_protocolRewards`|`bool`|a flag to be set if the caller wants to compute the payouts for the protocol rewards|
-|`_vestedAuctionFee`|`bool`|a flag to be set if the caller wants to compute the payouts for the vested auction fee|
-|`_SRsplits`|`RewardsSplit.IEtherFiNodesManager`|the splits for the Staking Rewards|
-|`_SRscale`|`uint256`|the scale|
-|`_PRsplits`|`RewardsSplit.IEtherFiNodesManager`|the splits for the Protocol Rewards|
-|`_PRscale`|`uint256`|the scale|
-
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`toNodeOperator`|`uint256`| the payout to the Node Operator|
-|`toTnft`|`uint256`|         the payout to the T-NFT holder|
-|`toBnft`|`uint256`|         the payout to the B-NFT holder|
-|`toTreasury`|`uint256`|     the payout to the Treasury|
-
-
 ### getStakingRewardsPayouts
 
 get the accrued staking rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
