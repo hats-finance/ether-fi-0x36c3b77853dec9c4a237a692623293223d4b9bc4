@@ -107,8 +107,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         regulationsManager = IRegulationsManager(_regulationsManager);
         eEthliquidStakingOpened = false;
         schedulingPeriodInSeconds = 604800;
-
-        //_initializeTypes();
     }
 
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
