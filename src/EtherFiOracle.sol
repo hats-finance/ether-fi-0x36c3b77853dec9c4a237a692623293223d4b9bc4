@@ -6,37 +6,13 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
+import "./interfaces/IEtherFiOracle.sol";
 
-contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
-    struct OracleReport {
-        uint16 consensusVersion;
-        uint32 refSlotFrom;
-        uint32 refSlotTo;
-        uint32 refBlockFrom;
-        uint32 refBlockTo;
-        int256 accruedRewards;
-        uint32[] validatorsToApprove;
-        uint32[] liquidityPoolValidatorsToExit;
-        uint32[] exitedValidators;
-        uint32[] slashedValidators;
-        uint32[] withdrawalRequestsToInvalidate;
-        uint32 lastFinalizedWithdrawalRequestId;
-    }
 
-    struct CommitteeMemberState {
-        bool registered;
-        bool enabled; // is the member allowed to submit the report
-        uint32 lastReportRefSlot; // the ref slot of the last report from the member
-        uint32 numReports; // number of reports by the member
-    }
+contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IEtherFiOracle {
 
-    struct ConsensusState {
-        uint32 support; // how many supports?
-        bool consensusReached; // if the consensus is reached for this report
-    }
-
-    mapping(address => CommitteeMemberState) public committeeMemberStates; // committee member wallet address to its State
-    mapping(bytes32 => ConsensusState) public consensusStates; // report's hash -> Consensus State
+    mapping(address => IEtherFiOracle.CommitteeMemberState) public committeeMemberStates; // committee member wallet address to its State
+    mapping(bytes32 => IEtherFiOracle.ConsensusState) public consensusStates; // report's hash -> Consensus State
 
     uint32 public consensusVersion; // the version of the consensus
     uint32 public quorumSize; // the required supports to reach the consensus
@@ -54,6 +30,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint32 internal SLOTS_PER_EPOCH;
     uint32 internal SECONDS_PER_SLOT;
     uint32 internal BEACON_GENESIS_TIME;
+
 
 
     event CommitteeMemberAdded(address member);
@@ -219,7 +196,13 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             )
         );
 
-        return keccak256(abi.encodePacked(chunk1, chunk2));
+       bytes32 chunk3 = keccak256(
+            abi.encode(
+                _report.eEthTargetAllocationWeight,
+                _report.etherFanTargetAllocationWeight
+            )
+        );
+        return keccak256(abi.encodePacked(chunk1, chunk2, chunk3));
     }
 
     // only admin
