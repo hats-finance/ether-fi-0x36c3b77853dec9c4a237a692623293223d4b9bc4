@@ -534,7 +534,8 @@ contract EtherFiNodesManager is
             IEtherFiNode(etherfiNode).getRewardsPayouts(
                 _beaconBalance,
                 _stakingRewards,
-                stakingRewardsSplit, protocolRewardsSplit, SCALE
+                stakingRewardsSplit,
+                SCALE
             );
     }
 

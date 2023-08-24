@@ -133,7 +133,6 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _stakingRewards a flag to be set if the caller wants to compute the payouts for the staking rewards
     /// @param _SRsplits the splits for the Staking Rewards
-    /// @param _PRsplits the splits for the Protocol Rewards
     /// @param _scale the scale
     ///
     /// @return toNodeOperator  the payout to the Node Operator
@@ -144,7 +143,6 @@ contract EtherFiNode is IEtherFiNode {
         uint256 _beaconBalance,
         bool _stakingRewards,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
     )
         public
@@ -295,9 +293,7 @@ contract EtherFiNode is IEtherFiNode {
         // Compute the payouts for the rewards = (staking rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
         uint256[] memory payouts = new uint256[](4); // (toNodeOperator, toTnft, toBnft, toTreasury)
-        (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(_beaconBalance, 
-                                                                            _stakingRewards,
-                                                                             _SRsplits, _PRsplits, _scale);
+        (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(_beaconBalance, _stakingRewards, _SRsplits, _scale);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
