@@ -29,6 +29,10 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint32 public lastHandledReportRefSlot;
     uint32 public lastHandledReportRefBlock;
 
+    event AdminAdded(address admin);
+    event AdminRemoved(address admin);
+    event AdminOperationsExecuted(address admin, bytes32 reportHash);
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -68,6 +72,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _handleValidators(_report, _pubKey, _signature);
         _handleWithdrawals(_report);
         _handleTargetFundsAllocations(_report);
+
+        emit AdminOperationsExecuted(msg.sender, reportHash);
     }
 
     function _handleAccruedRewards(IEtherFiOracle.OracleReport calldata _report) internal {
@@ -112,11 +118,15 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function addAdmin(address _admin) external onlyOwner {
         require(!admins[_admin], "EtherFiAdmin: admin already exists");
         admins[_admin] = true;
+
+        emit AdminAdded(_admin);
     }
 
     function removeAdmin(address _admin) external onlyOwner {
         require(admins[_admin], "EtherFiAdmin: admin does not exist");
         admins[_admin] = false;
+
+        emit AdminRemoved(_admin);
     }
 
     function getImplementation() external view returns (address) {
