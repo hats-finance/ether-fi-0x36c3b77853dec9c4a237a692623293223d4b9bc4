@@ -36,10 +36,6 @@ interface IAuctionManager {
         address _stakingManagerContractAddress
     ) external;
 
-    function setProtocolRevenueManager(
-        address _protocolRevenueManager
-    ) external;
-
     function setAccumulatedRevenueThreshold(uint128 _newThreshold) external;
 
     function transferAccumulatedRevenue() external;

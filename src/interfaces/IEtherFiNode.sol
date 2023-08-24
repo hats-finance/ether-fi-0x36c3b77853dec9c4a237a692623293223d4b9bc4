@@ -56,12 +56,6 @@ interface IEtherFiNode {
 
     function exitTimestamp() external view returns (uint32);
 
-    function calculatePayouts(
-        uint256 _totalAmount,
-        IEtherFiNodesManager.RewardsSplit memory _splits,
-        uint256 _scale
-    ) external view returns (uint256, uint256, uint256, uint256);
-
     function getStakingRewardsPayouts(
         uint256 _beaconBalance,
         IEtherFiNodesManager.RewardsSplit memory _splits,
@@ -73,19 +67,9 @@ interface IEtherFiNode {
         uint32 _bNftExitRequestTimestamp
     ) external view returns (uint256);
 
-    function getRewardsPayouts(
-        uint256 _beaconBalance,
-        bool _stakingRewards,
-        IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        IEtherFiNodesManager.RewardsSplit memory _PRsplits,
-        uint256 _scale
-    ) external view returns (uint256, uint256, uint256, uint256);
-
     function calculateTVL(
         uint256 _beaconBalance,
-        bool _stakingRewards,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);
 

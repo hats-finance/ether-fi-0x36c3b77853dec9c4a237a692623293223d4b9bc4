@@ -38,7 +38,6 @@ contract EtherFiNodeTest is TestSetup {
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
@@ -121,7 +120,6 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_EtherFiNodeMultipleSafesWorkCorrectly() public {
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
         bytes32[] memory bobProof = merkle.getProof(whiteListedAddresses, 4);
         bytes32[] memory danProof = merkle.getProof(whiteListedAddresses, 6);
@@ -203,11 +201,6 @@ contract EtherFiNodeTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, depositDataArray);
         vm.stopPrank();
 
-        // protocolRevenue manager no longer gets auction revenue
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1[0]), 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2[0]), 0);
         assertEq(address(managerInstance.etherfiNodeAddress(bidId1[0])).balance, 0);
 
         etherFiNode = managerInstance.etherfiNodeAddress(bidId2[0]);
@@ -237,9 +230,6 @@ contract EtherFiNodeTest is TestSetup {
         vm.stopPrank();
 
         assertEq(address(managerInstance.etherfiNodeAddress(bidId2[0])).balance, 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(1), 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId1[0]), 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(bidId2[0]), 0);
     }
 
     function test_markExitedWorksCorrectly() public {
@@ -307,9 +297,7 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
         assertEq(address(etherFiNode).balance, 0.00 ether); // node no longer receives auction revenue
-        assertTrue(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]) == 0);
 
-        uint256 auctionRevenueRewards = protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]);
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
 
         vm.prank(alice);
@@ -318,8 +306,7 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EVICTED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
         assertEq(address(etherFiNode).balance, 0);
-        assertEq(protocolRevenueManagerInstance.getAccruedAuctionRevenueRewards(validatorIds[0]), 0); // nodes no longer accrue auction revenue
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance + auctionRevenueRewards);
+        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
     }
 
     function test_partialWithdraw() public {
@@ -339,15 +326,6 @@ contract EtherFiNodeTest is TestSetup {
         // Simulate the rewards distribution from the beacon chain
         vm.deal(etherfiNode, address(etherfiNode).balance + 1 ether);
 
-        // call 'partialWithdraw' without specifying any rewards to withdraw
-        hoax(owner);
-        managerInstance.partialWithdraw(bidId[0], false);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
-        assertEq(address(treasuryInstance).balance, treasuryBalance);
-        assertEq(address(dan).balance, danBalance);
-        assertEq(address(staker).balance, bnftStakerBalance);
-
-
         // Withdraw the {staking, protocol} rewards
         // - bid amount = 0 ether (Auction revenue no longer distributed to nodes)
         //   - 50 % ether is vested for the stakers
@@ -355,7 +333,7 @@ contract EtherFiNodeTest is TestSetup {
         //     - 25 % to treasury, 25% to node operator, the rest to the stakers
         // - staking rewards amount = 1 ether
         hoax(owner);
-        managerInstance.partialWithdraw(bidId[0], true);
+        managerInstance.partialWithdraw(bidId[0]);
         assertEq(
             address(nodeOperator).balance,
             nodeOperatorBalance + (1 ether * 5) / 100 + (0.0 ether * 50 * 25) / (100 * 100)
@@ -371,7 +349,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert(
             "etherfi node contract's balance is above 8 ETH. You should exit the node."
         );
-        managerInstance.partialWithdraw(bidId[0], true);
+        managerInstance.partialWithdraw(bidId[0]);
     }
 
     function test_partialWithdrawFails() public {
@@ -390,7 +368,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert(
             "you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN."
         );
-        managerInstance.partialWithdraw(bidId[0], true);
+        managerInstance.partialWithdraw(bidId[0]);
     }
 
     function test_markBeingSlashedFails() public {
@@ -442,7 +420,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256 bnftStakerBalance = address(staker).balance;
 
         hoax(owner);
-        managerInstance.partialWithdraw(bidId[0], true);
+        managerInstance.partialWithdraw(bidId[0]);
         uint256 nodeOperatorBalance2 = address(nodeOperator).balance;
 
         // node operator gets nothing because took longer than 14 days
@@ -465,7 +443,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256 withdrawnDanBalance = dan.balance;
         uint256 withdrawnBNFTBalance = address(staker).balance;
         hoax(owner);
-        managerInstance.partialWithdraw(bidId[0], true);
+        managerInstance.partialWithdraw(bidId[0]);
         assertEq(address(nodeOperator).balance, withdrawnOperatorBalance);
         assertEq(address(treasuryInstance).balance, withdrawnTreasuryBalance);
         assertEq(address(dan).balance, withdrawnDanBalance);
@@ -653,7 +631,7 @@ contract EtherFiNodeTest is TestSetup {
 
         hoax(owner);
         vm.expectRevert("you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN.");
-        managerInstance.partialWithdraw(validatorIds[0], true);
+        managerInstance.partialWithdraw(validatorIds[0]);
     }
 
     function test_getFullWithdrawalPayoutsAuditFix3() public {
@@ -985,7 +963,7 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 beaconBalance = 32 ether + 1 ether;
 
-            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true);
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
             assertEq(toNodeOperator, 0.05 ether);
             assertEq(toTreasury, 0.05 ether);
             assertEq(toTnft, 30.815625000000000000 ether);
@@ -996,7 +974,7 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 beaconBalance = 32 ether;
 
-            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true);
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
             assertEq(toNodeOperator, 0 ether);
             assertEq(toTreasury, 0 ether);
             assertEq(toTnft, 30 ether);
@@ -1008,7 +986,7 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 beaconBalance = 31.5 ether;
 
-            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true);
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
             assertEq(toNodeOperator, 0 ether);
             assertEq(toTreasury, 0 ether);
             assertEq(toTnft, 30 ether);
@@ -1021,7 +999,7 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 beaconBalance = 31 ether;
 
-            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true);
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
             assertEq(toNodeOperator, 0 ether);
             assertEq(toTreasury, 0 ether);
             assertEq(toTnft, 29.5 ether);
@@ -1031,7 +1009,7 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 beaconBalance = 30 ether;
 
-            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true);
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
             assertEq(toNodeOperator, 0 ether);
             assertEq(toTreasury, 0 ether);
             assertEq(toTnft, 28.5 ether);
@@ -1043,7 +1021,7 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 beaconBalance = 0 ether;
 
-            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true);
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
             assertEq(toNodeOperator, 0 ether);
             assertEq(toTreasury, 0 ether);
             assertEq(toTnft, 0 ether);
@@ -1060,7 +1038,7 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 beaconBalance = 32 ether + 1 ether;
 
-            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true);
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
             assertEq(toNodeOperator, 0.05 ether);
             assertEq(toTreasury, 0.05 ether);
             assertEq(toTnft, 30.815625000000000000 ether);
@@ -1077,7 +1055,7 @@ contract EtherFiNodeTest is TestSetup {
         {
             uint256 beaconBalance = 32 ether + 1 ether;
 
-            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance, true);
+            (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
             assertEq(toNodeOperator, tvls[0]);
             assertEq(toTreasury, tvls[3]);
             assertEq(toTnft, tvls[1]);

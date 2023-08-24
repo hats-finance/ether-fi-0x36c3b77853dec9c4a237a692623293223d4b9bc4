@@ -402,13 +402,6 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
         upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
     }
 
-    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) external {
-        _requireAdmin();
-        if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
-        treasuryFeeSplitPercent = _treasurySplitPercent;
-        protocolRevenueFeeSplitPercent = _protocolRevenueManagerSplitPercent;
-    }
-
     /// @notice Updates the address of the admin
     /// @param _newAdmin the new address to set as admin
     function updateAdmin(address _newAdmin) external onlyOwner {

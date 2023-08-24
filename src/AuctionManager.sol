@@ -29,7 +29,7 @@ contract AuctionManager is
     uint256 public numberOfActiveBids;
 
     INodeOperatorManager public nodeOperatorManager;
-    IProtocolRevenueManager public protocolRevenueManager;
+    IProtocolRevenueManager public DEPRECATED_protocolRevenueManager;
 
     address public stakingManagerContractAddress;
     bool public whitelistEnabled;
@@ -290,20 +290,6 @@ contract AuctionManager is
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Sets an instance of the protocol revenue manager
-    /// @notice Performed this way due to circular dependencies
-    /// @dev Needed to process an auction fee
-    /// @param _protocolRevenueManager the address of the protocol manager
-    function setProtocolRevenueManager(
-        address _protocolRevenueManager
-    ) external onlyOwner {
-        require(address(protocolRevenueManager) == address(0), "Address already set");
-        require(_protocolRevenueManager != address(0), "No zero addresses");
-        protocolRevenueManager = IProtocolRevenueManager(
-            _protocolRevenueManager
-        );
-    }
-
     /// @notice Sets the staking managers contract address in the current contract
     /// @param _stakingManagerContractAddress new stakingManagerContract address
     function setStakingManagerContractAddress(
@@ -313,7 +299,6 @@ contract AuctionManager is
         require(_stakingManagerContractAddress != address(0), "No zero addresses");
         stakingManagerContractAddress = _stakingManagerContractAddress;
     }
-
 
     /// @notice Sets the membership manager contract address
     /// @dev Needed to transfer accumulated revenue to the membership manager contract

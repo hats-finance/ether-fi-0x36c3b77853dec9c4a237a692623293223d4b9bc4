@@ -3,7 +3,6 @@ pragma solidity 0.8.13;
 
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
-import "./interfaces/IProtocolRevenueManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
@@ -130,47 +129,6 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Compute the payouts for staking rewards to the individuals
-    /// @param _beaconBalance the balance of the validator in Consensus Layer
-    /// @param _stakingRewards a flag to be set if the caller wants to compute the payouts for the staking rewards
-    /// @param _SRsplits the splits for the Staking Rewards
-    /// @param _PRsplits the splits for the Protocol Rewards
-    /// @param _scale the scale
-    ///
-    /// @return toNodeOperator  the payout to the Node Operator
-    /// @return toTnft          the payout to the T-NFT holder
-    /// @return toBnft          the payout to the B-NFT holder
-    /// @return toTreasury      the payout to the Treasury
-    function getRewardsPayouts(
-        uint256 _beaconBalance,
-        bool _stakingRewards,
-        IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        IEtherFiNodesManager.RewardsSplit memory _PRsplits,
-        uint256 _scale
-    )
-        public
-        view
-        returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury)
-    {
-        // (operator, tnft, bnft, treasury)
-        uint256[] memory payouts = new uint256[](4);
-        uint256[] memory tmps = new uint256[](4);
-
-        if (_stakingRewards) {
-            (tmps[0], tmps[1], tmps[2], tmps[3]) = getStakingRewardsPayouts(
-                _beaconBalance,
-                _SRsplits,
-                _scale
-            );
-            payouts[0] += tmps[0];
-            payouts[1] += tmps[1];
-            payouts[2] += tmps[2];
-            payouts[3] += tmps[3];
-        }
-
-        return (payouts[0], payouts[1], payouts[2], payouts[3]);
-    }
-
     /// @notice Fetch the accrued staking rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
     /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _splits the splits for the staking rewards
@@ -199,7 +157,7 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        uint256 stakingBalance = _beaconBalance + getWithdrawableAmount(true);
+        uint256 stakingBalance = _beaconBalance + getWithdrawableAmount();
         uint256 rewards;
 
         // If (Staking Principal + Staking Rewards >= 32 ether), the validator is running in a normal state
@@ -277,7 +235,6 @@ contract EtherFiNode is IEtherFiNode {
     ///         Compute the TVLs for {node operator, t-nft holder, b-nft holder, treasury}
     /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @param _SRsplits the splits for the Staking Rewards
-    /// @param _PRsplits the splits for the Protocol Rewards
     /// @param _scale the scale
     ///
     /// @return toNodeOperator  the payout to the Node Operator
@@ -286,19 +243,15 @@ contract EtherFiNode is IEtherFiNode {
     /// @return toTreasury      the payout to the Treasury
     function calculateTVL(
         uint256 _beaconBalance,
-        bool _stakingRewards,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        IEtherFiNodesManager.RewardsSplit memory _PRsplits,
         uint256 _scale
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
-        uint256 balance = _beaconBalance + getWithdrawableAmount(_stakingRewards);
+        uint256 balance = _beaconBalance + getWithdrawableAmount();
 
         // Compute the payouts for the rewards = (staking rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
         uint256[] memory payouts = new uint256[](4); // (toNodeOperator, toTnft, toBnft, toTreasury)
-        (payouts[0], payouts[1], payouts[2], payouts[3]) = getRewardsPayouts(_beaconBalance, 
-                                                                            _stakingRewards,
-                                                                             _SRsplits, _PRsplits, _scale);
+        (payouts[0], payouts[1], payouts[2], payouts[3]) = getStakingRewardsPayouts(_beaconBalance, _SRsplits, _scale);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
@@ -328,7 +281,7 @@ contract EtherFiNode is IEtherFiNode {
 
         require(
             payouts[0] + payouts[1] + payouts[2] + payouts[3] ==
-                _beaconBalance + getWithdrawableAmount(_stakingRewards),
+                _beaconBalance + getWithdrawableAmount(),
             "Incorrect Amount"
         );
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
@@ -396,13 +349,8 @@ contract EtherFiNode is IEtherFiNode {
     }
 
     /// @notice Compute the withdrawable amount from the node
-    /// @param _stakingRewards a flag to include the withdrawable amount for the staking principal + rewards
-    function getWithdrawableAmount(bool _stakingRewards) public view returns (uint256) {
-        uint256 balance = 0;
-        if (_stakingRewards) {
-            balance += address(this).balance;
-        }
-        return balance;
+    function getWithdrawableAmount() public view returns (uint256) {
+        return address(this).balance;
     }
 
     //--------------------------------------------------------------------------------------
@@ -442,12 +390,6 @@ contract EtherFiNode is IEtherFiNode {
         return uint256(timeElapsed / (24 * 3_600));
     }
 
-    function _protocolRevenueManagerAddress() internal view returns (address) {
-        return
-            IEtherFiNodesManager(etherFiNodesManager)
-                .protocolRevenueManagerContract();
-    }
-
     function implementation() external view returns (address) {
         bytes32 slot = bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1);
         address implementationVariable;
@@ -471,11 +413,4 @@ contract EtherFiNode is IEtherFiNode {
         _;
     }
 
-    modifier onlyProtocolRevenueManagerContract() {
-        require(
-            msg.sender == _protocolRevenueManagerAddress(),
-            "Only protocol revenue manager contract function"
-        );
-        _;
-    }
 }
