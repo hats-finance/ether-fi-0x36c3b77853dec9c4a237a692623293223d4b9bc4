@@ -53,15 +53,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
     
     HoldersUpdate public holdersUpdate;
-    mapping(StakingTag => StakingTagInformation) public stakingTypeInformation;
+    mapping(SourceOfFunds => FundStatistics) public fundStatistics;
 
-    enum StakingTag {
+    enum SourceOfFunds {
         UNDEFINED,
         EETH,
         ETHER_FAN
     }
 
-    struct StakingTagInformation {
+    struct FundStatistics {
         uint256 amountOfFundsInPool;
         uint128 numberOfValidators;
         uint128 targetWeight;
@@ -119,11 +119,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
         if(msg.sender == address(membershipManager)) {
             isWhitelistedAndEligible(_user, _merkleProof);
-            stakingTypeInformation[StakingTag.ETHER_FAN].amountOfFundsInPool += msg.value;
+            fundStatistics[SourceOfFunds.ETHER_FAN].amountOfFundsInPool += msg.value;
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
             isWhitelistedAndEligible(msg.sender, _merkleProof);
-            stakingTypeInformation[StakingTag.EETH].amountOfFundsInPool += msg.value;
+            fundStatistics[SourceOfFunds.EETH].amountOfFundsInPool += msg.value;
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
         
@@ -147,9 +147,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         // TODO: Relook at this logic, possible arithmetic underflow when withdraw amount > current amount
         // if(msg.sender == address(membershipManager)) {
-        //     stakingTypeInformation[StakingTag.ETHER_FAN].amountOfFundsInPool -= _amount;
+        //     fundStatistics[SourceOfFunds.ETHER_FAN].amountOfFundsInPool -= _amount;
         // }else {
-        //     stakingTypeInformation[StakingTag.EETH].amountOfFundsInPool -= _amount;
+        //     fundStatistics[SourceOfFunds.EETH].amountOfFundsInPool -= _amount;
         // }
 
         uint256 share = sharesForWithdrawalAmount(_amount);
@@ -503,10 +503,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
         return (_a > _b) ? _b : _a;
     }
-
-    // function _initializeTypes() internal {
-    //     stakingTypeInformation[StakingTag.EETH] = 
-    // }
 
     function getImplementation() external view returns (address) {return _getImplementation();}
 
