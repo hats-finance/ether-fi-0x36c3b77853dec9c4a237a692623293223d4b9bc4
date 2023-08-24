@@ -172,13 +172,13 @@ contract TestSetup is Test {
     bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
     bytes32[] zeroProof;
 
-    EtherFiOracle.OracleReport reportAtPeriod2A;
-    EtherFiOracle.OracleReport reportAtPeriod2B;
-    EtherFiOracle.OracleReport reportAtPeriod2C;
-    EtherFiOracle.OracleReport reportAtPeriod3;
-    EtherFiOracle.OracleReport reportAtPeriod3A;
-    EtherFiOracle.OracleReport reportAtPeriod3B;
-    EtherFiOracle.OracleReport reportAtPeriod4;
+    IEtherFiOracle.OracleReport reportAtPeriod2A;
+    IEtherFiOracle.OracleReport reportAtPeriod2B;
+    IEtherFiOracle.OracleReport reportAtPeriod2C;
+    IEtherFiOracle.OracleReport reportAtPeriod3;
+    IEtherFiOracle.OracleReport reportAtPeriod3A;
+    IEtherFiOracle.OracleReport reportAtPeriod3B;
+    IEtherFiOracle.OracleReport reportAtPeriod4;
 
     int256 slotsPerEpoch = 32;
     int256 secondsPerSlot = 12;
@@ -360,13 +360,13 @@ contract TestSetup is Test {
         uint32[] memory exitedValidators = new uint32[](1);
         uint32[] memory slashedValidators = new uint32[](1);
         uint32[] memory withdrawalRequestsToInvalidate = new uint32[](1);
-        reportAtPeriod2A = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod2B = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod2C = EtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3 = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3A = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3B = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod4 = EtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod3 = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
 
         vm.stopPrank();
 
