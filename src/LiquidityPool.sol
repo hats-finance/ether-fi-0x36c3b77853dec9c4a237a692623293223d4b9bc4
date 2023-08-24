@@ -16,8 +16,9 @@ import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
+import "./interfaces/ILiquidityPool.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -44,28 +45,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     address[] public bnftHolders;
     uint128 public max_validators_per_owner;
     uint128 public schedulingPeriodInSeconds;
-
-    // Necessary to preserve "statelessness" of dutyForWeek().
-    // Handles case where new users join/leave holder list during an active slot
-    struct HoldersUpdate {
-        uint128 timestamp;
-        uint128 startOfSlotNumOwners;
-    }
     
     HoldersUpdate public holdersUpdate;
-    mapping(StakingTag => StakingTagInformation) public stakingTypeInformation;
 
-    enum StakingTag {
-        UNDEFINED,
-        EETH,
-        ETHER_FAN
-    }
-
-    struct StakingTagInformation {
-        uint256 amountOfFundsInPool;
-        uint128 numberOfValidators;
-        uint128 targetWeight;
-    }
+    mapping(SourceOfFunds => FundStatistics) public fundStatistics;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -118,11 +101,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
         if(msg.sender == address(membershipManager)) {
             isWhitelistedAndEligible(_user, _merkleProof);
-            stakingTypeInformation[StakingTag.ETHER_FAN].amountOfFundsInPool += msg.value;
+            fundStatistics[SourceOfFunds.ETHER_FAN].amountOfFundsInPool += msg.value;
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
             isWhitelistedAndEligible(msg.sender, _merkleProof);
-            stakingTypeInformation[StakingTag.EETH].amountOfFundsInPool += msg.value;
+            fundStatistics[SourceOfFunds.EETH].amountOfFundsInPool += msg.value;
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
         
@@ -146,9 +129,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         // TODO: Relook at this logic, possible arithmetic underflow when withdraw amount > current amount
         // if(msg.sender == address(membershipManager)) {
-        //     stakingTypeInformation[StakingTag.ETHER_FAN].amountOfFundsInPool -= _amount;
+        //     fundStatistics[SourceOfFunds.ETHER_FAN].amountOfFundsInPool -= _amount;
         // }else {
-        //     stakingTypeInformation[StakingTag.EETH].amountOfFundsInPool -= _amount;
+        //     fundStatistics[SourceOfFunds.EETH].amountOfFundsInPool -= _amount;
         // }
 
         uint256 share = sharesForWithdrawalAmount(_amount);

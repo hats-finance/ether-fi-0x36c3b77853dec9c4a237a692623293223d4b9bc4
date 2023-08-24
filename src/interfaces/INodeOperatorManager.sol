@@ -29,7 +29,7 @@ interface INodeOperatorManager {
 
     function batchUpdateOperatorsApprovedTags(
         address[] memory _users, 
-        LiquidityPool.StakingTag[] memory _approvedTags, 
+        LiquidityPool.SourceOfFunds[] memory _approvedTags, 
         bool[] memory _approvals
     ) external;
 

@@ -30,7 +30,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     mapping(address => KeyData) public addressToOperatorData;
     mapping(address => bool) private whitelistedAddresses;
     mapping(address => bool) public registered;
-    mapping(address => mapping(LiquidityPool.StakingTag => bool)) public operatorApprovedTags;
+    mapping(address => mapping(LiquidityPool.SourceOfFunds => bool)) public operatorApprovedTags;
     address public admin;
 
     //--------------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
 
     function batchUpdateOperatorsApprovedTags(
         address[] memory _users, 
-        LiquidityPool.StakingTag[] memory _approvedTags, 
+        LiquidityPool.SourceOfFunds[] memory _approvedTags, 
         bool[] memory _approvals
     ) external onlyAdmin {
         require(_users.length == _approvedTags.length && _users.length == _approvals.length, "Invalid array lengths");
