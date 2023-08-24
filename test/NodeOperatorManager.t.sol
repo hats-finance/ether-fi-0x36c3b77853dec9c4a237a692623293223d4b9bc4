@@ -157,7 +157,7 @@ contract NodeOperatorManagerTest is TestSetup {
         address[] memory incorrectUsers = new address[](1);
         users[0] = address(alice);
 
-        LiquidityPool.SourceOfFunds[] memory approvedTags = new LiquidityPool.SourceOfFunds[](2);
+        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](2);
         approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
         approvedTags[1] = ILiquidityPool.SourceOfFunds.ETHER_FAN;
 
