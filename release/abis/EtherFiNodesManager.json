@@ -246,21 +246,6 @@
         "internalType": "bool",
         "name": "_stakingRewards",
         "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_assumeFullyVested",
-        "type": "bool"
       }
     ],
     "name": "calculateTVL",
@@ -434,16 +419,6 @@
       {
         "internalType": "bool",
         "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
         "type": "bool"
       }
     ],
@@ -680,25 +655,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "localRevenueIndex",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256[]",
         "name": "_validatorIds",
         "type": "uint256[]"
@@ -772,16 +728,6 @@
         "internalType": "bool",
         "name": "_stakingRewards",
         "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
       }
     ],
     "name": "partialWithdraw",
@@ -799,16 +745,6 @@
       {
         "internalType": "bool",
         "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
         "type": "bool"
       }
     ],
@@ -832,16 +768,6 @@
       {
         "internalType": "bool",
         "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
         "type": "bool"
       }
     ],
@@ -1041,24 +967,6 @@
     "name": "setEtherFiNodeIpfsHashForEncryptedValidatorKey",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_localRevenueIndex",
-        "type": "uint256"
-      }
-    ],
-    "name": "setEtherFiNodeLocalRevenueIndex",
-    "outputs": [],
-    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -1303,25 +1211,6 @@
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "vestedAuctionRewards",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

@@ -71,7 +71,7 @@ contract EtherFiNodeTest is TestSetup {
                 signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
-            });
+        });
 
         depositDataArray[0] = depositData;
 

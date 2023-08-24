@@ -41,12 +41,83 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "address",
+        "name": "member",
+        "type": "address"
+      }
+    ],
+    "name": "CommitteeMemberAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "member",
+        "type": "address"
+      }
+    ],
+    "name": "CommitteeMemberRemoved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "member",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
+      }
+    ],
+    "name": "CommitteeMemberUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "newConsensusVersion",
+        "type": "uint32"
+      }
+    ],
+    "name": "ConsensusVersionUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "uint8",
         "name": "version",
         "type": "uint8"
       }
     ],
     "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "newOracleReportPeriod",
+        "type": "uint32"
+      }
+    ],
+    "name": "OracleReportPeriodUpdated",
     "type": "event"
   },
   {
@@ -86,9 +157,9 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "uint16",
+        "internalType": "uint32",
         "name": "consensusVersion",
-        "type": "uint16"
+        "type": "uint32"
       },
       {
         "indexed": false,
@@ -121,7 +192,56 @@
         "type": "bytes32"
       }
     ],
-    "name": "ReportPublishsed",
+    "name": "ReportPublished",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "consensusVersion",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "refSlotFrom",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "refSlotTo",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "refBlockFrom",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "refBlockTo",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "hash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "committeeMember",
+        "type": "address"
+      }
+    ],
+    "name": "ReportSubmitted",
     "type": "event"
   },
   {
@@ -299,7 +419,12 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "approvedValidators",
+            "name": "validatorsToApprove",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "liquidityPoolValidatorsToExit",
             "type": "uint32[]"
           },
           {
@@ -314,11 +439,6 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "evictedValidators",
-            "type": "uint32[]"
-          },
-          {
-            "internalType": "uint32[]",
             "name": "withdrawalRequestsToInvalidate",
             "type": "uint32[]"
           },
@@ -326,9 +446,19 @@
             "internalType": "uint32",
             "name": "lastFinalizedWithdrawalRequestId",
             "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "eEthTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
           }
         ],
-        "internalType": "struct EtherFiOracle.OracleReport",
+        "internalType": "struct IEtherFiOracle.OracleReport",
         "name": "_report",
         "type": "tuple"
       }
@@ -658,7 +788,12 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "approvedValidators",
+            "name": "validatorsToApprove",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "liquidityPoolValidatorsToExit",
             "type": "uint32[]"
           },
           {
@@ -673,11 +808,6 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "evictedValidators",
-            "type": "uint32[]"
-          },
-          {
-            "internalType": "uint32[]",
             "name": "withdrawalRequestsToInvalidate",
             "type": "uint32[]"
           },
@@ -685,9 +815,19 @@
             "internalType": "uint32",
             "name": "lastFinalizedWithdrawalRequestId",
             "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "eEthTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
           }
         ],
-        "internalType": "struct EtherFiOracle.OracleReport",
+        "internalType": "struct IEtherFiOracle.OracleReport",
         "name": "_report",
         "type": "tuple"
       }
@@ -783,7 +923,12 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "approvedValidators",
+            "name": "validatorsToApprove",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "liquidityPoolValidatorsToExit",
             "type": "uint32[]"
           },
           {
@@ -798,11 +943,6 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "evictedValidators",
-            "type": "uint32[]"
-          },
-          {
-            "internalType": "uint32[]",
             "name": "withdrawalRequestsToInvalidate",
             "type": "uint32[]"
           },
@@ -810,9 +950,19 @@
             "internalType": "uint32",
             "name": "lastFinalizedWithdrawalRequestId",
             "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "eEthTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
           }
         ],
-        "internalType": "struct EtherFiOracle.OracleReport",
+        "internalType": "struct IEtherFiOracle.OracleReport",
         "name": "_report",
         "type": "tuple"
       }

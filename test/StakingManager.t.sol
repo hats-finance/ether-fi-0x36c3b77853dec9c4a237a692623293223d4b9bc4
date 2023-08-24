@@ -19,6 +19,12 @@ contract StakingManagerTest is TestSetup {
         string ipfsHashForEncryptedValidatorKey
     );
 
+    uint256[] public processedBids;
+    uint256[] public validatorArray;
+    uint256[] public bidIds;
+    bytes[] public sig;
+    address public etherFiNode;
+
     function setUp() public {
         setUpTests();
     }
@@ -47,6 +53,90 @@ contract StakingManagerTest is TestSetup {
             memory trueOne = hex"010000000000000000000000cd5ebc2dd4cb3dc52ac66ceecc72c838b40a5931";
         assertEq(withdrawalCredential.length, trueOne.length);
         assertEq(keccak256(withdrawalCredential), keccak256(trueOne));
+    }
+
+    function test_ApproveRegistration() public {
+
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+
+        vm.startPrank(alice);
+        liquidityPoolInstance.registerAsBnftHolder(alice);
+        liquidityPoolInstance.registerAsBnftHolder(greg);
+
+        vm.deal(alice, 100000 ether);
+        vm.deal(greg, 100000 ether);
+
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+        vm.stopPrank();
+
+        //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
+        vm.warp(12431561615);
+
+        liquidityPoolInstance.dutyForWeek();
+
+        startHoax(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 1000);
+        bidIds = auctionInstance.createBid{value: 1 ether}(
+            10,
+            0.1 ether
+        );
+        vm.stopPrank();
+        
+        startHoax(alice);
+        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
+
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
+        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            1 ether
+        );
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
+        depositDataArray[0] = depositData;
+
+        validatorArray = new uint256[](1);
+        validatorArray[0] = processedBids[0];
+
+        sig = new bytes[](1);
+        sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
+
+        liquidityPoolInstance.batchRegisterAsBnftHolder(zeroRoot, validatorArray, depositDataArray, sig);
+        vm.stopPrank();
+
+        bytes[] memory pubKey = new bytes[](1);
+        pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+
+        vm.prank(alice);
+        stakingManagerInstance.batchApproveRegistration(validatorArray, pubKey, sig);
+
+        uint256 selectedBidId = bidIds[0];
+        etherFiNode = managerInstance.etherfiNodeAddress(selectedBidId);
+
+        assertEq(selectedBidId, 1);
+        assertEq(address(managerInstance).balance, 0 ether);
+
+        //Revenue not about auction threshold so still 1 ether
+        assertEq(address(auctionInstance).balance, 1 ether);
+
+        address safeAddress = managerInstance.etherfiNodeAddress(bidIds[0]);
+        assertEq(safeAddress, etherFiNode);
     }
 
     function test_DepositOneWorksCorrectly() public {
@@ -93,6 +183,7 @@ contract StakingManagerTest is TestSetup {
             managerInstance.generateWithdrawalCredentials(etherFiNode),
             32 ether
         );
+       
         IStakingManager.DepositData memory depositData = IStakingManager
             .DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -103,7 +194,7 @@ contract StakingManagerTest is TestSetup {
 
         depositDataArray[0] = depositData;
 
-        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId, depositDataArray);
+        stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), bidId, depositDataArray);
 
         uint256 validatorId = bidId[0];
         uint256 winningBid = bidId[0];
@@ -114,6 +205,8 @@ contract StakingManagerTest is TestSetup {
         assertEq(stakingManagerInstance.stakeAmount(), 32 ether);
         assertEq(winningBid, bidId[0]);
         assertEq(validatorId, bidId[0]);
+
+        vm.stopPrank();
 
         assertEq(
             IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey(),
@@ -757,12 +850,12 @@ contract StakingManagerTest is TestSetup {
                 hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
                 managerInstance.generateWithdrawalCredentials(etherFiNode),
                 32 ether
-            );
+            );        
             depositDataArray[i] = IStakingManager.DepositData({
-                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-                depositDataRoot: generatedRoot,
-                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+                    publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                    signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                    depositDataRoot: generatedRoot,
+                    ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
         }
 
@@ -834,13 +927,13 @@ contract StakingManagerTest is TestSetup {
                 hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
                 managerInstance.generateWithdrawalCredentials(etherFiNode),
-                32 ether
+                1 ether
             );
             depositDataArray[i] = IStakingManager.DepositData({
-                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-                depositDataRoot: generatedRoot,
-                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+                    publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                    signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                    depositDataRoot: generatedRoot,
+                    ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
         }
 
@@ -1137,11 +1230,11 @@ contract StakingManagerTest is TestSetup {
             memory depositDataArray2 = new IStakingManager.DepositData[](1);
 
         depositData = IStakingManager.DepositData({
-            publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-            signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-            depositDataRoot: root,
-            ipfsHashForEncryptedValidatorKey: "test_ipfs"
-        });
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
 
         depositDataArray2[0] = depositData;
 
@@ -1253,10 +1346,10 @@ contract StakingManagerTest is TestSetup {
         depositDataArray[0] = depositData;
 
         vm.expectEmit(true, true, true, true);
-        emit ValidatorRegistered(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, alice, bob, bidId1[0], hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c", "test_ipfs");
-        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, alice, bob, depositDataArray);
+        emit ValidatorRegistered(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, alice, alice, bidId1[0], hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c", "test_ipfs");
+        stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), bidId1, depositDataArray);
         assertEq(BNFTInstance.ownerOf(bidId1[0]), alice);
-        assertEq(TNFTInstance.ownerOf(bidId1[0]), bob);
+        assertEq(TNFTInstance.ownerOf(bidId1[0]), alice);
     }
 
     function test_MaxBatchBidGasFee() public {
