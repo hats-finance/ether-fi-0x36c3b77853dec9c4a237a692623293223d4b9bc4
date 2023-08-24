@@ -4,6 +4,15 @@ pragma solidity 0.8.13;
 import "./IStakingManager.sol";
 
 interface ILiquidityPool {
+
+    struct PermitInput {
+        uint256 value;
+        uint256 deadline;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    } 
+
     function numPendingDeposits() external view returns (uint32);
     function totalValueOutOfLp() external view returns (uint128);
     function totalValueInLp() external view returns (uint128);
@@ -16,8 +25,9 @@ interface ILiquidityPool {
 
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable;
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) external payable;
-    function withdraw(address _recipient, uint256 _amount) external;
+    function withdraw(address _recipient, uint256 _amount) external returns (uint256);
     function requestWithdraw(address recipient, uint256 amount) external returns (uint256);
+    function requestWithdrawWithPermit(address _owner, uint256 _amount, PermitInput calldata _permit) external returns (uint256);
     function requestMembershipNFTWithdraw(address recipient, uint256 amount) external returns (uint256);
 
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory);
