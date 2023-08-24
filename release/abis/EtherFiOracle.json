@@ -192,7 +192,7 @@
         "type": "bytes32"
       }
     ],
-    "name": "ReportPublishsed",
+    "name": "ReportPublished",
     "type": "event"
   },
   {
@@ -237,7 +237,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "committeeMembe",
+        "name": "committeeMember",
         "type": "address"
       }
     ],
@@ -424,7 +424,7 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "validatorsToExit",
+            "name": "liquidityPoolValidatorsToExit",
             "type": "uint32[]"
           },
           {
@@ -783,7 +783,7 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "validatorsToExit",
+            "name": "liquidityPoolValidatorsToExit",
             "type": "uint32[]"
           },
           {
@@ -908,7 +908,7 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "validatorsToExit",
+            "name": "liquidityPoolValidatorsToExit",
             "type": "uint32[]"
           },
           {

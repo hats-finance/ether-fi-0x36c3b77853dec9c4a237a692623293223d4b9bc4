@@ -45,6 +45,31 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "validatorId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "pubKey",
+        "type": "bytes"
+      }
+    ],
+    "name": "BatchRegisteredAsBnftHolder",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "beacon",
@@ -320,6 +345,11 @@
         "internalType": "struct IStakingManager.DepositData[]",
         "name": "_depositData",
         "type": "tuple[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_signaturesForApprovalDeposit",
+        "type": "bytes[]"
       }
     ],
     "name": "batchRegisterAsBnftHolder",
@@ -339,8 +369,13 @@
     "outputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "holder",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -587,9 +622,21 @@
   {
     "inputs": [
       {
-        "internalType": "address[]",
+        "components": [
+          {
+            "internalType": "address",
+            "name": "holder",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct LiquidityPool.BnftHolder[]",
         "name": "_localBnftHoldersArray",
-        "type": "address[]"
+        "type": "tuple[]"
       }
     ],
     "name": "numberOfActiveSlots",

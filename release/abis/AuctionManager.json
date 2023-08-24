@@ -192,6 +192,32 @@
   },
   {
     "inputs": [],
+    "name": "accumulatedRevenue",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "accumulatedRevenueThreshold",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "admin",
     "outputs": [
       {
@@ -380,6 +406,19 @@
   },
   {
     "inputs": [],
+    "name": "membershipManagerContractAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "minBidAmount",
     "outputs": [
       {
@@ -525,12 +564,38 @@
   {
     "inputs": [
       {
+        "internalType": "uint128",
+        "name": "_newThreshold",
+        "type": "uint128"
+      }
+    ],
+    "name": "setAccumulatedRevenueThreshold",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint64",
         "name": "_newMaxBidAmount",
         "type": "uint64"
       }
     ],
     "name": "setMaxBidPrice",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_membershipManagerContractAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setMembershipManagerContractAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -585,6 +650,13 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "transferAccumulatedRevenue",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

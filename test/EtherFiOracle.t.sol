@@ -221,10 +221,29 @@ contract EtherFiOracleTest is TestSetup {
         assertEq(consensusReached, true);
     }
 
+    function test_set_quorum_size() public {
+        vm.startPrank(owner);
+
+        // TODO enable this test for mainnet
+        // vm.expectRevert("Quorum size must be greater than 1");
+        // etherFiOracleInstance.setQuorumSize(1);
+
+        etherFiOracleInstance.setQuorumSize(2);
+
+        vm.stopPrank();
+    }
+
     function test_set_oracle_report_period() public {
         vm.startPrank(owner);
+
+        vm.expectRevert("Report period cannot be zero");
+        etherFiOracleInstance.setOracleReportPeriod(0);
+
         vm.expectRevert("Report period must be a multiple of the epoch");
         etherFiOracleInstance.setOracleReportPeriod(127);
+
+        etherFiOracleInstance.setOracleReportPeriod(128);
+
         vm.stopPrank();
     }
 
