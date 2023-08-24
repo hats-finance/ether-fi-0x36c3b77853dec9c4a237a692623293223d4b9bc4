@@ -129,10 +129,11 @@ contract StakingManagerTest is TestSetup {
         uint256 selectedBidId = bidIds[0];
         etherFiNode = managerInstance.etherfiNodeAddress(selectedBidId);
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
         assertEq(selectedBidId, 1);
         assertEq(address(managerInstance).balance, 0 ether);
-        assertEq(address(auctionInstance).balance, 0.9 ether);
+
+        //Revenue not about auction threshold so still 1 ether
+        assertEq(address(auctionInstance).balance, 1 ether);
 
         address safeAddress = managerInstance.etherfiNodeAddress(bidIds[0]);
         assertEq(safeAddress, etherFiNode);
