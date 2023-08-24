@@ -180,6 +180,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
+        require(bnftHolders[_index].timestamp < _getCurrentSchedulingStartTimestamp(), "Already deposited");
 
         uint256 numberOfValidatorsToSpin = max_validators_per_owner;
         if(_index == lastIndex) {
@@ -195,6 +196,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         totalValueOutOfLp += uint128(amountFromLp);
         totalValueInLp -= uint128(amountFromLp);
         numPendingDeposits += uint32(numberOfValidatorsToSpin);
+
+        bnftHolders[_index].timestamp = block.timestamp;
 
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender);
 

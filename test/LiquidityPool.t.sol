@@ -1109,12 +1109,8 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(stakingManagerInstance.bidIdToStaker(17), address(0));
         assertEq(stakingManagerInstance.bidIdToStaker(18), address(0));
 
+        vm.expectRevert("Already deposited");
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
-
-        assertEq(stakingManagerInstance.bidIdToStaker(15), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(16), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(17), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(18), alice);
 
     }
 
