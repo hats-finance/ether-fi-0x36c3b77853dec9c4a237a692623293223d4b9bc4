@@ -16,8 +16,9 @@ import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
+import "./interfaces/ILiquidityPool.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -44,28 +45,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     address[] public bnftHolders;
     uint128 public max_validators_per_owner;
     uint128 public schedulingPeriodInSeconds;
-
-    // Necessary to preserve "statelessness" of dutyForWeek().
-    // Handles case where new users join/leave holder list during an active slot
-    struct HoldersUpdate {
-        uint128 timestamp;
-        uint128 startOfSlotNumOwners;
-    }
     
     HoldersUpdate public holdersUpdate;
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
-
-    enum SourceOfFunds {
-        UNDEFINED,
-        EETH,
-        ETHER_FAN
-    }
-
-    struct FundStatistics {
-        uint256 amountOfFundsInPool;
-        uint128 numberOfValidators;
-        uint128 targetWeight;
-    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------

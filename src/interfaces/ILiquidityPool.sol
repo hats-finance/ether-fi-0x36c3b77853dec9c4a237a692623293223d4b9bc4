@@ -38,4 +38,23 @@ interface ILiquidityPool {
     
     function updateAdmin(address _newAdmin) external;
     function updateBNftTreasury(address _newTreasury) external; 
+
+    enum SourceOfFunds {
+        UNDEFINED,
+        EETH,
+        ETHER_FAN
+    }
+
+    struct FundStatistics {
+        uint256 amountOfFundsInPool;
+        uint128 numberOfValidators;
+        uint128 targetWeight;
+    }
+
+    // Necessary to preserve "statelessness" of dutyForWeek().
+    // Handles case where new users join/leave holder list during an active slot
+    struct HoldersUpdate {
+        uint128 timestamp;
+        uint128 startOfSlotNumOwners;
+    }
 }
