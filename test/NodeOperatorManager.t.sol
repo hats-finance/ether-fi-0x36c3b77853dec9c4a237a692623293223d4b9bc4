@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import "../src/interfaces/ILiquidityPool.sol";
 
 contract NodeOperatorManagerTest is TestSetup {
     event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
@@ -156,9 +157,9 @@ contract NodeOperatorManagerTest is TestSetup {
         address[] memory incorrectUsers = new address[](1);
         users[0] = address(alice);
 
-        LiquidityPool.StakingTag[] memory approvedTags = new LiquidityPool.StakingTag[](2);
-        approvedTags[0] = LiquidityPool.StakingTag.EETH;
-        approvedTags[1] = LiquidityPool.StakingTag.ETHER_FAN;
+        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](2);
+        approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
+        approvedTags[1] = ILiquidityPool.SourceOfFunds.ETHER_FAN;
 
         bool[] memory approvals = new bool[](2);
         approvals[0] = false;
@@ -180,24 +181,24 @@ contract NodeOperatorManagerTest is TestSetup {
 
         nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
 
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), LiquidityPool.StakingTag.EETH), false);
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), LiquidityPool.StakingTag.ETHER_FAN), false);
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), LiquidityPool.StakingTag.EETH), false);
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), LiquidityPool.StakingTag.ETHER_FAN), true);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), ILiquidityPool.SourceOfFunds.EETH), false);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), ILiquidityPool.SourceOfFunds.ETHER_FAN), false);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), ILiquidityPool.SourceOfFunds.EETH), false);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), ILiquidityPool.SourceOfFunds.ETHER_FAN), true);
 
         //Lets update again and make sure it changes
         approvals[0] = true;
         approvals[1] = true;
 
-        approvedTags[0] = LiquidityPool.StakingTag.EETH;
-        approvedTags[1] = LiquidityPool.StakingTag.EETH;
+        approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
+        approvedTags[1] = ILiquidityPool.SourceOfFunds.EETH;
 
         nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
 
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), LiquidityPool.StakingTag.EETH), true);
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), LiquidityPool.StakingTag.ETHER_FAN), false);
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), LiquidityPool.StakingTag.EETH), true);
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), LiquidityPool.StakingTag.ETHER_FAN), true);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), ILiquidityPool.SourceOfFunds.EETH), true);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), ILiquidityPool.SourceOfFunds.ETHER_FAN), false);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), ILiquidityPool.SourceOfFunds.EETH), true);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), ILiquidityPool.SourceOfFunds.ETHER_FAN), true);
 
     }
 }
