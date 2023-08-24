@@ -573,7 +573,8 @@ contract EtherFiNodesManager is
         return  IEtherFiNode(etherfiNode).calculateTVL(
                     _beaconBalance,
                     _stakingRewards,
-                    stakingRewardsSplit, protocolRewardsSplit, SCALE
+                    stakingRewardsSplit,
+                    SCALE
                 );
     }
 
