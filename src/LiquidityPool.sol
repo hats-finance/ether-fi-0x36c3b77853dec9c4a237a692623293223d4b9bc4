@@ -47,6 +47,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     uint128 public schedulingPeriodInSeconds;
     
     HoldersUpdate public holdersUpdate;
+
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
 
     //--------------------------------------------------------------------------------------
@@ -61,6 +62,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey);
+    event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
 
@@ -406,6 +408,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
         }
+    }
+
+    function setStakingTargetWeights(uint32 _eEthWeight, uint32 _etherFanWeight) external onlyAdmin {
+        require(_eEthWeight + _etherFanWeight == 100, "Invalid weights");
+
+        fundStatistics[SourceOfFunds.EETH].targetWeight = _eEthWeight;
+        fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight = _etherFanWeight;
+
+        emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }
 
     //--------------------------------------------------------------------------------------
