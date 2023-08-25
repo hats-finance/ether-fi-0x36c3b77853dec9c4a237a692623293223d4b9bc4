@@ -49,7 +49,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     uint32 public topUpCooltimePeriod;
     uint32 public withdrawalLockBlocks;
 
-    uint24 private __gap0;
+    uint32 private __gap0;
 
     // [END] SLOT 261 END
 
