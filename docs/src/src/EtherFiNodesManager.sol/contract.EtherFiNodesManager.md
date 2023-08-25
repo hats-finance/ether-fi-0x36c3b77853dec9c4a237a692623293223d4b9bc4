@@ -361,16 +361,6 @@ function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, st
 |`_ipfs`|`string`|ipfs hash|
 
 
-### setEtherFiNodeLocalRevenueIndex
-
-
-```solidity
-function setEtherFiNodeLocalRevenueIndex(uint256 _validatorId, uint256 _localRevenueIndex)
-    external
-    payable
-    onlyProtocolRevenueManagerContract;
-```
-
 ### incrementNumberOfValidators
 
 

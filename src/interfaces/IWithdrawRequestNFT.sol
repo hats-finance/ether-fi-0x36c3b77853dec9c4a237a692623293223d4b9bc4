@@ -14,6 +14,7 @@ interface IWithdrawRequestNFT {
     function getRequest(uint256 requestId) external view returns (WithdrawRequest memory);
     function isFinalized(uint256 requestId) external view returns (bool);
     function getNextRequestId() external view returns (uint256);
+    function invalidateRequest(uint256 requestId) external;
     function finalizeRequests(uint256 upperBound) external;
     function updateAdmin(address _newAdmin) external;
     function updateLiqudityPool(address _newLiquidityPool) external;
