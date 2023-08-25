@@ -4,6 +4,8 @@ pragma solidity 0.8.13;
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuctionManager.sol";
+import "forge-std/console.sol";
+
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IDepositContract.sol";
 import "./interfaces/IEtherFiNode.sol";
@@ -11,6 +13,7 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./EtherFiNode.sol";
+import "./LiquidityPool.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/beacon/IBeaconUpgradeable.sol";
@@ -193,10 +196,11 @@ contract StakingManager is
         for (uint256 x; x < _validatorId.length; ++x) {
             // Deposit to the Beacon Chain
             bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
-            bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
-            // TODO: will revisit this later; should we have on-chain verification as well for depositDataRoot?
-            // require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
-            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], depositDataRoot);        
+            bytes32 beaconChainDepositRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
+            bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 1 ether);
+            bytes32 registeredDataRoot = LiquidityPool(payable(liquidityPoolContract)).depositDataRootForApprovalDeposits(_validatorId[x]);
+            require(depositDataRoot == registeredDataRoot, "Incorrect deposit data root");
+            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], beaconChainDepositRoot);        
         }
     }
 

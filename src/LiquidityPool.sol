@@ -48,7 +48,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     
     HoldersUpdate public holdersUpdate;
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
-
+    mapping(uint256 => bytes32) public depositDataRootForApprovalDeposits;
+ 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -60,7 +61,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event BnftHolderDeregistered(uint256 index);
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
-    event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey);
+    event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
 
@@ -235,9 +236,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         numPendingDeposits -= uint32(_validatorIds.length);
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
-
+        
         for(uint256 x; x < _validatorIds.length; x++) {
-            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _depositData[x].publicKey);
+            depositDataRootForApprovalDeposits[_validatorIds[x]] = _depositData[x].depositDataRoot;
+            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _depositData[x].publicKey, _depositRoot);
         }
     }
 
