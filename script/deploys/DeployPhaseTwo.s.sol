@@ -94,7 +94,7 @@ contract DeployPhaseTwoScript is Script {
         // etherFiOracleInstance.initialize(2, 7200, 12, beacon_genesis_time);
         // 96 slots = 19.2 mins, 7200 slots = 225 epochs = 1day
 
-        addressProvider.addContract(address(etherFiAdminProxy), "EtherFiOracle");
+        addressProvider.addContract(address(etherFiOracleProxy), "EtherFiOracle");
     }
 
     function deploy_EtherFiAdmin() internal {
