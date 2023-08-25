@@ -17,6 +17,8 @@ interface IEtherFiOracle {
         uint32 lastFinalizedWithdrawalRequestId;
         uint32 eEthTargetAllocationWeight;
         uint32 etherFanTargetAllocationWeight;
+        uint32 pendingWithdrawalAmount;
+        uint32 numPendingValidatorsRequestedToExit;
     }
 
     struct CommitteeMemberState {

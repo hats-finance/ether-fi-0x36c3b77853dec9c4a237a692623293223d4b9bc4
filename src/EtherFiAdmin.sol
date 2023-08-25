@@ -28,6 +28,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     uint32 public lastHandledReportRefSlot;
     uint32 public lastHandledReportRefBlock;
+    uint32 public pendingWithdrawalAmount;
+    uint32 public numPendingValidatorsRequestedToExit;
 
     event AdminAdded(address admin);
     event AdminRemoved(address admin);
@@ -67,6 +69,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         lastHandledReportRefSlot = _report.refSlotTo;
         lastHandledReportRefBlock = _report.refBlockTo;
+        pendingWithdrawalAmount = _report.pendingWithdrawalAmount;
+        numPendingValidatorsRequestedToExit = _report.numPendingValidatorsRequestedToExit;
 
         _handleAccruedRewards(_report);
         _handleValidators(_report, _pubKey, _signature);
