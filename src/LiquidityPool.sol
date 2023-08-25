@@ -516,10 +516,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return (_a > _b) ? _b : _a;
     }
 
-    // function _initializeTypes() internal {
-    //     stakingTypeInformation[StakingTag.EETH] = 
-    // }
-
     function getImplementation() external view returns (address) {return _getImplementation();}
 
     //--------------------------------------------------------------------------------------
