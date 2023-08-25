@@ -4,8 +4,6 @@ pragma solidity 0.8.13;
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IBNFT.sol";
 import "./interfaces/IAuctionManager.sol";
-import "forge-std/console.sol";
-
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IDepositContract.sol";
 import "./interfaces/IEtherFiNode.sol";
