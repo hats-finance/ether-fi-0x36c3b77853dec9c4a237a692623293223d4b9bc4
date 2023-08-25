@@ -177,7 +177,6 @@ contract UpgradeTest is TestSetup {
         assertEq(protocolRevenueManagerInstance.getImplementation(), address(protocolRevenueManagerImplementation));
 
         vm.prank(alice);
-        protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(uint128(60));
 
         ProtocolRevenueManagerV2 protocolRevenueManagerV2Implementation = new ProtocolRevenueManagerV2();
 
@@ -196,9 +195,6 @@ contract UpgradeTest is TestSetup {
 
         assertEq(protocolRevenueManagerV2Instance.getImplementation(), address(protocolRevenueManagerV2Implementation));
         assertEq(protocolRevenueManagerV2Instance.isUpgraded(), true);
-
-        // State is maintained
-        assertEq(protocolRevenueManagerV2Instance.vestedAuctionFeeSplitForStakers(), 60);
     }
 
     function test_CanUpgradeStakingManager() public {
@@ -211,8 +207,8 @@ contract UpgradeTest is TestSetup {
             0.1 ether
         );
 
-        vm.stopPrank();      
-        
+        vm.stopPrank();
+
         assertEq(stakingManagerInstance.getImplementation(), address(stakingManagerImplementation));
 
         vm.prank(alice);

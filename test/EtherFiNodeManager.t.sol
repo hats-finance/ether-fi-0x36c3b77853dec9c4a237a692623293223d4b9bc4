@@ -31,7 +31,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
@@ -343,15 +342,15 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdraw(0, true);
+        managerInstance.partialWithdraw(0);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatch(ids, true);
+        managerInstance.partialWithdrawBatch(ids);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids, true);
+        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");

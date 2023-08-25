@@ -424,7 +424,7 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "validatorsToExit",
+            "name": "liquidityPoolValidatorsToExit",
             "type": "uint32[]"
           },
           {
@@ -446,9 +446,19 @@
             "internalType": "uint32",
             "name": "lastFinalizedWithdrawalRequestId",
             "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "eEthTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
           }
         ],
-        "internalType": "struct EtherFiOracle.OracleReport",
+        "internalType": "struct IEtherFiOracle.OracleReport",
         "name": "_report",
         "type": "tuple"
       }
@@ -783,7 +793,7 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "validatorsToExit",
+            "name": "liquidityPoolValidatorsToExit",
             "type": "uint32[]"
           },
           {
@@ -805,9 +815,19 @@
             "internalType": "uint32",
             "name": "lastFinalizedWithdrawalRequestId",
             "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "eEthTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
           }
         ],
-        "internalType": "struct EtherFiOracle.OracleReport",
+        "internalType": "struct IEtherFiOracle.OracleReport",
         "name": "_report",
         "type": "tuple"
       }
@@ -908,7 +928,7 @@
           },
           {
             "internalType": "uint32[]",
-            "name": "validatorsToExit",
+            "name": "liquidityPoolValidatorsToExit",
             "type": "uint32[]"
           },
           {
@@ -930,9 +950,19 @@
             "internalType": "uint32",
             "name": "lastFinalizedWithdrawalRequestId",
             "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "eEthTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
           }
         ],
-        "internalType": "struct EtherFiOracle.OracleReport",
+        "internalType": "struct IEtherFiOracle.OracleReport",
         "name": "_report",
         "type": "tuple"
       }

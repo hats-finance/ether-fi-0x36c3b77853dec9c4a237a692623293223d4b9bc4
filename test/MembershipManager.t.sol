@@ -816,7 +816,6 @@ contract MembershipManagerTest is TestSetup {
         // setup fees
         vm.startPrank(alice);
         membershipManagerInstance.setFeeAmounts(0 ether, 0 ether, 0.5 ether);
-        membershipManagerInstance.setFeeSplits(20, 80);
 
         (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerInstance.getFees();
         assertEq(mintFee, 0 ether);
@@ -936,8 +935,6 @@ contract MembershipManagerTest is TestSetup {
         vm.startPrank(owner);
         vm.expectRevert(MembershipManager.OnlyAdmin.selector);
         membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether, 0 ether);
-        vm.expectRevert(MembershipManager.OnlyAdmin.selector);
-        membershipManagerInstance.setFeeSplits(20, 80);
         vm.stopPrank();
 
         vm.startPrank(alice);
@@ -946,12 +943,6 @@ contract MembershipManagerTest is TestSetup {
 
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
         membershipManagerInstance.setFeeAmounts(0, 0.001 ether * uint256(type(uint16).max) + 1, 0 ether);
-
-        vm.expectRevert(MembershipManager.InvalidAmount.selector);
-        membershipManagerInstance.setFeeSplits(10, 80);
-
-        vm.expectRevert(MembershipManager.InvalidAmount.selector);
-        membershipManagerInstance.setFeeSplits(21, 80);
 
         vm.stopPrank();
     }
@@ -1078,7 +1069,7 @@ contract MembershipManagerTest is TestSetup {
         uint256 tier1GI1 = membershipManagerInstance.rewardsGlobalIndex(1);
         uint256 tier2GI1 = membershipManagerInstance.rewardsGlobalIndex(2);
 
-        uint256[] memory tvls = calculateAggregatedTVL(validatorIds, false, true, false, false);
+        uint256[] memory tvls = calculateAggregatedTVL(validatorIds);
         uint256 eEthTVL = tvls[1] + membershipNftInstance.valueOf(aliceToken) + membershipNftInstance.valueOf(bobToken);
 
         // For test, repeat {mint, burn} to generate Protocol Revenue
@@ -1103,7 +1094,7 @@ contract MembershipManagerTest is TestSetup {
         // An year passed
         skip(365 days);
 
-        tvls = calculateAggregatedTVL(validatorIds, false, true, false, false);
+        tvls = calculateAggregatedTVL(validatorIds);
         eEthTVL = tvls[1] + membershipNftInstance.valueOf(aliceToken) + membershipNftInstance.valueOf(bobToken);
 
         // Target 50% APR Earnings in eETH!
@@ -1137,20 +1128,13 @@ contract MembershipManagerTest is TestSetup {
         */
     }
 
-    //TODO(Dave): remove unused params
-    function calculateAggregatedTVL(
-            uint256[] memory _validatorIds,
-            bool _stakingRewards,
-            bool _protocolRewards,
-            bool _vestedAuctionFee,
-            bool _assumeFullyVested
-        ) internal returns (uint256[] memory) {
+    function calculateAggregatedTVL(uint256[] memory _validatorIds) internal returns (uint256[] memory) {
         uint256[] memory tvls = new uint256[](4);
 
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 beaconBalance = 32 ether;
             (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury)
-                = managerInstance.calculateTVL(_validatorIds[i], beaconBalance, _stakingRewards);
+                = managerInstance.calculateTVL(_validatorIds[i], beaconBalance);
             tvls[0] += toNodeOperator;
             tvls[1] += toTnft;
             tvls[2] += toBnft;

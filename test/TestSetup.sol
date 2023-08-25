@@ -35,6 +35,8 @@ import "./TestERC20.sol";
 
 import "../src/MembershipManagerV0.sol";
 import "../src/EtherFiOracle.sol";
+import "../src/EtherFiAdmin.sol";
+
 
 contract TestSetup is Test {
     uint256 public constant kwei = 10 ** 3;
@@ -61,6 +63,7 @@ contract TestSetup is Test {
     UUPSProxy public nftExchangeProxy;
     UUPSProxy public withdrawRequestNFTProxy;
     UUPSProxy public etherFiOracleProxy;
+    UUPSProxy public etherFiAdminProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -121,6 +124,9 @@ contract TestSetup is Test {
     EtherFiOracle public etherFiOracleImplementation;
     EtherFiOracle public etherFiOracleInstance;
 
+    EtherFiAdmin public etherFiAdminImplementation;
+    EtherFiAdmin public etherFiAdminInstance;
+
     EtherFiNode public node;
     Treasury public treasuryInstance;
 
@@ -173,13 +179,13 @@ contract TestSetup is Test {
     bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
     bytes32[] zeroProof;
 
-    EtherFiOracle.OracleReport reportAtPeriod2A;
-    EtherFiOracle.OracleReport reportAtPeriod2B;
-    EtherFiOracle.OracleReport reportAtPeriod2C;
-    EtherFiOracle.OracleReport reportAtPeriod3;
-    EtherFiOracle.OracleReport reportAtPeriod3A;
-    EtherFiOracle.OracleReport reportAtPeriod3B;
-    EtherFiOracle.OracleReport reportAtPeriod4;
+    IEtherFiOracle.OracleReport reportAtPeriod2A;
+    IEtherFiOracle.OracleReport reportAtPeriod2B;
+    IEtherFiOracle.OracleReport reportAtPeriod2C;
+    IEtherFiOracle.OracleReport reportAtPeriod3;
+    IEtherFiOracle.OracleReport reportAtPeriod3A;
+    IEtherFiOracle.OracleReport reportAtPeriod3B;
+    IEtherFiOracle.OracleReport reportAtPeriod4;
 
     int256 slotsPerEpoch = 32;
     int256 secondsPerSlot = 12;
@@ -356,18 +362,31 @@ contract TestSetup is Test {
         nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance), address(managerInstance));
         nftExchangeInstance.updateAdmin(alice);
 
-        uint32[] memory validatorsToApprove = new uint32[](1);
-        uint32[] memory validatorsToExit = new uint32[](1);
-        uint32[] memory exitedValidators = new uint32[](1);
-        uint32[] memory slashedValidators = new uint32[](1);
-        uint32[] memory withdrawalRequestsToInvalidate = new uint32[](1);
-        reportAtPeriod2A = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod2B = EtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod2C = EtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3 = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3A = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod3B = EtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
-        reportAtPeriod4 = EtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1);
+        etherFiAdminImplementation = new EtherFiAdmin();
+        etherFiAdminProxy = new UUPSProxy(address(etherFiAdminImplementation), "");
+        etherFiAdminInstance = EtherFiAdmin(payable(etherFiAdminProxy));
+        etherFiAdminInstance.initialize(
+            address(etherFiOracleInstance),
+            address(stakingManagerInstance),
+            address(auctionInstance),
+            address(managerInstance),
+            address(liquidityPoolInstance),
+            address(membershipManagerInstance),
+            address(withdrawRequestNFTInstance)
+        );
+
+        uint256[] memory validatorsToApprove = new uint256[](1);
+        uint256[] memory validatorsToExit = new uint256[](1);
+        uint256[] memory exitedValidators = new uint256[](1);
+        uint256[] memory slashedValidators = new uint256[](1);
+        uint256[] memory withdrawalRequestsToInvalidate = new uint256[](1);
+        reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod3 = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
 
         vm.stopPrank();
 
@@ -387,7 +406,6 @@ contract TestSetup is Test {
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
 
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
 
         protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));

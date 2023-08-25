@@ -42,7 +42,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     address public bNftTreasury;
     IWithdrawRequestNFT public withdrawRequestNFT;
 
-    address[] public bnftHolders;
+    BnftHolder[] public bnftHolders;
     uint128 public max_validators_per_owner;
     uint128 public schedulingPeriodInSeconds;
 
@@ -52,10 +52,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         uint128 timestamp;
         uint128 startOfSlotNumOwners;
     }
+
+    struct BnftHolder {
+        address holder;
+        uint256 timestamp;
+    }
     
     HoldersUpdate public holdersUpdate;
-
-
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -68,6 +71,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event BnftHolderDeregistered(uint256 index);
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
+    event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey);
 
     error InvalidAmount();
 
@@ -125,7 +129,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @dev Burns user balance from msg.senders account & Sends equal amount of ETH back to the recipient
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
-    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager {
+    /// it returns the amount of shares burned
+    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager returns (uint256) {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
         require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
@@ -140,6 +145,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(sent, "Failed to send Ether");
 
         emit Withdraw(msg.sender, _recipient, _amount);
+        return share;
     }
 
     /// @notice request withdraw from pool and receive a WithdrawRequestNFT
@@ -181,19 +187,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function batchRegisterAsBnftHolder(
-        bytes32 _depositRoot,
-        uint256[] calldata _validatorIds,
-        IStakingManager.DepositData[] calldata _depositData
-    ) external {
-        numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData);
-    }
-
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
-        require(msg.sender == bnftHolders[_index], "Incorrect Caller");
+        require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
+        require(bnftHolders[_index].timestamp < _getCurrentSchedulingStartTimestamp(), "Already deposited");
 
         uint256 numberOfValidatorsToSpin = max_validators_per_owner;
         if(_index == lastIndex) {
@@ -210,6 +208,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp -= uint128(amountFromLp);
         numPendingDeposits += uint32(numberOfValidatorsToSpin);
 
+        bnftHolders[_index].timestamp = block.timestamp;
+
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender);
 
         if (numberOfValidatorsToSpin > newValidators.length) {
@@ -224,13 +224,29 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return newValidators;
     }
 
+    function batchRegisterAsBnftHolder(
+        bytes32 _depositRoot,
+        uint256[] calldata _validatorIds,
+        IStakingManager.DepositData[] calldata _depositData,
+        bytes[] calldata _signaturesForApprovalDeposit
+    ) external {
+        require(_validatorIds.length == _depositData.length, "Array lengths must match");
+
+        numPendingDeposits -= uint32(_validatorIds.length);
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
+
+        for(uint256 x; x < _validatorIds.length; x++) {
+            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _depositData[x].publicKey);
+        }
+    }
+
     function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
         uint256 returnAmount = 2 ether * _validatorIds.length;
 
         totalValueOutOfLp += uint128(returnAmount);
         numPendingDeposits -= uint32(_validatorIds.length);
 
-        stakingManager.batchCancelDeposit(_validatorIds);
+        stakingManager.batchCancelDepositAsBnftHolder(_validatorIds, msg.sender);
 
         totalValueInLp -= uint128(returnAmount);
 
@@ -240,13 +256,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function registerAsBnftHolder(address _user) public onlyAdmin {
         _checkHoldersUpdateStatus();
-        bnftHolders.push(_user);
+        BnftHolder memory bnftHolder = BnftHolder({
+            holder: _user,
+            timestamp: 0
+        });
+
+        bnftHolders.push(bnftHolder);
 
         emit BnftHolderRegistered(msg.sender);
     }
 
     function deRegisterBnftHolder(uint256 _index) external {
-        require(msg.sender == admin || msg.sender == bnftHolders[_index], "Incorrect Caller");
+        require(msg.sender == admin || msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
         bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
         bnftHolders.pop();
 
@@ -257,7 +278,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         uint128 lastIndex;
         uint128 lastIndexNumberOfValidators = max_validators_per_owner;
 
-        address[] memory localBnftHoldersArray = bnftHolders;
+        BnftHolder[] memory localBnftHoldersArray = bnftHolders;
 
         uint256 index = _getSlotIndex(localBnftHoldersArray);
         uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
@@ -379,7 +400,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit UpdatedSchedulingPeriod(_schedulingPeriodInSeconds);
     }
 
-    function numberOfActiveSlots(address[] memory _localBnftHoldersArray) public view returns (uint256 numberOfActiveSlots) {
+    function numberOfActiveSlots(BnftHolder[] memory _localBnftHoldersArray) public view returns (uint256 numberOfActiveSlots) {
         numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
         if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
@@ -409,11 +430,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         }
     }
 
-    function _getSlotIndex(address[] memory _localBnftHoldersArray) internal returns (uint256) {
+    function _getSlotIndex(BnftHolder[] memory _localBnftHoldersArray) internal returns (uint256) {
         return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots(_localBnftHoldersArray);
     }
 
-    function _fetchLastIndex(uint128 _size, uint256 _index, address[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
+    function _fetchLastIndex(uint128 _size, uint256 _index, BnftHolder[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
         uint256 numSlots = numberOfActiveSlots(_localBnftHoldersArray);
         uint128 tempLastIndex = uint128(_index) + _size - 1;
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);

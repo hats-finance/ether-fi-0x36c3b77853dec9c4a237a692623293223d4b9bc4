@@ -172,7 +172,6 @@ contract DeployEtherFiSuiteScript is Script {
         nodeOperatorManager.setAuctionContractAddress(address(auctionManager));
 
         auctionManager.setStakingManagerContractAddress(address(stakingManager));
-        auctionManager.setProtocolRevenueManager(address(protocolRevenueManager));
 
         protocolRevenueManager.setAuctionManagerAddress(address(auctionManager));
         protocolRevenueManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));
