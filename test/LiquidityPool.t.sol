@@ -343,8 +343,15 @@ contract LiquidityPoolTest is TestSetup {
 
         bytes32 depositRoot = _getDepositRoot();
 
+        bytes[] memory pubKey = new bytes[](2);
+        pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+        pubKey[1] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+
         vm.prank(henry);
         liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, sig);
+
+        vm.prank(alice);
+        stakingManagerInstance.batchApproveRegistration(newValidators, pubKey, sig);
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
@@ -574,6 +581,13 @@ contract LiquidityPoolTest is TestSetup {
         bytes32 depositRoot = _getDepositRoot();
         vm.prank(alice);
         liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, sig);
+
+        bytes[] memory pubKey = new bytes[](2);
+        pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+        pubKey[1] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+
+        vm.prank(alice);
+        stakingManagerInstance.batchApproveRegistration(newValidators, pubKey, sig);
     
         return newValidators;
     }
