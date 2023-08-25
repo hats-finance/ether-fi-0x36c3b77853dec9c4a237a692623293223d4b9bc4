@@ -410,11 +410,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         }
     }
 
-    function setStakingTargetWeights(uint128 _eEthWeight, uint128 _etherFanWeight) external onlyAdmin {
+    function setStakingTargetWeights(uint32 _eEthWeight, uint32 _etherFanWeight) external onlyAdmin {
         require(_eEthWeight + _etherFanWeight == 100, "Invalid weights");
 
-        stakingTypeInformation[StakingTag.EETH].targetWeight = _eEthWeight;
-        stakingTypeInformation[StakingTag.ETHER_FAN].targetWeight = _etherFanWeight;
+        fundStatistics[SourceOfFunds.EETH].targetWeight = _eEthWeight;
+        fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight = _etherFanWeight;
 
         emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }

@@ -984,8 +984,8 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_SetStakingTypeTargetWeights() public {
-        (,, uint128 eEthTargetWeight) = liquidityPoolInstance.stakingTypeInformation(LiquidityPool.StakingTag.EETH);
-        (,, uint128 etherFanTargetWeight) = liquidityPoolInstance.stakingTypeInformation(LiquidityPool.StakingTag.ETHER_FAN);
+        (, uint32 eEthTargetWeight) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.EETH);
+        (, uint32 etherFanTargetWeight) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.ETHER_FAN);
 
         assertEq(eEthTargetWeight, 0);
         assertEq(etherFanTargetWeight, 0);
@@ -1000,13 +1000,13 @@ contract LiquidityPoolTest is TestSetup {
 
         liquidityPoolInstance.setStakingTargetWeights(61, 39);
 
-        (,, eEthTargetWeight) = liquidityPoolInstance.stakingTypeInformation(LiquidityPool.StakingTag.EETH);
-        (,, etherFanTargetWeight) = liquidityPoolInstance.stakingTypeInformation(LiquidityPool.StakingTag.ETHER_FAN);
+        (, eEthTargetWeight) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.EETH);
+        (, etherFanTargetWeight) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.ETHER_FAN);
 
         assertEq(eEthTargetWeight, 61);
         assertEq(etherFanTargetWeight, 39);
     }
-    
+
     function test_DepositFromBNFTHolder() public {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
