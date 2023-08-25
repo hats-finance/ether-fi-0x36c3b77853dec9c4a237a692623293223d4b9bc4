@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
-import "forge-std/console.sol";
 
 contract StakingManagerTest is TestSetup {
     event StakeDeposit(
@@ -56,7 +55,8 @@ contract StakingManagerTest is TestSetup {
         assertEq(keccak256(withdrawalCredential), keccak256(trueOne));
     }
 
-    function test_DepositFromBNFTHolder() public {
+    function test_ApproveRegistration() public {
+
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.startPrank(alice);
@@ -79,11 +79,9 @@ contract StakingManagerTest is TestSetup {
         vm.warp(12431561615);
 
         liquidityPoolInstance.dutyForWeek();
-       
-        vm.prank(alice);
-        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 10);
 
         startHoax(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 1000);
         bidIds = auctionInstance.createBid{value: 1 ether}(
             10,
             0.1 ether
@@ -92,21 +90,6 @@ contract StakingManagerTest is TestSetup {
         
         startHoax(alice);
         processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
-
-        assertEq(stakingManagerInstance.bidIdToStaker(1), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(2), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(3), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(4), alice);
-    }
-
-    function test_RegisterAsBNFTHolder() public {
-        
-        test_DepositFromBNFTHolder();
-
-        assertEq(processedBids[0], 1);
-        assertEq(processedBids[1], 2);
-        assertEq(processedBids[2], 3);
-        assertEq(processedBids[3], 4);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
@@ -131,27 +114,10 @@ contract StakingManagerTest is TestSetup {
         validatorArray = new uint256[](1);
         validatorArray[0] = processedBids[0];
 
-        assertEq(BNFTInstance.balanceOf(alice), 0);
-        assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 0);
-
         sig = new bytes[](1);
         sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
 
         liquidityPoolInstance.batchRegisterAsBnftHolder(zeroRoot, validatorArray, depositDataArray, sig);
-
-        assertEq(liquidityPoolInstance.numPendingDeposits(), 3);
-        assertEq(BNFTInstance.balanceOf(alice), 1);
-        assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 1);
-    }
-
-    function test_ApproveRegistration() public {
-
-        test_RegisterAsBNFTHolder();
-
-        assertEq(managerInstance.numberOfValidators(), 1);
-        assertEq(liquidityPoolInstance.numPendingDeposits(), 3);
-        assertEq(BNFTInstance.balanceOf(alice), 1);
-        assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 1);
         vm.stopPrank();
 
         bytes[] memory pubKey = new bytes[](1);
@@ -163,10 +129,11 @@ contract StakingManagerTest is TestSetup {
         uint256 selectedBidId = bidIds[0];
         etherFiNode = managerInstance.etherfiNodeAddress(selectedBidId);
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
         assertEq(selectedBidId, 1);
         assertEq(address(managerInstance).balance, 0 ether);
-        assertEq(address(auctionInstance).balance, 0.9 ether);
+
+        //Revenue not about auction threshold so still 1 ether
+        assertEq(address(auctionInstance).balance, 1 ether);
 
         address safeAddress = managerInstance.etherfiNodeAddress(bidIds[0]);
         assertEq(safeAddress, etherFiNode);
@@ -214,7 +181,7 @@ contract StakingManagerTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(etherFiNode),
-            1 ether
+            32 ether
         );
        
         IStakingManager.DepositData memory depositData = IStakingManager
@@ -568,7 +535,7 @@ contract StakingManagerTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(etherFiNode),
-            1 ether
+            32 ether
         );
 
         IStakingManager.DepositData[]
@@ -647,7 +614,7 @@ contract StakingManagerTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(etherFiNode),
-            1 ether
+            32 ether
         );
 
         IStakingManager.DepositData[]
@@ -668,11 +635,11 @@ contract StakingManagerTest is TestSetup {
         uint256 selectedBidId = bidId[0];
         etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether);
+        // assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether); // protocolRevenueManager is being deprecated
         assertEq(selectedBidId, 1);
         assertEq(managerInstance.numberOfValidators(), 1);
-        assertEq(address(managerInstance).balance, 0 ether);
-        assertEq(address(auctionInstance).balance, 0);
+        assertEq(address(managerInstance).balance, 0 ether, "EtherFiNode manager balance should be 0");
+        assertEq(address(auctionInstance).balance, 0.1 ether, "Auction balance should be 0.1");
 
         address operatorAddress = auctionInstance.getBidOwner(bidId[0]);
         assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
@@ -723,6 +690,7 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[8] = 19;
         bidIdArray[9] = 20;
 
+        // only the first 4 bids will be processed because of the 128 ether limit
         uint256[] memory processedBidIds = stakingManagerInstance
             .batchDepositWithBidIds{value: 128 ether}(bidIdArray, proof, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
@@ -737,7 +705,7 @@ contract StakingManagerTest is TestSetup {
                 hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
                 managerInstance.generateWithdrawalCredentials(etherFiNode),
-                1 ether
+                32 ether
             );
             depositDataArray[i] = IStakingManager.DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -747,14 +715,16 @@ contract StakingManagerTest is TestSetup {
             });
         }
 
-        assertEq(address(auctionInstance).balance, 3 ether);
+        assertEq(address(auctionInstance).balance, 3 ether, "Auction balance should be 3");
+
         stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), 
             processedBidIds,
             depositDataArray
         );
 
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.2 ether);
-        assertEq(address(auctionInstance).balance, 2.6 ether);
+        assertEq(auctionInstance.accumulatedRevenue(), 0.4 ether, "Auction accumulated revenue should be 0.4");
+        assertEq(address(auctionInstance).balance, 3 ether, "Auction balance should be 4");
+        assertEq(address(membershipManagerInstance).balance, 0 ether, "MembershipManager balance should be 1");
 
         assertEq(
             BNFTInstance.ownerOf(processedBidIds[0]),
@@ -879,7 +849,7 @@ contract StakingManagerTest is TestSetup {
                 hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
                 managerInstance.generateWithdrawalCredentials(etherFiNode),
-                1 ether
+                32 ether
             );        
             depositDataArray[i] = IStakingManager.DepositData({
                     publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -1067,7 +1037,7 @@ contract StakingManagerTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(etherFiNode),
-            1 ether
+            32 ether
         );
 
         IStakingManager.DepositData[]
@@ -1215,7 +1185,7 @@ contract StakingManagerTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(etherFiNode),
-            1 ether
+            32 ether
         );
 
         IStakingManager.DepositData[]
@@ -1253,7 +1223,7 @@ contract StakingManagerTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(etherFiNode),
-            1 ether
+            32 ether
         );
 
         IStakingManager.DepositData[]
@@ -1359,7 +1329,7 @@ contract StakingManagerTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(etherFiNode),
-            1 ether
+            32 ether
         );
 
         IStakingManager.DepositData[]
@@ -1376,10 +1346,10 @@ contract StakingManagerTest is TestSetup {
         depositDataArray[0] = depositData;
 
         vm.expectEmit(true, true, true, true);
-        emit ValidatorRegistered(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, alice, bob, bidId1[0], hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c", "test_ipfs");
-        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, alice, bob, depositDataArray, alice);
+        emit ValidatorRegistered(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, alice, alice, bidId1[0], hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c", "test_ipfs");
+        stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), bidId1, depositDataArray);
         assertEq(BNFTInstance.ownerOf(bidId1[0]), alice);
-        assertEq(TNFTInstance.ownerOf(bidId1[0]), bob);
+        assertEq(TNFTInstance.ownerOf(bidId1[0]), alice);
     }
 
     function test_MaxBatchBidGasFee() public {

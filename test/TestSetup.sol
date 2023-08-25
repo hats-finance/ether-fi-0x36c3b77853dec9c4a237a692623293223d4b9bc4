@@ -34,6 +34,8 @@ import "./TestERC20.sol";
 
 import "../src/MembershipManagerV0.sol";
 import "../src/EtherFiOracle.sol";
+import "../src/EtherFiAdmin.sol";
+
 
 contract TestSetup is Test {
     uint256 public constant kwei = 10 ** 3;
@@ -60,6 +62,7 @@ contract TestSetup is Test {
     UUPSProxy public nftExchangeProxy;
     UUPSProxy public withdrawRequestNFTProxy;
     UUPSProxy public etherFiOracleProxy;
+    UUPSProxy public etherFiAdminProxy;
 
     DepositDataGeneration public depGen;
     IDepositContract public depositContractEth2;
@@ -120,6 +123,9 @@ contract TestSetup is Test {
     EtherFiOracle public etherFiOracleImplementation;
     EtherFiOracle public etherFiOracleInstance;
 
+    EtherFiAdmin public etherFiAdminImplementation;
+    EtherFiAdmin public etherFiAdminInstance;
+
     EtherFiNode public node;
     Treasury public treasuryInstance;
 
@@ -171,6 +177,17 @@ contract TestSetup is Test {
 
     bytes32 zeroRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
     bytes32[] zeroProof;
+
+    IEtherFiOracle.OracleReport reportAtPeriod2A;
+    IEtherFiOracle.OracleReport reportAtPeriod2B;
+    IEtherFiOracle.OracleReport reportAtPeriod2C;
+    IEtherFiOracle.OracleReport reportAtPeriod3;
+    IEtherFiOracle.OracleReport reportAtPeriod3A;
+    IEtherFiOracle.OracleReport reportAtPeriod3B;
+    IEtherFiOracle.OracleReport reportAtPeriod4;
+
+    int256 slotsPerEpoch = 32;
+    int256 secondsPerSlot = 12;
 
     function setUpTests() internal {
         vm.startPrank(owner);
@@ -321,7 +338,13 @@ contract TestSetup is Test {
             address(protocolRevenueManagerInstance)
         );
         membershipManagerInstance.updateAdmin(alice);
+        auctionInstance.setMembershipManagerContractAddress(address(membershipManagerInstance));
 
+        etherFiOracleImplementation = new EtherFiOracle();
+        etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
+        etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
+        etherFiOracleInstance.initialize(2, 1024, 32, 12, 1);
+        
         vm.stopPrank();
 
         vm.prank(alice);
@@ -338,10 +361,31 @@ contract TestSetup is Test {
         nftExchangeInstance.initialize(address(TNFTInstance), address(membershipNftInstance), address(managerInstance));
         nftExchangeInstance.updateAdmin(alice);
 
-        etherFiOracleImplementation = new EtherFiOracle();
-        etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
-        etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
-        etherFiOracleInstance.initialize(2, 32, 12, 1);
+        etherFiAdminImplementation = new EtherFiAdmin();
+        etherFiAdminProxy = new UUPSProxy(address(etherFiAdminImplementation), "");
+        etherFiAdminInstance = EtherFiAdmin(payable(etherFiAdminProxy));
+        etherFiAdminInstance.initialize(
+            address(etherFiOracleInstance),
+            address(stakingManagerInstance),
+            address(auctionInstance),
+            address(managerInstance),
+            address(liquidityPoolInstance),
+            address(membershipManagerInstance),
+            address(withdrawRequestNFTInstance)
+        );
+
+        uint256[] memory validatorsToApprove = new uint256[](1);
+        uint256[] memory validatorsToExit = new uint256[](1);
+        uint256[] memory exitedValidators = new uint256[](1);
+        uint256[] memory slashedValidators = new uint256[](1);
+        uint256[] memory withdrawalRequestsToInvalidate = new uint256[](1);
+        reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod3 = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
 
         vm.stopPrank();
 
@@ -361,7 +405,6 @@ contract TestSetup is Test {
         nodeOperatorManagerInstance.setAuctionContractAddress(address(auctionInstance));
 
         auctionInstance.setStakingManagerContractAddress(address(stakingManagerInstance));
-        auctionInstance.setProtocolRevenueManager(address(protocolRevenueManagerInstance));
 
         protocolRevenueManagerInstance.setAuctionManagerAddress(address(auctionInstance));
         protocolRevenueManagerInstance.setEtherFiNodesManagerAddress(address(managerInstance));
@@ -558,5 +601,11 @@ contract TestSetup is Test {
         vm.prank(owner);
         (bool sent,) = payable(_recipient).call{value: _amount}("");
         assertEq(sent, true);
+    }
+
+    function _moveClock(int256 numSlots) internal {
+        assertEq(numSlots > 0, true);
+        vm.warp(block.timestamp + uint256(numSlots * 12 seconds));
+        vm.roll(block.number + uint256(numSlots));
     }
 }

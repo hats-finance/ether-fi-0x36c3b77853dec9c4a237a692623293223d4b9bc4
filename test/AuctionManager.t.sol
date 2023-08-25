@@ -14,6 +14,9 @@ contract AuctionManagerTest is TestSetup {
     event BidReEnteredAuction(uint256 indexed bidId);
     event Received(address indexed sender, uint256 value);
 
+    bytes32[] public proof;
+    bytes32[] public aliceProof;
+
     function setUp() public {
         setUpTests();
     }
@@ -704,9 +707,9 @@ contract AuctionManagerTest is TestSetup {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bid1Ids = auctionInstance.createBid{value: 1 ether}(
+        uint256[] memory bid1Ids = auctionInstance.createBid{value: 0.1 ether}(
             1,
-            1 ether
+            0.1 ether
         );
 
         vm.prank(owner);
@@ -723,7 +726,7 @@ contract AuctionManagerTest is TestSetup {
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(etherFiNode),
-            1 ether
+            32 ether
         );
 
         IStakingManager.DepositData memory depositData = IStakingManager
@@ -738,7 +741,9 @@ contract AuctionManagerTest is TestSetup {
 
         stakingManagerInstance.batchRegisterValidators(zeroRoot, processedBidIds, depositDataArray);
 
-        assertEq(etherFiNode.balance, 0.5 ether);
+        // Auction Revenue is no longer distributed to nodes
+        assertEq(etherFiNode.balance, 0 ether);
+        assertEq(auctionInstance.accumulatedRevenue(), 0.1 ether);
     }
 
     function test_SetMaxBidAmount() public {
@@ -848,10 +853,177 @@ contract AuctionManagerTest is TestSetup {
 
     function test_CanOnlySetAddressesOnce() public {
         vm.startPrank(owner);
-        vm.expectRevert("Address already set");
-        auctionInstance.setProtocolRevenueManager(address(0));
 
         vm.expectRevert("Address already set");
         auctionInstance.setStakingManagerContractAddress(address(0));
+    }
+
+    function test_SetAccumulatedRevenueThreshold() public {
+        vm.prank(bob);
+        vm.expectRevert("Caller is not the admin");
+        auctionInstance.setAccumulatedRevenueThreshold(0.005 ether);
+
+        // TODO: consider if 0 is an invalid threshold amount
+        // vm.prank(alice);
+        // vm.expectRevert("Invalid Amount");
+        // auctionInstance.updateAccumulatedRevenueThreshold(0);
+
+        vm.prank(alice);
+        auctionInstance.setAccumulatedRevenueThreshold(2 ether);
+        assertEq(auctionInstance.accumulatedRevenueThreshold(), 2 ether);
+    }
+
+    function test_AccumulateAuctionRevenue() public {
+        vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            _ipfsHash,
+            5
+        ); 
+
+        startHoax(alice);
+
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.5 ether}(
+            1,
+            0.5 ether
+        );
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof, alice);
+        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
+
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
+        depositDataArray[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(
+            zeroRoot,
+            bidId,
+            depositDataArray
+        );
+        vm.stopPrank();
+
+        assertEq(auctionInstance.accumulatedRevenue(), 0.5 ether);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+
+        uint256[] memory bidIds2 = auctionInstance.createBid{value: 0.7 ether}(
+            1,
+            0.7 ether
+        );
+
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+            bidIds2,
+            proof,
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931
+        );
+
+        IStakingManager.DepositData[]
+            memory depositDataArray2 = new IStakingManager.DepositData[](1);
+
+        etherFiNode = managerInstance.etherfiNodeAddress(2);
+        root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
+
+        depositData = IStakingManager.DepositData({
+            publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            depositDataRoot: root,
+            ipfsHashForEncryptedValidatorKey: "test_ipfs"
+        });
+
+        depositDataArray2[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(
+            zeroRoot,
+            bidIds2,
+            depositDataArray2
+        );
+        vm.stopPrank();
+
+        assertEq(
+            auctionInstance.accumulatedRevenue(),
+            0 ether
+        );
+
+        assertEq(address(membershipManagerInstance).balance, 1.2 ether);
+    }
+    
+    function test_transferAccumulatedRevenue() public {
+        vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            _ipfsHash,
+            5
+        ); 
+
+        startHoax(alice);
+
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.5 ether}(
+            1,
+            0.5 ether
+        );
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof, alice);
+        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
+
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
+        depositDataArray[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(
+            zeroRoot,
+            bidId,
+            depositDataArray
+        );
+        vm.stopPrank();
+
+        assertEq(auctionInstance.accumulatedRevenue(), 0.5 ether);
+        assertEq(address(auctionInstance).balance, 0.5 ether);
+        assertEq(address(membershipManagerInstance).balance, 0 ether);
+
+        vm.prank(alice);
+        auctionInstance.transferAccumulatedRevenue();
+
+        assertEq(auctionInstance.accumulatedRevenue(), 0 ether);
+        assertEq(address(auctionInstance).balance, 0 ether);
+        assertEq(address(membershipManagerInstance).balance, 0.5 ether);
     }
 }

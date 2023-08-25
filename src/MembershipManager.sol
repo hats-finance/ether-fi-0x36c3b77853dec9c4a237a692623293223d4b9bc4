@@ -24,7 +24,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     ILiquidityPool public liquidityPool;
     IMembershipNFT public membershipNFT;
     address public treasury;
-    address public protocolRevenueManager;
+    address public DEPRECATED_protocolRevenueManager;
 
     mapping (uint256 => uint256) public allTimeHighDepositAmount;
     mapping (uint256 => TokenDeposit) public tokenDeposits;
@@ -42,8 +42,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     uint16 private mintFee; // fee = 0.001 ETH * 'mintFee'
     uint16 private burnFee; // fee = 0.001 ETH * 'burnFee'
     uint16 private upgradeFee; // fee = 0.001 ETH * 'upgradeFee'
-    uint8 public treasuryFeeSplitPercent;
-    uint8 public protocolRevenueFeeSplitPercent;
+    uint8 public DEPRECATED_treasuryFeeSplitPercent;
+    uint8 public DEPRECATED_protocolRevenueFeeSplitPercent;
 
     uint32 public topUpCooltimePeriod;
     uint32 public withdrawalLockBlocks;
@@ -88,7 +88,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
         membershipNFT = IMembershipNFT(_membershipNft);
         treasury = _treasury;
-        protocolRevenueManager = _protocolRevenueManager;
 
         pointsBoostFactor = 10000;
         pointsGrowthRate = 10000;
@@ -96,8 +95,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         maxDepositTopUpPercent = 20;
         withdrawalLockBlocks = 3600;
 
-        treasuryFeeSplitPercent = 0;
-        protocolRevenueFeeSplitPercent = 100;
     }
 
     error InvalidEAPRollover();
@@ -198,7 +195,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _amount The amount of membership tokens to exchange.
     function requestWithdraw(uint256 _tokenId, uint256 _amount) external whenNotPaused returns (uint256) {
         _requireTokenOwner(_tokenId);
-        if (liquidityPool.totalValueInLp() < _amount) revert InsufficientLiquidity();
 
         // prevent transfers for several blocks after a withdrawal to prevent frontrunning
         membershipNFT.incrementLock(_tokenId, withdrawalLockBlocks);
@@ -400,13 +396,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         mintFee = uint16(_mintFeeAmount / 0.001 ether);
         burnFee = uint16(_burnFeeAmount / 0.001 ether);
         upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
-    }
-
-    function setFeeSplits(uint8 _treasurySplitPercent, uint8 _protocolRevenueManagerSplitPercent) external {
-        _requireAdmin();
-        if (_treasurySplitPercent + _protocolRevenueManagerSplitPercent != 100) revert InvalidAmount();
-        treasuryFeeSplitPercent = _treasurySplitPercent;
-        protocolRevenueFeeSplitPercent = _protocolRevenueManagerSplitPercent;
     }
 
     /// @notice Updates the address of the admin

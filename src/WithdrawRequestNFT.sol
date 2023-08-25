@@ -4,13 +4,10 @@ pragma solidity 0.8.13;
 import "@openzeppelin-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
 contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
-    using Counters for Counters.Counter;
-
     struct WithdrawRequest {
         uint96  amountOfEEth;
         uint96  shareOfEEth;
@@ -24,6 +21,8 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     ILiquidityPool public liquidityPool;
     IeETH public eETH; 
 
+    event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner);
+    event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -47,6 +46,8 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         _nextRequestId++;
         _requests[requestId] = WithdrawRequest(amountOfEEth, shareOfEEth, true);
         _safeMint(recipient, requestId);
+
+        emit WithdrawRequestCreated(uint32(requestId), amountOfEEth, shareOfEEth, recipient);
         return requestId;
     }
 
@@ -65,9 +66,12 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
         // transfer eth to requester
         address recipient = ownerOf(tokenId);
-        liquidityPool.withdraw(recipient, amountToTransfer);
         _burn(tokenId);
         delete _requests[tokenId];
+
+        uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToTransfer);
+
+        emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient);
     }
     
     // add function to transfer accumulated shares to admin
