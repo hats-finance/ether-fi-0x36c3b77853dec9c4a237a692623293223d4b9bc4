@@ -184,7 +184,7 @@ contract StakingManager is
         }  
     }
 
-    // TOOD - discuss if we need to receive the full `DepositData` for stronger verification
+    // TODO - discuss if we need to receive the full `DepositData` for stronger verification
     function batchApproveRegistration(
         uint256[] memory _validatorId, 
         bytes[] calldata _pubKey,

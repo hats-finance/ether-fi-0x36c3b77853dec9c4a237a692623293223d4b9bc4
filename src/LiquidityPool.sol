@@ -17,6 +17,8 @@ import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/INodeOperatorManager.sol";
+import "forge-std/console.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
@@ -41,6 +43,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     address public bNftTreasury;
     IWithdrawRequestNFT public withdrawRequestNFT;
+    INodeOperatorManager public nodeOperator;
 
     BnftHolder[] public bnftHolders;
     uint128 public max_validators_per_owner;
@@ -190,9 +193,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index, ILiquidityPool.SourceOfFunds _source) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
+        console.log("h");
+        nodeOperator.verifyNodeOperatorType(_candidateBidIds, _source);
+        console.log("h");
+
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
         require(bnftHolders[_index].timestamp < _getCurrentSchedulingStartTimestamp(), "Already deposited");
 
@@ -369,6 +376,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function setMembershipManager(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         membershipManager = IMembershipManager(_address);
+    }
+
+    function setNodeOperatorManager(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        nodeOperator = INodeOperatorManager(_address);
     }
 
     function setTnft(address _address) external onlyOwner {

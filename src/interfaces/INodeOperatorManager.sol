@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "../../src/LiquidityPool.sol";
+import "../interfaces/ILiquidityPool.sol";
 
 interface INodeOperatorManager {
     struct KeyData {
@@ -29,9 +29,11 @@ interface INodeOperatorManager {
 
     function batchUpdateOperatorsApprovedTags(
         address[] memory _users, 
-        LiquidityPool.SourceOfFunds[] memory _approvedTags, 
+        ILiquidityPool.SourceOfFunds[] memory _approvedTags, 
         bool[] memory _approvals
     ) external;
 
     function fetchNextKeyIndex(address _user) external returns (uint64);
+
+    function verifyNodeOperatorType(uint256[] memory _candidateBids, ILiquidityPool.SourceOfFunds _source) external;
 }

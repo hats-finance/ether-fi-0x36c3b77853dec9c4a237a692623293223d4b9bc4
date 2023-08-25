@@ -4,11 +4,14 @@ pragma solidity 0.8.13;
 import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
 import "../src/LiquidityPool.sol";
+import "../src/interfaces/ILiquidityPool.sol";
+import "../src/AuctionManager.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "forge-std/console.sol";
 
 contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgradeable, PausableUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -24,7 +27,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    address public auctionManagerContractAddress;
+    AuctionManager public auctionManager;
 
     // user address => OperaterData Struct
     mapping(address => KeyData) public addressToOperatorData;
@@ -169,6 +172,13 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         return _getImplementation();
     }
 
+    function verifyNodeOperatorType(uint256[] memory _candidateBids, ILiquidityPool.SourceOfFunds _source) external {
+        for(uint256 x; x < _candidateBids.length; x++) {
+            address operator = auctionManager.getBidOwner(_candidateBids[x]);
+            require(operatorApprovedTags[operator][_source], "Not approved");
+        }
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  SETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -179,9 +189,9 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     function setAuctionContractAddress(
         address _auctionContractAddress
     ) public onlyOwner {
-        require(auctionManagerContractAddress == address(0), "Address already set");
+        require(address(auctionManager) == address(0), "Address already set");
         require(_auctionContractAddress != address(0), "No zero addresses");
-        auctionManagerContractAddress = _auctionContractAddress;
+        auctionManager = AuctionManager(_auctionContractAddress);
     }
 
     /// @notice Updates the address of the admin
@@ -205,7 +215,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
 
     modifier onlyAuctionManagerContract() {
         require(
-            msg.sender == auctionManagerContractAddress,
+            msg.sender == address(auctionManager),
             "Only auction manager contract function"
         );
         _;
