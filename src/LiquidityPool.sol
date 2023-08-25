@@ -239,7 +239,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         
         for(uint256 x; x < _validatorIds.length; x++) {
             depositDataRootForApprovalDeposits[_validatorIds[x]] = _depositData[x].depositDataRoot;
-            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _depositData[x].publicKey, _depositRoot);
+            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _depositData[x].publicKey, _depositData[x].depositDataRoot);
         }
     }
 
