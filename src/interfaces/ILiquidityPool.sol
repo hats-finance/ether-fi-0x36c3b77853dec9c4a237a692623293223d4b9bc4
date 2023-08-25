@@ -46,9 +46,8 @@ interface ILiquidityPool {
     }
 
     struct FundStatistics {
-        uint256 amountOfFundsInPool;
-        uint128 numberOfValidators;
-        uint128 targetWeight;
+        uint32 numberOfValidators;
+        uint32 targetWeight;
     }
 
     // Necessary to preserve "statelessness" of dutyForWeek().

@@ -61,6 +61,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey);
+    event FundsDeposited(SourceOfFunds source, uint256 amount);
+    event FundsWithdrawn(SourceOfFunds source, uint256 amount);
 
     error InvalidAmount();
 
@@ -99,11 +101,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
         if(msg.sender == address(membershipManager)) {
             isWhitelistedAndEligible(_user, _merkleProof);
-            fundStatistics[SourceOfFunds.ETHER_FAN].amountOfFundsInPool += msg.value;
+            emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
             isWhitelistedAndEligible(msg.sender, _merkleProof);
-            fundStatistics[SourceOfFunds.EETH].amountOfFundsInPool += msg.value;
+            emit FundsDeposited(SourceOfFunds.EETH, msg.value);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
         
@@ -125,16 +127,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
 
-        // TODO: Relook at this logic, possible arithmetic underflow when withdraw amount > current amount
-        // if(msg.sender == address(membershipManager)) {
-        //     fundStatistics[SourceOfFunds.ETHER_FAN].amountOfFundsInPool -= _amount;
-        // }else {
-        //     fundStatistics[SourceOfFunds.EETH].amountOfFundsInPool -= _amount;
-        // }
-
         uint256 share = sharesForWithdrawalAmount(_amount);
         totalValueInLp -= uint128(_amount);
         if (_amount > type(uint128).max || _amount == 0 || share == 0) revert InvalidAmount();
+
+        //Potentially we could do this if statement offline?
+        //emit FundsWithdrawn(msg.sender, _amount);
+        if(msg.sender == address(membershipManager)) {
+            emit FundsWithdrawn(SourceOfFunds.ETHER_FAN, _amount);
+        } else {
+            emit FundsWithdrawn(SourceOfFunds.EETH, _amount);
+        }
 
         eETH.burnShares(msg.sender, share);
 
