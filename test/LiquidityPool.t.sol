@@ -40,6 +40,32 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
     }
 
+    function calculatePermitDigest(address owner, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domainSeparator) public pure returns (bytes32) {
+        bytes32 permitTypehash = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                hex"1901",
+                domainSeparator,
+                keccak256(abi.encode(permitTypehash, owner, spender, value, nonce, deadline))
+            )
+        );
+        return digest;
+    }
+
+    function createPermitInput(uint256 privKey, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domianSeparator) public returns (ILiquidityPool.PermitInput memory) {
+        address owner = vm.addr(privKey);
+        bytes32 digest = calculatePermitDigest(owner, spender, value, nonce, deadline, domianSeparator);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privKey, digest);
+        ILiquidityPool.PermitInput memory permitInput = ILiquidityPool.PermitInput({
+            value: value,
+            deadline: deadline,
+            v: v,
+            r: r,
+            s: s
+        });
+        return permitInput;
+    }
+
     function test_DepositOrWithdrawOfZeroFails() public {
         vm.deal(alice, 1 ether);
 
@@ -97,6 +123,43 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
     }
 
+    function test_WithdrawLiquidityPoolWithInvalidPermitFails() public {
+        vm.deal(alice, 3 ether);
+        vm.startPrank(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        assertEq(alice.balance, 1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        uint256 aliceNonce = eETHInstance.nonces(alice);
+        // create permit with invalid private key (Bob)
+        ILiquidityPool.PermitInput memory permitInput = createPermitInput(3, address(liquidityPoolInstance), 2 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+        vm.expectRevert("ERC20Permit: invalid signature");
+        liquidityPoolInstance.requestWithdrawWithPermit(alice, 2 ether, permitInput);
+        vm.stopPrank();
+    }
+
+    function test_WithdrawLiquidityPoolWithInsufficientPermitFails() public {
+        vm.deal(alice, 3 ether);
+        vm.startPrank(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        assertEq(alice.balance, 1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 2 ether);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        uint256 aliceNonce = eETHInstance.nonces(alice);
+        //  permit with insufficient amount of ETH
+        ILiquidityPool.PermitInput memory permitInput = createPermitInput(2, address(liquidityPoolInstance), 1 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+        vm.expectRevert("TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
+        liquidityPoolInstance.requestWithdrawWithPermit(alice, 2 ether, permitInput);
+        vm.stopPrank();
+    }
+
+
     function test_WithdrawLiquidityPoolSuccess() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
@@ -124,8 +187,10 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
-        uint256 aliceReqId = liquidityPoolInstance.requestWithdraw(alice, 2 ether);
+        uint256 aliceNonce = eETHInstance.nonces(alice);
+        // alice priv key = 2
+        ILiquidityPool.PermitInput memory permitInputAlice = createPermitInput(2, address(liquidityPoolInstance), 2 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+        uint256 aliceReqId = liquidityPoolInstance.requestWithdrawWithPermit(alice, 2 ether, permitInputAlice);
         withdrawRequestNFTInstance.finalizeRequests(aliceReqId);
         withdrawRequestNFTInstance.claimWithdraw(aliceReqId);
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -133,8 +198,10 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(bob);
-        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
-        uint256 bobReqId = liquidityPoolInstance.requestWithdraw(bob, 2 ether);
+        uint256 bobNonce = eETHInstance.nonces(bob);
+        // bob priv key = 3
+        ILiquidityPool.PermitInput memory permitInputBob = createPermitInput(3, address(liquidityPoolInstance), 2 ether, bobNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+        uint256 bobReqId = liquidityPoolInstance.requestWithdrawWithPermit(bob, 2 ether, permitInputBob);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -155,7 +222,6 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         startHoax(alice);
-        eETHInstance.approve(address(liquidityPoolInstance), 2 ether);
         vm.expectRevert("Not enough eETH");
         liquidityPoolInstance.requestWithdraw(alice, 2 ether);
     }
