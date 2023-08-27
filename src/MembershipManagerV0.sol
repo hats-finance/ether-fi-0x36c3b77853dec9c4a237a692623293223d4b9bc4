@@ -54,8 +54,8 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
 
     uint128 public sharesReservedForRewards;
 
-    address public admin;
-
+    address public DEPRECATED_admin;
+    mapping(address => bool) public admins;
  
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -403,9 +403,9 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
     }
 
     /// @notice Updates the address of the admin
-    /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        admin = _newAdmin;
+    /// @param _address the new address to set as admin
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        admins[_address] = _isAdmin;
     }
 
     //Pauses the contract
@@ -608,7 +608,7 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
 
     error OnlyAdmin();
     function _requireAdmin() internal {
-        if (msg.sender != admin) revert OnlyAdmin();
+        if (!admins[msg.sender]) revert OnlyAdmin();
     }
 
     function _feeAmountSanityCheck(uint256 _feeAmount) internal {

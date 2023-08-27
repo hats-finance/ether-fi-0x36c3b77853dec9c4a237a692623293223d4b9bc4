@@ -199,19 +199,19 @@ contract TestSetup is Test {
         nodeOperatorManagerProxy = new UUPSProxy(address(nodeOperatorManagerImplementation), "");
         nodeOperatorManagerInstance = NodeOperatorManager(address(nodeOperatorManagerProxy));
         nodeOperatorManagerInstance.initialize();
-        nodeOperatorManagerInstance.updateAdmin(alice);
+        nodeOperatorManagerInstance.updateAdmin(alice, true);
 
         auctionImplementation = new AuctionManager();
         auctionManagerProxy = new UUPSProxy(address(auctionImplementation), "");
         auctionInstance = AuctionManager(address(auctionManagerProxy));
         auctionInstance.initialize(address(nodeOperatorManagerInstance));
-        auctionInstance.updateAdmin(alice);
+        auctionInstance.updateAdmin(alice, true);
 
         stakingManagerImplementation = new StakingManager();
         stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation), "");
         stakingManagerInstance = StakingManager(address(stakingManagerProxy));
         stakingManagerInstance.initialize(address(auctionInstance));
-        stakingManagerInstance.updateAdmin(alice);
+        stakingManagerInstance.updateAdmin(alice, true);
 
         TNFTImplementation = new TNFT();
         TNFTProxy = new UUPSProxy(address(TNFTImplementation), "");
@@ -240,7 +240,7 @@ contract TestSetup is Test {
             address(BNFTInstance),
             address(protocolRevenueManagerInstance)
         );
-        managerInstance.updateAdmin(alice);
+        managerInstance.updateAdmin(alice, true);
 
         regulationsManagerImplementation = new RegulationsManager();
         vm.expectRevert("Initializable: contract is already initialized");
@@ -249,7 +249,7 @@ contract TestSetup is Test {
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
         regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
         regulationsManagerInstance.initialize();
-        regulationsManagerInstance.updateAdmin(alice);
+        regulationsManagerInstance.updateAdmin(alice, true);
 
         node = new EtherFiNode();
 
@@ -283,7 +283,7 @@ contract TestSetup is Test {
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
         liquidityPoolInstance.setTnft(address(TNFTInstance));
-        liquidityPoolInstance.updateAdmin(alice);
+        liquidityPoolInstance.updateAdmin(alice, true);
 
         eETHImplementation = new EETH();
         vm.expectRevert("Initializable: contract is already initialized");
@@ -317,13 +317,13 @@ contract TestSetup is Test {
         membershipNftProxy = new UUPSProxy(address(membershipNftImplementation), "");
         membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
         membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
-        membershipNftInstance.updateAdmin(alice);
+        membershipNftInstance.updateAdmin(alice, true);
 
         withdrawRequestNFTImplementation = new WithdrawRequestNFT();
         withdrawRequestNFTProxy = new UUPSProxy(address(withdrawRequestNFTImplementation), "");
         withdrawRequestNFTInstance = WithdrawRequestNFT(payable(withdrawRequestNFTProxy));
         withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)));
-        withdrawRequestNFTInstance.updateAdmin(alice);
+        withdrawRequestNFTInstance.updateAdmin(alice, true);
 
         liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
 
@@ -337,7 +337,7 @@ contract TestSetup is Test {
             address(treasuryInstance),
             address(protocolRevenueManagerInstance)
         );
-        membershipManagerInstance.updateAdmin(alice);
+        membershipManagerInstance.updateAdmin(alice, true);
         auctionInstance.setMembershipManagerContractAddress(address(membershipManagerInstance));
 
         etherFiOracleImplementation = new EtherFiOracle();
@@ -419,7 +419,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMembershipManager(address(membershipManagerInstance));
-        liquidityPoolInstance.updateAdmin(alice);
+        liquidityPoolInstance.updateAdmin(alice, true);
         liquidityPoolInstance.updateBNftTreasury(owner);
 
         vm.stopPrank();
@@ -444,9 +444,9 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         _initializeMembershipTiers();
-        vm.stopPrank();
-
         _initializePeople();
+        _initializeEtherFiAdmin();
+
     }
 
     function _merkleSetup() internal {
@@ -492,6 +492,7 @@ contract TestSetup is Test {
             uint24 weight = uint24(i + 1);
             membershipManagerInstance.addNewTier(requiredPointsForTier, weight);
         }
+        vm.stopPrank();
     }
 
     function _initializePeople() internal {
@@ -607,5 +608,20 @@ contract TestSetup is Test {
         assertEq(numSlots > 0, true);
         vm.warp(block.timestamp + uint256(numSlots * 12 seconds));
         vm.roll(block.number + uint256(numSlots));
+    }
+
+    function _initializeEtherFiAdmin() internal {
+        vm.startPrank(owner);
+
+        address admin = address(etherFiAdminInstance);
+        EtherFiNodesManager(payable(managerInstance)).updateAdmin(admin, true); 
+        AuctionManager(auctionInstance).updateAdmin(admin, true); 
+        StakingManager(stakingManagerInstance).updateAdmin(admin, true); 
+        LiquidityPool(payable(liquidityPoolInstance)).updateAdmin(admin, true);
+        RegulationsManager(regulationsManagerInstance).updateAdmin(admin, true);
+        MembershipManager(payable(membershipManagerInstance)).updateAdmin(admin, true);
+        MembershipNFT(membershipNftInstance).updateAdmin(admin, true);
+
+        vm.stopPrank();
     }
 }

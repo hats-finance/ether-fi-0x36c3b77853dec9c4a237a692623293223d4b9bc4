@@ -16,10 +16,12 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
     mapping(uint256 => WithdrawRequest) private _requests;
     uint256 private _nextRequestId;
-    address public admin;
+    address public DEPRECATED_admin;
     uint256 public lastFinalizedRequestId;
     ILiquidityPool public liquidityPool;
     IeETH public eETH; 
+
+    mapping(address => bool) public admins;
 
     event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner);
     event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner);
@@ -106,15 +108,15 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         eETH = IeETH(_newEEth);
     }
 
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        admins[_address] = _isAdmin;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
     }
 

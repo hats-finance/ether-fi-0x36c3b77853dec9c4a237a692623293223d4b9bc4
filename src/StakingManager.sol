@@ -50,7 +50,8 @@ contract StakingManager is
 
     mapping(uint256 => address) public bidIdToStaker;
 
-    address public admin;
+    address public DEPRECATED_admin;
+    mapping(address => bool) public admins;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -311,10 +312,10 @@ contract StakingManager is
     function unPauseContract() external onlyAdmin { _unpause(); }
 
     /// @notice Updates the address of the admin
-    /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+    /// @param _address the new address to set as admin
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        admins[_address] = _isAdmin;
     }
 
     function registerEth2DepositContract(address _address) public onlyOwner {
@@ -453,7 +454,7 @@ contract StakingManager is
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
     }
 }
