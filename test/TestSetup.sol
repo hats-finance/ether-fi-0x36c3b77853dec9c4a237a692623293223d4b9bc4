@@ -613,14 +613,15 @@ contract TestSetup is Test {
     function _initializeEtherFiAdmin() internal {
         vm.startPrank(owner);
 
+        etherFiAdminInstance.updateAdmin(alice, true);
+
         address admin = address(etherFiAdminInstance);
-        EtherFiNodesManager(payable(managerInstance)).updateAdmin(admin, true); 
-        AuctionManager(auctionInstance).updateAdmin(admin, true); 
-        StakingManager(stakingManagerInstance).updateAdmin(admin, true); 
-        LiquidityPool(payable(liquidityPoolInstance)).updateAdmin(admin, true);
-        RegulationsManager(regulationsManagerInstance).updateAdmin(admin, true);
-        MembershipManager(payable(membershipManagerInstance)).updateAdmin(admin, true);
-        MembershipNFT(membershipNftInstance).updateAdmin(admin, true);
+        auctionInstance.updateAdmin(admin, true); 
+        stakingManagerInstance.updateAdmin(admin, true); 
+        liquidityPoolInstance.updateAdmin(admin, true);
+        regulationsManagerInstance.updateAdmin(admin, true);
+        membershipManagerInstance.updateAdmin(admin, true);
+        membershipNftInstance.updateAdmin(admin, true);
 
         vm.stopPrank();
     }
