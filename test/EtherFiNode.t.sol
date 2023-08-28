@@ -101,7 +101,7 @@ contract EtherFiNodeTest is TestSetup {
     function test_SetPhaseRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
-        safeInstance.setPhase(IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        safeInstance.setPhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.EXITED);
 
     }
 
@@ -246,7 +246,7 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
 
         vm.expectRevert("Only EtherFiNodeManager Contract");
-        IEtherFiNode(etherFiNode).markExited(1);
+        IEtherFiNode(etherFiNode).markExited(validatorIds[0] ,1);
 
         vm.expectRevert("Caller is not the admin");
         vm.prank(owner);

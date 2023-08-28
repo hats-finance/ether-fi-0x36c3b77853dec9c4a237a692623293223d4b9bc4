@@ -57,6 +57,7 @@ interface IEtherFiNode {
     function exitTimestamp() external view returns (uint32);
 
     function getStakingRewardsPayouts(
+        uint256 validatorId,
         uint256 _beaconBalance,
         IEtherFiNodesManager.RewardsSplit memory _splits,
         uint256 _scale
@@ -68,13 +69,14 @@ interface IEtherFiNode {
     ) external view returns (uint256);
 
     function calculateTVL(
+        uint256 validatorId,
         uint256 _beaconBalance,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         uint256 _scale
     ) external view returns (uint256, uint256, uint256, uint256);
 
     // Non-VIEW functions
-    function setPhase(VALIDATOR_PHASE _phase) external;
+    function setPhase(uint256 _validatorId, VALIDATOR_PHASE _phase) external;
 
     function setIpfsHashForEncryptedValidatorKey(
         string calldata _ipfs
@@ -82,9 +84,9 @@ interface IEtherFiNode {
 
     function setExitRequestTimestamp() external;
 
-    function markExited(uint32 _exitTimestamp) external;
+    function markExited(uint256 validatorId, uint32 _exitTimestamp) external;
 
-    function markEvicted() external;
+    function markEvicted(uint256 validatorId) external;
 
     // Withdraw Rewards
     function moveRewardsToManager(uint256 _amount) external;
