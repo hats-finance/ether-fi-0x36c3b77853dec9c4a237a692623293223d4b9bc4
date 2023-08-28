@@ -35,7 +35,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     uint128 public totalValueOutOfLp;
     uint128 public totalValueInLp;
 
-    address public admin;
+    address public DEPRECATED_admin;
 
     uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
 
@@ -48,6 +48,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     
     HoldersUpdate public holdersUpdate;
 
+    mapping(address => bool) public admins;
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
 
     //--------------------------------------------------------------------------------------
@@ -268,7 +269,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function deRegisterBnftHolder(uint256 _index) external {
-        require(msg.sender == admin || msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
+        require(admins[msg.sender] || msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
         bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
         bnftHolders.pop();
 
@@ -380,10 +381,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     /// @notice Updates the address of the admin
-    /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+    /// @param _address the new address to set as admin
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        admins[_address] = _isAdmin;
     }
 
     function updateBNftTreasury(address _newTreasury) external onlyOwner {
@@ -526,7 +527,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
     }
 

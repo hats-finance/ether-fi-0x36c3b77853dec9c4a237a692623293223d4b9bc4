@@ -30,8 +30,9 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     mapping(address => KeyData) public addressToOperatorData;
     mapping(address => bool) private whitelistedAddresses;
     mapping(address => bool) public registered;
+
+    mapping(address => bool) public admins;
     mapping(address => mapping(LiquidityPool.SourceOfFunds => bool)) public operatorApprovedTags;
-    address public admin;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -185,10 +186,10 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     }
 
     /// @notice Updates the address of the admin
-    /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+    /// @param _address the new address to set as admin
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        admins[_address] = _isAdmin;
     }
 
     //--------------------------------------------------------------------------------------
@@ -212,7 +213,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
     }
 }

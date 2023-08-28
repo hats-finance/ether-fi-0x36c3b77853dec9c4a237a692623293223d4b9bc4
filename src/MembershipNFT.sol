@@ -27,7 +27,9 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     string private contractMetadataURI; /// @dev opensea contract-level metadata
 
-    address public admin;
+    address public DEPRECATED_admin;
+
+    mapping(address => bool) public admins;
 
     event MerkleUpdated(bytes32, bytes32);
     event MintingPaused(bool isPaused);
@@ -106,10 +108,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
     /// @notice Updates the address of the admin
-    /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+    /// @param _address the new address to set as admin
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        admins[_address] = _isAdmin;
     }
     
     function setMintingPaused(bool _paused) external onlyAdmin {
@@ -352,7 +354,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     //--------------------------------------------------------------------------------------
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
     }
 
