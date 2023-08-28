@@ -421,7 +421,6 @@ contract TestSetup is Test {
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMembershipManager(address(membershipManagerInstance));
         liquidityPoolInstance.updateAdmin(alice, true);
-        liquidityPoolInstance.updateBNftTreasury(owner);
 
         vm.stopPrank();
 

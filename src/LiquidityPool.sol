@@ -38,8 +38,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     address public DEPRECATED_admin;
 
     uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
-
-    address public bNftTreasury;
+    
+    address public DEPRECATED_bNftTreasury;
     IWithdrawRequestNFT public withdrawRequestNFT;
 
     BnftHolder[] public bnftHolders;
@@ -393,11 +393,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         admins[_address] = _isAdmin;
-    }
-
-    function updateBNftTreasury(address _newTreasury) external onlyOwner {
-        require(_newTreasury != address(0), "Cannot be address zero");
-        bNftTreasury = _newTreasury;
     }
 
     function setMaxBnftSlotSize(uint128 _newSize) external onlyAdmin {
