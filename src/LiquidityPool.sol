@@ -47,6 +47,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     uint128 public schedulingPeriodInSeconds;
     
     HoldersUpdate public holdersUpdate;
+
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
     mapping(uint256 => bytes32) public depositDataRootForApprovalDeposits;
  
@@ -62,6 +63,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
+    event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
 
@@ -133,8 +135,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp -= uint128(_amount);
         if (_amount > type(uint128).max || _amount == 0 || share == 0) revert InvalidAmount();
 
-        //Potentially we could do this if statement offline?
-        //emit FundsWithdrawn(msg.sender, _amount);
         if(msg.sender == address(membershipManager)) {
             emit FundsWithdrawn(SourceOfFunds.ETHER_FAN, _amount);
         } else {
@@ -193,7 +193,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
-        require(bnftHolders[_index].timestamp < _getCurrentSchedulingStartTimestamp(), "Already deposited");
+        require(bnftHolders[_index].timestamp < uint32(_getCurrentSchedulingStartTimestamp()), "Already deposited");
 
         uint256 numberOfValidatorsToSpin = max_validators_per_owner;
         if(_index == lastIndex) {
@@ -210,7 +210,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp -= uint128(amountFromLp);
         numPendingDeposits += uint32(numberOfValidatorsToSpin);
 
-        bnftHolders[_index].timestamp = block.timestamp;
+        bnftHolders[_index].timestamp = uint32(block.timestamp);
 
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender);
 
@@ -403,11 +403,20 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit UpdatedSchedulingPeriod(_schedulingPeriodInSeconds);
     }
 
-    function numberOfActiveSlots(BnftHolder[] memory _localBnftHoldersArray) public view returns (uint256 numberOfActiveSlots) {
-        numberOfActiveSlots = uint128(_localBnftHoldersArray.length);
-        if(holdersUpdate.timestamp > uint128(_getCurrentSchedulingStartTimestamp())) {
+    function numberOfActiveSlots(BnftHolder[] memory _localBnftHoldersArray) public view returns (uint32 numberOfActiveSlots) {
+        numberOfActiveSlots = uint32(_localBnftHoldersArray.length);
+        if(holdersUpdate.timestamp > uint32(_getCurrentSchedulingStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
         }
+    }
+
+    function setStakingTargetWeights(uint32 _eEthWeight, uint32 _etherFanWeight) external onlyAdmin {
+        require(_eEthWeight + _etherFanWeight == 100, "Invalid weights");
+
+        fundStatistics[SourceOfFunds.EETH].targetWeight = _eEthWeight;
+        fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight = _etherFanWeight;
+
+        emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }
 
     //--------------------------------------------------------------------------------------
@@ -415,10 +424,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //--------------------------------------------------------------------------------------
 
     function _checkHoldersUpdateStatus() internal {
-        if(holdersUpdate.timestamp < uint128(_getCurrentSchedulingStartTimestamp())) {
-            holdersUpdate.startOfSlotNumOwners = uint128(bnftHolders.length);
+        if(holdersUpdate.timestamp < uint32(_getCurrentSchedulingStartTimestamp())) {
+            holdersUpdate.startOfSlotNumOwners = uint32(bnftHolders.length);
         }
-        holdersUpdate.timestamp = uint128(block.timestamp);
+        holdersUpdate.timestamp = uint32(block.timestamp);
     }
 
     function _getCurrentSchedulingStartTimestamp() internal view returns (uint256) {
@@ -438,7 +447,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function _fetchLastIndex(uint128 _size, uint256 _index, BnftHolder[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
-        uint256 numSlots = numberOfActiveSlots(_localBnftHoldersArray);
+        uint32 numSlots = numberOfActiveSlots(_localBnftHoldersArray);
         uint128 tempLastIndex = uint128(_index) + _size - 1;
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }

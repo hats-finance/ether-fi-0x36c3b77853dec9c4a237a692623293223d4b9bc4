@@ -128,6 +128,14 @@ contract SmallScenariosTest is TestSetup {
         startHoax(alice);
         uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, proof, 0);
 
+        for (uint256 i = 0; i < processedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                processedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED));
+        }
+
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
         assertEq(address(stakingManagerInstance).balance, 32 ether);
 
@@ -148,11 +156,20 @@ contract SmallScenariosTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        
+
         vm.stopPrank();
         vm.startPrank(alice);
         // Register the Validator
         liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), processedBidIds, depositDataArray, sig);
+
+        for (uint256 i = 0; i < processedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                processedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL));
+        }
+
         vm.stopPrank();
 
         assertEq(address(stakingManagerInstance).balance, 31 ether);
@@ -223,6 +240,21 @@ contract SmallScenariosTest is TestSetup {
 
         assert(liquidityPoolInstance.getTotalPooledEther() >= 47.5 ether); // 63 - 15.5 = 47.5
         assert(address(liquidityPoolInstance).balance >= 17.5 ether); // 33 - 15.5 = 17.5
+
+        bytes[] memory pubKey = new bytes[](2);
+        pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+        pubKey[1] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+
+        vm.prank(alice);
+        stakingManagerInstance.batchApproveRegistration(processedBidIds, pubKey, sig);
+
+        for (uint256 i = 0; i < processedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                processedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.LIVE));
+        }
 
         // EtherFi sends an exit request for a node to be exited to reclaim the 32 ether sent to the pool for withdrawals
         {
@@ -388,6 +420,14 @@ contract SmallScenariosTest is TestSetup {
             greg
         );
 
+        for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                gregProcessedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED));
+        }
+
         staker = stakingManagerInstance.bidIdToStaker(bobBidIds[2]);
 
         assertEq(staker, greg);
@@ -420,6 +460,14 @@ contract SmallScenariosTest is TestSetup {
         }
 
         stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), gregProcessedBidIds, depositDataArray);
+
+        for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                gregProcessedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.LIVE));
+        }
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
             address gregNode = managerInstance.etherfiNodeAddress(

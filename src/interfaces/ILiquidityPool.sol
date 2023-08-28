@@ -27,13 +27,13 @@ interface ILiquidityPool {
     // Necessary to preserve "statelessness" of dutyForWeek().
     // Handles case where new users join/leave holder list during an active slot
     struct HoldersUpdate {
-        uint128 timestamp;
-        uint128 startOfSlotNumOwners;
+        uint32 timestamp;
+        uint32 startOfSlotNumOwners;
     }
 
     struct BnftHolder {
         address holder;
-        uint256 timestamp;
+        uint32 timestamp;
     }
 
     function numPendingDeposits() external view returns (uint32);

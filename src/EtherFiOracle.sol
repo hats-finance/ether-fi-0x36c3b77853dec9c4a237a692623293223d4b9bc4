@@ -195,7 +195,9 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
        bytes32 chunk3 = keccak256(
             abi.encode(
                 _report.eEthTargetAllocationWeight,
-                _report.etherFanTargetAllocationWeight
+                _report.etherFanTargetAllocationWeight,
+                _report.pendingWithdrawalAmount,
+                _report.numPendingValidatorsRequestedToExit
             )
         );
         return keccak256(abi.encodePacked(chunk1, chunk2, chunk3));
