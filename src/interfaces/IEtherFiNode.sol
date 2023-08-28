@@ -34,13 +34,13 @@ interface IEtherFiNode {
     enum VALIDATOR_PHASE {
         NOT_INITIALIZED,
         STAKE_DEPOSITED,
-        WAITING_FOR_APPROVAL,
         LIVE,
         EXITED,
         FULLY_WITHDRAWN,
         CANCELLED,
         BEING_SLASHED,
-        EVICTED
+        EVICTED,
+        WAITING_FOR_APPROVAL
     }
 
     // VIEW functions
