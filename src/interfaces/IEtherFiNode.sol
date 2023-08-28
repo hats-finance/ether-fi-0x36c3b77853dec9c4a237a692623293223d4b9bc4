@@ -39,7 +39,8 @@ interface IEtherFiNode {
         FULLY_WITHDRAWN,
         CANCELLED,
         BEING_SLASHED,
-        EVICTED
+        EVICTED,
+        WAITING_FOR_APPROVAL
     }
 
     // VIEW functions

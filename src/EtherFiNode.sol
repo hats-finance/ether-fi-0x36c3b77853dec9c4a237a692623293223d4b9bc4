@@ -411,7 +411,9 @@ contract EtherFiNode is IEtherFiNode {
         if (currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED) {
             pass = (_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED);
         } else if (currentPhase == VALIDATOR_PHASE.STAKE_DEPOSITED) {
-            pass = (_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED);
+            pass = (_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED || _newPhase == VALIDATOR_PHASE.WAITING_FOR_APPROVAL);
+        } else if (currentPhase == VALIDATOR_PHASE.WAITING_FOR_APPROVAL) {
+            pass = (_newPhase == VALIDATOR_PHASE.LIVE);
         } else if (currentPhase == VALIDATOR_PHASE.LIVE) {
             pass = (_newPhase == VALIDATOR_PHASE.EXITED || _newPhase == VALIDATOR_PHASE.BEING_SLASHED || _newPhase == VALIDATOR_PHASE.EVICTED);
         } else if (currentPhase == VALIDATOR_PHASE.BEING_SLASHED) {

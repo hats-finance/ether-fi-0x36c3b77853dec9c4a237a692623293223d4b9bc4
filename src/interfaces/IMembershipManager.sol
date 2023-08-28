@@ -9,18 +9,25 @@ interface IMembershipManager {
     }
 
     struct TokenData {
-        uint96 rewardsLocalIndex;
+        uint96 share;
         uint40 baseLoyaltyPoints;
         uint40 baseTierPoints;
         uint32 prevPointsAccrualTimestamp;
         uint32 prevTopUpTimestamp;
         uint8  tier;
-        uint8  __gap;
+        uint8  version;
     }
 
+    // Used for V1
+    struct TierVault {
+        uint128 totalPooledEEthShares; // total share of eEth in the tier vault
+        uint128 totalVaultShares; // total share of the tier vault
+    }
+
+    // Used for V0
     struct TierDeposit {
-        uint128 amounts;
-        uint128 shares;
+        uint128 amounts; // total pooled eth amount
+        uint128 shares; // total pooled eEth shares
     }
 
     struct TierData {
@@ -43,6 +50,8 @@ interface IMembershipManager {
 
     function claim(uint256 _tokenId) external;
 
+    function migrateFromV0ToV1(uint256 _tokenId) external;
+
     // Getter functions
     function tokenDeposits(uint256) external view returns (uint128, uint128);
     function tokenData(uint256) external view returns (uint96, uint40, uint40, uint32, uint32, uint8, uint8);
@@ -58,8 +67,12 @@ interface IMembershipManager {
     function maxDepositTopUpPercent() external view returns (uint8);
     function numberOfTiers() external view returns (uint8);
     function getImplementation() external view returns (address);
-    function sharesReservedForRewards() external view returns (uint128);
     function minimumAmountForMint() external view returns (uint256);
+
+    function eEthShareForVaultShare(uint8 _tier, uint256 _vaultShare) external view returns (uint256);
+    function vaultShareForEEthShare(uint8 _tier, uint256 _eEthShare) external view returns (uint256);
+    function ethAmountForVaultShare(uint8 _tier, uint256 _vaultShare) external view returns (uint256);
+    function vaultShareForEthAmount(uint8 _tier, uint256 _ethAmount) external view returns (uint256);
 
     // only Owner
     function setWithdrawalLockBlocks(uint32 _blocks) external;
@@ -69,8 +82,6 @@ interface IMembershipManager {
     function updateTier(uint8 _tier, uint40 _requiredTierPoints, uint24 _weight) external;
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
     function setPointsBatch(uint256[] calldata _tokenIds, uint40[] calldata _loyaltyPoints, uint40[] calldata _tierPoints) external;
-    function recoverTierPointsForEap(uint256 _tokenId, uint32  _eapDepositBlockNumber) external;
-    function recoverTierPointsForEapBatch(uint256[] calldata _tokenIds, uint32[] calldata _eapDepositBlockNumbers) external;
     function setMinDepositWei(uint56 _value) external;
     function setMaxDepositTopUpPercent(uint8 _percent) external;
     function setTopUpCooltimePeriod(uint32 _newWaitTime) external;

@@ -45,7 +45,8 @@ contract EtherFiNodesManager is
     RewardsSplit public stakingRewardsSplit;
     RewardsSplit public protocolRewardsSplit;
 
-    address public admin;
+    address public DEPRECATED_admin;
+    mapping(address => bool) public admins;
 
     /*
     // I don't need this I can just continue to use the existing one
@@ -387,10 +388,10 @@ contract EtherFiNodesManager is
     }
 
     /// @notice Updates the address of the admin
-    /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+    /// @param _address the new address to set as admin
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        admins[_address] = _isAdmin;
     }
 
     //Pauses the contract
@@ -612,7 +613,7 @@ contract EtherFiNodesManager is
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
     }
 }

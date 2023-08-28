@@ -20,7 +20,8 @@ contract RegulationsManager is
 
     uint32 public whitelistVersion;
 
-    address public admin;
+    address public DEPRECATED_admin;
+    mapping(address => bool) public admins;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -94,9 +95,9 @@ contract RegulationsManager is
 
     /// @notice Updates the address of the admin
     /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
+    function updateAdmin(address _newAdmin, bool _isAdmin) external onlyOwner {
         require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+        admins[_newAdmin] = _isAdmin;
     }
 
     //--------------------------------------------------------------------------------------
@@ -120,7 +121,7 @@ contract RegulationsManager is
     //--------------------------------------------------------------------------------------
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
     }
 }

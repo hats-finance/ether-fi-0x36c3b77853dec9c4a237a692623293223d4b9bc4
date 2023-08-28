@@ -5,6 +5,7 @@ import "forge-std/console.sol";
 
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
+import "../src/interfaces/ILiquidityPool.sol";
 import "../src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorManager.sol";
@@ -199,19 +200,19 @@ contract TestSetup is Test {
         nodeOperatorManagerProxy = new UUPSProxy(address(nodeOperatorManagerImplementation), "");
         nodeOperatorManagerInstance = NodeOperatorManager(address(nodeOperatorManagerProxy));
         nodeOperatorManagerInstance.initialize();
-        nodeOperatorManagerInstance.updateAdmin(alice);
+        nodeOperatorManagerInstance.updateAdmin(alice, true);
 
         auctionImplementation = new AuctionManager();
         auctionManagerProxy = new UUPSProxy(address(auctionImplementation), "");
         auctionInstance = AuctionManager(address(auctionManagerProxy));
         auctionInstance.initialize(address(nodeOperatorManagerInstance));
-        auctionInstance.updateAdmin(alice);
+        auctionInstance.updateAdmin(alice, true);
 
         stakingManagerImplementation = new StakingManager();
         stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation), "");
         stakingManagerInstance = StakingManager(address(stakingManagerProxy));
         stakingManagerInstance.initialize(address(auctionInstance));
-        stakingManagerInstance.updateAdmin(alice);
+        stakingManagerInstance.updateAdmin(alice, true);
 
         TNFTImplementation = new TNFT();
         TNFTProxy = new UUPSProxy(address(TNFTImplementation), "");
@@ -240,7 +241,7 @@ contract TestSetup is Test {
             address(BNFTInstance),
             address(protocolRevenueManagerInstance)
         );
-        managerInstance.updateAdmin(alice);
+        managerInstance.updateAdmin(alice, true);
 
         regulationsManagerImplementation = new RegulationsManager();
         vm.expectRevert("Initializable: contract is already initialized");
@@ -249,7 +250,7 @@ contract TestSetup is Test {
         regulationsManagerProxy = new UUPSProxy(address(regulationsManagerImplementation), "");
         regulationsManagerInstance = RegulationsManager(address(regulationsManagerProxy));
         regulationsManagerInstance.initialize();
-        regulationsManagerInstance.updateAdmin(alice);
+        regulationsManagerInstance.updateAdmin(alice, true);
 
         node = new EtherFiNode();
 
@@ -283,7 +284,7 @@ contract TestSetup is Test {
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
         liquidityPoolInstance.initialize(address(regulationsManagerInstance));
         liquidityPoolInstance.setTnft(address(TNFTInstance));
-        liquidityPoolInstance.updateAdmin(alice);
+        liquidityPoolInstance.updateAdmin(alice, true);
 
         eETHImplementation = new EETH();
         vm.expectRevert("Initializable: contract is already initialized");
@@ -317,13 +318,13 @@ contract TestSetup is Test {
         membershipNftProxy = new UUPSProxy(address(membershipNftImplementation), "");
         membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
         membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
-        membershipNftInstance.updateAdmin(alice);
+        membershipNftInstance.updateAdmin(alice, true);
 
         withdrawRequestNFTImplementation = new WithdrawRequestNFT();
         withdrawRequestNFTProxy = new UUPSProxy(address(withdrawRequestNFTImplementation), "");
         withdrawRequestNFTInstance = WithdrawRequestNFT(payable(withdrawRequestNFTProxy));
         withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)));
-        withdrawRequestNFTInstance.updateAdmin(alice);
+        withdrawRequestNFTInstance.updateAdmin(alice, true);
 
         liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
 
@@ -337,7 +338,7 @@ contract TestSetup is Test {
             address(treasuryInstance),
             address(protocolRevenueManagerInstance)
         );
-        membershipManagerInstance.updateAdmin(alice);
+        membershipManagerInstance.updateAdmin(alice, true);
         auctionInstance.setMembershipManagerContractAddress(address(membershipManagerInstance));
 
         etherFiOracleImplementation = new EtherFiOracle();
@@ -352,6 +353,7 @@ contract TestSetup is Test {
         vm.startPrank(owner);
 
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
+        membershipNftInstance.setLiquidityPool(address(liquidityPoolInstance));
 
         tvlOracle = new TVLOracle(alice);
 
@@ -379,13 +381,13 @@ contract TestSetup is Test {
         uint256[] memory exitedValidators = new uint256[](1);
         uint256[] memory slashedValidators = new uint256[](1);
         uint256[] memory withdrawalRequestsToInvalidate = new uint256[](1);
-        reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
-        reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
-        reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
-        reportAtPeriod3 = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
-        reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
-        reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
-        reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20);
+        reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod3 = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
 
         vm.stopPrank();
 
@@ -419,8 +421,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMembershipManager(address(membershipManagerInstance));
-        liquidityPoolInstance.updateAdmin(alice);
-        liquidityPoolInstance.updateBNftTreasury(owner);
+        liquidityPoolInstance.updateAdmin(alice, true);
 
         vm.stopPrank();
 
@@ -444,9 +445,9 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         _initializeMembershipTiers();
-        vm.stopPrank();
-
         _initializePeople();
+        _initializeEtherFiAdmin();
+
     }
 
     function _merkleSetup() internal {
@@ -492,6 +493,7 @@ contract TestSetup is Test {
             uint24 weight = uint24(i + 1);
             membershipManagerInstance.addNewTier(requiredPointsForTier, weight);
         }
+        vm.stopPrank();
     }
 
     function _initializePeople() internal {
@@ -591,6 +593,18 @@ contract TestSetup is Test {
         rootMigration2 = merkleMigration2.getRoot(dataForVerification2);
     }
 
+    function _upgradeMembershipManagerFromV0ToV1() internal {
+        assertEq(membershipManagerInstance.getImplementation(), address(membershipManagerImplementation));
+        membershipManagerV1Implementation = new MembershipManager();
+        vm.startPrank(owner);
+        membershipManagerInstance.upgradeTo(address(membershipManagerV1Implementation));
+        membershipManagerV1Instance = MembershipManager(payable(membershipManagerProxy));
+        assertEq(membershipManagerV1Instance.getImplementation(), address(membershipManagerV1Implementation));
+
+        membershipManagerV1Instance.initializePhase2();
+        vm.stopPrank();
+    }
+
     function _getDepositRoot() internal returns (bytes32) {
         bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
         return onchainDepositRoot;
@@ -607,5 +621,21 @@ contract TestSetup is Test {
         assertEq(numSlots > 0, true);
         vm.warp(block.timestamp + uint256(numSlots * 12 seconds));
         vm.roll(block.number + uint256(numSlots));
+    }
+
+    function _initializeEtherFiAdmin() internal {
+        vm.startPrank(owner);
+
+        etherFiAdminInstance.updateAdmin(alice, true);
+
+        address admin = address(etherFiAdminInstance);
+        auctionInstance.updateAdmin(admin, true); 
+        stakingManagerInstance.updateAdmin(admin, true); 
+        liquidityPoolInstance.updateAdmin(admin, true);
+        regulationsManagerInstance.updateAdmin(admin, true);
+        membershipManagerInstance.updateAdmin(admin, true);
+        membershipNftInstance.updateAdmin(admin, true);
+
+        vm.stopPrank();
     }
 }

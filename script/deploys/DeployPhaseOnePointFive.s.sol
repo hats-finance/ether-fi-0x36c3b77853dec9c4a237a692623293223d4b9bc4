@@ -131,10 +131,10 @@ contract DeployPhaseOnePointFiveScript is Script {
     }
 
     function setUpAdmins(address _admin) internal {
-        liquidityPool.updateAdmin(_admin);
-        regulationsManager.updateAdmin(_admin);
-        membershipManager.updateAdmin(_admin);
-        membershipNFT.updateAdmin(_admin);
+        liquidityPool.updateAdmin(_admin, true);
+        regulationsManager.updateAdmin(_admin, true);
+        membershipManager.updateAdmin(_admin, true);
+        membershipNFT.updateAdmin(_admin, true);
         nftExchange.updateAdmin(_admin);
     }
 
@@ -148,6 +148,7 @@ contract DeployPhaseOnePointFiveScript is Script {
     function preMint() internal {
         bytes32[] memory emptyProof;
         uint256 minAmount = membershipManager.minimumAmountForMint();
-        membershipManager.wrapEthBatch{value: 100 * minAmount}(100, minAmount, 0, emptyProof);
+        // MembershipManager V1 does not have `wrapEthBatch`
+        // membershipManager.wrapEthBatch{value: 100 * minAmount}(100, minAmount, 0, emptyProof);
     }
 }

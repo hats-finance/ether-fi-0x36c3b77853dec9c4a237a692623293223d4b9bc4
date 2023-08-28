@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
+import "../src/LiquidityPool.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
@@ -29,7 +30,9 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     mapping(address => KeyData) public addressToOperatorData;
     mapping(address => bool) private whitelistedAddresses;
     mapping(address => bool) public registered;
-    address public admin;
+
+    mapping(address => bool) public admins;
+    mapping(address => mapping(LiquidityPool.SourceOfFunds => bool)) public operatorApprovedTags;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -64,7 +67,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
 
         addressToOperatorData[msg.sender] = keyData;
         registered[msg.sender] = true;
-        
+
         emit OperatorRegistered(
             keyData.totalKeys,
             keyData.keysUsed,
@@ -88,6 +91,18 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         uint64 ipfsIndex = keyData.keysUsed;
         keyData.keysUsed++;
         return ipfsIndex;
+    }
+
+    function batchUpdateOperatorsApprovedTags(
+        address[] memory _users, 
+        LiquidityPool.SourceOfFunds[] memory _approvedTags, 
+        bool[] memory _approvals
+    ) external onlyAdmin {
+        require(_users.length == _approvedTags.length && _users.length == _approvals.length, "Invalid array lengths");
+        
+        for(uint256 x; x < _approvedTags.length; x++) {
+            operatorApprovedTags[_users[x]][_approvedTags[x]] = _approvals[x];
+        }
     }
 
     /// @notice Adds an address to the whitelist
@@ -171,10 +186,10 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     }
 
     /// @notice Updates the address of the admin
-    /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+    /// @param _address the new address to set as admin
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        admins[_address] = _isAdmin;
     }
 
     //--------------------------------------------------------------------------------------
@@ -198,7 +213,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
     }
 }

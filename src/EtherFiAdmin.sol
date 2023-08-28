@@ -28,10 +28,11 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     uint32 public lastHandledReportRefSlot;
     uint32 public lastHandledReportRefBlock;
+    uint32 public pendingWithdrawalAmount;
+    uint32 public numPendingValidatorsRequestedToExit;
 
-    event AdminAdded(address admin);
-    event AdminRemoved(address admin);
-    event AdminOperationsExecuted(address admin, bytes32 reportHash);
+    event AdminUpdated(address _address, bool _isAdmin);
+    event AdminOperationsExecuted(address _address, bytes32 _reportHash);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -59,7 +60,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         withdrawRequestNft = IWithdrawRequestNFT(_withdrawRequestNft);
     }
 
-    function executeTasks(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) external isAdmin(msg.sender) {
+    function executeTasks(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) external isAdmin() {
         bytes32 reportHash = etherFiOracle.generateReportHash(_report);
         require(etherFiOracle.isConsensusReached(reportHash), "EtherFiAdmin: not allowed to submit report");
         require(lastHandledReportRefSlot < _report.refSlotTo, "EtherFiAdmin: report already handled");
@@ -67,6 +68,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         lastHandledReportRefSlot = _report.refSlotTo;
         lastHandledReportRefBlock = _report.refBlockTo;
+        pendingWithdrawalAmount = _report.pendingWithdrawalAmount;
+        numPendingValidatorsRequestedToExit = _report.numPendingValidatorsRequestedToExit;
 
         _handleAccruedRewards(_report);
         _handleValidators(_report, _pubKey, _signature);
@@ -115,18 +118,11 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         // liquidityPool.setStakingTargetWeights(_report.eEthTargetAllocationWeight, _report.etherFanTargetAllocationWeight);
     }
 
-    function addAdmin(address _admin) external onlyOwner {
-        require(!admins[_admin], "EtherFiAdmin: admin already exists");
-        admins[_admin] = true;
 
-        emit AdminAdded(_admin);
-    }
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        admins[_address] = _isAdmin;
 
-    function removeAdmin(address _admin) external onlyOwner {
-        require(admins[_admin], "EtherFiAdmin: admin does not exist");
-        admins[_admin] = false;
-
-        emit AdminRemoved(_admin);
+        emit AdminUpdated(_address, _isAdmin);
     }
 
     function getImplementation() external view returns (address) {
@@ -136,8 +132,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
 
-    modifier isAdmin(address _admin) {
-        require(admins[_admin], "EtherFiAdmin: not an admin");
+    modifier isAdmin() {
+        require(admins[msg.sender], "EtherFiAdmin: not an admin");
         _;
     }
 }
