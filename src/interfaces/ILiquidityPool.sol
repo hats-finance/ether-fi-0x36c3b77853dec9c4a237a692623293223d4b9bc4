@@ -70,5 +70,4 @@ interface ILiquidityPool {
     function setWithdrawRequestNFT(address _address) external; 
     
     function updateAdmin(address _newAdmin) external;
-    function updateBNftTreasury(address _newTreasury) external; 
 }
