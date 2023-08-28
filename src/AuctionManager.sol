@@ -36,12 +36,14 @@ contract AuctionManager is
 
     mapping(uint256 => Bid) public bids;
 
-    address public admin;
+    address public DEPRECATED_admin;
 
     // new state variables for phase 2
     address public membershipManagerContractAddress;
     uint128 public accumulatedRevenue;
     uint128 public accumulatedRevenueThreshold;
+
+    mapping(address => bool) public admins;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -340,10 +342,10 @@ contract AuctionManager is
     }
 
     /// @notice Updates the address of the admin
-    /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+    /// @param _address the new address to set as admin
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        admins[_address] = _isAdmin;
     }
 
     //--------------------------------------------------------------------------------------
@@ -356,7 +358,7 @@ contract AuctionManager is
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
     }
 }
