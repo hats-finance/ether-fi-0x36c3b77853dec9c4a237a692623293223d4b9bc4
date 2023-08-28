@@ -371,7 +371,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
+        membershipManagerInstance.rebase(0.5 ether);
         vm.stopPrank();
 
         // Check the balance of Alice updated by the rebasing
@@ -404,7 +404,7 @@ contract MembershipManagerTest is TestSetup {
 
         // More Staking rewards 1 ETH into LP
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
+        membershipManagerInstance.rebase(1 ether);
         vm.stopPrank();
 
         // Alice belongs to the tier 1 with the weight 2
@@ -670,7 +670,7 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(address(liquidityPoolInstance).balance * 2, address(liquidityPoolInstance).balance);
+        membershipManagerInstance.rebase(1 ether);
         vm.stopPrank();
 
         // Alice earns 1 kwei per day by holding 1 membership points
@@ -988,7 +988,7 @@ contract MembershipManagerTest is TestSetup {
 
         // 1 ETH is earned as a staking rewards; 2 ETH has grown to 3 ETH.
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(2 ether + 1 ether, 2 ether);
+        membershipManagerInstance.rebase(1 ether);
         vm.stopPrank();
 
         // The balance has grown accordingly
@@ -1013,119 +1013,6 @@ contract MembershipManagerTest is TestSetup {
         assertEq(tier0_apr_bp, 3333); // 33.33% for tier 0 with weight 1
         assertEq(tier1_apr_bp, 6666); // 66.66% for tier 1 with weight 2
         assertEq(tier2_apr_bp, 0); // 00.00% for tier 2 with weight 3, because there is no deposited ETH in tier 2
-    }
-
-    function test_boostAprWithNftRevenue() public {
-
-        // TODO(Dave,Brett): this fails because it relies on protocol revenue manager to distribute rewards
-        // we should see if we can re-enable after new revenue distribution work is done
-        /*
-        uint256[] memory validatorIds = launch_validator();
-        vm.startPrank(alice);
-        membershipManagerInstance.setFeeAmounts(0.05 ether, 0.05 ether, 0.05 ether);
-        membershipManagerInstance.setFeeSplits(0, 100);
-        vm.stopPrank();
-
-        (uint256 fee,,) = membershipManagerInstance.getFees();
-
-        assertEq(address(liquidityPoolInstance).balance, 0 ether);
-        assertEq(eETHInstance.totalSupply(), 60 ether);
-        assertEq(eETHInstance.balanceOf(bob), 60 ether);
-
-        vm.deal(alice, 1 ether + fee);
-        vm.deal(bob, 1 ether + fee);
-
-        // Both Alice & Bob mint the NFT with 1 ether
-        vm.prank(alice);
-        uint256 aliceToken = membershipManagerInstance.wrapEth{value: 1 ether + fee}(1 ether, 0, aliceProof);
-        vm.prank(bob);
-        uint256 bobToken = membershipManagerInstance.wrapEth{value: 1 ether + fee}(1 ether, 0, bobProof);
-
-
-        // For testing purposes, 
-        // - Bob's NFT is upgraded to tier 1,
-        // - while Alice's NFT remain tier 0
-        // Note that tier 0 and tier 1 have weight 1 and weight 2, respcetively.
-        vm.startPrank(alice);
-        membershipManagerInstance.setPoints(aliceToken, 0, 0);
-        membershipManagerInstance.claim(aliceToken);
-        membershipManagerInstance.setPoints(bobToken, 0, uint40(24 * 28));
-        membershipManagerInstance.claim(bobToken);
-        vm.stopPrank();
-
-        // The {Alice, Bob} NFTs contain 1 ether each
-        // - Memberhsip Manager contract has 2 ether (which backs the values of two NFTs)
-        assertEq(membershipNftInstance.tierOf(aliceToken), 0); // tier 0, weight 1
-        assertEq(membershipNftInstance.tierOf(bobToken), 1); // tier 1, weight 2
-        assertEq(membershipNftInstance.valueOf(aliceToken), 1 ether);
-        assertEq(membershipNftInstance.valueOf(bobToken), 1 ether);
-        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 2 ether);
-
-
-        // Take a snapshot of the following values:
-        uint256 t1 = block.timestamp;
-        uint256 LpGI1 = liquidityPoolInstance.amountForShare(1 ether);
-        uint256 tier0GI1 = membershipManagerInstance.rewardsGlobalIndex(0);
-        uint256 tier1GI1 = membershipManagerInstance.rewardsGlobalIndex(1);
-        uint256 tier2GI1 = membershipManagerInstance.rewardsGlobalIndex(2);
-
-        uint256[] memory tvls = calculateAggregatedTVL(validatorIds);
-        uint256 eEthTVL = tvls[1] + membershipNftInstance.valueOf(aliceToken) + membershipNftInstance.valueOf(bobToken);
-
-        // For test, repeat {mint, burn} to generate Protocol Revenue
-        // Target 50% APR for eETH. 
-        // See the below formula for 'howManyMintsForFiftyPercentAPR'
-        {
-            (,, uint64 tnftSplit, ) = managerInstance.protocolRewardsSplit();
-            uint256 howManyMintsForFiftyPercentAPR = ((eEthTVL / 2) * 1_000_000) / (2 * fee * tnftSplit);
-            for (uint256 i = 0; i < howManyMintsForFiftyPercentAPR; i++) {
-                vm.deal(alice, 1 ether + fee);
-                vm.startPrank(alice);
-                uint256 t = membershipManagerInstance.wrapEth{value: 1 ether + fee}(1 ether, 0, aliceProof);
-                membershipManagerInstance.withdrawAndBurnForEth(t);
-                vm.stopPrank();
-            }
-        }
-
-
-        vm.prank(alice);
-        membershipManagerInstance.withdrawFees(address(membershipManagerInstance).balance, address(protocolRevenueManagerInstance));
-
-        // An year passed
-        skip(365 days);
-
-        tvls = calculateAggregatedTVL(validatorIds);
-        eEthTVL = tvls[1] + membershipNftInstance.valueOf(aliceToken) + membershipNftInstance.valueOf(bobToken);
-
-        // Target 50% APR Earnings in eETH!
-        vm.startPrank(alice);
-        membershipManagerInstance.rebase(eEthTVL, address(liquidityPoolInstance).balance);
-        vm.stopPrank();
-
-        // The balance has grown accordingly
-        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 3.002721774193548387 ether);
-        assertEq(membershipNftInstance.valueOf(aliceToken), 1.334240591397849462 ether); // tier 0, weight 1
-        assertEq(membershipNftInstance.valueOf(bobToken), 1.668481182795698924 ether); // tier 1, weight 2
-
-
-        // Take another snapshot of the following values:
-        uint256 t2 = block.timestamp;
-        uint256 LpGI2 = liquidityPoolInstance.amountForShare(1 ether);
-        uint256 tier0GI2 = membershipManagerInstance.rewardsGlobalIndex(0);
-        uint256 tier1GI2 = membershipManagerInstance.rewardsGlobalIndex(1);
-        uint256 tier2GI2 = membershipManagerInstance.rewardsGlobalIndex(2);
-
-        // Compute APRs
-        uint256 eETH_apr_bp = 10000 * (LpGI2 - LpGI1) / 1 ether * (365 days) / (t2 - t1);
-        uint256 tier0_apr_bp = 10000 * (tier0GI2 - tier0GI1) / 1 ether * (365 days) / (t2 - t1);
-        uint256 tier1_apr_bp = 10000 * (tier1GI2 - tier1GI1) / 1 ether * (365 days) / (t2 - t1);
-        uint256 tier2_apr_bp = 10000 * (tier2GI2 - tier2GI1) / 1 ether * (365 days) / (t2 - t1);
-
-        assertEq(eETH_apr_bp, 5013); // 50.13%
-        assertEq(tier0_apr_bp, 3342); // 33.42% for tier 0 with weight 1
-        assertEq(tier1_apr_bp, 6684); // 66.84% for tier 1 with weight 2
-        assertEq(tier2_apr_bp, 0); // 00.00% for tier 2 with weight 3, because there is no deposited ETH in tier 2
-        */
     }
 
     function calculateAggregatedTVL(uint256[] memory _validatorIds) internal returns (uint256[] memory) {
@@ -1274,7 +1161,7 @@ contract MembershipManagerTest is TestSetup {
             uint256 tvlInContract = address(liquidityPoolInstance).balance;
 
             vm.startPrank(alice);
-            membershipManagerInstance.rebase(moneyPerRebase + tvlInContract, tvlInContract);
+            membershipManagerInstance.rebase(int128(uint128(moneyPerRebase)));
             vm.stopPrank();
 
             _transferTo(address(liquidityPoolInstance), moneyPerRebase);
@@ -1419,7 +1306,7 @@ contract MembershipManagerTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(5 ether + 1 ether, 5 ether);
+        membershipManagerInstance.rebase(1 ether);
         vm.stopPrank();
         
         assertEq(membershipNftInstance.valueOf(tokens[0]), 1 ether + 1 ether * uint256(10) / uint256(100));

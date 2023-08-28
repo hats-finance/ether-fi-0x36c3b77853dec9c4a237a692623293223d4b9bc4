@@ -81,9 +81,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _handleAccruedRewards(IEtherFiOracle.OracleReport calldata _report) internal {
-        uint256 lpBalance = address(liquidityPool).balance;
-        uint256 tvl = uint256(_report.accruedRewards + int256(lpBalance));
-        membershipManager.rebase(lpBalance, tvl);
+        membershipManager.rebase(_report.accruedRewards);
     }
 
     function _handleValidators(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) internal {
