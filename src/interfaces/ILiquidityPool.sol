@@ -13,6 +13,29 @@ interface ILiquidityPool {
         bytes32 s;
     } 
 
+    enum SourceOfFunds {
+        UNDEFINED,
+        EETH,
+        ETHER_FAN
+    }
+
+    struct FundStatistics {
+        uint32 numberOfValidators;
+        uint32 targetWeight;
+    }
+
+    // Necessary to preserve "statelessness" of dutyForWeek().
+    // Handles case where new users join/leave holder list during an active slot
+    struct HoldersUpdate {
+        uint32 timestamp;
+        uint32 startOfSlotNumOwners;
+    }
+
+    struct BnftHolder {
+        address holder;
+        uint32 timestamp;
+    }
+
     function numPendingDeposits() external view returns (uint32);
     function totalValueOutOfLp() external view returns (uint128);
     function totalValueInLp() external view returns (uint128);
@@ -47,5 +70,5 @@ interface ILiquidityPool {
     function setWithdrawRequestNFT(address _address) external; 
     
     function updateAdmin(address _newAdmin) external;
-    function updateBNftTreasury(address _newTreasury) external;
+    function updateBNftTreasury(address _newTreasury) external; 
 }
