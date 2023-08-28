@@ -238,7 +238,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
         
         for(uint256 x; x < _validatorIds.length; x++) {
-            depositDataRootForApprovalDeposits[_validatorIds[x]] = _depositData[x].depositDataRoot;
+            depositDataRootForApprovalDeposits[_validatorIds[x]] = _depositData[x].approveValidatorDepositRoot;
             emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _depositData[x].publicKey, _depositData[x].depositDataRoot);
         }
     }

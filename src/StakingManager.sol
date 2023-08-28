@@ -195,7 +195,7 @@ contract StakingManager is
             // Deposit to the Beacon Chain
             bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
             bytes32 beaconChainDepositRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
-            bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 1 ether);
+            bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
             bytes32 registeredDataRoot = LiquidityPool(payable(liquidityPoolContract)).depositDataRootForApprovalDeposits(_validatorId[x]);
             require(depositDataRoot == registeredDataRoot, "Incorrect deposit data root");
             depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], beaconChainDepositRoot);        
