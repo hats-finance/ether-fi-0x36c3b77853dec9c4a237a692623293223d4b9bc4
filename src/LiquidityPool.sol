@@ -38,7 +38,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     address public admin;
 
     uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
-
+    
+    address public DEPRECATED_bNftTreasury;
     IWithdrawRequestNFT public withdrawRequestNFT;
 
     BnftHolder[] public bnftHolders;
