@@ -229,17 +229,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function batchRegisterAsBnftHolder(
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
-        IStakingManager.DepositData[] calldata _depositData,
+        IStakingManager.DepositData[] calldata _registerValidatorDepositData,
+        bytes32[] calldata _depositDataRootApproval,
         bytes[] calldata _signaturesForApprovalDeposit
     ) external {
-        require(_validatorIds.length == _depositData.length, "Array lengths must match");
+        require(_validatorIds.length == _registerValidatorDepositData.length, "Array lengths must match");
 
         numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _registerValidatorDepositData, msg.sender);
         
         for(uint256 x; x < _validatorIds.length; x++) {
-            depositDataRootForApprovalDeposits[_validatorIds[x]] = _depositData[x].approveValidatorDepositRoot;
-            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _depositData[x].publicKey, _depositData[x].depositDataRoot);
+            depositDataRootForApprovalDeposits[_validatorIds[x]] = _depositDataRootApproval[x];
+            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _registerValidatorDepositData[x].publicKey, _depositDataRootApproval[x]);
         }
     }
 

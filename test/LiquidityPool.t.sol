@@ -21,8 +21,8 @@ contract LiquidityPoolTest is TestSetup {
     function setUp() public {
         setUpTests();
         sig = new bytes[](2);
-        sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
-        sig[1] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
+        sig[0] = hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65";
+        sig[1] = hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65";
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
@@ -389,6 +389,8 @@ contract LiquidityPoolTest is TestSetup {
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](2);
 
+        bytes32[] memory depositDataRootsForApproval = new bytes32[](2);
+
         for (uint256 i = 0; i < newValidators.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
                 newValidators[i]
@@ -399,6 +401,16 @@ contract LiquidityPoolTest is TestSetup {
                 managerInstance.generateWithdrawalCredentials(etherFiNode),
                 1 ether
             );
+
+            bytes32 rootForApproval = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                31 ether
+            );
+
+            depositDataRootsForApproval[i] = rootForApproval;
+
             depositDataArray[i] = IStakingManager.DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -410,16 +422,14 @@ contract LiquidityPoolTest is TestSetup {
 
         }
 
-        bytes32 depositRoot = _getDepositRoot();
-
         bytes[] memory pubKey = new bytes[](2);
         pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
         pubKey[1] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
 
-        
+        bytes32 depositRoot = _getDepositRoot();
 
         vm.prank(henry);
-        liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, sig);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
 
         for (uint256 i = 0; i < newValidators.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -647,6 +657,8 @@ contract LiquidityPoolTest is TestSetup {
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](2);
 
+        bytes32[] memory depositDataRootsForApproval = new bytes32[](2);
+
         for (uint256 i = 0; i < newValidators.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
                 newValidators[i]
@@ -657,6 +669,16 @@ contract LiquidityPoolTest is TestSetup {
                 managerInstance.generateWithdrawalCredentials(etherFiNode),
                 1 ether
             );
+
+            bytes32 rootForApproval = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                31 ether
+            );
+
+            depositDataRootsForApproval[i] = rootForApproval;
+
             depositDataArray[i] = IStakingManager.DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -667,7 +689,7 @@ contract LiquidityPoolTest is TestSetup {
 
         bytes32 depositRoot = _getDepositRoot();
         vm.prank(alice);
-        liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, sig);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
 
         bytes[] memory pubKey = new bytes[](2);
         pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
@@ -1160,6 +1182,8 @@ contract LiquidityPoolTest is TestSetup {
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
 
+        bytes32[] memory depositDataRootsForApproval = new bytes32[](1);
+
         address etherFiNode = managerInstance.etherfiNodeAddress(11);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -1167,6 +1191,16 @@ contract LiquidityPoolTest is TestSetup {
             managerInstance.generateWithdrawalCredentials(etherFiNode),
             1 ether
         );
+
+        bytes32 rootForApproval = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            31 ether
+        );
+
+        depositDataRootsForApproval[0] = rootForApproval;
+
         IStakingManager.DepositData memory depositData = IStakingManager
             .DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -1186,7 +1220,7 @@ contract LiquidityPoolTest is TestSetup {
         sig = new bytes[](1);
         sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
 
-        liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), validatorArray, depositDataArray, sig);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), validatorArray, depositDataArray, depositDataRootsForApproval, sig);
 
         assertEq(liquidityPoolInstance.numPendingDeposits(), 3);
         assertEq(BNFTInstance.balanceOf(alice), 1);
