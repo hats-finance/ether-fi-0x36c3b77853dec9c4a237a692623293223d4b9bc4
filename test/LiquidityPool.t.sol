@@ -983,6 +983,30 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setSchedulingPeriodInSeconds(100000);
     }
 
+    function test_SetStakingTypeTargetWeights() public {
+        (, uint32 eEthTargetWeight) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.EETH);
+        (, uint32 etherFanTargetWeight) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.ETHER_FAN);
+
+        assertEq(eEthTargetWeight, 0);
+        assertEq(etherFanTargetWeight, 0);
+
+        vm.prank(bob);
+        vm.expectRevert("Caller is not the admin");
+        liquidityPoolInstance.setStakingTargetWeights(50, 50);
+
+        vm.startPrank(alice);
+        vm.expectRevert("Invalid weights");
+        liquidityPoolInstance.setStakingTargetWeights(50, 51);
+
+        liquidityPoolInstance.setStakingTargetWeights(61, 39);
+
+        (, eEthTargetWeight) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.EETH);
+        (, etherFanTargetWeight) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.ETHER_FAN);
+
+        assertEq(eEthTargetWeight, 61);
+        assertEq(etherFanTargetWeight, 39);
+    }
+
     function test_DepositFromBNFTHolder() public {
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
