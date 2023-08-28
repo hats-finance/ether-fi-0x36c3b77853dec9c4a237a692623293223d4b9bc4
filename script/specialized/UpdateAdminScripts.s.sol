@@ -37,15 +37,15 @@ contract UpdateAdmins is Script {
         address nftExchange = addressProvider.getContractAddress("NFTExchange");
 
         address admin = vm.envAddress("ADMIN");
-        EtherFiNodesManager(payable(etherFiNodesManager)).updateAdmin(admin); 
-        ProtocolRevenueManager(payable(protocolRevenueManager)).updateAdmin(admin); 
-        AuctionManager(auctionManager).updateAdmin(admin); 
-        StakingManager(stakingManager).updateAdmin(admin); 
-        LiquidityPool(payable(liquidityPool)).updateAdmin(admin);
-        RegulationsManager(regulationsManager).updateAdmin(admin);
-        MembershipManager(payable(membershipManager)).updateAdmin(admin);
-        MembershipNFT(membershipNFT).updateAdmin(admin);
-        NFTExchange(nftExchange).updateAdmin(admin);
+        EtherFiNodesManager(payable(etherFiNodesManager)).updateAdmin(admin, true); 
+        // ProtocolRevenueManager(payable(protocolRevenueManager)).updateAdmin(admin);  // DEPRECATED
+        AuctionManager(auctionManager).updateAdmin(admin, true); 
+        StakingManager(stakingManager).updateAdmin(admin, true); 
+        LiquidityPool(payable(liquidityPool)).updateAdmin(admin, true);
+        RegulationsManager(regulationsManager).updateAdmin(admin, true);
+        MembershipManager(payable(membershipManager)).updateAdmin(admin, true);
+        MembershipNFT(membershipNFT).updateAdmin(admin, true);
+        // NFTExchange(nftExchange).updateAdmin(admin); // Not in the scope of Phase 2 upgrade
 
         vm.stopBroadcast();
     }

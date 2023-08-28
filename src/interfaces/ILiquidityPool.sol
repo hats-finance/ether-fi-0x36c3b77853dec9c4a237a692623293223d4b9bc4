@@ -13,6 +13,29 @@ interface ILiquidityPool {
         bytes32 s;
     } 
 
+    enum SourceOfFunds {
+        UNDEFINED,
+        EETH,
+        ETHER_FAN
+    }
+
+    struct FundStatistics {
+        uint32 numberOfValidators;
+        uint32 targetWeight;
+    }
+
+    // Necessary to preserve "statelessness" of dutyForWeek().
+    // Handles case where new users join/leave holder list during an active slot
+    struct HoldersUpdate {
+        uint32 timestamp;
+        uint32 startOfSlotNumOwners;
+    }
+
+    struct BnftHolder {
+        address holder;
+        uint32 timestamp;
+    }
+
     function numPendingDeposits() external view returns (uint32);
     function totalValueOutOfLp() external view returns (uint128);
     function totalValueInLp() external view returns (uint128);
@@ -31,7 +54,7 @@ interface ILiquidityPool {
     function requestMembershipNFTWithdraw(address recipient, uint256 amount) external returns (uint256);
 
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory);
-    function batchRegisterAsBnftHolder(bytes32 _depositRoot, uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _depositData, bytes[] calldata signaturesForApprovalDeposit) external;
+    function batchRegisterAsBnftHolder(bytes32 _depositRoot, uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _registerValidatorDepositData, bytes32[] calldata _depositDataRootApproval, bytes[] calldata _signaturesForApprovalDeposit) external;
     function batchCancelDeposit(uint256[] calldata _validatorIds) external;
     function sendExitRequests(uint256[] calldata _validatorIds) external;
 
@@ -45,7 +68,5 @@ interface ILiquidityPool {
     function setMembershipManager(address _address) external;
     function setTnft(address _address) external;
     function setWithdrawRequestNFT(address _address) external; 
-    
-    function updateAdmin(address _newAdmin) external;
-    function updateBNftTreasury(address _newTreasury) external;
+    function updateAdmin(address _newAdmin, bool _isAdmin) external;
 }

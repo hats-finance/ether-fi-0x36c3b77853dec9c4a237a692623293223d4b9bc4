@@ -199,7 +199,7 @@ contract WithdrawRequestNFTTest is TestSetup {
     function testUpdateAdmin() public {
         address newAdmin = address(0xabc);
         vm.prank(owner);
-        withdrawRequestNFTInstance.updateAdmin(newAdmin);
-        assertEq(address(withdrawRequestNFTInstance.admin()), newAdmin, "Admin should be updated");
+        withdrawRequestNFTInstance.updateAdmin(newAdmin, true);
+        assertTrue(withdrawRequestNFTInstance.admins(newAdmin));
     }
 }
