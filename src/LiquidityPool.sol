@@ -50,7 +50,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     mapping(address => bool) public admins;
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
-
+    mapping(uint256 => bytes32) public depositDataRootForApprovalDeposits;
+ 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -62,7 +63,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event BnftHolderDeregistered(uint256 index);
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
-    event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey);
+    event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
     event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
@@ -226,19 +227,26 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return newValidators;
     }
 
+    //_registerValidatorDepositData takes in:
+    //  publicKey: 
+    //  signature: signature for 1 ether deposit
+    //  depositDataRoot: data root for 31 ether deposit
+    //  ipfsHashForEncryptedValidatorKey:
     function batchRegisterAsBnftHolder(
         bytes32 _depositRoot,
         uint256[] calldata _validatorIds,
-        IStakingManager.DepositData[] calldata _depositData,
+        IStakingManager.DepositData[] calldata _registerValidatorDepositData,
+        bytes32[] calldata _depositDataRootApproval,
         bytes[] calldata _signaturesForApprovalDeposit
     ) external {
-        require(_validatorIds.length == _depositData.length, "Array lengths must match");
+        require(_validatorIds.length == _registerValidatorDepositData.length, "Array lengths must match");
 
         numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _depositData, msg.sender);
-
+        stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _registerValidatorDepositData, msg.sender);
+        
         for(uint256 x; x < _validatorIds.length; x++) {
-            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _depositData[x].publicKey);
+            depositDataRootForApprovalDeposits[_validatorIds[x]] = _depositDataRootApproval[x];
+            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _registerValidatorDepositData[x].publicKey, _depositDataRootApproval[x]);
         }
     }
 
