@@ -123,6 +123,18 @@ contract SmallScenariosTest is TestSetup {
 
         bytes32[] memory proof = getWhitelistMerkleProof(3);
 
+        address[] memory users = new address[](1);
+        users[0] = address(bob);
+
+        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](1);
+        approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
+
+        bool[] memory approvals = new bool[](1);
+        approvals[0] = true;
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
+
         // EtherFi rolls up 32 ether into a validator and mints the associated NFT's
         vm.deal(owner, 4 ether);
         startHoax(alice);

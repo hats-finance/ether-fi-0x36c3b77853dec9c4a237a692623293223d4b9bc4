@@ -24,7 +24,6 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 import "./libraries/DepositRootGenerator.sol";
-import "forge-std/console.sol";
 
 contract StakingManager is
     Initializable,
@@ -436,7 +435,6 @@ contract StakingManager is
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     function _verifyNodeOperator(address _operator, ILiquidityPool.SourceOfFunds _source) internal returns (bool approved) {
-        console.log("Inside first verify");
         if(uint256(ILiquidityPool.SourceOfFunds.UNDEFINED) == uint256(_source)) {
             approved = true;
         } else {

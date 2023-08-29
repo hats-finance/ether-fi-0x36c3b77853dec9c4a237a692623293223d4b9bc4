@@ -657,7 +657,7 @@ contract TestSetup is Test {
 
         ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](2);
         approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
-        approvedTags[1] = ILiquidityPool.SourceOfFunds.EETH;
+        approvedTags[1] = ILiquidityPool.SourceOfFunds.ETHER_FAN;
 
         bool[] memory approvals = new bool[](2);
         approvals[0] = true;

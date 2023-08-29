@@ -9,7 +9,6 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "forge-std/console.sol";
 
 contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgradeable, PausableUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
@@ -133,7 +132,6 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     }
 
     function verifyOperator(address _operator, ILiquidityPool.SourceOfFunds _source) external view returns (bool approved) {
-        console.log("Inside second verify");
         approved = operatorApprovedTags[_operator][_source];
     }
 

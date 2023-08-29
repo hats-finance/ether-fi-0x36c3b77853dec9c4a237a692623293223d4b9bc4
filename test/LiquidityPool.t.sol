@@ -16,6 +16,7 @@ contract LiquidityPoolTest is TestSetup {
     uint256[] public processedBids;
     uint256[] public validatorArray;
     uint256[] public bidIds;
+    uint256[] public bids;
     bytes[] public sig;
     bytes32 public rootForApproval;
 
@@ -848,6 +849,98 @@ contract LiquidityPoolTest is TestSetup {
         //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
         vm.expectRevert("Not assigned");
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, chadProof, 8, ILiquidityPool.SourceOfFunds.EETH);
+    }
+
+    function test_OnlyApprovedOperatorsGetSelected() public {
+
+        startHoax(bob);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            _ipfsHash,
+            10000
+        );
+        auctionInstance.createBid{value: 1 ether}(
+            10,
+            0.1 ether
+        );
+        vm.stopPrank();
+
+        vm.prank(alice);
+        auctionInstance.createBid{value: 1 ether}(
+            10,
+            0.1 ether
+        );
+
+        startHoax(owner);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            _ipfsHash,
+            10000
+        );
+        auctionInstance.createBid{value: 1 ether}(
+            10,
+            0.1 ether
+        );
+        vm.stopPrank();
+
+        bids = new uint256[](10);
+
+        bids[0] = 3;
+        bids[1] = 4;
+        bids[2] = 5;
+        bids[3] = 11;
+        bids[4] = 12;
+        bids[5] = 14;
+        bids[6] = 34;
+        bids[7] = 36;
+        bids[8] = 38;
+        bids[9] = 8;
+
+        //Sets up the list of BNFT holders
+        setUpBnftHolders();
+
+        vm.startPrank(alice);
+
+        //Move to a random time in the future
+        vm.warp(13431561615);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 270 ether}(address(alice), aliceProof);
+
+        vm.stopPrank();
+        
+        //Move way more in the future
+        vm.warp(33431561615);
+    
+        vm.startPrank(alice);
+        
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 300 ether}(address(alice), aliceProof);
+
+        //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
+        (uint256 firstIndex, uint128 lastIndex, uint128 numForLastIndex) = liquidityPoolInstance.dutyForWeek();
+
+        assertEq(firstIndex, 5);
+        assertEq(lastIndex, 1);
+        assertEq(numForLastIndex,3);
+
+        //With the current timestamps and data, the following is true
+        //First Index = 5 
+        //Last Index = 1
+        //Num Validators For Last = 3
+
+        vm.stopPrank();
+
+        vm.prank(henry);
+        //Henry deposits and his index is 7, allowing him to deposit
+        uint256[] memory validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bids, henryProof, 7, ILiquidityPool.SourceOfFunds.EETH);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 4);
+        assertEq(validators[0], 3);
+        assertEq(validators[1], 4);
+        assertEq(validators[2], 5);
+        assertEq(validators[3], 8);
     }
 
     function test_DepositAsBnftHolderWithLargeSet() public {
