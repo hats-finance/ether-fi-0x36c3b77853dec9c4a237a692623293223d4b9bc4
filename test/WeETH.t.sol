@@ -148,7 +148,7 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(10 ether + 50 ether, 50 ether);
+        liquidityPoolInstance.rebase(10 ether);
 
         _transferTo(address(liquidityPoolInstance), 10 ether);
 
@@ -172,7 +172,7 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(60 ether + 50 ether, 60 ether);
+        liquidityPoolInstance.rebase(50 ether);
 
         _transferTo(address(liquidityPoolInstance), 50 ether);   
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 110 ether);
@@ -214,19 +214,17 @@ contract WeETHTest is TestSetup {
 
         // Rewards enter LP
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(1 ether + 3 ether, 3 ether);
+        liquidityPoolInstance.rebase(1 ether);
         _transferTo(address(liquidityPoolInstance), 1 ether);
         assertEq(address(liquidityPoolInstance).balance, 4 ether);
 
         // Alice now has 2.666666666666666666 ether
-        // Bob should still have 1 weETH because it doesn't rebase
+        // Bob should still have 1 ether weETH because it doesn't rebase
         assertEq(eETHInstance.balanceOf(alice), 2.666666666666666666 ether);
         assertEq(weEthInstance.balanceOf(bob), 1 ether);
 
         // Bob unwraps his weETH and should get his principal + rewards
         // Bob should get 1.333333333333333333 ether
-
-        /// @notice not sure where the 0.000000000000000001 ether goes to. Possible that it gets rounded down on conversion
         vm.startPrank(bob);
         weEthInstance.unwrap(1 ether);
         assertEq(eETHInstance.balanceOf(bob), 1.333333333333333332 ether);

@@ -345,6 +345,9 @@ contract TestSetup is Test {
         etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
         etherFiOracleInstance.initialize(2, 1024, 32, 12, 1);
         
+        etherFiOracleInstance.addCommitteeMember(alice);
+        etherFiOracleInstance.addCommitteeMember(bob);
+
         vm.stopPrank();
 
         vm.prank(alice);
@@ -352,6 +355,7 @@ contract TestSetup is Test {
         vm.startPrank(owner);
 
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
+        membershipNftInstance.setLiquidityPool(address(liquidityPoolInstance));
 
         tvlOracle = new TVLOracle(alice);
 
@@ -379,13 +383,13 @@ contract TestSetup is Test {
         uint256[] memory exitedValidators = new uint256[](1);
         uint256[] memory slashedValidators = new uint256[](1);
         uint256[] memory withdrawalRequestsToInvalidate = new uint256[](1);
-        reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
-        reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
-        reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
-        reportAtPeriod3 = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
-        reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
-        reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
-        reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0);
+        reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod3 = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
 
         vm.stopPrank();
 
@@ -591,6 +595,18 @@ contract TestSetup is Test {
         rootMigration2 = merkleMigration2.getRoot(dataForVerification2);
     }
 
+    function _upgradeMembershipManagerFromV0ToV1() internal {
+        assertEq(membershipManagerInstance.getImplementation(), address(membershipManagerImplementation));
+        membershipManagerV1Implementation = new MembershipManager();
+        vm.startPrank(owner);
+        membershipManagerInstance.upgradeTo(address(membershipManagerV1Implementation));
+        membershipManagerV1Instance = MembershipManager(payable(membershipManagerProxy));
+        assertEq(membershipManagerV1Instance.getImplementation(), address(membershipManagerV1Implementation));
+
+        membershipManagerV1Instance.initializePhase2();
+        vm.stopPrank();
+    }
+
     function _getDepositRoot() internal returns (bytes32) {
         bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
         return onchainDepositRoot;
@@ -621,7 +637,42 @@ contract TestSetup is Test {
         regulationsManagerInstance.updateAdmin(admin, true);
         membershipManagerInstance.updateAdmin(admin, true);
         membershipNftInstance.updateAdmin(admin, true);
+        managerInstance.updateAdmin(admin, true);
+        withdrawRequestNFTInstance.updateAdmin(admin, true);
 
         vm.stopPrank();
     }
+
+    function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report) internal {
+        bytes[] memory emptyBytes = new bytes[](0);
+        _executeAdminTasks(_report, emptyBytes, emptyBytes);
+    }
+
+    function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, bytes[] memory _pubKey, bytes[] memory _signature) internal {        
+        (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = etherFiOracleInstance.blockStampForNextReport();
+        _report.refSlotFrom = slotFrom;
+        _report.refSlotTo = slotTo;
+        _report.refBlockFrom = blockFrom;
+        _report.refBlockTo = slotTo; //
+
+        uint32 reportAtBlock = _report.refSlotTo + 3 * 32;
+        if (block.number < reportAtBlock) {
+            _moveClock(int256(reportAtBlock - block.number));
+        }
+
+        vm.prank(alice);
+        etherFiOracleInstance.submitReport(_report);
+        vm.prank(bob);
+        etherFiOracleInstance.submitReport(_report);
+    
+        vm.prank(alice);
+        etherFiAdminInstance.executeTasks(_report, _pubKey, _pubKey);
+    }
+
+    function _emptyOracleReport() internal returns (IEtherFiOracle.OracleReport memory report) {
+        uint256[] memory emptyVals = new uint256[](0);
+        uint32 consensusVersion = etherFiOracleInstance.consensusVersion();
+        report = IEtherFiOracle.OracleReport(consensusVersion, 0, 0, 0, 0, 0, emptyVals, emptyVals, emptyVals, emptyVals, emptyVals, 0, 0, 0, 0, 0, 0);
+    }
+
 }

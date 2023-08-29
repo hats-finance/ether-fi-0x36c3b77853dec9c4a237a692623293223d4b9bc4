@@ -131,6 +131,10 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         _unpause();
     }
 
+    function verifyOperator(address _operator, ILiquidityPool.SourceOfFunds _source) external view returns (bool approved) {
+        approved = operatorApprovedTags[_operator][_source];
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  GETTERS   ---------------------------------------
     //--------------------------------------------------------------------------------------

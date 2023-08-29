@@ -8,6 +8,8 @@ import "./interfaces/IStakingManager.sol";
 import "./interfaces/IDepositContract.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
+import "./interfaces/INodeOperatorManager.sol";
+import "./interfaces/ILiquidityPool.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./EtherFiNode.sol";
@@ -52,6 +54,7 @@ contract StakingManager is
     mapping(uint256 => address) public bidIdToStaker;
 
     address public DEPRECATED_admin;
+    address public nodeOperatorManager;
     mapping(address => bool) public admins;
 
     //--------------------------------------------------------------------------------------
@@ -100,14 +103,14 @@ contract StakingManager is
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof)
         external payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
     {
-        return batchDepositWithBidIds(_candidateBidIds, _merkleProof, msg.sender);
+        return batchDepositWithBidIds(_candidateBidIds, _merkleProof, msg.sender, ILiquidityPool.SourceOfFunds.UNDEFINED);
     }
 
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker)
-        public payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker, ILiquidityPool.SourceOfFunds _source)
+        public payable whenNotPaused correctStakeAmount returns (uint256[] memory)
     {
         verifyWhitelisted(msg.sender, _merkleProof);
 
@@ -124,8 +127,9 @@ contract StakingManager is
             ++i) {
             uint256 bidId = _candidateBidIds[i];
             address bidStaker = bidIdToStaker[bidId];
+            address operator = auctionManager.getBidOwner(bidId);
             bool isActive = auctionManager.isBidActive(bidId);
-            if (bidStaker == address(0) && isActive) {
+            if (bidStaker == address(0) && isActive && _verifyNodeOperator(operator, _source)) {
                 auctionManager.updateSelectedBidInformation(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
@@ -424,6 +428,14 @@ contract StakingManager is
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    function _verifyNodeOperator(address _operator, ILiquidityPool.SourceOfFunds _source) internal returns (bool approved) {
+        if(uint8(ILiquidityPool.SourceOfFunds.UNDEFINED) == uint8(_source)) {
+            approved = true;
+        } else {
+            approved = INodeOperatorManager(nodeOperatorManager).verifyOperator(_operator, _source);
+        }
+    }
 
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------

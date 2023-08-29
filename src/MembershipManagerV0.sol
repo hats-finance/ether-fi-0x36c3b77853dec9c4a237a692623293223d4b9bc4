@@ -255,9 +255,9 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
         _emitNftUpdateEvent(_tokenId);
     }
 
-    function rebase(uint256 _tvl, uint256 _balanceInLp) external {
+    function rebase(int128 _accruedRewards) external {
         _requireAdmin();
-        liquidityPool.rebase(_tvl, _balanceInLp);
+        liquidityPool.rebase(_accruedRewards);
         _distributeStakingRewards();
     }
 
@@ -271,7 +271,7 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
     function _distributeStakingRewards() internal {
         _requireAdmin();
-        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = globalIndexLibrary.calculateGlobalIndex(tierDeposits.length, address(this), address(liquidityPool));
+        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = globalIndexLibrary.calculateGlobalIndex(address(this), address(liquidityPool));
         uint128 totalShares = 0;
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             uint256 amounts = liquidityPool.amountForShare(adjustedShares[i]);

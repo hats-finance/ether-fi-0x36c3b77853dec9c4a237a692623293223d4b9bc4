@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 interface IEtherFiOracle {
     struct OracleReport {
-        uint16 consensusVersion;
+        uint32 consensusVersion;
         uint32 refSlotFrom;
         uint32 refSlotTo;
         uint32 refBlockFrom;
         uint32 refBlockTo;
-        int256 accruedRewards;
+        int128 accruedRewards;
         uint256[] validatorsToApprove;
         uint256[] liquidityPoolValidatorsToExit;
         uint256[] exitedValidators;
@@ -19,6 +19,7 @@ interface IEtherFiOracle {
         uint32 etherFanTargetAllocationWeight;
         uint32 pendingWithdrawalAmount;
         uint32 numPendingValidatorsRequestedToExit;
+        uint32 numValidatorsToSpinUp;
     }
 
     struct CommitteeMemberState {

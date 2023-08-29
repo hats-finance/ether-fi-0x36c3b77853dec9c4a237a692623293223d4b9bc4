@@ -148,6 +148,7 @@ contract DeployPhaseOnePointFiveScript is Script {
     function preMint() internal {
         bytes32[] memory emptyProof;
         uint256 minAmount = membershipManager.minimumAmountForMint();
-        membershipManager.wrapEthBatch{value: 100 * minAmount}(100, minAmount, 0, emptyProof);
+        // MembershipManager V1 does not have `wrapEthBatch`
+        // membershipManager.wrapEthBatch{value: 100 * minAmount}(100, minAmount, 0, emptyProof);
     }
 }

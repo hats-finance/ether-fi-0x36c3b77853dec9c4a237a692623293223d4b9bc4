@@ -67,6 +67,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
+    event Rebase(uint256 totalEthLocked, uint256 totalEEthShares);
 
     error InvalidAmount();
 
@@ -190,7 +191,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index, SourceOfFunds _source) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
@@ -213,7 +214,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender, _source);
 
         if (numberOfValidatorsToSpin > newValidators.length) {
             uint256 returnAmount = 2 ether * (numberOfValidatorsToSpin - newValidators.length);
@@ -330,15 +331,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     /// @notice Rebase by ether.fi
-    /// @param _tvl total value locked in ether.fi liquidity pool
-    /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
-    function rebase(uint256 _tvl, uint256 _balanceInLp) external {
+    function rebase(int128 _accruedRewards) public {
         require(msg.sender == address(membershipManager), "only membership manager can rebase");
-        require(address(this).balance == _balanceInLp, "the LP balance has changed.");
-        require(getTotalPooledEther() > 0, "rebasing when there is no pooled ether is not allowed.");
-        if (_tvl > type(uint128).max) revert InvalidAmount();
-        totalValueOutOfLp = uint128(_tvl - _balanceInLp);
-        totalValueInLp = uint128(_balanceInLp);
+        totalValueOutOfLp = uint128(int128(totalValueOutOfLp) + _accruedRewards);
+
+        emit Rebase(getTotalPooledEther(), eETH.totalShares());
     }
 
     /// @notice swap T-NFTs for ETH
