@@ -191,7 +191,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index, SourceOfFunds _source) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
@@ -214,7 +214,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender, _source);
 
         if (numberOfValidatorsToSpin > newValidators.length) {
             uint256 returnAmount = 2 ether * (numberOfValidatorsToSpin - newValidators.length);
@@ -228,7 +228,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return newValidators;
     }
 
-    //_registerValidatorDepositData takes in:
+    //  _registerValidatorDepositData takes in:
     //  publicKey: 
     //  signature: signature for 1 ether deposit
     //  depositDataRoot: data root for 31 ether deposit

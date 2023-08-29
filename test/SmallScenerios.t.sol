@@ -123,10 +123,22 @@ contract SmallScenariosTest is TestSetup {
 
         bytes32[] memory proof = getWhitelistMerkleProof(3);
 
+        address[] memory users = new address[](1);
+        users[0] = address(bob);
+
+        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](1);
+        approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
+
+        bool[] memory approvals = new bool[](1);
+        approvals[0] = true;
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
+
         // EtherFi rolls up 32 ether into a validator and mints the associated NFT's
         vm.deal(owner, 4 ether);
         startHoax(alice);
-        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, proof, 0);
+        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, proof, 0, ILiquidityPool.SourceOfFunds.EETH);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -382,8 +394,7 @@ contract SmallScenariosTest is TestSetup {
         startHoax(dan);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            danProof,
-            dan
+            danProof
         );
 
         (amount, , , isActive) = auctionInstance.bids(chadBidIds[4]);
@@ -429,8 +440,7 @@ contract SmallScenariosTest is TestSetup {
 
         uint256[] memory gregProcessedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 192 ether}(
             bidIdArray2,
-            gregProof,
-            greg
+            gregProof
         );
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {

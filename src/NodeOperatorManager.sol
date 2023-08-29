@@ -32,7 +32,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     mapping(address => bool) public registered;
 
     mapping(address => bool) public admins;
-    mapping(address => mapping(LiquidityPool.SourceOfFunds => bool)) public operatorApprovedTags;
+    mapping(address => mapping(ILiquidityPool.SourceOfFunds => bool)) public operatorApprovedTags;
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -129,6 +129,10 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     //Unpauses the contract
     function unPauseContract() external onlyAdmin {
         _unpause();
+    }
+
+    function isEligibleToRunValidatorsForSourceOfFund(address _operator, ILiquidityPool.SourceOfFunds _source) external view returns (bool approved) {
+        approved = operatorApprovedTags[_operator][_source];
     }
 
     //--------------------------------------------------------------------------------------
