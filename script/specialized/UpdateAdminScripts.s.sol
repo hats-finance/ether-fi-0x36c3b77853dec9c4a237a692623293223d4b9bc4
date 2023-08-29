@@ -39,6 +39,7 @@ contract UpdateAdmins is Script {
         address withdrawRequestNFTAddress = addressProvider.getContractAddress("WithdrawRequestNFT");
 
         address admin = vm.envAddress("ADMIN");
+        
         EtherFiNodesManager(payable(etherFiNodesManager)).updateAdmin(admin, true); 
         // ProtocolRevenueManager(payable(protocolRevenueManager)).updateAdmin(admin);  // DEPRECATED
         AuctionManager(auctionManager).updateAdmin(admin, true); 

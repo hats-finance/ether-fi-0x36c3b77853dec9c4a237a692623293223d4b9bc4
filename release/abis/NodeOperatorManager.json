@@ -355,6 +355,30 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "_operator",
+        "type": "address"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "_source",
+        "type": "uint8"
+      }
+    ],
+    "name": "isEligibleToRunValidatorsForSourceOfFund",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "approved",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_user",
         "type": "address"
       }

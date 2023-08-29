@@ -384,6 +384,11 @@
         "internalType": "address",
         "name": "_staker",
         "type": "address"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "_source",
+        "type": "uint8"
       }
     ],
     "name": "batchDepositWithBidIds",
@@ -641,6 +646,19 @@
   },
   {
     "inputs": [],
+    "name": "nodeOperatorManager",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "nodesManager",
     "outputs": [
       {
@@ -792,6 +810,19 @@
       }
     ],
     "name": "setMaxBatchDepositSize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_nodeOperateManager",
+        "type": "address"
+      }
+    ],
+    "name": "setNodeOperatorManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
