@@ -103,51 +103,16 @@ contract StakingManager is
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof)
         external payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
     {
-        return batchDepositWithBidIds(_candidateBidIds, _merkleProof, msg.sender, ILiquidityPool.SourceOfFunds.UNDEFINED);
+        return _depositWithBidIds(_candidateBidIds, _merkleProof, msg.sender, ILiquidityPool.SourceOfFunds.UNDEFINED);
     }
 
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker, ILiquidityPool.SourceOfFunds _source)
-        public payable whenNotPaused correctStakeAmount returns (uint256[] memory)
+        public payable whenNotPaused nonReentrant correctStakeAmount returns (uint256[] memory)
     {
-        verifyWhitelisted(msg.sender, _merkleProof);
-
-        require(_candidateBidIds.length > 0, "No bid Ids provided");
-        uint256 numberOfDeposits = msg.value / stakeAmount;
-        require(numberOfDeposits <= maxBatchDepositSize, "Batch too large");
-        require(auctionManager.numberOfActiveBids() >= numberOfDeposits, "No bids available at the moment");
-
-        uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
-        uint256 processedBidIdsCount = 0;
-
-        for (uint256 i = 0;
-            i < _candidateBidIds.length && processedBidIdsCount < numberOfDeposits;
-            ++i) {
-            uint256 bidId = _candidateBidIds[i];
-            address bidStaker = bidIdToStaker[bidId];
-            address operator = auctionManager.getBidOwner(bidId);
-            bool isActive = auctionManager.isBidActive(bidId);
-            if (bidStaker == address(0) && isActive && _verifyNodeOperator(operator, _source)) {
-                auctionManager.updateSelectedBidInformation(bidId);
-                processedBidIds[processedBidIdsCount] = bidId;
-                processedBidIdsCount++;
-                _processDeposit(bidId, _staker);
-            }
-        }
-
-        // resize the processedBidIds array to the actual number of processed bid IDs
-        assembly {
-            mstore(processedBidIds, processedBidIdsCount)
-        }
-
-        uint256 unMatchedBidCount = numberOfDeposits - processedBidIdsCount;
-        if (unMatchedBidCount > 0) {
-            _refundDeposit(msg.sender, stakeAmount * unMatchedBidCount);
-        }
-
-        return processedBidIds;
+        return _depositWithBidIds(_candidateBidIds, _merkleProof, _staker, _source);
     }
 
     /// @notice Batch creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
@@ -338,6 +303,50 @@ contract StakingManager is
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
 
+    function _depositWithBidIds(
+        uint256[] calldata _candidateBidIds, 
+        bytes32[] calldata _merkleProof, 
+        address _staker, 
+        ILiquidityPool.SourceOfFunds _source
+    ) internal returns (uint256[] memory){
+        verifyWhitelisted(msg.sender, _merkleProof);
+
+        require(_candidateBidIds.length > 0, "No bid Ids provided");
+        uint256 numberOfDeposits = msg.value / stakeAmount;
+        require(numberOfDeposits <= maxBatchDepositSize, "Batch too large");
+        require(auctionManager.numberOfActiveBids() >= numberOfDeposits, "No bids available at the moment");
+
+        uint256[] memory processedBidIds = new uint256[](numberOfDeposits);
+        uint256 processedBidIdsCount = 0;
+
+        for (uint256 i = 0;
+            i < _candidateBidIds.length && processedBidIdsCount < numberOfDeposits;
+            ++i) {
+            uint256 bidId = _candidateBidIds[i];
+            address bidStaker = bidIdToStaker[bidId];
+            address operator = auctionManager.getBidOwner(bidId);
+            bool isActive = auctionManager.isBidActive(bidId);
+            if (bidStaker == address(0) && isActive && _verifyNodeOperator(operator, _source)) {
+                auctionManager.updateSelectedBidInformation(bidId);
+                processedBidIds[processedBidIdsCount] = bidId;
+                processedBidIdsCount++;
+                _processDeposit(bidId, _staker);
+            }
+        }
+
+        // resize the processedBidIds array to the actual number of processed bid IDs
+        assembly {
+            mstore(processedBidIds, processedBidIdsCount)
+        }
+
+        uint256 unMatchedBidCount = numberOfDeposits - processedBidIdsCount;
+        if (unMatchedBidCount > 0) {
+            _refundDeposit(msg.sender, stakeAmount * unMatchedBidCount);
+        }
+
+        return processedBidIds;
+    }
+
     /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
     /// @param _validatorId ID of the validator to register
     /// @param _bNftRecipient The address to receive the minted B-NFT
@@ -438,7 +447,7 @@ contract StakingManager is
         if(uint256(ILiquidityPool.SourceOfFunds.UNDEFINED) == uint256(_source)) {
             approved = true;
         } else {
-            approved = INodeOperatorManager(nodeOperatorManager).verifyOperator(_operator, _source);
+            approved = INodeOperatorManager(nodeOperatorManager).isEligibleToRunValidatorsForSourceOfFund(_operator, _source);
         }
     }
 

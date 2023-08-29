@@ -858,7 +858,7 @@ contract LiquidityPoolTest is TestSetup {
             _ipfsHash,
             10000
         );
-        auctionInstance.createBid{value: 1 ether}(
+        uint256[] memory bobBidIds = auctionInstance.createBid{value: 1 ether}(
             10,
             0.1 ether
         );
@@ -875,7 +875,7 @@ contract LiquidityPoolTest is TestSetup {
             _ipfsHash,
             10000
         );
-        auctionInstance.createBid{value: 1 ether}(
+        uint256[] memory ownerBidIds = auctionInstance.createBid{value: 1 ether}(
             10,
             0.1 ether
         );
@@ -883,16 +883,16 @@ contract LiquidityPoolTest is TestSetup {
 
         bids = new uint256[](10);
 
-        bids[0] = 3;
-        bids[1] = 4;
-        bids[2] = 5;
-        bids[3] = 11;
-        bids[4] = 12;
-        bids[5] = 14;
-        bids[6] = 34;
-        bids[7] = 36;
-        bids[8] = 38;
-        bids[9] = 8;
+        bids[0] = bidIds[2];
+        bids[1] = bidIds[3];
+        bids[2] = bidIds[4];
+        bids[3] = bobBidIds[1];
+        bids[4] = bobBidIds[2];
+        bids[5] = bobBidIds[4];
+        bids[6] = ownerBidIds[4];
+        bids[7] = ownerBidIds[6];
+        bids[8] = ownerBidIds[9];
+        bids[9] = bidIds[7];
 
         //Sets up the list of BNFT holders
         setUpBnftHolders();
@@ -907,7 +907,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 270 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 570 ether}(address(alice), aliceProof);
 
         vm.stopPrank();
         
@@ -915,9 +915,6 @@ contract LiquidityPoolTest is TestSetup {
         vm.warp(33431561615);
     
         vm.startPrank(alice);
-        
-        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 300 ether}(address(alice), aliceProof);
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         (uint256 firstIndex, uint128 lastIndex, uint128 numForLastIndex) = liquidityPoolInstance.dutyForWeek();
@@ -937,10 +934,10 @@ contract LiquidityPoolTest is TestSetup {
         //Henry deposits and his index is 7, allowing him to deposit
         uint256[] memory validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bids, henryProof, 7, ILiquidityPool.SourceOfFunds.EETH);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 4);
-        assertEq(validators[0], 3);
-        assertEq(validators[1], 4);
-        assertEq(validators[2], 5);
-        assertEq(validators[3], 8);
+        assertEq(validators[0], bidIds[2]);
+        assertEq(validators[1], bidIds[3]);
+        assertEq(validators[2], bidIds[4]);
+        assertEq(validators[3], bidIds[7]);
     }
 
     function test_DepositAsBnftHolderWithLargeSet() public {
