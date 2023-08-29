@@ -333,9 +333,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @notice Rebase by ether.fi
     function rebase(int128 _accruedRewards) public {
         require(msg.sender == address(membershipManager), "only membership manager can rebase");
-        require(getTotalPooledEther() > 0, "rebasing when there is no pooled ether is not allowed.");
-        int128 newTVL = int128(uint128(getTotalPooledEther())) + _accruedRewards;
-        totalValueOutOfLp = uint128(newTVL) - totalValueInLp;
+        totalValueOutOfLp = uint128(int128(totalValueOutOfLp) + _accruedRewards);
 
         emit Rebase(getTotalPooledEther(), eETH.totalShares());
     }
