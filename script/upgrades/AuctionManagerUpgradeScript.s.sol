@@ -20,9 +20,9 @@ contract AuctionManagerUpgrade is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         AuctionManager AuctionManagerInstance = AuctionManager(AuctionManagerProxyAddress);
-        AuctionManager AuctionManagerV2Implementation = new AuctionManager();
+        AuctionManager AuctionManagerImplementation = new AuctionManager();
 
-        AuctionManagerInstance.upgradeTo(address(AuctionManagerV2Implementation));
+        AuctionManagerInstance.upgradeTo(address(AuctionManagerImplementation));
 
         vm.stopBroadcast();
     }

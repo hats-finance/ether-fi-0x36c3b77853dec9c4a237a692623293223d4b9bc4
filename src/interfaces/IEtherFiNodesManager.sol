@@ -145,4 +145,6 @@ interface IEtherFiNodesManager {
     function fullWithdraw(uint256 _validatorId) external;
 
     function fullWithdrawBatch(uint256[] calldata _validatorIds) external;
+
+    function updateAdmin(address _address, bool _isAdmin) external;
 }

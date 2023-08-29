@@ -285,6 +285,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.setTnft(address(TNFTInstance));
         liquidityPoolInstance.updateAdmin(alice, true);
 
+        // TODO - not sure what `name` and `versiona` are for
         eETHImplementation = new EETH();
         vm.expectRevert("Initializable: contract is already initialized");
         eETHImplementation.initialize(payable(address(liquidityPoolInstance)));
@@ -636,9 +637,7 @@ contract TestSetup is Test {
         auctionInstance.updateAdmin(admin, true); 
         stakingManagerInstance.updateAdmin(admin, true); 
         liquidityPoolInstance.updateAdmin(admin, true);
-        regulationsManagerInstance.updateAdmin(admin, true);
         membershipManagerInstance.updateAdmin(admin, true);
-        membershipNftInstance.updateAdmin(admin, true);
         managerInstance.updateAdmin(admin, true);
         withdrawRequestNFTInstance.updateAdmin(admin, true);
 

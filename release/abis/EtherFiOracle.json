@@ -388,9 +388,9 @@
       {
         "components": [
           {
-            "internalType": "uint16",
+            "internalType": "uint32",
             "name": "consensusVersion",
-            "type": "uint16"
+            "type": "uint32"
           },
           {
             "internalType": "uint32",
@@ -413,34 +413,34 @@
             "type": "uint32"
           },
           {
-            "internalType": "int256",
+            "internalType": "int128",
             "name": "accruedRewards",
-            "type": "int256"
+            "type": "int128"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "validatorsToApprove",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "liquidityPoolValidatorsToExit",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "exitedValidators",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "slashedValidators",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "withdrawalRequestsToInvalidate",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
             "internalType": "uint32",
@@ -455,6 +455,21 @@
           {
             "internalType": "uint32",
             "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "pendingWithdrawalAmount",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "numPendingValidatorsRequestedToExit",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "numValidatorsToSpinUp",
             "type": "uint32"
           }
         ],
@@ -534,19 +549,6 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "lastHandledReportRefSlot",
-    "outputs": [
-      {
-        "internalType": "uint32",
-        "name": "",
-        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -757,9 +759,9 @@
       {
         "components": [
           {
-            "internalType": "uint16",
+            "internalType": "uint32",
             "name": "consensusVersion",
-            "type": "uint16"
+            "type": "uint32"
           },
           {
             "internalType": "uint32",
@@ -782,34 +784,34 @@
             "type": "uint32"
           },
           {
-            "internalType": "int256",
+            "internalType": "int128",
             "name": "accruedRewards",
-            "type": "int256"
+            "type": "int128"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "validatorsToApprove",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "liquidityPoolValidatorsToExit",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "exitedValidators",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "slashedValidators",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "withdrawalRequestsToInvalidate",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
             "internalType": "uint32",
@@ -824,6 +826,21 @@
           {
             "internalType": "uint32",
             "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "pendingWithdrawalAmount",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "numPendingValidatorsRequestedToExit",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "numValidatorsToSpinUp",
             "type": "uint32"
           }
         ],
@@ -892,9 +909,9 @@
       {
         "components": [
           {
-            "internalType": "uint16",
+            "internalType": "uint32",
             "name": "consensusVersion",
-            "type": "uint16"
+            "type": "uint32"
           },
           {
             "internalType": "uint32",
@@ -917,34 +934,34 @@
             "type": "uint32"
           },
           {
-            "internalType": "int256",
+            "internalType": "int128",
             "name": "accruedRewards",
-            "type": "int256"
+            "type": "int128"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "validatorsToApprove",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "liquidityPoolValidatorsToExit",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "exitedValidators",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "slashedValidators",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
-            "internalType": "uint32[]",
+            "internalType": "uint256[]",
             "name": "withdrawalRequestsToInvalidate",
-            "type": "uint32[]"
+            "type": "uint256[]"
           },
           {
             "internalType": "uint32",
@@ -959,6 +976,21 @@
           {
             "internalType": "uint32",
             "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "pendingWithdrawalAmount",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "numPendingValidatorsRequestedToExit",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "numValidatorsToSpinUp",
             "type": "uint32"
           }
         ],
