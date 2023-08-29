@@ -5,6 +5,7 @@ import "forge-std/console.sol";
 
 import "../src/interfaces/IStakingManager.sol";
 import "../src/interfaces/IEtherFiNode.sol";
+import "../src/interfaces/ILiquidityPool.sol";
 import "../src/EtherFiNodesManager.sol";
 import "../src/StakingManager.sol";
 import "../src/NodeOperatorManager.sol";
@@ -355,6 +356,7 @@ contract TestSetup is Test {
         vm.startPrank(owner);
 
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
+        membershipNftInstance.setLiquidityPool(address(liquidityPoolInstance));
 
         tvlOracle = new TVLOracle(alice);
 
@@ -423,7 +425,6 @@ contract TestSetup is Test {
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMembershipManager(address(membershipManagerInstance));
         liquidityPoolInstance.updateAdmin(alice, true);
-        liquidityPoolInstance.updateBNftTreasury(owner);
 
         vm.stopPrank();
 
@@ -593,6 +594,18 @@ contract TestSetup is Test {
         dataForVerification2.push(keccak256(abi.encodePacked(dan, uint256(1 ether), uint256(96768), uint32(0))));
 
         rootMigration2 = merkleMigration2.getRoot(dataForVerification2);
+    }
+
+    function _upgradeMembershipManagerFromV0ToV1() internal {
+        assertEq(membershipManagerInstance.getImplementation(), address(membershipManagerImplementation));
+        membershipManagerV1Implementation = new MembershipManager();
+        vm.startPrank(owner);
+        membershipManagerInstance.upgradeTo(address(membershipManagerV1Implementation));
+        membershipManagerV1Instance = MembershipManager(payable(membershipManagerProxy));
+        assertEq(membershipManagerV1Instance.getImplementation(), address(membershipManagerV1Implementation));
+
+        membershipManagerV1Instance.initializePhase2();
+        vm.stopPrank();
     }
 
     function _getDepositRoot() internal returns (bytes32) {

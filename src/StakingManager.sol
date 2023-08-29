@@ -11,6 +11,7 @@ import "./interfaces/IEtherFiNodesManager.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 import "./EtherFiNode.sol";
+import "./LiquidityPool.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/beacon/IBeaconUpgradeable.sol";
@@ -192,12 +193,13 @@ contract StakingManager is
         bytes[] calldata _signature
     ) external onlyAdmin {
         for (uint256 x; x < _validatorId.length; ++x) {
+            nodesManager.setEtherFiNodePhase(_validatorId[x], IEtherFiNode.VALIDATOR_PHASE.LIVE);
             // Deposit to the Beacon Chain
             bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
-            bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
-            // TODO: will revisit this later; should we have on-chain verification as well for depositDataRoot?
-            // require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
-            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], depositDataRoot);        
+            bytes32 beaconChainDepositRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
+            bytes32 registeredDataRoot = LiquidityPool(payable(liquidityPoolContract)).depositDataRootForApprovalDeposits(_validatorId[x]);
+            require(beaconChainDepositRoot == registeredDataRoot, "Incorrect deposit data root");
+            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], beaconChainDepositRoot);        
         }
     }
 
@@ -348,7 +350,11 @@ contract StakingManager is
         bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, _depositAmount);
         require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
 
-        nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
+        if(_tNftRecipient == liquidityPoolContract) {
+            nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL);
+        } else {
+            nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.LIVE);
+        }
 
         // Deposit to the Beacon Chain
         depositContractEth2.deposit{value: _depositAmount}(_depositData.publicKey, withdrawalCredentials, _depositData.signature, depositDataRoot);
