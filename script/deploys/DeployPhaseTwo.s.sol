@@ -56,7 +56,7 @@ contract DeployPhaseTwoScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
 
-        // deploy_WithdrawRequestNFT();
+        deploy_WithdrawRequestNFT();
 
         deploy_EtherFiOracle();
 
