@@ -183,7 +183,7 @@ contract NodeOperatorManagerTest is TestSetup {
 
         assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), ILiquidityPool.SourceOfFunds.EETH), false);
         assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), ILiquidityPool.SourceOfFunds.ETHER_FAN), false);
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), ILiquidityPool.SourceOfFunds.EETH), false);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), ILiquidityPool.SourceOfFunds.EETH), true);
         assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), ILiquidityPool.SourceOfFunds.ETHER_FAN), true);
 
         //Lets update again and make sure it changes

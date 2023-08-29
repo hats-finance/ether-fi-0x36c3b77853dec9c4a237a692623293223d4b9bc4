@@ -395,6 +395,8 @@ contract TestSetup is Test {
 
         // Setup dependencies
         vm.startPrank(alice);
+        stakingManagerInstance.setNodeOperatorManager(address(nodeOperatorManagerInstance));
+        _approveNodeOperators();
         _setUpNodeOperatorWhitelist();
         vm.stopPrank();
 
@@ -646,6 +648,22 @@ contract TestSetup is Test {
     function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report) internal {
         bytes[] memory emptyBytes = new bytes[](0);
         _executeAdminTasks(_report, emptyBytes, emptyBytes);
+    }
+
+    function _approveNodeOperators() internal {
+        address[] memory users = new address[](2);
+        users[0] = address(alice);
+        users[1] = address(bob);
+
+        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](2);
+        approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
+        approvedTags[1] = ILiquidityPool.SourceOfFunds.EETH;
+
+        bool[] memory approvals = new bool[](2);
+        approvals[0] = true;
+        approvals[1] = true;
+
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
     }
 
     function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, bytes[] memory _pubKey, bytes[] memory _signature) internal {        

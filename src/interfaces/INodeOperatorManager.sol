@@ -35,6 +35,6 @@ interface INodeOperatorManager {
 
     function fetchNextKeyIndex(address _user) external returns (uint64);
 
-    function verifyOperator(address _operator, ILiquidityPool.SourceOfFunds _source) external view returns (bool approved);
+    function verifyOperator(address _operator, LiquidityPool.SourceOfFunds _source) external view returns (bool approved);
 
 }

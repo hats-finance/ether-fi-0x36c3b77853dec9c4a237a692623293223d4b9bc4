@@ -327,7 +327,7 @@ contract StakingManagerTest is TestSetup {
         vm.prank(alice);
         stakingManagerInstance.pauseContract();
 
-        vm.prank(alice);
+        hoax(alice);
         vm.expectRevert("Pausable: paused");
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
