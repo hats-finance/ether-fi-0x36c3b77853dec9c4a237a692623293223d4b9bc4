@@ -287,7 +287,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.updateAdmin(alice, true);
 
         // TODO - not sure what `name` and `versiona` are for
-        eETHImplementation = new EETH("", "");
+        eETHImplementation = new EETH();
         vm.expectRevert("Initializable: contract is already initialized");
         eETHImplementation.initialize(payable(address(liquidityPoolInstance)));
 

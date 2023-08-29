@@ -35,9 +35,9 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC20P
     bytes32 private immutable _TYPE_HASH;
 
     // TODO: Figure our what `name` and `version` are for
-    constructor(string memory name, string memory version) { 
-        bytes32 hashedName = keccak256(bytes(name));
-        bytes32 hashedVersion = keccak256(bytes(version));
+    constructor() { 
+        bytes32 hashedName = keccak256("EETH");
+        bytes32 hashedVersion = keccak256("1");
         bytes32 typeHash = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
         _HASHED_NAME = hashedName;
         _HASHED_VERSION = hashedVersion;

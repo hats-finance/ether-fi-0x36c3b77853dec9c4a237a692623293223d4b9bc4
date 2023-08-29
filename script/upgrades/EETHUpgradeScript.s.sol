@@ -20,7 +20,7 @@ contract EETHUpgrade is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         EETH EETHInstance = EETH(EETHProxyAddress);
-        EETH EETHV2Implementation = new EETH("", "");
+        EETH EETHV2Implementation = new EETH();
 
         EETHInstance.upgradeTo(address(EETHV2Implementation));
 
