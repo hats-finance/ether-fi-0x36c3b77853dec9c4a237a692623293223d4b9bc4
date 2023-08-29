@@ -197,7 +197,8 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
                 _report.eEthTargetAllocationWeight,
                 _report.etherFanTargetAllocationWeight,
                 _report.pendingWithdrawalAmount,
-                _report.numPendingValidatorsRequestedToExit
+                _report.numPendingValidatorsRequestedToExit,
+                _report.numValidatorsToSpinUp
             )
         );
         return keccak256(abi.encodePacked(chunk1, chunk2, chunk3));

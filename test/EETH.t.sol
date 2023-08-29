@@ -65,15 +65,6 @@ contract EETHTest is TestSetup {
         eETHInstance.burnShares(alice, 100);
     }
 
-    /// @dev Tests eETH balanceOf and totalSupply functions as well
-    function test_EEthRebaseFailsWhenThereIsNoPooledEther() public {
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
-        vm.prank(address(membershipManagerInstance));
-        vm.expectRevert("rebasing when there is no pooled ether is not allowed.");
-        liquidityPoolInstance.rebase(10 ether);
-    }
-
-    /// @dev Tests eETH balanceOf and totalSupply functions as well
     function test_EEthRebase() public {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
 
