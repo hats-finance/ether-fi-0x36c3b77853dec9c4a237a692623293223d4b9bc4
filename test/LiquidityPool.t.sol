@@ -288,7 +288,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(owner);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(2 ether + 4 ether, 4 ether);
+        liquidityPoolInstance.rebase(2 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
 
@@ -357,6 +357,13 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(address(alice).balance, aliceBalance);
         assertEq(address(stakingManagerInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 60 ether);
+    }
+
+    function test_sendExitRequestFails() public {
+        uint256[] memory newValidators = new uint256[](10);
+        vm.expectRevert("Caller is not the admin");
+        vm.prank(owner);
+        liquidityPoolInstance.sendExitRequests(newValidators);
     }
 
     function test_ProcessNodeExit() public {
@@ -457,16 +464,9 @@ contract LiquidityPoolTest is TestSetup {
         slashingPenalties[0] = 0.5 ether;
         slashingPenalties[1] = 0.5 ether;
 
+        // The penalties are applied to the B-NFT holders, not T-NFT holders
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(64 ether - 1 ether, 0 ether);
-
-        vm.expectRevert("validator node is not exited");
-        vm.prank(owner);
-        managerInstance.fullWithdrawBatch(newValidators);
-
-        vm.expectRevert("Caller is not the admin");
-        vm.prank(owner);
-        liquidityPoolInstance.sendExitRequests(newValidators);
+        liquidityPoolInstance.rebase(0 ether);
 
         vm.warp(1681075815 - 7 * 24 * 3600);   // Sun Apr 02 2023 21:30:15 UTC
         vm.prank(alice);
@@ -488,7 +488,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(alice);
         managerInstance.processNodeExit(newValidators, exitRequestTimestamps);
 
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 64 ether - 1 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         assertTrue(managerInstance.isExited(newValidators[0]));
         assertTrue(managerInstance.isExited(newValidators[1]));
 
@@ -496,10 +496,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(henry);
         managerInstance.fullWithdrawBatch(newValidators);
 
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 63 ether);
-
-        //NOT SURE WHY THIS IS NOW 60 ETHER
-        //assertEq(address(liquidityPoolInstance).balance, 60.045312500000000000 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         assertEq(address(liquidityPoolInstance).balance, 60 ether);
     }
 
@@ -549,7 +546,7 @@ contract LiquidityPoolTest is TestSetup {
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 100 ether);
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(103 ether, 100 ether);
+        liquidityPoolInstance.rebase(3 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 103 ether);
 
         vm.deal(alice, 3 ether);
@@ -567,6 +564,7 @@ contract LiquidityPoolTest is TestSetup {
         uint256[] memory tvls = new uint256[](4);
 
         for (uint256 i = 0; i < validatorIds.length; i++) {
+            // Beacon Balance < 32 ether means that the validator got slashed
             uint256 beaconBalance = 16 ether * (i + 1) + 1 ether;
             (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury)
                 = managerInstance.calculateTVL(validatorIds[i], beaconBalance);
@@ -575,16 +573,12 @@ contract LiquidityPoolTest is TestSetup {
             tvls[2] += toBnft;
             tvls[3] += toTreasury;
         }
-
-        assertEq(address(liquidityPoolInstance).balance, 0 ether);
-        assertEq(eETHInstance.totalSupply(), 60 ether);
-        assertEq(eETHInstance.balanceOf(bob), 60 ether);
-
         uint256 eEthTVL = tvls[1];
 
-        vm.startPrank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(eEthTVL, 0 ether);
-        vm.stopPrank();
+        // Reflect the loss in TVL by rebasing
+        int128 lossInTVL = int128(uint128(eEthTVL)) - int128(uint128(60 ether));
+        vm.prank(address(membershipManagerInstance));
+        liquidityPoolInstance.rebase(lossInTVL);
 
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
         assertEq(eETHInstance.totalSupply(), eEthTVL);

@@ -67,6 +67,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
+    event Rebase(uint256 totalEthLocked, uint256 totalEEthShares);
 
     error InvalidAmount();
 
@@ -330,15 +331,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     /// @notice Rebase by ether.fi
-    /// @param _tvl total value locked in ether.fi liquidity pool
-    /// @param _balanceInLp the balance of the LP contract when 'tvl' was calculated off-chain
-    function rebase(uint256 _tvl, uint256 _balanceInLp) external {
+    function rebase(int128 _accruedRewards) public {
         require(msg.sender == address(membershipManager), "only membership manager can rebase");
-        require(address(this).balance == _balanceInLp, "the LP balance has changed.");
         require(getTotalPooledEther() > 0, "rebasing when there is no pooled ether is not allowed.");
-        if (_tvl > type(uint128).max) revert InvalidAmount();
-        totalValueOutOfLp = uint128(_tvl - _balanceInLp);
-        totalValueInLp = uint128(_balanceInLp);
+        int128 newTVL = int128(uint128(getTotalPooledEther())) + _accruedRewards;
+        totalValueOutOfLp = uint128(newTVL) - totalValueInLp;
+
+        emit Rebase(getTotalPooledEther(), eETH.totalShares());
     }
 
     /// @notice swap T-NFTs for ETH

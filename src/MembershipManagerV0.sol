@@ -255,9 +255,9 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
         _emitNftUpdateEvent(_tokenId);
     }
 
-    function rebase(uint256 _tvl, uint256 _balanceInLp) external {
+    function rebase(int128 _accruedRewards) external {
         _requireAdmin();
-        liquidityPool.rebase(_tvl, _balanceInLp);
+        liquidityPool.rebase(_accruedRewards);
         _distributeStakingRewards();
     }
 
