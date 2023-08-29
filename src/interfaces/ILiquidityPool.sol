@@ -16,7 +16,8 @@ interface ILiquidityPool {
     enum SourceOfFunds {
         UNDEFINED,
         EETH,
-        ETHER_FAN
+        ETHER_FAN,
+        DELEGATED_STAKING
     }
 
     struct FundStatistics {

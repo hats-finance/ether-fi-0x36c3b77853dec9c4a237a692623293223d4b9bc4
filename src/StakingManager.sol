@@ -103,7 +103,7 @@ contract StakingManager is
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof)
         external payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
     {
-        return _depositWithBidIds(_candidateBidIds, _merkleProof, msg.sender, ILiquidityPool.SourceOfFunds.UNDEFINED);
+        return _depositWithBidIds(_candidateBidIds, _merkleProof, msg.sender, ILiquidityPool.SourceOfFunds.DELEGATED_STAKING);
     }
 
     /// @notice Allows depositing multiple stakes at once
@@ -444,7 +444,7 @@ contract StakingManager is
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     function _verifyNodeOperator(address _operator, ILiquidityPool.SourceOfFunds _source) internal returns (bool approved) {
-        if(uint256(ILiquidityPool.SourceOfFunds.UNDEFINED) == uint256(_source)) {
+        if(uint256(ILiquidityPool.SourceOfFunds.DELEGATED_STAKING) == uint256(_source)) {
             approved = true;
         } else {
             approved = INodeOperatorManager(nodeOperatorManager).isEligibleToRunValidatorsForSourceOfFund(_operator, _source);
