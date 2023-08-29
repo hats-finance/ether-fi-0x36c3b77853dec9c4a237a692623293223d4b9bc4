@@ -227,7 +227,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return newValidators;
     }
 
-    //_registerValidatorDepositData takes in:
+    //  _registerValidatorDepositData takes in:
     //  publicKey: 
     //  signature: signature for 1 ether deposit
     //  depositDataRoot: data root for 31 ether deposit

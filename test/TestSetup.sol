@@ -37,7 +37,6 @@ import "../src/MembershipManagerV0.sol";
 import "../src/EtherFiOracle.sol";
 import "../src/EtherFiAdmin.sol";
 
-
 contract TestSetup is Test {
     uint256 public constant kwei = 10 ** 3;
     uint256 public slippageLimit = 50;
