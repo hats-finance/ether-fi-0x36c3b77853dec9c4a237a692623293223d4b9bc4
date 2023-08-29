@@ -28,4 +28,6 @@ interface IStakingManager {
     function batchCancelDeposit(uint256[] calldata _validatorIds) external;
 
     function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) external;
+
+    function updateAdmin(address _address, bool _isAdmin) external;
 }

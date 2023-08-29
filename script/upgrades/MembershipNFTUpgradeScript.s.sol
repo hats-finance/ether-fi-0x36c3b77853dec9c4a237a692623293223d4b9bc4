@@ -22,7 +22,7 @@ contract MembershipNFTUpgrade is Script {
         MembershipNFT membershipNFTInstance = MembershipNFT(payable(membershipNFTProxy));
         MembershipNFT membershipNFTV2Implementation = new MembershipNFT();
 
-        // membershipNFTInstance.upgradeTo(address(membershipNFTV2Implementation));
+        membershipNFTInstance.upgradeTo(address(membershipNFTV2Implementation));
         
         vm.stopBroadcast();
     }

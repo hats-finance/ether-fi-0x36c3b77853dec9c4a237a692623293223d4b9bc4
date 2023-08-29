@@ -61,6 +61,12 @@
         "internalType": "bytes",
         "name": "pubKey",
         "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "depositRoot",
+        "type": "bytes32"
       }
     ],
     "name": "BatchRegisteredAsBnftHolder",
@@ -129,6 +135,44 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "source",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "FundsDeposited",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "source",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "FundsWithdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "uint8",
         "name": "version",
         "type": "uint8"
@@ -161,12 +205,50 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "totalEthLocked",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalEEthShares",
+        "type": "uint256"
+      }
+    ],
+    "name": "Rebase",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "address",
         "name": "userAddress",
         "type": "address"
       }
     ],
     "name": "RemovedFromWhitelist",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "eEthWeight",
+        "type": "uint128"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "etherFanWeight",
+        "type": "uint128"
+      }
+    ],
+    "name": "StakingTargetWeightsSet",
     "type": "event"
   },
   {
@@ -222,12 +304,44 @@
   },
   {
     "inputs": [],
-    "name": "admin",
+    "name": "DEPRECATED_admin",
     "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_bNftTreasury",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -247,19 +361,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "bNftTreasury",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -343,8 +444,13 @@
           }
         ],
         "internalType": "struct IStakingManager.DepositData[]",
-        "name": "_depositData",
+        "name": "_registerValidatorDepositData",
         "type": "tuple[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_depositDataRootApproval",
+        "type": "bytes32[]"
       },
       {
         "internalType": "bytes[]",
@@ -373,9 +479,9 @@
         "type": "address"
       },
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "timestamp",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -443,6 +549,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "depositDataRootForApprovalDeposits",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "dutyForWeek",
     "outputs": [
@@ -486,6 +611,30 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "fundStatistics",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "numberOfValidators",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "targetWeight",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -541,14 +690,14 @@
     "name": "holdersUpdate",
     "outputs": [
       {
-        "internalType": "uint128",
+        "internalType": "uint32",
         "name": "timestamp",
-        "type": "uint128"
+        "type": "uint32"
       },
       {
-        "internalType": "uint128",
+        "internalType": "uint32",
         "name": "startOfSlotNumOwners",
-        "type": "uint128"
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -629,12 +778,12 @@
             "type": "address"
           },
           {
-            "internalType": "uint256",
+            "internalType": "uint32",
             "name": "timestamp",
-            "type": "uint256"
+            "type": "uint32"
           }
         ],
-        "internalType": "struct LiquidityPool.BnftHolder[]",
+        "internalType": "struct ILiquidityPool.BnftHolder[]",
         "name": "_localBnftHoldersArray",
         "type": "tuple[]"
       }
@@ -642,9 +791,9 @@
     "name": "numberOfActiveSlots",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "numberOfActiveSlots",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -699,14 +848,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_tvl",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_balanceInLp",
-        "type": "uint256"
+        "internalType": "int128",
+        "name": "_accruedRewards",
+        "type": "int128"
       }
     ],
     "name": "rebase",
@@ -945,6 +1089,24 @@
   {
     "inputs": [
       {
+        "internalType": "uint32",
+        "name": "_eEthWeight",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_etherFanWeight",
+        "type": "uint32"
+      }
+    ],
+    "name": "setStakingTargetWeights",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_address",
         "type": "address"
@@ -1101,24 +1263,16 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_newAdmin",
+        "name": "_address",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAdmin",
+        "type": "bool"
       }
     ],
     "name": "updateAdmin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newTreasury",
-        "type": "address"
-      }
-    ],
-    "name": "updateBNftTreasury",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

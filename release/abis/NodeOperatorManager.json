@@ -220,13 +220,19 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -243,6 +249,29 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_users",
+        "type": "address[]"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds[]",
+        "name": "_approvedTags",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "_approvals",
+        "type": "bool[]"
+      }
+    ],
+    "name": "batchUpdateOperatorsApprovedTags",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -335,6 +364,30 @@
       {
         "internalType": "bool",
         "name": "whitelisted",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "operatorApprovedTags",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
         "type": "bool"
       }
     ],
@@ -481,8 +534,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_newAdmin",
+        "name": "_address",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAdmin",
+        "type": "bool"
       }
     ],
     "name": "updateAdmin",

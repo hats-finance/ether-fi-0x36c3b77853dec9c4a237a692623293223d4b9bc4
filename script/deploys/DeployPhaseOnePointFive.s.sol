@@ -83,7 +83,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
         addressProvider.addContract(address(liquidityPoolProxy), "LiquidityPool");
 
-        eETHImplementation = new EETH();
+        eETHImplementation = new EETH("", "");
         eETHProxy = new UUPSProxy(address(eETHImplementation),"");
         eETH = EETH(address(eETHProxy));
         eETH.initialize(address(liquidityPool));
