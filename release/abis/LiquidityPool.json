@@ -395,6 +395,11 @@
         "internalType": "uint256",
         "name": "_index",
         "type": "uint256"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "_source",
+        "type": "uint8"
       }
     ],
     "name": "batchDepositAsBnftHolder",

@@ -115,6 +115,10 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
+    function getImplementation() external view returns (address) {
+        return _getImplementation();
+    }
+
     modifier onlyAdmin() {
         require(admins[msg.sender], "Caller is not the admin");
         _;
