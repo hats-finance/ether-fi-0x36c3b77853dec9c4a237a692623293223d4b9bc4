@@ -9,7 +9,7 @@ interface IMembershipManager {
     }
 
     struct TokenData {
-        uint96 share;
+        uint96 vaultShare;
         uint40 baseLoyaltyPoints;
         uint40 baseTierPoints;
         uint32 prevPointsAccrualTimestamp;
