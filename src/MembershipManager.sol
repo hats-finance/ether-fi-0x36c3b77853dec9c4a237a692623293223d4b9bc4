@@ -251,8 +251,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 shareValuePerEthBeforeRebase = liquidityPool.amountForShare(1 ether);
         liquidityPool.rebase(_accruedRewards);
         uint256 shareValuePerEthAfterRebase = liquidityPool.amountForShare(1 ether);
-        _distributeStakingRewardsV0();
-        _distributeStakingRewardsV1(shareValuePerEthBeforeRebase, shareValuePerEthAfterRebase);
+       
+        if (shareValuePerEthAfterRebase > shareValuePerEthBeforeRebase) {
+            _distributeStakingRewardsV0();
+            _distributeStakingRewardsV1(shareValuePerEthBeforeRebase, shareValuePerEthAfterRebase);
+        }
     }
 
     function claimBatch(uint256[] calldata _tokenIds) public whenNotPaused {
