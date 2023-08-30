@@ -41,29 +41,31 @@ contract EtherFiNode is IEtherFiNode {
 
     function createEigenPod() external {
         console2.log("start");
-        //eigenPodManager.createPod();
+        eigenPodManager.createPod();
         console2.log("post create");
         eigenPod = eigenPodManager.getPod(address(this));
         console2.log("getPod");
     }
-    /*
 
-    function queueRestakedWithdrawal() onlyOwner {
-        IEigenPod(eigenPod).withdrawBeforeRestaking()
+    // TODO(Dave): onlyOwner
+    function queueRestakedWithdrawal() external {
+        console2.log("withdrawBeforeRestaking");
+        IEigenPod(eigenPod).withdrawBeforeRestaking();
     }
+
+
+    // TODO(Dave): onlyOwner
+    function claimQueuedRestakedWithdrawal() external {
+        IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), 1); // TODO(Dave): do we ever want to adjust this number?
+        // existing withdraw logic
+    }
+
+    /*
 
     function balance() external uint256 {
 
     }
 
-    function claimQueuedRestakedWithdrawal() external onlyOwner {
-        IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), 1); // TODO(Dave): do we ever want to adjust this number?
-
-        // existing withdraw logic
-    }
-    */
-
-    /*
     function addValidator(uint256 validatorId) external onlyEtherFiNodeManagerContract {
         // TODO(Dave): check for dupes
         validators[validatorId].stakingStartTimestamp = uint32(block.timestamp);

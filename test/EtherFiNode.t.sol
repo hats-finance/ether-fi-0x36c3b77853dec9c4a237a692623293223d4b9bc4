@@ -174,8 +174,21 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_createPod() public {
+        console2.log("podAddrPre:", address(safeInstance.eigenPod()));
         safeInstance.createEigenPod();
         console2.log("podAddr:", address(safeInstance.eigenPod()));
+
+        vm.deal(address(safeInstance.eigenPod()), 2 ether);
+        console2.log("balances:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+
+        safeInstance.queueRestakedWithdrawal();
+        console2.log("balances2:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+
+        vm.roll(block.number + (50400) + 1);
+        
+        safeInstance.claimQueuedRestakedWithdrawal();
+        console2.log("balances3:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+
     }
 
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {
