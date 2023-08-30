@@ -591,11 +591,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         TokenData storage token = tokenData[_tokenId];
         uint256 tier = token.tier;
-
         uint256 amount = membershipNFT.accruedStakingRewardsOf(_tokenId);
-
-        // Round-up in favor of safety of the protocol
-        uint256 share = liquidityPool.sharesForWithdrawalAmount(amount);
         _incrementTokenDeposit(_tokenId, amount);
         _incrementTierDeposit(tier, amount);
         
