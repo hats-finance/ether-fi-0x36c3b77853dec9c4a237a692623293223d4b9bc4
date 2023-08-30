@@ -92,7 +92,9 @@ upgrade-goerli-regulations_manager :; forge clean && forge script script/upgrade
 
 upgrade-goerli-weeth :; forge clean && forge script script/upgrades/WeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-etherfi_oracle :; forge clean && forge script script/upgrades/EtherFiOracleUpgradeScript.s.sol:EtherFiOracleUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-goerli-etherfi-oracle :; forge clean && forge script script/upgrades/EtherFiOracleUpgradeScript.s.sol:EtherFiOracleUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
+upgrade-goerli-etherfi-admin :; forge clean && forge script script/upgrades/EtherFiAdminUpgradeScript.s.sol:EtherFiAdminUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-goerli-withdraw-request-nft :; forge clean && forge script script/upgrades/WithdrawRequestNFTUpgradeScript.s.sol:WithdrawRequestNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
@@ -133,7 +135,11 @@ upgrade-regulations_manager :; forge clean && forge script script/upgrades/Regul
 
 upgrade-weeth :; forge clean && forge script script/upgrades/WeETHUpgradeScript.s.sol:WeEthUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-etherfi_oracle :; forge clean && forge script script/upgrades/EtherFiOracleUpgradeScript.s.sol:EtherFiOracleUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+upgrade-etherfi-oracle :; forge clean && forge script script/upgrades/EtherFiOracleUpgradeScript.s.sol:EtherFiOracleUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
+upgrade-etherfi-admin :; forge clean && forge script script/upgrades/EtherFiAdminUpgradeScript.s.sol:EtherFiAdminUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
+upgrade-node-operator :; forge clean && forge script script/specialized/DeployNewNodeOperatorManager.s.sol:DeployNewNodeOperatorManagerScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-withdraw-request-nft :; forge clean && forge script script/upgrades/WithdrawRequestNFTUpgradeScript.s.sol:WithdrawRequestNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
