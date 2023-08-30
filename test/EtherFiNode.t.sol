@@ -4,6 +4,11 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 import "../src/EtherFiNode.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
+import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
+//import "@eigenlayer/contracts/interfaces/IEigenPod.sol";
+import "@eigenlayer/contracts/interfaces/IDelayedWithdrawalRouter.sol";
+//import "@eigenlayer/contracts/pods/EigenPodManager.sol";
 
 contract EtherFiNodeTest is TestSetup {
 
@@ -90,6 +95,87 @@ contract EtherFiNodeTest is TestSetup {
             auctionInstance.accumulatedRevenue(),
             0.1 ether
         );
+
+        /**
+         * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
+         * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
+         */
+        //EmptyContract emptyContract = new EmptyContract();
+        address emptyContract = address(0x0);
+    /*
+        delegation = DelegationManager(
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
+        );
+        strategyManager = StrategyManager(
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
+        );
+        slasher = Slasher(
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
+        );
+        delayedWithdrawalRouter = DelayedWithdrawalRouter(
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
+        );
+        podManagerAddress = DelayedWithdrawalRouter(
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
+        );
+        */
+        /*
+        IEigenPodManager eigenPodManager = EigenPodManager(
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
+        );
+        IDelayedWithdrawalRouter delayedWithdrawalRouter = DelayedWithdrawalRouter(
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
+        );
+        */
+        IEigenPodManager eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
+        IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
+       
+       // IDelayedWithdrawalRouter
+
+        uint32 WITHDRAWAL_DELAY_BLOCKS = 7 days / 12 seconds;
+        uint256 REQUIRED_BALANCE_WEI = 32 ether;
+        uint64  MAX_VALIDATOR_BALANCE_GWEI = 32e9;
+        uint64  EFFECTIVE_RESTAKED_BALANCE_OFFSET = 75e7;
+
+        //IEigenPod podImplementation = new EigenPod(
+                //address(0x0),
+                //delayedWithdrawalRouter,
+                //address(eigenPodManager),
+                //MAX_VALIDATOR_BALANCE_GWEI,
+                //EFFECTIVE_RESTAKED_BALANCE_OFFSET
+        //);
+        //eigenPodBeacon = new UpgradeableBeacon(address(podImplementation));
+
+        /*
+
+        podManagerAddress = DelayedWithdrawalRouter(
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
+        );
+
+        EigenPod podImplementation = new EigenPod(
+            address(0x0),
+            delayedWithdrawalRouter,
+
+            */
+
+
+
+        // eigenlayer setup
+        //EigenPodManager eigenPodManagerImplementation = new EigenPodManager(ethPOSDeposit, eigenPodBeacon, strategyManager, slasher);
+        /*
+        EigenPodManager eigenPodManagerImplementation = new EigenPodManager(
+            address(0x0),
+            eigenPodBeacon,
+            address(0x0),
+            address(0x0)
+        );
+        DelayedWithdrawalRouter delayedWithdrawalRouterImplementation = new DelayedWithdrawalRouter(IEigenPodManager(podManagerAddress));
+        */
+    }
+
+    function test_createPod() public {
+        safeInstance.createEigenPod();
+        console2.log("podAddr:", address(safeInstance.eigenPod()));
     }
 
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {

@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 //import "../../lib/eigenlayer-contracts/src/contracts/interfaces/IEigenPodManager.sol";
 import "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
+import "@eigenlayer/contracts/interfaces/IDelayedWithdrawalRouter.sol";
+import "forge-std/console2.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
@@ -17,6 +19,10 @@ contract EtherFiNode is IEtherFiNode {
     uint32 public exitTimestamp;
     uint32 public stakingStartTimestamp;
     VALIDATOR_PHASE public phase;
+    bool public restaked; // TODO(Dave)?
+
+    IEigenPodManager eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
+    IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
 
     /*
     struct ValidatorState {
@@ -29,22 +35,31 @@ contract EtherFiNode is IEtherFiNode {
     */
 
     // TODO:
-    address public eigenPodManager = address(0x1234);
-    address public eigenPod;
+    IEigenPod public eigenPod;
 
     event ValidatorAdded(uint256 indexed validatorId);
 
     function createEigenPod() external {
-        IEigenPodManager(eigenPodManager).createPod();
+        console2.log("start");
+        //eigenPodManager.createPod();
+        console2.log("post create");
+        eigenPod = eigenPodManager.getPod(address(this));
+        console2.log("getPod");
     }
-
     /*
+
     function queueRestakedWithdrawal() onlyOwner {
+        IEigenPod(eigenPod).withdrawBeforeRestaking()
+    }
+
+    function balance() external uint256 {
 
     }
 
-    function claimQueuedRestakedWithdrawal() onlyOwner {
+    function claimQueuedRestakedWithdrawal() external onlyOwner {
+        IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), 1); // TODO(Dave): do we ever want to adjust this number?
 
+        // existing withdraw logic
     }
     */
 
@@ -82,6 +97,10 @@ contract EtherFiNode is IEtherFiNode {
         require(_etherFiNodesManager != address(0), "No zero addresses");
         stakingStartTimestamp = uint32(block.timestamp);
         etherFiNodesManager = _etherFiNodesManager;
+
+
+        eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
+        delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
     }
 
     //--------------------------------------------------------------------------------------
