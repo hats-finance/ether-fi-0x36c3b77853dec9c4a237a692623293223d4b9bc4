@@ -422,6 +422,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
+    function _allocateSourceOfFunds() internal view returns (SourceOfFunds) {
+        uint256 validatorRatio = fundStatistics[SourceOfFunds.EETH].numberOfValidators / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
+        uint256 weightRatio = fundStatistics[SourceOfFunds.EETH].targetWeight / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
+    }
+
     function _checkHoldersUpdateStatus() internal {
         if(holdersUpdate.timestamp < uint32(_getCurrentSchedulingStartTimestamp())) {
             holdersUpdate.startOfSlotNumOwners = uint32(bnftHolders.length);
