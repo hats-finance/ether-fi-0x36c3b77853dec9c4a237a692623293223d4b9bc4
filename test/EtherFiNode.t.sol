@@ -186,7 +186,7 @@ contract EtherFiNodeTest is TestSetup {
 
         vm.roll(block.number + (50400) + 1);
         
-        safeInstance.claimQueuedRestakedWithdrawal();
+        safeInstance.claimQueuedWithdrawals(1);
         console2.log("balances3:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
 
     }

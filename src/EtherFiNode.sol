@@ -55,8 +55,8 @@ contract EtherFiNode is IEtherFiNode {
 
 
     // TODO(Dave): onlyOwner
-    function claimQueuedRestakedWithdrawal() external {
-        IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), 1); // TODO(Dave): do we ever want to adjust this number?
+    function claimQueuedWithdrawals(uint256 maxNumWithdrawals) external {
+        IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), maxNumWithdrawals); // TODO(Dave): do we ever want to adjust this number?
         // existing withdraw logic
     }
 
