@@ -27,6 +27,9 @@ contract StakingManagerTest is TestSetup {
 
     function setUp() public {
         setUpTests();
+
+        vm.prank(alice);
+        liquidityPoolInstance.setStakingTargetWeights(50, 50);
     }
 
      function test_DisableInitializer() public {
@@ -56,6 +59,10 @@ contract StakingManagerTest is TestSetup {
     }
 
     function test_ApproveRegistration() public {
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 4;
+        _executeAdminTasks(report);
 
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 

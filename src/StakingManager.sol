@@ -339,6 +339,7 @@ contract StakingManager is
             mstore(processedBidIds, processedBidIdsCount)
         }
 
+        //Need to refund the BNFT holder, currently we just sending the 30 ETH from LP back
         uint256 unMatchedBidCount = numberOfDeposits - processedBidIdsCount;
         if (unMatchedBidCount > 0) {
             _refundDeposit(msg.sender, stakeAmount * unMatchedBidCount);

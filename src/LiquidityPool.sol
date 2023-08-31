@@ -225,7 +225,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
         uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender, _source);
-
         if (numberOfValidatorsToSpin > newValidators.length) {
             uint256 returnAmount = 2 ether * (numberOfValidatorsToSpin - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
@@ -302,7 +301,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         BnftHolder[] memory localBnftHoldersArray = bnftHolders;
 
         uint256 index = _getSlotIndex();
-        console.log(1);
         uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
 
         if(numValidatorsToCreate % max_validators_per_owner == 0) {

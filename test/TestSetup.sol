@@ -668,6 +668,17 @@ contract TestSetup is Test {
         approvals[1] = true;
 
         nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
+
+        address[] memory aliceUser = new address[](1);
+        aliceUser[0] = address(alice);
+
+        ILiquidityPool.SourceOfFunds[] memory aliceApprovedTags = new ILiquidityPool.SourceOfFunds[](1);
+        aliceApprovedTags[0] = ILiquidityPool.SourceOfFunds.ETHER_FAN;
+
+        bool[] memory aliceApprovals = new bool[](1);
+        aliceApprovals[0] = true;
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(aliceUser, aliceApprovedTags, aliceApprovals);
+
     }
 
     function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, bytes[] memory _pubKey, bytes[] memory _signature) internal {        

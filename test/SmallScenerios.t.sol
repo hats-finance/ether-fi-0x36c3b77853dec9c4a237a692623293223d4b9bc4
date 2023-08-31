@@ -24,6 +24,10 @@ contract SmallScenariosTest is TestSetup {
         chadProof = merkle.getProof(whiteListedAddresses, 5);
         danProof = merkle.getProof(whiteListedAddresses, 6);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
+
+        vm.prank(alice);
+    liquidityPoolInstance.setStakingTargetWeights(50, 50);
+
     }
     
     /*
@@ -42,6 +46,10 @@ contract SmallScenariosTest is TestSetup {
     function test_EEthWeTHLpScenarios() public {
         // bids to match with later staking 
         bobProof = merkle.getProof(whiteListedAddresses, 4);
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 1;
+        _executeAdminTasks(report);
 
         setUpBnftHolders();
         vm.warp(976348625856);
