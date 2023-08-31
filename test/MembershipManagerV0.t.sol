@@ -562,9 +562,6 @@ contract MembershipManagerV0Test is TestSetup {
         vm.deal(henry, 12 ether);
         vm.deal(alice, 12 ether);
 
-        vm.prank(alice);
-        stakingManagerInstance.enableWhitelist();
-
         vm.prank(henry);
 
         // Henry tries to mint but fails because he is not whitelisted.

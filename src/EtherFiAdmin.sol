@@ -118,6 +118,9 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         // liquidityPool.setStakingTargetWeights(_report.eEthTargetAllocationWeight, _report.etherFanTargetAllocationWeight);
     }
 
+    function updateNumberOfValidatorsToSpinUp(uint32 _numberOfValidators) external isAdmin {
+        numValidatorsToSpinUp = _numberOfValidators;
+    }
 
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         admins[_address] = _isAdmin;

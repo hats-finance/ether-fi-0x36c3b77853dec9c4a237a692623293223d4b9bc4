@@ -138,7 +138,7 @@ contract SmallScenariosTest is TestSetup {
         // EtherFi rolls up 32 ether into a validator and mints the associated NFT's
         vm.deal(owner, 4 ether);
         startHoax(alice);
-        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, proof, 0, ILiquidityPool.SourceOfFunds.EETH);
+        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, proof, 0);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(

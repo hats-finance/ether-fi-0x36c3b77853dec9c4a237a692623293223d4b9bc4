@@ -17,6 +17,7 @@ import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./EtherFiAdmin.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
@@ -38,8 +39,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     address public DEPRECATED_admin;
 
     uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
+    uint32 public SCALE;
     
     address public DEPRECATED_bNftTreasury;
+    address public etherFiAdminContract;
     IWithdrawRequestNFT public withdrawRequestNFT;
 
     BnftHolder[] public bnftHolders;
@@ -95,6 +98,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         regulationsManager = IRegulationsManager(_regulationsManager);
         eEthliquidStakingOpened = false;
         schedulingPeriodInSeconds = 604800;
+        SCALE = 10_000;
     }
 
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
@@ -191,7 +195,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index, SourceOfFunds _source) external payable returns (uint256[] memory){
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
@@ -201,6 +205,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         if(_index == lastIndex) {
             numberOfValidatorsToSpin = lastIndexNumOfValidators;
         }
+
+        SourceOfFunds _source = _allocateSourceOfFunds(uint32(numberOfValidatorsToSpin));
 
         require(msg.value == numberOfValidatorsToSpin * 2 ether, "B-NFT holder must deposit 2 ETH per validator");
         require(totalValueInLp + msg.value >= 32 ether * numberOfValidatorsToSpin, "Not enough balance");
@@ -291,15 +297,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         BnftHolder[] memory localBnftHoldersArray = bnftHolders;
 
-        uint256 index = _getSlotIndex(localBnftHoldersArray);
+        uint256 index = _getSlotIndex();
         uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
 
         if(numValidatorsToCreate % max_validators_per_owner == 0) {
             uint128 size = numValidatorsToCreate / max_validators_per_owner;
-            lastIndex = _fetchLastIndex(size, index, localBnftHoldersArray);
+            lastIndex = _fetchLastIndex(size, index);
         } else {
             uint128 size = (numValidatorsToCreate / max_validators_per_owner) + 1;
-            lastIndex = _fetchLastIndex(size, index, localBnftHoldersArray);
+            lastIndex = _fetchLastIndex(size, index);
             lastIndexNumberOfValidators = numValidatorsToCreate % max_validators_per_owner;
         }
 
@@ -309,7 +315,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     // Just using for testing
     // TODO remove and use oracle
     function numberOfValidatorsToSpawn() public view returns (uint128) {
-        return uint128(getTotalPooledEther() / 30 ether);
+        return EtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
     }
 
     /// @notice Send the exit requests as the T-NFT holder
@@ -380,6 +386,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         tNft = ITNFT(_address);
     }
 
+    function setEtherFiAdminContract(address _address) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        etherFiAdminContract = _address;
+    }
+
     function setWithdrawRequestNFT(address _address) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         withdrawRequestNFT = IWithdrawRequestNFT(_address);
@@ -422,9 +433,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _allocateSourceOfFunds() internal view returns (SourceOfFunds) {
-        uint256 validatorRatio = fundStatistics[SourceOfFunds.EETH].numberOfValidators / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
-        uint256 weightRatio = fundStatistics[SourceOfFunds.EETH].targetWeight / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
+    function _allocateSourceOfFunds(uint32 _numValidators) internal returns (SourceOfFunds) {
+        uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * SCALE) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
+        uint256 weightRatio = (fundStatistics[SourceOfFunds.EETH].targetWeight * SCALE) / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
+
+        if(validatorRatio > weightRatio) {
+            fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators += _numValidators;
+            return SourceOfFunds.ETHER_FAN;
+        } else {
+            fundStatistics[SourceOfFunds.EETH].numberOfValidators += _numValidators;
+            return SourceOfFunds.EETH;
+        }
     }
 
     function _checkHoldersUpdateStatus() internal {
@@ -446,12 +465,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         }
     }
 
-    function _getSlotIndex(BnftHolder[] memory _localBnftHoldersArray) internal returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots(_localBnftHoldersArray);
+    function _getSlotIndex() internal returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots(bnftHolders);
     }
 
-    function _fetchLastIndex(uint128 _size, uint256 _index, BnftHolder[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
-        uint32 numSlots = numberOfActiveSlots(_localBnftHoldersArray);
+    function _fetchLastIndex(uint128 _size, uint256 _index) internal returns (uint128 lastIndex){
+        uint32 numSlots = numberOfActiveSlots(bnftHolders);
         uint128 tempLastIndex = uint128(_index) + _size - 1;
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }

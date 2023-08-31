@@ -15,7 +15,7 @@ interface IStakingManager {
     function verifyWhitelisted(address _address, bytes32[] calldata _merkleProof) external view;
     function merkleRoot() external view returns (bytes32);
     function whitelistEnabled() external view returns (bool);
-
+    
     function initialize(address _auctionAddress) external;
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
     function setLiquidityPoolAddress(address _liquidityPoolAddress) external;
