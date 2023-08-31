@@ -293,7 +293,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit BnftHolderDeregistered(_index);
     }
 
-    function dutyForWeek() public returns (uint256, uint128, uint128) {
+    function dutyForWeek() public view returns (uint256, uint128, uint128) {
         uint128 lastIndex;
         uint128 lastIndexNumberOfValidators = max_validators_per_owner;
 
@@ -467,11 +467,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         }
     }
 
-    function _getSlotIndex() internal returns (uint256) {
+    function _getSlotIndex() internal view returns (uint256) {
         return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots(bnftHolders);
     }
 
-    function _fetchLastIndex(uint128 _size, uint256 _index) internal returns (uint128 lastIndex){
+    function _fetchLastIndex(uint128 _size, uint256 _index) internal view returns (uint128 lastIndex){
         uint32 numSlots = numberOfActiveSlots(bnftHolders);
         uint128 tempLastIndex = uint128(_index) + _size - 1;
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
