@@ -48,11 +48,6 @@ contract EtherFiNodesManager is
     address public DEPRECATED_admin;
     mapping(address => bool) public admins;
 
-    /*
-    // I don't need this I can just continue to use the existing one
-    mapping(uint256 => uint256) validatorIdToWithdrawalSafeId;
-    */
-
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -198,10 +193,22 @@ contract EtherFiNodesManager is
         }
     }
 
+    /// @notice queue a withdrawal of eth from an eigenPod. You must wait for the queuing period
+    ///         defined by eigenLayer before you can finish the withdrawal via etherFiNode.claimQueuedWithdrawals()
+    /// @param _validatorId The validator Id
+    function queueRestakedWithdrawal(uint256 _validatorId) external whenNotPaused {
+        address etherfiNode = etherfiNodeAddress[_validatorId];
+        IEtherFiNode(etherfiNode).queueRestakedWithdrawal();
+    }
+
     /// @notice Process the rewards skimming
     /// @param _validatorId The validator Id
     function partialWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused {
         address etherfiNode = etherfiNodeAddress[_validatorId];
+
+        // sweep rewards from eigenPod if any queued withdrawals are ready to be claimed
+        IEtherFiNode(etherfiNode).claimQueuedWithdrawals(5);
+
         require(
             address(etherfiNode).balance < 8 ether,
             "etherfi node contract's balance is above 8 ETH. You should exit the node."
@@ -285,6 +292,8 @@ contract EtherFiNodesManager is
         require(sent, "Failed to send Ether");
     }
 
+    error MustClaimRestakedWithdrawals();
+
     /// @notice process the full withdrawal
     /// @dev This fullWithdrawal is allowed only after it's marked as EXITED.
     /// @dev EtherFi will be monitoring the status of the validator nodes and mark them EXITED if they do;
@@ -292,6 +301,16 @@ contract EtherFiNodesManager is
     /// @param _validatorId the validator Id to withdraw from
     function fullWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused{
         address etherfiNode = etherfiNodeAddress[_validatorId];
+
+        // TODO(Dave): strategy to handle DOS attack where attacker keeps sending new funds to pod
+
+        if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
+            // sweep rewards from eigenPod
+            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(5);
+
+            // require that all pending withdrawals have cleared
+            if (IEtherFiNode(etherfiNode).hasOutstandingEigenLayerWithdrawals()) revert MustClaimRestakedWithdrawals();
+        }
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
             = getFullWithdrawalPayouts(_validatorId);

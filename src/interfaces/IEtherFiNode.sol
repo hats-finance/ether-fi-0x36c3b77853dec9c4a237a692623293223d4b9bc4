@@ -102,4 +102,9 @@ interface IEtherFiNode {
         address _bnftHolder,
         uint256 _bnftAmount
     ) external;
+
+    function queueRestakedWithdrawal() external;
+    function claimQueuedWithdrawals(uint256 maxNumWithdrawals) external;
+    function isRestakingEnabled() external view returns (bool);
+    function hasOutstandingEigenLayerWithdrawals() external view returns (bool);
 }

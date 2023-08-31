@@ -19,6 +19,8 @@ contract EtherFiNode is IEtherFiNode {
     uint32 public exitTimestamp;
     uint32 public stakingStartTimestamp;
     VALIDATOR_PHASE public phase;
+
+    uint32 public observedExitBlock;
     bool public restaked; // TODO(Dave)?
 
     IEigenPodManager eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
@@ -47,17 +49,47 @@ contract EtherFiNode is IEtherFiNode {
         console2.log("getPod");
     }
 
+    function isRestakingEnabled() public view returns (bool) {
+        return address(eigenPod) != address(0x0);
+    }
+
+    // Check that all withdrawals initiated before the observed exit of the node have been claimed.
+    // This check ignores withdrawals queued after the observed exit of a node to prevent a denial of serviec
+    // in which an attacker keeps sending small amounts of eth to the eigenPod and queuing more withdrawals
+    //
+    // We don't need to worry about unbounded array length because anyone can call claimQueuedWithdrawals()
+    // with a variable number of withdrawals to process if the queue ever became to large.
+    // This function can go away once we have a proof based withdrawal system.
+    function hasOutstandingEigenLayerWithdrawals() external view returns (bool) {
+
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this));
+        for (uint256 i = 0; i < unclaimedWithdrawals.length; i++) {
+            if (unclaimedWithdrawals[i].blockCreated <= observedExitBlock) {
+                // unclaimed withdrawal from before oracle observed exit
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    error SafeNotConfiguredForRestaking();
     // TODO(Dave): onlyOwner
-    function queueRestakedWithdrawal() external {
-        console2.log("withdrawBeforeRestaking");
-        IEigenPod(eigenPod).withdrawBeforeRestaking();
+    function queueRestakedWithdrawal() public {
+        if (isRestakingEnabled()) {
+            IEigenPod(eigenPod).withdrawBeforeRestaking();
+        }
     }
 
 
     // TODO(Dave): onlyOwner
-    function claimQueuedWithdrawals(uint256 maxNumWithdrawals) external {
-        IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), maxNumWithdrawals); // TODO(Dave): do we ever want to adjust this number?
-        // existing withdraw logic
+    function claimQueuedWithdrawals(uint256 maxNumWithdrawals) public {
+        if (address(eigenPod) == address(0x0)) revert SafeNotConfiguredForRestaking();
+
+        // only claim if we have active unclaimed withdrawals
+        if (delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this)).length > 0) {
+            IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), maxNumWithdrawals); // TODO(Dave): do we ever want to adjust this number?
+        }
     }
 
     /*
@@ -138,6 +170,15 @@ contract EtherFiNode is IEtherFiNode {
         _validatePhaseTransition(validatorId, VALIDATOR_PHASE.EXITED);
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
+
+        if (isRestakingEnabled()) {
+            // eigenLayer bookeeping
+            // we need to mark a block from which we know all beaconchain eth has been moved to the eigenPod
+            // so that we can properly calculate exit payouts and ensure queued withdrawals have been resolved
+            // (eigenLayer withdrawals are tied to blocknumber instead of timestamp)
+            observedExitBlock = uint32(block.number);
+            queueRestakedWithdrawal();
+        }
     }
 
     /// @notice Set the validators phase to EVICTED
@@ -145,6 +186,15 @@ contract EtherFiNode is IEtherFiNode {
         _validatePhaseTransition(validatorId, VALIDATOR_PHASE.EVICTED);
         phase = VALIDATOR_PHASE.EVICTED;
         exitTimestamp = uint32(block.timestamp);
+
+        if (isRestakingEnabled()) {
+            // eigenLayer bookeeping
+            // we need to mark a block from which we know all beaconchain eth has been moved to the eigenPod
+            // so that we can properly calculate exit payouts and ensure queued withdrawals have been resolved
+            // (eigenLayer withdrawals are tied to blocknumber instead of timestamp)
+            observedExitBlock = uint32(block.number);
+            queueRestakedWithdrawal();
+        }
     }
 
     //--------------------------------------------------------------------------------------
@@ -170,6 +220,7 @@ contract EtherFiNode is IEtherFiNode {
         address _bnftHolder,
         uint256 _bnftAmount
     ) external onlyEtherFiNodeManagerContract {
+
         // the recipients of the funds must be able to receive the fund
         // For example, if it is a smart contract, 
         // they should implement either receive() or fallback() properly

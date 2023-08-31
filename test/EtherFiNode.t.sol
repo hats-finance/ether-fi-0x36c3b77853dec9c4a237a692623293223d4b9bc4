@@ -188,7 +188,25 @@ contract EtherFiNodeTest is TestSetup {
         
         safeInstance.claimQueuedWithdrawals(1);
         console2.log("balances3:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+    }
 
+    function test_claimMixedSafeAndPodFunds() public {
+        safeInstance.createEigenPod();
+
+        // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
+        vm.deal(address(safeInstance.eigenPod()), 1 ether);
+        vm.deal(address(safeInstance), 1 ether);
+
+        assertEq(address(safeInstance).balance, 1 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
+
+        // claim the restaked rewards
+        safeInstance.queueRestakedWithdrawal();
+        vm.roll(block.number + (50400) + 1);
+        safeInstance.claimQueuedWithdrawals(1);
+
+        assertEq(address(safeInstance).balance, 2 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
     }
 
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {
