@@ -189,6 +189,7 @@ contract TestSetup is Test {
     int256 slotsPerEpoch = 32;
     int256 secondsPerSlot = 12;
 
+
     function setUpTests() internal {
         vm.startPrank(owner);
 
@@ -453,6 +454,9 @@ contract TestSetup is Test {
         _initializePeople();
         _initializeEtherFiAdmin();
 
+        vm.prank(alice);
+        stakingManagerInstance.disableWhitelist();
+
     }
 
     function _merkleSetup() internal {
@@ -692,4 +696,115 @@ contract TestSetup is Test {
         report = IEtherFiOracle.OracleReport(consensusVersion, 0, 0, 0, 0, 0, emptyVals, emptyVals, emptyVals, emptyVals, emptyVals, 0, 0, 0, 0, 0, 0);
     }
 
+    function setUpBnftHolders() internal {
+        vm.startPrank(alice);
+        liquidityPoolInstance.registerAsBnftHolder(alice);
+        liquidityPoolInstance.registerAsBnftHolder(greg);
+        liquidityPoolInstance.registerAsBnftHolder(bob);
+        liquidityPoolInstance.registerAsBnftHolder(owner);
+        liquidityPoolInstance.registerAsBnftHolder(shonee);
+        liquidityPoolInstance.registerAsBnftHolder(dan);
+        liquidityPoolInstance.registerAsBnftHolder(elvis);
+        liquidityPoolInstance.registerAsBnftHolder(henry);
+        vm.stopPrank();
+
+        vm.deal(alice, 100000 ether);
+        vm.deal(greg, 100000 ether);
+        vm.deal(bob, 100000 ether);
+        vm.deal(owner, 100000 ether);
+        vm.deal(shonee, 100000 ether);
+        vm.deal(dan, 100000 ether);
+        vm.deal(elvis, 100000 ether);
+        vm.deal(henry, 100000 ether);
+        vm.deal(chad, 100000 ether);
+    }
+
+    function launch_validator() internal returns (uint256[] memory) {
+        bytes[] memory sig;
+        bytes32 rootForApproval;
+
+        sig = new bytes[](2);
+        sig[0] = hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65";
+        sig[1] = hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65";
+
+
+        vm.deal(owner, 100 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0);
+
+        setUpBnftHolders();
+
+        vm.warp(976348625856);
+
+        vm.prank(alice);
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        vm.startPrank(alice);
+        if (!nodeOperatorManagerInstance.registered(alice)) {
+            nodeOperatorManagerInstance.registerNodeOperator(
+                _ipfsHash,
+                10000
+            );
+        }
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
+        vm.stopPrank();
+
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob, zeroProof);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
+        vm.stopPrank();
+
+        bytes32[] memory proof = getWhitelistMerkleProof(9);
+
+        vm.prank(alice);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, proof, 0, ILiquidityPool.SourceOfFunds.EETH);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
+
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](2);
+
+        bytes32[] memory depositDataRootsForApproval = new bytes32[](2);
+
+        for (uint256 i = 0; i < newValidators.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                newValidators[i]
+            );
+            root = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                1 ether
+            );
+
+            rootForApproval = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                31 ether
+            );
+
+            depositDataRootsForApproval[i] = rootForApproval;
+
+            depositDataArray[i] = IStakingManager.DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+        }
+
+        bytes32 depositRoot = _getDepositRoot();
+        vm.prank(alice);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
+
+        bytes[] memory pubKey = new bytes[](2);
+        pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+        pubKey[1] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+
+        vm.prank(alice);
+        stakingManagerInstance.batchApproveRegistration(newValidators, pubKey, sig);
+    
+        return newValidators;
+    }
 }
