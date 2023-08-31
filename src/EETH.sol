@@ -7,11 +7,13 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/EIP712Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/CountersUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/draft-IERC20PermitUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
 
-contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC20PermitUpgradeable, EIP712Upgradeable, IeETH {
+
+contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC20PermitUpgradeable, IeETH {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     ILiquidityPool public liquidityPool;
 
@@ -20,11 +22,32 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC20P
     mapping (address => mapping (address => uint256)) public allowances;
     mapping (address => CountersUpgradeable.Counter) private _nonces;
 
-    bytes32 private constant _PERMIT_TYPEHASH =
-        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 private constant _PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
-    // [STATE-CHANGING FUNCTIONS]
-    constructor() { _disableInitializers(); }
+    // Cache the domain separator as an immutable value, but also store the chain id that it corresponds to, in order to
+    // invalidate the cached domain separator if the chain id changes.
+    bytes32 private immutable _CACHED_DOMAIN_SEPARATOR;
+    uint256 private immutable _CACHED_CHAIN_ID;
+    address private immutable _CACHED_THIS;
+
+    bytes32 private immutable _HASHED_NAME;
+    bytes32 private immutable _HASHED_VERSION;
+    bytes32 private immutable _TYPE_HASH;
+
+    // TODO: Figure our what `name` and `version` are for
+    constructor() { 
+        bytes32 hashedName = keccak256("EETH");
+        bytes32 hashedVersion = keccak256("1");
+        bytes32 typeHash = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+        _HASHED_NAME = hashedName;
+        _HASHED_VERSION = hashedVersion;
+        _CACHED_CHAIN_ID = block.chainid;
+        _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator(typeHash, hashedName, hashedVersion);
+        _CACHED_THIS = address(this);
+        _TYPE_HASH = typeHash;
+
+        _disableInitializers(); 
+    }
 
     function initialize(address _liquidityPool) external initializer {
         require(_liquidityPool != address(0), "No zero addresses");
@@ -163,6 +186,26 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC20P
 
     function DOMAIN_SEPARATOR() external view override returns (bytes32) {
         return _domainSeparatorV4();
+    }
+
+    function _domainSeparatorV4() internal view returns (bytes32) {
+        if (address(this) == _CACHED_THIS && block.chainid == _CACHED_CHAIN_ID) {
+            return _CACHED_DOMAIN_SEPARATOR;
+        } else {
+            return _buildDomainSeparator(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION);
+        }
+    }
+
+    function _buildDomainSeparator(
+        bytes32 typeHash,
+        bytes32 nameHash,
+        bytes32 versionHash
+    ) private view returns (bytes32) {
+        return keccak256(abi.encode(typeHash, nameHash, versionHash, block.chainid, address(this)));
+    }
+
+    function _hashTypedDataV4(bytes32 structHash) internal view virtual returns (bytes32) {
+        return ECDSAUpgradeable.toTypedDataHash(_domainSeparatorV4(), structHash);
     }
 
     // [MODIFIERS]

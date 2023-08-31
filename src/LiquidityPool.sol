@@ -7,6 +7,7 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
+import "forge-std/console.sol";
 
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
@@ -99,6 +100,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         eEthliquidStakingOpened = false;
         schedulingPeriodInSeconds = 604800;
         SCALE = 10_000;
+
+        fundStatistics[SourceOfFunds.EETH].numberOfValidators = 1;
+        fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = 1;
     }
 
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
@@ -298,6 +302,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         BnftHolder[] memory localBnftHoldersArray = bnftHolders;
 
         uint256 index = _getSlotIndex();
+        console.log(1);
         uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
 
         if(numValidatorsToCreate % max_validators_per_owner == 0) {

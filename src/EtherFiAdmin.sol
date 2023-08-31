@@ -64,8 +64,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function executeTasks(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) external isAdmin() {
         bytes32 reportHash = etherFiOracle.generateReportHash(_report);
         require(etherFiOracle.isConsensusReached(reportHash), "EtherFiAdmin: report didn't reach consensus");
-        require(lastHandledReportRefSlot < _report.refSlotTo, "EtherFiAdmin: report already handled");
-        require(lastHandledReportRefBlock < _report.refBlockTo, "EtherFiAdmin: report already handled");
+        require(slotForNextReportToProcess() == _report.refSlotFrom, "EtherFiAdmin: report has wrong `refSlotFrom`");
+        require(blockForNextReportToProcess() == _report.refBlockFrom, "EtherFiAdmin: report has wrong `refBlockFrom`");
 
         lastHandledReportRefSlot = _report.refSlotTo;
         lastHandledReportRefBlock = _report.refBlockTo;
@@ -114,8 +114,15 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (_report.eEthTargetAllocationWeight == 0 || _report.etherFanTargetAllocationWeight == 0) {
             return;
         }
-        // TODO enable it 
-        // liquidityPool.setStakingTargetWeights(_report.eEthTargetAllocationWeight, _report.etherFanTargetAllocationWeight);
+        liquidityPool.setStakingTargetWeights(_report.eEthTargetAllocationWeight, _report.etherFanTargetAllocationWeight);
+    }
+
+    function slotForNextReportToProcess() public view returns (uint32) {
+        return (lastHandledReportRefSlot == 0) ? 0 : lastHandledReportRefSlot + 1;
+    }
+
+    function blockForNextReportToProcess() public view returns (uint32) {
+        return (lastHandledReportRefBlock == 0) ? 0 : lastHandledReportRefBlock + 1;
     }
 
     function updateNumberOfValidatorsToSpinUp(uint32 _numberOfValidators) external isAdmin {

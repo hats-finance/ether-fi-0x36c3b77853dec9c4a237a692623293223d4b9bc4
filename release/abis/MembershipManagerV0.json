@@ -301,6 +301,19 @@
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "DEPRECATED_admin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint40",
@@ -325,13 +338,19 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -677,14 +696,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_tvl",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_balanceInLp",
-        "type": "uint256"
+        "internalType": "int128",
+        "name": "_accruedRewards",
+        "type": "int128"
       }
     ],
     "name": "rebase",
@@ -816,24 +830,6 @@
       }
     ],
     "name": "setFeeAmounts",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint8",
-        "name": "_treasurySplitPercent",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "_protocolRevenueManagerSplitPercent",
-        "type": "uint8"
-      }
-    ],
-    "name": "setFeeSplits",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1190,8 +1186,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_newAdmin",
+        "name": "_address",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAdmin",
+        "type": "bool"
       }
     ],
     "name": "updateAdmin",

@@ -117,6 +117,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         require(_report.consensusVersion == consensusVersion, "Report is for wrong consensusVersion");
 
         (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = blockStampForNextReport();
+        console.log(slotTo);
         require(_report.refSlotFrom == slotFrom, "Report is for wrong slotFrom");
         require(_report.refSlotTo == slotTo, "Report is for wrong slotTo");
         require(_report.refBlockFrom == blockFrom, "Report is for wrong blockFrom");

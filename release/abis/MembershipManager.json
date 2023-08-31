@@ -66,6 +66,11 @@
   },
   {
     "inputs": [],
+    "name": "NotInV0",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "OnlyAdmin",
     "type": "error"
   },
@@ -97,6 +102,11 @@
   {
     "inputs": [],
     "name": "WrongTokenMinted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WrongVersion",
     "type": "error"
   },
   {
@@ -235,7 +245,7 @@
       {
         "indexed": false,
         "internalType": "uint96",
-        "name": "_rewardsLocalIndex",
+        "name": "_share",
         "type": "uint96"
       }
     ],
@@ -301,6 +311,71 @@
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "DEPRECATED_admin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_protocolRevenueFeeSplitPercent",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_protocolRevenueManager",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_sharesReservedForRewards",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_treasuryFeeSplitPercent",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint40",
@@ -325,13 +400,19 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -430,6 +511,54 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "_tier",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_vaultShare",
+        "type": "uint256"
+      }
+    ],
+    "name": "eEthShareForVaultShare",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "_tier",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_vaultShare",
+        "type": "uint256"
+      }
+    ],
+    "name": "ethAmountForVaultShare",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getFees",
     "outputs": [
@@ -500,6 +629,13 @@
   },
   {
     "inputs": [],
+    "name": "initializePhase2",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "liquidityPool",
     "outputs": [
       {
@@ -535,6 +671,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "migrateFromV0ToV1",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -637,32 +786,6 @@
   },
   {
     "inputs": [],
-    "name": "protocolRevenueFeeSplitPercent",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "protocolRevenueManager",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "proxiableUUID",
     "outputs": [
       {
@@ -677,53 +800,12 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_tvl",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_balanceInLp",
-        "type": "uint256"
+        "internalType": "int128",
+        "name": "_accruedRewards",
+        "type": "int128"
       }
     ],
     "name": "rebase",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint32",
-        "name": "_eapDepositBlockNumber",
-        "type": "uint32"
-      }
-    ],
-    "name": "recoverTierPointsForEap",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "_tokenIds",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint32[]",
-        "name": "_eapDepositBlockNumbers",
-        "type": "uint32[]"
-      }
-    ],
-    "name": "recoverTierPointsForEapBatch",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -816,24 +898,6 @@
       }
     ],
     "name": "setFeeAmounts",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint8",
-        "name": "_treasurySplitPercent",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint8",
-        "name": "_protocolRevenueManagerSplitPercent",
-        "type": "uint8"
-      }
-    ],
-    "name": "setFeeSplits",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -937,19 +1001,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "sharesReservedForRewards",
-    "outputs": [
-      {
-        "internalType": "uint128",
-        "name": "",
-        "type": "uint128"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -1034,11 +1085,35 @@
         "type": "uint256"
       }
     ],
+    "name": "tierVaults",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "totalPooledEEthShares",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "totalVaultShares",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "name": "tokenData",
     "outputs": [
       {
         "internalType": "uint96",
-        "name": "rewardsLocalIndex",
+        "name": "vaultShare",
         "type": "uint96"
       },
       {
@@ -1068,7 +1143,7 @@
       },
       {
         "internalType": "uint8",
-        "name": "__gap",
+        "name": "version",
         "type": "uint8"
       }
     ],
@@ -1168,19 +1243,6 @@
   },
   {
     "inputs": [],
-    "name": "treasuryFeeSplitPercent",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "unPauseContract",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -1190,8 +1252,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_newAdmin",
+        "name": "_address",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAdmin",
+        "type": "bool"
       }
     ],
     "name": "updateAdmin",
@@ -1274,6 +1341,54 @@
   {
     "inputs": [
       {
+        "internalType": "uint8",
+        "name": "_tier",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_eEthShare",
+        "type": "uint256"
+      }
+    ],
+    "name": "vaultShareForEEthShare",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "_tier",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_ethAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "vaultShareForEthAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_amount",
         "type": "uint256"
@@ -1326,40 +1441,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_numNFTs",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_amountForPoints",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
-      }
-    ],
-    "name": "wrapEthBatch",
-    "outputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "",
-        "type": "uint256[]"
       }
     ],
     "stateMutability": "payable",

@@ -152,11 +152,6 @@
         "type": "uint256"
       },
       {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
         "components": [
           {
             "internalType": "uint64",
@@ -181,33 +176,6 @@
         ],
         "internalType": "struct IEtherFiNodesManager.RewardsSplit",
         "name": "_SRsplits",
-        "type": "tuple"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "treasury",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "nodeOperator",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "tnft",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "bnft",
-            "type": "uint64"
-          }
-        ],
-        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
-        "name": "_PRsplits",
         "type": "tuple"
       },
       {
@@ -313,104 +281,6 @@
         "type": "uint256"
       },
       {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "treasury",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "nodeOperator",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "tnft",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "bnft",
-            "type": "uint64"
-          }
-        ],
-        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
-        "name": "_SRsplits",
-        "type": "tuple"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "treasury",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "nodeOperator",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "tnft",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "bnft",
-            "type": "uint64"
-          }
-        ],
-        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
-        "name": "_PRsplits",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_scale",
-        "type": "uint256"
-      }
-    ],
-    "name": "getRewardsPayouts",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "toNodeOperator",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toBnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTreasury",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_beaconBalance",
-        "type": "uint256"
-      },
-      {
         "components": [
           {
             "internalType": "uint64",
@@ -470,13 +340,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      }
-    ],
+    "inputs": [],
     "name": "getWithdrawableAmount",
     "outputs": [
       {

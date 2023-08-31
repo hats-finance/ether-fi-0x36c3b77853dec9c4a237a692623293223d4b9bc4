@@ -69,5 +69,6 @@ interface ILiquidityPool {
     function setMembershipManager(address _address) external;
     function setTnft(address _address) external;
     function setWithdrawRequestNFT(address _address) external; 
+    function setStakingTargetWeights(uint32 _eEthWeight, uint32 _etherFanWeight) external;
     function updateAdmin(address _newAdmin, bool _isAdmin) external;
 }

@@ -768,7 +768,13 @@ contract LiquidityPoolTest is TestSetup {
         //Sets up the list of BNFT holders
         setUpBnftHolders();
 
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+
+        report.numValidatorsToSpinUp = 4;
+        _executeAdminTasks(report);
+
         vm.startPrank(alice);
+        liquidityPoolInstance.setStakingTargetWeights(50, 50);
 
         //Move to a random time in the future
         vm.warp(13431561615);
@@ -779,7 +785,6 @@ contract LiquidityPoolTest is TestSetup {
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
-        etherFiAdminInstance.numValidatorsToSpinUp();
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         liquidityPoolInstance.dutyForWeek();
@@ -812,10 +817,15 @@ contract LiquidityPoolTest is TestSetup {
         //However, Chad will not be included in this weeks duty
         liquidityPoolInstance.registerAsBnftHolder(chad);
 
-        vm.startPrank(alice);
-        
+        vm.prank(alice);
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 300 ether}(address(alice), aliceProof);
+
+        IEtherFiOracle.OracleReport memory report2 = _emptyOracleReport();
+
+        report2.numValidatorsToSpinUp = 14;
+        report2.refSlotTo = 2785963007;
+        _executeAdminTasks(report2);
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         (uint256 firstIndex, uint128 lastIndex, uint128 numForLastIndex) = liquidityPoolInstance.dutyForWeek();
@@ -829,6 +839,7 @@ contract LiquidityPoolTest is TestSetup {
         //Last Index = 0
         //Num Validators For Last = 2
 
+        vm.prank(alice);
         //Alice deposits and her index is 0 (the last index), allowing her to deposit for 2 validators
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, aliceProof, 0);
         vm.stopPrank();

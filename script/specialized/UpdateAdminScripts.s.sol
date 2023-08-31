@@ -13,6 +13,7 @@ import "../../src/StakingManager.sol";
 import "../../src/NFTExchange.sol";
 import "../../src/RegulationsManager.sol";
 import "../../src/helpers/AddressProvider.sol";
+import "../../src/WithdrawRequestNFT.sol";
 
 contract UpdateAdmins is Script {   
 
@@ -35,17 +36,20 @@ contract UpdateAdmins is Script {
         address membershipNFT = addressProvider.getContractAddress("MembershipNFT");
         address membershipManager = addressProvider.getContractAddress("MembershipManager");
         address nftExchange = addressProvider.getContractAddress("NFTExchange");
+        address withdrawRequestNFTAddress = addressProvider.getContractAddress("WithdrawRequestNFT");
 
         address admin = vm.envAddress("ADMIN");
+        
         EtherFiNodesManager(payable(etherFiNodesManager)).updateAdmin(admin, true); 
         // ProtocolRevenueManager(payable(protocolRevenueManager)).updateAdmin(admin);  // DEPRECATED
         AuctionManager(auctionManager).updateAdmin(admin, true); 
         StakingManager(stakingManager).updateAdmin(admin, true); 
         LiquidityPool(payable(liquidityPool)).updateAdmin(admin, true);
-        RegulationsManager(regulationsManager).updateAdmin(admin, true);
+        // RegulationsManager(regulationsManager).updateAdmin(admin, true);
         MembershipManager(payable(membershipManager)).updateAdmin(admin, true);
         MembershipNFT(membershipNFT).updateAdmin(admin, true);
         // NFTExchange(nftExchange).updateAdmin(admin); // Not in the scope of Phase 2 upgrade
+        WithdrawRequestNFT(payable(withdrawRequestNFTAddress)).updateAdmin(admin, true);
 
         vm.stopBroadcast();
     }

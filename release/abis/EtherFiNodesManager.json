@@ -167,6 +167,45 @@
   },
   {
     "inputs": [],
+    "name": "DEPRECATED_admin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_protocolRevenueManager",
+    "outputs": [
+      {
+        "internalType": "contract IProtocolRevenueManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_protocolRevenueManagerContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "SCALE",
     "outputs": [
       {
@@ -179,13 +218,19 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -241,11 +286,6 @@
         "internalType": "uint256",
         "name": "_beaconBalance",
         "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
       }
     ],
     "name": "calculateTVL",
@@ -415,11 +455,6 @@
         "internalType": "uint256",
         "name": "_beaconBalance",
         "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
       }
     ],
     "name": "getRewardsPayouts",
@@ -723,11 +758,6 @@
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
       }
     ],
     "name": "partialWithdraw",
@@ -741,11 +771,6 @@
         "internalType": "uint256[]",
         "name": "_validatorIds",
         "type": "uint256[]"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
       }
     ],
     "name": "partialWithdrawBatch",
@@ -764,11 +789,6 @@
         "internalType": "uint256[]",
         "name": "_validatorIds",
         "type": "uint256[]"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
       }
     ],
     "name": "partialWithdrawBatchGroupByOperator",
@@ -844,32 +864,6 @@
     "name": "processNodeExit",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "protocolRevenueManager",
-    "outputs": [
-      {
-        "internalType": "contract IProtocolRevenueManager",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "protocolRevenueManagerContract",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -1173,8 +1167,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_newAdmin",
+        "name": "_address",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAdmin",
+        "type": "bool"
       }
     ],
     "name": "updateAdmin",
