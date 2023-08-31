@@ -670,6 +670,17 @@ contract StakingManagerTest is TestSetup {
         );
     }
 
+    function test_EnablingAndDisablingWhitelistingWorks() public {
+         assertEq(stakingManagerInstance.whitelistEnabled(), false);
+
+         vm.startPrank(alice);
+         stakingManagerInstance.enableWhitelist();
+         assertEq(stakingManagerInstance.whitelistEnabled(), true);
+
+         stakingManagerInstance.disableWhitelist();
+         assertEq(stakingManagerInstance.whitelistEnabled(), false);
+     }
+
     function test_BatchRegisterValidatorWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 

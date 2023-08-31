@@ -185,7 +185,6 @@ contract TestSetup is Test {
     IEtherFiOracle.OracleReport reportAtPeriod3A;
     IEtherFiOracle.OracleReport reportAtPeriod3B;
     IEtherFiOracle.OracleReport reportAtPeriod4;
-    IEtherFiOracle.OracleReport reportAtPeriod5;
 
     int256 slotsPerEpoch = 32;
     int256 secondsPerSlot = 12;
@@ -381,7 +380,6 @@ contract TestSetup is Test {
         );
 
         liquidityPoolInstance.setEtherFiAdminContract(address(etherFiAdminInstance));
-        liquidityPoolInstance.setEtherFiAdminContract(address(etherFiAdminInstance));
 
         uint256[] memory validatorsToApprove = new uint256[](1);
         uint256[] memory validatorsToExit = new uint256[](1);
@@ -395,7 +393,6 @@ contract TestSetup is Test {
         reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtPeriod5 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 4);
 
         vm.stopPrank();
 
