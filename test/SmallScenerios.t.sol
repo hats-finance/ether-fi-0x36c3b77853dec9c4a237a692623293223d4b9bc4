@@ -518,26 +518,4 @@ contract SmallScenariosTest is TestSetup {
         assertEq(address(stakingManagerInstance).balance, 0 ether);
     }
 
-    function setUpBnftHolders() internal {
-        vm.startPrank(alice);
-        liquidityPoolInstance.registerAsBnftHolder(alice);
-        liquidityPoolInstance.registerAsBnftHolder(greg);
-        liquidityPoolInstance.registerAsBnftHolder(bob);
-        liquidityPoolInstance.registerAsBnftHolder(owner);
-        liquidityPoolInstance.registerAsBnftHolder(shonee);
-        liquidityPoolInstance.registerAsBnftHolder(dan);
-        liquidityPoolInstance.registerAsBnftHolder(elvis);
-        liquidityPoolInstance.registerAsBnftHolder(henry);
-        vm.stopPrank();
-
-        vm.deal(alice, 100000 ether);
-        vm.deal(greg, 100000 ether);
-        vm.deal(bob, 100000 ether);
-        vm.deal(owner, 100000 ether);
-        vm.deal(shonee, 100000 ether);
-        vm.deal(dan, 100000 ether);
-        vm.deal(elvis, 100000 ether);
-        vm.deal(henry, 100000 ether);
-        vm.deal(chad, 100000 ether);
-    }
 }
