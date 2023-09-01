@@ -352,8 +352,11 @@ contract TestSetup is Test {
 
         vm.stopPrank();
 
-        vm.prank(alice);
+        vm.startPrank(alice);
+        liquidityPoolInstance.setStakingTargetWeights(50, 50);
         membershipManagerInstance.setTopUpCooltimePeriod(28 days);
+        vm.stopPrank();
+        
         vm.startPrank(owner);
 
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
@@ -379,6 +382,9 @@ contract TestSetup is Test {
             address(membershipManagerInstance),
             address(withdrawRequestNFTInstance)
         );
+
+        liquidityPoolInstance.setEtherFiAdminContract(address(etherFiAdminInstance));
+        liquidityPoolInstance.initializePhase2();
 
         uint256[] memory validatorsToApprove = new uint256[](1);
         uint256[] memory validatorsToExit = new uint256[](1);
@@ -667,6 +673,17 @@ contract TestSetup is Test {
         approvals[1] = true;
 
         nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
+
+        address[] memory aliceUser = new address[](1);
+        aliceUser[0] = address(alice);
+
+        ILiquidityPool.SourceOfFunds[] memory aliceApprovedTags = new ILiquidityPool.SourceOfFunds[](1);
+        aliceApprovedTags[0] = ILiquidityPool.SourceOfFunds.ETHER_FAN;
+
+        bool[] memory aliceApprovals = new bool[](1);
+        aliceApprovals[0] = true;
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(aliceUser, aliceApprovedTags, aliceApprovals);
+
     }
 
     function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, bytes[] memory _pubKey, bytes[] memory _signature) internal {        
@@ -723,6 +740,10 @@ contract TestSetup is Test {
         bytes[] memory sig;
         bytes32 rootForApproval;
 
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 2;
+        _executeAdminTasks(report);
+
         sig = new bytes[](2);
         sig[0] = hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65";
         sig[1] = hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65";
@@ -758,7 +779,7 @@ contract TestSetup is Test {
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
         vm.prank(alice);
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, proof, 0, ILiquidityPool.SourceOfFunds.EETH);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, proof, 0);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
         IStakingManager.DepositData[]

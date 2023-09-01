@@ -27,6 +27,9 @@ contract StakingManagerTest is TestSetup {
 
     function setUp() public {
         setUpTests();
+
+        vm.prank(alice);
+        liquidityPoolInstance.setStakingTargetWeights(50, 50);
     }
 
      function test_DisableInitializer() public {
@@ -56,6 +59,10 @@ contract StakingManagerTest is TestSetup {
     }
 
     function test_ApproveRegistration() public {
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 4;
+        _executeAdminTasks(report);
 
         bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
@@ -89,7 +96,7 @@ contract StakingManagerTest is TestSetup {
         vm.stopPrank();
         
         startHoax(alice);
-        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0, ILiquidityPool.SourceOfFunds.EETH);
+        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
@@ -175,7 +182,7 @@ contract StakingManagerTest is TestSetup {
         );
         stakingManagerInstance.disableWhitelist();
         vm.stopPrank();
-        
+
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
@@ -366,7 +373,6 @@ contract StakingManagerTest is TestSetup {
         vm.startPrank(alice);
         stakingManagerInstance.enableWhitelist();
         vm.stopPrank();
-
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
@@ -663,6 +669,17 @@ contract StakingManagerTest is TestSetup {
             1
         );
     }
+
+    function test_EnablingAndDisablingWhitelistingWorks() public {
+         assertEq(stakingManagerInstance.whitelistEnabled(), false);
+
+         vm.startPrank(alice);
+         stakingManagerInstance.enableWhitelist();
+         assertEq(stakingManagerInstance.whitelistEnabled(), true);
+
+         stakingManagerInstance.disableWhitelist();
+         assertEq(stakingManagerInstance.whitelistEnabled(), false);
+     }
 
     function test_BatchRegisterValidatorWorksCorrectly() public {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
@@ -1379,17 +1396,6 @@ contract StakingManagerTest is TestSetup {
 
         vm.expectRevert("Address already set");
         stakingManagerInstance.setEtherFiNodesManagerAddress(address(0));
-    }
-
-    function test_EnablingAndDisablingWhitelistingWorks() public {
-        assertEq(stakingManagerInstance.whitelistEnabled(), false);
-
-        vm.startPrank(alice);
-        stakingManagerInstance.enableWhitelist();
-        assertEq(stakingManagerInstance.whitelistEnabled(), true);
-
-        stakingManagerInstance.disableWhitelist();
-        assertEq(stakingManagerInstance.whitelistEnabled(), false);
     }
 
     // https://dashboard.tenderly.co/public/safe/safe-apps/simulator/8f9bf820-b9a5-4df5-8c50-20c7ecfa30a6?trace=0.0.4.0.1.0.0.2.2.1
