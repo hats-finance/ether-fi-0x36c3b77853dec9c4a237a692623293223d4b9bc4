@@ -129,7 +129,7 @@ contract StakingManager is
                 auctionManager.updateSelectedBidInformation(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
-                _processDeposit(bidId, _staker);
+                _processDeposit(bidId, _staker, false); // TODO(Dave): how do I want to inject this param?
             }
         }
 
@@ -380,10 +380,10 @@ contract StakingManager is
 
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId The bid that won the right to the deposit
-    function _processDeposit(uint256 _bidId, address _staker) internal {
+    function _processDeposit(uint256 _bidId, address _staker, bool _enableRestaking) internal {
         bidIdToStaker[_bidId] = _staker;
         uint256 validatorId = _bidId;
-        address etherfiNode = createEtherfiNode(validatorId);
+        address etherfiNode = createEtherfiNode(validatorId, _enableRestaking);
         nodesManager.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED);
         emit StakeDeposit(msg.sender, _bidId, etherfiNode);
     }
@@ -406,10 +406,10 @@ contract StakingManager is
         require(bidIdToStaker[_validatorId] == address(0), "Bid already cancelled");
     }
 
-    function createEtherfiNode(uint256 _validatorId) private returns (address) {
+    function createEtherfiNode(uint256 _validatorId, bool _enableRestaking) private returns (address) {
         BeaconProxy proxy = new BeaconProxy(address(upgradableBeacon), "");
         EtherFiNode node = EtherFiNode(payable(proxy));
-        node.initialize(address(nodesManager));
+        node.initialize(address(nodesManager), _enableRestaking);
         nodesManager.registerEtherFiNode(_validatorId, address(node));
         return address(node);
     }

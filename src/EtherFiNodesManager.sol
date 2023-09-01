@@ -129,8 +129,6 @@ contract EtherFiNodesManager is
         );
     }
 
-    // TODO(Dave): handle this step in add/remove validator
-
     /// @notice Registers the validator ID for the EtherFiNode contract
     /// @param _validatorId ID of the validator associated to the node
     /// @param _address Address of the EtherFiNode contract
@@ -207,7 +205,9 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
         // sweep rewards from eigenPod if any queued withdrawals are ready to be claimed
-        IEtherFiNode(etherfiNode).claimQueuedWithdrawals(5);
+        if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
+            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(5);
+        }
 
         require(
             address(etherfiNode).balance < 8 ether,
@@ -502,7 +502,12 @@ contract EtherFiNodesManager is
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
-        return generateWithdrawalCredentials(etherfiNode);
+        
+        if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
+            return generateWithdrawalCredentials(IEtherFiNode(etherfiNode).eigenPod());
+        } else {
+            return generateWithdrawalCredentials(etherfiNode);
+        }
     }
 
     /// @notice Fetches if the node has an exit request

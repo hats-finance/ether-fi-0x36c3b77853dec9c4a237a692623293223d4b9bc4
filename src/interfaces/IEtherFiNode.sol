@@ -45,6 +45,7 @@ interface IEtherFiNode {
 
     // VIEW functions
     function phase() external view returns (VALIDATOR_PHASE);
+    function eigenPod() external view returns (address);
 
     function ipfsHashForEncryptedValidatorKey()
         external

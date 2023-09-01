@@ -37,20 +37,21 @@ contract EtherFiNode is IEtherFiNode {
     */
 
     // TODO:
-    IEigenPod public eigenPod;
+    address public eigenPod;
 
     event ValidatorAdded(uint256 indexed validatorId);
 
-    function createEigenPod() external {
+    // TODO(Dave): permissions and scope
+    function createEigenPod() public {
         console2.log("start");
         eigenPodManager.createPod();
         console2.log("post create");
-        eigenPod = eigenPodManager.getPod(address(this));
+        eigenPod = address(eigenPodManager.getPod(address(this)));
         console2.log("getPod");
     }
 
     function isRestakingEnabled() public view returns (bool) {
-        return address(eigenPod) != address(0x0);
+        return eigenPod != address(0x0);
     }
 
     // Check that all withdrawals initiated before the observed exit of the node have been claimed.
@@ -73,18 +74,17 @@ contract EtherFiNode is IEtherFiNode {
         return true;
     }
 
-    error SafeNotConfiguredForRestaking();
     // TODO(Dave): onlyOwner
     function queueRestakedWithdrawal() public {
-        if (isRestakingEnabled()) {
-            IEigenPod(eigenPod).withdrawBeforeRestaking();
-        }
+        if (!isRestakingEnabled()) return;
+
+        IEigenPod(eigenPod).withdrawBeforeRestaking();
     }
 
 
     // TODO(Dave): onlyOwner
     function claimQueuedWithdrawals(uint256 maxNumWithdrawals) public {
-        if (address(eigenPod) == address(0x0)) revert SafeNotConfiguredForRestaking();
+        if (!isRestakingEnabled()) return;
 
         // only claim if we have active unclaimed withdrawals
         if (delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this)).length > 0) {
@@ -126,15 +126,17 @@ contract EtherFiNode is IEtherFiNode {
     ///  To receive the rewards from the execution layer, it should have 'receive()' function.
     receive() external payable {}
 
-    function initialize(address _etherFiNodesManager) public {
+    function initialize(address _etherFiNodesManager, bool _enableRestaking) public {
         require(stakingStartTimestamp == 0, "already initialized");
         require(_etherFiNodesManager != address(0), "No zero addresses");
         stakingStartTimestamp = uint32(block.timestamp);
         etherFiNodesManager = _etherFiNodesManager;
 
-
-        eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
-        delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
+        if (_enableRestaking) {
+            eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
+            delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
+            createEigenPod();
+        }
     }
 
     //--------------------------------------------------------------------------------------
