@@ -297,6 +297,64 @@ contract EtherFiNodeTest is TestSetup {
 
     }
 
+    function test_restakedAttackerCantBlockWithdraw() public {
+
+        uint256 validatorId = bidId[0];
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitRequestTimestamps = new uint32[](1);
+        validatorIds[0] = validatorId;
+        exitRequestTimestamps[0] = uint32(block.timestamp);
+
+
+        vm.deal(safeInstance.eigenPod(), 32 ether);
+
+        vm.startPrank(alice); // alice is the admin
+        vm.expectRevert("validator node is not exited");
+        managerInstance.fullWithdraw(validatorIds[0]);
+
+        // Marked as EXITED
+        // should also have queued up the current balance to via DelayedWithdrawalRouter
+        managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
+
+        vm.roll(block.number + 1);
+
+        // attacker now sends funds and queues claims
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+
+        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 6);
+
+
+        // wait some time so claims are claimable
+        vm.roll(block.number + (50400) + 1);
+
+        safeInstance.claimQueuedWithdrawals(5);
+        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+
+        // shoud not be allowed to partial withdraw since node is exited
+        // In this case it fails because of the balance check right before the state check
+        vm.expectRevert("etherfi node contract's balance is above 8 ETH. You should exit the node.");
+        managerInstance.partialWithdraw(validatorId);
+
+        // This should succeed even though there are still some unclaimed withdrawals
+        // this is because we only enforce that all withdrawals before the observed exit of the node have completed
+        managerInstance.fullWithdraw(validatorIds[0]);
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(address(safeInstance).balance, 0);
+    }
+
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(alice);
