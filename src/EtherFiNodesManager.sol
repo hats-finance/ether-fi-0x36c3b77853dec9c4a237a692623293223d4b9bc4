@@ -314,7 +314,7 @@ contract EtherFiNodesManager is
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
             = getFullWithdrawalPayouts(_validatorId);
-        IEtherFiNode(etherfiNode).setPhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+        IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
 
         _distributePayouts(_validatorId, toTreasury, toOperator, toTnft, toBnft);
     }
@@ -332,7 +332,7 @@ contract EtherFiNodesManager is
     ) external whenNotPaused onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             address etherfiNode = etherfiNodeAddress[_validatorIds[i]];
-            IEtherFiNode(etherfiNode).setPhase(_validatorIds[i], IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
+            IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
         }
     }
 
@@ -388,7 +388,7 @@ contract EtherFiNodesManager is
     /// @param _phase phase of the validator
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) public onlyStakingManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        IEtherFiNode(etherfiNode).setPhase(_validatorId, _phase);
+        IEtherFiNode(etherfiNode).setPhase(_phase);
     }
 
     /// @notice Sets the ipfs hash of the validator's encrypted private key
@@ -435,7 +435,7 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
         // Mark EXITED
-        IEtherFiNode(etherfiNode).markExited(_validatorId, _exitTimestamp);
+        IEtherFiNode(etherfiNode).markExited(_exitTimestamp);
 
         numberOfValidators -= 1;
 
@@ -446,7 +446,7 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
         // Mark EVICTED
-        IEtherFiNode(etherfiNode).markEvicted(_validatorId);
+        IEtherFiNode(etherfiNode).markEvicted();
 
         numberOfValidators -= 1;
 
@@ -537,7 +537,7 @@ contract EtherFiNodesManager is
     function getStakingRewardsPayouts(uint256 _validatorId, uint256 _beaconBalance) 
         public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        return IEtherFiNode(etherfiNode).getStakingRewardsPayouts(_validatorId, _beaconBalance, stakingRewardsSplit, SCALE);
+        return IEtherFiNode(etherfiNode).getStakingRewardsPayouts(_beaconBalance, stakingRewardsSplit, SCALE);
     }
 
     /// @notice Fetches the total rewards payout for the node for specific revenues
@@ -554,7 +554,6 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return
             IEtherFiNode(etherfiNode).getStakingRewardsPayouts(
-                _validatorId,
                 _beaconBalance,
                 stakingRewardsSplit,
                 SCALE
@@ -591,7 +590,6 @@ contract EtherFiNodesManager is
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         return  IEtherFiNode(etherfiNode).calculateTVL(
-                    _validatorId,
                     _beaconBalance,
                     stakingRewardsSplit,
                     SCALE

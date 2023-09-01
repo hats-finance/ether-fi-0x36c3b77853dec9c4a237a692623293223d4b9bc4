@@ -102,79 +102,6 @@ contract EtherFiNodeTest is TestSetup {
             0.1 ether
         );
 
-        /**
-         * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
-         * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
-         */
-        //EmptyContract emptyContract = new EmptyContract();
-        address emptyContract = address(0x0);
-    /*
-        delegation = DelegationManager(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
-        );
-        strategyManager = StrategyManager(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
-        );
-        slasher = Slasher(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
-        );
-        delayedWithdrawalRouter = DelayedWithdrawalRouter(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
-        );
-        podManagerAddress = DelayedWithdrawalRouter(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
-        );
-        */
-        /*
-        IEigenPodManager eigenPodManager = EigenPodManager(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
-        );
-        IDelayedWithdrawalRouter delayedWithdrawalRouter = DelayedWithdrawalRouter(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
-        );
-        */
-       
-       // IDelayedWithdrawalRouter
-
-        uint32 WITHDRAWAL_DELAY_BLOCKS = 7 days / 12 seconds;
-        uint256 REQUIRED_BALANCE_WEI = 32 ether;
-        uint64  MAX_VALIDATOR_BALANCE_GWEI = 32e9;
-        uint64  EFFECTIVE_RESTAKED_BALANCE_OFFSET = 75e7;
-
-        //IEigenPod podImplementation = new EigenPod(
-                //address(0x0),
-                //delayedWithdrawalRouter,
-                //address(eigenPodManager),
-                //MAX_VALIDATOR_BALANCE_GWEI,
-                //EFFECTIVE_RESTAKED_BALANCE_OFFSET
-        //);
-        //eigenPodBeacon = new UpgradeableBeacon(address(podImplementation));
-
-        /*
-
-        podManagerAddress = DelayedWithdrawalRouter(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
-        );
-
-        EigenPod podImplementation = new EigenPod(
-            address(0x0),
-            delayedWithdrawalRouter,
-
-            */
-
-
-
-        // eigenlayer setup
-        //EigenPodManager eigenPodManagerImplementation = new EigenPodManager(ethPOSDeposit, eigenPodBeacon, strategyManager, slasher);
-        /*
-        EigenPodManager eigenPodManagerImplementation = new EigenPodManager(
-            address(0x0),
-            eigenPodBeacon,
-            address(0x0),
-            address(0x0)
-        );
-        DelayedWithdrawalRouter delayedWithdrawalRouterImplementation = new DelayedWithdrawalRouter(IEigenPodManager(podManagerAddress));
-        */
     }
 
     function test_createPod() public {
@@ -269,7 +196,6 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = validatorId;
         exitRequestTimestamps[0] = uint32(block.timestamp);
 
-
         vm.deal(safeInstance.eigenPod(), 32 ether);
 
         vm.startPrank(alice); // alice is the admin
@@ -283,7 +209,6 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
 
-
         // fail because we have not processed the queued withdrawal of the funds from the pod
         // because not enough time has passed to claim them
         vm.expectRevert(EtherFiNodesManager.MustClaimRestakedWithdrawals.selector);
@@ -294,7 +219,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // try again. FullWithdraw will automatically attempt to claim queuedWithdrawals
         managerInstance.fullWithdraw(validatorIds[0]);
-
+        assertEq(address(safeInstance).balance, 0);
     }
 
     function test_restakedAttackerCantBlockWithdraw() public {
@@ -304,7 +229,6 @@ contract EtherFiNodeTest is TestSetup {
         uint32[] memory exitRequestTimestamps = new uint32[](1);
         validatorIds[0] = validatorId;
         exitRequestTimestamps[0] = uint32(block.timestamp);
-
 
         vm.deal(safeInstance.eigenPod(), 32 ether);
 
@@ -336,10 +260,10 @@ contract EtherFiNodeTest is TestSetup {
         unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 6);
 
-
         // wait some time so claims are claimable
         vm.roll(block.number + (50400) + 1);
 
+        // TODO(Dave): 5 picked here because that's how many claims I set the manager contract to attempt. We can tune thi
         safeInstance.claimQueuedWithdrawals(5);
         unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
 
@@ -364,15 +288,13 @@ contract EtherFiNodeTest is TestSetup {
     function test_SetPhaseRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
-        safeInstance.setPhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.EXITED);
-
+        safeInstance.setPhase(IEtherFiNode.VALIDATOR_PHASE.EXITED);
     }
 
     function test_SetIpfsHashForEncryptedValidatorKeyRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setIpfsHashForEncryptedValidatorKey("_ipfsHash");
-
     }
 
     function test_SetExitRequestTimestampRevertsOnIncorrectCaller() public {
@@ -507,7 +429,7 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
 
         vm.expectRevert("Only EtherFiNodeManager Contract");
-        IEtherFiNode(etherFiNode).markExited(validatorIds[0] ,1);
+        IEtherFiNode(etherFiNode).markExited(1);
 
         vm.expectRevert("Caller is not the admin");
         vm.prank(owner);

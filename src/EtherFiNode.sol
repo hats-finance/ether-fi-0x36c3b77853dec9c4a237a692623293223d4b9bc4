@@ -5,42 +5,27 @@ import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
-//import "../../lib/eigenlayer-contracts/src/contracts/interfaces/IEigenPodManager.sol";
 import "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
 import "@eigenlayer/contracts/interfaces/IDelayedWithdrawalRouter.sol";
 import "forge-std/console2.sol";
 
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
-    address public owner;
 
+    uint256 public DEPRECATED_localRevenueIndex;
+    uint256 public DEPRECATED_vestedAuctionRewards;
     string public ipfsHashForEncryptedValidatorKey;
     uint32 public exitRequestTimestamp;
     uint32 public exitTimestamp;
     uint32 public stakingStartTimestamp;
     VALIDATOR_PHASE public phase;
 
-    uint32 public observedExitBlock;
-    bool public restaked; // TODO(Dave)?
-
+    uint32 public restakingObservedExitBlock; 
+    address public eigenPod;
     IEigenPodManager eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
     IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
 
-    /*
-    struct ValidatorState {
-        uint32 exitRequestTimestamp;
-        uint32 exitTimestamp;
-        uint32 stakingStartTimestamp;
-        VALIDATOR_PHASE phase;
-    }
-    mapping(uint256 => ValidatorState) public validators;
-    */
-
-    // TODO:
-    address public eigenPod;
-
-    event ValidatorAdded(uint256 indexed validatorId);
-
+    event EigenPodCreated(address indexed nodeAddress, address indexed podAddress);
 
     error SafeNotConfiguredForRestaking();
 
@@ -50,11 +35,9 @@ contract EtherFiNode is IEtherFiNode {
         if (address(eigenPodManager) == address(0x0)) revert SafeNotConfiguredForRestaking();
         if (eigenPod != address(0x0)) return; // already have pod
 
-        console2.log("start");
         eigenPodManager.createPod();
-        console2.log("post create");
         eigenPod = address(eigenPodManager.getPod(address(this)));
-        console2.log("getPod");
+        emit EigenPodCreated(address(this), eigenPod);
     }
 
     function isRestakingEnabled() public view returns (bool) {
@@ -72,7 +55,7 @@ contract EtherFiNode is IEtherFiNode {
 
         IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this));
         for (uint256 i = 0; i < unclaimedWithdrawals.length; i++) {
-            if (unclaimedWithdrawals[i].blockCreated <= observedExitBlock) {
+            if (unclaimedWithdrawals[i].blockCreated <= restakingObservedExitBlock) {
                 // unclaimed withdrawal from before oracle observed exit
                 return true;
             }
@@ -98,24 +81,6 @@ contract EtherFiNode is IEtherFiNode {
             IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), maxNumWithdrawals); // TODO(Dave): do we ever want to adjust this number?
         }
     }
-
-    /*
-
-    function balance() external uint256 {
-
-    }
-
-    function addValidator(uint256 validatorId) external onlyEtherFiNodeManagerContract {
-        // TODO(Dave): check for dupes
-        validators[validatorId].stakingStartTimestamp = uint32(block.timestamp);
-        emit ValidatorAdded(validatorId);
-    }
-    */
-
-    //[]ValidatorState public validators;
-
-
-        
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -152,8 +117,8 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Set the validator phase
     /// @param _phase the new phase
-    function setPhase(uint256 _validatorId, VALIDATOR_PHASE _phase) external onlyEtherFiNodeManagerContract {
-        _validatePhaseTransition(_validatorId, _phase);
+    function setPhase(VALIDATOR_PHASE _phase) external onlyEtherFiNodeManagerContract {
+        _validatePhaseTransition(_phase);
         phase = _phase;
     }
 
@@ -174,9 +139,9 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Set the validators phase to exited
     /// @param _exitTimestamp the time the exit was complete
-    function markExited(uint256 validatorId, uint32 _exitTimestamp) external onlyEtherFiNodeManagerContract {
+    function markExited(uint32 _exitTimestamp) external onlyEtherFiNodeManagerContract {
         require(_exitTimestamp <= block.timestamp, "Invalid exit timestamp");
-        _validatePhaseTransition(validatorId, VALIDATOR_PHASE.EXITED);
+        _validatePhaseTransition(VALIDATOR_PHASE.EXITED);
         phase = VALIDATOR_PHASE.EXITED;
         exitTimestamp = _exitTimestamp;
 
@@ -185,14 +150,14 @@ contract EtherFiNode is IEtherFiNode {
             // we need to mark a block from which we know all beaconchain eth has been moved to the eigenPod
             // so that we can properly calculate exit payouts and ensure queued withdrawals have been resolved
             // (eigenLayer withdrawals are tied to blocknumber instead of timestamp)
-            observedExitBlock = uint32(block.number);
+            restakingObservedExitBlock = uint32(block.number);
             queueRestakedWithdrawal();
         }
     }
 
     /// @notice Set the validators phase to EVICTED
-    function markEvicted(uint256 validatorId) external onlyEtherFiNodeManagerContract {
-        _validatePhaseTransition(validatorId, VALIDATOR_PHASE.EVICTED);
+    function markEvicted() external onlyEtherFiNodeManagerContract {
+        _validatePhaseTransition(VALIDATOR_PHASE.EVICTED);
         phase = VALIDATOR_PHASE.EVICTED;
         exitTimestamp = uint32(block.timestamp);
 
@@ -201,7 +166,7 @@ contract EtherFiNode is IEtherFiNode {
             // we need to mark a block from which we know all beaconchain eth has been moved to the eigenPod
             // so that we can properly calculate exit payouts and ensure queued withdrawals have been resolved
             // (eigenLayer withdrawals are tied to blocknumber instead of timestamp)
-            observedExitBlock = uint32(block.number);
+            restakingObservedExitBlock = uint32(block.number);
             queueRestakedWithdrawal();
         }
     }
@@ -264,7 +229,6 @@ contract EtherFiNode is IEtherFiNode {
     /// @return toBnft          the payout to the B-NFT holder
     /// @return toTreasury      the payout to the Treasury
     function getStakingRewardsPayouts(
-        uint256 _validatorId,
         uint256 _beaconBalance,
         IEtherFiNodesManager.RewardsSplit memory _splits,
         uint256 _scale
@@ -279,7 +243,6 @@ contract EtherFiNode is IEtherFiNode {
         )
     {
         uint256 stakingBalance = _beaconBalance + getWithdrawableAmount();
-        //ValidatorState validatorState = validators[validatorId].exitRequestTimestamp;
         uint256 rewards;
 
         // If (Staking Principal + Staking Rewards >= 32 ether), the validator is running in a normal state
@@ -365,19 +328,16 @@ contract EtherFiNode is IEtherFiNode {
     /// @return toBnft          `the payout to the B-NFT holder
     /// @return toTreasury      the payout to the Treasury
     function calculateTVL(
-        uint256 _validatorId,
         uint256 _beaconBalance,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         uint256 _scale
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         uint256 balance = _beaconBalance + getWithdrawableAmount();
-       // ValidatorState validatorState = validators[validatorId];
-        //uint32 exitRequestTimestamp = validators[validatorId];
 
         // Compute the payouts for the rewards = (staking rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
         uint256[] memory payouts = new uint256[](4); // (toNodeOperator, toTnft, toBnft, toTreasury)
-        (payouts[0], payouts[1], payouts[2], payouts[3]) = getStakingRewardsPayouts(_validatorId, _beaconBalance, _SRsplits, _scale);
+        (payouts[0], payouts[1], payouts[2], payouts[3]) = getStakingRewardsPayouts(_beaconBalance, _SRsplits, _scale);
         balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
@@ -483,8 +443,7 @@ contract EtherFiNode is IEtherFiNode {
     //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _validatePhaseTransition(uint256 validatorId, VALIDATOR_PHASE _newPhase) internal view returns (bool) {
-        //VALIDATOR_PHASE currentPhase = validators[validatorId].phase;
+    function _validatePhaseTransition(VALIDATOR_PHASE _newPhase) internal view returns (bool) {
         VALIDATOR_PHASE currentPhase = phase;
         bool pass = true;
 
