@@ -39,10 +39,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     address public DEPRECATED_admin;
 
     uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
-    uint32 public SCALE;
     
     address public DEPRECATED_bNftTreasury;
-    address public etherFiAdminContract;
     IWithdrawRequestNFT public withdrawRequestNFT;
 
     BnftHolder[] public bnftHolders;
@@ -54,7 +52,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     mapping(address => bool) public admins;
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
     mapping(uint256 => bytes32) public depositDataRootForApprovalDeposits;
- 
+    address public etherFiAdminContract;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -98,7 +97,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         regulationsManager = IRegulationsManager(_regulationsManager);
         eEthliquidStakingOpened = false;
         schedulingPeriodInSeconds = 604800;
-        SCALE = 10_000;
 
         fundStatistics[SourceOfFunds.EETH].numberOfValidators = 1;
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = 1;
@@ -436,8 +434,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //--------------------------------------------------------------------------------------
 
     function _allocateSourceOfFunds(uint32 _numValidators) internal returns (SourceOfFunds) {
-        uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * SCALE) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
-        uint256 weightRatio = (fundStatistics[SourceOfFunds.EETH].targetWeight * SCALE) / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
+        uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
+        uint256 weightRatio = (fundStatistics[SourceOfFunds.EETH].targetWeight * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
 
         if(validatorRatio > weightRatio) {
             fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators += _numValidators;
