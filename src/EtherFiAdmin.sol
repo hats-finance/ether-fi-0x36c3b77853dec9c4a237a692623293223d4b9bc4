@@ -125,6 +125,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return (lastHandledReportRefBlock == 0) ? 0 : lastHandledReportRefBlock + 1;
     }
 
+
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         admins[_address] = _isAdmin;
 
