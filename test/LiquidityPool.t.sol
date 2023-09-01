@@ -72,7 +72,6 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(alice, 1 ether);
 
         vm.startPrank(alice);
-        stakingManagerInstance.disableWhitelist();
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.expectRevert(LiquidityPool.InvalidAmount.selector);
@@ -86,6 +85,24 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
     }
 
+    function test_DepositWhenNotWhitelisted() public {
+        vm.deal(alice, 1 ether);
+
+        vm.startPrank(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.enableWhitelist();
+
+        vm.expectRevert("User is not whitelisted");
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        assertEq(address(liquidityPoolInstance).balance, 0);
+
+        liquidityPoolInstance.addToWhitelist(address(alice));
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+
+        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+
+    }
+
     function test_StakingManagerLiquidityPool() public {
         vm.startPrank(alice);
         vm.deal(alice, 2 ether);
@@ -95,16 +112,6 @@ contract LiquidityPoolTest is TestSetup {
 
         hoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-
-        startHoax(alice);
-        stakingManagerInstance.enableWhitelist();
-        vm.expectRevert("User is not whitelisted");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, bobProof);
-        stakingManagerInstance.disableWhitelist();
-        vm.stopPrank();
-
-        vm.prank(alice);
-        stakingManagerInstance.enableWhitelist();
 
         startHoax(alice);
         uint256 aliceBalBefore = alice.balance;
@@ -343,7 +350,7 @@ contract LiquidityPoolTest is TestSetup {
         uint256 aliceBalance = address(alice).balance;
         bytes32[] memory proof = getWhitelistMerkleProof(9);
         vm.prank(alice);
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, proof, 0);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 0);
 
         assertEq(newValidators.length, 2);
         assertEq(address(alice).balance, aliceBalance - 4 ether);
@@ -400,7 +407,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.warp(1681075815 - 35 * 24 * 3600);   // Sun March ...
         vm.prank(henry);
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, proof, 7);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 7);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
         IStakingManager.DepositData[]
@@ -531,8 +538,6 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.closeEEthLiquidStaking();
 
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-
-        stakingManagerInstance.enableWhitelist();
 
         vm.expectRevert("Liquid staking functions are closed");
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
@@ -740,20 +745,20 @@ contract LiquidityPoolTest is TestSetup {
 
         //Making sure a user cannot deposit using another user's index
         vm.expectRevert("Incorrect Caller");
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, bobProof, 2);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 2);
 
         vm.prank(greg);
 
         //Making sure a user cannot deposit if they are not assigned
         vm.expectRevert("Not assigned");
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, bobProof, 1);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 1);
 
         vm.prank(bob);
 
         //Making sure if a user is assigned they send in the correct amount (This will be updated 
         //as we will allow users to specify how many validator they want to spin up)
         vm.expectRevert("B-NFT holder must deposit 2 ETH per validator");
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 6 ether}(bidIds, bobProof, 2);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 6 ether}(bidIds, 2);
 
         //Move way more in the future
         _moveClock(33431561615);
@@ -787,7 +792,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(shonee);
         //Shonee deposits and her index is 4, allowing her to deposit for 4 validators
-        validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 4);
+        validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
         assertEq(validators[0], 1);
         assertEq(validators[1], 2);
         assertEq(validators[2], 3);
@@ -797,7 +802,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(henry);
 
         //Henry deposits and his index is 7, allowing him to deposit
-        validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, henryProof, 7);
+        validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 7);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 6);
 
         assertEq(validators[0], 5);
@@ -807,7 +812,7 @@ contract LiquidityPoolTest is TestSetup {
 
         //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
         vm.expectRevert("Not assigned");
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, chadProof, 8);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 8);
     }
 
     function test_OnlyApprovedOperatorsGetSelected() public {
@@ -895,7 +900,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(henry);
         //Henry deposits and his index is 7, allowing him to deposit
-        uint256[] memory validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bids, henryProof, 7);
+        uint256[] memory validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bids, 7);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 4);
         assertEq(validators[0], bidIds[2]);
         assertEq(validators[1], bidIds[3]);
@@ -904,11 +909,6 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_DepositAsBnftHolderWithLargeSet() public {
-
-        firstIndexPlayerProof = merkle.getProof(whiteListedAddresses, 12);
-        beforeFirstIndexPlayerProof = merkle.getProof(whiteListedAddresses, 13);
-        lastIndexPlayerProof = merkle.getProof(whiteListedAddresses, 14);
-
 
         //Add 1000 people to the BNFT holder array
         for (uint i = 1; i <= 1000; i++) {
@@ -959,7 +959,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(firstIndexAddress);
 
         //Allow the user in the first index position to deposit 
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, firstIndexPlayerProof, firstIndex);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, firstIndex);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 4);
 
         vm.stopPrank();
@@ -968,7 +968,7 @@ contract LiquidityPoolTest is TestSetup {
 
         //User who is one short of the assigned first index attempts to deposit but fails
         vm.expectRevert("Not assigned");
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, beforeFirstIndexPlayerProof, firstIndex - 1);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, firstIndex - 1);
         vm.stopPrank();
 
         vm.deal(lastIndexAddress, 10 ether);
@@ -976,7 +976,7 @@ contract LiquidityPoolTest is TestSetup {
 
         //User who is last in the selection deposits with the correct amount of funds
         uint256 amount = 2 ether * numOfValidatorsForLastIndex;
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: amount}(bidIds, lastIndexPlayerProof, lastIndex);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: amount}(bidIds, lastIndex);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 4 + numOfValidatorsForLastIndex);
         vm.stopPrank();
     }
@@ -1047,20 +1047,20 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(greg);
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 12 ether}(bidIds, gregProof, 1);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 12 ether}(bidIds, 1);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 6);
 
         vm.stopPrank();
 
         vm.startPrank(owner);
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, ownerProof, 3);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 3);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 10);
         vm.stopPrank();
 
         vm.startPrank(chad);
         //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
         vm.expectRevert("Not assigned");
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, chadProof, 8);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 8);
         vm.stopPrank();
     }
 
@@ -1126,7 +1126,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.startPrank(alice);
         //Alice deposits and her index is 0 (the last index), allowing her to deposit for 2 validators
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 0);
         vm.stopPrank();
 
         vm.startPrank(owner);
@@ -1140,7 +1140,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(greg);
         //Greg attempts to deposit, however, due to his index being 1 after the swap he is not assigned
         vm.expectRevert("Not assigned");
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, henryProof, 1);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 1);
         vm.stopPrank();
     }
 
@@ -1219,7 +1219,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
         
         startHoax(alice);
-        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
+        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 0);
 
         assertEq(stakingManagerInstance.bidIdToStaker(11), alice);
         assertEq(stakingManagerInstance.bidIdToStaker(12), alice);
@@ -1318,7 +1318,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
         
         startHoax(alice);
-        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
+        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 0);
 
         assertEq(stakingManagerInstance.bidIdToStaker(11), alice);
         assertEq(stakingManagerInstance.bidIdToStaker(12), alice);
@@ -1331,7 +1331,7 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(stakingManagerInstance.bidIdToStaker(18), address(0));
 
         vm.expectRevert("Already deposited");
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, aliceProof, 0);
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 0);
 
     }
 

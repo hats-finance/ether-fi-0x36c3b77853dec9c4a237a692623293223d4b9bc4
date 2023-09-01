@@ -572,7 +572,7 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(alice, 12 ether);
 
         vm.prank(alice);
-        stakingManagerInstance.enableWhitelist();
+        liquidityPoolInstance.enableWhitelist();
 
         vm.prank(henry);
 
@@ -582,10 +582,13 @@ contract MembershipManagerTest is TestSetup {
 
         //Giving 12 Ether to shonee
         vm.deal(shonee, 12 ether);
+
+        vm.prank(alice);
+        liquidityPoolInstance.addToWhitelist(address(shonee));
         vm.startPrank(shonee);
 
         //This is the merkle proof for Shonee
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 11);
+        shoneeProof = merkle.getProof(whiteListedAddresses, 11);
 
         // Now shonee cant mint because she is not registered, even though she is whitelisted
         vm.expectRevert("User is not eligible to participate");
@@ -900,55 +903,6 @@ contract MembershipManagerTest is TestSetup {
         return tvls;
     }
 
-    // function launch_validator() internal returns (uint256[] memory) {
-    //     vm.deal(owner, 100 ether);
-    //     vm.prank(alice);
-    //     nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
-    //     assertEq(liquidityPoolInstance.getTotalPooledEther(), 0);
-
-    //     hoax(alice);
-    //     uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
-
-    //     startHoax(bob);
-    //     regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-    //     liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
-    //     assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
-    //     vm.stopPrank();
-
-    //     bytes32[] memory proof = getWhitelistMerkleProof(9);
-
-    //     vm.prank(alice);
-    //     uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
-    //     assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
-
-    //     IStakingManager.DepositData[]
-    //         memory depositDataArray = new IStakingManager.DepositData[](2);
-
-    //     for (uint256 i = 0; i < newValidators.length; i++) {
-    //         address etherFiNode = managerInstance.etherfiNodeAddress(
-    //             newValidators[i]
-    //         );
-    //         bytes32 root = depGen.generateDepositRoot(
-    //             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-    //             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-    //             managerInstance.generateWithdrawalCredentials(etherFiNode),
-    //             32 ether
-    //         );
-    //         depositDataArray[i] = IStakingManager.DepositData({
-    //             publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-    //             signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-    //             depositDataRoot: root,
-    //             ipfsHashForEncryptedValidatorKey: "test_ipfs"
-    //         });
-    //     }
-
-    //     bytes32 depositRoot = _getDepositRoot();
-    //     vm.prank(alice);
-    //     liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
-
-    //     return newValidators;
-    // }
-
     function test_Pausable() public {
         assertEq(membershipManagerV1Instance.paused(), false);
 
@@ -1015,7 +969,6 @@ contract MembershipManagerTest is TestSetup {
     function test_bring_random_monkeys() public {
         vm.deal(alice, 1 ether);
         vm.startPrank(alice);
-        stakingManagerInstance.disableWhitelist();
         membershipManagerV1Instance.setTopUpCooltimePeriod(7 days);
         vm.stopPrank();
 

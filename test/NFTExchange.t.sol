@@ -274,8 +274,6 @@ contract NFTExchangeTest is TestSetup {
     }
 
     function _alice_stake() internal returns (uint256) {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
@@ -284,7 +282,7 @@ contract NFTExchangeTest is TestSetup {
 
         vm.deal(alice, 32 ether);
         vm.startPrank(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, proof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1);
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(

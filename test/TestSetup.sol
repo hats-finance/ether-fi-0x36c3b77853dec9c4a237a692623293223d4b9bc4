@@ -460,9 +460,6 @@ contract TestSetup is Test {
         _initializePeople();
         _initializeEtherFiAdmin();
 
-        vm.prank(alice);
-        stakingManagerInstance.disableWhitelist();
-
     }
 
     function _merkleSetup() internal {
@@ -491,9 +488,6 @@ contract TestSetup is Test {
         whiteListedAddresses.push(keccak256(abi.encodePacked(shonee)));
 
         root = merkle.getRoot(whiteListedAddresses);
-
-        vm.prank(alice);
-        stakingManagerInstance.updateMerkleRoot(root);
     }
 
     function getWhitelistMerkleProof(uint256 index) internal returns (bytes32[] memory) {
@@ -521,11 +515,6 @@ contract TestSetup is Test {
             regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
             vm.stopPrank();
         }
-
-        vm.startPrank(alice);
-        root = merkle.getRoot(whiteListedAddresses);
-        stakingManagerInstance.updateMerkleRoot(root);
-        vm.stopPrank();
     }
 
     function _setUpNodeOperatorWhitelist() internal {
@@ -779,7 +768,7 @@ contract TestSetup is Test {
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
         vm.prank(alice);
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, proof, 0);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 0);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
         IStakingManager.DepositData[]

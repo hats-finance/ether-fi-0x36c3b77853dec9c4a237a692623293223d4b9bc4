@@ -52,7 +52,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     mapping(address => bool) public admins;
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
     mapping(uint256 => bytes32) public depositDataRootForApprovalDeposits;
+    mapping(address => bool) public whitelisted;
     address public etherFiAdminContract;
+    bool public whitelistEnabled;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -62,7 +64,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event Withdraw(address indexed sender, address recipient, uint256 amount);
     event AddedToWhitelist(address userAddress);
     event RemovedFromWhitelist(address userAddress);
-    event BnftHolderDeregistered(uint256 index);
+    event BnftHolderDeregistered(address user, uint256 index);
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
@@ -70,6 +72,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
     event Rebase(uint256 totalEthLocked, uint256 totalEEthShares);
+    event WhitelistEnabled();
+    event WhitelistDisabled();
 
     error InvalidAmount();
 
@@ -199,7 +203,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _index) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
@@ -229,7 +233,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender, _source);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, msg.sender, _source);
         if (numberOfValidatorsToSpin > newValidators.length) {
             uint256 returnAmount = 2 ether * (numberOfValidatorsToSpin - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
@@ -296,7 +300,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
         bnftHolders.pop();
 
-        emit BnftHolderDeregistered(_index);
+        emit BnftHolderDeregistered(msg.sender, _index);
     }
 
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
@@ -435,6 +439,30 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }
 
+    function addToWhitelist(address _user) external onlyAdmin {
+        whitelisted[_user] = true;
+
+        emit AddedToWhitelist(_user);
+    }
+
+    function removeFromWhitelist(address _user) external onlyAdmin {
+        whitelisted[_user] = false;
+
+        emit RemovedFromWhitelist(_user);
+    }
+
+    function enableWhitelist() external onlyAdmin {
+        whitelistEnabled = true;
+
+        emit WhitelistEnabled();
+    }
+
+    function disableWhitelist() external onlyAdmin {
+        whitelistEnabled = false;
+
+        emit WhitelistDisabled();
+    }
+
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -479,8 +507,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
 
-    function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
-        stakingManager.verifyWhitelisted(_user, _merkleProof);
+    function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view {
+        if(whitelistEnabled) {
+            require(whitelisted[_user], "User is not whitelisted");
+        }
+
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
     }
 
