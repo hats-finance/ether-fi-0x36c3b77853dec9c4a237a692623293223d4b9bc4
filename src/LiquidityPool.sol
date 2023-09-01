@@ -98,8 +98,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         eEthliquidStakingOpened = false;
     }
 
-    function initializePhase2() external {
-        
+    function initializePhase2() external {        
         schedulingPeriodInSeconds = 604800;
 
         fundStatistics[SourceOfFunds.EETH].numberOfValidators = 1;
@@ -210,7 +209,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         if(_index == lastIndex) {
             numberOfValidatorsToSpin = lastIndexNumOfValidators;
         }
-
         SourceOfFunds _source = _allocateSourceOfFunds();
 
         if(_source == SourceOfFunds.EETH){
