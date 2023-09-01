@@ -196,7 +196,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         claim(_tokenId);
         if (!membershipNFT.isWithdrawable(_tokenId, _amount)) revert ExceededMaxWithdrawal();
 
-        uint256 prevAmount = ethAmountForVaultShare(tokenData[_tokenId].tier, tokenData[_tokenId].share);
+        uint256 prevAmount = ethAmountForVaultShare(tokenData[_tokenId].tier, tokenData[_tokenId].vaultShare);
         _updateAllTimeHighDepositOf(_tokenId);
         _withdraw(_tokenId, _amount);
         _applyUnwrapPenalty(_tokenId, prevAmount, _amount);
@@ -246,13 +246,16 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _emitNftUpdateEvent(_tokenId);
     }
 
-    function rebase(uint256 _tvl, uint256 _balanceInLp) external {
+    function rebase(int128 _accruedRewards) external {
         _requireAdmin();
         uint256 shareValuePerEthBeforeRebase = liquidityPool.amountForShare(1 ether);
-        liquidityPool.rebase(_tvl, _balanceInLp);
+        liquidityPool.rebase(_accruedRewards);
         uint256 shareValuePerEthAfterRebase = liquidityPool.amountForShare(1 ether);
-        _distributeStakingRewardsV0();
-        _distributeStakingRewardsV1(shareValuePerEthBeforeRebase, shareValuePerEthAfterRebase);
+       
+        if (shareValuePerEthAfterRebase > shareValuePerEthBeforeRebase) {
+            _distributeStakingRewardsV0();
+            _distributeStakingRewardsV1(shareValuePerEthBeforeRebase, shareValuePerEthAfterRebase);
+        }
     }
 
     function claimBatch(uint256[] calldata _tokenIds) public whenNotPaused {
@@ -440,7 +443,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (!canTopUp(_tokenId, additionalDeposit, _amount, _amountForPoints)) revert InvalidDeposit();
 
         TokenData storage token = tokenData[_tokenId];
-        uint256 totalDeposit = ethAmountForVaultShare(token.tier, token.share);
+        uint256 totalDeposit = ethAmountForVaultShare(token.tier, token.vaultShare);
         uint256 maxDepositWithoutPenalty = (totalDeposit * maxDepositTopUpPercent) / 100;
 
         _deposit(_tokenId, _amount, _amountForPoints);
@@ -467,14 +470,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (tokenData[_tokenId].version != 1) revert WrongVersion();
 
         uint8 tier = tokenData[_tokenId].tier;
-        uint256 share = tokenData[_tokenId].share;
-        uint256 balance = ethAmountForVaultShare(tier, share);
-        _withdraw(_tokenId, balance);
+        uint256 vaultShare = tokenData[_tokenId].vaultShare;
+        uint256 ethAmount = ethAmountForVaultShare(tier, vaultShare);
+        
+        _withdraw(_tokenId, ethAmount);
         membershipNFT.burn(msg.sender, _tokenId, 1);
 
-        // Rounding down in favor of the protocol
-        // + Guard against the inflation attack
-        return _min(balance, liquidityPool.amountForShare(share));     
+        return ethAmount;   
     }
 
     function _withdraw(uint256 _tokenId, uint256 _amount) internal {
@@ -532,11 +534,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     // V1
     function _incrementTokenVaultShareV1(uint256 _tokenId, uint256 _share) internal {
-        tokenData[_tokenId].share += uint96(_share);
+        tokenData[_tokenId].vaultShare += uint96(_share);
     }
 
     function _decrementTokenVaultShareV1(uint256 _tokenId, uint256 _share) internal {
-        tokenData[_tokenId].share -= uint96(_share);
+        tokenData[_tokenId].vaultShare -= uint96(_share);
     }
 
     function _incrementTierVaultV1(uint8 _tier, uint256 _eEthShare, uint256 _vaultShare) internal {
@@ -563,13 +565,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
             return;
         }
         
-        uint256 prevVaultShare = tokenData[_tokenId].share;
+        uint256 prevVaultShare = tokenData[_tokenId].vaultShare;
         uint256 eEthShare = eEthShareForVaultShare(_curTier, prevVaultShare);
         uint256 newVaultShare = vaultShareForEEthShare(_newTier, eEthShare);
 
         _decrementTierVaultV1(_curTier, eEthShare, prevVaultShare);
         _incrementTierVaultV1(_newTier, eEthShare, newVaultShare);
-        tokenData[_tokenId].share = uint96(newVaultShare);
+        tokenData[_tokenId].vaultShare = uint96(newVaultShare);
         tokenData[_tokenId].tier = _newTier;
     }
 
@@ -592,15 +594,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         TokenData storage token = tokenData[_tokenId];
         uint256 tier = token.tier;
-
         uint256 amount = membershipNFT.accruedStakingRewardsOf(_tokenId);
-
-        // Round-up in favor of safety of the protocol
-        uint256 share = liquidityPool.sharesForWithdrawalAmount(amount);
         _incrementTokenDeposit(_tokenId, amount);
         _incrementTierDeposit(tier, amount);
         
-        token.share = tierData[tier].rewardsGlobalIndex;
+        token.vaultShare = tierData[tier].rewardsGlobalIndex;
     }
 
 
@@ -624,7 +622,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint96 vaultShare = uint96(vaultShareForEEthShare(tier, eEthShare));
         _incrementTierVaultV1(tier, eEthShare, vaultShare);
 
-        tokenData[_tokenId].share = vaultShare;
+        tokenData[_tokenId].vaultShare = vaultShare;
         tokenData[_tokenId].version = 1;
 
         delete tokenDeposits[_tokenId];
@@ -723,7 +721,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         TokenData memory token = tokenData[_tokenId];
         emit NftUpdated(_tokenId, amount, 0,
                         token.baseLoyaltyPoints, token.baseTierPoints, token.tier,
-                        token.prevTopUpTimestamp, token.share);
+                        token.prevTopUpTimestamp, token.vaultShare);
     }
 
     // Finds the corresponding for the tier points

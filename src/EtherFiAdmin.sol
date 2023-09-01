@@ -30,6 +30,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint32 public lastHandledReportRefBlock;
     uint32 public pendingWithdrawalAmount;
     uint32 public numPendingValidatorsRequestedToExit;
+    uint32 public numValidatorsToSpinUp;
 
     event AdminUpdated(address _address, bool _isAdmin);
     event AdminOperationsExecuted(address _address, bytes32 _reportHash);
@@ -62,14 +63,15 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function executeTasks(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) external isAdmin() {
         bytes32 reportHash = etherFiOracle.generateReportHash(_report);
-        require(etherFiOracle.isConsensusReached(reportHash), "EtherFiAdmin: not allowed to submit report");
-        require(lastHandledReportRefSlot < _report.refSlotTo, "EtherFiAdmin: report already handled");
-        require(lastHandledReportRefBlock < _report.refBlockTo, "EtherFiAdmin: report already handled");
+        require(etherFiOracle.isConsensusReached(reportHash), "EtherFiAdmin: report didn't reach consensus");
+        require(slotForNextReportToProcess() == _report.refSlotFrom, "EtherFiAdmin: report has wrong `refSlotFrom`");
+        require(blockForNextReportToProcess() == _report.refBlockFrom, "EtherFiAdmin: report has wrong `refBlockFrom`");
 
         lastHandledReportRefSlot = _report.refSlotTo;
         lastHandledReportRefBlock = _report.refBlockTo;
         pendingWithdrawalAmount = _report.pendingWithdrawalAmount;
         numPendingValidatorsRequestedToExit = _report.numPendingValidatorsRequestedToExit;
+        numValidatorsToSpinUp = _report.numValidatorsToSpinUp;
 
         _handleAccruedRewards(_report);
         _handleValidators(_report, _pubKey, _signature);
@@ -80,9 +82,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _handleAccruedRewards(IEtherFiOracle.OracleReport calldata _report) internal {
-        uint256 lpBalance = address(liquidityPool).balance;
-        uint256 tvl = uint256(_report.accruedRewards + int256(lpBalance));
-        membershipManager.rebase(lpBalance, tvl);
+        membershipManager.rebase(_report.accruedRewards);
     }
 
     function _handleValidators(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) internal {
@@ -114,8 +114,15 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (_report.eEthTargetAllocationWeight == 0 || _report.etherFanTargetAllocationWeight == 0) {
             return;
         }
-        // TODO enable it 
-        // liquidityPool.setStakingTargetWeights(_report.eEthTargetAllocationWeight, _report.etherFanTargetAllocationWeight);
+        liquidityPool.setStakingTargetWeights(_report.eEthTargetAllocationWeight, _report.etherFanTargetAllocationWeight);
+    }
+
+    function slotForNextReportToProcess() public view returns (uint32) {
+        return (lastHandledReportRefSlot == 0) ? 0 : lastHandledReportRefSlot + 1;
+    }
+
+    function blockForNextReportToProcess() public view returns (uint32) {
+        return (lastHandledReportRefBlock == 0) ? 0 : lastHandledReportRefBlock + 1;
     }
 
 

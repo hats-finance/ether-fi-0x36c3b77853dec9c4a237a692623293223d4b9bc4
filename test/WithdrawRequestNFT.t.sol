@@ -160,13 +160,16 @@ contract WithdrawRequestNFTTest is TestSetup {
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
 
-        uint96 amountOfEEth = 1 ether;
+        // Case 1.
+        // Even after the rebase, the withdrawal amount should remain the same; 1 eth
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), 1 ether);
 
         vm.prank(bob);
-        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, 1 ether);
 
-        vm.prank(bob);
-        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+        vm.prank(address(membershipManagerInstance));
+        liquidityPoolInstance.rebase(10 ether);
 
         assertEq(withdrawRequestNFTInstance.balanceOf(bob), 1, "Bobs balance should be 1");
         assertEq(withdrawRequestNFTInstance.ownerOf(requestId), bob, "Bobs should own the NFT");
@@ -180,6 +183,44 @@ contract WithdrawRequestNFTTest is TestSetup {
         uint256 bobsEndingBalance = address(bob).balance;
 
         assertEq(bobsEndingBalance, bobsStartingBalance + 1 ether, "Bobs balance should be 1 ether higher");
+    }
+
+    function test_ValidClaimWithdrawWithNegativeRebase() public {
+        uint256[] memory validatorIds = launch_validator();
+
+        startHoax(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        vm.stopPrank();
+
+        uint256 bobsStartingBalance = address(bob).balance;
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether + 60 ether);
+
+        // Case 2.
+        // After the rebase with negative rewards (loss of 35 eth among 70 eth),
+        // the withdrawal amount is reduced from 1 ether to 0.5 ether
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), 1 ether);
+
+        vm.prank(bob);
+        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, 1 ether);
+
+        vm.prank(address(membershipManagerInstance));
+        liquidityPoolInstance.rebase(-35 ether);
+
+        assertEq(withdrawRequestNFTInstance.balanceOf(bob), 1, "Bobs balance should be 1");
+        assertEq(withdrawRequestNFTInstance.ownerOf(requestId), bob, "Bobs should own the NFT");
+
+        vm.prank(alice);
+        withdrawRequestNFTInstance.finalizeRequests(requestId);
+
+        vm.prank(bob);
+        withdrawRequestNFTInstance.claimWithdraw(requestId);
+
+        uint256 bobsEndingBalance = address(bob).balance;
+
+        assertEq(bobsEndingBalance, bobsStartingBalance + 0.5 ether, "Bobs balance should be 1 ether higher");
     }
 
     function testUpdateLiquidityPool() public {

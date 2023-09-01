@@ -21,6 +21,7 @@ contract EtherFiNodeTest is TestSetup {
 
     uint256[] bidId;
     EtherFiNode safeInstance;
+    EtherFiNode restakingSafe;
 
     function setUp() public {
        
@@ -49,8 +50,7 @@ contract EtherFiNodeTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof2,
-            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf
+            proof2
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -66,7 +66,8 @@ contract EtherFiNodeTest is TestSetup {
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            //managerInstance.generateWithdrawalCredentials(etherFiNode),
+            managerInstance.getWithdrawalCredentials(bidId[0]),
             32 ether
         );
 
@@ -271,8 +272,7 @@ contract EtherFiNodeTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            bobProof,
-            bob
+            bobProof
         );
 
         hoax(dan);
@@ -281,8 +281,7 @@ contract EtherFiNodeTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            danProof,
-            dan
+            danProof
         );
 
         {

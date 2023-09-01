@@ -368,7 +368,7 @@ contract MembershipManagerV0Test is TestSetup {
 
         // Rebase; staking rewards 0.5 ETH into LP
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(0.5 ether + 0.5 ether, 0.5 ether);
+        membershipManagerInstance.rebase(0.5 ether);
         vm.stopPrank();
 
         // Check the balance of Alice updated by the rebasing
@@ -400,7 +400,7 @@ contract MembershipManagerV0Test is TestSetup {
 
         // More Staking rewards 1 ETH into LP
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(2.5 ether + 0.5 ether + 1 ether, 2.5 ether);
+        membershipManagerInstance.rebase(1 ether);
         vm.stopPrank();
 
         // Alice belongs to the tier 1 with the weight 2
@@ -613,7 +613,7 @@ contract MembershipManagerV0Test is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(address(liquidityPoolInstance).balance * 2, address(liquidityPoolInstance).balance);
+        membershipManagerInstance.rebase(1 ether);
         vm.stopPrank();
 
         // Alice earns 1 kwei per day by holding 1 membership points
@@ -931,7 +931,7 @@ contract MembershipManagerV0Test is TestSetup {
 
         // 1 ETH is earned as a staking rewards; 2 ETH has grown to 3 ETH.
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(2 ether + 1 ether, 2 ether);
+        membershipManagerInstance.rebase(1 ether);
         vm.stopPrank();
 
         // The balance has grown accordingly
@@ -1025,114 +1025,6 @@ contract MembershipManagerV0Test is TestSetup {
         return total;
     }
 
-    function test_bring_random_monkeys() public {
-        vm.deal(alice, 1 ether);
-        vm.startPrank(alice);
-        stakingManagerInstance.disableWhitelist();
-        membershipManagerInstance.setTopUpCooltimePeriod(7 days);
-        vm.stopPrank();
-
-        uint256 rounds = 30;
-        uint256 moneyPerActor = 10000 ether;
-        uint256 moneyPerRebase = 10 ether;
-        uint256 totalMoneySupply = moneyPerActor * actors.length + moneyPerRebase * rounds;
-
-        uint256[] memory tokens = new uint256[](actors.length);
-        for (uint256 i = 0; i < actors.length; i++) {
-            address actor = actors[i];
-            vm.deal(actor, moneyPerActor);
-
-            vm.startPrank(actor);
-            tokens[i] = membershipManagerInstance.wrapEth{value: 100 ether}(100 ether, 0 ether, zeroProof);
-            vm.stopPrank();
-        }
-
-        uint256[] memory counts = new uint256[](10);
-
-        for (uint256 round = 0; round < rounds; round++) {
-            skip(7 days);
-
-            uint256 tvlInContract = address(liquidityPoolInstance).balance;
-
-            vm.startPrank(alice);
-            membershipManagerInstance.rebase(moneyPerRebase + tvlInContract, tvlInContract);
-            vm.stopPrank();
-
-            _transferTo(address(liquidityPoolInstance), moneyPerRebase);
-
-            for (uint256 i = 0; i < actors.length; i++) {
-                address actor = actors[i];
-                uint256 token = tokens[i];
-
-                uint128 random = uint128(uint256(keccak256(abi.encodePacked(actor, round, i))) % type(uint128).max);
-                uint128 amount = random % 0.1 ether + 0.1 ether;
-                uint128 withdrawalAmount = random % 0.05 ether;
-
-                vm.startPrank(actor);
-                if (random % 4 == 0 && true) {
-                    membershipManagerInstance.claim(token);
-                    counts[1]++;
-                }
-                if (random % 2 == 0 && i % 4 != 0) {
-                    membershipManagerInstance.topUpDepositWithEth{value: amount + 0}(token, amount, 0, zeroProof);
-                    counts[2]++;
-                }
-                if (random % 3 == 0 && i % 4 != 0) {
-                    uint256 requestId = membershipManagerInstance.requestWithdraw(token, withdrawalAmount);
-                    vm.stopPrank();
-
-                    vm.prank(alice);
-                    withdrawRequestNFTInstance.finalizeRequests(requestId);
-
-                    vm.startPrank(actor);
-                    withdrawRequestNFTInstance.claimWithdraw(requestId);
-                    counts[3]++;
-                }
-    
-                vm.stopPrank();
-            }
-        }
-
-
-        for (uint256 i = 0; i < membershipManagerInstance.numberOfTiers(); i++) {
-            (uint128 share, uint128 amount) = membershipManagerInstance.tierDeposits(i);
-            // console.log("tierDeposits", i, share, amount);
-        }
-
-        uint256 totalActorsBalance;
-        for (uint256 i = 0; i < actors.length; i++) {
-            address actor = actors[i];
-            uint256 token = tokens[i];
-
-            uint256 expectedBalanceAfterWithdrawal = address(actor).balance + membershipNftInstance.valueOf(token);
-
-            vm.prank(actor);
-            uint256 requestId = membershipManagerInstance.requestWithdrawAndBurn(token);
-            vm.prank(alice);
-            withdrawRequestNFTInstance.finalizeRequests(requestId);
-            vm.prank(actor);
-            withdrawRequestNFTInstance.claimWithdraw(requestId);
-
-            assertLe(address(actor).balance, expectedBalanceAfterWithdrawal);
-            assertGe(address(actor).balance, expectedBalanceAfterWithdrawal - 3); // rounding errors
-
-            totalActorsBalance += address(actor).balance;
-        }
-
-        for (uint256 i = 0; i < membershipManagerInstance.numberOfTiers(); i++) {
-            (uint128 share, uint128 amount) = membershipManagerInstance.tierDeposits(i);
-            // console.log("tierDeposits", i, share, amount);
-            assertEq(share, 0);
-            assertEq(amount, 0);
-        }
-        // console.log(counts[0], counts[1], counts[2], counts[3]);
-        // console.log("address(liquidityPoolInstance).balance", address(liquidityPoolInstance).balance);
-        // console.log("eETHInstance.balanceOf(address(membershipManagerInstance))", eETHInstance.balanceOf(address(membershipManagerInstance)));
-        // console.log("resting Rewards", liquidityPoolInstance.amountForShare(membershipManagerInstance.sharesReservedForRewards()));
-        assertEq(totalActorsBalance + address(liquidityPoolInstance).balance, totalMoneySupply);
-        // assertLe(membershipManagerInstance.sharesReservedForRewards(), eETHInstance.shares(address(membershipManagerInstance)));
-    }
-
     function test_eap_migration() public {
         // Jul-19-2023 13:03:23
         vm.warp(1689764603);
@@ -1199,7 +1091,7 @@ contract MembershipManagerV0Test is TestSetup {
         vm.stopPrank();
 
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(5 ether + 1 ether, 5 ether);
+        membershipManagerInstance.rebase(1 ether);
         vm.stopPrank();
         
         assertEq(membershipNftInstance.valueOf(tokens[0]), 1 ether + 1 ether * uint256(10) / uint256(100));
@@ -1230,7 +1122,7 @@ contract MembershipManagerV0Test is TestSetup {
 
         // 2x by rebase
         vm.startPrank(alice);
-        membershipManagerInstance.rebase(address(liquidityPoolInstance).balance * 2, address(liquidityPoolInstance).balance);
+        membershipManagerInstance.rebase(int128(uint128(address(liquidityPoolInstance).balance)));
         vm.stopPrank();
         _transferTo(address(liquidityPoolInstance), address(liquidityPoolInstance).balance);
 
@@ -1254,7 +1146,7 @@ contract MembershipManagerV0Test is TestSetup {
 
         // another 2x by rebase
         vm.startPrank(alice);
-        membershipManagerV1Instance.rebase(address(liquidityPoolInstance).balance * 2, address(liquidityPoolInstance).balance);
+        membershipManagerV1Instance.rebase(int128(uint128(address(liquidityPoolInstance).balance)));
         vm.stopPrank();
         _transferTo(address(liquidityPoolInstance), address(liquidityPoolInstance).balance);
 

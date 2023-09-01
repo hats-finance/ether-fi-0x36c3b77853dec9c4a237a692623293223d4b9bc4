@@ -9,7 +9,7 @@ interface IMembershipManager {
     }
 
     struct TokenData {
-        uint96 share;
+        uint96 vaultShare;
         uint40 baseLoyaltyPoints;
         uint40 baseTierPoints;
         uint32 prevPointsAccrualTimestamp;
@@ -77,7 +77,7 @@ interface IMembershipManager {
     // only Owner
     function setWithdrawalLockBlocks(uint32 _blocks) external;
     function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external;
-    function rebase(uint256 _tvl, uint256 _balanceInLp) external;
+    function rebase(int128 _accruedRewards) external;
     function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256);
     function updateTier(uint8 _tier, uint40 _requiredTierPoints, uint24 _weight) external;
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
@@ -86,4 +86,5 @@ interface IMembershipManager {
     function setMaxDepositTopUpPercent(uint8 _percent) external;
     function setTopUpCooltimePeriod(uint32 _newWaitTime) external;
     function withdrawFees(uint256 _amount, address _recipient) external;
+    function updateAdmin(address _address, bool _isAdmin) external;
 }

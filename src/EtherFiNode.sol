@@ -41,8 +41,15 @@ contract EtherFiNode is IEtherFiNode {
 
     event ValidatorAdded(uint256 indexed validatorId);
 
+
+    error SafeNotConfiguredForRestaking();
+
     // TODO(Dave): permissions and scope
     function createEigenPod() public {
+
+        if (address(eigenPodManager) == address(0x0)) revert SafeNotConfiguredForRestaking();
+        if (eigenPod != address(0x0)) return; // already have pod
+
         console2.log("start");
         eigenPodManager.createPod();
         console2.log("post create");

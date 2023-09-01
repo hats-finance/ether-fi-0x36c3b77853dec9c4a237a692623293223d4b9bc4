@@ -10,13 +10,6 @@ contract EtherFiOracleTest is TestSetup {
 
         // Timestamp = 1, BlockNumber = 0
         vm.roll(0);
-
-        console.log(etherFiOracleInstance.owner());
-
-        vm.startPrank(owner);
-        etherFiOracleInstance.addCommitteeMember(alice);
-        etherFiOracleInstance.addCommitteeMember(bob);
-        vm.stopPrank();
     }
 
     function test_addCommitteeMember() public {
@@ -245,6 +238,23 @@ contract EtherFiOracleTest is TestSetup {
         etherFiOracleInstance.setOracleReportPeriod(128);
 
         vm.stopPrank();
+    }
+
+    function test_admin_task() public {
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+
+        // When we want Oracle to allow to spin up one validator
+        report.numValidatorsToSpinUp = 1;
+        _executeAdminTasks(report);
+        assertEq(etherFiAdminInstance.numValidatorsToSpinUp(), 1);
+
+        report.eEthTargetAllocationWeight = 80;
+        report.etherFanTargetAllocationWeight = 20;
+        _executeAdminTasks(report);
+        // assertEq(liquidityPool.eEthTargetAllocationWeight(), 80);
+        // assertEq(liquidityPool.etherFanTargetAllocationWeight(), 20);
+
+
     }
 
 }

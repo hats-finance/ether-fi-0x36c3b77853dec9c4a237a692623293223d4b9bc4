@@ -2,27 +2,27 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "../../src/AuctionManager.sol";
+import "../../src/EtherFiAdmin.sol";
 import "../../src/helpers/AddressProvider.sol";
 
-contract AuctionManagerUpgrade is Script {
+contract EtherFiAdminUpgrade is Script {
 
     AddressProvider public addressProvider;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
+
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address AuctionManagerProxyAddress = addressProvider.getContractAddress("AuctionManager");
-        
+        address proxyAddress = addressProvider.getContractAddress("EtherFiAdmin");
+
         vm.startBroadcast(deployerPrivateKey);
 
-        AuctionManager AuctionManagerInstance = AuctionManager(AuctionManagerProxyAddress);
-        AuctionManager AuctionManagerImplementation = new AuctionManager();
+        EtherFiAdmin instance = EtherFiAdmin(proxyAddress);
+        EtherFiAdmin v2Implementation = new EtherFiAdmin();
 
-        AuctionManagerInstance.upgradeTo(address(AuctionManagerImplementation));
+        instance.upgradeTo(address(v2Implementation));
 
         vm.stopBroadcast();
     }

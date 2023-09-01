@@ -7,6 +7,15 @@ import "../../src/EtherFiOracle.sol";
 import "../../src/EtherFiAdmin.sol";
 import "../../src/WithdrawRequestNFT.sol";
 import "../../src/helpers/AddressProvider.sol";
+
+import "../../src/interfaces/IAuctionManager.sol";
+import "../../src/interfaces/IStakingManager.sol";
+import "../../src/interfaces/ILiquidityPool.sol";
+import "../../src/interfaces/IMembershipManager.sol";
+import "../../src/interfaces/IMembershipNFT.sol";
+import "../../src/interfaces/IEtherFiNodesManager.sol";
+import "../../src/interfaces/IWithdrawRequestNFT.sol";
+
 import "../../src/UUPSProxy.sol";
 
 contract DeployPhaseTwoScript is Script {
@@ -34,12 +43,15 @@ contract DeployPhaseTwoScript is Script {
     address membershipManagerAddress;
     address withdrawRequestNFTAddress;
 
+    address oracleAdminAddress;
+
     uint32 beacon_genesis_time;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");    
         beacon_genesis_time = uint32(vm.envUint("BEACON_GENESIS_TIME"));
         addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
+        oracleAdminAddress = vm.envAddress("ORACLE_ADMIN_ADDRESS");
         addressProvider = AddressProvider(addressProviderAddress);
         
         vm.startBroadcast(deployerPrivateKey);
@@ -94,6 +106,9 @@ contract DeployPhaseTwoScript is Script {
         // etherFiOracleInstance.initialize(2, 7200, 12, beacon_genesis_time);
         // 96 slots = 19.2 mins, 7200 slots = 225 epochs = 1day
 
+        etherFiOracleInstance.addCommitteeMember(address(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39));
+        etherFiOracleInstance.addCommitteeMember(address(0x601B37004f2A6B535a6cfBace0f88D2d534aCcD8));
+
         addressProvider.addContract(address(etherFiOracleProxy), "EtherFiOracle");
     }
 
@@ -117,6 +132,18 @@ contract DeployPhaseTwoScript is Script {
             membershipManagerAddress,
             withdrawRequestNFTAddress
         );
+
+        etherFiAdminInstance.updateAdmin(oracleAdminAddress, true);
+
+        // TODO: The below will fail in Mainnet
+        // -> Pre-build those transactions in Gnosis safe and sign when deploying
+        address admin = address(etherFiAdminInstance);
+        IAuctionManager(address(auctionAddress)).updateAdmin(admin, true);
+        IStakingManager(address(stakingManagerAddress)).updateAdmin(admin, true);
+        ILiquidityPool(address(liquidityPoolAddress)).updateAdmin(admin, true);
+        IMembershipManager(address(membershipManagerAddress)).updateAdmin(admin, true);
+        IEtherFiNodesManager(address(managerAddress)).updateAdmin(admin, true);
+        IWithdrawRequestNFT(address(withdrawRequestNFTAddress)).updateAdmin(admin, true);
 
         addressProvider.addContract(address(etherFiAdminProxy), "EtherFiAdmin");
     }

@@ -341,6 +341,12 @@ contract AuctionManager is
         whitelistBidAmount = _newAmount;
     }
 
+    function updateNodeOperatorManager(address _address) external onlyOwner {
+        nodeOperatorManager = INodeOperatorManager(
+            _address
+        );
+    }
+
     /// @notice Updates the address of the admin
     /// @param _address the new address to set as admin
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
@@ -360,13 +366,5 @@ contract AuctionManager is
     modifier onlyAdmin() {
         require(admins[msg.sender], "Caller is not the admin");
         _;
-    }
-}
-
-contract AuctionManagerV2 is AuctionManager {
-    function updateNodeOperatorManager(address _address) external onlyOwner {
-        nodeOperatorManager = INodeOperatorManager(
-            _address
-        );
     }
 }
