@@ -96,6 +96,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
         eEthliquidStakingOpened = false;
+    }
+
+    function initializePhase2() external {
+        
         schedulingPeriodInSeconds = 604800;
 
         fundStatistics[SourceOfFunds.EETH].numberOfValidators = 1;
@@ -437,7 +441,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _allocateSourceOfFunds() internal view returns (SourceOfFunds) {
+    function _allocateSourceOfFunds() public view returns (SourceOfFunds) {
         uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
         uint256 weightRatio = (fundStatistics[SourceOfFunds.EETH].targetWeight * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
 
@@ -459,7 +463,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
-    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
+    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view {
         if(_lastIndex < _firstIndex) {
             require(_index <= _lastIndex || (_index >= _firstIndex && _index < numberOfActiveSlots()), "Not assigned");
         }else {
