@@ -207,7 +207,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             numberOfValidatorsToSpin = lastIndexNumOfValidators;
         }
 
-        SourceOfFunds _source = _allocateSourceOfFunds(uint32(numberOfValidatorsToSpin));
+        SourceOfFunds _source = _allocateSourceOfFunds();
+
+        if(_source == SourceOfFunds.EETH){
+            fundStatistics[SourceOfFunds.EETH].numberOfValidators += uint32(numberOfValidatorsToSpin);
+        } else {
+            fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators += uint32(numberOfValidatorsToSpin);
+        }
 
         require(msg.value == numberOfValidatorsToSpin * 2 ether, "B-NFT holder must deposit 2 ETH per validator");
         require(totalValueInLp + msg.value >= 32 ether * numberOfValidatorsToSpin, "Not enough balance");
@@ -294,8 +300,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
         uint128 lastIndex;
         uint128 lastIndexNumberOfValidators = max_validators_per_owner;
-
-        BnftHolder[] memory localBnftHoldersArray = bnftHolders;
 
         uint256 index = _getSlotIndex();
         uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
@@ -413,8 +417,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit UpdatedSchedulingPeriod(_schedulingPeriodInSeconds);
     }
 
-    function numberOfActiveSlots(BnftHolder[] memory _localBnftHoldersArray) public view returns (uint32 numberOfActiveSlots) {
-        numberOfActiveSlots = uint32(_localBnftHoldersArray.length);
+    function numberOfActiveSlots() public view returns (uint32 numberOfActiveSlots) {
+        numberOfActiveSlots = uint32(bnftHolders.length);
         if(holdersUpdate.timestamp > uint32(_getCurrentSchedulingStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
         }
@@ -433,15 +437,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _allocateSourceOfFunds(uint32 _numValidators) internal returns (SourceOfFunds) {
+    function _allocateSourceOfFunds() internal view returns (SourceOfFunds) {
         uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
         uint256 weightRatio = (fundStatistics[SourceOfFunds.EETH].targetWeight * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
 
         if(validatorRatio > weightRatio) {
-            fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators += _numValidators;
             return SourceOfFunds.ETHER_FAN;
         } else {
-            fundStatistics[SourceOfFunds.EETH].numberOfValidators += _numValidators;
             return SourceOfFunds.EETH;
         }
     }
@@ -459,18 +461,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
         if(_lastIndex < _firstIndex) {
-            require(_index <= _lastIndex || (_index >= _firstIndex && _index < numberOfActiveSlots(bnftHolders)), "Not assigned");
+            require(_index <= _lastIndex || (_index >= _firstIndex && _index < numberOfActiveSlots()), "Not assigned");
         }else {
             require(_index >= _firstIndex && _index <= _lastIndex, "Not assigned");
         }
     }
 
     function _getSlotIndex() internal view returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots(bnftHolders);
+        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots();
     }
 
     function _fetchLastIndex(uint128 _size, uint256 _index) internal view returns (uint128 lastIndex){
-        uint32 numSlots = numberOfActiveSlots(bnftHolders);
+        uint32 numSlots = numberOfActiveSlots();
         uint128 tempLastIndex = uint128(_index) + _size - 1;
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
