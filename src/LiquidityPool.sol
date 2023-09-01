@@ -199,39 +199,41 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index) external payable returns (uint256[] memory){
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
         require(bnftHolders[_index].timestamp < uint32(_getCurrentSchedulingStartTimestamp()), "Already deposited");
 
-        uint256 numberOfValidatorsToSpin = max_validators_per_owner;
         if(_index == lastIndex) {
-            numberOfValidatorsToSpin = lastIndexNumOfValidators;
+            require(_numberOfValidators <= lastIndexNumOfValidators, "Above max allocation");
+        } else {
+            require(_numberOfValidators <= max_validators_per_owner, "Above max allocation");
         }
+
         SourceOfFunds _source = _allocateSourceOfFunds();
 
         if(_source == SourceOfFunds.EETH){
-            fundStatistics[SourceOfFunds.EETH].numberOfValidators += uint32(numberOfValidatorsToSpin);
+            fundStatistics[SourceOfFunds.EETH].numberOfValidators += uint32(_numberOfValidators);
         } else {
-            fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators += uint32(numberOfValidatorsToSpin);
+            fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators += uint32(_numberOfValidators);
         }
 
-        require(msg.value == numberOfValidatorsToSpin * 2 ether, "B-NFT holder must deposit 2 ETH per validator");
-        require(totalValueInLp + msg.value >= 32 ether * numberOfValidatorsToSpin, "Not enough balance");
+        require(msg.value == _numberOfValidators * 2 ether, "B-NFT holder must deposit 2 ETH per validator");
+        require(totalValueInLp + msg.value >= 32 ether * _numberOfValidators, "Not enough balance");
 
-        uint256 amountFromLp = 30 ether * numberOfValidatorsToSpin;
+        uint256 amountFromLp = 30 ether * _numberOfValidators;
         if (amountFromLp > type(uint128).max) revert InvalidAmount();
 
         totalValueOutOfLp += uint128(amountFromLp);
         totalValueInLp -= uint128(amountFromLp);
-        numPendingDeposits += uint32(numberOfValidatorsToSpin);
+        numPendingDeposits += uint32(_numberOfValidators);
 
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender, _source);
-        if (numberOfValidatorsToSpin > newValidators.length) {
-            uint256 returnAmount = 2 ether * (numberOfValidatorsToSpin - newValidators.length);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, _merkleProof, msg.sender, _source);
+        if (_numberOfValidators > newValidators.length) {
+            uint256 returnAmount = 2 ether * (_numberOfValidators - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
             totalValueInLp -= uint128(returnAmount);
 
