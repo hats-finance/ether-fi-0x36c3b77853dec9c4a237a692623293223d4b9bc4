@@ -22,65 +22,10 @@ contract EtherFiNode is IEtherFiNode {
 
     uint32 public restakingObservedExitBlock; 
     address public eigenPod;
+    // TODO(Dave): these need to be part of initialize so they can be per environment
     IEigenPodManager eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
     IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
 
-    event EigenPodCreated(address indexed nodeAddress, address indexed podAddress);
-
-    error SafeNotConfiguredForRestaking();
-
-    // TODO(Dave): permissions and scope
-    function createEigenPod() public {
-
-        if (address(eigenPodManager) == address(0x0)) revert SafeNotConfiguredForRestaking();
-        if (eigenPod != address(0x0)) return; // already have pod
-
-        eigenPodManager.createPod();
-        eigenPod = address(eigenPodManager.getPod(address(this)));
-        emit EigenPodCreated(address(this), eigenPod);
-    }
-
-    function isRestakingEnabled() public view returns (bool) {
-        return eigenPod != address(0x0);
-    }
-
-    // Check that all withdrawals initiated before the observed exit of the node have been claimed.
-    // This check ignores withdrawals queued after the observed exit of a node to prevent a denial of serviec
-    // in which an attacker keeps sending small amounts of eth to the eigenPod and queuing more withdrawals
-    //
-    // We don't need to worry about unbounded array length because anyone can call claimQueuedWithdrawals()
-    // with a variable number of withdrawals to process if the queue ever became to large.
-    // This function can go away once we have a proof based withdrawal system.
-    function hasOutstandingEigenLayerWithdrawals() external view returns (bool) {
-
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this));
-        for (uint256 i = 0; i < unclaimedWithdrawals.length; i++) {
-            if (unclaimedWithdrawals[i].blockCreated <= restakingObservedExitBlock) {
-                // unclaimed withdrawal from before oracle observed exit
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // TODO(Dave): onlyOwner
-    function queueRestakedWithdrawal() public {
-        if (!isRestakingEnabled()) return;
-
-        IEigenPod(eigenPod).withdrawBeforeRestaking();
-    }
-
-
-    // TODO(Dave): onlyOwner
-    function claimQueuedWithdrawals(uint256 maxNumWithdrawals) public {
-        if (!isRestakingEnabled()) return;
-
-        // only claim if we have active unclaimed withdrawals
-        if (delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this)).length > 0) {
-            IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), maxNumWithdrawals); // TODO(Dave): do we ever want to adjust this number?
-        }
-    }
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -487,6 +432,76 @@ contract EtherFiNode is IEtherFiNode {
 
         IBeacon beacon = IBeacon(implementationVariable);
         return beacon.implementation();
+    }
+
+
+    //--------------------------------------------------------------------------------------
+    //-----------------------------------  RESTAKING  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    event EigenPodCreated(address indexed nodeAddress, address indexed podAddress);
+    error SafeNotConfiguredForRestaking();
+
+    /// @notice create a new eigenPod associated with this withdrawal safe
+    /// @dev to take advantage of restaking via eigenlayer the validator associated with this
+    ///      withdrawal safe must set their withdrawalCredentials to point to this eigenPod
+    ///      and not to the withdrawal safe itself
+    function createEigenPod() internal {
+
+        if (address(eigenPodManager) == address(0x0)) revert SafeNotConfiguredForRestaking();
+        if (eigenPod != address(0x0)) return; // already have pod
+
+        eigenPodManager.createPod();
+        eigenPod = address(eigenPodManager.getPod(address(this)));
+        emit EigenPodCreated(address(this), eigenPod);
+    }
+
+    // consider restaking enabled if we have a connected eigenPod
+    function isRestakingEnabled() public view returns (bool) {
+        return eigenPod != address(0x0);
+    }
+
+    // Check that all withdrawals initiated before the observed exit of the node have been claimed.
+    // This check ignores withdrawals queued after the observed exit of a node to prevent a denial of serviec
+    // in which an attacker keeps sending small amounts of eth to the eigenPod and queuing more withdrawals
+    //
+    // We don't need to worry about unbounded array length because anyone can call claimQueuedWithdrawals()
+    // with a variable number of withdrawals to process if the queue ever became to large.
+    // This function can go away once we have a proof based withdrawal system.
+    function hasOutstandingEigenLayerWithdrawals() external view returns (bool) {
+
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this));
+        for (uint256 i = 0; i < unclaimedWithdrawals.length; i++) {
+            if (unclaimedWithdrawals[i].blockCreated <= restakingObservedExitBlock) {
+                // unclaimed withdrawal from before oracle observed exit
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// @notice Queue a withdrawal of the current balance of the eigenPod to this withdrawalSafe.
+    /// @dev You must call claimQueuedWithdrawals at a later time once the time required by EigenLayer's
+    ///     DelayedWithdrawalRouter has elapsed. Once queued the funds live in the DelayedWithdrawalRouter
+    function queueRestakedWithdrawal() public {
+        if (!isRestakingEnabled()) return;
+
+        // EigenLayer has not enabled "true" restaking yet so we use this temporary mechanism
+        IEigenPod(eigenPod).withdrawBeforeRestaking();
+    }
+
+    /// @notice claim queued withdrawals from the EigenPod to this withdrawal safe.
+    /// @param maxNumWithdrawals maximum number of queued withdrawals to claim in this tx.
+    /// @dev usually you will want to call with "maxNumWithdrawals == unclaimedWithdrawals.length
+    ///      but if this queue grows too large to process in your target tx you can pass less
+    function claimQueuedWithdrawals(uint256 maxNumWithdrawals) public {
+        if (!isRestakingEnabled()) return;
+
+        // only claim if we have active unclaimed withdrawals
+        if (delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this)).length > 0) {
+            IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), maxNumWithdrawals); // TODO(Dave): do we ever want to adjust this number?
+        }
     }
 
     //--------------------------------------------------------------------------------------
