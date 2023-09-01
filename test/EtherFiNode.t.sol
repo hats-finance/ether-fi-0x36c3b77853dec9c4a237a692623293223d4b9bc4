@@ -23,6 +23,9 @@ contract EtherFiNodeTest is TestSetup {
     EtherFiNode safeInstance;
     EtherFiNode restakingSafe;
 
+    IEigenPodManager eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
+    IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
+
     function setUp() public {
        
         setUpTests();
@@ -47,6 +50,8 @@ contract EtherFiNodeTest is TestSetup {
 
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
+ //       uint256[] memory restakingBidIdArray = new uint256[](1);
+  //      restakingBidIdArray = bidId[1];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
@@ -128,8 +133,6 @@ contract EtherFiNodeTest is TestSetup {
             address(new TransparentUpgradeableProxy(address(emptyContract), address(eigenLayerProxyAdmin), ""))
         );
         */
-        IEigenPodManager eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
-        IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
        
        // IDelayedWithdrawalRouter
 
@@ -208,6 +211,90 @@ contract EtherFiNodeTest is TestSetup {
 
         assertEq(address(safeInstance).balance, 2 ether);
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
+    }
+
+    function test_claimRestakedRewards() public {
+        // simulate 1 eth of staking rewards sent to the eigen pod
+        vm.deal(address(safeInstance.eigenPod()), 1 ether);
+        assertEq(address(safeInstance).balance, 0 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
+
+        // queue the withdrawal of the rewards. Funds have been sent to the DelayedWithdrawalRouter
+        safeInstance.queueRestakedWithdrawal();
+        assertEq(address(safeInstance).balance, 0 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
+
+        // simulate some more staking rewards but dont queue the withdrawal
+        vm.deal(address(safeInstance.eigenPod()), 0.5 ether);
+
+        // attempt to claim queued withdrawals but not enough time has passed (no funds moved to safe)
+        safeInstance.claimQueuedWithdrawals(1);
+        assertEq(address(safeInstance).balance, 0 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 0.5 ether);
+
+        // wait and claim
+        vm.roll(block.number + (50400) + 1);
+        safeInstance.claimQueuedWithdrawals(1);
+        assertEq(address(safeInstance).balance, 1 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 0.5 ether);
+
+        // now queue up multiple different rewards (0.5 ether remain in pod from previous step)
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(address(safeInstance.eigenPod()), 0.5 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(address(safeInstance.eigenPod()), 0.5 ether);
+        safeInstance.queueRestakedWithdrawal();
+
+        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 3);
+
+        // wait but only claim 2 of the 3 queued withdrawals
+        // The ability to claim a subset of outstanding withdrawals is to avoid a denial of service
+        // attack in which the attacker creates too many withdrawals for us to process in 1 tx
+        vm.roll(block.number + (50400) + 1);
+        safeInstance.claimQueuedWithdrawals(2);
+
+        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
+        assertEq(address(safeInstance).balance, 2 ether);
+    }
+
+    function test_restakedFullWithdrawal() public {
+
+        uint256 validatorId = bidId[0];
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitRequestTimestamps = new uint32[](1);
+        validatorIds[0] = validatorId;
+        exitRequestTimestamps[0] = uint32(block.timestamp);
+
+
+        vm.deal(safeInstance.eigenPod(), 32 ether);
+
+        vm.startPrank(alice); // alice is the admin
+        vm.expectRevert("validator node is not exited");
+        managerInstance.fullWithdraw(validatorIds[0]);
+
+        // Marked as EXITED
+        // should also have queued up the current balance to via DelayedWithdrawalRouter
+        managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
+
+
+        // fail because we have not processed the queued withdrawal of the funds from the pod
+        // because not enough time has passed to claim them
+        vm.expectRevert(EtherFiNodesManager.MustClaimRestakedWithdrawals.selector);
+        managerInstance.fullWithdraw(validatorIds[0]);
+
+        // wait some time
+        vm.roll(block.number + (50400) + 1);
+
+        // try again. FullWithdraw will automatically attempt to claim queuedWithdrawals
+        managerInstance.fullWithdraw(validatorIds[0]);
+
     }
 
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {

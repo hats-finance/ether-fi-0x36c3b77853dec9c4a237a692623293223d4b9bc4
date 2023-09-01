@@ -74,11 +74,11 @@ contract EtherFiNode is IEtherFiNode {
         for (uint256 i = 0; i < unclaimedWithdrawals.length; i++) {
             if (unclaimedWithdrawals[i].blockCreated <= observedExitBlock) {
                 // unclaimed withdrawal from before oracle observed exit
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     // TODO(Dave): onlyOwner
