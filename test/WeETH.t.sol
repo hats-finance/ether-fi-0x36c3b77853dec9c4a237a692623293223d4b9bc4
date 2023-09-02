@@ -16,32 +16,6 @@ contract WeETHTest is TestSetup {
         gregProof = merkle.getProof(whiteListedAddresses, 8);
     }
 
-    function calculatePermitDigest(address owner, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domainSeparator) public pure returns (bytes32) {
-        bytes32 permitTypehash = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                hex"1901",
-                domainSeparator,
-                keccak256(abi.encode(permitTypehash, owner, spender, value, nonce, deadline))
-            )
-        );
-        return digest;
-    }
-
-    function createPermitInput(uint256 privKey, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domianSeparator) public returns (ILiquidityPool.PermitInput memory) {
-        address owner = vm.addr(privKey);
-        bytes32 digest = calculatePermitDigest(owner, spender, value, nonce, deadline, domianSeparator);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privKey, digest);
-        ILiquidityPool.PermitInput memory permitInput = ILiquidityPool.PermitInput({
-            value: value,
-            deadline: deadline,
-            v: v,
-            r: r,
-            s: s
-        });
-        return permitInput;
-    }
-
     function test_WrapEETHFailsIfZeroAmount() public {
         vm.expectRevert("weETH: can't wrap zero eETH");
         weEthInstance.wrap(0);
