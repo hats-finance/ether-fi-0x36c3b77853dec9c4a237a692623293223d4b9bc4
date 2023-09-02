@@ -19,6 +19,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
     event AddedToWhitelist(address userAddress);
     event RemovedFromWhitelist(address userAddress);
+    event UpdatedOperatorApprovals(address operator, LiquidityPool.SourceOfFunds source, bool approved);
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -102,6 +103,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         
         for(uint256 x; x < _approvedTags.length; x++) {
             operatorApprovedTags[_users[x]][_approvedTags[x]] = _approvals[x];
+            emit UpdatedOperatorApprovals(_users[x], _approvedTags[x], _approvals[x]);
         }
     }
 

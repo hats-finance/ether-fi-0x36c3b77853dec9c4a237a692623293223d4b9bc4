@@ -24,6 +24,10 @@ contract SmallScenariosTest is TestSetup {
         chadProof = merkle.getProof(whiteListedAddresses, 5);
         danProof = merkle.getProof(whiteListedAddresses, 6);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
+
+        vm.prank(alice);
+    liquidityPoolInstance.setStakingTargetWeights(50, 50);
+
     }
     
     /*
@@ -42,6 +46,10 @@ contract SmallScenariosTest is TestSetup {
     function test_EEthWeTHLpScenarios() public {
         // bids to match with later staking 
         bobProof = merkle.getProof(whiteListedAddresses, 4);
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 1;
+        _executeAdminTasks(report);
 
         setUpBnftHolders();
         vm.warp(976348625856);
@@ -138,7 +146,7 @@ contract SmallScenariosTest is TestSetup {
         // EtherFi rolls up 32 ether into a validator and mints the associated NFT's
         vm.deal(owner, 4 ether);
         startHoax(alice);
-        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, proof, 0, ILiquidityPool.SourceOfFunds.EETH);
+        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, proof, 0, 1);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -518,26 +526,4 @@ contract SmallScenariosTest is TestSetup {
         assertEq(address(stakingManagerInstance).balance, 0 ether);
     }
 
-    function setUpBnftHolders() internal {
-        vm.startPrank(alice);
-        liquidityPoolInstance.registerAsBnftHolder(alice);
-        liquidityPoolInstance.registerAsBnftHolder(greg);
-        liquidityPoolInstance.registerAsBnftHolder(bob);
-        liquidityPoolInstance.registerAsBnftHolder(owner);
-        liquidityPoolInstance.registerAsBnftHolder(shonee);
-        liquidityPoolInstance.registerAsBnftHolder(dan);
-        liquidityPoolInstance.registerAsBnftHolder(elvis);
-        liquidityPoolInstance.registerAsBnftHolder(henry);
-        vm.stopPrank();
-
-        vm.deal(alice, 100000 ether);
-        vm.deal(greg, 100000 ether);
-        vm.deal(bob, 100000 ether);
-        vm.deal(owner, 100000 ether);
-        vm.deal(shonee, 100000 ether);
-        vm.deal(dan, 100000 ether);
-        vm.deal(elvis, 100000 ether);
-        vm.deal(henry, 100000 ether);
-        vm.deal(chad, 100000 ether);
-    }
 }
