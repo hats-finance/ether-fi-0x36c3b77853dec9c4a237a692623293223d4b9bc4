@@ -329,6 +329,42 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "_allocateSourceOfFunds",
+    "outputs": [
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_firstIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_lastIndex",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_index",
+        "type": "uint256"
+      }
+    ],
+    "name": "_isAssigned",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -397,9 +433,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "enum ILiquidityPool.SourceOfFunds",
-        "name": "_source",
-        "type": "uint8"
+        "internalType": "uint256",
+        "name": "_numberOfValidators",
+        "type": "uint256"
       }
     ],
     "name": "batchDepositAsBnftHolder",
@@ -526,7 +562,13 @@
       }
     ],
     "name": "deposit",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "payable",
     "type": "function"
   },
@@ -549,7 +591,13 @@
       }
     ],
     "name": "deposit",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "payable",
     "type": "function"
   },
@@ -592,7 +640,7 @@
         "type": "uint128"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -616,6 +664,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "etherFiAdminContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -723,6 +784,13 @@
   },
   {
     "inputs": [],
+    "name": "initializePhase2",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "max_validators_per_owner",
     "outputs": [
       {
@@ -774,25 +842,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "holder",
-            "type": "address"
-          },
-          {
-            "internalType": "uint32",
-            "name": "timestamp",
-            "type": "uint32"
-          }
-        ],
-        "internalType": "struct ILiquidityPool.BnftHolder[]",
-        "name": "_localBnftHoldersArray",
-        "type": "tuple[]"
-      }
-    ],
+    "inputs": [],
     "name": "numberOfActiveSlots",
     "outputs": [
       {
@@ -1022,6 +1072,19 @@
       }
     ],
     "name": "sendExitRequests",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "setEtherFiAdminContract",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
