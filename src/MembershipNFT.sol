@@ -197,7 +197,10 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         (uint96 rewardsLocalIndex,,,,, uint8 tier, uint8 version) = membershipManager.tokenData(_tokenId);
         (uint128 amounts, uint128 shares) = membershipManager.tokenDeposits(_tokenId);
         (uint96 rewardsGlobalIndex,,, ) = membershipManager.tierData(tier);
-        uint256 rewards = uint256(rewardsGlobalIndex - rewardsLocalIndex) * shares / 1 ether;
+        uint256 rewards = 0;
+        if (rewardsGlobalIndex > rewardsLocalIndex) {        
+            rewards = uint256(rewardsGlobalIndex - rewardsLocalIndex) * shares / 1 ether;
+        }
         return rewards;
     }
 
