@@ -46,7 +46,7 @@ library globalIndexLibrary {
             if (shares > 0) {
                 uint256 delta = 1 ether * rescaledTierRewards[i] / shares;
                 if (uint256(rewardsGlobalIndex) + uint256(delta) > type(uint96).max) revert IntegerOverflow();
-                console.log("%s %s %s", i, globalIndex[i], delta);
+                
                 if (isLoss) {
                     globalIndex[i] -= uint96(delta);
                 } else {
@@ -55,7 +55,6 @@ library globalIndexLibrary {
             }
         }
 
-        console.log("DONE");
         return (globalIndex);
     }
 
