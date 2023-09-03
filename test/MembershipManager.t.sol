@@ -900,55 +900,6 @@ contract MembershipManagerTest is TestSetup {
         return tvls;
     }
 
-    // function launch_validator() internal returns (uint256[] memory) {
-    //     vm.deal(owner, 100 ether);
-    //     vm.prank(alice);
-    //     nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
-    //     assertEq(liquidityPoolInstance.getTotalPooledEther(), 0);
-
-    //     hoax(alice);
-    //     uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
-
-    //     startHoax(bob);
-    //     regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-    //     liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
-    //     assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
-    //     vm.stopPrank();
-
-    //     bytes32[] memory proof = getWhitelistMerkleProof(9);
-
-    //     vm.prank(alice);
-    //     uint256[] memory newValidators = liquidityPoolInstance.batchDepositWithBidIds{value: 2 * 2 ether}(2, bidIds, proof);
-    //     assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
-
-    //     IStakingManager.DepositData[]
-    //         memory depositDataArray = new IStakingManager.DepositData[](2);
-
-    //     for (uint256 i = 0; i < newValidators.length; i++) {
-    //         address etherFiNode = managerInstance.etherfiNodeAddress(
-    //             newValidators[i]
-    //         );
-    //         bytes32 root = depGen.generateDepositRoot(
-    //             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-    //             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-    //             managerInstance.generateWithdrawalCredentials(etherFiNode),
-    //             32 ether
-    //         );
-    //         depositDataArray[i] = IStakingManager.DepositData({
-    //             publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-    //             signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-    //             depositDataRoot: root,
-    //             ipfsHashForEncryptedValidatorKey: "test_ipfs"
-    //         });
-    //     }
-
-    //     bytes32 depositRoot = _getDepositRoot();
-    //     vm.prank(alice);
-    //     liquidityPoolInstance.batchRegisterValidators(depositRoot, newValidators, depositDataArray);
-
-    //     return newValidators;
-    // }
-
     function test_Pausable() public {
         assertEq(membershipManagerV1Instance.paused(), false);
 
@@ -1190,5 +1141,85 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(tokens[2]), 1 ether + 1 ether * uint256(20) / uint256(100) );
         assertEq(membershipNftInstance.valueOf(tokens[3]), 1 ether + 1 ether * uint256(25) / uint256(100) - 1);
         assertEq(membershipNftInstance.valueOf(tokens[4]), 1 ether + 1 ether * uint256(30) / uint256(100) - 1);
+    }
+
+    function test_rewards_for_etherfan() public {
+        vm.startPrank(alice);
+        membershipManagerV1Instance.updateTier(0, 0, 10);
+        membershipManagerV1Instance.updateTier(1, 1, 15);
+        membershipManagerV1Instance.updateTier(2, 2, 20);
+        membershipManagerV1Instance.updateTier(3, 3, 25);
+        membershipManagerV1Instance.updateTier(4, 4, 30);
+        vm.stopPrank();
+
+        vm.deal(alice, 6 ether);
+        uint256[] memory tokens = new uint256[](5);
+        vm.startPrank(alice);
+
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, zeroProof);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokens[i] = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+            membershipManagerV1Instance.setPoints(tokens[i], 0, uint40(i));
+            assertEq(membershipNftInstance.valueOf(tokens[i]), 1 ether);
+            assertEq(membershipNftInstance.tierOf(tokens[i]), uint40(i));
+        }
+        vm.stopPrank();
+
+        _transferTo(address(membershipManagerV1Instance), 1 ether);
+
+        vm.startPrank(alice);
+        membershipManagerV1Instance.rebase(0 ether);
+        vm.stopPrank();
+
+        assertEq(membershipNftInstance.valueOf(tokens[0]), 1 ether + 1 ether * uint256(10) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[1]), 1 ether + 1 ether * uint256(15) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[2]), 1 ether + 1 ether * uint256(20) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[3]), 1 ether + 1 ether * uint256(25) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[4]), 1 ether + 1 ether * uint256(30) / uint256(100));
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+    }
+
+    function test_negative_rewards() public {
+        // Spawn 2 validators, TVL = 60 ETH
+        uint256[] memory validatorIds = launch_validator();
+
+        vm.startPrank(alice);
+        membershipManagerV1Instance.updateTier(0, 0, 10);
+        membershipManagerV1Instance.updateTier(1, 1, 15);
+        membershipManagerV1Instance.updateTier(2, 2, 20);
+        membershipManagerV1Instance.updateTier(3, 3, 25);
+        membershipManagerV1Instance.updateTier(4, 4, 30);
+        vm.stopPrank();
+
+        vm.deal(alice, 6 ether);
+        uint256[] memory tokens = new uint256[](5);
+        vm.startPrank(alice);
+
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, zeroProof);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokens[i] = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+            membershipManagerV1Instance.setPoints(tokens[i], 0, uint40(i));
+            assertEq(membershipNftInstance.valueOf(tokens[i]), 1 ether);
+            assertEq(membershipNftInstance.tierOf(tokens[i]), uint40(i));
+        }
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        // 10 % loss in eETH
+        // eETH: 61 ETH -> -6.1 ETH 
+        // Ether.Fan: 5 ETH -> -0.5 ETH
+        membershipManagerV1Instance.rebase(-6.6 ether);
+        vm.stopPrank();
+
+        assertEq(membershipNftInstance.valueOf(tokens[0]), 1 ether - 0.5 ether * uint256(10) / uint256(100) - 1);
+        assertEq(membershipNftInstance.valueOf(tokens[1]), 1 ether - 0.5 ether * uint256(15) / uint256(100) - 1);
+        assertEq(membershipNftInstance.valueOf(tokens[2]), 1 ether - 0.5 ether * uint256(20) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[3]), 1 ether - 0.5 ether * uint256(25) / uint256(100) - 1);
+        assertEq(membershipNftInstance.valueOf(tokens[4]), 1 ether - 0.5 ether * uint256(30) / uint256(100) - 1);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether * uint256(9) / uint256(10));
     }
 }

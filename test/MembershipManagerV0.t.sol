@@ -1184,4 +1184,69 @@ contract MembershipManagerV0Test is TestSetup {
 
         // vm.stopPrank();
     }
+
+    function test_negative_rewards() public {
+        // Spawn 2 validators, TVL = 60 ETH
+        uint256[] memory validatorIds = launch_validator();
+
+        vm.startPrank(alice);
+        membershipManagerInstance.updateTier(0, 0, 10);
+        membershipManagerInstance.updateTier(1, 1, 15);
+        membershipManagerInstance.updateTier(2, 2, 20);
+        membershipManagerInstance.updateTier(3, 3, 25);
+        membershipManagerInstance.updateTier(4, 4, 30);
+        vm.stopPrank();
+
+        vm.deal(alice, 6 ether);
+        uint256[] memory tokens = new uint256[](5);
+        uint256[] memory tokensValues = new uint256[](5);
+        vm.startPrank(alice);
+
+        liquidityPoolInstance.deposit{value: 1 ether}(alice, zeroProof);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokens[i] = membershipManagerInstance.wrapEth{value: 1 ether}(1 ether, 0, aliceProof);
+            tokensValues[i] = membershipNftInstance.valueOf(tokens[i]);
+            membershipManagerInstance.setPoints(tokens[i], 0, uint40(i));
+            assertEq(membershipNftInstance.valueOf(tokens[i]), 1 ether);
+            assertEq(membershipNftInstance.tierOf(tokens[i]), uint40(i));
+        }
+        vm.stopPrank();
+
+         _transferTo(address(membershipManagerInstance), 1 ether);
+
+        vm.startPrank(alice);
+        membershipManagerInstance.rebase(0 ether);
+        vm.stopPrank();
+
+        assertEq(membershipNftInstance.valueOf(tokens[0]), tokensValues[0] + 1 ether * uint256(10) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[1]), tokensValues[1] + 1 ether * uint256(15) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[2]), tokensValues[2] + 1 ether * uint256(20) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[3]), tokensValues[3] + 1 ether * uint256(25) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[4]), tokensValues[4] + 1 ether * uint256(30) / uint256(100));
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 5 ether + 1 ether);
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokensValues[i] = membershipNftInstance.valueOf(tokens[i]);
+        }
+
+        console.log(liquidityPoolInstance.getTotalPooledEther());
+
+        vm.startPrank(alice);
+        // 10 % loss in eETH
+        // eETH: 61 ETH -> -6.1 ETH 
+        // Ether.Fan: 5 (principal) + 1 (earnings) ETH -> - 0.5 ETH + - 0.1 ETH
+        membershipManagerInstance.rebase(-6.7 ether);
+        vm.stopPrank();
+
+        assertEq(membershipNftInstance.valueOf(tokens[0]), tokensValues[0] - 0.5 ether * uint256(10) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[1]), tokensValues[1] - 0.5 ether * uint256(15) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[2]), tokensValues[2] - 0.5 ether * uint256(20) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[3]), tokensValues[3] - 0.5 ether * uint256(25) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[4]), tokensValues[4] - 0.5 ether * uint256(30) / uint256(100));
+        assertEq(eETHInstance.balanceOf(alice), 1 ether * uint256(9) / uint256(10));
+        assertEq(eETHInstance.balanceOf(address(membershipManagerInstance)), 6 ether * uint256(9) / uint256(10));
+    }
 }
