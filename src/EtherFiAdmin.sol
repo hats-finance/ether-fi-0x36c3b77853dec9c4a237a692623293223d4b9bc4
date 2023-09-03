@@ -91,6 +91,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         // liquidityPoolValidatorsToExit
         liquidityPool.sendExitRequests(_report.liquidityPoolValidatorsToExit);
+        require(_report.numPendingValidatorsRequestedToExit == numPendingValidatorsRequestedToExit + _report.liquidityPoolValidatorsToExit.length, "EtherFiAdmin: wrong `numPendingValidatorsRequestedToExit`");
 
         // exitedValidators
         uint32[] memory _exitTimestamps = new uint32[](_report.exitedValidators.length);
