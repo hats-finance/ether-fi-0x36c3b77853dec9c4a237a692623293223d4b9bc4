@@ -49,7 +49,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     uint32 public topUpCooltimePeriod;
     uint32 public withdrawalLockBlocks;
 
-    uint32 private __gap0;
+    uint16 private fanBoostThreshold; // = 0.001 ETH * fanBoostThreshold
+    uint16 private __gap0;
 
     // [END] SLOT 261 END
 
@@ -84,25 +85,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error WrongVersion();
 
     function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNft, address _treasury, address _protocolRevenueManager) external initializer {
-        if (_eEthAddress == address(0) || _liquidityPoolAddress == address(0) || _treasury == address(0) || _protocolRevenueManager == address(0) || _membershipNft == address(0)) revert DisallowZeroAddress();
-
-        __Ownable_init();
-        __UUPSUpgradeable_init();
-
-        eETH = IeETH(_eEthAddress);
-        liquidityPool = ILiquidityPool(_liquidityPoolAddress);
-        membershipNFT = IMembershipNFT(_membershipNft);
-        treasury = _treasury;
-
-        pointsBoostFactor = 10000;
-        pointsGrowthRate = 10000;
-        minDepositGwei = (0.1 ether / 1 gwei);
-        maxDepositTopUpPercent = 20;
-        withdrawalLockBlocks = 3600;
+        revert Deprecated();
     }
 
     // To be called for Phase 2 contract upgrade
     function initializePhase2() external onlyOwner {
+        fanBoostThreshold = 1_000; // 1 ETH
         for (uint256 i = 0; i < tierData.length; i++) {
             tierVaults.push(TierVault(0, 0));
         }
@@ -248,14 +236,21 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     function rebase(int128 _accruedRewards) external {
         _requireAdmin();
-        uint256 shareValuePerEthBeforeRebase = liquidityPool.amountForShare(1 ether);
+        uint256 ethRewardsPerEEthShareBeforeRebase = liquidityPool.amountForShare(1 ether);
         liquidityPool.rebase(_accruedRewards);
-        uint256 shareValuePerEthAfterRebase = liquidityPool.amountForShare(1 ether);
-       
-        if (shareValuePerEthAfterRebase > shareValuePerEthBeforeRebase) {
-            _distributeStakingRewardsV0();
-            _distributeStakingRewardsV1(shareValuePerEthBeforeRebase, shareValuePerEthAfterRebase);
+        uint256 ethRewardsPerEEthShareAfterRebase = liquidityPool.amountForShare(1 ether);
+
+        // The balance of MembershipManager contract is used to reward ether.fan stakers (not eETH stakers)
+        // Eth Rewards Amount per NFT = (eETH share amount of the NFT) * (total rewards ETH amount) / (total eETH share amount in ether.fan)
+        uint256 etherFanEEthShares = eETH.shares(address(this));
+        uint256 thresholdAmount = fanBoostThresholdEthAmount();
+        if (address(this).balance >= thresholdAmount) {
+            uint256 mintedShare = liquidityPool.deposit{value: thresholdAmount}(address(this), address(this), new bytes32[](0));
+            ethRewardsPerEEthShareAfterRebase += 1 ether * thresholdAmount / etherFanEEthShares;
         }
+
+        _distributeStakingRewardsV0(ethRewardsPerEEthShareBeforeRebase, ethRewardsPerEEthShareAfterRebase);
+        _distributeStakingRewardsV1(ethRewardsPerEEthShareBeforeRebase, ethRewardsPerEEthShareAfterRebase);
     }
 
     function claimBatch(uint256[] calldata _tokenIds) public whenNotPaused {
@@ -266,18 +261,16 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     /// @notice Distributes staking rewards to eligible stakers.
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
-    function _distributeStakingRewardsV0() internal {
-        _requireAdmin();
-        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = globalIndexLibrary.calculateGlobalIndex(address(this), address(liquidityPool));
+    function _distributeStakingRewardsV0(uint256 _ethRewardsPerEEthShareBeforeRebase, uint256 _ethRewardsPerEEthShareAfterRebase) internal {
+        uint96[] memory globalIndex = globalIndexLibrary.calculateGlobalIndex(address(this), address(liquidityPool), _ethRewardsPerEEthShareBeforeRebase, _ethRewardsPerEEthShareAfterRebase);
         for (uint256 i = 0; i < tierDeposits.length; i++) {
-            tierDeposits[i].shares = adjustedShares[i];
+            tierDeposits[i].shares = uint128(liquidityPool.sharesForAmount(tierDeposits[i].amounts));
             tierData[i].rewardsGlobalIndex = globalIndex[i];
         }
     }
 
-    function _distributeStakingRewardsV1(uint256 _shareValuePerEthBeforeRebas, uint256 _shareValuePerEthAfterRebase) internal {
-        _requireAdmin();
-        uint128[] memory vaultTotalPooledEEthShares = globalIndexLibrary.calculateVaultEEthShares(address(this), address(liquidityPool), _shareValuePerEthBeforeRebas, _shareValuePerEthAfterRebase);
+    function _distributeStakingRewardsV1(uint256 _ethRewardsPerEEthShareBeforeRebase, uint256 _ethRewardsPerEEthShareAfterRebase) internal {
+        uint128[] memory vaultTotalPooledEEthShares = globalIndexLibrary.calculateVaultEEthShares(address(this), address(liquidityPool), _ethRewardsPerEEthShareBeforeRebase, _ethRewardsPerEEthShareAfterRebase);
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             tierVaults[i].totalPooledEEthShares = vaultTotalPooledEEthShares[i];
         }
@@ -374,6 +367,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         mintFee = uint16(_mintFeeAmount / 0.001 ether);
         burnFee = uint16(_burnFeeAmount / 0.001 ether);
         upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
+    }
+
+    function setFanBoostThresholdEthAmount(uint256 _fanBoostThresholdEthAmount) external {
+        _requireAdmin();
+        fanBoostThreshold = uint16(_fanBoostThresholdEthAmount / 0.001 ether);
     }
 
     /// @notice Updates the address of the admin
@@ -656,6 +654,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     function vaultShareForEthAmount(uint8 _tier, uint256 _ethAmount) public view returns (uint256) {
         uint256 eEthshare = liquidityPool.sharesForAmount(_ethAmount);
         return vaultShareForEEthShare(_tier, eEthshare);
+    }
+
+    function fanBoostThresholdEthAmount() public view returns (uint256) {
+        return uint256(fanBoostThreshold) * 0.001 ether;
     }
 
     function _updateAllTimeHighDepositOf(uint256 _tokenId) internal {

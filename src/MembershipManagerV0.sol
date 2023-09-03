@@ -257,8 +257,16 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
 
     function rebase(int128 _accruedRewards) external {
         _requireAdmin();
+        uint256 ethRewardsPerEEthShareBeforeRebase = liquidityPool.amountForShare(1 ether);
         liquidityPool.rebase(_accruedRewards);
-        _distributeStakingRewards();
+        uint256 ethRewardsPerEEthShareAfterRebase = liquidityPool.amountForShare(1 ether);
+
+        uint256 etherFanEEthShares = eETH.shares(address(this));
+        if (address(this).balance >= 1 ether) {
+            uint256 mintedShare = liquidityPool.deposit{value: 1 ether}(address(this), address(this), new bytes32[](0));
+            ethRewardsPerEEthShareAfterRebase += 1 ether * 1 ether / etherFanEEthShares;
+        }
+        _distributeStakingRewards(ethRewardsPerEEthShareBeforeRebase, ethRewardsPerEEthShareAfterRebase);
     }
 
     function claimBatch(uint256[] calldata _tokenIds) public whenNotPaused {
@@ -269,13 +277,11 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
 
     /// @notice Distributes staking rewards to eligible stakers.
     /// @dev This function distributes staking rewards to eligible NFTs based on their staked tokens and membership tiers.
-    function _distributeStakingRewards() internal {
-        _requireAdmin();
-        (uint96[] memory globalIndex, uint128[] memory adjustedShares) = globalIndexLibrary.calculateGlobalIndex(address(this), address(liquidityPool));
+    function _distributeStakingRewards(uint256 _ethRewardsPerEEthShareBeforeRebase, uint256 _ethRewardsPerEEthShareAfterRebase) internal {
+        uint96[] memory globalIndex = globalIndexLibrary.calculateGlobalIndex(address(this), address(liquidityPool), _ethRewardsPerEEthShareBeforeRebase, _ethRewardsPerEEthShareAfterRebase);
         uint128 totalShares = 0;
         for (uint256 i = 0; i < tierDeposits.length; i++) {
-            uint256 amounts = liquidityPool.amountForShare(adjustedShares[i]);
-            tierDeposits[i].shares = adjustedShares[i];
+            tierDeposits[i].shares = uint128(liquidityPool.sharesForAmount(tierDeposits[i].amounts));
             tierData[i].rewardsGlobalIndex = globalIndex[i];
             totalShares += tierDeposits[i].shares;
         }
