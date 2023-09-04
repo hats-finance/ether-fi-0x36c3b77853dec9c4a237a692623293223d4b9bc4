@@ -90,13 +90,13 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.enableWhitelist();
+        liquidityPoolInstance.updateWhitelistStatus(true);
 
         vm.expectRevert("User is not whitelisted");
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
         assertEq(address(liquidityPoolInstance).balance, 0);
 
-        liquidityPoolInstance.addToWhitelist(address(alice));
+        liquidityPoolInstance.updateWhitelistedAddresses(address(alice), true);
         liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
 
         assertEq(address(liquidityPoolInstance).balance, 1 ether);

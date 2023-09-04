@@ -52,9 +52,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     mapping(address => bool) public admins;
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
     mapping(uint256 => bytes32) public depositDataRootForApprovalDeposits;
-    mapping(address => bool) public whitelisted;
     address public etherFiAdminContract;
     bool public whitelistEnabled;
+    mapping(address => bool) public whitelisted;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -62,8 +62,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, address recipient, uint256 amount);
-    event AddedToWhitelist(address userAddress);
-    event RemovedFromWhitelist(address userAddress);
+    event UpdatedWhitelist(address userAddress, bool value);
     event BnftHolderDeregistered(address user, uint256 index);
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
@@ -72,8 +71,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
     event Rebase(uint256 totalEthLocked, uint256 totalEEthShares);
-    event WhitelistEnabled();
-    event WhitelistDisabled();
+    event WhitelistStatusUpdated(bool value);
 
     error InvalidAmount();
 
@@ -441,28 +439,16 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }
 
-    function addToWhitelist(address _user) external onlyAdmin {
-        whitelisted[_user] = true;
+    function updateWhitelistedAddresses(address _user, bool _value) external onlyAdmin {
+        whitelisted[_user] = _value;
 
-        emit AddedToWhitelist(_user);
+        emit UpdatedWhitelist(_user, _value);
     }
 
-    function removeFromWhitelist(address _user) external onlyAdmin {
-        whitelisted[_user] = false;
+    function updateWhitelistStatus(bool _value) external onlyAdmin {
+        whitelistEnabled = _value;
 
-        emit RemovedFromWhitelist(_user);
-    }
-
-    function enableWhitelist() external onlyAdmin {
-        whitelistEnabled = true;
-
-        emit WhitelistEnabled();
-    }
-
-    function disableWhitelist() external onlyAdmin {
-        whitelistEnabled = false;
-
-        emit WhitelistDisabled();
+        emit WhitelistStatusUpdated(_value);
     }
 
     //--------------------------------------------------------------------------------------
@@ -510,10 +496,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view {
-        if(whitelistEnabled) {
-            require(whitelisted[_user], "User is not whitelisted");
-        }
-
+        require(!whitelistEnabled || whitelisted[_user], "User is not whitelisted");
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
     }
 

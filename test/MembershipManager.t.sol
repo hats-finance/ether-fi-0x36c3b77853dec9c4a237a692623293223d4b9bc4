@@ -572,7 +572,7 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(alice, 12 ether);
 
         vm.prank(alice);
-        liquidityPoolInstance.enableWhitelist();
+        liquidityPoolInstance.updateWhitelistStatus(true);
 
         vm.prank(henry);
 
@@ -584,7 +584,7 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(shonee, 12 ether);
 
         vm.prank(alice);
-        liquidityPoolInstance.addToWhitelist(address(shonee));
+        liquidityPoolInstance.updateWhitelistedAddresses(address(shonee), true);
         vm.startPrank(shonee);
 
         //This is the merkle proof for Shonee

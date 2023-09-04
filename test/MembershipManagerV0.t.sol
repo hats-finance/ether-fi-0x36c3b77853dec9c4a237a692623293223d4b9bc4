@@ -563,7 +563,7 @@ contract MembershipManagerV0Test is TestSetup {
         vm.deal(alice, 12 ether);
 
         vm.prank(alice);
-        liquidityPoolInstance.enableWhitelist();
+        liquidityPoolInstance.updateWhitelistStatus(true);
 
         vm.prank(henry);
 
@@ -575,7 +575,7 @@ contract MembershipManagerV0Test is TestSetup {
         vm.deal(shonee, 12 ether);
 
         vm.prank(alice);
-        liquidityPoolInstance.addToWhitelist(address(shonee));
+        liquidityPoolInstance.updateWhitelistedAddresses(address(shonee), true);
 
         vm.startPrank(shonee);
 
