@@ -6,7 +6,6 @@ import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradea
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
@@ -53,6 +52,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
     mapping(uint256 => bytes32) public depositDataRootForApprovalDeposits;
     address public etherFiAdminContract;
+    bool public whitelistEnabled;
+    mapping(address => bool) public whitelisted;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -60,9 +61,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, address recipient, uint256 amount);
-    event AddedToWhitelist(address userAddress);
-    event RemovedFromWhitelist(address userAddress);
-    event BnftHolderDeregistered(uint256 index);
+    event UpdatedWhitelist(address userAddress, bool value);
+    event BnftHolderDeregistered(address user, uint256 index);
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
@@ -70,6 +70,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
     event Rebase(uint256 totalEthLocked, uint256 totalEEthShares);
+    event WhitelistStatusUpdated(bool value);
 
     error InvalidAmount();
 
@@ -114,12 +115,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable returns (uint256) {
         if(msg.sender == address(membershipManager)) {
             if (_user != address(membershipManager)) {
-                isWhitelistedAndEligible(_user, _merkleProof);
-            }
+                _isWhitelistedAndEligible(_user, _merkleProof);
+            }       
             emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
-            isWhitelistedAndEligible(msg.sender, _merkleProof);
+            _isWhitelistedAndEligible(msg.sender, _merkleProof);
             emit FundsDeposited(SourceOfFunds.EETH, msg.value);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
@@ -203,7 +204,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory){
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
@@ -235,7 +236,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, _merkleProof, msg.sender, _source);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, msg.sender, _source);
         if (_numberOfValidators > newValidators.length) {
             uint256 returnAmount = 2 ether * (_numberOfValidators - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
@@ -302,7 +303,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
         bnftHolders.pop();
 
-        emit BnftHolderDeregistered(_index);
+        emit BnftHolderDeregistered(msg.sender, _index);
     }
 
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
@@ -310,7 +311,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         uint128 lastIndexNumberOfValidators = max_validators_per_owner;
 
         uint256 index = _getSlotIndex();
-        uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
+        uint128 numValidatorsToCreate = EtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
 
         if(numValidatorsToCreate % max_validators_per_owner == 0) {
             uint128 size = numValidatorsToCreate / max_validators_per_owner;
@@ -324,12 +325,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return (index, lastIndex, lastIndexNumberOfValidators);
     }
 
-    // Just using for testing
-    // TODO remove and use oracle
-    function numberOfValidatorsToSpawn() public view returns (uint128) {
-        return EtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
-    }
-
     /// @notice Send the exit requests as the T-NFT holder
     function sendExitRequests(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -339,13 +334,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     /// @notice Allow interactions with the eEth token
-    function openEEthLiquidStaking() external onlyAdmin {
-        eEthliquidStakingOpened = true;
-    }
-
-    /// @notice Disallow interactions with the eEth token
-    function closeEEthLiquidStaking() external onlyAdmin {
-        eEthliquidStakingOpened = false;
+    function updateLiquidStakingStatus(bool _value) external onlyAdmin {
+        eEthliquidStakingOpened = _value;
     }
 
     /// @notice Rebase by ether.fi
@@ -441,6 +431,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }
 
+    function updateWhitelistedAddresses(address _user, bool _value) external onlyAdmin {
+        whitelisted[_user] = _value;
+
+        emit UpdatedWhitelist(_user, _value);
+    }
+
+    function updateWhitelistStatus(bool _value) external onlyAdmin {
+        whitelistEnabled = _value;
+
+        emit WhitelistStatusUpdated(_value);
+    }
+
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -485,8 +487,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
 
-    function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
-        stakingManager.verifyWhitelisted(_user, _merkleProof);
+    function _isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view {
+        require(!whitelistEnabled || whitelisted[_user], "User is not whitelisted");
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
     }
 

@@ -246,9 +246,7 @@ contract UpgradeTest is TestSetup {
         assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
     }
 
-    function test_canUpgradeEtherFiNode() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        
+    function test_canUpgradeEtherFiNode() public {        
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -258,14 +256,12 @@ contract UpgradeTest is TestSetup {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, proof);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds);
 
         address safe1 = managerInstance.etherfiNodeAddress(processedBids[0]);
         console.log(safe1);
 
         vm.stopPrank();
-
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -276,7 +272,7 @@ contract UpgradeTest is TestSetup {
         startHoax(alice);
         uint256[] memory aliceBidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        uint256[] memory aliceProcessedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(aliceBidIds, aliceProof);
+        uint256[] memory aliceProcessedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(aliceBidIds);
 
         address safe2 = managerInstance.etherfiNodeAddress(aliceProcessedBids[0]);
         console.log(safe2);

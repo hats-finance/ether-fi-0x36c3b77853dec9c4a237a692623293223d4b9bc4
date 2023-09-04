@@ -54,13 +54,12 @@ interface ILiquidityPool {
     function requestWithdrawWithPermit(address _owner, uint256 _amount, PermitInput calldata _permit) external returns (uint256);
     function requestMembershipNFTWithdraw(address recipient, uint256 amount) external returns (uint256);
 
-    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory);
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory);
     function batchRegisterAsBnftHolder(bytes32 _depositRoot, uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _registerValidatorDepositData, bytes32[] calldata _depositDataRootApproval, bytes[] calldata _signaturesForApprovalDeposit) external;
     function batchCancelDeposit(uint256[] calldata _validatorIds) external;
     function sendExitRequests(uint256[] calldata _validatorIds) external;
 
-    function openEEthLiquidStaking() external;
-    function closeEEthLiquidStaking() external;
+    function updateLiquidStakingStatus(bool value) external;
 
     function rebase(int128 _accruedRewards) external;
     function setTokenAddress(address _eETH) external;

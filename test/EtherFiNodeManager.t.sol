@@ -21,8 +21,6 @@ contract EtherFiNodesManagerTest is TestSetup {
             address(TNFTInstance),
             address(BNFTInstance),
             address(protocolRevenueManagerInstance));
-
-        bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
         
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
@@ -36,8 +34,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         bidIdArray[0] = bidId[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray,
-            proof2
+            bidIdArray
         );
 
         etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -193,8 +190,6 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_CreateEtherFiNode() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -207,14 +202,13 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
 
         hoax(alice);
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId);
 
         address node = managerInstance.etherfiNodeAddress(processedBids[0]);
         assert(node != address(0));
     }
 
     function test_RegisterEtherFiNode() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -227,7 +221,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
 
         hoax(alice);
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId);
 
         address node = managerInstance.etherfiNodeAddress(processedBids[0]);
         assert(node != address(0));

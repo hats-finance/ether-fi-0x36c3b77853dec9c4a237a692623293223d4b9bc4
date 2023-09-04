@@ -22,7 +22,6 @@ import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 import "./libraries/DepositRootGenerator.sol";
 
 contract StakingManager is
@@ -41,7 +40,7 @@ contract StakingManager is
     address public implementationContract;
     address public liquidityPoolContract;
 
-    bool public whitelistEnabled;
+    bool public DEPRECATED_whitelistEnabled;
     bytes32 public merkleRoot;
 
     ITNFT public TNFTInterfaceInstance;
@@ -65,9 +64,6 @@ contract StakingManager is
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(address indexed operator, address indexed bNftOwner, address indexed tNftOwner, 
                               uint256 validatorId, bytes validatorPubKey, string ipfsHashForEncryptedValidatorKey);
-    event WhitelistDisabled();
-    event WhitelistEnabled();
-    event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -100,19 +96,19 @@ contract StakingManager is
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof)
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds)
         external payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
     {
-        return _depositWithBidIds(_candidateBidIds, _merkleProof, msg.sender, ILiquidityPool.SourceOfFunds.DELEGATED_STAKING);
+        return _depositWithBidIds(_candidateBidIds, msg.sender, ILiquidityPool.SourceOfFunds.DELEGATED_STAKING);
     }
 
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker, ILiquidityPool.SourceOfFunds _source)
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, address _staker, ILiquidityPool.SourceOfFunds _source)
         public payable whenNotPaused nonReentrant correctStakeAmount returns (uint256[] memory)
     {
-        return _depositWithBidIds(_candidateBidIds, _merkleProof, _staker, _source);
+        return _depositWithBidIds(_candidateBidIds, _staker, _source);
     }
 
     /// @notice Batch creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
@@ -247,38 +243,6 @@ contract StakingManager is
         implementationContract = _newImplementation;
     }
 
-    /// @notice Disables the bid whitelist
-    /// @dev Allows both regular users and whitelisted users to bid
-    function disableWhitelist() public onlyAdmin {
-        whitelistEnabled = false;
-        emit WhitelistDisabled();
-    }
-
-    /// @notice Enables the bid whitelist
-    /// @dev Only users who are on a whitelist can bid
-    function enableWhitelist() public onlyAdmin {
-        whitelistEnabled = true;
-        emit WhitelistEnabled();
-    }
-
-    /// @notice Updates the merkle root whitelists have been updated
-    /// @dev Merkleroot Fetches generated in JS offline and sent to the contract
-    /// @dev Used in the staking manager and LP
-    /// @param _newMerkle New merkle root to be used for staking
-    function updateMerkleRoot(bytes32 _newMerkle) external onlyAdmin {
-        bytes32 oldMerkle = merkleRoot;
-        merkleRoot = _newMerkle;
-
-        emit MerkleUpdated(oldMerkle, _newMerkle);
-    }
-
-    function verifyWhitelisted(address _address, bytes32[] calldata _merkleProof) public view {
-        if (whitelistEnabled) {
-            bool verified = MerkleProofUpgradeable.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(_address)));
-            require(verified, "User is not whitelisted");
-        }
-    }
-
     function pauseContract() external onlyAdmin { _pause(); }
     function unPauseContract() external onlyAdmin { _unpause(); }
 
@@ -305,11 +269,9 @@ contract StakingManager is
 
     function _depositWithBidIds(
         uint256[] calldata _candidateBidIds, 
-        bytes32[] calldata _merkleProof, 
         address _staker, 
         ILiquidityPool.SourceOfFunds _source
     ) internal returns (uint256[] memory){
-        verifyWhitelisted(msg.sender, _merkleProof);
 
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;

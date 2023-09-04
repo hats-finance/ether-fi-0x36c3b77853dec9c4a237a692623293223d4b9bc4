@@ -572,7 +572,7 @@ contract MembershipManagerTest is TestSetup {
         vm.deal(alice, 12 ether);
 
         vm.prank(alice);
-        stakingManagerInstance.enableWhitelist();
+        liquidityPoolInstance.updateWhitelistStatus(true);
 
         vm.prank(henry);
 
@@ -582,10 +582,13 @@ contract MembershipManagerTest is TestSetup {
 
         //Giving 12 Ether to shonee
         vm.deal(shonee, 12 ether);
+
+        vm.prank(alice);
+        liquidityPoolInstance.updateWhitelistedAddresses(address(shonee), true);
         vm.startPrank(shonee);
 
         //This is the merkle proof for Shonee
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 11);
+        shoneeProof = merkle.getProof(whiteListedAddresses, 11);
 
         // Now shonee cant mint because she is not registered, even though she is whitelisted
         vm.expectRevert("User is not eligible to participate");
@@ -966,7 +969,6 @@ contract MembershipManagerTest is TestSetup {
     function test_bring_random_monkeys() public {
         vm.deal(alice, 1 ether);
         vm.startPrank(alice);
-        stakingManagerInstance.disableWhitelist();
         membershipManagerV1Instance.setTopUpCooltimePeriod(7 days);
         vm.stopPrank();
 

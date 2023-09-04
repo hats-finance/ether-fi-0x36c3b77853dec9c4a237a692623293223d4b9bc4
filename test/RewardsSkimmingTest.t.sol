@@ -47,7 +47,6 @@ contract RewardsSkimmingTest is TestSetup {
         _setUpStakerMerkle();
 
         vm.startPrank(alice);
-        stakingManagerInstance.updateMerkleRoot(rootStakers);
         nodeOperatorManagerInstance.addToWhitelist(operators[0]);
         vm.stopPrank();
 
@@ -78,8 +77,7 @@ contract RewardsSkimmingTest is TestSetup {
 
             uint256[] memory candidateBidIds = new uint256[](1);
             candidateBidIds[0] = validatorIds[i];
-            bytes32[] memory stakerProof = merkleStakers.getProof(stakerWhitelistedAddresses, i);
-            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds, stakerProof);
+            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds);
 
             address etherFiNode = managerInstance.etherfiNodeAddress(candidateBidIds[0]);
 
