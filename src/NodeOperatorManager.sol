@@ -15,7 +15,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
+    event OperatorRegistered(address operator, uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
     event AddedToWhitelist(address userAddress);
     event RemovedFromWhitelist(address userAddress);
@@ -70,6 +70,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         registered[msg.sender] = true;
 
         emit OperatorRegistered(
+            msg.sender,
             keyData.totalKeys,
             keyData.keysUsed,
             _ipfsHash

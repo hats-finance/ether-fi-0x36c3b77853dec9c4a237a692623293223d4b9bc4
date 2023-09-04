@@ -90,9 +90,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp += uint128(msg.value);
     }
 
-    function initialize(address _regulationsManager) external initializer {
-        require(_regulationsManager != address(0), "No zero addresses");
-
+    function initialize(address _regulationsManager) external initializer NonZeroAddress(_regulationsManager) {
         __Ownable_init();
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
@@ -141,9 +139,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
     /// it returns the amount of shares burned
-    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager returns (uint256) {
+    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager NonZeroAddress(_recipient) returns (uint256) {
         require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
-        require(_recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
 
         uint256 share = sharesForWithdrawalAmount(_amount);
@@ -169,9 +166,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @dev Transfers the amount of eETH from msg.senders account to the WithdrawRequestNFT contract & mints an NFT to the msg.sender
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
-    function requestWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen returns (uint256) {
+    function requestWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen NonZeroAddress(recipient) returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
-        require(recipient != address(0), "Cannot withdraw to zero address");
         require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
 
         uint256 share = sharesForAmount(amount);
@@ -191,9 +187,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestWithdraw(_owner, _amount);
     }
 
-    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen returns (uint256) {
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen NonZeroAddress(recipient) returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
-        require(recipient != address(0), "Cannot withdraw to zero address");
 
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
@@ -272,7 +267,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         }
     }
 
-    function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
+    function batchCancelDeposit(uint256[] calldata _validatorIds) external {
         uint256 returnAmount = 2 ether * _validatorIds.length;
 
         totalValueOutOfLp += uint128(returnAmount);
@@ -300,6 +295,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function deRegisterBnftHolder(uint256 _index) external {
         require(admins[msg.sender] || msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
+        require(_index < bnftHolders.length, "Invalid index");
+
         bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
         bnftHolders.pop();
 
@@ -307,19 +304,26 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
+        uint128 maxValidatorsPerOwner = max_validators_per_owner;
+
+        require(maxValidatorsPerOwner > 0, "Max validators not set");
+        require(schedulingPeriodInSeconds > 0, "Scheduling period not set");
+        require(etherFiAdminContract != address(0), "EtherFi Admin contract not set");
+        require(EtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() > 0, "No validators to spin up");
+
         uint128 lastIndex;
-        uint128 lastIndexNumberOfValidators = max_validators_per_owner;
+        uint128 lastIndexNumberOfValidators = maxValidatorsPerOwner;
 
         uint256 index = _getSlotIndex();
         uint128 numValidatorsToCreate = EtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
 
-        if(numValidatorsToCreate % max_validators_per_owner == 0) {
-            uint128 size = numValidatorsToCreate / max_validators_per_owner;
+        if(numValidatorsToCreate % maxValidatorsPerOwner == 0) {
+            uint128 size = numValidatorsToCreate / maxValidatorsPerOwner;
             lastIndex = _fetchLastIndex(size, index);
         } else {
-            uint128 size = (numValidatorsToCreate / max_validators_per_owner) + 1;
+            uint128 size = (numValidatorsToCreate / maxValidatorsPerOwner) + 1;
             lastIndex = _fetchLastIndex(size, index);
-            lastIndexNumberOfValidators = numValidatorsToCreate % max_validators_per_owner;
+            lastIndexNumberOfValidators = numValidatorsToCreate % maxValidatorsPerOwner;
         }
 
         return (index, lastIndex, lastIndexNumberOfValidators);
@@ -363,45 +367,37 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice sets the contract address for eETH
     /// @param _eETH address of eETH contract
-    function setTokenAddress(address _eETH) external onlyOwner {
-        require(_eETH != address(0), "No zero addresses");
+    function setTokenAddress(address _eETH) external onlyOwner NonZeroAddress(_eETH) {
         eETH = IeETH(_eETH);
     }
 
-    function setStakingManager(address _address) external onlyOwner {
-        require(_address != address(0), "No zero addresses");
+    function setStakingManager(address _address) external onlyOwner NonZeroAddress(_address) {
         stakingManager = IStakingManager(_address);
     }
 
-    function setEtherFiNodesManager(address _nodeManager) public onlyOwner {
-        require(_nodeManager != address(0), "No zero addresses");
+    function setEtherFiNodesManager(address _nodeManager) public onlyOwner NonZeroAddress(_nodeManager) {
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
-    function setMembershipManager(address _address) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
+    function setMembershipManager(address _address) external onlyOwner NonZeroAddress(_address) {
         membershipManager = IMembershipManager(_address);
     }
 
-    function setTnft(address _address) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
+    function setTnft(address _address) external onlyOwner NonZeroAddress(_address) {
         tNft = ITNFT(_address);
     }
 
-    function setEtherFiAdminContract(address _address) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
+    function setEtherFiAdminContract(address _address) external onlyOwner NonZeroAddress(_address) {
         etherFiAdminContract = _address;
     }
 
-    function setWithdrawRequestNFT(address _address) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
+    function setWithdrawRequestNFT(address _address) external onlyOwner NonZeroAddress(_address) {
         withdrawRequestNFT = IWithdrawRequestNFT(_address);
     }
 
     /// @notice Updates the address of the admin
     /// @param _address the new address to set as admin
-    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner NonZeroAddress(_address) {
         admins[_address] = _isAdmin;
     }
 
@@ -569,6 +565,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     modifier onlyWithdrawRequestOrMembershipManager() {
         require(msg.sender == address(withdrawRequestNFT) || msg.sender == address(membershipManager), "Caller is not the WithdrawRequestNFT or MembershipManager");
+        _;
+    }
+
+    modifier NonZeroAddress(address _address) {
+        require(_address != address(0), "No zero addresses");
         _;
     }
 }
