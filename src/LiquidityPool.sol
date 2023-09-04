@@ -6,7 +6,6 @@ import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradea
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
@@ -107,15 +106,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = 1;
     }
 
-    function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
-        deposit(_user, _user, _merkleProof);
+    function deposit(address _user, bytes32[] calldata _merkleProof) external payable returns (uint256) {
+        return deposit(_user, _user, _merkleProof);
     }
 
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
+    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable returns (uint256) {
         if(msg.sender == address(membershipManager)) {
-            _isWhitelistedAndEligible(_user, _merkleProof);
+            if (_user != address(membershipManager)) {
+                _isWhitelistedAndEligible(_user, _merkleProof);
+            }       
             emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
@@ -131,6 +132,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         eETH.mintShares(_recipient, share);
 
         emit Deposit(_recipient, msg.value);
+
+        return share;
     }
 
     /// @notice withdraw from pool
