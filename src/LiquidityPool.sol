@@ -115,11 +115,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @dev mints the amount of eETH 1:1 with ETH sent
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
         if(msg.sender == address(membershipManager)) {
-            isWhitelistedAndEligible(_user, _merkleProof);
+            _isWhitelistedAndEligible(_user, _merkleProof);
             emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
-            isWhitelistedAndEligible(msg.sender, _merkleProof);
+            _isWhitelistedAndEligible(msg.sender, _merkleProof);
             emit FundsDeposited(SourceOfFunds.EETH, msg.value);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
@@ -308,7 +308,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         uint128 lastIndexNumberOfValidators = max_validators_per_owner;
 
         uint256 index = _getSlotIndex();
-        uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
+        uint128 numValidatorsToCreate = EtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
 
         if(numValidatorsToCreate % max_validators_per_owner == 0) {
             uint128 size = numValidatorsToCreate / max_validators_per_owner;
@@ -322,12 +322,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return (index, lastIndex, lastIndexNumberOfValidators);
     }
 
-    // Just using for testing
-    // TODO remove and use oracle
-    function numberOfValidatorsToSpawn() public view returns (uint128) {
-        return EtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
-    }
-
     /// @notice Send the exit requests as the T-NFT holder
     function sendExitRequests(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -337,13 +331,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     /// @notice Allow interactions with the eEth token
-    function openEEthLiquidStaking() external onlyAdmin {
-        eEthliquidStakingOpened = true;
-    }
-
-    /// @notice Disallow interactions with the eEth token
-    function closeEEthLiquidStaking() external onlyAdmin {
-        eEthliquidStakingOpened = false;
+    function updateLiquidStakingStatus(bool _value) external onlyAdmin {
+        eEthliquidStakingOpened = _value;
     }
 
     /// @notice Rebase by ether.fi
@@ -495,7 +484,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
 
-    function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view {
+    function _isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view {
         require(!whitelistEnabled || whitelisted[_user], "User is not whitelisted");
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
     }

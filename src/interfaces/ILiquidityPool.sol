@@ -59,8 +59,7 @@ interface ILiquidityPool {
     function batchCancelDeposit(uint256[] calldata _validatorIds) external;
     function sendExitRequests(uint256[] calldata _validatorIds) external;
 
-    function openEEthLiquidStaking() external;
-    function closeEEthLiquidStaking() external;
+    function updateLiquidStakingStatus(bool value) external;
 
     function rebase(int128 _accruedRewards) external;
     function setTokenAddress(address _eETH) external;
