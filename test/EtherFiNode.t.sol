@@ -50,8 +50,6 @@ contract EtherFiNodeTest is TestSetup {
 
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
- //       uint256[] memory restakingBidIdArray = new uint256[](1);
-  //      restakingBidIdArray = bidId[1];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,

@@ -33,7 +33,6 @@ contract EtherFiNodesManager is
     address public stakingManagerContract;
     address public DEPRECATED_protocolRevenueManagerContract;
 
-    // TODO(Dave): rename? 
     mapping(uint256 => address) public etherfiNodeAddress;
 
     TNFT public tnft;
@@ -302,12 +301,9 @@ contract EtherFiNodesManager is
     function fullWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused{
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
-        // TODO(Dave): strategy to handle DOS attack where attacker keeps sending new funds to pod
-
         if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
             // sweep rewards from eigenPod
             IEtherFiNode(etherfiNode).claimQueuedWithdrawals(5);
-
             // require that all pending withdrawals have cleared
             if (IEtherFiNode(etherfiNode).hasOutstandingEigenLayerWithdrawals()) revert MustClaimRestakedWithdrawals();
         }
