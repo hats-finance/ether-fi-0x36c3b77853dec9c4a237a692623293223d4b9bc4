@@ -37,7 +37,8 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof2
+            proof2,
+            false
         );
 
         etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -207,7 +208,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
 
         hoax(alice);
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof, false);
 
         address node = managerInstance.etherfiNodeAddress(processedBids[0]);
         assert(node != address(0));
@@ -227,7 +228,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
 
         hoax(alice);
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof, false);
 
         address node = managerInstance.etherfiNodeAddress(processedBids[0]);
         assert(node != address(0));

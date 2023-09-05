@@ -100,19 +100,19 @@ contract StakingManager is
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof)
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, bool _enableRestaking)
         external payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
     {
-        return _depositWithBidIds(_candidateBidIds, _merkleProof, msg.sender, ILiquidityPool.SourceOfFunds.DELEGATED_STAKING);
+        return _depositWithBidIds(_candidateBidIds, _merkleProof, msg.sender, ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, _enableRestaking);
     }
 
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker, ILiquidityPool.SourceOfFunds _source)
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker, ILiquidityPool.SourceOfFunds _source, bool _enableRestaking)
         public payable whenNotPaused nonReentrant correctStakeAmount returns (uint256[] memory)
     {
-        return _depositWithBidIds(_candidateBidIds, _merkleProof, _staker, _source);
+        return _depositWithBidIds(_candidateBidIds, _merkleProof, _staker, _source, _enableRestaking);
     }
 
     /// @notice Batch creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
@@ -141,7 +141,7 @@ contract StakingManager is
     function batchRegisterValidators(
         bytes32 _depositRoot,
         uint256[] calldata _validatorId,
-        address _bNftRecipient, 
+        address _bNftRecipient,
         address _tNftRecipient,
         DepositData[] calldata _depositData,
         address _staker
@@ -307,7 +307,8 @@ contract StakingManager is
         uint256[] calldata _candidateBidIds, 
         bytes32[] calldata _merkleProof, 
         address _staker, 
-        ILiquidityPool.SourceOfFunds _source
+        ILiquidityPool.SourceOfFunds _source,
+        bool _enableRestaking
     ) internal returns (uint256[] memory){
         verifyWhitelisted(msg.sender, _merkleProof);
 
@@ -330,7 +331,7 @@ contract StakingManager is
                 auctionManager.updateSelectedBidInformation(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
-                _processDeposit(bidId, _staker, true); // TODO(Dave): decide how to inject this value
+                _processDeposit(bidId, _staker, _enableRestaking);
             }
         }
 
@@ -427,7 +428,10 @@ contract StakingManager is
     function createEtherfiNode(uint256 _validatorId, bool _enableRestaking) private returns (address) {
         BeaconProxy proxy = new BeaconProxy(address(upgradableBeacon), "");
         EtherFiNode node = EtherFiNode(payable(proxy));
-        node.initialize(address(nodesManager), _enableRestaking);
+        node.initialize(address(nodesManager));
+        if (_enableRestaking) {
+            node.createEigenPod();
+        }
         nodesManager.registerEtherFiNode(_validatorId, address(node));
         return address(node);
     }

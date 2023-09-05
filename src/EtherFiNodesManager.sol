@@ -47,6 +47,9 @@ contract EtherFiNodesManager is
     address public DEPRECATED_admin;
     mapping(address => bool) public admins;
 
+    IEigenPodManager public eigenPodManager;
+    IDelayedWithdrawalRouter public delayedWithdrawalRouter;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -464,6 +467,16 @@ contract EtherFiNodesManager is
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    // Eigenlayer EigenPodManager
+    function setEigenPodMananger(address _addr) external onlyOwner {
+        eigenPodManager = IEigenPodManager(_addr);
+    }
+
+    // Eigenlayer DelayedWithdrawalRouter
+    function setDelayedWithdrawalRouter(address _addr) external onlyOwner {
+        delayedWithdrawalRouter = IDelayedWithdrawalRouter(_addr);
+    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------

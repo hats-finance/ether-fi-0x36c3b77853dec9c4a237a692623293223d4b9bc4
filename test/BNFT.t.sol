@@ -30,7 +30,8 @@ contract BNFTTest is TestSetup {
         hoax(alice);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIds,
-            proof
+            proof,
+            false
         );
 
         IStakingManager.DepositData[]
@@ -87,7 +88,8 @@ contract BNFTTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof
+            proof,
+            false
         );
 
         IStakingManager.DepositData[]

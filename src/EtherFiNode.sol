@@ -21,10 +21,6 @@ contract EtherFiNode is IEtherFiNode {
 
     uint32 public restakingObservedExitBlock; 
     address public eigenPod;
-    // TODO(Dave): these need to be part of initialize so they can be per environment
-    IEigenPodManager eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
-    IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
-
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  CONSTRUCTOR   ------------------------------------
@@ -42,17 +38,11 @@ contract EtherFiNode is IEtherFiNode {
     ///  To receive the rewards from the execution layer, it should have 'receive()' function.
     receive() external payable {}
 
-    function initialize(address _etherFiNodesManager, bool _enableRestaking) public {
+    function initialize(address _etherFiNodesManager) public {
         require(stakingStartTimestamp == 0, "already initialized");
         require(_etherFiNodesManager != address(0), "No zero addresses");
         stakingStartTimestamp = uint32(block.timestamp);
         etherFiNodesManager = _etherFiNodesManager;
-
-        if (_enableRestaking) {
-            eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
-            delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
-            createEigenPod();
-        }
     }
 
     //--------------------------------------------------------------------------------------
@@ -439,17 +429,15 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
 
     event EigenPodCreated(address indexed nodeAddress, address indexed podAddress);
-    error SafeNotConfiguredForRestaking();
 
     /// @notice create a new eigenPod associated with this withdrawal safe
     /// @dev to take advantage of restaking via eigenlayer the validator associated with this
     ///      withdrawal safe must set their withdrawalCredentials to point to this eigenPod
     ///      and not to the withdrawal safe itself
-    function createEigenPod() internal {
-
-        if (address(eigenPodManager) == address(0x0)) revert SafeNotConfiguredForRestaking();
+    function createEigenPod() external {
         if (eigenPod != address(0x0)) return; // already have pod
 
+        IEigenPodManager eigenPodManager = IEigenPodManager(IEtherFiNodesManager(etherFiNodesManager).eigenPodManager());
         eigenPodManager.createPod();
         eigenPod = address(eigenPodManager.getPod(address(this)));
         emit EigenPodCreated(address(this), eigenPod);
@@ -469,6 +457,7 @@ contract EtherFiNode is IEtherFiNode {
     // This function can go away once we have a proof based withdrawal system.
     function hasOutstandingEigenLayerWithdrawals() external view returns (bool) {
 
+        IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter());
         IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this));
         for (uint256 i = 0; i < unclaimedWithdrawals.length; i++) {
             if (unclaimedWithdrawals[i].blockCreated <= restakingObservedExitBlock) {
@@ -498,8 +487,8 @@ contract EtherFiNode is IEtherFiNode {
         if (!isRestakingEnabled()) return;
 
         // only claim if we have active unclaimed withdrawals
-        if (delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this)).length > 0) {
-            IDelayedWithdrawalRouter(delayedWithdrawalRouter).claimDelayedWithdrawals(address(this), maxNumWithdrawals); // TODO(Dave): do we ever want to adjust this number?
+        if (IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter().getUserDelayedWithdrawals(address(this)).length > 0) {
+            IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter().claimDelayedWithdrawals(address(this), maxNumWithdrawals); // TODO(Dave): do we ever want to adjust this number?
         }
     }
 
