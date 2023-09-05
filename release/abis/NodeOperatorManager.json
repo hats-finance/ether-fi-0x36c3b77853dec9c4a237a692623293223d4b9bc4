@@ -479,6 +479,11 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_operator",
+        "type": "address"
+      },
+      {
         "internalType": "bytes",
         "name": "_ipfsHash",
         "type": "bytes"
