@@ -94,15 +94,6 @@ contract EtherFiNode is IEtherFiNode {
         _validatePhaseTransition(VALIDATOR_PHASE.EVICTED);
         phase = VALIDATOR_PHASE.EVICTED;
         exitTimestamp = uint32(block.timestamp);
-
-        if (isRestakingEnabled()) {
-            // eigenLayer bookeeping
-            // we need to mark a block from which we know all beaconchain eth has been moved to the eigenPod
-            // so that we can properly calculate exit payouts and ensure queued withdrawals have been resolved
-            // (eigenLayer withdrawals are tied to blocknumber instead of timestamp)
-            restakingObservedExitBlock = uint32(block.number);
-            queueRestakedWithdrawal();
-        }
     }
 
     //--------------------------------------------------------------------------------------
@@ -487,8 +478,9 @@ contract EtherFiNode is IEtherFiNode {
         if (!isRestakingEnabled()) return;
 
         // only claim if we have active unclaimed withdrawals
-        if (IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter().getUserDelayedWithdrawals(address(this)).length > 0) {
-            IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter().claimDelayedWithdrawals(address(this), maxNumWithdrawals); // TODO(Dave): do we ever want to adjust this number?
+        IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter());
+        if (delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this)).length > 0) {
+            delayedWithdrawalRouter.claimDelayedWithdrawals(address(this), maxNumWithdrawals);
         }
     }
 

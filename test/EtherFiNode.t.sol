@@ -6,9 +6,7 @@ import "../src/EtherFiNode.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
-//import "@eigenlayer/contracts/interfaces/IEigenPod.sol";
 import "@eigenlayer/contracts/interfaces/IDelayedWithdrawalRouter.sol";
-//import "@eigenlayer/contracts/pods/EigenPodManager.sol";
 
 contract EtherFiNodeTest is TestSetup {
 
@@ -19,15 +17,16 @@ contract EtherFiNodeTest is TestSetup {
     uint256 BNFTRewardSplit = 84_375;
     uint256 RewardSplitDivisor = 1_000_000;
 
+    uint256 testnetFork;
     uint256[] bidId;
     EtherFiNode safeInstance;
     EtherFiNode restakingSafe;
 
-    IEigenPodManager eigenPodManager = IEigenPodManager(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
-    IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
+    // eigenLayer
+    IDelayedWithdrawalRouter delayedWithdrawalRouter;
 
     function setUp() public {
-       
+
         setUpTests();
 
         assertTrue(node.phase() == IEtherFiNode.VALIDATOR_PHASE.NOT_INITIALIZED);
@@ -101,10 +100,14 @@ contract EtherFiNodeTest is TestSetup {
             0.1 ether
         );
 
+        delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(safeInstance.etherFiNodesManager()).delayedWithdrawalRouter());
+        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
     }
 
     function test_createPod() public {
-        console2.log("podAddrPre:", address(safeInstance.eigenPod()));
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
         safeInstance.createEigenPod();
         console2.log("podAddr:", address(safeInstance.eigenPod()));
 
@@ -121,6 +124,10 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_claimMixedSafeAndPodFunds() public {
+
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
         safeInstance.createEigenPod();
 
         // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
@@ -140,6 +147,11 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_claimRestakedRewards() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
+
         // simulate 1 eth of staking rewards sent to the eigen pod
         vm.deal(address(safeInstance.eigenPod()), 1 ether);
         assertEq(address(safeInstance).balance, 0 ether);
@@ -188,6 +200,10 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_restakedFullWithdrawal() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
 
         uint256 validatorId = bidId[0];
         uint256[] memory validatorIds = new uint256[](1);
@@ -222,6 +238,10 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_restakedAttackerCantBlockWithdraw() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
 
         uint256 validatorId = bidId[0];
         uint256[] memory validatorIds = new uint256[](1);
