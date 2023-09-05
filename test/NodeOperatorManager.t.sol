@@ -5,7 +5,7 @@ import "./TestSetup.sol";
 import "../src/interfaces/ILiquidityPool.sol";
 
 contract NodeOperatorManagerTest is TestSetup {
-    event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
+    event OperatorRegistered(address user, uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
     bytes aliceIPFS_Hash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
@@ -86,7 +86,7 @@ contract NodeOperatorManagerTest is TestSetup {
 
     function test_EventOperatorRegistered() public {
         vm.expectEmit(false, false, false, true);
-        emit OperatorRegistered(10, 0, aliceIPFS_Hash);
+        emit OperatorRegistered(address(alice), 10, 0, aliceIPFS_Hash);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
             aliceIPFS_Hash,

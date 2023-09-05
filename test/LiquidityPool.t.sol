@@ -205,7 +205,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         startHoax(alice);
-        vm.expectRevert("Not enough eETH");
+        vm.expectRevert(LiquidityPool.InsufficientLiquidity.selector);
         liquidityPoolInstance.requestWithdraw(alice, 2 ether);
     }
 
