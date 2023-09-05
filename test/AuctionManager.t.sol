@@ -42,6 +42,7 @@ contract AuctionManagerTest is TestSetup {
     function test_ReEnterAuctionManagerFailsIfNotCorrectCaller() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );
@@ -65,6 +66,7 @@ contract AuctionManagerTest is TestSetup {
     function test_ReEnterAuctionManagerFailsIfBidAlreadyActive() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );
@@ -98,6 +100,7 @@ contract AuctionManagerTest is TestSetup {
     function test_ReEnterAuctionManagerWorks() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );
@@ -173,18 +176,21 @@ contract AuctionManagerTest is TestSetup {
     function test_createBidWorks() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             _ipfsHash,
             5
         );
 
         vm.prank(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
+            bob,
             _ipfsHash,
             5
         );
 
         vm.prank(henry);
         nodeOperatorManagerInstance.registerNodeOperator(
+            henry,
             _ipfsHash,
             5
         );
@@ -298,12 +304,14 @@ contract AuctionManagerTest is TestSetup {
     function test_CreateBidMinMaxAmounts() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             _ipfsHash,
             5
         );
 
         vm.prank(henry);
         nodeOperatorManagerInstance.registerNodeOperator(
+            henry,
             _ipfsHash,
             5
         );
@@ -339,6 +347,7 @@ contract AuctionManagerTest is TestSetup {
     function test_createBidFailsIfBidSizeIsLargerThanKeysRemaining() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFSHash,
             3
         );
@@ -366,6 +375,7 @@ contract AuctionManagerTest is TestSetup {
     function test_createBidFailsIfIPFSIndexMoreThanTotalKeys() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFSHash,
             1
         );
@@ -388,6 +398,7 @@ contract AuctionManagerTest is TestSetup {
     function test_createBidBatch() public {
         startHoax(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFSHash,
             10
         );
@@ -451,6 +462,7 @@ contract AuctionManagerTest is TestSetup {
 
         startHoax(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
+            bob,
             aliceIPFSHash,
             10
         );
@@ -486,6 +498,7 @@ contract AuctionManagerTest is TestSetup {
     function test_createBidBatchFailsWithIncorrectValue() public {
         hoax(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFSHash,
             10
         );
@@ -501,6 +514,7 @@ contract AuctionManagerTest is TestSetup {
     function test_CreateBidPauseable() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFSHash,
             5
         );
@@ -528,6 +542,7 @@ contract AuctionManagerTest is TestSetup {
     function test_CancelBidFailsWhenBidAlreadyInactive() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             aliceIPFSHash,
             5
         );
@@ -549,6 +564,7 @@ contract AuctionManagerTest is TestSetup {
     function test_CancelBidFailsWhenNotBidOwnerCalling() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             aliceIPFSHash,
             5
         );
@@ -570,18 +586,21 @@ contract AuctionManagerTest is TestSetup {
     function test_CancelBidWorksIfBidIsNotCurrentHighest() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             aliceIPFSHash,
             5
         );
 
         vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf,
             aliceIPFSHash,
             5
         );
 
         vm.prank(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCDca97f61d8EE53878cf602FF6BC2f260f10240B,
             aliceIPFSHash,
             5
         );
@@ -626,18 +645,21 @@ contract AuctionManagerTest is TestSetup {
     function test_PausableCancelBid() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );
 
         vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf,
             _ipfsHash,
             5
         );
 
         vm.prank(0xCDca97f61d8EE53878cf602FF6BC2f260f10240B);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCDca97f61d8EE53878cf602FF6BC2f260f10240B,
             _ipfsHash,
             5
         );
@@ -677,6 +699,7 @@ contract AuctionManagerTest is TestSetup {
     function test_ProcessAuctionFeeTransfer() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );
@@ -774,6 +797,7 @@ contract AuctionManagerTest is TestSetup {
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFSHash,
             5
         );
@@ -793,6 +817,7 @@ contract AuctionManagerTest is TestSetup {
     function test_EventBidReEnteredAuction() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFSHash,
             5
         );
@@ -812,6 +837,7 @@ contract AuctionManagerTest is TestSetup {
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFSHash,
             5
         );
@@ -848,11 +874,12 @@ contract AuctionManagerTest is TestSetup {
 
     function test_AccumulateAuctionRevenue() public {
         vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
         vm.stopPrank();
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             _ipfsHash,
             5
         ); 
@@ -942,11 +969,12 @@ contract AuctionManagerTest is TestSetup {
     
     function test_transferAccumulatedRevenue() public {
         vm.startPrank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
         vm.stopPrank();
 
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             _ipfsHash,
             5
         ); 

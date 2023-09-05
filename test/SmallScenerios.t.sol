@@ -59,7 +59,7 @@ contract SmallScenariosTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         startHoax(bob);
-        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 40);
+        nodeOperatorManagerInstance.registerNodeOperator(bob, _ipfsHash, 40);
         uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(5, 0.2 ether);
         vm.stopPrank();
 
@@ -338,12 +338,14 @@ contract SmallScenariosTest is TestSetup {
     function test_AuctionToStakerFlow() public {
         vm.prank(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
+            bob,
             _ipfsHash,
             40
         );
 
         vm.prank(chad);
         nodeOperatorManagerInstance.registerNodeOperator(
+            chad,
             _ipfsHash,
             10
         );

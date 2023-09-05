@@ -275,7 +275,7 @@ contract NFTExchangeTest is TestSetup {
 
     function _alice_stake() internal returns (uint256) {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);

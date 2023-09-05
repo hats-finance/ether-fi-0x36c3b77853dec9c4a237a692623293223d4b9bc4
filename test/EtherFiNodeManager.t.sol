@@ -23,7 +23,7 @@ contract EtherFiNodesManagerTest is TestSetup {
             address(protocolRevenueManagerInstance));
         
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -192,6 +192,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     function test_CreateEtherFiNode() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             _ipfsHash,
             5
         );
@@ -211,6 +212,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     function test_RegisterEtherFiNode() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             _ipfsHash,
             5
         );

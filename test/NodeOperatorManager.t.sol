@@ -20,12 +20,14 @@ contract NodeOperatorManagerTest is TestSetup {
 
         vm.expectRevert("Pausable: paused");
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
         nodeOperatorManagerInstance.unPauseContract();
 
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -44,6 +46,7 @@ contract NodeOperatorManagerTest is TestSetup {
 
         vm.expectRevert("Already registered");
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -52,6 +55,7 @@ contract NodeOperatorManagerTest is TestSetup {
     function test_CanAddAddressToWhitelist() public {
         vm.startPrank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -71,6 +75,7 @@ contract NodeOperatorManagerTest is TestSetup {
     function test_CanRemoveAddressFromWhitelist() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -89,6 +94,7 @@ contract NodeOperatorManagerTest is TestSetup {
         emit OperatorRegistered(address(alice), 10, 0, aliceIPFS_Hash);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFS_Hash,
             10
         );
@@ -97,6 +103,7 @@ contract NodeOperatorManagerTest is TestSetup {
     function test_FetchNextKeyIndex() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -117,6 +124,7 @@ contract NodeOperatorManagerTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
+            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             aliceIPFS_Hash,
             1
         );
@@ -140,12 +148,14 @@ contract NodeOperatorManagerTest is TestSetup {
     function test_SetStakingTypeApprovals() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
+            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
 
         vm.prank(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
+            bob,
             aliceIPFS_Hash,
             uint64(10)
         );

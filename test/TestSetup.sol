@@ -778,6 +778,7 @@ contract TestSetup is Test {
         vm.startPrank(alice);
         if (!nodeOperatorManagerInstance.registered(alice)) {
             nodeOperatorManagerInstance.registerNodeOperator(
+                alice,
                 _ipfsHash,
                 10000
             );

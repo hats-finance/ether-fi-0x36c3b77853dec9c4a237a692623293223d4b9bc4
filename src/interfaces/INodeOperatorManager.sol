@@ -23,6 +23,7 @@ interface INodeOperatorManager {
     ) external view returns (bool whitelisted);
 
     function registerNodeOperator(
+        address _operator,
         bytes memory ipfsHash,
         uint64 totalKeys
     ) external;
