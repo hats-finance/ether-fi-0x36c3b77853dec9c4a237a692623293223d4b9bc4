@@ -241,7 +241,7 @@ contract SmallScenariosTest is TestSetup {
         /// Chad wants to withdraw his ETH from the pool.
         /// He has a claimable balance of 15.5 ETH but the Pool only has a balance of 0.0453125 ETH.
         /// EtherFi should make sure that there is sufficient liquidity in the pool to allow for withdrawals
-        vm.expectRevert("Not enough ETH in the liquidity pool");
+        vm.expectRevert(LiquidityPool.InsufficientLiquidity.selector);
         vm.prank(chad);
         liquidityPoolInstance.requestWithdraw(chad, 15.5 ether);
         

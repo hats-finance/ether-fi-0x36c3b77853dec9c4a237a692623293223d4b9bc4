@@ -16,7 +16,7 @@ import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
-import "./EtherFiAdmin.sol";
+import "./interfaces/IEtherFiAdmin.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
@@ -73,6 +73,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event WhitelistStatusUpdated(bool value);
 
     error InvalidAmount();
+    error DataNotSet();
+    error InsufficientLiquidity();
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -140,8 +142,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _amount the amount to withdraw from contract
     /// it returns the amount of shares burned
     function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager NonZeroAddress(_recipient) returns (uint256) {
-        require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
-        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
+
+        if(totalValueInLp < _amount || eETH.balanceOf(msg.sender) < _amount) revert InsufficientLiquidity();
 
         uint256 share = sharesForWithdrawalAmount(_amount);
         totalValueInLp -= uint128(_amount);
@@ -167,8 +169,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
     function requestWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen NonZeroAddress(recipient) returns (uint256) {
-        require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
-        require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
+
+        if(totalValueInLp < amount || eETH.balanceOf(recipient) < amount) revert InsufficientLiquidity();
 
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
@@ -306,16 +308,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
         uint128 maxValidatorsPerOwner = max_validators_per_owner;
 
-        require(maxValidatorsPerOwner > 0, "Max validators not set");
-        require(schedulingPeriodInSeconds > 0, "Scheduling period not set");
-        require(etherFiAdminContract != address(0), "EtherFi Admin contract not set");
-        require(EtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() > 0, "No validators to spin up");
+        if((maxValidatorsPerOwner == 0) || (schedulingPeriodInSeconds == 0) || (etherFiAdminContract == address(0)) || (IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0)) {
+            revert DataNotSet();
+        }
 
         uint128 lastIndex;
         uint128 lastIndexNumberOfValidators = maxValidatorsPerOwner;
 
         uint256 index = _getSlotIndex();
-        uint128 numValidatorsToCreate = EtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
+        uint128 numValidatorsToCreate = IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
 
         if(numValidatorsToCreate % maxValidatorsPerOwner == 0) {
             uint128 size = numValidatorsToCreate / maxValidatorsPerOwner;
