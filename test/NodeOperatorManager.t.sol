@@ -51,42 +51,59 @@ contract NodeOperatorManagerTest is TestSetup {
     }
 
     function test_RegisterNodeOperatorInMigration() public {
+
+        address[] memory operators = new address[](2);
+        operators[0] = address(bob);
+        operators[1] = address(alice);
+
+        bytes[] memory hashes = new bytes[](2);
+        hashes[0] = bobIPFS_Hash;
+        hashes[1] = aliceIPFS_Hash;
+
+        uint64[] memory totalKeys = new uint64[](2);
+        totalKeys[0] = 10;
+        totalKeys[1] = 15;
+
+        uint64[] memory keysUsed = new uint64[](2);
+        keysUsed[0] = 5;
+        keysUsed[1] = 1;
+
         vm.prank(bob);
         vm.expectRevert("Caller is not the admin");
-        nodeOperatorManagerInstance.migrateNodeOperator(
-            address(bob),
-            bobIPFS_Hash,
-            uint64(10),
-            uint64(5)
+        nodeOperatorManagerInstance.batchMigrateNodeOperator(
+            operators,
+            hashes,
+            totalKeys,
+            keysUsed
         );
 
         vm.prank(alice);
-        nodeOperatorManagerInstance.migrateNodeOperator(
-            address(bob),
-            bobIPFS_Hash,
-            uint64(10),
-            uint64(5)
+        nodeOperatorManagerInstance.batchMigrateNodeOperator(
+            operators,
+            hashes,
+            totalKeys,
+            keysUsed
         );
 
         (
-            uint64 totalKeys,
-            uint64 keysUsed,
-            bytes memory aliceHash
+            uint64 totalKeysUser,
+            uint64 keysUsedUser,
+            bytes memory bobHash
         ) = nodeOperatorManagerInstance.addressToOperatorData(bob);
 
-        assertEq(aliceHash, abi.encodePacked(bobIPFS_Hash));
-        assertEq(totalKeys, 10);
-        assertEq(keysUsed, 5);
+        assertEq(bobHash, abi.encodePacked(bobIPFS_Hash));
+        assertEq(totalKeysUser, 10);
+        assertEq(keysUsedUser, 5);
 
         assertEq(nodeOperatorManagerInstance.registered(bob), true);
 
         vm.prank(alice);
         vm.expectRevert("Already registered");
-        nodeOperatorManagerInstance.migrateNodeOperator(
-            address(bob),
-            bobIPFS_Hash,
-            uint64(10),
-            uint64(5)
+        nodeOperatorManagerInstance.batchMigrateNodeOperator(
+            operators,
+            hashes,
+            totalKeys,
+            keysUsed
         );
     }
 
