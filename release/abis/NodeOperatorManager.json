@@ -67,23 +67,10 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "bytes32",
-        "name": "oldMerkle",
-        "type": "bytes32"
+        "internalType": "address",
+        "name": "operator",
+        "type": "address"
       },
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "newMerkle",
-        "type": "bytes32"
-      }
-    ],
-    "name": "MerkleUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
       {
         "indexed": false,
         "internalType": "uint64",
@@ -491,6 +478,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "address",
+        "name": "_operator",
+        "type": "address"
+      },
       {
         "internalType": "bytes",
         "name": "_ipfsHash",

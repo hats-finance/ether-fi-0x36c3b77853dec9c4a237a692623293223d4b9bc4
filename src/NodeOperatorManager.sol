@@ -4,7 +4,6 @@ pragma solidity 0.8.13;
 import "../src/interfaces/INodeOperatorManager.sol";
 import "../src/interfaces/IAuctionManager.sol";
 import "../src/LiquidityPool.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
@@ -16,7 +15,6 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     //--------------------------------------------------------------------------------------
 
     event OperatorRegistered(address operator, uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
-    event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
     event AddedToWhitelist(address userAddress);
     event RemovedFromWhitelist(address userAddress);
     event UpdatedOperatorApprovals(address operator, LiquidityPool.SourceOfFunds source, bool approved);
@@ -77,6 +75,32 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         );
     }
 
+    /// @notice Migrates operator details from previous contract
+    function migrateNodeOperator(
+        address _operator, 
+        bytes memory _ipfsHash,
+        uint64 _totalKeys,
+        uint64 _keysUsed
+    ) external onlyAdmin {
+        require(!registered[_operator], "Already registered");
+
+        KeyData memory keyData = KeyData({
+            totalKeys: _totalKeys,
+            keysUsed: _keysUsed,
+            ipfsHash: abi.encodePacked(_ipfsHash)
+        });
+
+        addressToOperatorData[_operator] = keyData;
+        registered[_operator] = true;
+
+        emit OperatorRegistered(
+            _operator,
+            keyData.totalKeys,
+            keyData.keysUsed,
+            _ipfsHash
+        );
+    }
+
     /// @notice Fetches the next key they have available to use
     /// @param _user the user to fetch the key for
     /// @return The ipfs index available for the validator
@@ -101,7 +125,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         bool[] memory _approvals
     ) external onlyAdmin {
         require(_users.length == _approvedTags.length && _users.length == _approvals.length, "Invalid array lengths");
-        
+
         for(uint256 x; x < _approvedTags.length; x++) {
             operatorApprovedTags[_users[x]][_approvedTags[x]] = _approvals[x];
             emit UpdatedOperatorApprovals(_users[x], _approvedTags[x], _approvals[x]);

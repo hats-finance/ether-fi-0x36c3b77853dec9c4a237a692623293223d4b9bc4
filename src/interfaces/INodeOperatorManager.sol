@@ -27,6 +27,13 @@ interface INodeOperatorManager {
         uint64 totalKeys
     ) external;
 
+    function migrateNodeOperator(
+        address _operator, 
+        bytes memory _ipfsHash,
+        uint64 _totalKeys,
+        uint64 _keysUsed
+    ) external; 
+
     function batchUpdateOperatorsApprovedTags(
         address[] memory _users, 
         LiquidityPool.SourceOfFunds[] memory _approvedTags, 

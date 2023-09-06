@@ -99,7 +99,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         eEthliquidStakingOpened = false;
     }
 
-    function initializePhase2() external {        
+    function initializePhase2() external onlyOwner {        
         schedulingPeriodInSeconds = 604800;
 
         fundStatistics[SourceOfFunds.EETH].numberOfValidators = 1;
