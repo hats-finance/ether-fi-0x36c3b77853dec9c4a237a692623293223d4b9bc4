@@ -49,6 +49,8 @@ contract EtherFiNodesManager is
 
     IEigenPodManager public eigenPodManager;
     IDelayedWithdrawalRouter public delayedWithdrawalRouter;
+    // max number of queued eigenlayer withdrawals to attempt to claim in a single tx
+    uint8 public maxEigenlayerWithrawals;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -208,7 +210,7 @@ contract EtherFiNodesManager is
 
         // sweep rewards from eigenPod if any queued withdrawals are ready to be claimed
         if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
-            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(5);
+            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithrawals);
         }
 
         require(
@@ -397,6 +399,12 @@ contract EtherFiNodesManager is
         external onlyStakingManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setIpfsHashForEncryptedValidatorKey(_ipfs);
+    }
+
+    /// @notice set maximum number of queued eigenlayer withdrawals that can be processed in 1 tx
+    /// @param _max max number of queued withdrawals
+    function setMaxEigenLayerWithdrawals(uint8 _max) external onlyOwner {
+        maxEigenlayerWithrawals = _max;
     }
 
     /// @notice Increments the number of validators by a certain amount
