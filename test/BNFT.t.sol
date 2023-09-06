@@ -15,7 +15,6 @@ contract BNFTTest is TestSetup {
     }
 
     function test_Mint() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -30,7 +29,6 @@ contract BNFTTest is TestSetup {
         hoax(alice);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIds,
-            proof,
             false
         );
 
@@ -71,8 +69,6 @@ contract BNFTTest is TestSetup {
     }
 
     function test_BNFTCannotBeTransferred() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -88,7 +84,6 @@ contract BNFTTest is TestSetup {
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof,
             false
         );
 

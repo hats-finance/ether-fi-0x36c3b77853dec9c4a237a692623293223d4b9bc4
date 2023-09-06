@@ -24,6 +24,10 @@ contract SmallScenariosTest is TestSetup {
         chadProof = merkle.getProof(whiteListedAddresses, 5);
         danProof = merkle.getProof(whiteListedAddresses, 6);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
+
+        vm.prank(alice);
+    liquidityPoolInstance.setStakingTargetWeights(50, 50);
+
     }
     
     /*
@@ -42,6 +46,10 @@ contract SmallScenariosTest is TestSetup {
     function test_EEthWeTHLpScenarios() public {
         // bids to match with later staking 
         bobProof = merkle.getProof(whiteListedAddresses, 4);
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 1;
+        _executeAdminTasks(report);
 
         setUpBnftHolders();
         vm.warp(976348625856);
@@ -121,8 +129,6 @@ contract SmallScenariosTest is TestSetup {
         // Chad's 15 ETH + Alice's 10ETH + Bob's 5ETH
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
 
-        bytes32[] memory proof = getWhitelistMerkleProof(3);
-
         address[] memory users = new address[](1);
         users[0] = address(bob);
 
@@ -138,7 +144,7 @@ contract SmallScenariosTest is TestSetup {
         // EtherFi rolls up 32 ether into a validator and mints the associated NFT's
         vm.deal(owner, 4 ether);
         startHoax(alice);
-        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, proof, 0, ILiquidityPool.SourceOfFunds.EETH);
+        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, 0, 1);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -235,7 +241,7 @@ contract SmallScenariosTest is TestSetup {
         /// Chad wants to withdraw his ETH from the pool.
         /// He has a claimable balance of 15.5 ETH but the Pool only has a balance of 0.0453125 ETH.
         /// EtherFi should make sure that there is sufficient liquidity in the pool to allow for withdrawals
-        vm.expectRevert("Not enough ETH in the liquidity pool");
+        vm.expectRevert(LiquidityPool.InsufficientLiquidity.selector);
         vm.prank(chad);
         liquidityPoolInstance.requestWithdraw(chad, 15.5 ether);
         
@@ -394,7 +400,6 @@ contract SmallScenariosTest is TestSetup {
         startHoax(dan);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            danProof,
             false
         );
 
@@ -428,8 +433,6 @@ contract SmallScenariosTest is TestSetup {
 
         //-------------------------------------------------------------------------------------------------------------------------------
 
-        bytes32[] memory gregProof = merkle.getProof(whiteListedAddresses, 8);
-
         startHoax(greg);
         uint256[] memory bidIdArray2 = new uint256[](6);
         bidIdArray2[0] = chadBidIds[4];
@@ -441,7 +444,6 @@ contract SmallScenariosTest is TestSetup {
 
         uint256[] memory gregProcessedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 192 ether}(
             bidIdArray2,
-            gregProof,
             false
         );
 

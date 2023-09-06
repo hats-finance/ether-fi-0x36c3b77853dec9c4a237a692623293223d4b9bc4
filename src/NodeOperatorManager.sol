@@ -15,10 +15,11 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event OperatorRegistered(uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
+    event OperatorRegistered(address operator, uint64 totalKeys, uint64 keysUsed, bytes ipfsHash);
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
     event AddedToWhitelist(address userAddress);
     event RemovedFromWhitelist(address userAddress);
+    event UpdatedOperatorApprovals(address operator, LiquidityPool.SourceOfFunds source, bool approved);
 
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -69,6 +70,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         registered[msg.sender] = true;
 
         emit OperatorRegistered(
+            msg.sender,
             keyData.totalKeys,
             keyData.keysUsed,
             _ipfsHash
@@ -102,6 +104,7 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         
         for(uint256 x; x < _approvedTags.length; x++) {
             operatorApprovedTags[_users[x]][_approvedTags[x]] = _approvals[x];
+            emit UpdatedOperatorApprovals(_users[x], _approvedTags[x], _approvals[x]);
         }
     }
 

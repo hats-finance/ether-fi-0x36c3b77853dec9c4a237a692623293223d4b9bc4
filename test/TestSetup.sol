@@ -355,8 +355,11 @@ contract TestSetup is Test {
 
         vm.stopPrank();
 
-        vm.prank(alice);
+        vm.startPrank(alice);
+        liquidityPoolInstance.setStakingTargetWeights(50, 50);
         membershipManagerInstance.setTopUpCooltimePeriod(28 days);
+        vm.stopPrank();
+        
         vm.startPrank(owner);
 
         membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
@@ -382,6 +385,9 @@ contract TestSetup is Test {
             address(membershipManagerInstance),
             address(withdrawRequestNFTInstance)
         );
+
+        liquidityPoolInstance.setEtherFiAdminContract(address(etherFiAdminInstance));
+        liquidityPoolInstance.initializePhase2();
 
         uint256[] memory validatorsToApprove = new uint256[](1);
         uint256[] memory validatorsToExit = new uint256[](1);
@@ -435,7 +441,7 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         vm.prank(alice);
-        liquidityPoolInstance.openEEthLiquidStaking();
+        liquidityPoolInstance.updateLiquidStakingStatus(true);
 
         vm.startPrank(owner);
 
@@ -456,9 +462,6 @@ contract TestSetup is Test {
         _initializeMembershipTiers();
         _initializePeople();
         _initializeEtherFiAdmin();
-
-        vm.prank(alice);
-        stakingManagerInstance.disableWhitelist();
 
     }
 
@@ -488,9 +491,6 @@ contract TestSetup is Test {
         whiteListedAddresses.push(keccak256(abi.encodePacked(shonee)));
 
         root = merkle.getRoot(whiteListedAddresses);
-
-        vm.prank(alice);
-        stakingManagerInstance.updateMerkleRoot(root);
     }
 
     function getWhitelistMerkleProof(uint256 index) internal returns (bytes32[] memory) {
@@ -518,11 +518,6 @@ contract TestSetup is Test {
             regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
             vm.stopPrank();
         }
-
-        vm.startPrank(alice);
-        root = merkle.getRoot(whiteListedAddresses);
-        stakingManagerInstance.updateMerkleRoot(root);
-        vm.stopPrank();
     }
 
     function _setUpNodeOperatorWhitelist() internal {
@@ -670,6 +665,17 @@ contract TestSetup is Test {
         approvals[1] = true;
 
         nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
+
+        address[] memory aliceUser = new address[](1);
+        aliceUser[0] = address(alice);
+
+        ILiquidityPool.SourceOfFunds[] memory aliceApprovedTags = new ILiquidityPool.SourceOfFunds[](1);
+        aliceApprovedTags[0] = ILiquidityPool.SourceOfFunds.ETHER_FAN;
+
+        bool[] memory aliceApprovals = new bool[](1);
+        aliceApprovals[0] = true;
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(aliceUser, aliceApprovedTags, aliceApprovals);
+
     }
 
     function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, bytes[] memory _pubKey, bytes[] memory _signature) internal {        
@@ -699,6 +705,32 @@ contract TestSetup is Test {
         report = IEtherFiOracle.OracleReport(consensusVersion, 0, 0, 0, 0, 0, emptyVals, emptyVals, emptyVals, emptyVals, emptyVals, 0, 0, 0, 0, 0, 0);
     }
 
+    function calculatePermitDigest(address owner, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domainSeparator) public pure returns (bytes32) {
+        bytes32 permitTypehash = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                hex"1901",
+                domainSeparator,
+                keccak256(abi.encode(permitTypehash, owner, spender, value, nonce, deadline))
+            )
+        );
+        return digest;
+    }
+
+    function createPermitInput(uint256 privKey, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domianSeparator) public returns (ILiquidityPool.PermitInput memory) {
+        address owner = vm.addr(privKey);
+        bytes32 digest = calculatePermitDigest(owner, spender, value, nonce, deadline, domianSeparator);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privKey, digest);
+        ILiquidityPool.PermitInput memory permitInput = ILiquidityPool.PermitInput({
+            value: value,
+            deadline: deadline,
+            v: v,
+            r: r,
+            s: s
+        });
+        return permitInput;
+    }
+
     function setUpBnftHolders() internal {
         vm.startPrank(alice);
         liquidityPoolInstance.registerAsBnftHolder(alice);
@@ -725,6 +757,10 @@ contract TestSetup is Test {
     function launch_validator() internal returns (uint256[] memory) {
         bytes[] memory sig;
         bytes32 rootForApproval;
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 2;
+        _executeAdminTasks(report);
 
         sig = new bytes[](2);
         sig[0] = hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65";
@@ -761,7 +797,7 @@ contract TestSetup is Test {
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
         vm.prank(alice);
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, proof, 0, ILiquidityPool.SourceOfFunds.EETH);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 0, 2);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
         IStakingManager.DepositData[]

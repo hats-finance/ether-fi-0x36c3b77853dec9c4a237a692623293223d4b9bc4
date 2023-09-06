@@ -6,7 +6,6 @@ import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradea
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
@@ -17,6 +16,7 @@ import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IEtherFiAdmin.sol";
 
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
@@ -51,16 +51,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     mapping(address => bool) public admins;
     mapping(SourceOfFunds => FundStatistics) public fundStatistics;
     mapping(uint256 => bytes32) public depositDataRootForApprovalDeposits;
- 
+    address public etherFiAdminContract;
+    bool public whitelistEnabled;
+    mapping(address => bool) public whitelisted;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, address recipient, uint256 amount);
-    event AddedToWhitelist(address userAddress);
-    event RemovedFromWhitelist(address userAddress);
-    event BnftHolderDeregistered(uint256 index);
+    event UpdatedWhitelist(address userAddress, bool value);
+    event BnftHolderDeregistered(address user, uint256 index);
     event BnftHolderRegistered(address user);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
@@ -68,8 +70,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
     event Rebase(uint256 totalEthLocked, uint256 totalEEthShares);
+    event WhitelistStatusUpdated(bool value);
 
     error InvalidAmount();
+    error DataNotSet();
+    error InsufficientLiquidity();
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -87,29 +92,35 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp += uint128(msg.value);
     }
 
-    function initialize(address _regulationsManager) external initializer {
-        require(_regulationsManager != address(0), "No zero addresses");
-
+    function initialize(address _regulationsManager) external initializer NonZeroAddress(_regulationsManager) {
         __Ownable_init();
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
         eEthliquidStakingOpened = false;
-        schedulingPeriodInSeconds = 604800;
     }
 
-    function deposit(address _user, bytes32[] calldata _merkleProof) external payable {
-        deposit(_user, _user, _merkleProof);
+    function initializePhase2() external {        
+        schedulingPeriodInSeconds = 604800;
+
+        fundStatistics[SourceOfFunds.EETH].numberOfValidators = 1;
+        fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = 1;
+    }
+
+    function deposit(address _user, bytes32[] calldata _merkleProof) external payable returns (uint256) {
+        return deposit(_user, _user, _merkleProof);
     }
 
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable {
+    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable returns (uint256) {
         if(msg.sender == address(membershipManager)) {
-            isWhitelistedAndEligible(_user, _merkleProof);
+            if (_user != address(membershipManager)) {
+                _isWhitelistedAndEligible(_user, _merkleProof);
+            }       
             emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
         } else {
             require(eEthliquidStakingOpened, "Liquid staking functions are closed");
-            isWhitelistedAndEligible(msg.sender, _merkleProof);
+            _isWhitelistedAndEligible(msg.sender, _merkleProof);
             emit FundsDeposited(SourceOfFunds.EETH, msg.value);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
@@ -121,6 +132,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         eETH.mintShares(_recipient, share);
 
         emit Deposit(_recipient, msg.value);
+
+        return share;
     }
 
     /// @notice withdraw from pool
@@ -128,10 +141,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _recipient the recipient who will receives the ETH
     /// @param _amount the amount to withdraw from contract
     /// it returns the amount of shares burned
-    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager returns (uint256) {
-        require(totalValueInLp >= _amount, "Not enough ETH in the liquidity pool");
-        require(_recipient != address(0), "Cannot withdraw to zero address");
-        require(eETH.balanceOf(msg.sender) >= _amount, "Not enough eETH");
+    function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager NonZeroAddress(_recipient) returns (uint256) {
+
+        if(totalValueInLp < _amount || eETH.balanceOf(msg.sender) < _amount) revert InsufficientLiquidity();
 
         uint256 share = sharesForWithdrawalAmount(_amount);
         totalValueInLp -= uint128(_amount);
@@ -156,10 +168,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @dev Transfers the amount of eETH from msg.senders account to the WithdrawRequestNFT contract & mints an NFT to the msg.sender
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
-    function requestWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen returns (uint256) {
-        require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
-        require(recipient != address(0), "Cannot withdraw to zero address");
-        require(eETH.balanceOf(recipient) >= amount, "Not enough eETH");
+    function requestWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen NonZeroAddress(recipient) returns (uint256) {
+
+        if(totalValueInLp < amount || eETH.balanceOf(recipient) < amount) revert InsufficientLiquidity();
 
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
@@ -178,9 +189,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestWithdraw(_owner, _amount);
     }
 
-    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen returns (uint256) {
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen NonZeroAddress(recipient) returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
-        require(recipient != address(0), "Cannot withdraw to zero address");
 
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
@@ -191,33 +201,41 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
-    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, uint256 _index, SourceOfFunds _source) external payable returns (uint256[] memory){
+    function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         _isAssigned(firstIndex, lastIndex, _index);
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
         require(bnftHolders[_index].timestamp < uint32(_getCurrentSchedulingStartTimestamp()), "Already deposited");
 
-        uint256 numberOfValidatorsToSpin = max_validators_per_owner;
         if(_index == lastIndex) {
-            numberOfValidatorsToSpin = lastIndexNumOfValidators;
+            require(_numberOfValidators <= lastIndexNumOfValidators, "Above max allocation");
+        } else {
+            require(_numberOfValidators <= max_validators_per_owner, "Above max allocation");
         }
 
-        require(msg.value == numberOfValidatorsToSpin * 2 ether, "B-NFT holder must deposit 2 ETH per validator");
-        require(totalValueInLp + msg.value >= 32 ether * numberOfValidatorsToSpin, "Not enough balance");
+        SourceOfFunds _source = _allocateSourceOfFunds();
 
-        uint256 amountFromLp = 30 ether * numberOfValidatorsToSpin;
+        if(_source == SourceOfFunds.EETH){
+            fundStatistics[SourceOfFunds.EETH].numberOfValidators += uint32(_numberOfValidators);
+        } else {
+            fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators += uint32(_numberOfValidators);
+        }
+
+        require(msg.value == _numberOfValidators * 2 ether, "B-NFT holder must deposit 2 ETH per validator");
+        require(totalValueInLp + msg.value >= 32 ether * _numberOfValidators, "Not enough balance");
+
+        uint256 amountFromLp = 30 ether * _numberOfValidators;
         if (amountFromLp > type(uint128).max) revert InvalidAmount();
 
         totalValueOutOfLp += uint128(amountFromLp);
         totalValueInLp -= uint128(amountFromLp);
-        numPendingDeposits += uint32(numberOfValidatorsToSpin);
+        numPendingDeposits += uint32(_numberOfValidators);
 
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * numberOfValidatorsToSpin}(_candidateBidIds, _merkleProof, msg.sender, _source, false); // TODO(Dave)
-
-        if (numberOfValidatorsToSpin > newValidators.length) {
-            uint256 returnAmount = 2 ether * (numberOfValidatorsToSpin - newValidators.length);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, msg.sender, _source, false); // TODO(Dave) how do players decide restaking or not
+        if (_numberOfValidators > newValidators.length) {
+            uint256 returnAmount = 2 ether * (_numberOfValidators - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
             totalValueInLp -= uint128(returnAmount);
 
@@ -251,7 +269,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         }
     }
 
-    function batchCancelDeposit(uint256[] calldata _validatorIds) external onlyAdmin {
+    function batchCancelDeposit(uint256[] calldata _validatorIds) external {
         uint256 returnAmount = 2 ether * _validatorIds.length;
 
         totalValueOutOfLp += uint128(returnAmount);
@@ -279,37 +297,37 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function deRegisterBnftHolder(uint256 _index) external {
         require(admins[msg.sender] || msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
+        require(_index < bnftHolders.length, "Invalid index");
+
         bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
         bnftHolders.pop();
 
-        emit BnftHolderDeregistered(_index);
+        emit BnftHolderDeregistered(msg.sender, _index);
     }
 
-    function dutyForWeek() public returns (uint256, uint128, uint128) {
+    function dutyForWeek() public view returns (uint256, uint128, uint128) {
+        uint128 maxValidatorsPerOwner = max_validators_per_owner;
+
+        if((maxValidatorsPerOwner == 0) || (schedulingPeriodInSeconds == 0) || (etherFiAdminContract == address(0)) || (IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0)) {
+            revert DataNotSet();
+        }
+
         uint128 lastIndex;
-        uint128 lastIndexNumberOfValidators = max_validators_per_owner;
+        uint128 lastIndexNumberOfValidators = maxValidatorsPerOwner;
 
-        BnftHolder[] memory localBnftHoldersArray = bnftHolders;
+        uint256 index = _getSlotIndex();
+        uint128 numValidatorsToCreate = IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
 
-        uint256 index = _getSlotIndex(localBnftHoldersArray);
-        uint128 numValidatorsToCreate = numberOfValidatorsToSpawn();
-
-        if(numValidatorsToCreate % max_validators_per_owner == 0) {
-            uint128 size = numValidatorsToCreate / max_validators_per_owner;
-            lastIndex = _fetchLastIndex(size, index, localBnftHoldersArray);
+        if(numValidatorsToCreate % maxValidatorsPerOwner == 0) {
+            uint128 size = numValidatorsToCreate / maxValidatorsPerOwner;
+            lastIndex = _fetchLastIndex(size, index);
         } else {
-            uint128 size = (numValidatorsToCreate / max_validators_per_owner) + 1;
-            lastIndex = _fetchLastIndex(size, index, localBnftHoldersArray);
-            lastIndexNumberOfValidators = numValidatorsToCreate % max_validators_per_owner;
+            uint128 size = (numValidatorsToCreate / maxValidatorsPerOwner) + 1;
+            lastIndex = _fetchLastIndex(size, index);
+            lastIndexNumberOfValidators = numValidatorsToCreate % maxValidatorsPerOwner;
         }
 
         return (index, lastIndex, lastIndexNumberOfValidators);
-    }
-
-    // Just using for testing
-    // TODO remove and use oracle
-    function numberOfValidatorsToSpawn() public view returns (uint128) {
-        return uint128(getTotalPooledEther() / 30 ether);
     }
 
     /// @notice Send the exit requests as the T-NFT holder
@@ -321,13 +339,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     /// @notice Allow interactions with the eEth token
-    function openEEthLiquidStaking() external onlyAdmin {
-        eEthliquidStakingOpened = true;
-    }
-
-    /// @notice Disallow interactions with the eEth token
-    function closeEEthLiquidStaking() external onlyAdmin {
-        eEthliquidStakingOpened = false;
+    function updateLiquidStakingStatus(bool _value) external onlyAdmin {
+        eEthliquidStakingOpened = _value;
     }
 
     /// @notice Rebase by ether.fi
@@ -355,40 +368,37 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice sets the contract address for eETH
     /// @param _eETH address of eETH contract
-    function setTokenAddress(address _eETH) external onlyOwner {
-        require(_eETH != address(0), "No zero addresses");
+    function setTokenAddress(address _eETH) external onlyOwner NonZeroAddress(_eETH) {
         eETH = IeETH(_eETH);
     }
 
-    function setStakingManager(address _address) external onlyOwner {
-        require(_address != address(0), "No zero addresses");
+    function setStakingManager(address _address) external onlyOwner NonZeroAddress(_address) {
         stakingManager = IStakingManager(_address);
     }
 
-    function setEtherFiNodesManager(address _nodeManager) public onlyOwner {
-        require(_nodeManager != address(0), "No zero addresses");
+    function setEtherFiNodesManager(address _nodeManager) public onlyOwner NonZeroAddress(_nodeManager) {
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
-    function setMembershipManager(address _address) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
+    function setMembershipManager(address _address) external onlyOwner NonZeroAddress(_address) {
         membershipManager = IMembershipManager(_address);
     }
 
-    function setTnft(address _address) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
+    function setTnft(address _address) external onlyOwner NonZeroAddress(_address) {
         tNft = ITNFT(_address);
     }
 
-    function setWithdrawRequestNFT(address _address) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
+    function setEtherFiAdminContract(address _address) external onlyOwner NonZeroAddress(_address) {
+        etherFiAdminContract = _address;
+    }
+
+    function setWithdrawRequestNFT(address _address) external onlyOwner NonZeroAddress(_address) {
         withdrawRequestNFT = IWithdrawRequestNFT(_address);
     }
 
     /// @notice Updates the address of the admin
     /// @param _address the new address to set as admin
-    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner NonZeroAddress(_address) {
         admins[_address] = _isAdmin;
     }
 
@@ -402,8 +412,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit UpdatedSchedulingPeriod(_schedulingPeriodInSeconds);
     }
 
-    function numberOfActiveSlots(BnftHolder[] memory _localBnftHoldersArray) public view returns (uint32 numberOfActiveSlots) {
-        numberOfActiveSlots = uint32(_localBnftHoldersArray.length);
+    function numberOfActiveSlots() public view returns (uint32 numberOfActiveSlots) {
+        numberOfActiveSlots = uint32(bnftHolders.length);
         if(holdersUpdate.timestamp > uint32(_getCurrentSchedulingStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
         }
@@ -418,9 +428,32 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }
 
+    function updateWhitelistedAddresses(address _user, bool _value) external onlyAdmin {
+        whitelisted[_user] = _value;
+
+        emit UpdatedWhitelist(_user, _value);
+    }
+
+    function updateWhitelistStatus(bool _value) external onlyAdmin {
+        whitelistEnabled = _value;
+
+        emit WhitelistStatusUpdated(_value);
+    }
+
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function _allocateSourceOfFunds() public view returns (SourceOfFunds) {
+        uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
+        uint256 weightRatio = (fundStatistics[SourceOfFunds.EETH].targetWeight * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
+
+        if(validatorRatio > weightRatio) {
+            return SourceOfFunds.ETHER_FAN;
+        } else {
+            return SourceOfFunds.EETH;
+        }
+    }
 
     function _checkHoldersUpdateStatus() internal {
         if(holdersUpdate.timestamp < uint32(_getCurrentSchedulingStartTimestamp())) {
@@ -433,26 +466,26 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
-    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) internal view {
+    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view {
         if(_lastIndex < _firstIndex) {
-            require(_index <= _lastIndex || (_index >= _firstIndex && _index < numberOfActiveSlots(bnftHolders)), "Not assigned");
+            require(_index <= _lastIndex || (_index >= _firstIndex && _index < numberOfActiveSlots()), "Not assigned");
         }else {
             require(_index >= _firstIndex && _index <= _lastIndex, "Not assigned");
         }
     }
 
-    function _getSlotIndex(BnftHolder[] memory _localBnftHoldersArray) internal returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots(_localBnftHoldersArray);
+    function _getSlotIndex() internal view returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots();
     }
 
-    function _fetchLastIndex(uint128 _size, uint256 _index, BnftHolder[] memory _localBnftHoldersArray) internal returns (uint128 lastIndex){
-        uint32 numSlots = numberOfActiveSlots(_localBnftHoldersArray);
+    function _fetchLastIndex(uint128 _size, uint256 _index) internal view returns (uint128 lastIndex){
+        uint32 numSlots = numberOfActiveSlots();
         uint128 tempLastIndex = uint128(_index) + _size - 1;
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
 
-    function isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view{
-        stakingManager.verifyWhitelisted(_user, _merkleProof);
+    function _isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view {
+        require(!whitelistEnabled || whitelisted[_user], "User is not whitelisted");
         require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
     }
 
@@ -533,6 +566,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     modifier onlyWithdrawRequestOrMembershipManager() {
         require(msg.sender == address(withdrawRequestNFT) || msg.sender == address(membershipManager), "Caller is not the WithdrawRequestNFT or MembershipManager");
+        _;
+    }
+
+    modifier NonZeroAddress(address _address) {
+        require(_address != address(0), "No zero addresses");
         _;
     }
 }

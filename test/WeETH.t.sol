@@ -54,6 +54,79 @@ contract WeETHTest is TestSetup {
         assertEq(eETHInstance.balanceOf(bob), 10 ether);
     }
 
+    function test_WrapWithPermitFailsWhenExceedingAllowance() public {
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+
+        startHoax(alice);
+
+        uint256 aliceNonce = eETHInstance.nonces(alice);
+        // alice priv key = 2
+        ILiquidityPool.PermitInput memory permitInput = createPermitInput(2, address(weEthInstance), 2 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+
+        vm.expectRevert("TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
+        weEthInstance.wrapWithPermit(5 ether, permitInput);
+
+    }
+
+    function test_WrapWithPermitFailsWithInvalidSignature() public {
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+
+        startHoax(alice);
+
+        uint256 aliceNonce = eETHInstance.nonces(alice);
+        // 69 is an invalid private key for alice
+        ILiquidityPool.PermitInput memory permitInput = createPermitInput(69, address(weEthInstance), 5 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+
+        vm.expectRevert("ERC20Permit: invalid signature");
+        weEthInstance.wrapWithPermit(5 ether, permitInput);
+    }
+
+    function test_WrapWithPermitWorksCorrectly() public {
+        // Total pooled ether = 10
+        vm.deal(bob, 10 ether);
+        vm.startPrank(bob);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
+
+        // Total pooled ether = 20
+        startHoax(alice);
+        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
+
+        startHoax(alice);
+
+        uint256 aliceNonce = eETHInstance.nonces(alice);
+        // alice priv key = 2
+        ILiquidityPool.PermitInput memory permitInput = createPermitInput(2, address(weEthInstance), 5 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+        weEthInstance.wrapWithPermit(5 ether, permitInput);
+
+        assertEq(weEthInstance.balanceOf(alice), 5 ether);
+        assertEq(eETHInstance.balanceOf(alice), 5 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
+    }
+
     function test_UnWrapEETHFailsIfZeroAmount() public {
         vm.expectRevert("Cannot unwrap a zero amount");
         weEthInstance.unwrap(0);

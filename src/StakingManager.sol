@@ -22,7 +22,6 @@ import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/utils/cryptography/MerkleProofUpgradeable.sol";
 import "./libraries/DepositRootGenerator.sol";
 
 contract StakingManager is
@@ -41,7 +40,7 @@ contract StakingManager is
     address public implementationContract;
     address public liquidityPoolContract;
 
-    bool public whitelistEnabled;
+    bool public DEPRECATED_whitelistEnabled;
     bytes32 public merkleRoot;
 
     ITNFT public TNFTInterfaceInstance;
@@ -65,9 +64,6 @@ contract StakingManager is
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(address indexed operator, address indexed bNftOwner, address indexed tNftOwner, 
                               uint256 validatorId, bytes validatorPubKey, string ipfsHashForEncryptedValidatorKey);
-    event WhitelistDisabled();
-    event WhitelistEnabled();
-    event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -84,7 +80,7 @@ contract StakingManager is
     /// @param _auctionAddress The address of the auction contract for interaction
     function initialize(address _auctionAddress) external initializer {
         require(_auctionAddress != address(0), "No zero addresses");
-         
+
         stakeAmount = 32 ether;
         maxBatchDepositSize = 25;
 
@@ -100,19 +96,19 @@ contract StakingManager is
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, bool _enableRestaking)
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bool _enableRestaking)
         external payable whenNotPaused correctStakeAmount nonReentrant returns (uint256[] memory)
     {
-        return _depositWithBidIds(_candidateBidIds, _merkleProof, msg.sender, ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, _enableRestaking);
+        return _depositWithBidIds(_candidateBidIds, msg.sender, ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, _enableRestaking);
     }
 
     /// @notice Allows depositing multiple stakes at once
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
     /// @return Array of the bid IDs that were processed and assigned
-    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, bytes32[] calldata _merkleProof, address _staker, ILiquidityPool.SourceOfFunds _source, bool _enableRestaking)
+    function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, address _staker, ILiquidityPool.SourceOfFunds _source, bool _enableRestaking)
         public payable whenNotPaused nonReentrant correctStakeAmount returns (uint256[] memory)
     {
-        return _depositWithBidIds(_candidateBidIds, _merkleProof, _staker, _source, _enableRestaking);
+        return _depositWithBidIds(_candidateBidIds, _staker, _source, _enableRestaking);
     }
 
     /// @notice Batch creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
@@ -151,8 +147,8 @@ contract StakingManager is
         require(_validatorId.length == _depositData.length, "Array lengths must match");
 
         for (uint256 x; x < _validatorId.length; ++x) {
-            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _staker, 1 ether);    
-        }  
+            _registerValidator(_validatorId[x], _bNftRecipient, _tNftRecipient, _depositData[x], _staker, 1 ether);
+        }
     }
 
     // TOOD - discuss if we need to receive the full `DepositData` for stronger verification
@@ -168,7 +164,7 @@ contract StakingManager is
             bytes32 beaconChainDepositRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
             bytes32 registeredDataRoot = LiquidityPool(payable(liquidityPoolContract)).depositDataRootForApprovalDeposits(_validatorId[x]);
             require(beaconChainDepositRoot == registeredDataRoot, "Incorrect deposit data root");
-            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], beaconChainDepositRoot);        
+            depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], beaconChainDepositRoot);
         }
     }
 
@@ -176,16 +172,16 @@ contract StakingManager is
     /// @param _validatorIds the IDs of the validators deposits to cancel
     function batchCancelDeposit(uint256[] calldata _validatorIds) public whenNotPaused nonReentrant {
         for (uint256 x; x < _validatorIds.length; ++x) {
-            _cancelDeposit(_validatorIds[x], msg.sender);    
-        }  
+            _cancelDeposit(_validatorIds[x], msg.sender);
+        }
     }
 
     /// @notice Cancels a user's deposits
     /// @param _validatorIds the IDs of the validators deposits to cancel
     function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) public whenNotPaused nonReentrant {
         for (uint256 x; x < _validatorIds.length; ++x) {
-            _cancelDeposit(_validatorIds[x], _caller);    
-        }  
+            _cancelDeposit(_validatorIds[x], _caller);
+        }
     }
 
     /// @notice Sets the EtherFi node manager contract
@@ -247,38 +243,6 @@ contract StakingManager is
         implementationContract = _newImplementation;
     }
 
-    /// @notice Disables the bid whitelist
-    /// @dev Allows both regular users and whitelisted users to bid
-    function disableWhitelist() public onlyAdmin {
-        whitelistEnabled = false;
-        emit WhitelistDisabled();
-    }
-
-    /// @notice Enables the bid whitelist
-    /// @dev Only users who are on a whitelist can bid
-    function enableWhitelist() public onlyAdmin {
-        whitelistEnabled = true;
-        emit WhitelistEnabled();
-    }
-
-    /// @notice Updates the merkle root whitelists have been updated
-    /// @dev Merkleroot Fetches generated in JS offline and sent to the contract
-    /// @dev Used in the staking manager and LP
-    /// @param _newMerkle New merkle root to be used for staking
-    function updateMerkleRoot(bytes32 _newMerkle) external onlyAdmin {
-        bytes32 oldMerkle = merkleRoot;
-        merkleRoot = _newMerkle;
-
-        emit MerkleUpdated(oldMerkle, _newMerkle);
-    }
-
-    function verifyWhitelisted(address _address, bytes32[] calldata _merkleProof) public view {
-        if (whitelistEnabled) {
-            bool verified = MerkleProofUpgradeable.verify(_merkleProof, merkleRoot, keccak256(abi.encodePacked(_address)));
-            require(verified, "User is not whitelisted");
-        }
-    }
-
     function pauseContract() external onlyAdmin { _pause(); }
     function unPauseContract() external onlyAdmin { _unpause(); }
 
@@ -305,12 +269,10 @@ contract StakingManager is
 
     function _depositWithBidIds(
         uint256[] calldata _candidateBidIds, 
-        bytes32[] calldata _merkleProof, 
         address _staker, 
         ILiquidityPool.SourceOfFunds _source,
         bool _enableRestaking
     ) internal returns (uint256[] memory){
-        verifyWhitelisted(msg.sender, _merkleProof);
 
         require(_candidateBidIds.length > 0, "No bid Ids provided");
         uint256 numberOfDeposits = msg.value / stakeAmount;
@@ -340,6 +302,7 @@ contract StakingManager is
             mstore(processedBidIds, processedBidIdsCount)
         }
 
+        //Need to refund the BNFT holder, currently we just sending the 30 ETH from LP back
         uint256 unMatchedBidCount = numberOfDeposits - processedBidIdsCount;
         if (unMatchedBidCount > 0) {
             _refundDeposit(msg.sender, stakeAmount * unMatchedBidCount);
