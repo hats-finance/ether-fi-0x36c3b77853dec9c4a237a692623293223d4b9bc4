@@ -47,6 +47,11 @@ contract EtherFiNodesManager is
     address public DEPRECATED_admin;
     mapping(address => bool) public admins;
 
+    IEigenPodManager public eigenPodManager;
+    IDelayedWithdrawalRouter public delayedWithdrawalRouter;
+    // max number of queued eigenlayer withdrawals to attempt to claim in a single tx
+    uint8 public maxEigenlayerWithrawals;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -190,10 +195,24 @@ contract EtherFiNodesManager is
         }
     }
 
+    /// @notice queue a withdrawal of eth from an eigenPod. You must wait for the queuing period
+    ///         defined by eigenLayer before you can finish the withdrawal via etherFiNode.claimQueuedWithdrawals()
+    /// @param _validatorId The validator Id
+    function queueRestakedWithdrawal(uint256 _validatorId) external whenNotPaused {
+        address etherfiNode = etherfiNodeAddress[_validatorId];
+        IEtherFiNode(etherfiNode).queueRestakedWithdrawal();
+    }
+
     /// @notice Process the rewards skimming
     /// @param _validatorId The validator Id
     function partialWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused {
         address etherfiNode = etherfiNodeAddress[_validatorId];
+
+        // sweep rewards from eigenPod if any queued withdrawals are ready to be claimed
+        if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
+            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithrawals);
+        }
+
         require(
             address(etherfiNode).balance < 8 ether,
             "etherfi node contract's balance is above 8 ETH. You should exit the node."
@@ -277,6 +296,8 @@ contract EtherFiNodesManager is
         require(sent, "Failed to send Ether");
     }
 
+    error MustClaimRestakedWithdrawals();
+
     /// @notice process the full withdrawal
     /// @dev This fullWithdrawal is allowed only after it's marked as EXITED.
     /// @dev EtherFi will be monitoring the status of the validator nodes and mark them EXITED if they do;
@@ -284,6 +305,13 @@ contract EtherFiNodesManager is
     /// @param _validatorId the validator Id to withdraw from
     function fullWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused{
         address etherfiNode = etherfiNodeAddress[_validatorId];
+
+        if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
+            // sweep rewards from eigenPod
+            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(5);
+            // require that all pending withdrawals have cleared
+            if (IEtherFiNode(etherfiNode).hasOutstandingEigenLayerWithdrawals()) revert MustClaimRestakedWithdrawals();
+        }
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
             = getFullWithdrawalPayouts(_validatorId);
@@ -359,7 +387,7 @@ contract EtherFiNodesManager is
     /// @notice Sets the phase of the validator
     /// @param _validatorId id of the validator associated to this etherfi node
     /// @param _phase phase of the validator
-    function setEtherFiNodePhase( uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) public onlyStakingManagerContract {
+    function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) public onlyStakingManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setPhase(_phase);
     }
@@ -371,6 +399,12 @@ contract EtherFiNodesManager is
         external onlyStakingManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setIpfsHashForEncryptedValidatorKey(_ipfs);
+    }
+
+    /// @notice set maximum number of queued eigenlayer withdrawals that can be processed in 1 tx
+    /// @param _max max number of queued withdrawals
+    function setMaxEigenLayerWithdrawals(uint8 _max) external onlyOwner {
+        maxEigenlayerWithrawals = _max;
     }
 
     /// @notice Increments the number of validators by a certain amount
@@ -442,6 +476,16 @@ contract EtherFiNodesManager is
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
+    // Eigenlayer EigenPodManager
+    function setEigenPodMananger(address _addr) external onlyOwner {
+        eigenPodManager = IEigenPodManager(_addr);
+    }
+
+    // Eigenlayer DelayedWithdrawalRouter
+    function setDelayedWithdrawalRouter(address _addr) external onlyOwner {
+        delayedWithdrawalRouter = IDelayedWithdrawalRouter(_addr);
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -475,7 +519,12 @@ contract EtherFiNodesManager is
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         require(etherfiNode != address(0), "The validator Id is invalid.");
-        return generateWithdrawalCredentials(etherfiNode);
+        
+        if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
+            return generateWithdrawalCredentials(IEtherFiNode(etherfiNode).eigenPod());
+        } else {
+            return generateWithdrawalCredentials(etherfiNode);
+        }
     }
 
     /// @notice Fetches if the node has an exit request

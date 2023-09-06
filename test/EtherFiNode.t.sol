@@ -4,6 +4,9 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 import "../src/EtherFiNode.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
+import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
+import "@eigenlayer/contracts/interfaces/IDelayedWithdrawalRouter.sol";
 
 contract EtherFiNodeTest is TestSetup {
 
@@ -14,11 +17,16 @@ contract EtherFiNodeTest is TestSetup {
     uint256 BNFTRewardSplit = 84_375;
     uint256 RewardSplitDivisor = 1_000_000;
 
+    uint256 testnetFork;
     uint256[] bidId;
     EtherFiNode safeInstance;
+    EtherFiNode restakingSafe;
+
+    // eigenLayer
+    IDelayedWithdrawalRouter delayedWithdrawalRouter;
 
     function setUp() public {
-       
+
         setUpTests();
 
         assertTrue(node.phase() == IEtherFiNode.VALIDATOR_PHASE.NOT_INITIALIZED);
@@ -42,7 +50,8 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray[0] = bidId[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            false
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -58,7 +67,8 @@ contract EtherFiNodeTest is TestSetup {
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            //managerInstance.generateWithdrawalCredentials(etherFiNode),
+            managerInstance.getWithdrawalCredentials(bidId[0]),
             32 ether
         );
 
@@ -87,6 +97,203 @@ contract EtherFiNodeTest is TestSetup {
             auctionInstance.accumulatedRevenue(),
             0.1 ether
         );
+
+        delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(safeInstance.etherFiNodesManager()).delayedWithdrawalRouter());
+        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
+    }
+
+    function test_createPod() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
+        console2.log("podAddr:", address(safeInstance.eigenPod()));
+
+        vm.deal(address(safeInstance.eigenPod()), 2 ether);
+        console2.log("balances:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+
+        safeInstance.queueRestakedWithdrawal();
+        console2.log("balances2:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+
+        vm.roll(block.number + (50400) + 1);
+        
+        safeInstance.claimQueuedWithdrawals(1);
+        console2.log("balances3:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+    }
+
+    function test_claimMixedSafeAndPodFunds() public {
+
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
+
+        // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
+        vm.deal(address(safeInstance.eigenPod()), 1 ether);
+        vm.deal(address(safeInstance), 1 ether);
+
+        assertEq(address(safeInstance).balance, 1 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
+
+        // claim the restaked rewards
+        safeInstance.queueRestakedWithdrawal();
+        vm.roll(block.number + (50400) + 1);
+        safeInstance.claimQueuedWithdrawals(1);
+
+        assertEq(address(safeInstance).balance, 2 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
+    }
+
+    function test_claimRestakedRewards() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
+
+        // simulate 1 eth of staking rewards sent to the eigen pod
+        vm.deal(address(safeInstance.eigenPod()), 1 ether);
+        assertEq(address(safeInstance).balance, 0 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
+
+        // queue the withdrawal of the rewards. Funds have been sent to the DelayedWithdrawalRouter
+        safeInstance.queueRestakedWithdrawal();
+        assertEq(address(safeInstance).balance, 0 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
+
+        // simulate some more staking rewards but dont queue the withdrawal
+        vm.deal(address(safeInstance.eigenPod()), 0.5 ether);
+
+        // attempt to claim queued withdrawals but not enough time has passed (no funds moved to safe)
+        safeInstance.claimQueuedWithdrawals(1);
+        assertEq(address(safeInstance).balance, 0 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 0.5 ether);
+
+        // wait and claim
+        vm.roll(block.number + (50400) + 1);
+        safeInstance.claimQueuedWithdrawals(1);
+        assertEq(address(safeInstance).balance, 1 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 0.5 ether);
+
+        // now queue up multiple different rewards (0.5 ether remain in pod from previous step)
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(address(safeInstance.eigenPod()), 0.5 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(address(safeInstance.eigenPod()), 0.5 ether);
+        safeInstance.queueRestakedWithdrawal();
+
+        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 3);
+
+        // wait but only claim 2 of the 3 queued withdrawals
+        // The ability to claim a subset of outstanding withdrawals is to avoid a denial of service
+        // attack in which the attacker creates too many withdrawals for us to process in 1 tx
+        vm.roll(block.number + (50400) + 1);
+        safeInstance.claimQueuedWithdrawals(2);
+
+        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
+        assertEq(address(safeInstance).balance, 2 ether);
+    }
+
+    function test_restakedFullWithdrawal() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
+
+        uint256 validatorId = bidId[0];
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitRequestTimestamps = new uint32[](1);
+        validatorIds[0] = validatorId;
+        exitRequestTimestamps[0] = uint32(block.timestamp);
+
+        vm.deal(safeInstance.eigenPod(), 32 ether);
+
+        vm.startPrank(alice); // alice is the admin
+        vm.expectRevert("validator node is not exited");
+        managerInstance.fullWithdraw(validatorIds[0]);
+
+        // Marked as EXITED
+        // should also have queued up the current balance to via DelayedWithdrawalRouter
+        managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
+
+        // fail because we have not processed the queued withdrawal of the funds from the pod
+        // because not enough time has passed to claim them
+        vm.expectRevert(EtherFiNodesManager.MustClaimRestakedWithdrawals.selector);
+        managerInstance.fullWithdraw(validatorIds[0]);
+
+        // wait some time
+        vm.roll(block.number + (50400) + 1);
+
+        // try again. FullWithdraw will automatically attempt to claim queuedWithdrawals
+        managerInstance.fullWithdraw(validatorIds[0]);
+        assertEq(address(safeInstance).balance, 0);
+    }
+
+    function test_restakedAttackerCantBlockWithdraw() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
+
+        uint256 validatorId = bidId[0];
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitRequestTimestamps = new uint32[](1);
+        validatorIds[0] = validatorId;
+        exitRequestTimestamps[0] = uint32(block.timestamp);
+
+        vm.deal(safeInstance.eigenPod(), 32 ether);
+
+        vm.startPrank(alice); // alice is the admin
+        vm.expectRevert("validator node is not exited");
+        managerInstance.fullWithdraw(validatorIds[0]);
+
+        // Marked as EXITED
+        // should also have queued up the current balance to via DelayedWithdrawalRouter
+        managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
+
+        vm.roll(block.number + 1);
+
+        // attacker now sends funds and queues claims
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+
+        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 6);
+
+        // wait some time so claims are claimable
+        vm.roll(block.number + (50400) + 1);
+
+        // TODO(Dave): 5 picked here because that's how many claims I set the manager contract to attempt. We can tune thi
+        safeInstance.claimQueuedWithdrawals(5);
+        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+
+        // shoud not be allowed to partial withdraw since node is exited
+        // In this case it fails because of the balance check right before the state check
+        vm.expectRevert("etherfi node contract's balance is above 8 ETH. You should exit the node.");
+        managerInstance.partialWithdraw(validatorId);
+
+        // This should succeed even though there are still some unclaimed withdrawals
+        // this is because we only enforce that all withdrawals before the observed exit of the node have completed
+        managerInstance.fullWithdraw(validatorIds[0]);
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(address(safeInstance).balance, 0);
     }
 
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {
@@ -99,14 +306,12 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setPhase(IEtherFiNode.VALIDATOR_PHASE.EXITED);
-
     }
 
     function test_SetIpfsHashForEncryptedValidatorKeyRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
         safeInstance.setIpfsHashForEncryptedValidatorKey("_ipfsHash");
-
     }
 
     function test_SetExitRequestTimestampRevertsOnIncorrectCaller() public {
@@ -147,7 +352,8 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray[0] = bidId1[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            false
         );
 
         hoax(dan);
@@ -155,7 +361,8 @@ contract EtherFiNodeTest is TestSetup {
         bidIdArray[0] = bidId2[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIdArray
+            bidIdArray,
+            false
         );
 
         {

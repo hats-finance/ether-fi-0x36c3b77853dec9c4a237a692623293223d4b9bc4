@@ -37,7 +37,8 @@ contract TnftTest is TestSetup {
 
         hoax(alice);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
-            bidIds
+            bidIds,
+            false
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);

@@ -71,13 +71,14 @@ contract RewardsSkimmingTest is TestSetup {
 
         for (uint i = 0; i < num_stakers; i++) {
             startHoax(stakers[i]);
-            
+
             IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
 
             uint256[] memory candidateBidIds = new uint256[](1);
             candidateBidIds[0] = validatorIds[i];
-            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds);
+            bytes32[] memory stakerProof = merkleStakers.getProof(stakerWhitelistedAddresses, i);
+            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds, false);
 
             address etherFiNode = managerInstance.etherfiNodeAddress(candidateBidIds[0]);
 

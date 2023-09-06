@@ -282,7 +282,7 @@ contract NFTExchangeTest is TestSetup {
 
         vm.deal(alice, 32 ether);
         vm.startPrank(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, false);
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(

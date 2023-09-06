@@ -2,6 +2,8 @@
 pragma solidity 0.8.13;
 
 import "./IEtherFiNode.sol";
+import "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
+import "@eigenlayer/contracts/interfaces/IDelayedWithdrawalRouter.sol";
 
 interface IEtherFiNodesManager {
     enum ValidatorRecipientType {
@@ -22,6 +24,9 @@ interface IEtherFiNodesManager {
     function numberOfValidators() external view returns (uint64);
     function nonExitPenaltyPrincipal() external view returns (uint64);
     function nonExitPenaltyDailyRate() external view returns (uint64);
+
+    function eigenPodManager() external view returns (IEigenPodManager);
+    function delayedWithdrawalRouter() external view returns (IDelayedWithdrawalRouter);
 
     function etherfiNodeAddress(
         uint256 _validatorId

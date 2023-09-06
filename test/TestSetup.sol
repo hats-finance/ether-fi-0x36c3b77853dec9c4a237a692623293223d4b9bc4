@@ -242,6 +242,9 @@ contract TestSetup is Test {
             address(protocolRevenueManagerInstance)
         );
         managerInstance.updateAdmin(alice, true);
+        managerInstance.setEigenPodMananger(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
+        managerInstance.setDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
+        managerInstance.setMaxEigenLayerWithdrawals(5); // TODO(Dave): run some tests to find a good balance between gas and security
 
         regulationsManagerImplementation = new RegulationsManager();
         vm.expectRevert("Initializable: contract is already initialized");

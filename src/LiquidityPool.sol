@@ -233,7 +233,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, msg.sender, _source);
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, msg.sender, _source, false); // TODO(Dave) how do players decide restaking or not
         if (_numberOfValidators > newValidators.length) {
             uint256 returnAmount = 2 ether * (_numberOfValidators - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
