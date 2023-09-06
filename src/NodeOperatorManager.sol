@@ -53,16 +53,40 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     /// @param _ipfsHash location of all IPFS data stored for operator
     /// @param _totalKeys The number of keys they have available, relates to how many validators they can run
     function registerNodeOperator(
-        address _operator,
         bytes memory _ipfsHash,
         uint64 _totalKeys
     ) public whenNotPaused {
-        require(!registered[_operator], "Already registered");
-        require(msg.sender == _operator || admins[msg.sender], "Incorrect Caller");
+        require(!registered[msg.sender], "Already registered");
         
         KeyData memory keyData = KeyData({
             totalKeys: _totalKeys,
             keysUsed: 0,
+            ipfsHash: abi.encodePacked(_ipfsHash)
+        });
+
+        addressToOperatorData[msg.sender] = keyData;
+        registered[msg.sender] = true;
+
+        emit OperatorRegistered(
+            msg.sender,
+            keyData.totalKeys,
+            keyData.keysUsed,
+            _ipfsHash
+        );
+    }
+
+    /// @notice Migrates operator details from previous contract
+    function migrateNodeOperator(
+        address _operator, 
+        bytes memory _ipfsHash,
+        uint64 _totalKeys,
+        uint64 _keysUsed
+    ) external onlyAdmin {
+        require(!registered[_operator], "Already registered");
+
+        KeyData memory keyData = KeyData({
+            totalKeys: _totalKeys,
+            keysUsed: _keysUsed,
             ipfsHash: abi.encodePacked(_ipfsHash)
         });
 

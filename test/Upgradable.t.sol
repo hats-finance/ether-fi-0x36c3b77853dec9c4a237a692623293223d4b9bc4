@@ -69,7 +69,6 @@ contract UpgradeTest is TestSetup {
     function test_CanUpgradeAuctionManager() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );
@@ -200,7 +199,7 @@ contract UpgradeTest is TestSetup {
 
     function test_CanUpgradeStakingManager() public {
         vm.prank(alice);
-        nodeOperatorManagerInstance.registerNodeOperator(alice, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(alice);
         auctionInstance.createBid{value: 0.1 ether}(
@@ -250,7 +249,6 @@ contract UpgradeTest is TestSetup {
     function test_canUpgradeEtherFiNode() public {        
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );
@@ -267,7 +265,6 @@ contract UpgradeTest is TestSetup {
         
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             _ipfsHash,
             5
         );
@@ -301,7 +298,7 @@ contract UpgradeTest is TestSetup {
     function test_CanUpgradeNodeOperatorManager() public {
 
         vm.prank(alice);
-        nodeOperatorManagerInstance.registerNodeOperator(alice, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
         
         assertEq(nodeOperatorManagerInstance.getImplementation(), address(nodeOperatorManagerImplementation));
 

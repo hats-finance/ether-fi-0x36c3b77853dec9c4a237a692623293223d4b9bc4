@@ -55,7 +55,6 @@ contract RewardsSkimmingTest is TestSetup {
 
         startHoax(operators[0]);
         nodeOperatorManagerInstance.registerNodeOperator(
-            operators[0],
             _ipfsHash,
             1000
         );

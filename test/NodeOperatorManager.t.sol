@@ -9,6 +9,7 @@ contract NodeOperatorManagerTest is TestSetup {
     event MerkleUpdated(bytes32 oldMerkle, bytes32 indexed newMerkle);
 
     bytes aliceIPFS_Hash = "QmYsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
+    bytes bobIPFS_Hash = "QmHsfDjQZfnSQkNyA4eVwswhakCusAx4Z6bzF89FZ91om3";
 
     function setUp() public {
         setUpTests();
@@ -20,14 +21,12 @@ contract NodeOperatorManagerTest is TestSetup {
 
         vm.expectRevert("Pausable: paused");
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
         nodeOperatorManagerInstance.unPauseContract();
 
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -46,16 +45,54 @@ contract NodeOperatorManagerTest is TestSetup {
 
         vm.expectRevert("Already registered");
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             aliceIPFS_Hash,
             uint64(10)
+        );
+    }
+
+    function test_RegisterNodeOperatorInMigration() public {
+        vm.prank(bob);
+        vm.expectRevert("Caller is not the admin");
+        nodeOperatorManagerInstance.migrateNodeOperator(
+            address(bob),
+            bobIPFS_Hash,
+            uint64(10),
+            uint64(5)
+        );
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.migrateNodeOperator(
+            address(bob),
+            bobIPFS_Hash,
+            uint64(10),
+            uint64(5)
+        );
+
+        (
+            uint64 totalKeys,
+            uint64 keysUsed,
+            bytes memory aliceHash
+        ) = nodeOperatorManagerInstance.addressToOperatorData(bob);
+
+        assertEq(aliceHash, abi.encodePacked(bobIPFS_Hash));
+        assertEq(totalKeys, 10);
+        assertEq(keysUsed, 5);
+
+        assertEq(nodeOperatorManagerInstance.registered(bob), true);
+
+        vm.prank(alice);
+        vm.expectRevert("Already registered");
+        nodeOperatorManagerInstance.migrateNodeOperator(
+            address(bob),
+            bobIPFS_Hash,
+            uint64(10),
+            uint64(5)
         );
     }
 
     function test_CanAddAddressToWhitelist() public {
         vm.startPrank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -75,7 +112,6 @@ contract NodeOperatorManagerTest is TestSetup {
     function test_CanRemoveAddressFromWhitelist() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -94,7 +130,6 @@ contract NodeOperatorManagerTest is TestSetup {
         emit OperatorRegistered(address(alice), 10, 0, aliceIPFS_Hash);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             aliceIPFS_Hash,
             10
         );
@@ -103,7 +138,6 @@ contract NodeOperatorManagerTest is TestSetup {
     function test_FetchNextKeyIndex() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
@@ -124,7 +158,6 @@ contract NodeOperatorManagerTest is TestSetup {
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             aliceIPFS_Hash,
             1
         );
@@ -148,14 +181,12 @@ contract NodeOperatorManagerTest is TestSetup {
     function test_SetStakingTypeApprovals() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             aliceIPFS_Hash,
             uint64(10)
         );
 
         vm.prank(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
-            bob,
             aliceIPFS_Hash,
             uint64(10)
         );

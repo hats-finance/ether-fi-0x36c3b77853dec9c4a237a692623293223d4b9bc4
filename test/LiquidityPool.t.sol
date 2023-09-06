@@ -32,7 +32,6 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(alice, 100 ether);
         vm.startPrank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
-            alice,
             _ipfsHash,
             10000
         );
@@ -842,7 +841,6 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(bob);
         nodeOperatorManagerInstance.registerNodeOperator(
-            bob,
             _ipfsHash,
             10000
         );
@@ -860,7 +858,6 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(owner);
         nodeOperatorManagerInstance.registerNodeOperator(
-            owner,
             _ipfsHash,
             10000
         );

@@ -88,7 +88,7 @@ contract StakingManagerTest is TestSetup {
         liquidityPoolInstance.dutyForWeek();
 
         startHoax(alice);
-        nodeOperatorManagerInstance.registerNodeOperator(alice, _ipfsHash, 1000);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 1000);
         bidIds = auctionInstance.createBid{value: 1 ether}(
             10,
             0.1 ether
@@ -159,7 +159,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_DepositOneWorksCorrectly() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
@@ -223,7 +223,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_BatchDepositWithBidIdsFailsIFInvalidDepositAmount() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -241,7 +241,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_BatchDepositWithBidIdsFailsIfNotEnoughActiveBids() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         uint256[] memory bidIdArray = new uint256[](10);
         bidIdArray[0] = 1;
@@ -263,7 +263,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_BatchDepositWithBidIdsFailsIfNoIdsProvided() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
         for (uint256 x = 0; x < 10; x++) {
             auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
         }
@@ -283,7 +283,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_BatchDepositWithBidIdsFailsIfPaused() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         for (uint256 x = 0; x < 10; x++) {
             auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -320,7 +320,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_BatchDepositWithIdsSimpleWorksCorrectly() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         for (uint256 x = 0; x < 10; x++) {
             auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -371,7 +371,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_BatchDepositWithIdsComplexWorksCorrectly() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         for (uint256 x = 0; x < 10; x++) {
             auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -456,7 +456,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_RegisterValidatorFailsIfIncorrectCaller() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
@@ -483,7 +483,7 @@ contract StakingManagerTest is TestSetup {
     function test_RegisterValidatorFailsIfIncorrectPhase() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.deal(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 1000000000000 ether);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
@@ -529,7 +529,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_RegisterValidatorFailsIfContractPaused() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -554,7 +554,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_RegisterValidatorWorksCorrectly() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
@@ -628,7 +628,7 @@ contract StakingManagerTest is TestSetup {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         for (uint256 x = 0; x < 10; x++) {
             auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -723,7 +723,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_BatchRegisterValidatorFailsIfArrayLengthAreNotEqual() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         for (uint256 x = 0; x < 10; x++) {
             auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -774,7 +774,7 @@ contract StakingManagerTest is TestSetup {
         bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         for (uint256 x = 0; x < 10; x++) {
             auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -829,7 +829,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_BatchRegisterValidatorFailsIfMoreThan16Registers() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 100);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
 
         for (uint256 x = 0; x < 10; x++) {
             auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -906,7 +906,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_cancelDepositFailsIfNotStakeOwner() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
@@ -932,7 +932,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_cancelDepositFailsIfDepositDoesNotExist() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
@@ -954,7 +954,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_cancelDepositFailsIfIncorrectPhase() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         vm.deal(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, 10000 ether);
@@ -1000,7 +1000,7 @@ contract StakingManagerTest is TestSetup {
 
     function cancelDepositFailsIfContractPaused() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
@@ -1025,7 +1025,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_cancelDepositWorksCorrectly() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
@@ -1089,10 +1089,10 @@ contract StakingManagerTest is TestSetup {
 
     function test_CorrectValidatorAttachedToNft() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         vm.prank(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        nodeOperatorManagerInstance.registerNodeOperator(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
@@ -1211,7 +1211,7 @@ contract StakingManagerTest is TestSetup {
 
     function test_EventDepositCancelled() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        nodeOperatorManagerInstance.registerNodeOperator(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931, _ipfsHash, 5);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidId1 = auctionInstance.createBid{value: 0.1 ether}(
@@ -1233,7 +1233,6 @@ contract StakingManagerTest is TestSetup {
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );
@@ -1278,7 +1277,6 @@ contract StakingManagerTest is TestSetup {
     function test_MaxBatchBidGasFee() public {
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );

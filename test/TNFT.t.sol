@@ -26,7 +26,6 @@ contract TnftTest is TestSetup {
     function test_Mint() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
-            0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931,
             _ipfsHash,
             5
         );
