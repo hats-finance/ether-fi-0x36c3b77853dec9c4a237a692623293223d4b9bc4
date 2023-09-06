@@ -6,21 +6,17 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IWithdrawRequestNFT.sol";
 
 contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
-    struct WithdrawRequest {
-        uint96  amountOfEEth;
-        uint96  shareOfEEth;
-        bool    isValid;
-    }
-
-    mapping(uint256 => WithdrawRequest) private _requests;
-    uint256 private _nextRequestId;
-    address public DEPRECATED_admin;
-    uint256 public lastFinalizedRequestId;
     ILiquidityPool public liquidityPool;
     IeETH public eETH; 
 
+    mapping(uint32 => IWithdrawRequestNFT.WithdrawRequest) private _requests;
+    uint32 public nextRequestId;
+    uint32 public lastFinalizedRequestId;
+
+    address public DEPRECATED_admin;
     mapping(address => bool) public admins;
 
     event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner);
@@ -40,25 +36,25 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
         eETH = IeETH(_eEthAddress);
-        _nextRequestId = 1;
+        nextRequestId = 1;
     }
 
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient) external payable onlyLiquidtyPool returns (uint256) {
-        uint256 requestId = _nextRequestId;
-        _nextRequestId++;
-        _requests[requestId] = WithdrawRequest(amountOfEEth, shareOfEEth, true);
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient) external payable onlyLiquidtyPool returns (uint32) {
+        uint32 requestId = nextRequestId;
+        nextRequestId++;
+        _requests[requestId] = IWithdrawRequestNFT.WithdrawRequest(amountOfEEth, shareOfEEth, true);
         _safeMint(recipient, requestId);
 
         emit WithdrawRequestCreated(uint32(requestId), amountOfEEth, shareOfEEth, recipient);
         return requestId;
     }
 
-    function claimWithdraw(uint256 tokenId) external {
-        require(tokenId <= _nextRequestId, "Request does not exist");
+    function claimWithdraw(uint32 tokenId) external {
+        require(tokenId <= nextRequestId, "Request does not exist");
         require(tokenId <= lastFinalizedRequestId, "Request is not finalized");
         require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
 
-        WithdrawRequest storage request = _requests[tokenId];
+        IWithdrawRequestNFT.WithdrawRequest storage request = _requests[tokenId];
         require(request.isValid, "Request is not valid");
 
         // send the lesser value of the originally requested amount of eEth or the current eEth value of the shares
@@ -78,23 +74,19 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     
     // add function to transfer accumulated shares to admin
 
-    function getRequest(uint256 requestId) external view returns (WithdrawRequest memory) {
+    function getRequest(uint32 requestId) external view returns (IWithdrawRequestNFT.WithdrawRequest memory) {
         return _requests[requestId];
     }
 
-    function isFinalized(uint256 requestId) external view returns (bool) {
+    function isFinalized(uint32 requestId) external view returns (bool) {
         return requestId <= lastFinalizedRequestId;
     }
 
-    function getNextRequestId() external view returns (uint256) {
-        return _nextRequestId;
-    }
-
-    function finalizeRequests(uint256 requestId) external onlyAdmin {
+    function finalizeRequests(uint32 requestId) external onlyAdmin {
         lastFinalizedRequestId = requestId;
     }
 
-    function invalidateRequest(uint256 requestId) external onlyAdmin {
+    function invalidateRequest(uint32 requestId) external onlyAdmin {
         _requests[requestId].isValid = false;
     }
 

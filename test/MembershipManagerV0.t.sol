@@ -71,7 +71,7 @@ contract MembershipManagerV0Test is TestSetup {
 
         // alice unwraps 1% and should lose 1 tier.
         vm.prank(alice);
-        uint256 aliceTokenId = membershipManagerInstance.requestWithdraw(aliceToken, 1 ether);
+        uint32 aliceTokenId = membershipManagerInstance.requestWithdraw(aliceToken, 1 ether);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 28 * 24 * 1); // booted to start of previous tier == 672
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
 
@@ -87,7 +87,7 @@ contract MembershipManagerV0Test is TestSetup {
         membershipManagerInstance.requestWithdrawAndBurn(aliceToken);
 
         // Bob burns the NFT extracting remaining value
-        uint256 bobTokenId = membershipManagerInstance.requestWithdrawAndBurn(bobToken);
+        uint32 bobTokenId = membershipManagerInstance.requestWithdrawAndBurn(bobToken);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -124,7 +124,7 @@ contract MembershipManagerV0Test is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(tokenId), 24);
 
         // Alice's NFT unwraps 1 membership points to 1 ETH
-        uint256 aliceRequestId1 = membershipManagerInstance.requestWithdraw(tokenId, 1 ether);
+        uint32 aliceRequestId1 = membershipManagerInstance.requestWithdraw(tokenId, 1 ether);
         withdrawRequestNFTInstance.finalizeRequests(aliceRequestId1);
         withdrawRequestNFTInstance.claimWithdraw(aliceRequestId1);
         assertEq(membershipNftInstance.loyaltyPointsOf(tokenId), 2 * kwei);
@@ -142,7 +142,7 @@ contract MembershipManagerV0Test is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(tokenId), 24 * 2);
 
         // Alice's NFT unwraps all her remaining membership points, burning the NFT
-        uint256 aliceRequestId2 = membershipManagerInstance.requestWithdrawAndBurn(tokenId);
+        uint32 aliceRequestId2 = membershipManagerInstance.requestWithdrawAndBurn(tokenId);
         withdrawRequestNFTInstance.finalizeRequests(aliceRequestId2);
         withdrawRequestNFTInstance.claimWithdraw(aliceRequestId2);
         assertEq(membershipNftInstance.balanceOf(alice, tokenId), 0); 

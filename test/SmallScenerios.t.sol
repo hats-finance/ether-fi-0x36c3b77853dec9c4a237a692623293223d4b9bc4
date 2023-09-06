@@ -261,7 +261,7 @@ contract SmallScenariosTest is TestSetup {
         vm.prank(chad);
         eETHInstance.approve(address(liquidityPoolInstance), 15.5 ether);
         vm.prank(chad);
-        uint256 withdrawRequestId = liquidityPoolInstance.requestWithdraw(chad, 15.5 ether);
+        uint32 withdrawRequestId = liquidityPoolInstance.requestWithdraw(chad, 15.5 ether);
 
         vm.prank(alice);
         withdrawRequestNFTInstance.finalizeRequests(withdrawRequestId);

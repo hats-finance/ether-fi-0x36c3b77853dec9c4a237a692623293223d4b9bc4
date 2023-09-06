@@ -173,7 +173,7 @@ contract LiquidityPoolTest is TestSetup {
         uint256 aliceNonce = eETHInstance.nonces(alice);
         // alice priv key = 2
         ILiquidityPool.PermitInput memory permitInputAlice = createPermitInput(2, address(liquidityPoolInstance), 2 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
-        uint256 aliceReqId = liquidityPoolInstance.requestWithdrawWithPermit(alice, 2 ether, permitInputAlice);
+        uint32 aliceReqId = liquidityPoolInstance.requestWithdrawWithPermit(alice, 2 ether, permitInputAlice);
         withdrawRequestNFTInstance.finalizeRequests(aliceReqId);
         withdrawRequestNFTInstance.claimWithdraw(aliceReqId);
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -184,7 +184,7 @@ contract LiquidityPoolTest is TestSetup {
         uint256 bobNonce = eETHInstance.nonces(bob);
         // bob priv key = 3
         ILiquidityPool.PermitInput memory permitInputBob = createPermitInput(3, address(liquidityPoolInstance), 2 ether, bobNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
-        uint256 bobReqId = liquidityPoolInstance.requestWithdrawWithPermit(bob, 2 ether, permitInputBob);
+        uint32 bobReqId = liquidityPoolInstance.requestWithdrawWithPermit(bob, 2 ether, permitInputBob);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -598,7 +598,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.startPrank(bob);
         eETHInstance.approve(address(liquidityPoolInstance), eEthTVL);
-        uint256 bobRequestId = liquidityPoolInstance.requestWithdraw(bob, eEthTVL);
+        uint32 bobRequestId = liquidityPoolInstance.requestWithdraw(bob, eEthTVL);
         vm.stopPrank();
 
         vm.prank(alice);

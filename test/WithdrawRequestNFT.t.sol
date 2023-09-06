@@ -36,9 +36,9 @@ contract WithdrawRequestNFTTest is TestSetup {
         eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
 
         vm.prank(bob);
-        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+        uint32 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
-        WithdrawRequestNFT.WithdrawRequest memory request = withdrawRequestNFTInstance.getRequest(requestId);
+        IWithdrawRequestNFT.WithdrawRequest memory request = withdrawRequestNFTInstance.getRequest(requestId);
 
         assertEq(request.amountOfEEth, 1 ether, "Amount of eEth should match");
         assertEq(request.shareOfEEth, 1 ether, "Share of eEth should match");
@@ -59,7 +59,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
 
         vm.prank(bob);
-        uint256 requestId1 = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+        uint32 requestId1 = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         assertEq(requestId1, 1, "Request id should be 1");
 
@@ -67,7 +67,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
 
         vm.prank(bob);
-        uint256 requestId2 = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+        uint32 requestId2 = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         assertEq(requestId2, 2, "Request id should be 2");
     }
@@ -86,7 +86,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
 
         vm.prank(bob);
-        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+        uint32 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         bool earlyRequestIsFinalized = withdrawRequestNFTInstance.isFinalized(requestId);
         assertFalse(earlyRequestIsFinalized, "Request should not be Finalized");
@@ -94,7 +94,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         vm.prank(alice);
         withdrawRequestNFTInstance.finalizeRequests(requestId);
 
-        WithdrawRequestNFT.WithdrawRequest memory request = withdrawRequestNFTInstance.getRequest(requestId);
+        IWithdrawRequestNFT.WithdrawRequest memory request = withdrawRequestNFTInstance.getRequest(requestId);
         assertEq(request.amountOfEEth, 1 ether, "Amount of eEth should match");
 
         bool requestIsFinalized = withdrawRequestNFTInstance.isFinalized(requestId);
@@ -115,12 +115,12 @@ contract WithdrawRequestNFTTest is TestSetup {
         eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
 
         vm.prank(bob);
-        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+        uint32 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         bool requestIsFinalized = withdrawRequestNFTInstance.isFinalized(requestId);
         assertFalse(requestIsFinalized, "Request should not be finalized");
 
-        WithdrawRequestNFT.WithdrawRequest memory request = withdrawRequestNFTInstance.getRequest(requestId);
+        IWithdrawRequestNFT.WithdrawRequest memory request = withdrawRequestNFTInstance.getRequest(requestId);
         assertEq(request.amountOfEEth, 1 ether, "Amount of eEth should match");
         assertEq(request.shareOfEEth, 1 ether, "Share of eEth should match");
         assertTrue(request.isValid, "Request should be valid");
@@ -140,7 +140,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
 
         vm.prank(bob);
-        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+        uint32 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
 
         bool requestIsFinalized = withdrawRequestNFTInstance.isFinalized(requestId);
         assertFalse(requestIsFinalized, "Request should not be finalized");
@@ -166,7 +166,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         eETHInstance.approve(address(liquidityPoolInstance), 1 ether);
 
         vm.prank(bob);
-        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, 1 ether);
+        uint32 requestId = liquidityPoolInstance.requestWithdraw(bob, 1 ether);
 
         vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(10 ether);
@@ -204,7 +204,7 @@ contract WithdrawRequestNFTTest is TestSetup {
         eETHInstance.approve(address(liquidityPoolInstance), 1 ether);
 
         vm.prank(bob);
-        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, 1 ether);
+        uint32 requestId = liquidityPoolInstance.requestWithdraw(bob, 1 ether);
 
         vm.prank(address(membershipManagerInstance));
         liquidityPoolInstance.rebase(-35 ether);

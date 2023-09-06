@@ -175,7 +175,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @dev This function allows users to request exchange of membership tokens to ETH.
     /// @param _tokenId The ID of the membership NFT.
     /// @param _amount The amount of membership tokens to exchange.
-    function requestWithdraw(uint256 _tokenId, uint256 _amount) external whenNotPaused returns (uint256) {
+    function requestWithdraw(uint256 _tokenId, uint256 _amount) external whenNotPaused returns (uint32) {
         _requireTokenOwner(_tokenId);
 
         // prevent transfers for several blocks after a withdrawal to prevent frontrunning
@@ -191,7 +191,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         // send EETH to recipient before requesting withdraw?
         eETH.approve(address(liquidityPool), _amount);
-        uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(address(msg.sender), _amount);
+        uint32 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(address(msg.sender), _amount);
 
         _emitNftUpdateEvent(_tokenId);
         return withdrawTokenId;
@@ -199,7 +199,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     /// @notice request to withdraw the entire balance of this NFT and burn it
     /// @param _tokenId The ID of the membership NFT to liquidate
-    function requestWithdrawAndBurn(uint256 _tokenId) external whenNotPaused returns (uint256) {
+    function requestWithdrawAndBurn(uint256 _tokenId) external whenNotPaused returns (uint32) {
         _requireTokenOwner(_tokenId);
 
         // Claim all staking rewards before burn
@@ -212,7 +212,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         eETH.approve(address(liquidityPool), totalBalance);
         if (feeAmount > 0) liquidityPool.withdraw(address(this), feeAmount);
-        uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(msg.sender, totalBalance - feeAmount);
+        uint32 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(msg.sender, totalBalance - feeAmount);
         
         _emitNftUpdateEvent(_tokenId);
         return withdrawTokenId;
