@@ -1226,12 +1226,14 @@ contract MembershipManagerTest is TestSetup {
     }
 
     function test_burn_fee_waiver() public {
+        vm.startPrank(alice);
+
+        membershipManagerV1Instance.setFeeAmounts(0 ether, 0.05 ether, 0 ether, 30);
         (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerV1Instance.getFees();
 
         vm.deal(alice, 2 ether);
 
         // Alice mints two NFTs with 1 ETH for each
-        vm.startPrank(alice);
         uint256 aliceToken1 = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0 ether, aliceProof);
         uint256 aliceToken2 = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0 ether, aliceProof);
 

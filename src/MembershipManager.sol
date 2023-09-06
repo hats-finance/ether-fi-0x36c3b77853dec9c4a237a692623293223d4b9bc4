@@ -203,12 +203,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _claimStakingRewards(_tokenId);
         _migrateFromV0ToV1(_tokenId);
 
-        uint256 feeAmount = burnFee * 0.001 ether;
+        uint256 feeAmount = hasMetBurnFeeWaiverPeriod(_tokenId) ? 0 : burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
         if (totalBalance < feeAmount) revert InsufficientBalance();
 
         eETH.approve(address(liquidityPool), totalBalance);
-        if (feeAmount > 0 && !hasMetBurnFeeWaiverPeriod(_tokenId)) liquidityPool.withdraw(address(this), feeAmount);
+        if (feeAmount > 0) liquidityPool.withdraw(address(this), feeAmount);
         uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(msg.sender, totalBalance - feeAmount);
         
         _emitNftUpdateEvent(_tokenId);
