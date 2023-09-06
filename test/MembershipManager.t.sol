@@ -1228,6 +1228,7 @@ contract MembershipManagerTest is TestSetup {
     function test_burn_fee_waiver() public {
         vm.startPrank(alice);
 
+        // Set burn fee to 0.05 ether, burn fee waiver requirement as 30 days
         membershipManagerV1Instance.setFeeAmounts(0 ether, 0.05 ether, 0 ether, 30);
         (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerV1Instance.getFees();
 
