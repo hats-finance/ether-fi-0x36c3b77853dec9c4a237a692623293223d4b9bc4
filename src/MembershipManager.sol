@@ -50,7 +50,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     uint32 public withdrawalLockBlocks;
 
     uint16 private fanBoostThreshold; // = 0.001 ETH * fanBoostThreshold
-    uint16 private __gap0;
+    uint16 private burnFeeWaiverPeriodInDays;
 
     // [END] SLOT 261 END
 
@@ -91,6 +91,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     // To be called for Phase 2 contract upgrade
     function initializePhase2() external onlyOwner {
         fanBoostThreshold = 1_000; // 1 ETH
+        burnFeeWaiverPeriodInDays = 30;
         for (uint256 i = 0; i < tierData.length; i++) {
             tierVaults.push(TierVault(0, 0));
         }
@@ -211,7 +212,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (totalBalance < feeAmount) revert InsufficientBalance();
 
         eETH.approve(address(liquidityPool), totalBalance);
-        if (feeAmount > 0) liquidityPool.withdraw(address(this), feeAmount);
+        if (feeAmount > 0 && !hasMetWaiverPeriod(_tokenId)) liquidityPool.withdraw(address(this), feeAmount);
         uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(msg.sender, totalBalance - feeAmount);
         
         _emitNftUpdateEvent(_tokenId);
@@ -658,6 +659,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     function fanBoostThresholdEthAmount() public view returns (uint256) {
         return uint256(fanBoostThreshold) * 0.001 ether;
+    }
+
+    function hasMetWaiverPeriod(uint256 _tokenId) public view returns (bool) {
+        uint256 stakingPeriod = membershipNFT.tierPointsOf(_tokenId) / 24;
+        return stakingPeriod >= burnFeeWaiverPeriodInDays;
     }
 
     function _updateAllTimeHighDepositOf(uint256 _tokenId) internal {
