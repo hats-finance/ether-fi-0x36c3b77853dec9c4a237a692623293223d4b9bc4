@@ -57,6 +57,10 @@ deploy-goerli-phase-2:; forge clean && forge script script/deploys/DeployPhaseTw
 
 deploy-mainnet-phase-2:; forge clean && forge script script/deploys/DeployPhaseTwo.s.sol:DeployPhaseTwoScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify  -vvvv --slow && bash script/extractABI.sh
 
+deploy-goerli-node-operator :; forge clean && forge script script/specialized/DeployNewNodeOperatorManager.s.sol:DeployNewNodeOperatorManagerScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
+deploy-node-operator :; forge clean && forge script script/specialized/DeployNewNodeOperatorManager.s.sol:DeployNewNodeOperatorManagerScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
+
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (GOERLI)
 
@@ -102,8 +106,6 @@ upgrade-goerli-etherfi-admin :; forge clean && forge script script/upgrades/Ethe
 
 upgrade-goerli-withdraw-request-nft :; forge clean && forge script script/upgrades/WithdrawRequestNFTUpgradeScript.s.sol:WithdrawRequestNFTUpgrade --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
-upgrade-goerli-node-operator :; forge clean && forge script script/specialized/DeployNewNodeOperatorManager.s.sol:DeployNewNodeOperatorManagerScript --rpc-url ${GOERLI_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
-
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #upgrade commands (MAINNET)
 
@@ -146,8 +148,6 @@ upgrade-weeth :; forge clean && forge script script/upgrades/WeETHUpgradeScript.
 upgrade-etherfi-oracle :; forge clean && forge script script/upgrades/EtherFiOracleUpgradeScript.s.sol:EtherFiOracleUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-etherfi-admin :; forge clean && forge script script/upgrades/EtherFiAdminUpgradeScript.s.sol:EtherFiAdminUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
-
-upgrade-node-operator :; forge clean && forge script script/specialized/DeployNewNodeOperatorManager.s.sol:DeployNewNodeOperatorManagerScript --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
 upgrade-withdraw-request-nft :; forge clean && forge script script/upgrades/WithdrawRequestNFTUpgradeScript.s.sol:WithdrawRequestNFTUpgrade --rpc-url ${MAINNET_RPC_URL} --broadcast --verify -vvvv --slow && bash script/extractABI.sh
 
