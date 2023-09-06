@@ -98,7 +98,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManagerImplementation = new MembershipManager();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation),"");
         membershipManager = MembershipManager(payable(address(membershipManagerProxy)));
-        membershipManager.initialize(address(eETH), address(liquidityPool), address(membershipNFT), treasury, protocolRevenueManagerProxy);
+        // membershipManager.initialize(address(eETH), address(liquidityPool), address(membershipNFT), treasury, protocolRevenueManagerProxy);
         addressProvider.addContract(address(membershipManagerProxy), "MembershipManager");
 
         weETHImplementation = new WeETH();
@@ -124,7 +124,7 @@ contract DeployPhaseOnePointFiveScript is Script {
 
         initializeTiers();
         preMint();
-        membershipManager.setFeeAmounts(0.05 ether, 0.05 ether, 0);
+        membershipManager.setFeeAmounts(0.05 ether, 0.05 ether, 0, 0);
         membershipManager.pauseContract();
         
         vm.stopBroadcast();
