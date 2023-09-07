@@ -16,9 +16,10 @@ contract MigrateNodeOperatorManager is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        phaseOneNodeOperator = addressProvider.getContractAddress("PhaseOneNodeOperatorManager");
-        phaseTwoNodeOperator = addressProvider.getContractAddress("PhaseTwoNodeOperatorManager");
+        phaseOneNodeOperator = vm.envAddress("PHASE_ONE_NODE_OPERATOR");
+        phaseTwoNodeOperator = addressProvider.getContractAddress("NodeOperatorManager");
 
+        // MAINNET
         address[] memory operators = new address[](7);
         operators[0] = 0x78cA32Ac90D7F99225a3B9288D561E0cB3744899;
         operators[1] = 0x3f95F8f6222F6D97b47122372D60117ab386C48F;
