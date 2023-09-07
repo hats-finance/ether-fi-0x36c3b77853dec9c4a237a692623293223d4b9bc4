@@ -238,8 +238,6 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     }
 
     function setQuorumSize(uint32 _quorumSize) public onlyOwner {
-        // TODO enable the below for mainnet
-        // require(_quorumSize > 1, "Quorum size must be greater than 1");
         quorumSize = _quorumSize;
 
         emit QuorumUpdated(_quorumSize);

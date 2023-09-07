@@ -770,7 +770,7 @@ contract MembershipManagerTest is TestSetup {
 
         // setup fees
         vm.startPrank(alice);
-        membershipManagerV1Instance.setFeeAmounts(0 ether, 0 ether, 0.5 ether);
+        membershipManagerV1Instance.setFeeAmounts(0 ether, 0 ether, 0.5 ether, 0);
 
         (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerV1Instance.getFees();
         assertEq(mintFee, 0 ether);
@@ -806,15 +806,15 @@ contract MembershipManagerTest is TestSetup {
     function test_SettingFeesFail() public {
         vm.startPrank(owner);
         vm.expectRevert(MembershipManager.OnlyAdmin.selector);
-        membershipManagerV1Instance.setFeeAmounts(0.05 ether, 0.05 ether, 0 ether);
+        membershipManagerV1Instance.setFeeAmounts(0.05 ether, 0.05 ether, 0 ether, 0);
         vm.stopPrank();
 
         vm.startPrank(alice);
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
-        membershipManagerV1Instance.setFeeAmounts(0.001 ether * uint256(type(uint16).max) + 1, 0, 0 ether);
+        membershipManagerV1Instance.setFeeAmounts(0.001 ether * uint256(type(uint16).max) + 1, 0, 0 ether, 0);
 
         vm.expectRevert(MembershipManager.InvalidAmount.selector);
-        membershipManagerV1Instance.setFeeAmounts(0, 0.001 ether * uint256(type(uint16).max) + 1, 0 ether);
+        membershipManagerV1Instance.setFeeAmounts(0, 0.001 ether * uint256(type(uint16).max) + 1, 0 ether, 0);
 
         vm.stopPrank();
     }
@@ -1223,5 +1223,36 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(tokens[3]), 1 ether - 0.5 ether * uint256(25) / uint256(100) - 1);
         assertEq(membershipNftInstance.valueOf(tokens[4]), 1 ether - 0.5 ether * uint256(30) / uint256(100) - 1);
         assertEq(eETHInstance.balanceOf(alice), 1 ether * uint256(9) / uint256(10));
+    }
+
+    function test_burn_fee_waiver() public {
+        vm.startPrank(alice);
+
+        // Set burn fee to 0.05 ether, burn fee waiver requirement as 30 days
+        membershipManagerV1Instance.setFeeAmounts(0 ether, 0.05 ether, 0 ether, 30);
+        (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerV1Instance.getFees();
+
+        vm.deal(alice, 2 ether);
+
+        // Alice mints two NFTs with 1 ETH for each
+        uint256 aliceToken1 = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0 ether, aliceProof);
+        uint256 aliceToken2 = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0 ether, aliceProof);
+
+        // 14 days passed
+        vm.warp(block.timestamp + uint256(14 * 24 * 60 * 60));
+
+        // Alice burns one NFT paying for the burn fee
+        assertEq(membershipManagerV1Instance.hasMetBurnFeeWaiverPeriod(aliceToken1), false);
+        uint256 reqId1 = membershipManagerV1Instance.requestWithdrawAndBurn(aliceToken1);
+
+        // 16 days passed
+        vm.warp(block.timestamp + uint256(16 * 24 * 60 * 60));
+
+        // Alice burns the other NFT not paying for the burn fee since the stkaing period passed 30 days
+        assertEq(membershipManagerV1Instance.hasMetBurnFeeWaiverPeriod(aliceToken2), true);
+        uint256 reqId2 = membershipManagerV1Instance.requestWithdrawAndBurn(aliceToken2);
+
+        assertEq(withdrawRequestNFTInstance.getRequest(reqId1).amountOfEEth, 1 ether - burnFee);
+        assertEq(withdrawRequestNFTInstance.getRequest(reqId2).amountOfEEth, 1 ether);
     }
 }

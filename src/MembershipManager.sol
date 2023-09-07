@@ -50,7 +50,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     uint32 public withdrawalLockBlocks;
 
     uint16 private fanBoostThreshold; // = 0.001 ETH * fanBoostThreshold
-    uint16 private __gap0;
+    uint16 private burnFeeWaiverPeriodInDays;
 
     // [END] SLOT 261 END
 
@@ -84,13 +84,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error DisallowZeroAddress();
     error WrongVersion();
 
-    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNft, address _treasury, address _protocolRevenueManager) external initializer {
-        revert Deprecated();
-    }
-
     // To be called for Phase 2 contract upgrade
     function initializePhase2() external onlyOwner {
         fanBoostThreshold = 1_000; // 1 ETH
+        burnFeeWaiverPeriodInDays = 30;
         for (uint256 i = 0; i < tierData.length; i++) {
             tierVaults.push(TierVault(0, 0));
         }
@@ -206,7 +203,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _claimStakingRewards(_tokenId);
         _migrateFromV0ToV1(_tokenId);
 
-        uint256 feeAmount = burnFee * 0.001 ether;
+        uint256 feeAmount = hasMetBurnFeeWaiverPeriod(_tokenId) ? 0 : burnFee * 0.001 ether;
         uint256 totalBalance = _withdrawAndBurn(_tokenId);
         if (totalBalance < feeAmount) revert InsufficientBalance();
 
@@ -359,7 +356,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         topUpCooltimePeriod = _newWaitTime;
     }
 
-    function setFeeAmounts(uint256 _mintFeeAmount, uint256 _burnFeeAmount, uint256 _upgradeFeeAmount) external {
+    function setFeeAmounts(uint256 _mintFeeAmount, uint256 _burnFeeAmount, uint256 _upgradeFeeAmount, uint16 _burnFeeWaiverPeriodInDays) external {
         _requireAdmin();
         _feeAmountSanityCheck(_mintFeeAmount);
         _feeAmountSanityCheck(_burnFeeAmount);
@@ -367,6 +364,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         mintFee = uint16(_mintFeeAmount / 0.001 ether);
         burnFee = uint16(_burnFeeAmount / 0.001 ether);
         upgradeFee = uint16(_upgradeFeeAmount / 0.001 ether);
+        burnFeeWaiverPeriodInDays = _burnFeeWaiverPeriodInDays;
     }
 
     function setFanBoostThresholdEthAmount(uint256 _fanBoostThresholdEthAmount) external {
@@ -658,6 +656,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     function fanBoostThresholdEthAmount() public view returns (uint256) {
         return uint256(fanBoostThreshold) * 0.001 ether;
+    }
+
+    function hasMetBurnFeeWaiverPeriod(uint256 _tokenId) public view returns (bool) {
+        uint256 stakingPeriod = membershipNFT.tierPointsOf(_tokenId) / 24;
+        return stakingPeriod >= burnFeeWaiverPeriodInDays;
     }
 
     function _updateAllTimeHighDepositOf(uint256 _tokenId) internal {
