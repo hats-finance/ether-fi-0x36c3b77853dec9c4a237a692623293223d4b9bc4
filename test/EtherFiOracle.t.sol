@@ -214,6 +214,19 @@ contract EtherFiOracleTest is TestSetup {
         assertEq(consensusReached, true);
     }
 
+    function test_report_start_slot() public {
+        etherFiOracleInstance.setReportStartSlot(2000);
+
+        // Now it's period 2!
+        _moveClock(2024 + 2 * slotsPerEpoch);
+
+        // these two should fail because not start yet
+        vm.prank(alice);
+        // vm.expectRevert("You don't need to submit a report");
+        bool consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod2A);
+
+    }
+
     function test_set_quorum_size() public {
         vm.startPrank(owner);
 
