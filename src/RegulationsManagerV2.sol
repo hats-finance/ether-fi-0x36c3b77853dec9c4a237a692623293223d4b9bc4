@@ -2,69 +2,56 @@
 pragma solidity 0.8.13;
 
 import "forge-std/console2.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RegulationsManagerV2 {
+contract RegulationsManagerV2 is Ownable {
 
     bytes32 constant TYPEHASH = keccak256("TermsOfService(bytes32 message,bytes32 hash)");
     bytes32 constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version)");
     string public DOMAIN_NAME = "Ether.fi Terms of Service";
     string public DOMAIN_VERSION = "1";
 
-    TermsOfService public currentTerms;
-
     struct TermsOfService {
         bytes32 message;
         bytes32 hashOfTerms;
     }
-
-    constructor() {
-        currentTerms = TermsOfService({
-            message: "I agree to Ether.fi ToS",
-            hashOfTerms: "hello"
-        });
-    }
+    TermsOfService public currentTerms;
 
     error InvalidTermsAndConditionsSignature();
 
     function verifyTermsSignature(bytes memory signature) external {
-        /*
-        bytes2 prefix = "\x19\x01";
-        bytes32 domainSeparator = domainSeparator();
-        bytes32 structHash = hashStruct(currentTerms);
 
-        // EIP712
-        // encode(domainSeparator : 𝔹²⁵⁶, message : 𝕊) = "\x19\x01" ‖ domainSeparator ‖ hashStruct(message) 
-        bytes32 message = keccak256(abi.encodePacked(prefix, domainSeparator, structHash));
-        */
-
+        console2.log("sender", msg.sender);
         console2.log("recovered", recoverSigner(generateTermsDigest(), signature));
         if (recoverSigner(generateTermsDigest(), signature) != msg.sender) revert InvalidTermsAndConditionsSignature();
     }
 
     function generateTermsDigest() public returns (bytes32) {
+
+        TermsOfService memory terms = currentTerms;
+
         bytes2 prefix = "\x19\x01";
-        bytes32 domainSeparator = domainSeparator();
-        bytes32 structHash = hashStruct(currentTerms);
+        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, DOMAIN_NAME, DOMAIN_VERSION));
+        bytes32 structHash = keccak256(abi.encode(TYPEHASH, terms.message, terms.hashOfTerms));
+
+        console2.logBytes32(structHash);
 
         bytes32 digest = keccak256(abi.encodePacked(prefix, domainSeparator, structHash));
         return digest;
     }
 
-    function hashStruct(TermsOfService memory terms) public pure returns (bytes32 hash) {
-        return keccak256(abi.encode(
-            TYPEHASH,
-            terms.message,
-            terms.hashOfTerms
-        ));
+    //--------------------------------------------------------------------------------------
+    //----------------------------------  Admin   ------------------------------------------
+    //--------------------------------------------------------------------------------------
+
+    function updateTermsOfService(bytes32 _message, bytes32 _hashOfTerms, string calldata _domainVersion) external onlyOwner {
+        currentTerms = TermsOfService({ message: _message, hashOfTerms: _hashOfTerms });
+        DOMAIN_VERSION = _domainVersion;
     }
 
-    function domainSeparator() public view returns (bytes32 hash) {
-        return keccak256(abi.encode(
-            DOMAIN_TYPEHASH,
-            DOMAIN_NAME,
-            DOMAIN_VERSION
-        ));
-    }
+    //--------------------------------------------------------------------------------------
+    //---------------------------  Signature Recovery   ------------------------------------
+    //--------------------------------------------------------------------------------------
 
     function splitSignature(bytes memory sig)
         internal
@@ -94,12 +81,5 @@ contract RegulationsManagerV2 {
 
         return ecrecover(message, v, r, s);
     }
-
-    // builds a prefixed hash to mimic the behavior of eth_sign.
-    function prefixed(bytes32 hash) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19\x01", hash));
-    }
-
-
 
 }

@@ -8,36 +8,50 @@ import "../src/RegulationsManagerV2.sol";
 contract RegulationsManagerV2Test is Test {
 
     RegulationsManagerV2 regulationsManager;
+    uint256 adminKey;
+    address admin;
+    uint256 aliceKey;
+    address alice;
 
     function setUp() public {
+
+        // setup keys
+        adminKey = 0x1;
+        aliceKey = 0x2;
+        admin = vm.addr(adminKey);
+        alice = vm.addr(aliceKey);
+
+        // deploy
+        vm.prank(admin);
         regulationsManager = new RegulationsManagerV2();
-        console2.log(address(regulationsManager));
     }
 
-    function test_hashStruct() public {
-        //RegulationManagerV2.TermsOfService memory currentTerms = regulationsManager.currentTerms();
-        (bytes32 message, bytes32 hashOfTerms) = regulationsManager.currentTerms();
-        bytes32 structHash = regulationsManager.hashStruct(RegulationsManagerV2.TermsOfService(
-            {
-                message: message,
-                hashOfTerms: hashOfTerms
-            }
-        ));
-        console2.logBytes32(message);
-        console2.logBytes32(structHash);
-    }
 
     function test_verifyTermsSignature() public {
-        //bytes memory signature = new bytes(65);
-        address alice = vm.addr(2);
-        console2.log("alice", alice);
 
+        // admin sets terms
+        vm.prank(admin);
+        regulationsManager.updateTermsOfService("I agree to ether.fi ToS", "0xI_am_a_real_hash :)", "1");
+
+
+        // alice signs terms and verifies
         vm.startPrank(alice);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, regulationsManager.generateTermsDigest());
+        console2.log("alice", alice);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(aliceKey, regulationsManager.generateTermsDigest());
         bytes memory signature = abi.encodePacked(r, s, v);
-
         regulationsManager.verifyTermsSignature(signature);
         vm.stopPrank();
+
+        // admin should not be able to uses alice's signature
+        vm.prank(admin);
+        vm.expectRevert(RegulationsManagerV2.InvalidTermsAndConditionsSignature.selector);
+        regulationsManager.verifyTermsSignature(signature);
+
+        // alice should not be able to update the terms because she is not owner
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        regulationsManager.updateTermsOfService("Alice Rules, Brett Drools", "0xI_am_a_real_hash :)", "1");
+
     }
 
 }
