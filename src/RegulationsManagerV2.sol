@@ -20,36 +20,20 @@ contract RegulationsManagerV2 is Ownable {
     error InvalidTermsAndConditionsSignature();
 
     function verifyTermsSignature(bytes memory signature) external {
-
-        console2.log("sender", msg.sender);
-        console2.log("recovered", recoverSigner(generateTermsDigest(), signature));
         if (recoverSigner(generateTermsDigest(), signature) != msg.sender) revert InvalidTermsAndConditionsSignature();
     }
 
-    function generateTermsDigest() public returns (bytes32) {
+    function generateTermsDigest() public view returns (bytes32) {
 
-        TermsOfService memory terms = TermsOfService({
-            message: "I agree to Ether.fi ToS",
-            hashOfTerms: hex"1234567890000000000000000000000000000000000000000000000000000000"
-        });
-
+        // Notice: EIP-712 spec has an exception for string types. If a field is type "string" or "bytes"
+        // you hash it instead of using the default encoding.
         bytes2 prefix = "\x19\x01";
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(DOMAIN_NAME)), keccak256(bytes(DOMAIN_VERSION))));
-        console2.log("domainSeparator");
-        console2.logBytes32(domainSeparator);
-
-        //bytes32 structHash = keccak256(abi.encode(TYPEHASH, keccak256(bytes(terms.message))));
-        bytes32 structHash = keccak256(abi.encode(TYPEHASH, keccak256(bytes(terms.message)), terms.hashOfTerms));
+        bytes32 structHash = keccak256(abi.encode(TYPEHASH, keccak256(bytes(currentTerms.message)), currentTerms.hashOfTerms));
 
         bytes32 digest = keccak256(abi.encodePacked(prefix, domainSeparator, structHash));
-        console2.log("digest");
-        console2.logBytes32(digest);
         return digest;
     }
-
-
-
-
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  Admin   ------------------------------------------

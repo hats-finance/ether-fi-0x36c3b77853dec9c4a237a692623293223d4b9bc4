@@ -35,16 +35,21 @@ contract RegulationsManagerV2Test is Test {
 
         // alice signs terms and verifies
         vm.startPrank(alice);
-        console2.log("alice", alice);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(aliceKey, regulationsManager.generateTermsDigest());
         bytes memory signature = abi.encodePacked(r, s, v);
-        console2.log("signature");
-        console2.logBytes(signature);
         regulationsManager.verifyTermsSignature(signature);
         vm.stopPrank();
 
         // admin should not be able to uses alice's signature
         vm.prank(admin);
+        vm.expectRevert(RegulationsManagerV2.InvalidTermsAndConditionsSignature.selector);
+        regulationsManager.verifyTermsSignature(signature);
+
+        // alices signature should be invalid if the terms have changed
+        vm.prank(admin);
+        regulationsManager.updateTermsOfService("I agree to Ether.fi ToS", hex"9934567890000000000000000000000000000000000000000000000000000000", "2");
+
+        vm.prank(alice);
         vm.expectRevert(RegulationsManagerV2.InvalidTermsAndConditionsSignature.selector);
         regulationsManager.verifyTermsSignature(signature);
 
