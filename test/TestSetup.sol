@@ -185,7 +185,7 @@ contract TestSetup is Test {
     IEtherFiOracle.OracleReport reportAtPeriod3A;
     IEtherFiOracle.OracleReport reportAtPeriod3B;
     IEtherFiOracle.OracleReport reportAtPeriod4;
-    IEtherFiOracle.OracleReport reportAtSlot3024;
+    IEtherFiOracle.OracleReport reportAtSlot3071;
 
     int256 slotsPerEpoch = 32;
     int256 secondsPerSlot = 12;
@@ -402,7 +402,7 @@ contract TestSetup is Test {
         reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtSlot3024 = IEtherFiOracle.OracleReport(1, 2000, 3024 - 1, 2000, 3024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtSlot3071 = IEtherFiOracle.OracleReport(1, 2048, 3072 - 1, 2048, 3072 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
 
         vm.stopPrank();
 

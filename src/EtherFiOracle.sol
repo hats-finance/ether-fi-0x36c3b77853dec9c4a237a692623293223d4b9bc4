@@ -160,7 +160,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     // Given the last published report AND the current slot number,
     // Return the next report's `slotTo` that we are waiting for
     // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
-    function _slotForNextReport() internal view returns (uint32) {
+    function _slotForNextReport() public view returns (uint32) {
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
         require(currSlot >= reportStartSlot, "Report Slot has not started yet");
         uint32 pastSlot = lastPublishedReportRefSlot == 0 ? reportStartSlot : lastPublishedReportRefSlot + 1;
