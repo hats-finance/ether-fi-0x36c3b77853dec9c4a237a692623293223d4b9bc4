@@ -102,7 +102,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     // The report should include data for the specified slot and block ranges (inclusive)
     function blockStampForNextReport() public view returns (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) {
         slotFrom = lastPublishedReportRefSlot == 0 ? reportStartSlot : lastPublishedReportRefSlot + 1;
-        slotTo = _slotForNextReport();
+        slotTo = slotForNextReport();
         blockFrom = lastPublishedReportRefBlock == 0 ? reportStartSlot : lastPublishedReportRefBlock + 1;
         // `blockTo` can't be decided since a slot may not have any block (`missed slot`)
     }
@@ -110,7 +110,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     function shouldSubmitReport(address _member) public view returns (bool) {
         require(committeeMemberStates[_member].registered, "You are not registered as the Oracle committee member");
         require(committeeMemberStates[_member].enabled, "You are disabled");
-        uint32 slot = _slotForNextReport();
+        uint32 slot = slotForNextReport();
         require(_isFinalized(slot), "Report Epoch is not finalized yet");
         return slot > committeeMemberStates[_member].lastReportRefSlot;
     }
@@ -160,14 +160,13 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     // Given the last published report AND the current slot number,
     // Return the next report's `slotTo` that we are waiting for
     // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
-    function _slotForNextReport() public view returns (uint32) {
+    function slotForNextReport() public view returns (uint32) {
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
         require(currSlot >= reportStartSlot, "Report Slot has not started yet");
         uint32 pastSlot = lastPublishedReportRefSlot == 0 ? reportStartSlot : lastPublishedReportRefSlot + 1;
         uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot) * reportPeriodSlot;
         uint32 __slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
         return __slotForNextReport - 1;
-        return 1;
     }
 
     function _computeSlotAtTimestamp(uint256 timestamp) public view returns (uint32) {
@@ -244,8 +243,9 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
 
     // only admin
     function setReportStartSlot(uint32 _reportStartSlot) public {
+        // check if the start slot is at the beginning of the epoch
+        require(_reportStartSlot % 32 == 0, "The start slot should be at the beginning of the epoch");
         reportStartSlot = _reportStartSlot;
-
         emit ReportStartSlotUpdated(_reportStartSlot);
     }
 
