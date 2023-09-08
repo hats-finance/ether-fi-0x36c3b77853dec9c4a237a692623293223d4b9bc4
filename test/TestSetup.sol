@@ -186,6 +186,7 @@ contract TestSetup is Test {
     IEtherFiOracle.OracleReport reportAtPeriod3B;
     IEtherFiOracle.OracleReport reportAtPeriod4;
     IEtherFiOracle.OracleReport reportAtSlot3071;
+    IEtherFiOracle.OracleReport reportAtSlot4287;
 
     int256 slotsPerEpoch = 32;
     int256 secondsPerSlot = 12;
@@ -403,6 +404,7 @@ contract TestSetup is Test {
         reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtSlot3071 = IEtherFiOracle.OracleReport(1, 2048, 3072 - 1, 2048, 3072 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtSlot4287 = IEtherFiOracle.OracleReport(1, 3264, 4288 - 1, 3264, 4288 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
 
         vm.stopPrank();
 

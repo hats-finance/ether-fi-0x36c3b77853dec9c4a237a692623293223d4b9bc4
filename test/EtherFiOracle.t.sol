@@ -240,14 +240,26 @@ contract EtherFiOracleTest is TestSetup {
         vm.expectRevert("Report Epoch is not finalized yet");
         consensusReached = etherFiOracleInstance.submitReport(reportAtSlot3071);
 
-        // move 1024 + 2 * 32 = 1088
-        // current slot = 2000 + 1088 = 3088 = current epoch 96
-        // slotForNextReport = 3023 = epoch 94
-        // assertEq(etherFiOracleInstance._slotForNextReport(), 1000);
+        // 2048 + 1024 + 64 = 3136
         _moveClock(1024 + 2 * slotsPerEpoch);
         
         vm.prank(alice);
         consensusReached = etherFiOracleInstance.submitReport(reportAtSlot3071);
+
+        // change startSlot to 3264
+        etherFiOracleInstance.setReportStartSlot(3264);
+
+        // slot 3236
+        _moveClock(100);
+        
+        vm.prank(alice);
+        vm.expectRevert("Report Slot has not started yet");
+        consensusReached = etherFiOracleInstance.submitReport(reportAtSlot4287);
+
+        _moveClock(28 + 1024 + 2 * slotsPerEpoch);
+
+        vm.prank(alice);
+        consensusReached = etherFiOracleInstance.submitReport(reportAtSlot4287);
 
     }
 
