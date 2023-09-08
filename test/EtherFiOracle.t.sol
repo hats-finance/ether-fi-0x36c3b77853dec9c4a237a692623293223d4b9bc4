@@ -217,13 +217,35 @@ contract EtherFiOracleTest is TestSetup {
     function test_report_start_slot() public {
         etherFiOracleInstance.setReportStartSlot(2000);
 
-        // Now it's period 2!
-        _moveClock(2024 + 2 * slotsPerEpoch);
+        // note that the block timestamp starts from 1 (= slot 0) and the block number starts from 0
 
-        // these two should fail because not start yet
+        // now after moveClock(1500)
+        // timestamp = 1 + 1500 * 12 = slot 1500
+        // block_number = 0 + 1500 = 1500
+        _moveClock(1500);
+
+        // this should fail because not start yet
         vm.prank(alice);
-        // vm.expectRevert("You don't need to submit a report");
-        bool consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod2A);
+        vm.expectRevert("Report Slot has not started yet");
+        bool consensusReached = etherFiOracleInstance.submitReport(reportAtSlot3024);
+
+        // current slot = 1500
+        // after moveClock(500)
+        // timestamp = (1 + 1500 * 12) + 500 * 12 = 1 + 2000 * 12 = slot 2000
+        // block_number = 0 + 2000 = 2000
+        _moveClock(500);
+
+        // this should fail because start but in period 1
+        vm.prank(alice);
+        vm.expectRevert("Report Epoch is not finalized yet");
+        consensusReached = etherFiOracleInstance.submitReport(reportAtSlot3024);
+
+
+        _moveClock(1024 + 2 * slotsPerEpoch + 2);
+        
+        vm.prank(alice);
+        // vm.expectRevert("Report Epoch is not finalized yet");
+        consensusReached = etherFiOracleInstance.submitReport(reportAtSlot3024);
 
     }
 

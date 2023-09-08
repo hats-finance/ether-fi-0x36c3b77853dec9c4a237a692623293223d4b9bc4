@@ -185,7 +185,7 @@ contract TestSetup is Test {
     IEtherFiOracle.OracleReport reportAtPeriod3A;
     IEtherFiOracle.OracleReport reportAtPeriod3B;
     IEtherFiOracle.OracleReport reportAtPeriod4;
-    IEtherFiOracle.OracleReport reportAtSlot2000;
+    IEtherFiOracle.OracleReport reportAtSlot3024;
 
     int256 slotsPerEpoch = 32;
     int256 secondsPerSlot = 12;
@@ -402,7 +402,7 @@ contract TestSetup is Test {
         reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        // reportAtSlot2000 = IEtherFiOracle.OracleReport(1, 2000, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtSlot3024 = IEtherFiOracle.OracleReport(1, 2000, 3024 - 1, 2000, 3024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
 
         vm.stopPrank();
 
@@ -626,6 +626,7 @@ contract TestSetup is Test {
         assertEq(sent, true);
     }
 
+    // effect: current slot x, moveClock y slots, you are at x + y - 1
     function _moveClock(int256 numSlots) internal {
         assertEq(numSlots > 0, true);
         vm.warp(block.timestamp + uint256(numSlots * 12 seconds));

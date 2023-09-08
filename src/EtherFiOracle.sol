@@ -162,10 +162,12 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
     function _slotForNextReport() internal view returns (uint32) {
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
+        require(currSlot >= reportStartSlot, "Report Slot has not started yet");
         uint32 pastSlot = lastPublishedReportRefSlot == 0 ? reportStartSlot : lastPublishedReportRefSlot + 1;
         uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot) * reportPeriodSlot;
         uint32 __slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
         return __slotForNextReport - 1;
+        return 1;
     }
 
     function _computeSlotAtTimestamp(uint256 timestamp) public view returns (uint32) {
