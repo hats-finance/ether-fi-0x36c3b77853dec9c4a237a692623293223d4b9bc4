@@ -31,7 +31,7 @@ contract RegulationsManagerV2Test is Test {
 
         // admin sets terms
         vm.prank(admin);
-        regulationsManager.updateTermsOfService("I agree to ether.fi ToS", "0xI_am_a_real_hash :)", "1");
+        regulationsManager.updateTermsOfService("I agree to Ether.fi ToS", hex"1234567890000000000000000000000000000000000000000000000000000000", "1");
 
 
         // alice signs terms and verifies

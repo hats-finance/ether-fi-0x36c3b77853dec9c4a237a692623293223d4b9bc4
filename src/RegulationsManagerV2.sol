@@ -6,13 +6,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RegulationsManagerV2 is Ownable {
 
-    bytes32 constant TYPEHASH = keccak256("TermsOfService(bytes32 message,bytes32 hash)");
+    bytes32 constant TYPEHASH = keccak256("TermsOfService(string message,bytes32 hashOfTerms)");
     bytes32 constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,string version)");
     string public DOMAIN_NAME = "Ether.fi Terms of Service";
     string public DOMAIN_VERSION = "1";
 
     struct TermsOfService {
-        bytes32 message;
+        string message;
         bytes32 hashOfTerms;
     }
     TermsOfService public currentTerms;
@@ -44,7 +44,7 @@ contract RegulationsManagerV2 is Ownable {
     //----------------------------------  Admin   ------------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function updateTermsOfService(bytes32 _message, bytes32 _hashOfTerms, string calldata _domainVersion) external onlyOwner {
+    function updateTermsOfService(string memory _message, bytes32 _hashOfTerms, string memory _domainVersion) external onlyOwner {
         currentTerms = TermsOfService({ message: _message, hashOfTerms: _hashOfTerms });
         DOMAIN_VERSION = _domainVersion;
     }
