@@ -28,17 +28,28 @@ contract RegulationsManagerV2 is Ownable {
 
     function generateTermsDigest() public returns (bytes32) {
 
-        TermsOfService memory terms = currentTerms;
+        TermsOfService memory terms = TermsOfService({
+            message: "I agree to Ether.fi ToS",
+            hashOfTerms: hex"1234567890000000000000000000000000000000000000000000000000000000"
+        });
 
         bytes2 prefix = "\x19\x01";
-        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, DOMAIN_NAME, DOMAIN_VERSION));
-        bytes32 structHash = keccak256(abi.encode(TYPEHASH, terms.message, terms.hashOfTerms));
+        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(DOMAIN_NAME)), keccak256(bytes(DOMAIN_VERSION))));
+        console2.log("domainSeparator");
+        console2.logBytes32(domainSeparator);
 
-        console2.logBytes32(structHash);
+        //bytes32 structHash = keccak256(abi.encode(TYPEHASH, keccak256(bytes(terms.message))));
+        bytes32 structHash = keccak256(abi.encode(TYPEHASH, keccak256(bytes(terms.message)), terms.hashOfTerms));
 
         bytes32 digest = keccak256(abi.encodePacked(prefix, domainSeparator, structHash));
+        console2.log("digest");
+        console2.logBytes32(digest);
         return digest;
     }
+
+
+
+
 
     //--------------------------------------------------------------------------------------
     //----------------------------------  Admin   ------------------------------------------

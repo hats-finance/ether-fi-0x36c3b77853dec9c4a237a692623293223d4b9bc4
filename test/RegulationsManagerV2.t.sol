@@ -33,12 +33,13 @@ contract RegulationsManagerV2Test is Test {
         vm.prank(admin);
         regulationsManager.updateTermsOfService("I agree to Ether.fi ToS", hex"1234567890000000000000000000000000000000000000000000000000000000", "1");
 
-
         // alice signs terms and verifies
         vm.startPrank(alice);
         console2.log("alice", alice);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(aliceKey, regulationsManager.generateTermsDigest());
         bytes memory signature = abi.encodePacked(r, s, v);
+        console2.log("signature");
+        console2.logBytes(signature);
         regulationsManager.verifyTermsSignature(signature);
         vm.stopPrank();
 
@@ -52,6 +53,89 @@ contract RegulationsManagerV2Test is Test {
         vm.expectRevert("Ownable: caller is not the owner");
         regulationsManager.updateTermsOfService("Alice Rules, Brett Drools", "0xI_am_a_real_hash :)", "1");
 
+        // The following signature was generated using the eip712 functionality within metamask
+        assertEq(signature, hex"d13796e5a8f81385c3ce17a91f37f1837a4b530162513fcc04c1499d934c4b6e4f8150755391cce42180c45355419f9d1e93fda243f447faedd4ee00787518071c");
+
+        // if you wish to generate additional signatures you can use the following script.
+        // You must serve it from an http server if you want metamask to work properly
+        /*
+            <!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>EIP-712 Signature Demo</title>
+            </head>
+
+            <body>
+                <h1>EIP-712 Signature with MetaMask</h1>
+                <button onclick="requestSignature()">Sign Message</button>
+
+                <script>
+
+                    window.onload = function() {
+                        // Check for MetaMask on page load
+                        if (typeof window.ethereum === "undefined") {
+                            alert("Please install MetaMask.");
+                        }
+                    }
+
+                    function requestSignature() {
+                        // Check if MetaMask is installed and available
+                        if (typeof window.ethereum === "undefined") {
+                            alert("Please install MetaMask.");
+                        } else {
+                            window.ethereum.request({ method: 'eth_requestAccounts' })
+                                .then(accounts => {
+                                    // Define the data structure
+                                    const typedData = {
+                                            types: {
+                                                EIP712Domain: [
+                                                    { name: "name", type: "string" },
+                                                    { name: "version", type: "string" },
+                                                ],
+                                                TermsOfService: [
+                                                    { name: "message", type: "string" },
+                                                    { name: "hashOfTerms", type: "bytes32" }
+                                                ]
+                                            },
+                                            domain: {
+                                                name: "Ether.fi Terms of Service",
+                                                version: "1"
+                                            },
+                                            primaryType: "TermsOfService",
+                                            message: {
+                                                message: "I agree to Ether.fi ToS",
+                                                hashOfTerms: "0x1234567890000000000000000000000000000000000000000000000000000000"
+                                            }
+                                        };
+
+                                    // Request signing
+                                    window.ethereum
+                                        .request({
+                                            method: "eth_signTypedData_v4",
+                                            params: [accounts[0], JSON.stringify(typedData)],
+                                        })
+                                        .then(signature => {
+                                            console.log(`Signature: ${signature}`);
+                                            alert(`Signature: ${signature}`);
+                                        })
+                                        .catch(error => {
+                                            console.error("Error:", error);
+                                            alert("Error: " + error.message);
+                                        });
+                                })
+                                .catch(error => {
+                                    console.error("Error:", error);
+                                    alert("Error: " + error.message);
+                                });
+                        }
+                    }
+                </script>
+            </body>
+            </html>
+        */
     }
 
 }
