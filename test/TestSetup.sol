@@ -628,7 +628,7 @@ contract TestSetup is Test {
         assertEq(sent, true);
     }
 
-    // effect: current slot x, moveClock y slots, you are at x + y - 1
+    // effect: current slot x, moveClock y slots, you are at x + y
     function _moveClock(int256 numSlots) internal {
         assertEq(numSlots > 0, true);
         vm.warp(block.timestamp + uint256(numSlots * 12 seconds));
