@@ -215,6 +215,7 @@ contract EtherFiOracleTest is TestSetup {
     }
 
     function test_report_start_slot() public {
+        vm.prank(owner);
         etherFiOracleInstance.setReportStartSlot(2048);
 
         // note that the block timestamp starts from 1 (= slot 0) and the block number starts from 0
@@ -226,8 +227,8 @@ contract EtherFiOracleTest is TestSetup {
 
         // this should fail because not start yet
         vm.prank(alice);
-        vm.expectRevert("Report Slot has not started yet");
-        bool consensusReached = etherFiOracleInstance.submitReport(reportAtSlot3071);
+        vm.expectRevert("Report Epoch is not finalized yet");
+        etherFiOracleInstance.submitReport(reportAtSlot3071);
 
         // current slot = 1500
         // after moveClock(500)
@@ -238,29 +239,46 @@ contract EtherFiOracleTest is TestSetup {
         // this should fail because start but in period 1
         vm.prank(alice);
         vm.expectRevert("Report Epoch is not finalized yet");
-        consensusReached = etherFiOracleInstance.submitReport(reportAtSlot3071);
+        etherFiOracleInstance.submitReport(reportAtSlot3071);
 
         // 2048 + 1024 + 64 = 3136
         _moveClock(1024 + 2 * slotsPerEpoch);
         
         vm.prank(alice);
-        consensusReached = etherFiOracleInstance.submitReport(reportAtSlot3071);
+        etherFiOracleInstance.submitReport(reportAtSlot3071);
 
         // change startSlot to 3264
+        vm.prank(owner);
         etherFiOracleInstance.setReportStartSlot(3264);
 
         // slot 3236
         _moveClock(100);
         
         vm.prank(alice);
-        vm.expectRevert("Report Slot has not started yet");
-        consensusReached = etherFiOracleInstance.submitReport(reportAtSlot4287);
+        vm.expectRevert("Report Epoch is not finalized yet");
+        etherFiOracleInstance.submitReport(reportAtSlot4287);
 
         _moveClock(28 + 1024 + 2 * slotsPerEpoch);
 
         vm.prank(alice);
-        consensusReached = etherFiOracleInstance.submitReport(reportAtSlot4287);
+        etherFiOracleInstance.submitReport(reportAtSlot4287);
+    }
 
+    function test_pause() public {
+        _moveClock(1024 + 2 * slotsPerEpoch);
+        
+        vm.prank(owner);
+        etherFiOracleInstance.pauseContract();
+
+        vm.prank(alice);
+        vm.expectRevert("Pausable: paused");
+        etherFiOracleInstance.submitReport(reportAtPeriod2A);
+
+        vm.prank(owner);
+        etherFiOracleInstance.unPauseContract();
+
+        vm.prank(alice);
+        etherFiOracleInstance.submitReport(reportAtPeriod2A);
     }
 
     function test_set_quorum_size() public {
