@@ -790,7 +790,7 @@ contract TestSetup is Test {
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 60 ether}(bob, zeroProof);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();
 

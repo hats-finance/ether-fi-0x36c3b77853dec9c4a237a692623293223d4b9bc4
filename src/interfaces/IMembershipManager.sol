@@ -39,9 +39,9 @@ interface IMembershipManager {
 
     // State-changing functions
     function wrapEthForEap(uint256 _amount, uint256 _amountForPoint, uint32  _eapDepositBlockNumber, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) external payable returns (uint256);
-    function wrapEth(uint256 _amount, uint256 _amountForPoint, bytes32[] calldata _merkleProof) external payable returns (uint256);
+    function wrapEth(uint256 _amount, uint256 _amountForPoint) external payable returns (uint256);
 
-    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) external payable;
+    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) external payable;
 
     function requestWithdraw(uint256 _tokenId, uint256 _amount) external returns (uint256);
     function requestWithdrawAndBurn(uint256 _tokenId) external returns (uint256);

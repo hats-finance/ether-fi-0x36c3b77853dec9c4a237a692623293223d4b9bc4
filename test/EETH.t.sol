@@ -71,7 +71,7 @@ contract EETHTest is TestSetup {
         // Total pooled ether = 10
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(alice);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -95,7 +95,7 @@ contract EETHTest is TestSetup {
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 5 ether}(bob);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 25 ether);
@@ -141,7 +141,7 @@ contract EETHTest is TestSetup {
     function test_TransferWithAmount() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -175,7 +175,7 @@ contract EETHTest is TestSetup {
     function test_TransferWithZero() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -244,7 +244,7 @@ contract EETHTest is TestSetup {
     function test_TransferFromWithAmount() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -276,7 +276,7 @@ contract EETHTest is TestSetup {
     function test_TransferFromWithZero() public {
         startHoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);

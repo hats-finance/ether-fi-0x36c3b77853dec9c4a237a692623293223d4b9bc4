@@ -49,9 +49,9 @@ contract LiquidityPoolTest is TestSetup {
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.expectRevert(LiquidityPool.InvalidAmount.selector);
-        liquidityPoolInstance.deposit{value: 0 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 0 ether}(alice);
 
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
 
         vm.expectRevert(LiquidityPool.InvalidAmount.selector);
         liquidityPoolInstance.requestWithdraw(alice, 0);
@@ -67,11 +67,11 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.updateWhitelistStatus(true);
 
         vm.expectRevert("User is not whitelisted");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
         assertEq(address(liquidityPoolInstance).balance, 0);
 
         liquidityPoolInstance.updateWhitelistedAddresses(address(alice), true);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
 
         assertEq(address(liquidityPoolInstance).balance, 1 ether);
 
@@ -81,7 +81,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
         vm.deal(alice, 2 ether);
         vm.expectRevert("User is not eligible to participate");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
         vm.stopPrank();
 
         hoax(alice);
@@ -89,10 +89,10 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(alice);
         uint256 aliceBalBefore = alice.balance;
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(alice.balance, aliceBalBefore - 2 ether);
     }
@@ -103,14 +103,14 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.startPrank(owner);
         vm.expectRevert();
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
     }
 
     function test_WithdrawLiquidityPoolWithInvalidPermitFails() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         vm.stopPrank();
@@ -128,7 +128,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         vm.stopPrank();
@@ -147,7 +147,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 0);
@@ -156,14 +156,14 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 2 ether}(bob);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 2 ether);
         vm.stopPrank();
 
         vm.startPrank(alice);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
         assertEq(alice.balance, 0 ether);
         assertEq(eETHInstance.balanceOf(alice), 3 ether);
         assertEq(eETHInstance.balanceOf(bob), 2 ether);
@@ -201,7 +201,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(bob, 100 ether);
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 100 ether}(bob, bobProof);        
+        liquidityPoolInstance.deposit{value: 100 ether}(bob);        
         vm.stopPrank();
 
         startHoax(alice);
@@ -222,14 +222,14 @@ contract LiquidityPoolTest is TestSetup {
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         vm.deal(alice, 3 ether);
         vm.expectRevert();
-        liquidityPoolNoToken.deposit{value: 2 ether}(alice, aliceProof);
+        liquidityPoolNoToken.deposit{value: 2 ether}(alice);
     }
 
     function test_selfdestruct() public {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
         vm.stopPrank();
 
         assertEq(alice.balance, 1 ether);
@@ -251,7 +251,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(alice, 3 ether);
         vm.startPrank(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 2 ether}(alice);
         assertEq(alice.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 0);
@@ -260,7 +260,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(bob, 3 ether);
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 2 ether}(bob);
         assertEq(bob.balance, 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         assertEq(eETHInstance.balanceOf(bob), 2 ether);
@@ -314,7 +314,7 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob);
         vm.stopPrank();
 
         assertEq(address(liquidityPoolInstance).balance, 60 ether);
@@ -372,7 +372,7 @@ contract LiquidityPoolTest is TestSetup {
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 60 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob);
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();
@@ -514,11 +514,11 @@ contract LiquidityPoolTest is TestSetup {
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.expectRevert("Liquid staking functions are closed");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
 
         liquidityPoolInstance.updateLiquidStakingStatus(true);
 
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}(alice);
 
         liquidityPoolInstance.updateLiquidStakingStatus(false);
     
@@ -531,7 +531,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(bob, 100 ether);
         vm.startPrank(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 100 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 100 ether}(bob);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 100 ether);
@@ -655,7 +655,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice));
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
         _moveClock(1119296511);
@@ -673,7 +673,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(alice);
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 630 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 630 ether}(address(alice));
         
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         (firstIndex, lastIndex, lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
@@ -709,7 +709,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice));
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         liquidityPoolInstance.dutyForWeek();
@@ -744,7 +744,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(alice);
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 300 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 300 ether}(address(alice));
 
         IEtherFiOracle.OracleReport memory report2 = _emptyOracleReport();
 
@@ -813,7 +813,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 200 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 200 ether}(address(alice));
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         liquidityPoolInstance.dutyForWeek();
@@ -893,7 +893,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 570 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 570 ether}(address(alice));
 
         vm.stopPrank();
         
@@ -953,7 +953,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.deal(alice, 100000 ether);
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 77000 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 77000 ether}(address(alice));
         vm.stopPrank();
 
         //Call duty for the week, and in this example, the data is:
@@ -1022,7 +1022,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice));
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         liquidityPoolInstance.dutyForWeek();
@@ -1053,7 +1053,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
         
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 370 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 370 ether}(address(alice));
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         liquidityPoolInstance.dutyForWeek();
@@ -1138,7 +1138,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
         
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 630 ether}(address(alice), aliceProof);    
+        liquidityPoolInstance.deposit{value: 630 ether}(address(alice));    
 
         vm.stopPrank();
 
@@ -1221,7 +1221,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice));
         vm.stopPrank();
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
@@ -1320,7 +1320,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 240 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 240 ether}(address(alice));
         vm.stopPrank();
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp

@@ -32,7 +32,7 @@ contract NFTExchangeTest is TestSetup {
         // Owner mints a membership NFT holding 30 ETH
         vm.deal(alice, 100 ether);
         vm.startPrank(alice);
-        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint40 loyaltyPoints = 10000;
@@ -108,7 +108,7 @@ contract NFTExchangeTest is TestSetup {
 
         // need to give liquidity pool a little more eth to cover previous withdrawal
         vm.prank(alice);
-        liquidityPoolInstance.deposit{value: 0.1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 0.1 ether}(alice);
 
         // Success: Owner brings the T-NFT to the liquidity pool and gets 30 ETH
         vm.prank(owner);
@@ -136,7 +136,7 @@ contract NFTExchangeTest is TestSetup {
         // Owner mints a membership NFT holding 30 ETH
         vm.deal(alice, 100 ether);
         vm.startPrank(alice);
-        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint40 loyaltyPoints = 10000;
@@ -178,7 +178,7 @@ contract NFTExchangeTest is TestSetup {
         // Owner mints a membership NFT holding 30 ETH
         vm.deal(alice, 100 ether);
         vm.startPrank(alice);
-        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint40 loyaltyPoints = 10000;
@@ -220,7 +220,7 @@ contract NFTExchangeTest is TestSetup {
         // Owner mints a membership NFT holding 30 ETH
         vm.deal(alice, 30 ether);
         vm.startPrank(alice);
-        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, ownerProof);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint40 loyaltyPoints = 10000;

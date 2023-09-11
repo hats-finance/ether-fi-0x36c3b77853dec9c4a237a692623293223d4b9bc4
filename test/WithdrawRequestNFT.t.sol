@@ -23,8 +23,7 @@ contract WithdrawRequestNFTTest is TestSetup {
 
     function test_RequestWithdraw() public {
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -47,8 +46,7 @@ contract WithdrawRequestNFTTest is TestSetup {
 
     function test_RequestIdIncrements() public {
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -74,8 +72,7 @@ contract WithdrawRequestNFTTest is TestSetup {
 
     function test_finalizeRequests() public {
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -103,8 +100,7 @@ contract WithdrawRequestNFTTest is TestSetup {
 
     function test_requestWithdraw() public {
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -128,8 +124,7 @@ contract WithdrawRequestNFTTest is TestSetup {
 
     function testInvalidClaimWithdraw() public {
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob);
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -152,8 +147,7 @@ contract WithdrawRequestNFTTest is TestSetup {
 
     function test_ValidClaimWithdraw() public {
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob);
         vm.stopPrank();
 
         uint256 bobsStartingBalance = address(bob).balance;
@@ -190,7 +184,7 @@ contract WithdrawRequestNFTTest is TestSetup {
 
         startHoax(bob);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}(bob);
         vm.stopPrank();
 
         uint256 bobsStartingBalance = address(bob).balance;
