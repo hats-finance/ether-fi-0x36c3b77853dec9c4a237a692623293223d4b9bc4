@@ -17,6 +17,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     uint32 public consensusVersion; // the version of the consensus
     uint32 public quorumSize; // the required supports to reach the consensus
     uint32 public reportPeriodSlot; // the period of the oracle report in # of slots
+    uint32 public reportStartSlot; // the first report slot
 
     uint32 public lastPublishedReportRefSlot; // the ref slot of the last published report
     uint32 public lastPublishedReportRefBlock; // the ref block of the last published report
@@ -35,6 +36,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     event QuorumUpdated(uint32 newQuorumSize);
     event ConsensusVersionUpdated(uint32 newConsensusVersion);
     event OracleReportPeriodUpdated(uint32 newOracleReportPeriod);
+    event ReportStartSlotUpdated(uint32 reportStartSlot);
 
     event ReportPublished(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash);
     event ReportSubmitted(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash, address committeeMember);
@@ -45,7 +47,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         _disableInitializers();
     }
 
-    function initialize(uint32 _quorumSize, uint32 _reportPeriodSlot, uint32 _slotsPerEpoch, uint32 _secondsPerSlot, uint32 _genesisTime)
+    function initialize(uint32 _quorumSize, uint32 _reportPeriodSlot, uint32 _reportStartSlot, uint32 _slotsPerEpoch, uint32 _secondsPerSlot, uint32 _genesisTime)
         external
         initializer
     {
@@ -55,6 +57,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         consensusVersion = 1;
         reportPeriodSlot = _reportPeriodSlot;
         quorumSize = _quorumSize;
+        reportStartSlot = _reportStartSlot;
         SLOTS_PER_EPOCH = _slotsPerEpoch;
         SECONDS_PER_SLOT = _secondsPerSlot;
         BEACON_GENESIS_TIME = _genesisTime;
@@ -98,16 +101,16 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     // For generating the next report, the starting & ending points need to be specified.
     // The report should include data for the specified slot and block ranges (inclusive)
     function blockStampForNextReport() public view returns (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) {
-        slotFrom = lastPublishedReportRefSlot == 0 ? 0 : lastPublishedReportRefSlot + 1;
-        slotTo = _slotForNextReport();
-        blockFrom = lastPublishedReportRefBlock == 0 ? 0 : lastPublishedReportRefBlock + 1;
+        slotFrom = lastPublishedReportRefSlot == 0 ? reportStartSlot : lastPublishedReportRefSlot + 1;
+        slotTo = slotForNextReport();
+        blockFrom = lastPublishedReportRefBlock == 0 ? reportStartSlot : lastPublishedReportRefBlock + 1;
         // `blockTo` can't be decided since a slot may not have any block (`missed slot`)
     }
 
     function shouldSubmitReport(address _member) public view returns (bool) {
         require(committeeMemberStates[_member].registered, "You are not registered as the Oracle committee member");
         require(committeeMemberStates[_member].enabled, "You are disabled");
-        uint32 slot = _slotForNextReport();
+        uint32 slot = slotForNextReport();
         require(_isFinalized(slot), "Report Epoch is not finalized yet");
         return slot > committeeMemberStates[_member].lastReportRefSlot;
     }
@@ -157,9 +160,10 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     // Given the last published report AND the current slot number,
     // Return the next report's `slotTo` that we are waiting for
     // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
-    function _slotForNextReport() internal view returns (uint32) {
+    function slotForNextReport() public view returns (uint32) {
         uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
-        uint32 pastSlot = lastPublishedReportRefSlot == 0 ? 0 : lastPublishedReportRefSlot + 1;
+        require(currSlot >= reportStartSlot, "Report Slot has not started yet");
+        uint32 pastSlot = lastPublishedReportRefSlot == 0 ? reportStartSlot : lastPublishedReportRefSlot + 1;
         uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot) * reportPeriodSlot;
         uint32 __slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
         return __slotForNextReport - 1;
@@ -235,6 +239,14 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         }
 
         emit CommitteeMemberUpdated(_address, _enabled);
+    }
+
+    // only admin
+    function setReportStartSlot(uint32 _reportStartSlot) public {
+        // check if the start slot is at the beginning of the epoch
+        require(_reportStartSlot % 32 == 0, "The start slot should be at the beginning of the epoch");
+        reportStartSlot = _reportStartSlot;
+        emit ReportStartSlotUpdated(_reportStartSlot);
     }
 
     function setQuorumSize(uint32 _quorumSize) public onlyOwner {

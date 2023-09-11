@@ -185,6 +185,8 @@ contract TestSetup is Test {
     IEtherFiOracle.OracleReport reportAtPeriod3A;
     IEtherFiOracle.OracleReport reportAtPeriod3B;
     IEtherFiOracle.OracleReport reportAtPeriod4;
+    IEtherFiOracle.OracleReport reportAtSlot3071;
+    IEtherFiOracle.OracleReport reportAtSlot4287;
 
     int256 slotsPerEpoch = 32;
     int256 secondsPerSlot = 12;
@@ -348,7 +350,7 @@ contract TestSetup is Test {
         etherFiOracleImplementation = new EtherFiOracle();
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
         etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
-        etherFiOracleInstance.initialize(2, 1024, 32, 12, 1);
+        etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, 1);
         
         etherFiOracleInstance.addCommitteeMember(alice);
         etherFiOracleInstance.addCommitteeMember(bob);
@@ -401,6 +403,8 @@ contract TestSetup is Test {
         reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
         reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtSlot3071 = IEtherFiOracle.OracleReport(1, 2048, 3072 - 1, 2048, 3072 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtSlot4287 = IEtherFiOracle.OracleReport(1, 3264, 4288 - 1, 3264, 4288 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
 
         vm.stopPrank();
 
@@ -624,6 +628,7 @@ contract TestSetup is Test {
         assertEq(sent, true);
     }
 
+    // effect: current slot x, moveClock y slots, you are at x + y
     function _moveClock(int256 numSlots) internal {
         assertEq(numSlots > 0, true);
         vm.warp(block.timestamp + uint256(numSlots * 12 seconds));
