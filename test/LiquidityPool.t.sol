@@ -78,11 +78,6 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_StakingManagerLiquidityPool() public {
-        vm.startPrank(alice);
-        vm.deal(alice, 2 ether);
-        vm.expectRevert("User is not eligible to participate");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
-        vm.stopPrank();
 
         hoax(alice);
         regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);

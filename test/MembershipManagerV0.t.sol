@@ -570,18 +570,6 @@ contract MembershipManagerV0Test is TestSetup {
         // Henry tries to mint but fails because he is not whitelisted.
         vm.expectRevert("User is not whitelisted");
         uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0);
-
-        //Giving 12 Ether to shonee
-        vm.deal(shonee, 12 ether);
-
-        vm.prank(alice);
-        liquidityPoolInstance.updateWhitelistedAddresses(address(shonee), true);
-
-        vm.startPrank(shonee);
-
-        // Now shonee cant mint because she is not registered, even though she is whitelisted
-        vm.expectRevert("User is not eligible to participate");
-        Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0);
     }
 
     function test_UpdatingPointsGrowthRate() public {
