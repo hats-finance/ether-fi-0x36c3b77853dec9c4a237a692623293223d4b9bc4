@@ -553,39 +553,39 @@ contract MembershipManagerV0Test is TestSetup {
         assertEq(membershipNftInstance.valueOf(token2), 2 ether);   
     }
 
-    function test_WrapEthFailsIfNotCorrectlyEligible() public {
-        //NOTE: Test that wrappingETH fails in both scenarios listed below:
-            // 1. User is not whitelisted
-            // 2. User is whitelisted but not registered
+    // function test_WrapEthFailsIfNotCorrectlyEligible() public {
+    //     //NOTE: Test that wrappingETH fails in both scenarios listed below:
+    //         // 1. User is not whitelisted
+    //         // 2. User is whitelisted but not registered
 
-        //Giving 12 Ether to alice and henry
-        vm.deal(henry, 12 ether);
-        vm.deal(alice, 12 ether);
+    //     //Giving 12 Ether to alice and henry
+    //     vm.deal(henry, 12 ether);
+    //     vm.deal(alice, 12 ether);
 
-        vm.prank(alice);
-        liquidityPoolInstance.updateWhitelistStatus(true);
+    //     vm.prank(alice);
+    //     liquidityPoolInstance.updateWhitelistStatus(true);
 
-        vm.prank(henry);
+    //     vm.prank(henry);
 
-        // Henry tries to mint but fails because he is not whitelisted.
-        vm.expectRevert("User is not whitelisted");
-        uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, emptyProof);
+    //     // Henry tries to mint but fails because he is not whitelisted.
+    //     vm.expectRevert("User is not whitelisted");
+    //     uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, emptyProof);
 
-        //Giving 12 Ether to shonee
-        vm.deal(shonee, 12 ether);
+    //     //Giving 12 Ether to shonee
+    //     vm.deal(shonee, 12 ether);
 
-        vm.prank(alice);
-        liquidityPoolInstance.updateWhitelistedAddresses(address(shonee), true);
+    //     vm.prank(alice);
+    //     liquidityPoolInstance.updateWhitelistedAddresses(address(shonee), true);
 
-        vm.startPrank(shonee);
+    //     vm.startPrank(shonee);
 
-        //This is the merkle proof for Shonee
-        shoneeProof = merkle.getProof(whiteListedAddresses, 11);
+    //     //This is the merkle proof for Shonee
+    //     shoneeProof = merkle.getProof(whiteListedAddresses, 11);
 
-        // Now shonee cant mint because she is not registered, even though she is whitelisted
-        vm.expectRevert("User is not eligible to participate");
-        Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, shoneeProof);
-    }
+    //     // Now shonee cant mint because she is not registered, even though she is whitelisted
+    //     vm.expectRevert("User is not eligible to participate");
+    //     Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0, shoneeProof);
+    // }
 
     function test_UpdatingPointsGrowthRate() public {
         vm.deal(alice, 1 ether);

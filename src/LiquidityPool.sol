@@ -100,8 +100,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function initializePhase2() external onlyOwner {        
-        schedulingPeriodInSeconds = 604800;
-
         fundStatistics[SourceOfFunds.EETH].numberOfValidators = 1;
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = 1;
     }
@@ -295,14 +293,27 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit BnftHolderRegistered(msg.sender);
     }
 
+
+    function fixData() public onlyAdmin {
+        delete bnftHolders;
+    }
+
+    function addHolders() public {
+        registerAsBnftHolder(0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA);
+        registerAsBnftHolder(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39);
+        registerAsBnftHolder(0x6f6C30D101c3FDa90546C0eA829726801A887b3f);
+    }
+
     function deRegisterBnftHolder(uint256 _index) external {
         require(admins[msg.sender] || msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
         require(_index < bnftHolders.length, "Invalid index");
 
+        address holder = bnftHolders[_index].holder;
+
         bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
         bnftHolders.pop();
 
-        emit BnftHolderDeregistered(msg.sender, _index);
+        emit BnftHolderDeregistered(holder, _index);
     }
 
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
@@ -428,17 +439,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }
 
-    function updateWhitelistedAddresses(address _user, bool _value) external onlyAdmin {
-        whitelisted[_user] = _value;
+    // function updateWhitelistedAddresses(address _user, bool _value) external onlyAdmin {
+    //     whitelisted[_user] = _value;
 
-        emit UpdatedWhitelist(_user, _value);
-    }
+    //     emit UpdatedWhitelist(_user, _value);
+    // }
 
-    function updateWhitelistStatus(bool _value) external onlyAdmin {
-        whitelistEnabled = _value;
+    // function updateWhitelistStatus(bool _value) external onlyAdmin {
+    //     whitelistEnabled = _value;
 
-        emit WhitelistStatusUpdated(_value);
-    }
+    //     emit WhitelistStatusUpdated(_value);
+    // }
 
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
@@ -464,6 +475,10 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function _getCurrentSchedulingStartTimestamp() internal view returns (uint256) {
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
+    }
+
+    function getArrayLength() public returns (uint256) {
+        return bnftHolders.length;
     }
 
     function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view {

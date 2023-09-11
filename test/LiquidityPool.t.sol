@@ -59,23 +59,23 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
     }
 
-    function test_DepositWhenNotWhitelisted() public {
-        vm.deal(alice, 1 ether);
+    // function test_DepositWhenNotWhitelisted() public {
+    //     vm.deal(alice, 1 ether);
 
-        vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.updateWhitelistStatus(true);
+    //     vm.startPrank(alice);
+    //     regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
+    //     liquidityPoolInstance.updateWhitelistStatus(true);
 
-        vm.expectRevert("User is not whitelisted");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
-        assertEq(address(liquidityPoolInstance).balance, 0);
+    //     vm.expectRevert("User is not whitelisted");
+    //     liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+    //     assertEq(address(liquidityPoolInstance).balance, 0);
 
-        liquidityPoolInstance.updateWhitelistedAddresses(address(alice), true);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+    //     liquidityPoolInstance.updateWhitelistedAddresses(address(alice), true);
+    //     liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
 
-        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+    //     assertEq(address(liquidityPoolInstance).balance, 1 ether);
 
-    }
+    // }
 
     function test_StakingManagerLiquidityPool() public {
         vm.startPrank(alice);
@@ -1298,6 +1298,16 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(liquidityPoolInstance.numPendingDeposits(), 3);
         assertEq(BNFTInstance.balanceOf(alice), 1);
         assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 1);
+    }
+
+    function test_DeleteArray() public {
+        setUpBnftHolders();
+
+        vm.startPrank(alice);
+        console.log(liquidityPoolInstance.getArrayLength());
+        liquidityPoolInstance.fixData();
+        console.log(liquidityPoolInstance.getArrayLength());
+        vm.stopPrank();
     }
 
     function test_DepositFromBNFTHolderTwice() public {
