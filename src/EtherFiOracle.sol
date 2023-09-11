@@ -5,11 +5,13 @@ pragma solidity ^0.8.13;
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 
 import "./interfaces/IEtherFiOracle.sol";
 
+import "forge-std/console.sol";
 
-contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IEtherFiOracle {
+contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable, UUPSUpgradeable, IEtherFiOracle {
 
     mapping(address => IEtherFiOracle.CommitteeMemberState) public committeeMemberStates; // committee member wallet address to its State
     mapping(bytes32 => IEtherFiOracle.ConsensusState) public consensusStates; // report's hash -> Consensus State
@@ -63,7 +65,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         BEACON_GENESIS_TIME = _genesisTime;
     }
 
-    function submitReport(OracleReport calldata _report) external returns (bool) {
+    function submitReport(OracleReport calldata _report) external whenNotPaused returns (bool) {
         require(shouldSubmitReport(msg.sender), "You don't need to submit a report");
         verifyReport(_report);
 
@@ -112,6 +114,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         require(committeeMemberStates[_member].enabled, "You are disabled");
         uint32 slot = slotForNextReport();
         require(_isFinalized(slot), "Report Epoch is not finalized yet");
+        require(computeSlotAtTimestamp(block.timestamp) >= reportStartSlot, "Report Slot has not started yet");
         return slot > committeeMemberStates[_member].lastReportRefSlot;
     }
 
@@ -125,7 +128,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         require(_report.refBlockTo < block.number, "Report is for wrong blockTo");
 
         // If two epochs in a row are justified, the current_epoch - 2 is considered finalized
-        uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
+        uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 reportEpoch = (_report.refSlotTo / SLOTS_PER_EPOCH);
         require(reportEpoch < currEpoch - 2, "Report Epoch is not finalized yet");
@@ -136,7 +139,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     }
 
     function _isFinalized(uint32 _slot) internal view returns (bool) {
-        uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
+        uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 slotEpoch = (_slot / SLOTS_PER_EPOCH);
         return slotEpoch < currEpoch - 2;
@@ -161,15 +164,15 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
     // Return the next report's `slotTo` that we are waiting for
     // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
     function slotForNextReport() public view returns (uint32) {
-        uint32 currSlot = _computeSlotAtTimestamp(block.timestamp);
-        require(currSlot >= reportStartSlot, "Report Slot has not started yet");
+        uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 pastSlot = lastPublishedReportRefSlot == 0 ? reportStartSlot : lastPublishedReportRefSlot + 1;
-        uint32 tmp = pastSlot + ((currSlot - pastSlot) / reportPeriodSlot) * reportPeriodSlot;
+        uint32 diff = currSlot > pastSlot ? currSlot - pastSlot : 0;
+        uint32 tmp = pastSlot + (diff / reportPeriodSlot) * reportPeriodSlot;
         uint32 __slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
         return __slotForNextReport - 1;
     }
 
-    function _computeSlotAtTimestamp(uint256 timestamp) public view returns (uint32) {
+    function computeSlotAtTimestamp(uint256 timestamp) public view returns (uint32) {
         return uint32((timestamp - BEACON_GENESIS_TIME) / SECONDS_PER_SLOT);
     }
 
@@ -208,8 +211,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         return keccak256(abi.encodePacked(chunk1, chunk2, chunk3));
     }
 
-    // only admin
-    function addCommitteeMember(address _address) public {
+    function addCommitteeMember(address _address) public onlyOwner {
         require(committeeMemberStates[_address].registered == false, "Already registered");
         numCommitteeMembers++;
         numActiveCommitteeMembers++;
@@ -218,8 +220,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         emit CommitteeMemberAdded(_address);
     }
 
-    // only admin
-    function removeCommitteeMember(address _address) public {
+    function removeCommitteeMember(address _address) public onlyOwner {
         require(committeeMemberStates[_address].registered == true, "Not registered");
         numCommitteeMembers--;
         delete committeeMemberStates[_address];
@@ -227,8 +228,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         emit CommitteeMemberRemoved(_address);
     }
 
-    // only admin
-    function manageCommitteeMember(address _address, bool _enabled) public {
+    function manageCommitteeMember(address _address, bool _enabled) public onlyOwner {
         require(committeeMemberStates[_address].registered == true, "Not registered");
         require(committeeMemberStates[_address].enabled != _enabled, "Already in the target state");
         committeeMemberStates[_address].enabled = _enabled;
@@ -241,8 +241,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         emit CommitteeMemberUpdated(_address, _enabled);
     }
 
-    // only admin
-    function setReportStartSlot(uint32 _reportStartSlot) public {
+    function setReportStartSlot(uint32 _reportStartSlot) public onlyOwner {
         // check if the start slot is at the beginning of the epoch
         require(_reportStartSlot % 32 == 0, "The start slot should be at the beginning of the epoch");
         reportStartSlot = _reportStartSlot;
@@ -268,6 +267,14 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, UUPSUpgradeable, IE
         consensusVersion = _consensusVersion;
 
         emit ConsensusVersionUpdated(_consensusVersion);
+    }
+
+    function pauseContract() external onlyOwner {
+        _pause();
+    }
+
+    function unPauseContract() external onlyOwner {
+        _unpause();
     }
 
     function getImplementation() external view returns (address) {
