@@ -51,8 +51,8 @@ interface ILiquidityPool {
     function sharesForWithdrawalAmount(uint256 _amount) external view returns (uint256);
     function amountForShare(uint256 _share) external view returns (uint256);
 
-    function deposit(address _user, bytes32[] calldata _merkleProof) external payable returns (uint256);
-    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) external payable returns (uint256);
+    function deposit(address _user) external payable returns (uint256);
+    function deposit(address _user, address _recipient) external payable returns (uint256);
     function withdraw(address _recipient, uint256 _amount) external returns (uint256);
     function requestWithdraw(address recipient, uint256 amount) external returns (uint256);
     function requestWithdrawWithPermit(address _owner, uint256 _amount, PermitInput calldata _permit) external returns (uint256);

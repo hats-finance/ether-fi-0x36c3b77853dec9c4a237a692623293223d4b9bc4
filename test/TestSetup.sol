@@ -515,9 +515,6 @@ contract TestSetup is Test {
             actors.push(actor);
             whitelistIndices.push(whiteListedAddresses.length);
             whiteListedAddresses.push(keccak256(abi.encodePacked(actor)));
-            vm.startPrank(actor);
-            regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-            vm.stopPrank();
         }
     }
 
@@ -799,8 +796,7 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 60 ether}(bob, zeroProof);
+        liquidityPoolInstance.deposit{value: 60 ether}(bob);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();
 

@@ -117,8 +117,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint40 loyaltyPoints = uint40(_min(_points, type(uint40).max));
         uint40 tierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
 
-        bytes32[] memory zeroProof;
-        liquidityPool.deposit{value: msg.value}(msg.sender, address(this), zeroProof);
+        liquidityPool.deposit{value: msg.value}(msg.sender, address(this));
 
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
@@ -136,16 +135,15 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @dev This function allows users to wrap their ETH into membership NFT.
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
-    /// @param _merkleProof Array of hashes forming the merkle proof for the user.
     /// @return tokenId The ID of the minted membership NFT.
-    function wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused returns (uint256) {
+    function wrapEth(uint256 _amount, uint256 _amountForPoints) public payable whenNotPaused returns (uint256) {
         uint256 feeAmount = mintFee * 0.001 ether;
         uint256 depositPerNFT = _amount + _amountForPoints;
         uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
 
         if (depositPerNFT / 1 gwei < minDepositGwei || msg.value != ethNeededPerNFT) revert InvalidDeposit();
 
-        return _wrapEth(_amount, _amountForPoints, _merkleProof);
+        return _wrapEth(_amount, _amountForPoints);
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
@@ -153,14 +151,13 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _tokenId ID of NFT token
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
-    /// @param _merkleProof array of hashes forming the merkle proof for the user
-    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) public payable whenNotPaused {
+    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) public payable whenNotPaused {
         _requireTokenOwner(_tokenId);
 
         claim(_tokenId);
 
         uint256 additionalDeposit = _topUpDeposit(_tokenId, _amount, _amountForPoints);
-        liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this), _merkleProof);
+        liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this));
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -242,7 +239,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 etherFanEEthShares = eETH.shares(address(this));
         uint256 thresholdAmount = fanBoostThresholdEthAmount();
         if (address(this).balance >= thresholdAmount) {
-            uint256 mintedShare = liquidityPool.deposit{value: thresholdAmount}(address(this), address(this), new bytes32[](0));
+            uint256 mintedShare = liquidityPool.deposit{value: thresholdAmount}(address(this), address(this));
             ethRewardsPerEEthShareAfterRebase += 1 ether * thresholdAmount / etherFanEEthShares;
         }
 
@@ -455,8 +452,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         return additionalDeposit;
     }
 
-    function _wrapEth(uint256 _amount, uint256 _amountForPoints, bytes32[] calldata _merkleProof) internal returns (uint256) {
-        liquidityPool.deposit{value: _amount + _amountForPoints}(msg.sender, address(this), _merkleProof);
+    function _wrapEth(uint256 _amount, uint256 _amountForPoints) internal returns (uint256) {
+        liquidityPool.deposit{value: _amount + _amountForPoints}(msg.sender, address(this));
         uint256 tokenId = _mintMembershipNFT(msg.sender, _amount, _amountForPoints, 0, 0);
         _emitNftUpdateEvent(tokenId);
         return tokenId;

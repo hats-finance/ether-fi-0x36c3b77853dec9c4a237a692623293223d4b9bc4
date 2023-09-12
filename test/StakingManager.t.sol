@@ -73,13 +73,11 @@ contract StakingManagerTest is TestSetup {
         vm.deal(alice, 100000 ether);
         vm.deal(greg, 100000 ether);
 
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-
         //Set the max number of validators per holder to 4
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
-        liquidityPoolInstance.deposit{value: 120 ether}(address(alice), aliceProof);
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice));
         vm.stopPrank();
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp

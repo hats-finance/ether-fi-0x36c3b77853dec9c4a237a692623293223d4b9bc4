@@ -7,11 +7,11 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
+import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IStakingManager.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/IStakingManager.sol";
-import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/ITNFT.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
@@ -25,7 +25,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     IStakingManager public stakingManager;
     IEtherFiNodesManager public nodesManager;
-    IRegulationsManager public regulationsManager;
+    IRegulationsManager public DEPRECATED_regulationsManager;
     IMembershipManager public membershipManager;
     ITNFT public tNft;
     IeETH public eETH; 
@@ -38,14 +38,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     address public DEPRECATED_admin;
 
     uint32 public numPendingDeposits; // number of deposits to the staking manager, which needs 'registerValidator'
-    
+
     address public DEPRECATED_bNftTreasury;
     IWithdrawRequestNFT public withdrawRequestNFT;
 
     BnftHolder[] public bnftHolders;
     uint128 public max_validators_per_owner;
     uint128 public schedulingPeriodInSeconds;
-    
+
     HoldersUpdate public holdersUpdate;
 
     mapping(address => bool) public admins;
@@ -94,8 +94,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function initialize(address _regulationsManager) external initializer NonZeroAddress(_regulationsManager) {
         __Ownable_init();
-        __UUPSUpgradeable_init();
-        regulationsManager = IRegulationsManager(_regulationsManager);
+        __UUPSUpgradeable_init(); 
     }
 
     function initializePhase2() external onlyOwner {        
@@ -105,24 +104,24 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = 1;
     }
 
-    function deposit(address _user, bytes32[] calldata _merkleProof) external payable returns (uint256) {
-        return deposit(_user, _user, _merkleProof);
+    function deposit(address _user) external payable returns (uint256) {
+        return deposit(_user, _user);
     }
 
     /// @notice deposit into pool
     /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) public payable returns (uint256) {
+    function deposit(address _user, address _recipient) public payable returns (uint256) {
         if(msg.sender == address(membershipManager)) {
             if (_user != address(membershipManager)) {
-                _isWhitelistedAndEligible(_user, _merkleProof);
-            }       
+                _isWhitelisted(_user);
+            }
             emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
         } else {
-            _isWhitelistedAndEligible(msg.sender, _merkleProof);
+            _isWhitelisted(msg.sender);
             emit FundsDeposited(SourceOfFunds.EETH, msg.value);
         }
         require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
-        
+
         totalValueInLp += uint128(msg.value);
         uint256 share = _sharesForDepositAmount(msg.value);
         if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
@@ -491,9 +490,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
 
-    function _isWhitelistedAndEligible(address _user, bytes32[] calldata _merkleProof) internal view {
+    function _isWhitelisted(address _user) internal view {
         require(!whitelistEnabled || whitelisted[_user], "User is not whitelisted");
-        require(regulationsManager.isEligible(regulationsManager.whitelistVersion(), _user) == true, "User is not eligible to participate");
     }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
