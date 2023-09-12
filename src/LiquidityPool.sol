@@ -92,7 +92,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp += uint128(msg.value);
     }
 
-    function initialize(address _regulationsManager) external initializer NonZeroAddress(_regulationsManager) {
+    function initialize() external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init(); 
     }

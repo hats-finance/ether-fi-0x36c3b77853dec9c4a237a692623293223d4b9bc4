@@ -77,7 +77,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPoolImplementation = new LiquidityPool();
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPool = LiquidityPool(payable(address(liquidityPoolProxy)));
-        liquidityPool.initialize(address(regulationsManager));
+        liquidityPool.initialize();
         liquidityPool.setTnft(tnft);
         liquidityPool.setStakingManager(stakingManagerProxyAddress);
         liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);

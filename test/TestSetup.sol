@@ -283,11 +283,11 @@ contract TestSetup is Test {
 
         liquidityPoolImplementation = new LiquidityPool();
         vm.expectRevert("Initializable: contract is already initialized");
-        liquidityPoolImplementation.initialize(address(regulationsManagerInstance));
+        liquidityPoolImplementation.initialize();
 
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
-        liquidityPoolInstance.initialize(address(regulationsManagerInstance));
+        liquidityPoolInstance.initialize();
         liquidityPoolInstance.setTnft(address(TNFTInstance));
         liquidityPoolInstance.updateAdmin(alice, true);
 
