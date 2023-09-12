@@ -37,6 +37,11 @@ interface ILiquidityPool {
         uint32 timestamp;
     }
 
+    struct BnftHoldersIndex {
+        bool registered;
+        uint32 index;
+    }
+
     function numPendingDeposits() external view returns (uint32);
     function totalValueOutOfLp() external view returns (uint128);
     function totalValueInLp() external view returns (uint128);

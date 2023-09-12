@@ -757,6 +757,14 @@ contract TestSetup is Test {
         vm.deal(elvis, 100000 ether);
         vm.deal(henry, 100000 ether);
         vm.deal(chad, 100000 ether);
+
+        (bool registered, uint32 index) = liquidityPoolInstance.bnftHoldersIndexes(alice);
+        assertEq(registered, true);
+        assertEq(index, 0);
+
+        (registered, index) = liquidityPoolInstance.bnftHoldersIndexes(henry);
+        assertEq(registered, true);
+        assertEq(index, 7);
     }
 
     function launch_validator() internal returns (uint256[] memory) {

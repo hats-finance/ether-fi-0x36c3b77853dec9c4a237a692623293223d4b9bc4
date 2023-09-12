@@ -54,6 +54,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     address public etherFiAdminContract;
     bool public whitelistEnabled;
     mapping(address => bool) public whitelisted;
+    mapping(address => BnftHoldersIndex) public bnftHoldersIndexes;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -63,7 +64,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event Withdraw(address indexed sender, address recipient, uint256 amount);
     event UpdatedWhitelist(address userAddress, bool value);
     event BnftHolderDeregistered(address user, uint256 index);
-    event BnftHolderRegistered(address user);
+    event BnftHolderRegistered(address user, uint256 index);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
     event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
@@ -283,26 +284,40 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(sent, "Failed to send Ether");
     }
 
-    function registerAsBnftHolder(address _user) public onlyAdmin {
+    function registerAsBnftHolder(address _user) public onlyAdmin {      
+        require(!bnftHoldersIndexes[_user].registered, "Already registered");  
         _checkHoldersUpdateStatus();
         BnftHolder memory bnftHolder = BnftHolder({
             holder: _user,
             timestamp: 0
         });
 
-        bnftHolders.push(bnftHolder);
+        uint256 index = bnftHolders.length;
 
-        emit BnftHolderRegistered(msg.sender);
+        bnftHolders.push(bnftHolder);
+        bnftHoldersIndexes[_user] = BnftHoldersIndex({
+            registered: true,
+            index: uint32(index)
+        });
+
+        emit BnftHolderRegistered(_user, index);
     }
 
-    function deRegisterBnftHolder(uint256 _index) external {
-        require(admins[msg.sender] || msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
-        require(_index < bnftHolders.length, "Invalid index");
+    function deRegisterBnftHolder(address _bNftHolder) external {
+        require(bnftHoldersIndexes[_bNftHolder].registered, "Not registered");
+        uint256 index = bnftHoldersIndexes[_bNftHolder].index;
+        require(admins[msg.sender] || msg.sender == bnftHolders[index].holder, "Incorrect Caller");
 
-        bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
+        uint256 endIndex = bnftHolders.length - 1;
+        address endUser = bnftHolders[endIndex].holder;
+
+        bnftHolders[index] = bnftHolders[endIndex];
+        bnftHoldersIndexes[endUser].index = uint32(index);
+        
         bnftHolders.pop();
+        delete bnftHoldersIndexes[_bNftHolder];
 
-        emit BnftHolderDeregistered(msg.sender, _index);
+        emit BnftHolderDeregistered(_bNftHolder, index);
     }
 
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
