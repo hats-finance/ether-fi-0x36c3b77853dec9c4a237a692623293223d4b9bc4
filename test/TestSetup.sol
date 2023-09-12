@@ -444,9 +444,6 @@ contract TestSetup is Test {
 
         vm.stopPrank();
 
-        vm.prank(alice);
-        liquidityPoolInstance.updateLiquidStakingStatus(true);
-
         vm.startPrank(owner);
 
         depGen = new DepositDataGeneration();

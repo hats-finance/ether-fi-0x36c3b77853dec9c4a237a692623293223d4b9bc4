@@ -50,7 +50,6 @@ interface ILiquidityPool {
     function sharesForAmount(uint256 _amount) external view returns (uint256);
     function sharesForWithdrawalAmount(uint256 _amount) external view returns (uint256);
     function amountForShare(uint256 _share) external view returns (uint256);
-    function eEthliquidStakingOpened() external view returns (bool);
 
     function deposit(address _user, bytes32[] calldata _merkleProof) external payable returns (uint256);
     function deposit(address _user, address _recipient, bytes32[] calldata _merkleProof) external payable returns (uint256);
@@ -63,8 +62,6 @@ interface ILiquidityPool {
     function batchRegisterAsBnftHolder(bytes32 _depositRoot, uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _registerValidatorDepositData, bytes32[] calldata _depositDataRootApproval, bytes[] calldata _signaturesForApprovalDeposit) external;
     function batchCancelDeposit(uint256[] calldata _validatorIds) external;
     function sendExitRequests(uint256[] calldata _validatorIds) external;
-
-    function updateLiquidStakingStatus(bool value) external;
 
     function rebase(int128 _accruedRewards) external;
     function setTokenAddress(address _eETH) external;

@@ -30,7 +30,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     ITNFT public tNft;
     IeETH public eETH; 
 
-    bool public eEthliquidStakingOpened;
+    bool public DEPRECATED_eEthliquidStakingOpened;
 
     uint128 public totalValueOutOfLp;
     uint128 public totalValueInLp;
@@ -87,7 +87,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     receive() external payable {
-        require(totalValueOutOfLp >= msg.value, "rebase first before collecting the rewards");
         if (msg.value > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp -= uint128(msg.value);
         totalValueInLp += uint128(msg.value);
@@ -97,7 +96,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         __Ownable_init();
         __UUPSUpgradeable_init();
         regulationsManager = IRegulationsManager(_regulationsManager);
-        eEthliquidStakingOpened = false;
     }
 
     function initializePhase2() external onlyOwner {        
@@ -120,7 +118,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             }       
             emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
         } else {
-            require(eEthliquidStakingOpened, "Liquid staking functions are closed");
             _isWhitelistedAndEligible(msg.sender, _merkleProof);
             emit FundsDeposited(SourceOfFunds.EETH, msg.value);
         }
@@ -169,7 +166,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @dev Transfers the amount of eETH from msg.senders account to the WithdrawRequestNFT contract & mints an NFT to the msg.sender
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
-    function requestWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen NonZeroAddress(recipient) returns (uint256) {
+    function requestWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
 
         if(totalValueInLp < amount || eETH.balanceOf(recipient) < amount) revert InsufficientLiquidity();
 
@@ -190,7 +187,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestWithdraw(_owner, _amount);
     }
 
-    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen NonZeroAddress(recipient) returns (uint256) {
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
 
         uint256 share = sharesForAmount(amount);
@@ -351,11 +348,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             uint256 validatorId = _validatorIds[i];
             nodesManager.sendExitRequest(validatorId);
         }
-    }
-
-    /// @notice Allow interactions with the eEth token
-    function updateLiquidStakingStatus(bool _value) external onlyAdmin {
-        eEthliquidStakingOpened = _value;
     }
 
     /// @notice Rebase by ether.fi
@@ -568,11 +560,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
-
-    modifier whenLiquidStakingOpen() {
-        require(eEthliquidStakingOpened, "Liquid staking functions are closed");
-        _;
-    }
 
     modifier onlyAdmin() {
         require(admins[msg.sender], "Caller is not the admin");
