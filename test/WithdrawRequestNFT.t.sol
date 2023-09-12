@@ -183,7 +183,6 @@ contract WithdrawRequestNFTTest is TestSetup {
         uint256[] memory validatorIds = launch_validator();
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 10 ether}(bob);
         vm.stopPrank();
 

@@ -13,16 +13,11 @@ contract NFTExchangeTest is TestSetup {
         setUpTests();
 
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
-
-        vm.startPrank(owner);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        vm.stopPrank();
     }
 
     function test_trade() public {

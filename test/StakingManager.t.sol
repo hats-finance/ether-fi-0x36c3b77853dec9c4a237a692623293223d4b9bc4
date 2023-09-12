@@ -73,8 +73,6 @@ contract StakingManagerTest is TestSetup {
         vm.deal(alice, 100000 ether);
         vm.deal(greg, 100000 ether);
 
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-
         //Set the max number of validators per holder to 4
         liquidityPoolInstance.setMaxBnftSlotSize(4);
 

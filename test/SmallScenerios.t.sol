@@ -69,7 +69,6 @@ contract SmallScenariosTest is TestSetup {
 
         /// Alice confirms she is not a US or Canadian citizen and deposits 10 ETH into the pool.
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 10 ether}(alice);
         vm.stopPrank();
 
@@ -79,12 +78,8 @@ contract SmallScenariosTest is TestSetup {
         assertEq(eETHInstance.shares(alice), 10 ether);
         assertEq(eETHInstance.totalShares(), 10 ether);
 
-        /// Bob then comes along, confirms he is not a US or Canadian citizen and deposits 5 ETH into the pool.
+        /// Bob then comes along and deposits 5 ETH into the pool.
         startHoax(bob);
-        vm.expectRevert("Incorrect hash");
-        regulationsManagerInstance.confirmEligibility("INCORRECT HASH");
-
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 5 ether}(bob);
         vm.stopPrank();
 
@@ -122,7 +117,6 @@ contract SmallScenariosTest is TestSetup {
 
         /// Chad confirms he is not a US or Canadian citizen and deposits 17 ether into Pool
         startHoax(chad);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 15 ether}(chad);
         vm.stopPrank();
 
@@ -249,7 +243,6 @@ contract SmallScenariosTest is TestSetup {
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         liquidityPoolInstance.deposit{value: 32 ether}(owner);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether + 32 ether);
         assertEq(address(liquidityPoolInstance).balance, 32 ether + 1 ether);

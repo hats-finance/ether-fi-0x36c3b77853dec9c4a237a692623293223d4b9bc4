@@ -16,12 +16,10 @@ contract MembershipManagerTest is TestSetup {
     function setUp() public {
         setUpTests();
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
@@ -245,7 +243,6 @@ contract MembershipManagerTest is TestSetup {
 
         // Alice confirms eligibility
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
 
         vm.expectRevert(MembershipManager.InvalidEAPRollover.selector);
         membershipManagerV1Instance.wrapEthForEap{value: 0.5 ether}(
@@ -321,7 +318,6 @@ contract MembershipManagerTest is TestSetup {
         );
         vm.deal(alice, 100 ether);
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         
         uint256 tokenId = membershipManagerV1Instance.wrapEthForEap{value: 2 ether}(
             2 ether,
@@ -735,7 +731,6 @@ contract MembershipManagerTest is TestSetup {
         earlyAdopterPoolInstance.withdraw();
 
         // Alice Deposits into MembershipManager and receives membership points in return
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         uint256 tokenId = membershipManagerV1Instance.wrapEthForEap{value: 2 ether}(2 ether, 0, 16970393 - 10, 1 ether, 103680, aliceProof);
         
         assertEq(membershipNftInstance.valueOf(tokenId), 2 ether);
