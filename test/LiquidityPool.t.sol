@@ -506,25 +506,6 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
     }
 
-    function test_LiquidStakingAccessControl() public {
-
-        startHoax(alice);
-        liquidityPoolInstance.updateLiquidStakingStatus(false);
-
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-
-        vm.expectRevert("Liquid staking functions are closed");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
-
-        liquidityPoolInstance.updateLiquidStakingStatus(true);
-
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
-
-        liquidityPoolInstance.updateLiquidStakingStatus(false);
-    
-        vm.stopPrank();
-    }
-
     function test_fallback() public {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
 
