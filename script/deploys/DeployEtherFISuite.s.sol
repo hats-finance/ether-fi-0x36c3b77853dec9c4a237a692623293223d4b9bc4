@@ -161,7 +161,7 @@ contract DeployEtherFiSuiteScript is Script {
         liquidityPool = LiquidityPool(
             payable(address(liquidityPoolProxy))
         );
-        liquidityPool.initialize(address(regulationsManagerInstance));
+        liquidityPool.initialize();
 
         eETHImplementation = new EETH();
         eETHProxy = new UUPSProxy(address(eETHImplementation), "");

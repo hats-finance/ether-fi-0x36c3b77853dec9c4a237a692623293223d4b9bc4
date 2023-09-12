@@ -283,11 +283,11 @@ contract TestSetup is Test {
 
         liquidityPoolImplementation = new LiquidityPool();
         vm.expectRevert("Initializable: contract is already initialized");
-        liquidityPoolImplementation.initialize(address(regulationsManagerInstance));
+        liquidityPoolImplementation.initialize();
 
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
-        liquidityPoolInstance.initialize(address(regulationsManagerInstance));
+        liquidityPoolInstance.initialize();
         liquidityPoolInstance.setTnft(address(TNFTInstance));
         liquidityPoolInstance.updateAdmin(alice, true);
 
@@ -443,9 +443,6 @@ contract TestSetup is Test {
         liquidityPoolInstance.updateAdmin(alice, true);
 
         vm.stopPrank();
-
-        vm.prank(alice);
-        liquidityPoolInstance.updateLiquidStakingStatus(true);
 
         vm.startPrank(owner);
 
@@ -754,6 +751,14 @@ contract TestSetup is Test {
         vm.deal(elvis, 100000 ether);
         vm.deal(henry, 100000 ether);
         vm.deal(chad, 100000 ether);
+
+        (bool registered, uint32 index) = liquidityPoolInstance.bnftHoldersIndexes(alice);
+        assertEq(registered, true);
+        assertEq(index, 0);
+
+        (registered, index) = liquidityPoolInstance.bnftHoldersIndexes(henry);
+        assertEq(registered, true);
+        assertEq(index, 7);
     }
 
     function launch_validator() internal returns (uint256[] memory) {

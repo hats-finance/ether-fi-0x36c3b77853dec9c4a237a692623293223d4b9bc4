@@ -481,24 +481,6 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
     }
 
-    function test_LiquidStakingAccessControl() public {
-
-        startHoax(alice);
-        liquidityPoolInstance.updateLiquidStakingStatus(false);
-
-
-        vm.expectRevert("Liquid staking functions are closed");
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
-
-        liquidityPoolInstance.updateLiquidStakingStatus(true);
-
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
-
-        liquidityPoolInstance.updateLiquidStakingStatus(false);
-    
-        vm.stopPrank();
-    }
-
     function test_fallback() public {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
 
@@ -1060,17 +1042,19 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(bobIndexAddress, bob);
 
         vm.prank(alice);
-        liquidityPoolInstance.deRegisterBnftHolder(3);
+        liquidityPoolInstance.deRegisterBnftHolder(owner);
+        (bool registered, ) = liquidityPoolInstance.bnftHoldersIndexes(owner);
+        assertEq(registered, false);
 
         (henryIndexAddress, ) = liquidityPoolInstance.bnftHolders(3);
-
         assertEq(henryIndexAddress, henry);
 
         vm.prank(bob);
-        liquidityPoolInstance.deRegisterBnftHolder(2);
+        liquidityPoolInstance.deRegisterBnftHolder(bob);
+        (registered, ) = liquidityPoolInstance.bnftHoldersIndexes(bob);
+        assertEq(registered, false);
 
         (address elvisIndexAddress, ) = liquidityPoolInstance.bnftHolders(2);
-
         assertEq(elvisIndexAddress, elvis);
     }
 
@@ -1079,7 +1063,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(bob);
         vm.expectRevert("Incorrect Caller");
-        liquidityPoolInstance.deRegisterBnftHolder(3);
+        liquidityPoolInstance.deRegisterBnftHolder(owner);
     }
 
     function test_DepositWhenUserDeRegisters() public {
@@ -1114,7 +1098,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.startPrank(owner);
         //Owner de registers themselves
-        liquidityPoolInstance.deRegisterBnftHolder(3);
+        liquidityPoolInstance.deRegisterBnftHolder(owner);
         vm.stopPrank();
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers

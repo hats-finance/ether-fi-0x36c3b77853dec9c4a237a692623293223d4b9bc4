@@ -30,7 +30,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     ITNFT public tNft;
     IeETH public eETH; 
 
-    bool public eEthliquidStakingOpened;
+    bool public DEPRECATED_eEthliquidStakingOpened;
 
     uint128 public totalValueOutOfLp;
     uint128 public totalValueInLp;
@@ -54,6 +54,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     address public etherFiAdminContract;
     bool public whitelistEnabled;
     mapping(address => bool) public whitelisted;
+    mapping(address => BnftHoldersIndex) public bnftHoldersIndexes;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -63,7 +64,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event Withdraw(address indexed sender, address recipient, uint256 amount);
     event UpdatedWhitelist(address userAddress, bool value);
     event BnftHolderDeregistered(address user, uint256 index);
-    event BnftHolderRegistered(address user);
+    event BnftHolderRegistered(address user, uint256 index);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
     event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
@@ -86,16 +87,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     receive() external payable {
-        require(totalValueOutOfLp >= msg.value, "rebase first before collecting the rewards");
         if (msg.value > type(uint128).max) revert InvalidAmount();
         totalValueOutOfLp -= uint128(msg.value);
         totalValueInLp += uint128(msg.value);
     }
 
-    function initialize(address _regulationsManager) external initializer NonZeroAddress(_regulationsManager) {
+    function initialize() external initializer {
         __Ownable_init();
-        __UUPSUpgradeable_init();
-        eEthliquidStakingOpened = false;
+        __UUPSUpgradeable_init(); 
     }
 
     function initializePhase2() external onlyOwner {        
@@ -118,7 +117,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             }
             emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
         } else {
-            require(eEthliquidStakingOpened, "Liquid staking functions are closed");
             _isWhitelisted(msg.sender);
             emit FundsDeposited(SourceOfFunds.EETH, msg.value);
         }
@@ -167,7 +165,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @dev Transfers the amount of eETH from msg.senders account to the WithdrawRequestNFT contract & mints an NFT to the msg.sender
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
-    function requestWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen NonZeroAddress(recipient) returns (uint256) {
+    function requestWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
 
         if(totalValueInLp < amount || eETH.balanceOf(recipient) < amount) revert InsufficientLiquidity();
 
@@ -188,7 +186,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestWithdraw(_owner, _amount);
     }
 
-    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public whenLiquidStakingOpen NonZeroAddress(recipient) returns (uint256) {
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
         require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
 
         uint256 share = sharesForAmount(amount);
@@ -282,26 +280,40 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(sent, "Failed to send Ether");
     }
 
-    function registerAsBnftHolder(address _user) public onlyAdmin {
+    function registerAsBnftHolder(address _user) public onlyAdmin {      
+        require(!bnftHoldersIndexes[_user].registered, "Already registered");  
         _checkHoldersUpdateStatus();
         BnftHolder memory bnftHolder = BnftHolder({
             holder: _user,
             timestamp: 0
         });
 
-        bnftHolders.push(bnftHolder);
+        uint256 index = bnftHolders.length;
 
-        emit BnftHolderRegistered(msg.sender);
+        bnftHolders.push(bnftHolder);
+        bnftHoldersIndexes[_user] = BnftHoldersIndex({
+            registered: true,
+            index: uint32(index)
+        });
+
+        emit BnftHolderRegistered(_user, index);
     }
 
-    function deRegisterBnftHolder(uint256 _index) external {
-        require(admins[msg.sender] || msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
-        require(_index < bnftHolders.length, "Invalid index");
+    function deRegisterBnftHolder(address _bNftHolder) external {
+        require(bnftHoldersIndexes[_bNftHolder].registered, "Not registered");
+        uint256 index = bnftHoldersIndexes[_bNftHolder].index;
+        require(admins[msg.sender] || msg.sender == bnftHolders[index].holder, "Incorrect Caller");
 
-        bnftHolders[_index] = bnftHolders[bnftHolders.length - 1];
+        uint256 endIndex = bnftHolders.length - 1;
+        address endUser = bnftHolders[endIndex].holder;
+
+        bnftHolders[index] = bnftHolders[endIndex];
+        bnftHoldersIndexes[endUser].index = uint32(index);
+        
         bnftHolders.pop();
+        delete bnftHoldersIndexes[_bNftHolder];
 
-        emit BnftHolderDeregistered(msg.sender, _index);
+        emit BnftHolderDeregistered(_bNftHolder, index);
     }
 
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
@@ -335,11 +347,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             uint256 validatorId = _validatorIds[i];
             nodesManager.sendExitRequest(validatorId);
         }
-    }
-
-    /// @notice Allow interactions with the eEth token
-    function updateLiquidStakingStatus(bool _value) external onlyAdmin {
-        eEthliquidStakingOpened = _value;
     }
 
     /// @notice Rebase by ether.fi
@@ -551,11 +558,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
-
-    modifier whenLiquidStakingOpen() {
-        require(eEthliquidStakingOpened, "Liquid staking functions are closed");
-        _;
-    }
 
     modifier onlyAdmin() {
         require(admins[msg.sender], "Caller is not the admin");
