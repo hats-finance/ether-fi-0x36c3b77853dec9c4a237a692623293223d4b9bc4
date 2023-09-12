@@ -610,34 +610,20 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_eEthAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_liquidityPoolAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_membershipNft",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_treasury",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_protocolRevenueManager",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
       }
     ],
-    "name": "initialize",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "hasMetBurnFeeWaiverPeriod",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -921,6 +907,11 @@
         "internalType": "uint256",
         "name": "_upgradeFeeAmount",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_burnFeeWaiverPeriodInDays",
+        "type": "uint16"
       }
     ],
     "name": "setFeeAmounts",
@@ -1229,11 +1220,6 @@
         "internalType": "uint128",
         "name": "_amountForPoints",
         "type": "uint128"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
       }
     ],
     "name": "topUpDepositWithEth",
@@ -1454,11 +1440,6 @@
         "internalType": "uint256",
         "name": "_amountForPoints",
         "type": "uint256"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
       }
     ],
     "name": "wrapEth",

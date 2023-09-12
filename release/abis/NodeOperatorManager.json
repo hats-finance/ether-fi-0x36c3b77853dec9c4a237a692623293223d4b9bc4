@@ -267,6 +267,34 @@
     "inputs": [
       {
         "internalType": "address[]",
+        "name": "_operator",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_ipfsHash",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "_totalKeys",
+        "type": "uint64[]"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "_keysUsed",
+        "type": "uint64[]"
+      }
+    ],
+    "name": "batchMigrateNodeOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
         "name": "_users",
         "type": "address[]"
       },
@@ -478,11 +506,6 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_operator",
-        "type": "address"
-      },
       {
         "internalType": "bytes",
         "name": "_ipfsHash",
