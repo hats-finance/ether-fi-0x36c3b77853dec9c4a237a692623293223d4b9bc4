@@ -88,7 +88,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     function initializePhase2() external onlyOwner {
         fanBoostThreshold = 1_000; // 1 ETH
         burnFeeWaiverPeriodInDays = 30;
-        for (uint256 i = 0; i < tierData.length; i++) {
+        while (tierVaults.length < tierData.length) {
             tierVaults.push(TierVault(0, 0));
         }
     }

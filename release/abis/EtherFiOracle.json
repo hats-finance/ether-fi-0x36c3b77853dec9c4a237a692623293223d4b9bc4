@@ -144,6 +144,19 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "uint32",
         "name": "newQuorumSize",
         "type": "uint32"
@@ -201,6 +214,19 @@
       {
         "indexed": false,
         "internalType": "uint32",
+        "name": "reportStartSlot",
+        "type": "uint32"
+      }
+    ],
+    "name": "ReportStartSlotUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint32",
         "name": "consensusVersion",
         "type": "uint32"
       },
@@ -248,6 +274,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "implementation",
@@ -256,25 +295,6 @@
     ],
     "name": "Upgraded",
     "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "timestamp",
-        "type": "uint256"
-      }
-    ],
-    "name": "_computeSlotAtTimestamp",
-    "outputs": [
-      {
-        "internalType": "uint32",
-        "name": "",
-        "type": "uint32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [
@@ -340,6 +360,25 @@
       {
         "internalType": "uint32",
         "name": "numReports",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "computeSlotAtTimestamp",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
         "type": "uint32"
       }
     ],
@@ -516,6 +555,11 @@
       },
       {
         "internalType": "uint32",
+        "name": "_reportStartSlot",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
         "name": "_slotsPerEpoch",
         "type": "uint32"
       },
@@ -639,6 +683,26 @@
   },
   {
     "inputs": [],
+    "name": "pauseContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "proxiableUUID",
     "outputs": [
       {
@@ -697,6 +761,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "reportStartSlot",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint32",
@@ -738,6 +815,19 @@
   {
     "inputs": [
       {
+        "internalType": "uint32",
+        "name": "_reportStartSlot",
+        "type": "uint32"
+      }
+    ],
+    "name": "setReportStartSlot",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_member",
         "type": "address"
@@ -749,6 +839,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "slotForNextReport",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -869,6 +972,13 @@
       }
     ],
     "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unPauseContract",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
