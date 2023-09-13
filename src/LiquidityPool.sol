@@ -200,7 +200,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
-        require(_isAssigned(firstIndex, lastIndex, _index), "Not assigned");
+        require(isAssigned(firstIndex, lastIndex, _index), "Not assigned");
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
         require(bnftHolders[_index].timestamp < uint32(_getCurrentSchedulingStartTimestamp()), "Already deposited");
 
@@ -472,7 +472,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
-    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view returns (bool) {
+    function isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view returns (bool) {
         if(_lastIndex < _firstIndex) {
             if((_index <= _lastIndex) || (_index >= _firstIndex && _index < numberOfActiveSlots())){
                 return true;
