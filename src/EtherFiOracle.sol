@@ -131,7 +131,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 reportEpoch = (_report.refSlotTo / SLOTS_PER_EPOCH);
-        require(reportEpoch < currEpoch - 2, "Report Epoch is not finalized yet");
+        require(reportEpoch + 2 < currEpoch, "Report Epoch is not finalized yet");
     }
 
     function isConsensusReached(bytes32 _hash) public view returns (bool) {
@@ -142,7 +142,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 slotEpoch = (_slot / SLOTS_PER_EPOCH);
-        return slotEpoch < currEpoch - 2;
+        return slotEpoch + 2 < currEpoch;
     }
 
     function _publishReport(OracleReport calldata _report, bytes32 _hash) internal {
@@ -162,10 +162,9 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
 
     // Given the last published report AND the current slot number,
     // Return the next report's `slotTo` that we are waiting for
-    // https://docs.google.com/spreadsheets/d/1U0Wj4S9EcfDLlIab_sEYjWAYyxMflOJaTrpnHcy3jdg/edit?usp=sharing
     function slotForNextReport() public view returns (uint32) {
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
-        uint32 pastSlot = lastPublishedReportRefSlot == 0 ? reportStartSlot : lastPublishedReportRefSlot + 1;
+        uint32 pastSlot = reportStartSlot < lastPublishedReportRefSlot ? lastPublishedReportRefSlot + 1 : reportStartSlot;
         uint32 diff = currSlot > pastSlot ? currSlot - pastSlot : 0;
         uint32 tmp = pastSlot + (diff / reportPeriodSlot) * reportPeriodSlot;
         uint32 __slotForNextReport = (tmp > pastSlot + reportPeriodSlot) ? tmp : pastSlot + reportPeriodSlot;
@@ -243,6 +242,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
 
     function setReportStartSlot(uint32 _reportStartSlot) public onlyOwner {
         // check if the start slot is at the beginning of the epoch
+        require(_reportStartSlot > computeSlotAtTimestamp(block.timestamp), "The start slot should be in the future");
         require(_reportStartSlot % 32 == 0, "The start slot should be at the beginning of the epoch");
         reportStartSlot = _reportStartSlot;
         emit ReportStartSlotUpdated(_reportStartSlot);
