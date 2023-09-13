@@ -651,17 +651,23 @@ contract TestSetup is Test {
     }
 
     function _approveNodeOperators() internal {
-        address[] memory users = new address[](2);
+        address[] memory users = new address[](4);
         users[0] = address(alice);
         users[1] = address(bob);
+        users[2] = address(bob);
+        users[3] = address(owner);
 
-        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](2);
+        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](4);
         approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
         approvedTags[1] = ILiquidityPool.SourceOfFunds.ETHER_FAN;
+        approvedTags[2] = ILiquidityPool.SourceOfFunds.EETH;
+        approvedTags[3] = ILiquidityPool.SourceOfFunds.EETH;
 
-        bool[] memory approvals = new bool[](2);
+        bool[] memory approvals = new bool[](4);
         approvals[0] = true;
         approvals[1] = true;
+        approvals[2] = true;
+        approvals[3] = true;
 
         nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
 
