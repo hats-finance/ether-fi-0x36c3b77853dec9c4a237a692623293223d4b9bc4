@@ -236,4 +236,31 @@ contract WithdrawRequestNFTTest is TestSetup {
         withdrawRequestNFTInstance.updateAdmin(newAdmin, true);
         assertTrue(withdrawRequestNFTInstance.admins(newAdmin));
     }
+
+    function test_withdraw_with_zero_liquidity() public {
+        // bob mints 60 eETH and alilce spins up 2 validators with the deposited 60 ETH
+        launch_validator();
+
+        // bob requests withdrawal
+        vm.prank(bob);
+        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, 60 ether);
+
+        // Somehow, LP gets some ETH
+        // For example, alice deposits 100 ETH :D
+        vm.prank(alice);
+        liquidityPoolInstance.deposit{value: 100 ether}(alice);
+
+        vm.prank(alice);
+        withdrawRequestNFTInstance.finalizeRequests(requestId);
+
+        uint256 bobsStartingBalance = address(bob).balance;
+
+        vm.prank(bob);
+        withdrawRequestNFTInstance.claimWithdraw(requestId);
+
+        uint256 bobsEndingBalance = address(bob).balance;
+
+        assertEq(bobsEndingBalance, bobsStartingBalance + 60 ether, "Bobs balance should be 60 ether higher");
+        
+    }
 }
