@@ -874,7 +874,7 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(validators[0], bidIds[2]);
         assertEq(validators[1], bidIds[3]);
         assertEq(validators[2], bidIds[4]);
-        assertEq(validators[3], bidIds[7]);
+        assertEq(validators[3], bobBidIds[1]);
     }
 
     function test_DepositAsBnftHolderWithLargeSet() public {

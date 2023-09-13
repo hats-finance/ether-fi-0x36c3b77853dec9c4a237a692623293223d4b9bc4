@@ -289,7 +289,8 @@ contract StakingManager is
             address bidStaker = bidIdToStaker[bidId];
             address operator = auctionManager.getBidOwner(bidId);
             bool isActive = auctionManager.isBidActive(bidId);
-            if (bidStaker == address(0) && isActive && _verifyNodeOperator(operator, _source)) {
+            if (bidStaker == address(0) && isActive) {
+                require(_verifyNodeOperator(operator, _source), "Operator not verified");
                 auctionManager.updateSelectedBidInformation(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
