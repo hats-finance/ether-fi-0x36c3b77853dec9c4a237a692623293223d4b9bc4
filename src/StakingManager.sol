@@ -368,7 +368,7 @@ contract StakingManager is
         uint256 validatorId = _bidId;
         address etherfiNode = createEtherfiNode(validatorId, _enableRestaking);
         nodesManager.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED);
-        emit StakeDeposit(msg.sender, _bidId, etherfiNode);
+        emit StakeDeposit(_staker, _bidId, etherfiNode);
     }
 
     /// @notice Cancels a users stake
