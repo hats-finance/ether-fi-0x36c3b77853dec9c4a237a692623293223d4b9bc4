@@ -236,7 +236,7 @@ contract EtherFiOracleTest is TestSetup {
 
         (slotFrom, slotTo, blockFrom) = etherFiOracleInstance.blockStampForNextReport();
         assertEq(slotFrom, 1024);
-        assertEq(slotTo, 1024 + 1024 - 1);
+        assertEq(slotTo, 2 * 1024 - 1);
         assertEq(blockFrom, 1024);
 
         console.log(etherFiOracleInstance.computeSlotAtTimestamp(block.timestamp));
