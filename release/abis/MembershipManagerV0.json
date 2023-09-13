@@ -1124,11 +1124,6 @@
         "internalType": "uint128",
         "name": "_amountForPoints",
         "type": "uint128"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
       }
     ],
     "name": "topUpDepositWithEth",
@@ -1314,11 +1309,6 @@
         "internalType": "uint256",
         "name": "_amountForPoints",
         "type": "uint256"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
       }
     ],
     "name": "wrapEth",
@@ -1348,11 +1338,6 @@
         "internalType": "uint256",
         "name": "_amountForPoints",
         "type": "uint256"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
       }
     ],
     "name": "wrapEthBatch",

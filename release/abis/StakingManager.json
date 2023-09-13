@@ -332,6 +332,21 @@
         "internalType": "uint256[]",
         "name": "_candidateBidIds",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "address",
+        "name": "_staker",
+        "type": "address"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "_source",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "_enableRestaking",
+        "type": "bool"
       }
     ],
     "name": "batchDepositWithBidIds",
@@ -353,14 +368,9 @@
         "type": "uint256[]"
       },
       {
-        "internalType": "address",
-        "name": "_staker",
-        "type": "address"
-      },
-      {
-        "internalType": "enum ILiquidityPool.SourceOfFunds",
-        "name": "_source",
-        "type": "uint8"
+        "internalType": "bool",
+        "name": "_enableRestaking",
+        "type": "bool"
       }
     ],
     "name": "batchDepositWithBidIds",
