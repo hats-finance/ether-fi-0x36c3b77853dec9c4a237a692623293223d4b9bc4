@@ -60,7 +60,7 @@ contract StakingManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event StakeDeposit(address indexed staker, uint256 bidId, address withdrawSafe);
+    event StakeDeposit(address indexed staker, uint256 bidId, address withdrawSafe, ILiquidityPool.SourceOfFunds source);
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(address indexed operator, address indexed bNftOwner, address indexed tNftOwner, 
                               uint256 validatorId, bytes validatorPubKey, string ipfsHashForEncryptedValidatorKey);
@@ -297,7 +297,7 @@ contract StakingManager is
                 auctionManager.updateSelectedBidInformation(bidId);
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
-                _processDeposit(bidId, _staker, _enableRestaking);
+                _processDeposit(bidId, _staker, _enableRestaking, _source);
             }
         }
 
@@ -366,12 +366,12 @@ contract StakingManager is
 
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId The bid that won the right to the deposit
-    function _processDeposit(uint256 _bidId, address _staker, bool _enableRestaking) internal {
+    function _processDeposit(uint256 _bidId, address _staker, bool _enableRestaking, ILiquidityPool.SourceOfFunds _source) internal {
         bidIdToStaker[_bidId] = _staker;
         uint256 validatorId = _bidId;
         address etherfiNode = createEtherfiNode(validatorId, _enableRestaking);
         nodesManager.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED);
-        emit StakeDeposit(_staker, _bidId, etherfiNode);
+        emit StakeDeposit(_staker, _bidId, etherfiNode, _source);
     }
 
     /// @notice Cancels a users stake

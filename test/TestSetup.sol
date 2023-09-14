@@ -389,7 +389,7 @@ contract TestSetup is Test {
         );
 
         liquidityPoolInstance.setEtherFiAdminContract(address(etherFiAdminInstance));
-        liquidityPoolInstance.initializePhase2();
+        liquidityPoolInstance.initializePhase2(604800, 1, 1);
 
         uint256[] memory validatorsToApprove = new uint256[](1);
         uint256[] memory validatorsToExit = new uint256[](1);
