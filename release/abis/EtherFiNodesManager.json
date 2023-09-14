@@ -149,6 +149,25 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum IEtherFiNode.VALIDATOR_PHASE",
+        "name": "_phase",
+        "type": "uint8"
+      }
+    ],
+    "name": "PhaseChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "address",
         "name": "account",
         "type": "address"

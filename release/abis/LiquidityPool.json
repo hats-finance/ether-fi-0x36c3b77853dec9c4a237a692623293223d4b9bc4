@@ -833,7 +833,23 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "uint128",
+        "name": "_schedulingPeriod",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_eEthNumVal",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_etherFanNumVal",
+        "type": "uint32"
+      }
+    ],
     "name": "initializePhase2",
     "outputs": [],
     "stateMutability": "nonpayable",

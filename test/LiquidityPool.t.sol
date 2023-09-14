@@ -775,13 +775,13 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(bob);
         //Making sure if a user is assigned they send in the correct amount (This will be updated 
         //as we will allow users to specify how many validator they want to spin up)
-        vm.expectRevert("Above max allocation");
+        vm.expectRevert(LiquidityPool.AboveMaxAllocation.selector);
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 10 ether}(bidIds, 2, 5);
 
         vm.prank(owner);
         //Making sure if a user is assigned they send in the correct amount (This will be updated 
         //as we will allow users to specify how many validator they want to spin up)
-        vm.expectRevert("Above max allocation");
+        vm.expectRevert(LiquidityPool.AboveMaxAllocation.selector);
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 3, 4);
     }
 
