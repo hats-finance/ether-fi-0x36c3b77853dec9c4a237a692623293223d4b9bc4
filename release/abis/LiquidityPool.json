@@ -398,29 +398,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_firstIndex",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint128",
-        "name": "_lastIndex",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_index",
-        "type": "uint256"
-      }
-    ],
-    "name": "_isAssigned",
-    "outputs": [],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -824,6 +801,35 @@
     "name": "initializePhase2",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_firstIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_lastIndex",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_index",
+        "type": "uint256"
+      }
+    ],
+    "name": "isAssigned",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
