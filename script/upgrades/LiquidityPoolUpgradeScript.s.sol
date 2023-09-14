@@ -23,7 +23,7 @@ contract LiquidityPoolUpgrade is Script {
         LiquidityPool LiquidityPoolV2Implementation = new LiquidityPool();
 
         LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
-        LiquidityPoolInstance.initializePhase2();
+        LiquidityPoolInstance.initializePhase2(604800, 1, 1);
 
         // Phase 2
         address withdrawRequestNFTInstance = addressProvider.getContractAddress("WithdrawRequestNFT");

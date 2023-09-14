@@ -415,7 +415,7 @@ contract LiquidityPoolTest is TestSetup {
         }
 
         vm.prank(alice);
-        stakingManagerInstance.batchApproveRegistration(newValidators, pubKey, sig);
+        liquidityPoolInstance.batchApproveRegistration(newValidators, pubKey, sig);
 
         for (uint256 i = 0; i < newValidators.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -684,7 +684,7 @@ contract LiquidityPoolTest is TestSetup {
 
         //Making sure if a user is assigned they send in the correct amount (This will be updated 
         //as we will allow users to specify how many validator they want to spin up)
-        vm.expectRevert("B-NFT holder must deposit 2 ETH per validator");
+        vm.expectRevert("Deposit 2 ETH per validator");
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 6 ether}(bidIds, 2, 4);
 
         //Move way more in the future
@@ -1237,12 +1237,15 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(BNFTInstance.balanceOf(alice), 0);
         assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 0);
 
+        bytes[] memory pubKey = new bytes[](1);
+        pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+
         bytes[] memory sig = new bytes[](1);
         sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
 
         liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), validatorArray, depositDataArray, depositDataRootsForApproval, sig);
 
-        assertEq(liquidityPoolInstance.numPendingDeposits(), 3);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 4);
         assertEq(BNFTInstance.balanceOf(alice), 1);
         assertEq(TNFTInstance.balanceOf(address(liquidityPoolInstance)), 1);
     }
