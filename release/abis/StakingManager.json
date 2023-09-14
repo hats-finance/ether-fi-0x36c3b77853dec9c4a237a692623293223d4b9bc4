@@ -114,6 +114,12 @@
         "internalType": "address",
         "name": "withdrawSafe",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "source",
+        "type": "uint8"
       }
     ],
     "name": "StakeDeposit",

@@ -197,7 +197,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
         return requestId;
-    }
+    } 
+
+    error AboveMaxAllocation();
 
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
@@ -205,9 +207,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
         require(bnftHolders[_index].timestamp < uint32(_getCurrentSchedulingStartTimestamp()), "Already deposited");
         if(_index == lastIndex) {
-            require(_numberOfValidators <= lastIndexNumOfValidators, "Above max allocation");
+            if(_numberOfValidators > lastIndexNumOfValidators) revert AboveMaxAllocation();
         } else {
-            require(_numberOfValidators <= max_validators_per_owner, "Above max allocation");
+            if(_numberOfValidators > max_validators_per_owner) revert AboveMaxAllocation();
         }
         require(msg.value == _numberOfValidators * 2 ether, "Deposit 2 ETH per validator");
         require(totalValueInLp + msg.value >= 32 ether * _numberOfValidators, "Not enough balance");
