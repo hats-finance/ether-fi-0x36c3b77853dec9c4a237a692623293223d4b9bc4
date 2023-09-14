@@ -56,6 +56,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     mapping(address => bool) public whitelisted;
     mapping(address => BnftHoldersIndex) public bnftHoldersIndexes;
 
+    // TODO(Dave): Before we go to mainnet consider packing this with other variables
+    bool public restakeBnftDeposits;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -230,7 +233,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, msg.sender, _source, false); // TODO(Dave) how do players decide restaking or not
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, msg.sender, _source, restakeBnftDeposits);
         if (_numberOfValidators > newValidators.length) {
             uint256 returnAmount = 2 ether * (_numberOfValidators - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
@@ -400,6 +403,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function setWithdrawRequestNFT(address _address) external onlyOwner NonZeroAddress(_address) {
         withdrawRequestNFT = IWithdrawRequestNFT(_address);
+    }
+
+    /// @notice Whether or not nodes created via bNFT deposits should be restaked
+    function setRestakeBnftDeposits(bool _restake) external onlyAdmin {
+        restakeBnftDeposits = _restake;
     }
 
     /// @notice Updates the address of the admin

@@ -350,8 +350,16 @@ contract TestSetup is Test {
         etherFiOracleImplementation = new EtherFiOracle();
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
         etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
-        etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, 1);
-        
+
+        // special case for forked tests utilizing oracle
+        // can't use env variable because then it would apply to all tests including non-forked ones
+        if (block.chainid == 5) {
+            uint32 genesisSlotTimestamp = uint32(1616508000);
+            etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, genesisSlotTimestamp);
+        } else {
+            etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, 1);
+        }
+
         etherFiOracleInstance.addCommitteeMember(alice);
         etherFiOracleInstance.addCommitteeMember(bob);
 
@@ -691,15 +699,15 @@ contract TestSetup is Test {
         _report.refBlockTo = slotTo; //
 
         uint32 reportAtBlock = _report.refSlotTo + 3 * 32;
-        if (block.number < reportAtBlock) {
-            _moveClock(int256(reportAtBlock - block.number));
+        if (block.number < reportAtBlock + (3*32)) { // ensure report is finalized
+            _moveClock(int256((reportAtBlock + (3*32)) - block.number));
         }
 
         vm.prank(alice);
         etherFiOracleInstance.submitReport(_report);
         vm.prank(bob);
         etherFiOracleInstance.submitReport(_report);
-    
+
         vm.prank(alice);
         etherFiAdminInstance.executeTasks(_report, _pubKey, _pubKey);
     }
