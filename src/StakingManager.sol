@@ -155,14 +155,17 @@ contract StakingManager is
     function batchApproveRegistration(
         uint256[] memory _validatorId, 
         bytes[] calldata _pubKey,
-        bytes[] calldata _signature
-    ) external onlyAdmin {
+        bytes[] calldata _signature,
+        bytes32[] calldata _depositDataRootApproval
+    ) external {
+        require(msg.sender == liquidityPoolContract, "Only LiquidityPool can call this function");
+
         for (uint256 x; x < _validatorId.length; ++x) {
             nodesManager.setEtherFiNodePhase(_validatorId[x], IEtherFiNode.VALIDATOR_PHASE.LIVE);
             // Deposit to the Beacon Chain
             bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId[x]);
             bytes32 beaconChainDepositRoot = depositRootGenerator.generateDepositRoot(_pubKey[x], _signature[x], withdrawalCredentials, 31 ether);
-            bytes32 registeredDataRoot = LiquidityPool(payable(liquidityPoolContract)).depositDataRootForApprovalDeposits(_validatorId[x]);
+            bytes32 registeredDataRoot = _depositDataRootApproval[x];
             require(beaconChainDepositRoot == registeredDataRoot, "Incorrect deposit data root");
             depositContractEth2.deposit{value: 31 ether}(_pubKey[x], withdrawalCredentials, _signature[x], beaconChainDepositRoot);
         }

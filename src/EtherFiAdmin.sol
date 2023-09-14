@@ -87,7 +87,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function _handleValidators(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) internal {
         // validatorsToApprove
-        stakingManager.batchApproveRegistration(_report.validatorsToApprove, _pubKey, _signature);
+        liquidityPool.batchApproveRegistration(_report.validatorsToApprove, _pubKey, _signature);
 
         // liquidityPoolValidatorsToExit
         liquidityPool.sendExitRequests(_report.liquidityPoolValidatorsToExit);

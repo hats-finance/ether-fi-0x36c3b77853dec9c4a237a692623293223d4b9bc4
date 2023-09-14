@@ -845,7 +845,8 @@ contract TestSetup is Test {
             });
         }
 
-        bytes32 depositRoot = _getDepositRoot();
+        // bytes32 depositRoot = _getDepositRoot();
+        bytes32 depositRoot = zeroRoot;
         vm.prank(alice);
         liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
 
@@ -854,7 +855,7 @@ contract TestSetup is Test {
         pubKey[1] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
 
         vm.prank(alice);
-        stakingManagerInstance.batchApproveRegistration(newValidators, pubKey, sig);
+        liquidityPoolInstance.batchApproveRegistration(newValidators, pubKey, sig);
     
         return newValidators;
     }

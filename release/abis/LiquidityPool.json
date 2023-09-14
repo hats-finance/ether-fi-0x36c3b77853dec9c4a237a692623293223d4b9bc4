@@ -42,37 +42,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "validatorId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "signature",
-        "type": "bytes"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "pubKey",
-        "type": "bytes"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "depositRoot",
-        "type": "bytes32"
-      }
-    ],
-    "name": "BatchRegisteredAsBnftHolder",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": true,
         "internalType": "address",
         "name": "beacon",
@@ -297,6 +266,50 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "validatorId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ValidatorApproved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "validatorId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "pubKey",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "depositRoot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ValidatorRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "bool",
         "name": "value",
         "type": "bool"
@@ -398,29 +411,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_firstIndex",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint128",
-        "name": "_lastIndex",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_index",
-        "type": "uint256"
-      }
-    ],
-    "name": "_isAssigned",
-    "outputs": [],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -454,6 +444,29 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_pubKey",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_signature",
+        "type": "bytes[]"
+      }
+    ],
+    "name": "batchApproveRegistration",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -824,6 +837,35 @@
     "name": "initializePhase2",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_firstIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_lastIndex",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_index",
+        "type": "uint256"
+      }
+    ],
+    "name": "isAssigned",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
