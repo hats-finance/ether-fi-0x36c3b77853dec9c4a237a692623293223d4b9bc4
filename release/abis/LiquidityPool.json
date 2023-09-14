@@ -6,6 +6,11 @@
   },
   {
     "inputs": [],
+    "name": "AboveMaxAllocation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "DataNotSet",
     "type": "error"
   },
