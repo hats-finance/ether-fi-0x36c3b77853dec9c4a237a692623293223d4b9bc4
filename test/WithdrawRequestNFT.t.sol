@@ -241,6 +241,9 @@ contract WithdrawRequestNFTTest is TestSetup {
         // bob mints 60 eETH and alilce spins up 2 validators with the deposited 60 ETH
         launch_validator();
 
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), 60 ether);
+
         // bob requests withdrawal
         vm.prank(bob);
         uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, 60 ether);

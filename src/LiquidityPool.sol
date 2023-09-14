@@ -167,7 +167,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param amount the requested amount to withdraw from contract
     function requestWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
 
-        if(totalValueInLp < amount || eETH.balanceOf(recipient) < amount) revert InsufficientLiquidity();
+        if(eETH.balanceOf(recipient) < amount) revert InsufficientLiquidity();
 
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
