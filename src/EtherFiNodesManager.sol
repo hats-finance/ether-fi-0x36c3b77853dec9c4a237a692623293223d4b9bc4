@@ -59,6 +59,7 @@ contract EtherFiNodesManager is
     event NodeExitRequested(uint256 _validatorId);
     event NodeExitProcessed(uint256 _validatorId);
     event NodeEvicted(uint256 _validatorId);
+    event PhaseChange(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE phase);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -315,7 +316,7 @@ contract EtherFiNodesManager is
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
             = getFullWithdrawalPayouts(_validatorId);
-        IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+        _setPhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
 
         _distributePayouts(_validatorId, toTreasury, toOperator, toTnft, toBnft);
     }
@@ -333,7 +334,7 @@ contract EtherFiNodesManager is
     ) external whenNotPaused onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             address etherfiNode = etherfiNodeAddress[_validatorIds[i]];
-            IEtherFiNode(etherfiNode).setPhase(IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
+            _setPhase(_validatorIds[i], IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
         }
     }
 
@@ -389,7 +390,7 @@ contract EtherFiNodesManager is
     /// @param _phase phase of the validator
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) public onlyStakingManagerContract {
         address etherfiNode = etherfiNodeAddress[_validatorId];
-        IEtherFiNode(etherfiNode).setPhase(_phase);
+        _setPhase(_validatorId, _phase);
     }
 
     /// @notice Sets the ipfs hash of the validator's encrypted private key
@@ -447,6 +448,12 @@ contract EtherFiNodesManager is
         numberOfValidators -= 1;
 
         emit NodeExitProcessed(_validatorId);
+    }
+
+    function _setPhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) internal {
+        address etherfiNode = etherfiNodeAddress[_validatorId];
+        IEtherFiNode(etherfiNode).setPhase(_phase);
+        emit PhaseChange(_validatorId, _phase);
     }
 
     function _processNodeEvict(uint256 _validatorId) internal {
