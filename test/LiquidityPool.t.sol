@@ -192,6 +192,19 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.requestWithdraw(alice, 2 ether);
     }
 
+    function test_withdraw_request_by_anyone() public {
+        vm.deal(bob, 100 ether);
+
+        vm.prank(bob);
+        liquidityPoolInstance.deposit{value: 100 ether}(bob);        
+
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), 100 ether);
+
+        vm.prank(alice);
+        liquidityPoolInstance.requestWithdraw(bob, 2 ether);
+    }
+
     function test_WithdrawFailsNotInitializedToken() public {
         startHoax(alice);
         vm.expectRevert();
