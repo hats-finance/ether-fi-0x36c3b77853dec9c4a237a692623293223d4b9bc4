@@ -176,15 +176,15 @@ contract StakingManager is
     /// @param _validatorIds the IDs of the validators deposits to cancel
     function batchCancelDeposit(uint256[] calldata _validatorIds) public whenNotPaused nonReentrant {
         for (uint256 x; x < _validatorIds.length; ++x) {
-            _cancelDeposit(_validatorIds[x], msg.sender);
+            _cancelDeposit(_validatorIds[x], msg.sender, 0);
         }
     }
 
     /// @notice Cancels a user's deposits
     /// @param _validatorIds the IDs of the validators deposits to cancel
-    function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) public whenNotPaused nonReentrant {
+    function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller, uint8 _cancelPhase) public whenNotPaused nonReentrant {
         for (uint256 x; x < _validatorIds.length; ++x) {
-            _cancelDeposit(_validatorIds[x], _caller);
+            _cancelDeposit(_validatorIds[x], _caller, _cancelPhase);
         }
     }
 
@@ -378,7 +378,7 @@ contract StakingManager is
 
     /// @notice Cancels a users stake
     /// @param _validatorId the ID of the validator deposit to cancel
-    function _cancelDeposit(uint256 _validatorId, address _caller) internal {
+    function _cancelDeposit(uint256 _validatorId, address _caller, uint8 _cancelPhase) internal {
         require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
 
         bidIdToStaker[_validatorId] = address(0);
@@ -387,7 +387,10 @@ contract StakingManager is
 
         // Call function in auction contract to re-initiate the bid that won
         auctionManager.reEnterAuction(_validatorId);
-        _refundDeposit(msg.sender, stakeAmount);
+        if(_cancelPhase == 1) {_refundDeposit(msg.sender, 31 ether);} 
+        else {_refundDeposit(msg.sender, stakeAmount);}
+
+        //Might need to burn BNFT
 
         emit DepositCancelled(_validatorId);
 

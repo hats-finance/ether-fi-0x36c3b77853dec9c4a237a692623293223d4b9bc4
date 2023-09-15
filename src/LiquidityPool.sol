@@ -280,18 +280,16 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         stakingManager.batchApproveRegistration(_validatorIds, _pubKey, _signature, depositDataRootApproval);
     }
 
-    function batchCancelDeposit(uint256[] calldata _validatorIds) external {
-        uint256 returnAmount = 2 ether * _validatorIds.length;
+    //@dev Cancel phase is a uint representation of when the user is cancelling their deposit
+    // ... Cancel phase = 1 if it is after the registration and 0 any other time
+    function batchCancelDepositBeforeRegistration(uint256[] calldata _validatorIds) external {
+        _cancelDeposits(0, _validatorIds);
+    }
 
-        totalValueOutOfLp += uint128(returnAmount);
-        numPendingDeposits -= uint32(_validatorIds.length);
-
-        stakingManager.batchCancelDepositAsBnftHolder(_validatorIds, msg.sender);
-
-        totalValueInLp -= uint128(returnAmount);
-
-        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
-        require(sent, "send fail");
+    //@dev Cancel phase is a uint representation of when the user is cancelling their deposit
+    // ... Cancel phase = 1 if it is after the registration and 0 any other time
+    function batchCancelDepositAfterRegistration(uint256[] calldata _validatorIds) external {
+        _cancelDeposits(1, _validatorIds);
     }
 
     function registerAsBnftHolder(address _user) public onlyAdmin {      
@@ -388,37 +386,37 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice sets the contract address for eETH
     /// @param _eETH address of eETH contract
-    function setTokenAddress(address _eETH) external onlyOwner NonZeroAddress(_eETH) {
+    function setTokenAddress(address _eETH) external onlyOwner {
         eETH = IeETH(_eETH);
     }
 
-    function setStakingManager(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setStakingManager(address _address) external onlyOwner {
         stakingManager = IStakingManager(_address);
     }
 
-    function setEtherFiNodesManager(address _nodeManager) public onlyOwner NonZeroAddress(_nodeManager) {
+    function setEtherFiNodesManager(address _nodeManager) public onlyOwner {
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
-    function setMembershipManager(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setMembershipManager(address _address) external onlyOwner {
         membershipManager = IMembershipManager(_address);
     }
 
-    function setTnft(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setTnft(address _address) external onlyOwner{
         tNft = ITNFT(_address);
     }
 
-    function setEtherFiAdminContract(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setEtherFiAdminContract(address _address) external onlyOwner {
         etherFiAdminContract = _address;
     }
 
-    function setWithdrawRequestNFT(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setWithdrawRequestNFT(address _address) external onlyOwner {
         withdrawRequestNFT = IWithdrawRequestNFT(_address);
     }
 
     /// @notice Updates the address of the admin
     /// @param _address the new address to set as admin
-    function updateAdmin(address _address, bool _isAdmin) external onlyOwner NonZeroAddress(_address) {
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         admins[_address] = _isAdmin;
     }
 
@@ -463,6 +461,25 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function _cancelDeposits(uint8 _cancelPhase, uint256[] calldata _validatorIds) internal {
+        uint256 returnAmount;
+        if(_cancelPhase == 1){
+            returnAmount = 1 ether * _validatorIds.length;
+        } else {
+            returnAmount = 2 ether * _validatorIds.length;
+        }
+
+        totalValueOutOfLp += uint128(returnAmount);
+        numPendingDeposits -= uint32(_validatorIds.length);
+
+        stakingManager.batchCancelDepositAsBnftHolder(_validatorIds, msg.sender, _cancelPhase);
+
+        totalValueInLp -= uint128(returnAmount);
+        
+        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+        require(sent, "send fail");
+    }
 
     function _allocateSourceOfFunds() public view returns (SourceOfFunds) {
         uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
@@ -569,7 +586,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return (_share * getTotalPooledEther()) / totalShares;
     }
 
-     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
         return (_a > _b) ? _b : _a;
     }
 
