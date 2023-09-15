@@ -167,15 +167,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
     function requestWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
-
-        if(totalValueInLp < amount || eETH.balanceOf(recipient) < amount) revert InsufficientLiquidity();
-
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
 
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
         // transfer shares to WithdrawRequestNFT contract from this contract
-        eETH.transferFrom(recipient, address(withdrawRequestNFT), amount);
+        eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
         return requestId;
     }
 

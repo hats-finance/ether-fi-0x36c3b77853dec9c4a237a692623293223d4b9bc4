@@ -188,8 +188,33 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         startHoax(alice);
-        vm.expectRevert(LiquidityPool.InsufficientLiquidity.selector);
+        vm.expectRevert("TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
         liquidityPoolInstance.requestWithdraw(alice, 2 ether);
+    }
+
+    function test_withdraw_request_by_anyone() public {
+        vm.deal(bob, 100 ether);
+        vm.deal(alice, 10 ether);
+
+        vm.prank(bob);
+        liquidityPoolInstance.deposit{value: 100 ether}(bob);        
+
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), 100 ether);
+
+        vm.startPrank(alice);
+        vm.expectRevert("TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
+        liquidityPoolInstance.requestWithdraw(bob, 2 ether);
+
+        liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        eETHInstance.approve(address(liquidityPoolInstance), 5 ether);
+
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+
+        liquidityPoolInstance.requestWithdraw(bob, 2 ether);
+        vm.stopPrank();
+
+        assertEq(eETHInstance.balanceOf(alice), 8 ether);
     }
 
     function test_WithdrawFailsNotInitializedToken() public {
