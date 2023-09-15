@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./TestSetup.sol";
+import "forge-std/Test.sol";
 
 contract LiquidityPoolTest is TestSetup {
 
@@ -22,6 +23,7 @@ contract LiquidityPoolTest is TestSetup {
     uint256[] public validators;
     bytes[] public sig;
     bytes32 public rootForApproval;
+    uint256 public testnetFork;
 
     function setUp() public {
         setUpTests();
@@ -40,6 +42,8 @@ contract LiquidityPoolTest is TestSetup {
             0.1 ether
         );
         vm.stopPrank();
+
+        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
     }
 
     function test_DepositOrWithdrawOfZeroFails() public {
@@ -1217,8 +1221,69 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(stakingManagerInstance.bidIdToStaker(14), alice);
     }
 
+    function test_RestakedDepositFromBNFTHolder() public {
+
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+
+        // set BNFT players to restake on deposit
+        vm.prank(alice);
+        liquidityPoolInstance.setRestakeBnftDeposits(true);
+
+        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 4;
+        _executeAdminTasks(report);
+
+        vm.startPrank(alice);
+        liquidityPoolInstance.registerAsBnftHolder(alice);
+        liquidityPoolInstance.registerAsBnftHolder(greg);
+
+        vm.deal(alice, 100000 ether);
+        vm.deal(greg, 100000 ether);
+
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
+
+        //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
+        liquidityPoolInstance.deposit{value: 120 ether}(address(alice));
+        vm.stopPrank();
+
+        //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
+        vm.warp(12431561615);
+
+        liquidityPoolInstance.dutyForWeek();
+
+        startHoax(alice);
+        bidIds = auctionInstance.createBid{value: 1 ether}(
+            10,
+            0.1 ether
+        );
+        vm.stopPrank();
+
+        startHoax(alice);
+        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 0, 4);
+
+        assertEq(stakingManagerInstance.bidIdToStaker(11), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(12), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(13), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(14), alice);
+
+        // verify that created nodes have associated eigenPods
+        IEtherFiNode node = IEtherFiNode(managerInstance.etherfiNodeAddress(bidIds[0]));
+        assertFalse(address(node.eigenPod()) == address(0x0));
+        node = IEtherFiNode(managerInstance.etherfiNodeAddress(bidIds[1]));
+        assertFalse(address(node.eigenPod()) == address(0x0));
+        node = IEtherFiNode(managerInstance.etherfiNodeAddress(bidIds[2]));
+        assertFalse(address(node.eigenPod()) == address(0x0));
+        node = IEtherFiNode(managerInstance.etherfiNodeAddress(bidIds[3]));
+        assertFalse(address(node.eigenPod()) == address(0x0));
+    }
+
     function test_RegisterAsBNFTHolder() public {
-        
+
         test_DepositFromBNFTHolder();
 
         assertEq(processedBids[0], 11);
