@@ -114,6 +114,12 @@
         "internalType": "address",
         "name": "withdrawSafe",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "source",
+        "type": "uint8"
       }
     ],
     "name": "StakeDeposit",
@@ -288,6 +294,11 @@
         "internalType": "bytes[]",
         "name": "_signature",
         "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_depositDataRootApproval",
+        "type": "bytes32[]"
       }
     ],
     "name": "batchApproveRegistration",
@@ -332,6 +343,21 @@
         "internalType": "uint256[]",
         "name": "_candidateBidIds",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "address",
+        "name": "_staker",
+        "type": "address"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "_source",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "_enableRestaking",
+        "type": "bool"
       }
     ],
     "name": "batchDepositWithBidIds",
@@ -353,14 +379,9 @@
         "type": "uint256[]"
       },
       {
-        "internalType": "address",
-        "name": "_staker",
-        "type": "address"
-      },
-      {
-        "internalType": "enum ILiquidityPool.SourceOfFunds",
-        "name": "_source",
-        "type": "uint8"
+        "internalType": "bool",
+        "name": "_enableRestaking",
+        "type": "bool"
       }
     ],
     "name": "batchDepositWithBidIds",

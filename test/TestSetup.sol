@@ -350,8 +350,16 @@ contract TestSetup is Test {
         etherFiOracleImplementation = new EtherFiOracle();
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
         etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
-        etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, 1);
-        
+
+        // special case for forked tests utilizing oracle
+        // can't use env variable because then it would apply to all tests including non-forked ones
+        if (block.chainid == 5) {
+            uint32 genesisSlotTimestamp = uint32(1616508000);
+            etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, genesisSlotTimestamp);
+        } else {
+            etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, 1);
+        }
+
         etherFiOracleInstance.addCommitteeMember(alice);
         etherFiOracleInstance.addCommitteeMember(bob);
 
@@ -389,7 +397,7 @@ contract TestSetup is Test {
         );
 
         liquidityPoolInstance.setEtherFiAdminContract(address(etherFiAdminInstance));
-        liquidityPoolInstance.initializePhase2();
+        liquidityPoolInstance.initializePhase2(604800, 1, 1);
 
         uint256[] memory validatorsToApprove = new uint256[](1);
         uint256[] memory validatorsToExit = new uint256[](1);
@@ -651,17 +659,23 @@ contract TestSetup is Test {
     }
 
     function _approveNodeOperators() internal {
-        address[] memory users = new address[](2);
+        address[] memory users = new address[](4);
         users[0] = address(alice);
         users[1] = address(bob);
+        users[2] = address(bob);
+        users[3] = address(owner);
 
-        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](2);
+        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](4);
         approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
         approvedTags[1] = ILiquidityPool.SourceOfFunds.ETHER_FAN;
+        approvedTags[2] = ILiquidityPool.SourceOfFunds.EETH;
+        approvedTags[3] = ILiquidityPool.SourceOfFunds.EETH;
 
-        bool[] memory approvals = new bool[](2);
+        bool[] memory approvals = new bool[](4);
         approvals[0] = true;
         approvals[1] = true;
+        approvals[2] = true;
+        approvals[3] = true;
 
         nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
 
@@ -685,15 +699,15 @@ contract TestSetup is Test {
         _report.refBlockTo = slotTo; //
 
         uint32 reportAtBlock = _report.refSlotTo + 3 * 32;
-        if (block.number < reportAtBlock) {
-            _moveClock(int256(reportAtBlock - block.number));
+        if (block.number < reportAtBlock + (3*32)) { // ensure report is finalized
+            _moveClock(int256((reportAtBlock + (3*32)) - block.number));
         }
 
         vm.prank(alice);
         etherFiOracleInstance.submitReport(_report);
         vm.prank(bob);
         etherFiOracleInstance.submitReport(_report);
-    
+
         vm.prank(alice);
         etherFiAdminInstance.executeTasks(_report, _pubKey, _pubKey);
     }
@@ -839,7 +853,8 @@ contract TestSetup is Test {
             });
         }
 
-        bytes32 depositRoot = _getDepositRoot();
+        // bytes32 depositRoot = _getDepositRoot();
+        bytes32 depositRoot = zeroRoot;
         vm.prank(alice);
         liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
 
@@ -848,7 +863,7 @@ contract TestSetup is Test {
         pubKey[1] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
 
         vm.prank(alice);
-        stakingManagerInstance.batchApproveRegistration(newValidators, pubKey, sig);
+        liquidityPoolInstance.batchApproveRegistration(newValidators, pubKey, sig);
     
         return newValidators;
     }

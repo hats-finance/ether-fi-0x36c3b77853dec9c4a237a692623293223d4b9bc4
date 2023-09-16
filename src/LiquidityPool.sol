@@ -56,6 +56,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     mapping(address => bool) public whitelisted;
     mapping(address => BnftHoldersIndex) public bnftHoldersIndexes;
 
+    // TODO(Dave): Before we go to mainnet consider packing this with other variables
+    bool public restakeBnftDeposits;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -66,7 +69,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event BnftHolderDeregistered(address user, uint256 index);
     event BnftHolderRegistered(address user, uint256 index);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
-    event BatchRegisteredAsBnftHolder(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
+    event ValidatorRegistered(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
+    event ValidatorApproved(uint256 validatorId);
     event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
     event FundsDeposited(SourceOfFunds source, uint256 amount);
     event FundsWithdrawn(SourceOfFunds source, uint256 amount);
@@ -97,11 +101,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         __UUPSUpgradeable_init(); 
     }
 
-    function initializePhase2() external onlyOwner {        
-        schedulingPeriodInSeconds = 604800;
+    function initializePhase2(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal) external onlyOwner {        
+        schedulingPeriodInSeconds = _schedulingPeriod;
 
-        fundStatistics[SourceOfFunds.EETH].numberOfValidators = 1;
-        fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = 1;
+        fundStatistics[SourceOfFunds.EETH].numberOfValidators = _eEthNumVal;
+        fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = _etherFanNumVal;
     }
 
     function deposit(address _user) external payable returns (uint256) {
@@ -155,7 +159,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         eETH.burnShares(msg.sender, share);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
-        require(sent, "Failed to send Ether");
+        require(sent, "send fail");
 
         emit Withdraw(msg.sender, _recipient, _amount);
         return share;
@@ -166,15 +170,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param recipient the recipient who will be issued the NFT
     /// @param amount the requested amount to withdraw from contract
     function requestWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
-
-        if(eETH.balanceOf(recipient) < amount) revert InsufficientLiquidity();
-
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
 
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
         // transfer shares to WithdrawRequestNFT contract from this contract
-        eETH.transferFrom(recipient, address(withdrawRequestNFT), amount);
+        eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
         return requestId;
     }
 
@@ -187,7 +188,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function requestMembershipNFTWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
-        require(totalValueInLp >= amount, "Not enough ETH in the liquidity pool");
+        require(totalValueInLp >= amount, "Not enough ETH");
 
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
@@ -196,30 +197,25 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
         return requestId;
-    }
+    } 
+
+    error AboveMaxAllocation();
 
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory){
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
-        _isAssigned(firstIndex, lastIndex, _index);
+        require(isAssigned(firstIndex, lastIndex, _index), "Not assigned");
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
         require(bnftHolders[_index].timestamp < uint32(_getCurrentSchedulingStartTimestamp()), "Already deposited");
-
         if(_index == lastIndex) {
-            require(_numberOfValidators <= lastIndexNumOfValidators, "Above max allocation");
+            if(_numberOfValidators > lastIndexNumOfValidators) revert AboveMaxAllocation();
         } else {
-            require(_numberOfValidators <= max_validators_per_owner, "Above max allocation");
+            if(_numberOfValidators > max_validators_per_owner) revert AboveMaxAllocation();
         }
+        require(msg.value == _numberOfValidators * 2 ether, "Deposit 2 ETH per validator");
+        require(totalValueInLp + msg.value >= 32 ether * _numberOfValidators, "Not enough balance");
 
         SourceOfFunds _source = _allocateSourceOfFunds();
-
-        if(_source == SourceOfFunds.EETH){
-            fundStatistics[SourceOfFunds.EETH].numberOfValidators += uint32(_numberOfValidators);
-        } else {
-            fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators += uint32(_numberOfValidators);
-        }
-
-        require(msg.value == _numberOfValidators * 2 ether, "B-NFT holder must deposit 2 ETH per validator");
-        require(totalValueInLp + msg.value >= 32 ether * _numberOfValidators, "Not enough balance");
+        fundStatistics[_source].numberOfValidators += uint32(_numberOfValidators);
 
         uint256 amountFromLp = 30 ether * _numberOfValidators;
         if (amountFromLp > type(uint128).max) revert InvalidAmount();
@@ -230,14 +226,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         bnftHolders[_index].timestamp = uint32(block.timestamp);
 
-        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, msg.sender, _source, false); // TODO(Dave) how do players decide restaking or not
+        uint256[] memory newValidators = stakingManager.batchDepositWithBidIds{value: 32 ether * _numberOfValidators}(_candidateBidIds, msg.sender, _source, restakeBnftDeposits);
         if (_numberOfValidators > newValidators.length) {
             uint256 returnAmount = 2 ether * (_numberOfValidators - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
             totalValueInLp -= uint128(returnAmount);
 
             (bool sent, ) = msg.sender.call{value: returnAmount}("");
-            require(sent, "Failed to send Ether");
+            require(sent, "send fail");
         }
         
         return newValidators;
@@ -255,15 +251,33 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         bytes32[] calldata _depositDataRootApproval,
         bytes[] calldata _signaturesForApprovalDeposit
     ) external {
-        require(_validatorIds.length == _registerValidatorDepositData.length, "Array lengths must match");
+        require(_validatorIds.length == _registerValidatorDepositData.length && _validatorIds.length == _depositDataRootApproval.length && _validatorIds.length == _signaturesForApprovalDeposit.length, "lengths differ");
 
-        numPendingDeposits -= uint32(_validatorIds.length);
         stakingManager.batchRegisterValidators(_depositRoot, _validatorIds, msg.sender, address(this), _registerValidatorDepositData, msg.sender);
         
-        for(uint256 x; x < _validatorIds.length; x++) {
-            depositDataRootForApprovalDeposits[_validatorIds[x]] = _depositDataRootApproval[x];
-            emit BatchRegisteredAsBnftHolder(_validatorIds[x], _signaturesForApprovalDeposit[x], _registerValidatorDepositData[x].publicKey, _depositDataRootApproval[x]);
+        for(uint256 i; i < _validatorIds.length; i++) {
+            depositDataRootForApprovalDeposits[_validatorIds[i]] = _depositDataRootApproval[i];
+            emit ValidatorRegistered(_validatorIds[i], _signaturesForApprovalDeposit[i], _registerValidatorDepositData[i].publicKey, _depositDataRootApproval[i]);
         }
+    }
+
+    function batchApproveRegistration(
+        uint256[] memory _validatorIds, 
+        bytes[] calldata _pubKey,
+        bytes[] calldata _signature
+    ) external onlyAdmin {
+        require(_validatorIds.length == _pubKey.length && _validatorIds.length == _signature.length, "lengths differ");
+
+        bytes32[] memory depositDataRootApproval = new bytes32[](_validatorIds.length);
+        for(uint256 i; i < _validatorIds.length; i++) {
+            depositDataRootApproval[i] = depositDataRootForApprovalDeposits[_validatorIds[i]];
+            delete depositDataRootForApprovalDeposits[_validatorIds[i]];        
+
+            emit ValidatorApproved(_validatorIds[i]);
+        }
+
+        numPendingDeposits -= uint32(_validatorIds.length);
+        stakingManager.batchApproveRegistration(_validatorIds, _pubKey, _signature, depositDataRootApproval);
     }
 
     function batchCancelDeposit(uint256[] calldata _validatorIds) external {
@@ -277,7 +291,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp -= uint128(returnAmount);
 
         (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
-        require(sent, "Failed to send Ether");
+        require(sent, "send fail");
     }
 
     function registerAsBnftHolder(address _user) public onlyAdmin {      
@@ -351,7 +365,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice Rebase by ether.fi
     function rebase(int128 _accruedRewards) public {
-        require(msg.sender == address(membershipManager), "only membership manager can rebase");
+        require(msg.sender == address(membershipManager), "Incorrect Caller");
         totalValueOutOfLp = uint128(int128(totalValueOutOfLp) + _accruedRewards);
 
         emit Rebase(getTotalPooledEther(), eETH.totalShares());
@@ -369,7 +383,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             tNft.transferFrom(owner, address(this), _tokenIds[i]);
         }
         (bool sent, ) = address(owner).call{value: amount}("");
-        require(sent, "Failed to send Ether");
+        require(sent, "send fail");
     }
 
     /// @notice sets the contract address for eETH
@@ -400,6 +414,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function setWithdrawRequestNFT(address _address) external onlyOwner NonZeroAddress(_address) {
         withdrawRequestNFT = IWithdrawRequestNFT(_address);
+    }
+
+    /// @notice Whether or not nodes created via bNFT deposits should be restaked
+    function setRestakeBnftDeposits(bool _restake) external onlyAdmin {
+        restakeBnftDeposits = _restake;
     }
 
     /// @notice Updates the address of the admin
@@ -472,11 +491,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
-    function _isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view {
+    function isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view returns (bool) {
         if(_lastIndex < _firstIndex) {
-            require(_index <= _lastIndex || (_index >= _firstIndex && _index < numberOfActiveSlots()), "Not assigned");
+            if((_index <= _lastIndex) || (_index >= _firstIndex && _index < numberOfActiveSlots())){
+                return true;
+            }
+            return false;
         }else {
-            require(_index >= _firstIndex && _index <= _lastIndex, "Not assigned");
+            if(_index >= _firstIndex && _index <= _lastIndex) {
+                return true;
+            }
+            return false;
         }
     }
 

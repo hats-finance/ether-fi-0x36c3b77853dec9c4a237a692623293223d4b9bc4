@@ -5,6 +5,11 @@
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "MustClaimRestakedWithdrawals",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -137,6 +142,25 @@
       }
     ],
     "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum IEtherFiNode.VALIDATOR_PHASE",
+        "name": "_phase",
+        "type": "uint8"
+      }
+    ],
+    "name": "PhaseChanged",
     "type": "event"
   },
   {
@@ -309,6 +333,32 @@
         "internalType": "uint256",
         "name": "toTreasury",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "delayedWithdrawalRouter",
+    "outputs": [
+      {
+        "internalType": "contract IDelayedWithdrawalRouter",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "eigenPodManager",
+    "outputs": [
+      {
+        "internalType": "contract IEigenPodManager",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -702,6 +752,19 @@
   },
   {
     "inputs": [],
+    "name": "maxEigenlayerWithrawals",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "nonExitPenaltyDailyRate",
     "outputs": [
       {
@@ -913,6 +976,19 @@
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
+      }
+    ],
+    "name": "queueRestakedWithdrawal",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -941,6 +1017,32 @@
       }
     ],
     "name": "sendExitRequest",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_addr",
+        "type": "address"
+      }
+    ],
+    "name": "setDelayedWithdrawalRouter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_addr",
+        "type": "address"
+      }
+    ],
+    "name": "setEigenPodMananger",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -977,6 +1079,19 @@
       }
     ],
     "name": "setEtherFiNodePhase",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "_max",
+        "type": "uint8"
+      }
+    ],
+    "name": "setMaxEigenLayerWithdrawals",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -210,7 +210,7 @@ contract NodeOperatorManagerTest is TestSetup {
 
         address[] memory users = new address[](2);
         users[0] = address(alice);
-        users[1] = address(bob);
+        users[1] = address(greg);
 
         address[] memory incorrectUsers = new address[](1);
         users[0] = address(alice);
@@ -241,8 +241,8 @@ contract NodeOperatorManagerTest is TestSetup {
 
         assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), ILiquidityPool.SourceOfFunds.EETH), false);
         assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(alice), ILiquidityPool.SourceOfFunds.ETHER_FAN), true);
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), ILiquidityPool.SourceOfFunds.EETH), false);
-        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(bob), ILiquidityPool.SourceOfFunds.ETHER_FAN), true);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(greg), ILiquidityPool.SourceOfFunds.ETHER_FAN), true);
+        assertEq(nodeOperatorManagerInstance.operatorApprovedTags(address(greg), ILiquidityPool.SourceOfFunds.EETH), false);
 
         //Lets update again and make sure it changes
         approvals[0] = true;

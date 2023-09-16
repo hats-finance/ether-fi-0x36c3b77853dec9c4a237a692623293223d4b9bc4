@@ -6,6 +6,11 @@
   },
   {
     "inputs": [],
+    "name": "AboveMaxAllocation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "DataNotSet",
     "type": "error"
   },
@@ -36,37 +41,6 @@
       }
     ],
     "name": "AdminChanged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "validatorId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "signature",
-        "type": "bytes"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "pubKey",
-        "type": "bytes"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "depositRoot",
-        "type": "bytes32"
-      }
-    ],
-    "name": "BatchRegisteredAsBnftHolder",
     "type": "event"
   },
   {
@@ -109,6 +83,12 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
       }
     ],
     "name": "BnftHolderRegistered",
@@ -291,6 +271,50 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "validatorId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ValidatorApproved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "validatorId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "pubKey",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "depositRoot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ValidatorRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "bool",
         "name": "value",
         "type": "bool"
@@ -352,6 +376,32 @@
   },
   {
     "inputs": [],
+    "name": "DEPRECATED_eEthliquidStakingOpened",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_regulationsManager",
+    "outputs": [
+      {
+        "internalType": "contract IRegulationsManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "_allocateSourceOfFunds",
     "outputs": [
       {
@@ -360,29 +410,6 @@
         "type": "uint8"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_firstIndex",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint128",
-        "name": "_lastIndex",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_index",
-        "type": "uint256"
-      }
-    ],
-    "name": "_isAssigned",
-    "outputs": [],
     "stateMutability": "view",
     "type": "function"
   },
@@ -422,6 +449,29 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_pubKey",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_signature",
+        "type": "bytes[]"
+      }
+    ],
+    "name": "batchApproveRegistration",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -548,9 +598,33 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_index",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "bnftHoldersIndexes",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "registered",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint32",
+        "name": "index",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_bNftHolder",
+        "type": "address"
       }
     ],
     "name": "deRegisterBnftHolder",
@@ -564,11 +638,6 @@
         "internalType": "address",
         "name": "_user",
         "type": "address"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
       }
     ],
     "name": "deposit",
@@ -593,11 +662,6 @@
         "internalType": "address",
         "name": "_recipient",
         "type": "address"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
       }
     ],
     "name": "deposit",
@@ -661,19 +725,6 @@
         "internalType": "contract IeETH",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "eEthliquidStakingOpened",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -780,23 +831,62 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_regulationsManager",
-        "type": "address"
-      }
-    ],
+    "inputs": [],
     "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "uint128",
+        "name": "_schedulingPeriod",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_eEthNumVal",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_etherFanNumVal",
+        "type": "uint32"
+      }
+    ],
     "name": "initializePhase2",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_firstIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_lastIndex",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_index",
+        "type": "uint256"
+      }
+    ],
+    "name": "isAssigned",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -914,19 +1004,6 @@
     "name": "registerAsBnftHolder",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "regulationsManager",
-    "outputs": [
-      {
-        "internalType": "contract IRegulationsManager",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -1331,19 +1408,6 @@
       }
     ],
     "name": "updateAdmin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bool",
-        "name": "_value",
-        "type": "bool"
-      }
-    ],
-    "name": "updateLiquidStakingStatus",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

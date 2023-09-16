@@ -15,10 +15,6 @@ contract SmallScenariosTest is TestSetup {
     function setUp() public {
         setUpTests();
 
-        sig = new bytes[](2);
-        sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
-        sig[1] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
-
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         bobProof = merkle.getProof(whiteListedAddresses, 4);
         chadProof = merkle.getProof(whiteListedAddresses, 5);
@@ -171,6 +167,12 @@ contract SmallScenariosTest is TestSetup {
             31 ether
         );
 
+        bytes[] memory pubKey = new bytes[](1);
+        pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+
+        bytes[] memory sig = new bytes[](1);
+        sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
+
         depositDataRootsForApproval[0] = rootForApproval;
 
         depositDataArray[0] = IStakingManager
@@ -261,12 +263,8 @@ contract SmallScenariosTest is TestSetup {
         assert(liquidityPoolInstance.getTotalPooledEther() >= 47.5 ether); // 63 - 15.5 = 47.5
         assert(address(liquidityPoolInstance).balance >= 17.5 ether); // 33 - 15.5 = 17.5
 
-        bytes[] memory pubKey = new bytes[](2);
-        pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
-        pubKey[1] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
-
         vm.prank(alice);
-        stakingManagerInstance.batchApproveRegistration(processedBidIds, pubKey, sig);
+        liquidityPoolInstance.batchApproveRegistration(processedBidIds, pubKey, sig);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(

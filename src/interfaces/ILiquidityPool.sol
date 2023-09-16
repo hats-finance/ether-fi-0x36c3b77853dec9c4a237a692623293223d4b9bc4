@@ -60,6 +60,7 @@ interface ILiquidityPool {
 
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory);
     function batchRegisterAsBnftHolder(bytes32 _depositRoot, uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _registerValidatorDepositData, bytes32[] calldata _depositDataRootApproval, bytes[] calldata _signaturesForApprovalDeposit) external;
+    function batchApproveRegistration(uint256[] memory _validatorIds, bytes[] calldata _pubKey, bytes[] calldata _signature) external;
     function batchCancelDeposit(uint256[] calldata _validatorIds) external;
     function sendExitRequests(uint256[] calldata _validatorIds) external;
 
@@ -71,5 +72,6 @@ interface ILiquidityPool {
     function setTnft(address _address) external;
     function setWithdrawRequestNFT(address _address) external; 
     function setStakingTargetWeights(uint32 _eEthWeight, uint32 _etherFanWeight) external;
+    function setEtherFiAdminContract(address _address) external;
     function updateAdmin(address _newAdmin, bool _isAdmin) external;
 }
