@@ -236,10 +236,14 @@ contract SmallScenariosTest is TestSetup {
         
         /// Chad wants to withdraw his ETH from the pool.
         /// He has a claimable balance of 15.5 ETH but the Pool only has a balance of 0.0453125 ETH.
-        /// EtherFi should make sure that there is sufficient liquidity in the pool to allow for withdrawals
-        vm.expectRevert("TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
+        /// EtherFi should allow users to request withdrawals even if the pool doesn't have enough ETH to cover it.
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 15.5 ether);
+
         vm.prank(chad);
-        liquidityPoolInstance.requestWithdraw(chad, 15.5 ether);
+        eETHInstance.approve(address(liquidityPoolInstance), 15.5 ether);
+
+        vm.prank(chad);
+        uint256 withdrawRequestId = liquidityPoolInstance.requestWithdraw(chad, 15.5 ether);
         
         // EtherFi deposits a validators worth (32 ETH) into the pool to allow users to withdraw
         vm.deal(owner, 100 ether);
@@ -249,14 +253,6 @@ contract SmallScenariosTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether + 32 ether);
         assertEq(address(liquidityPoolInstance).balance, 32 ether + 1 ether);
         vm.stopPrank();
-        
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 15.5 ether);
-
-        // Chad withdraws 
-        vm.prank(chad);
-        eETHInstance.approve(address(liquidityPoolInstance), 15.5 ether);
-        vm.prank(chad);
-        uint256 withdrawRequestId = liquidityPoolInstance.requestWithdraw(chad, 15.5 ether);
 
         vm.prank(alice);
         withdrawRequestNFTInstance.finalizeRequests(withdrawRequestId);
