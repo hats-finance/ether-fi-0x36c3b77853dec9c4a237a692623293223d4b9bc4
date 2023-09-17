@@ -61,7 +61,7 @@ interface ILiquidityPool {
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _index, uint256 _numberOfValidators) external payable returns (uint256[] memory);
     function batchRegisterAsBnftHolder(bytes32 _depositRoot, uint256[] calldata _validatorIds, IStakingManager.DepositData[] calldata _registerValidatorDepositData, bytes32[] calldata _depositDataRootApproval, bytes[] calldata _signaturesForApprovalDeposit) external;
     function batchApproveRegistration(uint256[] memory _validatorIds, bytes[] calldata _pubKey, bytes[] calldata _signature) external;
-    function batchCancelDepositBeforeRegistration(uint256[] calldata _validatorIds) external;
+    function batchCancelDeposit(uint256[] calldata _validatorIds) external;
     function sendExitRequests(uint256[] calldata _validatorIds) external;
 
     function rebase(int128 _accruedRewards) external;

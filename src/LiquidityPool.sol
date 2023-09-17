@@ -282,14 +282,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     //@dev Cancel phase is a uint representation of when the user is cancelling their deposit
     // ... Cancel phase = 1 if it is after the registration and 0 any other time
-    function batchCancelDepositBeforeRegistration(uint256[] calldata _validatorIds) external {
-        _cancelDeposits(0, _validatorIds);
-    }
-
-    //@dev Cancel phase is a uint representation of when the user is cancelling their deposit
-    // ... Cancel phase = 1 if it is after the registration and 0 any other time
-    function batchCancelDepositAfterRegistration(uint256[] calldata _validatorIds) external {
-        _cancelDeposits(1, _validatorIds);
+    function batchCancelDeposit(uint256[] calldata _validatorIds) external {
+        _cancelDeposits(_validatorIds);
     }
 
     function registerAsBnftHolder(address _user) public onlyAdmin {      
@@ -462,19 +456,19 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _cancelDeposits(uint8 _cancelPhase, uint256[] calldata _validatorIds) internal {
+    function _cancelDeposits(uint256[] calldata _validatorIds) internal {
         uint256 returnAmount;
-        if(_cancelPhase == 1){
-            returnAmount = 1 ether * _validatorIds.length;
-        } else {
-            returnAmount = 2 ether * _validatorIds.length;
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            if(nodesManager.phase(_validatorIds[i]) == IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL) {
+                returnAmount += 1 ether;
+            } else {
+                returnAmount += 2 ether;
+            }
         }
 
         totalValueOutOfLp += uint128(returnAmount);
         numPendingDeposits -= uint32(_validatorIds.length);
-
-        stakingManager.batchCancelDepositAsBnftHolder(_validatorIds, msg.sender, _cancelPhase);
-
+        stakingManager.batchCancelDepositAsBnftHolder(_validatorIds, msg.sender);
         totalValueInLp -= uint128(returnAmount);
         
         (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
