@@ -381,13 +381,21 @@ contract StakingManager is
     function _cancelDeposit(uint256 _validatorId, address _caller) internal {
         require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
 
+        IEtherFiNode.VALIDATOR_PHASE validatorPhase = nodesManager.phase(_validatorId);
+
         bidIdToStaker[_validatorId] = address(0);
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.CANCELLED);
         nodesManager.unregisterEtherFiNode(_validatorId);
 
         // Call function in auction contract to re-initiate the bid that won
         auctionManager.reEnterAuction(_validatorId);
-        _refundDeposit(msg.sender, stakeAmount);
+        if(validatorPhase == IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL) {
+            _refundDeposit(msg.sender, 31 ether);
+        } else {
+            _refundDeposit(msg.sender, stakeAmount);
+        }
+
+        //Might need to burn BNFT
 
         emit DepositCancelled(_validatorId);
 

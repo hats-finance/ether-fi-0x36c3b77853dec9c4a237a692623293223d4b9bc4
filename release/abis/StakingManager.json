@@ -114,6 +114,19 @@
         "internalType": "address",
         "name": "withdrawSafe",
         "type": "address"
+      }
+    ],
+    "name": "StakeDeposit",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
       },
       {
         "indexed": false,
@@ -122,7 +135,7 @@
         "type": "uint8"
       }
     ],
-    "name": "StakeDeposit",
+    "name": "StakeSource",
     "type": "event"
   },
   {

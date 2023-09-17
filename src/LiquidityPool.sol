@@ -281,15 +281,20 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function batchCancelDeposit(uint256[] calldata _validatorIds) external {
-        uint256 returnAmount = 2 ether * _validatorIds.length;
+        uint256 returnAmount;
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            if(nodesManager.phase(_validatorIds[i]) == IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL) {
+                returnAmount += 1 ether;
+            } else {
+                returnAmount += 2 ether;
+            }
+        }
 
         totalValueOutOfLp += uint128(returnAmount);
         numPendingDeposits -= uint32(_validatorIds.length);
-
         stakingManager.batchCancelDepositAsBnftHolder(_validatorIds, msg.sender);
-
         totalValueInLp -= uint128(returnAmount);
-
+        
         (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
         require(sent, "send fail");
     }
@@ -388,31 +393,31 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice sets the contract address for eETH
     /// @param _eETH address of eETH contract
-    function setTokenAddress(address _eETH) external onlyOwner NonZeroAddress(_eETH) {
+    function setTokenAddress(address _eETH) external onlyOwner {
         eETH = IeETH(_eETH);
     }
 
-    function setStakingManager(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setStakingManager(address _address) external onlyOwner {
         stakingManager = IStakingManager(_address);
     }
 
-    function setEtherFiNodesManager(address _nodeManager) public onlyOwner NonZeroAddress(_nodeManager) {
+    function setEtherFiNodesManager(address _nodeManager) public onlyOwner {
         nodesManager = IEtherFiNodesManager(_nodeManager);
     }
 
-    function setMembershipManager(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setMembershipManager(address _address) external onlyOwner {
         membershipManager = IMembershipManager(_address);
     }
 
-    function setTnft(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setTnft(address _address) external onlyOwner{
         tNft = ITNFT(_address);
     }
 
-    function setEtherFiAdminContract(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setEtherFiAdminContract(address _address) external onlyOwner {
         etherFiAdminContract = _address;
     }
 
-    function setWithdrawRequestNFT(address _address) external onlyOwner NonZeroAddress(_address) {
+    function setWithdrawRequestNFT(address _address) external onlyOwner {
         withdrawRequestNFT = IWithdrawRequestNFT(_address);
     }
 
@@ -423,7 +428,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice Updates the address of the admin
     /// @param _address the new address to set as admin
-    function updateAdmin(address _address, bool _isAdmin) external onlyOwner NonZeroAddress(_address) {
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         admins[_address] = _isAdmin;
     }
 
@@ -574,7 +579,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return (_share * getTotalPooledEther()) / totalShares;
     }
 
-     function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    function _min(uint256 _a, uint256 _b) internal pure returns (uint256) {
         return (_a > _b) ? _b : _a;
     }
 
