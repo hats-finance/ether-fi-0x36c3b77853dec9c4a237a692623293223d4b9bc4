@@ -281,7 +281,22 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function batchCancelDeposit(uint256[] calldata _validatorIds) external {
-        _cancelDeposits(_validatorIds);
+        uint256 returnAmount;
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            if(nodesManager.phase(_validatorIds[i]) == IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL) {
+                returnAmount += 1 ether;
+            } else {
+                returnAmount += 2 ether;
+            }
+        }
+
+        totalValueOutOfLp += uint128(returnAmount);
+        numPendingDeposits -= uint32(_validatorIds.length);
+        stakingManager.batchCancelDepositAsBnftHolder(_validatorIds, msg.sender);
+        totalValueInLp -= uint128(returnAmount);
+        
+        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
+        require(sent, "send fail");
     }
 
     function registerAsBnftHolder(address _user) public onlyAdmin {      
@@ -453,25 +468,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
-
-    function _cancelDeposits(uint256[] calldata _validatorIds) internal {
-        uint256 returnAmount;
-        for (uint256 i = 0; i < _validatorIds.length; i++) {
-            if(nodesManager.phase(_validatorIds[i]) == IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL) {
-                returnAmount += 1 ether;
-            } else {
-                returnAmount += 2 ether;
-            }
-        }
-
-        totalValueOutOfLp += uint128(returnAmount);
-        numPendingDeposits -= uint32(_validatorIds.length);
-        stakingManager.batchCancelDepositAsBnftHolder(_validatorIds, msg.sender);
-        totalValueInLp -= uint128(returnAmount);
-        
-        (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
-        require(sent, "send fail");
-    }
 
     function _allocateSourceOfFunds() public view returns (SourceOfFunds) {
         uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
