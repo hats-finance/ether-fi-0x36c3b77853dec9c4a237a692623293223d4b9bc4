@@ -280,8 +280,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         stakingManager.batchApproveRegistration(_validatorIds, _pubKey, _signature, depositDataRootApproval);
     }
 
-    //@dev Cancel phase is a uint representation of when the user is cancelling their deposit
-    // ... Cancel phase = 1 if it is after the registration and 0 any other time
     function batchCancelDeposit(uint256[] calldata _validatorIds) external {
         _cancelDeposits(_validatorIds);
     }
