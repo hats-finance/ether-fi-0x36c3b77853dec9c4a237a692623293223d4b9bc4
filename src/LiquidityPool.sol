@@ -338,7 +338,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
         uint128 maxValidatorsPerOwnerLocal = maxValidatorsPerOwner;
 
-        if(etherFiAdminContract == address(0) || IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0) {
+        if(maxValidatorsPerOwnerLocal == 0 || IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0) {
             return (0,0,0);
         }
 
