@@ -470,6 +470,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit WhitelistStatusUpdated(_value);
     }
 
+    function decreaseSourceOfFundsValidators(uint32 numberOfEethValidators, uint32 numberOfEtherFanValidators) external {
+        fundStatistics[SourceOfFunds.EETH].numberOfValidators -= numberOfEethValidators;
+        fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators -= numberOfEtherFanValidators;
+    }
+
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------

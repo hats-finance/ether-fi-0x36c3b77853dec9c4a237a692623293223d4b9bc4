@@ -55,6 +55,7 @@ contract StakingManager is
     address public DEPRECATED_admin;
     address public nodeOperatorManager;
     mapping(address => bool) public admins;
+    mapping(uint256 => ILiquidityPool.SourceOfFunds) public validatorSourceOfFunds;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -184,9 +185,18 @@ contract StakingManager is
     /// @notice Cancels a user's deposits
     /// @param _validatorIds the IDs of the validators deposits to cancel
     function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) public whenNotPaused nonReentrant {
-        for (uint256 x; x < _validatorIds.length; ++x) {
+        uint32 numberOfEethValidators;
+        uint32 numberOfEtherFanValidators;
+        for (uint256 x; x < _validatorIds.length; ++x) { 
+            if(validatorSourceOfFunds[_validatorIds[x]] == ILiquidityPool.SourceOfFunds.EETH){
+                numberOfEethValidators++;
+            } else if (validatorSourceOfFunds[_validatorIds[x]] == ILiquidityPool.SourceOfFunds.ETHER_FAN) {
+                numberOfEtherFanValidators++;
+            }
             _cancelDeposit(_validatorIds[x], _caller);
         }
+
+        ILiquidityPool(liquidityPoolContract).decreaseSourceOfFundsValidators(numberOfEethValidators, numberOfEtherFanValidators);
     }
 
     /// @notice Sets the EtherFi node manager contract
@@ -297,6 +307,7 @@ contract StakingManager is
             if (bidStaker == address(0) && isActive) {
                 require(_verifyNodeOperator(operator, _source), "Operator not verified");
                 auctionManager.updateSelectedBidInformation(bidId);
+                validatorSourceOfFunds[bidId] = _source;
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
                 _processDeposit(bidId, _staker, _enableRestaking, _source);
