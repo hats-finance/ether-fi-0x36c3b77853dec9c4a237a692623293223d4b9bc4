@@ -109,6 +109,7 @@ contract StakingManager is
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, address _staker, ILiquidityPool.SourceOfFunds _source, bool _enableRestaking)
         public payable whenNotPaused nonReentrant correctStakeAmount returns (uint256[] memory)
     {
+        require(msg.sender == liquidityPoolContract, "Incorrect Caller");
         return _depositWithBidIds(_candidateBidIds, _staker, _source, _enableRestaking);
     }
 
