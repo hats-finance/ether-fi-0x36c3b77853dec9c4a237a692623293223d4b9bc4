@@ -9,7 +9,7 @@ interface IWithdrawRequestNFT {
     }
 
     function initialize() external;
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester) external payable returns (uint256);
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester, uint64 fee) external payable returns (uint256);
     function claimWithdraw(uint256 requestId) external returns (WithdrawRequest memory);
 
     function getRequest(uint256 requestId) external view returns (WithdrawRequest memory);

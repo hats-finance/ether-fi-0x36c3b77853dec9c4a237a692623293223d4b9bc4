@@ -12,6 +12,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         uint96  amountOfEEth;
         uint96  shareOfEEth;
         bool    isValid;
+        uint64  fee;
     }
 
     mapping(uint256 => WithdrawRequest) private _requests;
@@ -23,15 +24,17 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
     mapping(address => bool) public admins;
 
-    event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner);
-    event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner);
+    address public membershipManagerAddress;
+
+    event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner, uint64 fee);
+    event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner, uint64 fee);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
-    function initialize(address _liquidityPoolAddress, address _eEthAddress) initializer external {
+    function initialize(address _liquidityPoolAddress, address _eEthAddress, address _membershipManager) initializer external {
         require(_liquidityPoolAddress != address(0), "No zero addresses");
         require(_eEthAddress != address(0), "No zero addresses");
         __ERC721_init("Withdraw Request NFT", "WithdrawRequestNFT");
@@ -40,16 +43,17 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
         eETH = IeETH(_eEthAddress);
+        membershipManagerAddress = _membershipManager;
         _nextRequestId = 1;
     }
 
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient) external payable onlyLiquidtyPool returns (uint256) {
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient, uint64 fee) external payable onlyLiquidtyPool returns (uint256) {
         uint256 requestId = _nextRequestId;
         _nextRequestId++;
-        _requests[requestId] = WithdrawRequest(amountOfEEth, shareOfEEth, true);
+        _requests[requestId] = WithdrawRequest(amountOfEEth, shareOfEEth, true, fee);
         _safeMint(recipient, requestId);
 
-        emit WithdrawRequestCreated(uint32(requestId), amountOfEEth, shareOfEEth, recipient);
+        emit WithdrawRequestCreated(uint32(requestId), amountOfEEth, shareOfEEth, recipient, fee);
         return requestId;
     }
 
@@ -71,9 +75,14 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         _burn(tokenId);
         delete _requests[tokenId];
 
-        uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToTransfer);
+        if (request.fee > 0) {
+            // send fee to membership manager
+            liquidityPool.withdraw(membershipManagerAddress, request.fee);
+        }
 
-        emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient);
+        uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToTransfer - request.fee);
+
+        emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient, request.fee);
     }
     
     // add function to transfer accumulated shares to admin
@@ -106,6 +115,11 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     function updateEEth(address _newEEth) external onlyAdmin {
         require(_newEEth != address(0), "Cannot be address zero");
         eETH = IeETH(_newEEth);
+    }
+
+    function updateMembershipManager(address _newMembershipManager) external onlyAdmin {
+        require(_newMembershipManager != address(0), "Cannot be address zero");
+        membershipManagerAddress = _newMembershipManager;
     }
 
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
