@@ -52,6 +52,17 @@ contract EtherFiNodesManager is
     // max number of queued eigenlayer withdrawals to attempt to claim in a single tx
     uint8 public maxEigenlayerWithrawals;
 
+    mapping(uint256 => uint256) private bidIdToValidatorId;
+    uint256 public validatorPoolHead;
+
+    function validatorIdFromBidId(uint256 _bidId) public returns (uint256) {
+        // if _bidId < grandfatherLimit {
+        //     return _bidId
+        //}
+        // if no entry in mapping return _bidId?
+        return bidIdToValidatorId[_bidId]
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
