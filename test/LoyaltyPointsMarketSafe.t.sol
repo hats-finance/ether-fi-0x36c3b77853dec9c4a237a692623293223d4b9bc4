@@ -47,22 +47,28 @@ contract LoyaltyPointsMarketSafeTest is Test {
     function test_boostToTop() public {
         vm.deal(plebian, 1 ether);
 
+        vm.startPrank(admin);
+
+        pointsContract.setBoostPaymentAmount(0.1 ether);
+
+        vm.stopPrank();
+
         vm.startPrank(plebian);
 
         vm.expectEmit(true, true, false, true);
-        emit BoostToTop(plebian, 1, 0.5 ether);
-        pointsContract.boostToTop{value: 0.5 ether}(1);
-        assertEq(address(pointsContract).balance, 0.5 ether);
+        emit BoostToTop(plebian, 1, 0.1 ether);
+        pointsContract.boostToTop{value: 0.1 ether}(1);
+        assertEq(address(pointsContract).balance, 0.1 ether);
 
         vm.expectEmit(true, true, false, true);
-        emit BoostToTop(plebian, 1337, 0.3 ether);
-        pointsContract.boostToTop{value: 0.3 ether}(1337);
-        assertEq(address(pointsContract).balance, 0.8 ether);
+        emit BoostToTop(plebian, 1337, 0.1 ether);
+        pointsContract.boostToTop{value: 0.1 ether}(1337);
+        assertEq(address(pointsContract).balance, 0.2 ether);
 
         vm.expectEmit(true, true, false, true);
-        emit BoostToTop(plebian, 9999, 0.2 ether);
-        pointsContract.boostToTop{value: 0.2 ether}(9999);
-        assertEq(address(pointsContract).balance, 1.0 ether);
+        emit BoostToTop(plebian, 9999, 0.1 ether);
+        pointsContract.boostToTop{value: 0.1 ether}(9999);
+        assertEq(address(pointsContract).balance, 0.3 ether);
 
         vm.stopPrank();
     }

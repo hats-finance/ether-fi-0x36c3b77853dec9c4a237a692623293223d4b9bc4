@@ -9,6 +9,9 @@ contract LoyaltyPointsMarketSafe is Ownable {
     event BoostToTop(address indexed buyer, uint256 indexed tokenId, uint256 amountWei);
 
     uint256 public weiPerPoint;
+    uint256 public boostPaymentAmount;
+
+    error InvalidAmount();
 
     constructor(uint256 _weiPerPoint) {
         weiPerPoint = _weiPerPoint;
@@ -19,6 +22,7 @@ contract LoyaltyPointsMarketSafe is Ownable {
     }
 
     function boostToTop(uint256 tokenId) external payable {
+        if (msg.value != boostPaymentAmount) revert InvalidAmount();
         emit BoostToTop(msg.sender, tokenId, msg.value);
     }
 
@@ -32,5 +36,9 @@ contract LoyaltyPointsMarketSafe is Ownable {
 
     function setWeiPerPoint(uint256 _weiPerPoint) external onlyOwner {
         weiPerPoint = _weiPerPoint;
+    }
+
+    function setBoostPaymentAmount(uint256 _boostPaymentAmount) external onlyOwner {
+        boostPaymentAmount = _boostPaymentAmount;
     }
 }
