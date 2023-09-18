@@ -74,4 +74,6 @@ interface ILiquidityPool {
     function setStakingTargetWeights(uint32 _eEthWeight, uint32 _etherFanWeight) external;
     function setEtherFiAdminContract(address _address) external;
     function updateAdmin(address _newAdmin, bool _isAdmin) external;
+
+    function decreaseSourceOfFundsValidators(uint32 numberOfEethValidators, uint32 numberOfEtherFanValidators) external;
 }

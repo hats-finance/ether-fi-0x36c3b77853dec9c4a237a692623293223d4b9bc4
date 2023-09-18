@@ -331,6 +331,9 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(alice);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 0, 2);
 
+        (uint32 numValidatorsEeth, ) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.EETH);
+        (uint32 numValidatorsEtherFan, ) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.ETHER_FAN);
+
         assertEq(newValidators.length, 2);
         assertEq(address(alice).balance, aliceBalance - 4 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
@@ -338,9 +341,14 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(liquidityPoolInstance.numPendingDeposits(), 2);
         assertEq(liquidityPoolInstance.totalValueOutOfLp(), 60 ether);
         assertEq(liquidityPoolInstance.totalValueInLp(), 0);
+        assertEq(numValidatorsEeth, 3);
+        assertEq(numValidatorsEtherFan, 1);
 
         vm.prank(alice);
         liquidityPoolInstance.batchCancelDeposit(newValidators);
+        
+        (numValidatorsEeth, ) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.EETH);
+        (numValidatorsEtherFan, ) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.ETHER_FAN);
 
         assertEq(liquidityPoolInstance.numPendingDeposits(), 0);
         assertEq(liquidityPoolInstance.totalValueOutOfLp(), 0);
@@ -348,6 +356,8 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(address(alice).balance, aliceBalance);
         assertEq(address(stakingManagerInstance).balance, 0 ether);
         assertEq(address(liquidityPoolInstance).balance, 60 ether);
+        assertEq(numValidatorsEeth, 1);     
+        assertEq(numValidatorsEtherFan, 1);
     }
 
     function test_batchCancelDepositAsBnftHolderAfterRegistration() public {
@@ -539,9 +549,20 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(alice);
         liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidatorsToRegister, depositDataArray, depositDataRootsForApproval, sig);
 
+        (uint32 numValidatorsEeth, ) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.EETH);
+        (uint32 numValidatorsEtherFan, ) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.ETHER_FAN);
+
+        assertEq(numValidatorsEeth, 3);     
+        assertEq(numValidatorsEtherFan, 1);
+
         vm.prank(alice);
         liquidityPoolInstance.batchCancelDeposit(newValidators);
 
+        (numValidatorsEeth, ) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.EETH);
+        (numValidatorsEtherFan, ) = liquidityPoolInstance.fundStatistics(ILiquidityPool.SourceOfFunds.ETHER_FAN);
+
+        assertEq(numValidatorsEeth, 1);     
+        assertEq(numValidatorsEtherFan, 1);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 0);
         assertEq(liquidityPoolInstance.totalValueOutOfLp(), 0);
         assertEq(liquidityPoolInstance.totalValueInLp(), 60 ether);
