@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract LoyaltyPointsMarketSafe is Ownable {
 
     event PointsPurchased(address indexed buyer, uint256 indexed tokenId, uint256 amountWei, uint256 weiPerPoint);
+    event BoostToTop(address indexed buyer, uint256 indexed tokenId, uint256 amountWei);
 
     uint256 public weiPerPoint;
 
@@ -15,6 +16,10 @@ contract LoyaltyPointsMarketSafe is Ownable {
 
     function purchasePoints(uint256 tokenId) external payable {
         emit PointsPurchased(msg.sender, tokenId, msg.value, weiPerPoint);
+    }
+
+    function boostToTop(uint256 tokenId) external payable {
+        emit BoostToTop(msg.sender, tokenId, msg.value);
     }
 
     //-----------------------------------------------------------------------------
