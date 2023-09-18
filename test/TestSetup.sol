@@ -367,6 +367,7 @@ contract TestSetup is Test {
 
         vm.startPrank(alice);
         liquidityPoolInstance.setStakingTargetWeights(50, 50);
+        liquidityPoolInstance.setMaxBnftSlotSize(4);
         membershipManagerInstance.setTopUpCooltimePeriod(28 days);
         vm.stopPrank();
         
@@ -448,7 +449,6 @@ contract TestSetup is Test {
         liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
         liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
         liquidityPoolInstance.setMembershipManager(address(membershipManagerInstance));
-        liquidityPoolInstance.updateAdmin(alice, true);
 
         vm.stopPrank();
 

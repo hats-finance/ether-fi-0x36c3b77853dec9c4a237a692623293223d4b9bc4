@@ -43,7 +43,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     IWithdrawRequestNFT public withdrawRequestNFT;
 
     BnftHolder[] public bnftHolders;
-    uint128 public max_validators_per_owner;
+    uint128 public maxValidatorsPerOwner;
     uint128 public schedulingPeriodInSeconds;
 
     HoldersUpdate public holdersUpdate;
@@ -205,11 +205,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
         require(isAssigned(firstIndex, lastIndex, _index), "Not assigned");
         require(msg.sender == bnftHolders[_index].holder, "Incorrect Caller");
-        require(bnftHolders[_index].timestamp < uint32(_getCurrentSchedulingStartTimestamp()), "Already deposited");
+        require(bnftHolders[_index].timestamp < uint32(getCurrentSchedulingStartTimestamp()), "Already deposited");
         if(_index == lastIndex) {
             if(_numberOfValidators > lastIndexNumOfValidators) revert AboveMaxAllocation();
         } else {
-            if(_numberOfValidators > max_validators_per_owner) revert AboveMaxAllocation();
+            if(_numberOfValidators > maxValidatorsPerOwner) revert AboveMaxAllocation();
         }
         require(msg.value == _numberOfValidators * 2 ether, "Deposit 2 ETH per validator");
         require(totalValueInLp + msg.value >= 32 ether * _numberOfValidators, "Not enough balance");
@@ -336,25 +336,25 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
-        uint128 maxValidatorsPerOwner = max_validators_per_owner;
+        uint128 maxValidatorsPerOwnerLocal = maxValidatorsPerOwner;
 
-        if((maxValidatorsPerOwner == 0) || (schedulingPeriodInSeconds == 0) || (etherFiAdminContract == address(0)) || (IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0)) {
+        if((etherFiAdminContract == address(0)) || (IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0)) {
             revert DataNotSet();
         }
 
         uint128 lastIndex;
-        uint128 lastIndexNumberOfValidators = maxValidatorsPerOwner;
+        uint128 lastIndexNumberOfValidators = maxValidatorsPerOwnerLocal;
 
         uint256 index = _getSlotIndex();
         uint128 numValidatorsToCreate = IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
 
-        if(numValidatorsToCreate % maxValidatorsPerOwner == 0) {
-            uint128 size = numValidatorsToCreate / maxValidatorsPerOwner;
+        if(numValidatorsToCreate % maxValidatorsPerOwnerLocal == 0) {
+            uint128 size = numValidatorsToCreate / maxValidatorsPerOwnerLocal;
             lastIndex = _fetchLastIndex(size, index);
         } else {
-            uint128 size = (numValidatorsToCreate / maxValidatorsPerOwner) + 1;
+            uint128 size = (numValidatorsToCreate / maxValidatorsPerOwnerLocal) + 1;
             lastIndex = _fetchLastIndex(size, index);
-            lastIndexNumberOfValidators = numValidatorsToCreate % maxValidatorsPerOwner;
+            lastIndexNumberOfValidators = numValidatorsToCreate % maxValidatorsPerOwnerLocal;
         }
 
         return (index, lastIndex, lastIndexNumberOfValidators);
@@ -433,7 +433,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function setMaxBnftSlotSize(uint128 _newSize) external onlyAdmin {
-        max_validators_per_owner = _newSize;
+        maxValidatorsPerOwner = _newSize;
     }
 
     function setSchedulingPeriodInSeconds(uint128 _schedulingPeriodInSeconds) external onlyAdmin {
@@ -444,7 +444,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function numberOfActiveSlots() public view returns (uint32 numberOfActiveSlots) {
         numberOfActiveSlots = uint32(bnftHolders.length);
-        if(holdersUpdate.timestamp > uint32(_getCurrentSchedulingStartTimestamp())) {
+        if(holdersUpdate.timestamp > uint32(getCurrentSchedulingStartTimestamp())) {
             numberOfActiveSlots = holdersUpdate.startOfSlotNumOwners;
         }
     }
@@ -486,13 +486,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     function _checkHoldersUpdateStatus() internal {
-        if(holdersUpdate.timestamp < uint32(_getCurrentSchedulingStartTimestamp())) {
+        if(holdersUpdate.timestamp < uint32(getCurrentSchedulingStartTimestamp())) {
             holdersUpdate.startOfSlotNumOwners = uint32(bnftHolders.length);
         }
         holdersUpdate.timestamp = uint32(block.timestamp);
     }
 
-    function _getCurrentSchedulingStartTimestamp() internal view returns (uint256) {
+    function getCurrentSchedulingStartTimestamp() public view returns (uint256) {
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
