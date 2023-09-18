@@ -214,7 +214,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(msg.value == _numberOfValidators * 2 ether, "Deposit 2 ETH per validator");
         require(totalValueInLp + msg.value >= 32 ether * _numberOfValidators, "Not enough balance");
 
-        SourceOfFunds _source = _allocateSourceOfFunds();
+        SourceOfFunds _source = allocateSourceOfFunds();
         fundStatistics[_source].numberOfValidators += uint32(_numberOfValidators);
 
         uint256 amountFromLp = 30 ether * _numberOfValidators;
@@ -338,8 +338,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function dutyForWeek() public view returns (uint256, uint128, uint128) {
         uint128 maxValidatorsPerOwnerLocal = maxValidatorsPerOwner;
 
-        if((etherFiAdminContract == address(0)) || (IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0)) {
-            revert DataNotSet();
+        if(etherFiAdminContract == address(0) || IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0) {
+            return (0,0,0);
         }
 
         uint128 lastIndex;
@@ -474,40 +474,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
-    function _allocateSourceOfFunds() public view returns (SourceOfFunds) {
-        uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
-        uint256 weightRatio = (fundStatistics[SourceOfFunds.EETH].targetWeight * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
-
-        if(validatorRatio > weightRatio) {
-            return SourceOfFunds.ETHER_FAN;
-        } else {
-            return SourceOfFunds.EETH;
-        }
-    }
-
     function _checkHoldersUpdateStatus() internal {
         if(holdersUpdate.timestamp < uint32(getCurrentSchedulingStartTimestamp())) {
             holdersUpdate.startOfSlotNumOwners = uint32(bnftHolders.length);
         }
         holdersUpdate.timestamp = uint32(block.timestamp);
-    }
-
-    function getCurrentSchedulingStartTimestamp() public view returns (uint256) {
-        return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
-    }
-
-    function isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view returns (bool) {
-        if(_lastIndex < _firstIndex) {
-            if((_index <= _lastIndex) || (_index >= _firstIndex && _index < numberOfActiveSlots())){
-                return true;
-            }
-            return false;
-        }else {
-            if(_index >= _firstIndex && _index <= _lastIndex) {
-                return true;
-            }
-            return false;
-        }
     }
 
     function _getSlotIndex() internal view returns (uint256) {
@@ -537,6 +508,35 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------
     //--------------------------------------------------------------------------------------
+
+    function allocateSourceOfFunds() public view returns (SourceOfFunds) {
+        uint256 validatorRatio = (fundStatistics[SourceOfFunds.EETH].numberOfValidators * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators;
+        uint256 weightRatio = (fundStatistics[SourceOfFunds.EETH].targetWeight * 10_000) / fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight;
+
+        if(validatorRatio > weightRatio) {
+            return SourceOfFunds.ETHER_FAN;
+        } else {
+            return SourceOfFunds.EETH;
+        }
+    }
+
+    function getCurrentSchedulingStartTimestamp() public view returns (uint256) {
+        return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
+    }
+
+     function isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view returns (bool) {
+        if(_lastIndex < _firstIndex) {
+            if((_index <= _lastIndex) || (_index >= _firstIndex && _index < numberOfActiveSlots())){
+                return true;
+            }
+            return false;
+        }else {
+            if(_index >= _firstIndex && _index <= _lastIndex) {
+                return true;
+            }
+            return false;
+        }
+    }
 
     function getTotalEtherClaimOf(address _user) external view returns (uint256) {
         uint256 staked;
