@@ -401,19 +401,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "_allocateSourceOfFunds",
-    "outputs": [
-      {
-        "internalType": "enum ILiquidityPool.SourceOfFunds",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -427,6 +414,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "allocateSourceOfFunds",
+    "outputs": [
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -769,6 +769,19 @@
   },
   {
     "inputs": [],
+    "name": "getCurrentSchedulingStartTimestamp",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getImplementation",
     "outputs": [
       {
@@ -891,7 +904,7 @@
   },
   {
     "inputs": [],
-    "name": "max_validators_per_owner",
+    "name": "maxValidatorsPerOwner",
     "outputs": [
       {
         "internalType": "uint128",
@@ -1119,6 +1132,19 @@
   },
   {
     "inputs": [],
+    "name": "restakeBnftDeposits",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "schedulingPeriodInSeconds",
     "outputs": [
       {
@@ -1191,6 +1217,19 @@
       }
     ],
     "name": "setMembershipManager",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "_restake",
+        "type": "bool"
+      }
+    ],
+    "name": "setRestakeBnftDeposits",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
