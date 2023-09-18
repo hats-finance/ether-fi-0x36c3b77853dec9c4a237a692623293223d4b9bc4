@@ -5,6 +5,7 @@ libs = ['lib']
 fs_permissions = [{ access = "read-write", path = "./release/logs"}]
 gas_reports = ["*"]
 optimizer_runs = 2000
+extra_output = ["storageLayout"]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
 [rpc_endpoints]
