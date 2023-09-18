@@ -144,6 +144,48 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
     }
 
+    function test_totalBalanceInExecutionLayer() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
+
+        (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+
+        // simulate 1 eth of staking rewards sent to the eigen pod
+        vm.deal(address(safeInstance.eigenPod()), 1 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 1 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+
+        // queue the withdrawal of the rewards. Funds have been sent to the DelayedWithdrawalRouter
+        safeInstance.queueRestakedWithdrawal();
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 1 ether);
+
+        // more staking rewards
+        vm.deal(address(safeInstance.eigenPod()), 2 ether);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 2 ether);
+        assertEq(_delayedWithdrawalRouter, 1 ether);
+
+        // wait and claim the first queued withdrawal
+        vm.roll(block.number + (50400) + 1);
+        safeInstance.claimQueuedWithdrawals(1);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 1 ether);
+        assertEq(_eigenPod, 2 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+    }
+
     function test_claimRestakedRewards() public {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);

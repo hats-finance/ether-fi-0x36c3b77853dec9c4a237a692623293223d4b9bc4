@@ -240,6 +240,27 @@ contract EtherFiNode is IEtherFiNode {
         return _principal - remaining;
     }
 
+    /// @notice total balance of this withdrawal safe in the execution layer. Includes restaked funds
+    /// @dev funds can be split across
+    ///   1. the withdrawal safe
+    ///   2. the EigenPod (eigenLayer)
+    ///   3. the delayedWithdrawalRouter (eigenLayer)
+    function totalBalanceInExecutionLayer() public view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) {
+
+        _withdrawalSafe = address(this).balance;
+
+        if (isRestakingEnabled()) {
+            _eigenPod = eigenPod.balance;
+
+            IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter());
+            IDelayedWithdrawalRouter.DelayedWithdrawal[] memory delayedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this));
+            for (uint256 x = 0; x < delayedWithdrawals.length; x++) {
+                _delayedWithdrawalRouter += delayedWithdrawals[x].amount;
+            }
+        }
+        return (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter);
+    }
+
     /// @notice Given
     ///         - the current balance of the validator in Consensus Layer
     ///         - the current balance of the ether fi node,
