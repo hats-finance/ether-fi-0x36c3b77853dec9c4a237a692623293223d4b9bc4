@@ -94,7 +94,7 @@ contract StakingManagerTest is TestSetup {
         vm.stopPrank();
         
         startHoax(alice);
-        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 0, 4);
+        processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);

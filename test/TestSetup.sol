@@ -817,7 +817,7 @@ contract TestSetup is Test {
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
         vm.prank(alice);
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 0, 2);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
         IStakingManager.DepositData[]
