@@ -140,21 +140,16 @@ contract EtherFiNode is IEtherFiNode {
     //--------------------------------------------------------------------------------------
 
     /// @notice Fetch the accrued staking rewards payouts to (toNodeOperator, toTnft, toBnft, toTreasury)
-    /// @param _beaconBalance the balance of the validator in Consensus Layer
+    /// @param _balance the balance
     /// @param _splits the splits for the staking rewards
     /// @param _scale the scale = SUM(_splits)
-    ///
-    /// Note that since the smart contract running in the execution layer does not know the consensus layer data
-    /// such as the status and balance of the validator, 
-    /// the partial withdrawal assumes that the validator is in active & not being slashed + the beacon balance is 32 ether.
-    /// Therefore, you need to set _beaconBalance = 32 ether to see the same payouts for the partial withdrawal
     ///
     /// @return toNodeOperator  the payout to the Node Operator
     /// @return toTnft          the payout to the T-NFT holder
     /// @return toBnft          the payout to the B-NFT holder
     /// @return toTreasury      the payout to the Treasury
     function getStakingRewardsPayouts(
-        uint256 _beaconBalance,
+        uint256 _balance,
         IEtherFiNodesManager.RewardsSplit memory _splits,
         uint256 _scale
     )
@@ -167,13 +162,12 @@ contract EtherFiNode is IEtherFiNode {
             uint256 toTreasury
         )
     {
-        uint256 stakingBalance = _beaconBalance + getWithdrawableAmount();
         uint256 rewards;
 
         // If (Staking Principal + Staking Rewards >= 32 ether), the validator is running in a normal state
         // Else, the validator is getting slashed
-        if (stakingBalance >= 32 ether) {
-            rewards = stakingBalance - 32 ether;
+        if (_balance >= 32 ether) {
+            rewards = _balance - 32 ether;
         } else {
             // Without the Oracle, the exact staking rewards cannot be computed
             // Assume that there is no staking rewards.
@@ -240,6 +234,27 @@ contract EtherFiNode is IEtherFiNode {
         return _principal - remaining;
     }
 
+    /// @notice total balance of this withdrawal safe in the execution layer. Includes restaked funds
+    /// @dev funds can be split across
+    ///   1. the withdrawal safe
+    ///   2. the EigenPod (eigenLayer)
+    ///   3. the delayedWithdrawalRouter (eigenLayer)
+    function totalBalanceInExecutionLayer() public view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) {
+
+        _withdrawalSafe = address(this).balance;
+
+        if (isRestakingEnabled()) {
+            _eigenPod = eigenPod.balance;
+
+            IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter());
+            IDelayedWithdrawalRouter.DelayedWithdrawal[] memory delayedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this));
+            for (uint256 x = 0; x < delayedWithdrawals.length; x++) {
+                _delayedWithdrawalRouter += delayedWithdrawals[x].amount;
+            }
+        }
+        return (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter);
+    }
+
     /// @notice Given
     ///         - the current balance of the validator in Consensus Layer
     ///         - the current balance of the ether fi node,
@@ -259,15 +274,20 @@ contract EtherFiNode is IEtherFiNode {
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         uint256 balance = _beaconBalance + getWithdrawableAmount();
 
+        if (isRestakingEnabled()) {
+            (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = totalBalanceInExecutionLayer();
+            balance += _eigenPod + _delayedWithdrawalRouter;
+        }
+
         // Compute the payouts for the rewards = (staking rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
         uint256[] memory payouts = new uint256[](4); // (toNodeOperator, toTnft, toBnft, toTreasury)
-        (payouts[0], payouts[1], payouts[2], payouts[3]) = getStakingRewardsPayouts(_beaconBalance, _SRsplits, _scale);
-        balance -= (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
+        (payouts[0], payouts[1], payouts[2], payouts[3]) = getStakingRewardsPayouts(balance, _SRsplits, _scale);
+        uint256 principal = balance - (payouts[0] + payouts[1] + payouts[2] + payouts[3]);
 
         // Compute the payouts for the principals to {B, T}-NFTs
         {
-            (uint256 toBnftPrincipal, uint256 toTnftPrincipal) = calculatePrincipals(balance);
+            (uint256 toBnftPrincipal, uint256 toTnftPrincipal) = calculatePrincipals(principal);
             payouts[1] += toTnftPrincipal;
             payouts[2] += toBnftPrincipal;
         }
@@ -290,11 +310,7 @@ contract EtherFiNode is IEtherFiNode {
             }
         }
 
-        require(
-            payouts[0] + payouts[1] + payouts[2] + payouts[3] ==
-                _beaconBalance + getWithdrawableAmount(),
-            "Incorrect Amount"
-        );
+        require(payouts[0] + payouts[1] + payouts[2] + payouts[3] == balance, "Incorrect Amount");
         return (payouts[0], payouts[1], payouts[2], payouts[3]);
     }
 

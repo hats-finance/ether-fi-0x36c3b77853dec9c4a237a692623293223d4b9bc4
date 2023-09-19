@@ -63,11 +63,6 @@ interface IEtherFiNodesManager {
         uint256 _validatorId
     ) external view returns (uint256);
 
-    function getStakingRewardsPayouts(
-        uint256 _validatorId,
-        uint256 _beaconBalance
-    ) external view returns (uint256, uint256, uint256, uint256);
-
     function getRewardsPayouts(
         uint256 _validatorId,
         uint256 _beaconBalance
