@@ -108,24 +108,26 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = _etherFanNumVal;
     }
 
-    function deposit(address _user) external payable returns (uint256) {
-        return deposit(_user, _user);
+    // Used by eETH staking flow
+    function deposit() external payable returns (uint256) {
+        require(_isWhitelisted(_user), "Invalid User");
+
+        emit FundsDeposited(SourceOfFunds.EETH, msg.value);
+
+        return _deposit(msg.sender);
     }
 
-    /// @notice deposit into pool
-    /// @dev mints the amount of eETH 1:1 with ETH sent
+    // Used by ether.fan staking flow
     function deposit(address _user, address _recipient) public payable returns (uint256) {
-        if(msg.sender == address(membershipManager)) {
-            if (_user != address(membershipManager)) {
-                _isWhitelisted(_user);
-            }
-            emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
-        } else {
-            _isWhitelisted(msg.sender);
-            emit FundsDeposited(SourceOfFunds.EETH, msg.value);
-        }
-        require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
+        require(_recipient == address(membershipManager), "Incorrect Caller");
+        require(_user == address(membershipManager) || _isWhitelisted(_user), "Invalid User");
 
+        emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
+
+        return _deposit(recipient);
+    }
+
+    function _deposit(address _recipient) internal returns (uint256) {
         totalValueInLp += uint128(msg.value);
         uint256 share = _sharesForDepositAmount(msg.value);
         if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
