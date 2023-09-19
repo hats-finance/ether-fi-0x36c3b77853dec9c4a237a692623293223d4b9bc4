@@ -108,33 +108,23 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = _etherFanNumVal;
     }
 
-    function deposit(address _user) external payable returns (uint256) {
-        return deposit(_user, _user);
+    // Used by eETH staking flow
+    function deposit() external payable returns (uint256) {
+        require(_isWhitelisted(msg.sender), "Invalid User");
+
+        emit FundsDeposited(SourceOfFunds.EETH, msg.value);
+
+        return _deposit();
     }
 
-    /// @notice deposit into pool
-    /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user, address _recipient) public payable returns (uint256) {
-        if(msg.sender == address(membershipManager)) {
-            if (_user != address(membershipManager)) {
-                _isWhitelisted(_user);
-            }
-            emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
-        } else {
-            _isWhitelisted(msg.sender);
-            emit FundsDeposited(SourceOfFunds.EETH, msg.value);
-        }
-        require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
+    // Used by ether.fan staking flow
+    function deposit(address _user) external payable returns (uint256) {
+        require(msg.sender == address(membershipManager), "Incorrect Caller");
+        require(_user == address(membershipManager) || _isWhitelisted(_user), "Invalid User");
 
-        totalValueInLp += uint128(msg.value);
-        uint256 share = _sharesForDepositAmount(msg.value);
-        if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
+        emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
 
-        eETH.mintShares(_recipient, share);
-
-        emit Deposit(_recipient, msg.value);
-
-        return share;
+        return _deposit();
     }
 
     /// @notice withdraw from pool
@@ -479,6 +469,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
+    function _deposit() internal returns (uint256) {
+        totalValueInLp += uint128(msg.value);
+        uint256 share = _sharesForDepositAmount(msg.value);
+        if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
+
+        eETH.mintShares(msg.sender, share);
+
+        emit Deposit(msg.sender, msg.value);
+
+        return share;
+    }
+
     function _checkHoldersUpdateStatus() internal {
         if(holdersUpdate.timestamp < uint32(getCurrentSchedulingStartTimestamp())) {
             holdersUpdate.startOfSlotNumOwners = uint32(bnftHolders.length);
@@ -496,8 +498,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
 
-    function _isWhitelisted(address _user) internal view {
-        require(!whitelistEnabled || whitelisted[_user], "User is not whitelisted");
+    function _isWhitelisted(address _user) internal view returns (bool) {
+        return (!whitelistEnabled || whitelisted[_user]);
     }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {

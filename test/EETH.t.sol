@@ -70,7 +70,7 @@ contract EETHTest is TestSetup {
 
         // Total pooled ether = 10
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -93,7 +93,7 @@ contract EETHTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
 
         startHoax(bob);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob);
+        liquidityPoolInstance.deposit{value: 5 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 25 ether);
@@ -138,7 +138,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferWithAmount() public {
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -171,7 +171,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferWithZero() public {
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -239,7 +239,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferFromWithAmount() public {
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -270,7 +270,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferFromWithZero() public {
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
