@@ -810,7 +810,7 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         startHoax(bob);
-        liquidityPoolInstance.deposit{value: 60 ether}(bob);
+        liquidityPoolInstance.deposit{value: 60 ether}();
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();
 

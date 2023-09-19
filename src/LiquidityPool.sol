@@ -109,8 +109,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     // Used by eETH staking flow
-    function deposit(address _user) external payable returns (uint256) {
-        require(_isWhitelisted(_user), "Invalid User");
+    function deposit() external payable returns (uint256) {
+        require(_isWhitelisted(msg.sender), "Invalid User");
 
         emit FundsDeposited(SourceOfFunds.EETH, msg.value);
 

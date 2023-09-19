@@ -25,7 +25,7 @@ contract WeETHTest is TestSetup {
         // Total pooled ether = 10
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -34,7 +34,7 @@ contract WeETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
@@ -54,7 +54,7 @@ contract WeETHTest is TestSetup {
 
     function test_WrapWithPermitFailsWhenExceedingAllowance() public {
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -73,7 +73,7 @@ contract WeETHTest is TestSetup {
 
     function test_WrapWithPermitFailsWithInvalidSignature() public {
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -93,7 +93,7 @@ contract WeETHTest is TestSetup {
         // Total pooled ether = 10
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -102,7 +102,7 @@ contract WeETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
@@ -132,7 +132,7 @@ contract WeETHTest is TestSetup {
 
         // Total pooled ether = 10
         vm.startPrank(bob);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -140,7 +140,7 @@ contract WeETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
@@ -171,7 +171,7 @@ contract WeETHTest is TestSetup {
 
     function test_MultipleDepositsAndFunctionalityWorksCorrectly() public {
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -183,7 +183,7 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         startHoax(bob);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob);
+        liquidityPoolInstance.deposit{value: 5 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 15 ether);
@@ -196,7 +196,7 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         startHoax(greg);
-        liquidityPoolInstance.deposit{value: 35 ether}(greg);
+        liquidityPoolInstance.deposit{value: 35 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 50 ether);
@@ -254,13 +254,13 @@ contract WeETHTest is TestSetup {
     function test_UnwrappingWithRewards() public {
         // Alice deposits into LP
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 2 ether}(alice);
+        liquidityPoolInstance.deposit{value: 2 ether}();
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         vm.stopPrank();
 
         // Bob deposits into LP
         startHoax(bob);
-        liquidityPoolInstance.deposit{value: 1 ether}(bob);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         assertEq(eETHInstance.balanceOf(bob), 1 ether);
         vm.stopPrank();
 
