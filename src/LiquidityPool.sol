@@ -118,13 +118,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     // Used by ether.fan staking flow
-    function deposit(address _user, address _recipient) public payable returns (uint256) {
+    function deposit(address _user) external payable returns (uint256) {
         require(msg.sender == address(membershipManager), "Incorrect Caller");
         require(_user == address(membershipManager) || _isWhitelisted(_user), "Invalid User");
 
         emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
 
-        return _deposit(_recipient);
+        return _deposit(msg.sender);
     }
 
     function _deposit(address _recipient) internal returns (uint256) {
