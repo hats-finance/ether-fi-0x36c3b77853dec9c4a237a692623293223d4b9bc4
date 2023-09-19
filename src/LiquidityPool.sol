@@ -109,7 +109,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     // Used by eETH staking flow
-    function deposit() external payable returns (uint256) {
+    function deposit(address _user) external payable returns (uint256) {
         require(_isWhitelisted(_user), "Invalid User");
 
         emit FundsDeposited(SourceOfFunds.EETH, msg.value);
@@ -124,7 +124,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
 
-        return _deposit(recipient);
+        return _deposit(_recipient);
     }
 
     function _deposit(address _recipient) internal returns (uint256) {
@@ -498,8 +498,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
 
-    function _isWhitelisted(address _user) internal view {
-        require(!whitelistEnabled || whitelisted[_user], "User is not whitelisted");
+    function _isWhitelisted(address _user) internal view returns (bool) {
+        return (!whitelistEnabled || whitelisted[_user]);
     }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {

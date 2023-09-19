@@ -68,7 +68,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
         liquidityPoolInstance.updateWhitelistStatus(true);
 
-        vm.expectRevert("User is not whitelisted");
+        vm.expectRevert("Invalid User");
         liquidityPoolInstance.deposit{value: 1 ether}(alice);
         assertEq(address(liquidityPoolInstance).balance, 0);
 

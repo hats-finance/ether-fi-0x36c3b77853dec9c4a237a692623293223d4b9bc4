@@ -573,7 +573,7 @@ contract MembershipManagerTest is TestSetup {
         vm.prank(henry);
 
         // Henry tries to mint but fails because he is not whitelisted.
-        vm.expectRevert("User is not whitelisted");
+        vm.expectRevert("Invalid User");
         uint256 Token = membershipManagerV1Instance.wrapEth{value: 10 ether}(10 ether, 0);
 
         //Giving 12 Ether to shonee
