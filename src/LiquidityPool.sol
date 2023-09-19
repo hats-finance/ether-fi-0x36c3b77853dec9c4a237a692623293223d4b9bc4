@@ -529,17 +529,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
-     function isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view returns (bool) {
+    function isAssigned(uint256 _firstIndex, uint128 _lastIndex, uint256 _index) public view returns (bool) {
         if(_lastIndex < _firstIndex) {
-            if((_index <= _lastIndex) || (_index >= _firstIndex && _index < numberOfActiveSlots())){
-                return true;
-            }
-            return false;
+            return (_index <= _lastIndex) || (_index >= _firstIndex && _index < numberOfActiveSlots());
         }else {
-            if(_index >= _firstIndex && _index <= _lastIndex) {
-                return true;
-            }
-            return false;
+            return _index >= _firstIndex && _index <= _lastIndex;
         }
     }
 
