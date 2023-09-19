@@ -114,7 +114,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         emit FundsDeposited(SourceOfFunds.EETH, msg.value);
 
-        return _deposit(msg.sender);
+        return _deposit();
     }
 
     // Used by ether.fan staking flow
@@ -124,19 +124,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
 
-        return _deposit(msg.sender);
-    }
-
-    function _deposit(address _recipient) internal returns (uint256) {
-        totalValueInLp += uint128(msg.value);
-        uint256 share = _sharesForDepositAmount(msg.value);
-        if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
-
-        eETH.mintShares(_recipient, share);
-
-        emit Deposit(_recipient, msg.value);
-
-        return share;
+        return _deposit();
     }
 
     /// @notice withdraw from pool
@@ -480,6 +468,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //--------------------------------------------------------------------------------------
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
+
+    function _deposit() internal returns (uint256) {
+        totalValueInLp += uint128(msg.value);
+        uint256 share = _sharesForDepositAmount(msg.value);
+        if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
+
+        eETH.mintShares(msg.sender, share);
+
+        emit Deposit(msg.sender, msg.value);
+
+        return share;
+    }
 
     function _checkHoldersUpdateStatus() internal {
         if(holdersUpdate.timestamp < uint32(getCurrentSchedulingStartTimestamp())) {
