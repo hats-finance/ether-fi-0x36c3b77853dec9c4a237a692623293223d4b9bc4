@@ -65,7 +65,7 @@ contract SmallScenariosTest is TestSetup {
 
         /// Alice confirms she is not a US or Canadian citizen and deposits 10 ETH into the pool.
         startHoax(alice);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -76,7 +76,7 @@ contract SmallScenariosTest is TestSetup {
 
         /// Bob then comes along and deposits 5 ETH into the pool.
         startHoax(bob);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob);
+        liquidityPoolInstance.deposit{value: 5 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 15 ether);
@@ -113,7 +113,7 @@ contract SmallScenariosTest is TestSetup {
 
         /// Chad confirms he is not a US or Canadian citizen and deposits 17 ether into Pool
         startHoax(chad);
-        liquidityPoolInstance.deposit{value: 15 ether}(chad);
+        liquidityPoolInstance.deposit{value: 15 ether}();
         vm.stopPrank();
 
         // Chad's 15 ETH + Alice's 10ETH + Bob's 5ETH
@@ -249,7 +249,7 @@ contract SmallScenariosTest is TestSetup {
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether);
-        liquidityPoolInstance.deposit{value: 32 ether}(owner);
+        liquidityPoolInstance.deposit{value: 32 ether}();
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether + 32 ether);
         assertEq(address(liquidityPoolInstance).balance, 32 ether + 1 ether);
         vm.stopPrank();

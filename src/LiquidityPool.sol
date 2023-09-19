@@ -108,33 +108,23 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = _etherFanNumVal;
     }
 
-    function deposit(address _user) external payable returns (uint256) {
-        return deposit(_user, _user);
+    // Used by eETH staking flow
+    function deposit() external payable returns (uint256) {
+        require(_isWhitelisted(msg.sender), "Invalid User");
+
+        emit FundsDeposited(SourceOfFunds.EETH, msg.value);
+
+        return _deposit();
     }
 
-    /// @notice deposit into pool
-    /// @dev mints the amount of eETH 1:1 with ETH sent
-    function deposit(address _user, address _recipient) public payable returns (uint256) {
-        if(msg.sender == address(membershipManager)) {
-            if (_user != address(membershipManager)) {
-                _isWhitelisted(_user);
-            }
-            emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
-        } else {
-            _isWhitelisted(msg.sender);
-            emit FundsDeposited(SourceOfFunds.EETH, msg.value);
-        }
-        require(_recipient == msg.sender || _recipient == address(membershipManager), "Wrong Recipient");
+    // Used by ether.fan staking flow
+    function deposit(address _user) external payable returns (uint256) {
+        require(msg.sender == address(membershipManager), "Incorrect Caller");
+        require(_user == address(membershipManager) || _isWhitelisted(_user), "Invalid User");
 
-        totalValueInLp += uint128(msg.value);
-        uint256 share = _sharesForDepositAmount(msg.value);
-        if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
+        emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
 
-        eETH.mintShares(_recipient, share);
-
-        emit Deposit(_recipient, msg.value);
-
-        return share;
+        return _deposit();
     }
 
     /// @notice withdraw from pool
@@ -575,6 +565,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //------------------------------  INTERNAL FUNCTIONS  ----------------------------------
     //--------------------------------------------------------------------------------------
 
+    function _deposit() internal returns (uint256) {
+        totalValueInLp += uint128(msg.value);
+        uint256 share = _sharesForDepositAmount(msg.value);
+        if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
+
+        eETH.mintShares(msg.sender, share);
+
+        emit Deposit(msg.sender, msg.value);
+
+        return share;
+    }
+
     /// @notice We use this to update our holders struct. This stores how many BNFT players are currently eligible to be selected.
     ///         For example, if a BNFT holder has just registered, they are not eligible for selection until the next scheduling period starts.
     /// @dev This struct helps us keep dutyForWeek stateless. It keeps track of the timestamp which is used in numberOfActiveSlots.
@@ -604,8 +606,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         lastIndex = (tempLastIndex + uint128(numSlots)) % uint128(numSlots);
     }
 
-    function _isWhitelisted(address _user) internal view {
-        require(!whitelistEnabled || whitelisted[_user], "User is not whitelisted");
+    function _isWhitelisted(address _user) internal view returns (bool) {
+        return (!whitelistEnabled || whitelisted[_user]);
     }
 
     function _sharesForDepositAmount(uint256 _depositAmount) internal view returns (uint256) {
@@ -645,8 +647,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return block.timestamp - (block.timestamp % schedulingPeriodInSeconds);
     }
 
-    /// @notice Explain to an end user what this does
-    /// @dev Explain to a developer any extra details
+    /// @notice Checks whether the BNFT player with _index is assigned
+    /// @dev Because we allow a sliding window type selection, we use strict conditions to check whether the provided index is 
+    ///         inside the first and last index.
     /// @param _firstIndex The index of the first selected BNFT holder
     /// @param _lastIndex The index of the last selected BNFT holder
     /// @param _index The index of the BNFT we are checking

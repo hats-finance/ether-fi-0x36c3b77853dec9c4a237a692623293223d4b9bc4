@@ -117,7 +117,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint40 loyaltyPoints = uint40(_min(_points, type(uint40).max));
         uint40 tierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
 
-        liquidityPool.deposit{value: msg.value}(msg.sender, address(this));
+        liquidityPool.deposit{value: msg.value}(msg.sender);
 
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
@@ -157,7 +157,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         claim(_tokenId);
 
         uint256 additionalDeposit = _topUpDeposit(_tokenId, _amount, _amountForPoints);
-        liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(this));
+        liquidityPool.deposit{value: additionalDeposit}(msg.sender);
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -239,7 +239,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 etherFanEEthShares = eETH.shares(address(this));
         uint256 thresholdAmount = fanBoostThresholdEthAmount();
         if (address(this).balance >= thresholdAmount) {
-            uint256 mintedShare = liquidityPool.deposit{value: thresholdAmount}(address(this), address(this));
+            uint256 mintedShare = liquidityPool.deposit{value: thresholdAmount}(address(this));
             ethRewardsPerEEthShareAfterRebase += 1 ether * thresholdAmount / etherFanEEthShares;
         }
 
@@ -453,7 +453,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     function _wrapEth(uint256 _amount, uint256 _amountForPoints) internal returns (uint256) {
-        liquidityPool.deposit{value: _amount + _amountForPoints}(msg.sender, address(this));
+        liquidityPool.deposit{value: _amount + _amountForPoints}(msg.sender);
         uint256 tokenId = _mintMembershipNFT(msg.sender, _amount, _amountForPoints, 0, 0);
         _emitNftUpdateEvent(tokenId);
         return tokenId;

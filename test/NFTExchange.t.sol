@@ -103,7 +103,7 @@ contract NFTExchangeTest is TestSetup {
 
         // need to give liquidity pool a little more eth to cover previous withdrawal
         vm.prank(alice);
-        liquidityPoolInstance.deposit{value: 0.1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 0.1 ether}();
 
         // Success: Owner brings the T-NFT to the liquidity pool and gets 30 ETH
         vm.prank(owner);
