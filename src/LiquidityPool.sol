@@ -200,12 +200,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _numberOfValidators) external payable returns (uint256[] memory){
         //Checking which indexes form the schedule for the current scheduling period.
         (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
-        (, uint32 index) = bnftHoldersIndexes(msg.sender);
+        uint32 index = bnftHoldersIndexes[msg.sender].index;
 
         //Need to make sure the BNFT player is assigned for the current period
         //See function for details
         require(isAssigned(firstIndex, lastIndex, index), "Not assigned");
-        require(msg.sender == bnftHolders[index].holder, "Incorrect Caller");
         require(bnftHolders[index].timestamp < uint32(getCurrentSchedulingStartTimestamp()), "Already deposited");
 
         //BNFT players are eligible to spin up anything up to the max amount of validators allowed (maxValidatorsPerOwner),
@@ -518,7 +517,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @notice View function to tell other functions how many users are currently eligible for selection
     /// @dev If no-one has registered in the current scheduling period then we return the length of the array otherwise,
     ///         we return the length of the array before the newly registered BNFT players
-    /// @return The number of BNFT holders eligible for selection
+    /// @return numberOfActiveSlots The number of BNFT holders eligible for selection
     function numberOfActiveSlots() public view returns (uint32 numberOfActiveSlots) {
         numberOfActiveSlots = uint32(bnftHolders.length);
         if(holdersUpdate.timestamp > uint32(getCurrentSchedulingStartTimestamp())) {
