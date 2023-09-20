@@ -231,19 +231,6 @@
     "type": "event"
   },
   {
-    "inputs": [],
-    "name": "DEPRECATED_admin",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -371,19 +358,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "getNextRequestId",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -438,7 +412,7 @@
       },
       {
         "internalType": "address",
-        "name": "_membershipManager",
+        "name": "_membershipManagerAddress",
         "type": "address"
       }
     ],
@@ -508,9 +482,9 @@
     "name": "lastFinalizedRequestId",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -531,10 +505,10 @@
   },
   {
     "inputs": [],
-    "name": "membershipManagerAddress",
+    "name": "membershipManager",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "contract IMembershipManager",
         "name": "",
         "type": "address"
       }
@@ -550,6 +524,19 @@
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextRequestId",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
