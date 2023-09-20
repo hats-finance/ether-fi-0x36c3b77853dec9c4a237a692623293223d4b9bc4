@@ -641,19 +641,13 @@ contract EtherFiNodesManager is
         return IEtherFiNode(etherfiNode).getNonExitPenalty(tNftExitRequestTimestamp, bNftExitRequestTimestamp);
     }
 
-    /// @notice Fetches the staking rewards payout for a node
-    /// @param _validatorId id of the validator associated to etherfi node
-    /// @return toNodeOperator  the TVL for the Node Operator
-    /// @return toTnft          the TVL for the T-NFT holder
-    /// @return toBnft          the TVL for the B-NFT holder
-    /// @return toTreasury      the TVL for the Treasury
-    function getStakingRewardsPayouts(uint256 _validatorId, uint256 _beaconBalance) 
-        public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
-        address etherfiNode = etherfiNodeAddress[_validatorId].withdrawalSafeAddress;
-        return IEtherFiNode(etherfiNode).getStakingRewardsPayouts(_beaconBalance, stakingRewardsSplit, SCALE);
-    }
-
-    /// @notice Fetches the total rewards payout for the node for specific revenues
+    /// @notice Fetches the claimable rewards payouts based on the accrued rewards
+    // 
+    /// Note that since the smart contract running in the execution layer does not know the consensus layer data
+    /// such as the status and balance of the validator, 
+    /// the partial withdrawal assumes that the validator is in active & not being slashed + the beacon balance is 32 ether.
+    /// Therefore, you need to set _beaconBalance = 32 ether to see the same payouts for the partial withdrawal
+    ///
     /// @param _validatorId ID of the validator associated to etherfi node
     /// @param _beaconBalance the balance of the validator in Consensus Layer
     /// @return toNodeOperator  the TVL for the Node Operator
@@ -667,7 +661,7 @@ contract EtherFiNodesManager is
         address etherfiNode = etherfiNodeAddress[_validatorId].withdrawalSafeAddress;
         return
             IEtherFiNode(etherfiNode).getStakingRewardsPayouts(
-                _beaconBalance,
+                _beaconBalance + etherfiNode.balance,
                 stakingRewardsSplit,
                 SCALE
             );

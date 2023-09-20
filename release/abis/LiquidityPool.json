@@ -496,11 +496,6 @@
       },
       {
         "internalType": "uint256",
-        "name": "_index",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
         "name": "_numberOfValidators",
         "type": "uint256"
       }
@@ -635,11 +630,23 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
+        "internalType": "uint32",
+        "name": "numberOfEethValidators",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "numberOfEtherFanValidators",
+        "type": "uint32"
       }
     ],
+    "name": "decreaseSourceOfFundsValidators",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "deposit",
     "outputs": [
       {
@@ -656,11 +663,6 @@
       {
         "internalType": "address",
         "name": "_user",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_recipient",
         "type": "address"
       }
     ],
@@ -1036,6 +1038,11 @@
       {
         "internalType": "uint256",
         "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fee",
         "type": "uint256"
       }
     ],

@@ -329,7 +329,7 @@ contract TestSetup is Test {
         withdrawRequestNFTImplementation = new WithdrawRequestNFT();
         withdrawRequestNFTProxy = new UUPSProxy(address(withdrawRequestNFTImplementation), "");
         withdrawRequestNFTInstance = WithdrawRequestNFT(payable(withdrawRequestNFTProxy));
-        withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)));
+        withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)), payable(address(membershipManagerInstance)));
         withdrawRequestNFTInstance.updateAdmin(alice, true);
 
         liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
@@ -810,14 +810,14 @@ contract TestSetup is Test {
         vm.stopPrank();
 
         startHoax(bob);
-        liquidityPoolInstance.deposit{value: 60 ether}(bob);
+        liquidityPoolInstance.deposit{value: 60 ether}();
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();
 
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
         vm.prank(alice);
-        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 0, 2);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
         IStakingManager.DepositData[]

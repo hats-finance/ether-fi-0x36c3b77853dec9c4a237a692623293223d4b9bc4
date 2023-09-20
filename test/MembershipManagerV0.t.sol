@@ -564,7 +564,7 @@ contract MembershipManagerV0Test is TestSetup {
         vm.prank(henry);
 
         // Henry tries to mint but fails because he is not whitelisted.
-        vm.expectRevert("User is not whitelisted");
+        vm.expectRevert("Invalid User");
         uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0);
     }
 
@@ -1186,7 +1186,7 @@ contract MembershipManagerV0Test is TestSetup {
         uint256[] memory tokensValues = new uint256[](5);
         vm.startPrank(alice);
 
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
 
         for (uint256 i = 0; i < tokens.length; i++) {

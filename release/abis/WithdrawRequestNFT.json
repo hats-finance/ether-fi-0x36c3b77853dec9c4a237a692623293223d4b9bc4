@@ -182,6 +182,12 @@
         "internalType": "address",
         "name": "owner",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
       }
     ],
     "name": "WithdrawRequestClaimed",
@@ -213,23 +219,16 @@
         "internalType": "address",
         "name": "owner",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
       }
     ],
     "name": "WithdrawRequestCreated",
     "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "DEPRECATED_admin",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [
@@ -359,19 +358,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "getNextRequestId",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -397,9 +383,14 @@
             "internalType": "bool",
             "name": "isValid",
             "type": "bool"
+          },
+          {
+            "internalType": "uint32",
+            "name": "feeGwei",
+            "type": "uint32"
           }
         ],
-        "internalType": "struct WithdrawRequestNFT.WithdrawRequest",
+        "internalType": "struct IWithdrawRequestNFT.WithdrawRequest",
         "name": "",
         "type": "tuple"
       }
@@ -417,6 +408,11 @@
       {
         "internalType": "address",
         "name": "_eEthAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_membershipManagerAddress",
         "type": "address"
       }
     ],
@@ -486,9 +482,9 @@
     "name": "lastFinalizedRequestId",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -509,12 +505,38 @@
   },
   {
     "inputs": [],
+    "name": "membershipManager",
+    "outputs": [
+      {
+        "internalType": "contract IMembershipManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "name",
     "outputs": [
       {
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextRequestId",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -588,6 +610,11 @@
         "internalType": "address",
         "name": "recipient",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
       }
     ],
     "name": "requestWithdraw",
@@ -797,6 +824,19 @@
       }
     ],
     "name": "updateLiquidityPool",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_newMembershipManager",
+        "type": "address"
+      }
+    ],
+    "name": "updateMembershipManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

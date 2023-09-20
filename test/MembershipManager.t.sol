@@ -573,7 +573,7 @@ contract MembershipManagerTest is TestSetup {
         vm.prank(henry);
 
         // Henry tries to mint but fails because he is not whitelisted.
-        vm.expectRevert("User is not whitelisted");
+        vm.expectRevert("Invalid User");
         uint256 Token = membershipManagerV1Instance.wrapEth{value: 10 ether}(10 ether, 0);
 
         //Giving 12 Ether to shonee
@@ -1146,7 +1146,7 @@ contract MembershipManagerTest is TestSetup {
         uint256[] memory tokens = new uint256[](5);
         vm.startPrank(alice);
 
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
 
         for (uint256 i = 0; i < tokens.length; i++) {
@@ -1187,7 +1187,7 @@ contract MembershipManagerTest is TestSetup {
         uint256[] memory tokens = new uint256[](5);
         vm.startPrank(alice);
 
-        liquidityPoolInstance.deposit{value: 1 ether}(alice);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
 
         for (uint256 i = 0; i < tokens.length; i++) {
@@ -1240,7 +1240,8 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipManagerV1Instance.hasMetBurnFeeWaiverPeriod(aliceToken2), true);
         uint256 reqId2 = membershipManagerV1Instance.requestWithdrawAndBurn(aliceToken2);
 
-        assertEq(withdrawRequestNFTInstance.getRequest(reqId1).amountOfEEth, 1 ether - burnFee);
+        assertEq(withdrawRequestNFTInstance.getRequest(reqId1).amountOfEEth, 1 ether);
+        assertEq(withdrawRequestNFTInstance.getRequest(reqId1).feeGwei, uint32(burnFee / 1 gwei));
         assertEq(withdrawRequestNFTInstance.getRequest(reqId2).amountOfEEth, 1 ether);
     }
 }

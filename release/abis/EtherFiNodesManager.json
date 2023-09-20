@@ -539,45 +539,6 @@
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_beaconBalance",
-        "type": "uint256"
-      }
-    ],
-    "name": "getStakingRewardsPayouts",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "toNodeOperator",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toBnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTreasury",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
       }
     ],
     "name": "getWithdrawalCredentials",

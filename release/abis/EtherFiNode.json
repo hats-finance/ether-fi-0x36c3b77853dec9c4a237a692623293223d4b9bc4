@@ -329,7 +329,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_beaconBalance",
+        "name": "_balance",
         "type": "uint256"
       },
       {
@@ -576,6 +576,29 @@
         "internalType": "uint32",
         "name": "",
         "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalBalanceInExecutionLayer",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "_withdrawalSafe",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_eigenPod",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_delayedWithdrawalRouter",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",

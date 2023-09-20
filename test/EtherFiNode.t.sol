@@ -144,6 +144,82 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
     }
 
+    function test_totalBalanceInExecutionLayer() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+        safeInstance.createEigenPod();
+
+        uint256 validatorId = bidId[0];
+        uint256 beaconBalance = 32 ether;
+        (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = (0, 0, 0, 0);
+
+        (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
+        assertEq(toNodeOperator, 0 ether);
+        assertEq(toTreasury, 0 ether);
+        assertEq(toTnft, 30 ether);
+        assertEq(toBnft, 2 ether);
+
+        // simulate 1 eth of staking rewards sent to the eigen pod
+        vm.deal(address(safeInstance.eigenPod()), 1 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 1 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
+        assertEq(toNodeOperator, 1 ether * 5 / 100);
+        assertEq(toTreasury, 1 ether * 5 / 100);
+        assertEq(toTnft, 30 ether + (1 ether * 90 * 29) / (100 * 32));
+        assertEq(toBnft, 2 ether + (1 ether * 90 * 3) / (100 * 32));
+
+        // queue the withdrawal of the rewards. Funds have been sent to the DelayedWithdrawalRouter
+        safeInstance.queueRestakedWithdrawal();
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 1 ether);
+
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
+        assertEq(toNodeOperator, 1 ether * 5 / 100);
+        assertEq(toTreasury, 1 ether * 5 / 100);
+        assertEq(toTnft, 30 ether + (1 ether * 90 * 29) / (100 * 32));
+        assertEq(toBnft, 2 ether + (1 ether * 90 * 3) / (100 * 32));
+
+        // more staking rewards
+        vm.deal(address(safeInstance.eigenPod()), 2 ether);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 2 ether);
+        assertEq(_delayedWithdrawalRouter, 1 ether);
+
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
+        assertEq(toNodeOperator, 3 ether * 5 / 100);
+        assertEq(toTreasury, 3 ether * 5 / 100);
+        assertEq(toTnft, 30 ether + (3 ether * 90 * 29) / (100 * 32));
+        assertEq(toBnft, 2 ether + (3 ether * 90 * 3) / (100 * 32));
+
+        // wait and claim the first queued withdrawal
+        vm.roll(block.number + (50400) + 1);
+        safeInstance.claimQueuedWithdrawals(1);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 1 ether);
+        assertEq(_eigenPod, 2 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+
+        (toNodeOperator, toTnft, toBnft, toTreasury) = managerInstance.calculateTVL(validatorId, beaconBalance);
+        assertEq(toNodeOperator, 3 ether * 5 / 100);
+        assertEq(toTreasury, 3 ether * 5 / 100);
+        assertEq(toTnft, 30 ether + (3 ether * 90 * 29) / (100 * 32));
+        assertEq(toBnft, 2 ether + (3 ether * 90 * 3) / (100 * 32));
+    }
+
     function test_claimRestakedRewards() public {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
@@ -506,7 +582,7 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(nodeOperator).balance, nodeOperatorBalance);
     }
 
-    function test_partialWithdraw() public {
+    function test_partialWithdrawRewardsDistribution() public {
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
         address etherfiNode = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
@@ -533,11 +609,11 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.partialWithdraw(bidId[0]);
         assertEq(
             address(nodeOperator).balance,
-            nodeOperatorBalance + (1 ether * 5) / 100 + (0.0 ether * 50 * 25) / (100 * 100)
+            nodeOperatorBalance + (1 ether * 5) / 100
         );
         assertEq(
             address(treasuryInstance).balance,
-            treasuryBalance + (1 ether * 5 ) / 100 + (0.0 ether * 50 * 25) / (100 * 100)
+            treasuryBalance + (1 ether * 5 ) / 100
         );
         assertEq(address(dan).balance, danBalance + 0.815625000000000000 ether);
         assertEq(address(staker).balance, bnftStakerBalance + 0.084375000000000000 ether);
