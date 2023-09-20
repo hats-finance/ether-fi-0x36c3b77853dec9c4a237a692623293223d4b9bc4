@@ -851,10 +851,9 @@ contract LiquidityPoolTest is TestSetup {
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
         _moveClock(1119296511);
-        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
         assertEq(firstIndex, 7);
         assertEq(lastIndex, 7);
-        assertEq(lastIndexNumOfValidators, 4);
 
         vm.stopPrank();
 
@@ -868,11 +867,10 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 630 ether}();
         
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        (firstIndex, lastIndex, lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+        (firstIndex, lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         assertEq(firstIndex, 7);
         assertEq(lastIndex, 5);
-        assertEq(lastIndexNumOfValidators, 1);
 
     }
     
@@ -938,11 +936,10 @@ contract LiquidityPoolTest is TestSetup {
         _executeAdminTasks(report2);
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        (uint256 firstIndex, uint128 lastIndex, uint128 numForLastIndex) = liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         assertEq(firstIndex, 4);
         assertEq(lastIndex, 7);
-        assertEq(numForLastIndex, 2);
 
         //With the current timestamps and data, the following is true
         //First Index = 4
@@ -1009,12 +1006,6 @@ contract LiquidityPoolTest is TestSetup {
         //as we will allow users to specify how many validator they want to spin up)
         vm.expectRevert(LiquidityPool.AboveMaxAllocation.selector);
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 10 ether}(bidIds, 5);
-
-        vm.prank(owner);
-        //Making sure if a user is assigned they send in the correct amount (This will be updated 
-        //as we will allow users to specify how many validator they want to spin up)
-        vm.expectRevert(LiquidityPool.AboveMaxAllocation.selector);
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
     }
 
     function test_OnlyApprovedOperatorsGetSelected() public {
@@ -1086,11 +1077,10 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        (uint256 firstIndex, uint128 lastIndex, uint128 numForLastIndex) = liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         assertEq(firstIndex, 5);
         assertEq(lastIndex, 1);
-        assertEq(numForLastIndex,3);
 
         //With the current timestamps and data, the following is true
         //First Index = 5 
@@ -1141,7 +1131,7 @@ contract LiquidityPoolTest is TestSetup {
         //First Index = 682
         //Last Index = 515
         //Num Validators For Last = 1
-        (uint256 firstIndex, uint128 lastIndex, uint128 numOfValidatorsForLastIndex) = liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         (address firstIndexAddress, ) = liquidityPoolInstance.bnftHolders(firstIndex);
         (address firstDeductOneIndexAddress, ) = liquidityPoolInstance.bnftHolders(firstIndex - 1);
@@ -1174,9 +1164,9 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(lastIndexAddress);
 
         //User who is last in the selection deposits with the correct amount of funds
-        uint256 amount = 2 ether * numOfValidatorsForLastIndex;
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: amount}(bidIds, numOfValidatorsForLastIndex);
-        assertEq(liquidityPoolInstance.numPendingDeposits(), 4 + numOfValidatorsForLastIndex);
+        uint256 amount = 2 ether * liquidityPoolInstance.maxValidatorsPerOwner();
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: amount}(bidIds, liquidityPoolInstance.maxValidatorsPerOwner());
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 4 + liquidityPoolInstance.maxValidatorsPerOwner());
         vm.stopPrank();
     }
 
