@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 import "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
 import "@eigenlayer/contracts/interfaces/IDelayedWithdrawalRouter.sol";
 
+import "forge-std/console2.sol";
+
 contract EtherFiNode is IEtherFiNode {
     address public etherFiNodesManager;
 
@@ -38,11 +40,32 @@ contract EtherFiNode is IEtherFiNode {
     ///  To receive the rewards from the execution layer, it should have 'receive()' function.
     receive() external payable {}
 
-    function initialize(address _etherFiNodesManager) public {
-        require(stakingStartTimestamp == 0, "already initialized");
+
+    function initialize(address _etherFiNodesManager) external {
+        require(etherFiNodesManager == address(0), "already initialized");
         require(_etherFiNodesManager != address(0), "No zero addresses");
-        stakingStartTimestamp = uint32(block.timestamp);
         etherFiNodesManager = _etherFiNodesManager;
+    }
+
+    function recordStakingStart() external onlyEtherFiNodeManagerContract {
+        require(stakingStartTimestamp == 0, "already recorded");
+        stakingStartTimestamp = uint32(block.timestamp);
+
+        // reverts if node is not ready to accept deposits
+        if (_validatePhaseTransition(VALIDATOR_PHASE.STAKE_DEPOSITED)) {
+            phase = VALIDATOR_PHASE.STAKE_DEPOSITED;
+        }
+        console2.log("post phase:", uint256(phase));
+    }
+
+    function resetWithdrawalSafe() external onlyEtherFiNodeManagerContract {
+        require(phase == VALIDATOR_PHASE.CANCELLED || phase == VALIDATOR_PHASE.FULLY_WITHDRAWN, "withdrawal safe still in use");
+        ipfsHashForEncryptedValidatorKey = "";
+        exitRequestTimestamp = 0;
+        exitTimestamp = 0;
+        stakingStartTimestamp = 0;
+        phase = VALIDATOR_PHASE.NOT_INITIALIZED;
+        restakingObservedExitBlock = 0;
     }
 
     //--------------------------------------------------------------------------------------
@@ -372,6 +395,8 @@ contract EtherFiNode is IEtherFiNode {
         VALIDATOR_PHASE currentPhase = phase;
         bool pass = true;
 
+        console2.log("currentPhase", uint256(currentPhase));
+
         // Transition rules
         if (currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED) {
             pass = (_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED);
@@ -390,6 +415,7 @@ contract EtherFiNode is IEtherFiNode {
         }
 
         require(pass, "Invalid phase transition");
+        return pass;
     }
 
     function _getDaysPassedSince(

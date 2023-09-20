@@ -76,6 +76,8 @@ interface IEtherFiNode {
     ) external view returns (uint256, uint256, uint256, uint256);
 
     // Non-VIEW functions
+    function createEigenPod() external;
+
     function setPhase(VALIDATOR_PHASE _phase) external;
 
     function setIpfsHashForEncryptedValidatorKey(
@@ -106,4 +108,8 @@ interface IEtherFiNode {
     function claimQueuedWithdrawals(uint256 maxNumWithdrawals) external;
     function isRestakingEnabled() external view returns (bool);
     function hasOutstandingEigenLayerWithdrawals() external view returns (bool);
+
+    function recordStakingStart() external;
+    function resetWithdrawalSafe() external;
+
 }

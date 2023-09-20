@@ -165,14 +165,14 @@ contract EtherFiNodesManagerTest is TestSetup {
     function test_RegisterEtherFiNodeRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only staking manager contract function");
         vm.prank(owner);
-        managerInstance.registerEtherFiNode(bidId[0], etherFiNode);
+        managerInstance.registerEtherFiNode(bidId[0]);
     }
 
     function test_RegisterEtherFiNodeRevertsIfAlreadyRegistered() public {
         // Node is registered in setup
         vm.expectRevert("already installed");
         vm.prank(address(stakingManagerInstance));
-        managerInstance.registerEtherFiNode(bidId[0], etherFiNode);
+        managerInstance.registerEtherFiNode(bidId[0]);
     }
 
     function test_UnregisterEtherFiNodeRevertsOnIncorrectCaller() public {

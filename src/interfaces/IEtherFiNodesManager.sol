@@ -87,10 +87,7 @@ interface IEtherFiNodesManager {
 
     function incrementNumberOfValidators(uint64 _count) external;
 
-    function registerEtherFiNode(
-        uint256 _validatorId,
-        address _address
-    ) external;
+    function registerEtherFiNode(uint256 _validatorId) external returns (address);
 
     function unregisterEtherFiNode(uint256 _validatorId) external;
 

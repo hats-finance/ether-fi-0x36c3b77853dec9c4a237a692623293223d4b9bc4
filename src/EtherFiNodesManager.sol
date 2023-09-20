@@ -6,12 +6,17 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "./interfaces/IAuctionManager.sol";
 import "./interfaces/IEtherFiNode.sol";
 import "./interfaces/IEtherFiNodesManager.sol";
 import "./interfaces/IProtocolRevenueManager.sol";
+import "./interfaces/IStakingManager.sol";
+import "./EtherFiNode.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
+
+import "forge-std/console2.sol";
 
 contract EtherFiNodesManager is
     Initializable,
@@ -58,8 +63,89 @@ contract EtherFiNodesManager is
         uint32 prev;
     }
 
+    address[] public unusedWithdrawalSafes;
+
+    // Only nodes that are CANCELLED or FULLY_WITHDRAWN can be reset for reuse
+    function resetWithdrawalSafes(uint256[] calldata _validatorIds) external onlyAdmin {
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            IEtherFiNode node = IEtherFiNode(etherfiNodeAddress[_validatorIds[i]].withdrawalSafeAddress);
+            node.resetWithdrawalSafe();
+            unusedWithdrawalSafes.push(address(node));
+            emit WithdrawalSafeReset(_validatorIds[i], address(node));
+        }
+    }
+
     function etherfiNodeAddressForBidID(uint256 _bidId) external returns (address) {
         return etherfiNodeAddress[_bidId].withdrawalSafeAddress;
+    }
+
+    // TODO: Maybe eigen layer toggle?
+    function createUnusedWithdrawalSafe() external returns (address) {
+        BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
+        EtherFiNode node = EtherFiNode(payable(proxy));
+        // TODO: double check that this address is correct when forwarded by UUPS proxy
+        node.initialize(address(this));
+
+        // add to pool of unused safes
+        unusedWithdrawalSafes.push(address(node));
+        return address(node);
+    }
+
+    // TODO: probably doesn't need to be a separate function. Fold into register below?
+    function reuseExistingWithdrawalSafe() private returns (address) {
+        // require length > 0
+
+        // pop from array with assembly
+
+        // re-initialize state
+
+        // update prev/next pointers
+
+        // update global pointer
+
+    }
+
+    /// @notice Registers the validator ID for the EtherFiNode contract
+    /// @param _validatorId ID of the validator associated to the node
+    function registerEtherFiNode(uint256 _validatorId) external onlyStakingManagerContract returns (address) {
+        // TODO(Dave): rework
+        require(etherfiNodeAddress[_validatorId].withdrawalSafeAddress == address(0), "already installed");
+
+        address withdrawalSafeAddress;
+
+        // can I re-use an existing safe
+        if (unusedWithdrawalSafes.length > 0) {
+            //pop
+            withdrawalSafeAddress = unusedWithdrawalSafes[unusedWithdrawalSafes.length-1];
+            uint256 newLength = unusedWithdrawalSafes.length - 1;
+            unusedWithdrawalSafes.pop();
+            IEtherFiNode(withdrawalSafeAddress).recordStakingStart();
+        } else {
+            // make a new one
+            BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
+            EtherFiNode node = EtherFiNode(payable(proxy));
+            withdrawalSafeAddress = address(node);
+            node.initialize(address(this)); // TODO(Dave): maybe combine these 2 functions
+            console2.log("start");
+            node.recordStakingStart();
+            console2.log("recorded");
+        }
+
+        // check if a withdrawal safe is available
+
+
+        etherfiNodeAddress[_validatorId].withdrawalSafeAddress = withdrawalSafeAddress;
+        return withdrawalSafeAddress;
+    }
+
+    /// @notice Unset the EtherFiNode contract for the validator ID
+    /// @param _validatorId ID of the validator associated
+    function unregisterEtherFiNode(
+        uint256 _validatorId
+    ) external onlyStakingManagerContract {
+        // TODO(Dave): rework
+        require(etherfiNodeAddress[_validatorId].withdrawalSafeAddress != address(0), "not installed");
+        etherfiNodeAddress[_validatorId].withdrawalSafeAddress = address(0);
     }
 
     /*
@@ -82,6 +168,7 @@ contract EtherFiNodesManager is
     event NodeExitProcessed(uint256 _validatorId);
     event NodeEvicted(uint256 _validatorId);
     event PhaseChanged(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase);
+    event WithdrawalSafeReset(uint256 indexed _validatorId, address indexed withdrawalSafeAddress);
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -156,27 +243,6 @@ contract EtherFiNodesManager is
         );
     }
 
-    /// @notice Registers the validator ID for the EtherFiNode contract
-    /// @param _validatorId ID of the validator associated to the node
-    /// @param _address Address of the EtherFiNode contract
-    function registerEtherFiNode(
-        uint256 _validatorId,
-        address _address
-    ) public onlyStakingManagerContract {
-        // TODO(Dave): rework
-        require(etherfiNodeAddress[_validatorId].withdrawalSafeAddress == address(0), "already installed");
-        etherfiNodeAddress[_validatorId].withdrawalSafeAddress = _address;
-    }
-
-    /// @notice Unset the EtherFiNode contract for the validator ID
-    /// @param _validatorId ID of the validator associated
-    function unregisterEtherFiNode(
-        uint256 _validatorId
-    ) public onlyStakingManagerContract {
-        // TODO(Dave): rework
-        require(etherfiNodeAddress[_validatorId].withdrawalSafeAddress != address(0), "not installed");
-        etherfiNodeAddress[_validatorId].withdrawalSafeAddress = address(0);
-    }
 
     /// @notice Send the request to exit the validator node
     /// @param _validatorId ID of the validator associated
