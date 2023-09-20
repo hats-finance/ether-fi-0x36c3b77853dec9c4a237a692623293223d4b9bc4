@@ -212,7 +212,7 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
 
         // send EETH to recipient before requesting withdraw?
         eETH.approve(address(liquidityPool), _amount);
-        uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(address(msg.sender), _amount);
+        uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(address(msg.sender), _amount, uint64(0));
 
         _emitNftUpdateEvent(_tokenId);
         return withdrawTokenId;
@@ -232,7 +232,7 @@ contract MembershipManagerV0 is Initializable, OwnableUpgradeable, PausableUpgra
 
         eETH.approve(address(liquidityPool), totalBalance);
         if (feeAmount > 0) liquidityPool.withdraw(address(this), feeAmount);
-        uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(msg.sender, totalBalance - feeAmount);
+        uint256 withdrawTokenId = liquidityPool.requestMembershipNFTWithdraw(msg.sender, totalBalance, uint64(feeAmount));
         _emitNftUpdateEvent(_tokenId);
         return withdrawTokenId;
     }

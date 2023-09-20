@@ -163,7 +163,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
 
-        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
+        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient, 0);
         // transfer shares to WithdrawRequestNFT contract from this contract
         eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
         return requestId;
@@ -177,13 +177,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestWithdraw(_owner, _amount);
     }
 
-    function requestMembershipNFTWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
-        require(totalValueInLp >= amount, "Not enough ETH");
-
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount, uint256 fee) public onlyMembershipManager NonZeroAddress(recipient) returns (uint256) {
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
 
-        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient);
+        uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient, fee);
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
         return requestId;
@@ -719,6 +717,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     modifier onlyWithdrawRequestOrMembershipManager() {
         require(msg.sender == address(withdrawRequestNFT) || msg.sender == address(membershipManager), "Caller is not the WithdrawRequestNFT or MembershipManager");
+        _;
+    }
+
+    modifier onlyMembershipManager() {
+        require(msg.sender == address(membershipManager), "Caller is not the MembershipManager");
         _;
     }
 

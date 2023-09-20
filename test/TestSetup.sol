@@ -329,7 +329,7 @@ contract TestSetup is Test {
         withdrawRequestNFTImplementation = new WithdrawRequestNFT();
         withdrawRequestNFTProxy = new UUPSProxy(address(withdrawRequestNFTImplementation), "");
         withdrawRequestNFTInstance = WithdrawRequestNFT(payable(withdrawRequestNFTProxy));
-        withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)));
+        withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)), payable(address(membershipManagerInstance)));
         withdrawRequestNFTInstance.updateAdmin(alice, true);
 
         liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));

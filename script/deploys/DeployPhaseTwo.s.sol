@@ -87,7 +87,7 @@ contract DeployPhaseTwoScript is Script {
         withdrawRequestNftProxy = new UUPSProxy(address(withdrawRequestNftImplementation), "");
         withdrawRequestNftInstance = WithdrawRequestNFT(payable(withdrawRequestNftProxy));
 
-        withdrawRequestNftInstance.initialize(liquidityPoolAddress, eEthAddress);
+        withdrawRequestNftInstance.initialize(liquidityPoolAddress, eEthAddress, membershipManagerAddress);
 
         addressProvider.addContract(address(withdrawRequestNftProxy), "WithdrawRequestNFT");
     }
