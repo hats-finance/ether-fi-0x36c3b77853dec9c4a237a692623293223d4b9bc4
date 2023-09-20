@@ -8,6 +8,7 @@ interface IEtherFiNode {
     //
     //      NOT_INITIALIZED
     //              |
+    //      READY_FOR_DEPOSIT
     //              ↓
     //      STAKE_DEPOSITED
     //           /      \
@@ -31,6 +32,8 @@ interface IEtherFiNode {
     //
     // All phase transitions should be made through the setPhase function,
     // which validates transitions based on these rules.
+    //
+    // Fully_WITHDRAWN or CANCELLED nodes can be recycled via resetWithdrawalSafe()
     enum VALIDATOR_PHASE {
         NOT_INITIALIZED,
         STAKE_DEPOSITED,
@@ -40,7 +43,8 @@ interface IEtherFiNode {
         CANCELLED,
         BEING_SLASHED,
         EVICTED,
-        WAITING_FOR_APPROVAL
+        WAITING_FOR_APPROVAL,
+        READY_FOR_DEPOSIT
     }
 
     // VIEW functions

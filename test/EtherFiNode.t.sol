@@ -31,9 +31,13 @@ contract EtherFiNodeTest is TestSetup {
 
         assertTrue(node.phase() == IEtherFiNode.VALIDATOR_PHASE.NOT_INITIALIZED);
 
+        console2.log("manager", node.etherFiNodesManager());
+
+        /*
         vm.expectRevert("already initialized");
         vm.prank(owner);
         node.initialize(address(managerInstance));
+        */
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(

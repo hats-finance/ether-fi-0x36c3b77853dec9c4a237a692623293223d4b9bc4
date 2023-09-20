@@ -42,19 +42,23 @@ contract EtherFiNode is IEtherFiNode {
 
 
     function initialize(address _etherFiNodesManager) external {
+        require(phase == VALIDATOR_PHASE.NOT_INITIALIZED, "already initialized");
         require(etherFiNodesManager == address(0), "already initialized");
         require(_etherFiNodesManager != address(0), "No zero addresses");
         etherFiNodesManager = _etherFiNodesManager;
+
+        _validatePhaseTransition(VALIDATOR_PHASE.READY_FOR_DEPOSIT);
+        phase = VALIDATOR_PHASE.READY_FOR_DEPOSIT;
     }
 
     function recordStakingStart() external onlyEtherFiNodeManagerContract {
         require(stakingStartTimestamp == 0, "already recorded");
+
         stakingStartTimestamp = uint32(block.timestamp);
 
-        // reverts if node is not ready to accept deposits
-        if (_validatePhaseTransition(VALIDATOR_PHASE.STAKE_DEPOSITED)) {
-            phase = VALIDATOR_PHASE.STAKE_DEPOSITED;
-        }
+        _validatePhaseTransition(VALIDATOR_PHASE.STAKE_DEPOSITED);
+        phase = VALIDATOR_PHASE.STAKE_DEPOSITED;
+
         console2.log("post phase:", uint256(phase));
     }
 
@@ -64,7 +68,7 @@ contract EtherFiNode is IEtherFiNode {
         exitRequestTimestamp = 0;
         exitTimestamp = 0;
         stakingStartTimestamp = 0;
-        phase = VALIDATOR_PHASE.NOT_INITIALIZED;
+        phase = VALIDATOR_PHASE.READY_FOR_DEPOSIT;
         restakingObservedExitBlock = 0;
     }
 
@@ -412,9 +416,12 @@ contract EtherFiNode is IEtherFiNode {
         bool pass = true;
 
         console2.log("currentPhase", uint256(currentPhase));
+        console2.log("newPhase", uint256(_newPhase));
 
         // Transition rules
         if (currentPhase == VALIDATOR_PHASE.NOT_INITIALIZED) {
+            pass = (_newPhase == VALIDATOR_PHASE.READY_FOR_DEPOSIT);
+        } else if (currentPhase == VALIDATOR_PHASE.READY_FOR_DEPOSIT) {
             pass = (_newPhase == VALIDATOR_PHASE.STAKE_DEPOSITED);
         } else if (currentPhase == VALIDATOR_PHASE.STAKE_DEPOSITED) {
             pass = (_newPhase == VALIDATOR_PHASE.LIVE || _newPhase == VALIDATOR_PHASE.CANCELLED || _newPhase == VALIDATOR_PHASE.WAITING_FOR_APPROVAL);
