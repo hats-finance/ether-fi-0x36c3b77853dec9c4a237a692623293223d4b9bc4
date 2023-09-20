@@ -826,7 +826,7 @@ contract TestSetup is Test {
         bytes32[] memory depositDataRootsForApproval = new bytes32[](2);
 
         for (uint256 i = 0; i < newValidators.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddress(
+            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(
                 newValidators[i]
             );
             root = depGen.generateDepositRoot(

@@ -38,7 +38,7 @@ contract EtherFiNodesManagerTest is TestSetup {
             false
         );
 
-        etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
+        etherFiNode = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
 
         assertTrue(
             managerInstance.phase(bidId[0]) ==
@@ -200,12 +200,12 @@ contract EtherFiNodesManagerTest is TestSetup {
         hoax(alice);
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
+        assertEq(managerInstance.etherfiNodeAddressForBidID(bidId[0]), address(0));
 
         hoax(alice);
         uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, false);
 
-        address node = managerInstance.etherfiNodeAddress(processedBids[0]);
+        address node = managerInstance.etherfiNodeAddressForBidID(processedBids[0]);
         assert(node != address(0));
     }
 
@@ -219,24 +219,24 @@ contract EtherFiNodesManagerTest is TestSetup {
         hoax(alice);
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
+        assertEq(managerInstance.etherfiNodeAddressForBidID(bidId[0]), address(0));
 
         hoax(alice);
         uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, false);
 
-        address node = managerInstance.etherfiNodeAddress(processedBids[0]);
+        address node = managerInstance.etherfiNodeAddressForBidID(processedBids[0]);
         assert(node != address(0));
 
     }
 
     function test_UnregisterEtherFiNode() public {
-        address node = managerInstance.etherfiNodeAddress(bidId[0]);
+        address node = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
         assert(node != address(0));
 
         vm.prank(address(stakingManagerInstance));
         managerInstance.unregisterEtherFiNode(bidId[0]);
 
-        node = managerInstance.etherfiNodeAddress(bidId[0]);
+        node = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
         assertEq(node, address(0));
     }
 
@@ -262,7 +262,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         vm.expectRevert("Exit request was already sent.");
         managerInstance.batchSendExitRequest(ids);
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
         uint32 exitRequestTimestamp = IEtherFiNode(etherFiNode).exitRequestTimestamp();
 
         assertEq(IEtherFiNode(etherFiNode).getNonExitPenalty(exitRequestTimestamp, uint32(block.timestamp)), 0);

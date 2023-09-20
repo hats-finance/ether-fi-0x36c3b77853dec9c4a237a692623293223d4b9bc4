@@ -20,6 +20,8 @@ interface IEtherFiNodesManager {
         uint64 bnft;
     }
 
+    function etherfiNodeAddressForBidID(uint256 _bidId) external returns (address);
+
     // VIEW functions
     function numberOfValidators() external view returns (uint64);
     function nonExitPenaltyPrincipal() external view returns (uint64);
@@ -27,10 +29,6 @@ interface IEtherFiNodesManager {
 
     function eigenPodManager() external view returns (IEigenPodManager);
     function delayedWithdrawalRouter() external view returns (IDelayedWithdrawalRouter);
-
-    function etherfiNodeAddress(
-        uint256 _validatorId
-    ) external view returns (address);
 
     function phase(
         uint256 _validatorId

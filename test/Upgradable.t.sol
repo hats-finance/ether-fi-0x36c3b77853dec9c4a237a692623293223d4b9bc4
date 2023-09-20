@@ -258,7 +258,7 @@ contract UpgradeTest is TestSetup {
 
         uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, false);
 
-        address safe1 = managerInstance.etherfiNodeAddress(processedBids[0]);
+        address safe1 = managerInstance.etherfiNodeAddressForBidID(processedBids[0]);
         console.log(safe1);
 
         vm.stopPrank();
@@ -273,7 +273,7 @@ contract UpgradeTest is TestSetup {
         uint256[] memory aliceBidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
         uint256[] memory aliceProcessedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(aliceBidIds, false);
 
-        address safe2 = managerInstance.etherfiNodeAddress(aliceProcessedBids[0]);
+        address safe2 = managerInstance.etherfiNodeAddressForBidID(aliceProcessedBids[0]);
         console.log(safe2);
 
         vm.stopPrank();
@@ -284,8 +284,8 @@ contract UpgradeTest is TestSetup {
         stakingManagerInstance.upgradeEtherFiNode(address(etherFiNodeV2));
 
 
-        safe1 = managerInstance.etherfiNodeAddress(processedBids[0]);
-        safe2 = managerInstance.etherfiNodeAddress(aliceProcessedBids[0]);
+        safe1 = managerInstance.etherfiNodeAddressForBidID(processedBids[0]);
+        safe2 = managerInstance.etherfiNodeAddressForBidID(aliceProcessedBids[0]);
 
         EtherFiNodeV2 safe1V2 = EtherFiNodeV2(payable(safe1));
         EtherFiNodeV2 safe2V2 = EtherFiNodeV2(payable(safe2));

@@ -101,7 +101,7 @@ contract StakingManagerTest is TestSetup {
 
         bytes32[] memory depositDataRootsForApproval = new bytes32[](1);
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -143,7 +143,7 @@ contract StakingManagerTest is TestSetup {
         liquidityPoolInstance.batchApproveRegistration(validatorArray, pubKey, sig);
 
         uint256 selectedBidId = bidIds[0];
-        etherFiNode = managerInstance.etherfiNodeAddress(selectedBidId);
+        etherFiNode = managerInstance.etherfiNodeAddressForBidID(selectedBidId);
 
         assertEq(selectedBidId, 1);
         assertEq(address(managerInstance).balance, 0 ether);
@@ -151,7 +151,7 @@ contract StakingManagerTest is TestSetup {
         //Revenue not about auction threshold so still 1 ether
         assertEq(address(auctionInstance).balance, 1 ether);
 
-        address safeAddress = managerInstance.etherfiNodeAddress(bidIds[0]);
+        address safeAddress = managerInstance.etherfiNodeAddressForBidID(bidIds[0]);
         assertEq(safeAddress, etherFiNode);
     }
 
@@ -178,7 +178,7 @@ contract StakingManagerTest is TestSetup {
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -201,7 +201,7 @@ contract StakingManagerTest is TestSetup {
         uint256 validatorId = bidId[0];
         uint256 winningBid = bidId[0];
         address staker = stakingManagerInstance.bidIdToStaker(validatorId);
-        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
+        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorId);
 
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(stakingManagerInstance.stakeAmount(), 32 ether);
@@ -505,7 +505,7 @@ contract StakingManagerTest is TestSetup {
             false
         );
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -578,7 +578,7 @@ contract StakingManagerTest is TestSetup {
             false
         );
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -602,7 +602,7 @@ contract StakingManagerTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId, depositDataArray);
 
         uint256 selectedBidId = bidId[0];
-        etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
+        etherFiNode = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
 
         // assertEq(address(protocolRevenueManagerInstance).balance, 0.05 ether); // protocolRevenueManager is being deprecated
         assertEq(selectedBidId, 1);
@@ -613,7 +613,7 @@ contract StakingManagerTest is TestSetup {
         address operatorAddress = auctionInstance.getBidOwner(bidId[0]);
         assertEq(operatorAddress, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
 
-        address safeAddress = managerInstance.etherfiNodeAddress(bidId[0]);
+        address safeAddress = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
         assertEq(safeAddress, etherFiNode);
 
         assertEq(
@@ -667,7 +667,7 @@ contract StakingManagerTest is TestSetup {
             memory depositDataArray = new IStakingManager.DepositData[](4);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddress(
+            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(
                 processedBidIds[i]
             );
             bytes32 root = depGen.generateDepositRoot(
@@ -808,7 +808,7 @@ contract StakingManagerTest is TestSetup {
 
         bytes32 root;
         for (uint256 i = 0; i < processedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddress(
+            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(
                 processedBidIds[i]
             );
             bytes32 generatedRoot = depGen.generateDepositRoot(
@@ -884,7 +884,7 @@ contract StakingManagerTest is TestSetup {
 
         bytes32 root;
         for (uint256 i = 0; i < bidIdArray.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddress(
+            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(
                 bidIdArray[i]
             );
             bytes32 generatedRoot = depGen.generateDepositRoot(
@@ -986,7 +986,7 @@ contract StakingManagerTest is TestSetup {
             false
         );
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -1065,7 +1065,7 @@ contract StakingManagerTest is TestSetup {
 
         uint256 selectedBidId = bidId2[0];
         address staker = stakingManagerInstance.bidIdToStaker(bidId2[0]);
-        address etherFiNode = managerInstance.etherfiNodeAddress(bidId2[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(bidId2[0]);
 
         assertEq(staker, 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         assertEq(selectedBidId, bidId2[0]);
@@ -1084,7 +1084,7 @@ contract StakingManagerTest is TestSetup {
         assertEq(address(auctionInstance).balance, 0.6 ether);
 
         stakingManagerInstance.batchCancelDeposit(bidId2);
-        assertEq(managerInstance.etherfiNodeAddress(bidId2[0]), address(0));
+        assertEq(managerInstance.etherfiNodeAddressForBidID(bidId2[0]), address(0));
         assertEq(stakingManagerInstance.bidIdToStaker(bidId2[0]), address(0));
         assertTrue(
             IEtherFiNode(etherFiNode).phase() ==
@@ -1124,7 +1124,7 @@ contract StakingManagerTest is TestSetup {
             false
         );
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -1161,7 +1161,7 @@ contract StakingManagerTest is TestSetup {
             false
         );
 
-        etherFiNode = managerInstance.etherfiNodeAddress(2);
+        etherFiNode = managerInstance.etherfiNodeAddressForBidID(2);
         root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -1265,7 +1265,7 @@ contract StakingManagerTest is TestSetup {
         startHoax(alice);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, false);
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(1);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
