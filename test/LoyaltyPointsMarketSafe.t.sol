@@ -11,6 +11,7 @@ contract LoyaltyPointsMarketSafeTest is Test {
     address plebian;
 
     event PointsPurchased(address indexed buyer, uint256 indexed tokenId, uint256 amountWei, uint256 weiPerPoint);
+    event BoostToTop(address indexed buyer, uint256 indexed tokenId, uint256 amountWei);
 
     function setUp() public {
         admin = address(0x01234);
@@ -39,6 +40,35 @@ contract LoyaltyPointsMarketSafeTest is Test {
         emit PointsPurchased(plebian, 9999, 0.2 ether, 1.0 gwei);
         pointsContract.purchasePoints{value: 0.2 ether}(9999);
         assertEq(address(pointsContract).balance, 1.0 ether);
+
+        vm.stopPrank();
+    }
+
+    function test_boostToTop() public {
+        vm.deal(plebian, 1 ether);
+
+        vm.startPrank(admin);
+
+        pointsContract.setBoostPaymentAmount(0.1 ether);
+
+        vm.stopPrank();
+
+        vm.startPrank(plebian);
+
+        vm.expectEmit(true, true, false, true);
+        emit BoostToTop(plebian, 1, 0.1 ether);
+        pointsContract.boostToTop{value: 0.1 ether}(1);
+        assertEq(address(pointsContract).balance, 0.1 ether);
+
+        vm.expectEmit(true, true, false, true);
+        emit BoostToTop(plebian, 1337, 0.1 ether);
+        pointsContract.boostToTop{value: 0.1 ether}(1337);
+        assertEq(address(pointsContract).balance, 0.2 ether);
+
+        vm.expectEmit(true, true, false, true);
+        emit BoostToTop(plebian, 9999, 0.1 ether);
+        pointsContract.boostToTop{value: 0.1 ether}(9999);
+        assertEq(address(pointsContract).balance, 0.3 ether);
 
         vm.stopPrank();
     }
