@@ -1241,7 +1241,7 @@ contract MembershipManagerTest is TestSetup {
         uint256 reqId2 = membershipManagerV1Instance.requestWithdrawAndBurn(aliceToken2);
 
         assertEq(withdrawRequestNFTInstance.getRequest(reqId1).amountOfEEth, 1 ether);
-        assertEq(withdrawRequestNFTInstance.getRequest(reqId1).fee, uint64(burnFee));
+        assertEq(withdrawRequestNFTInstance.getRequest(reqId1).feeGwei, uint32(burnFee / 1 gwei));
         assertEq(withdrawRequestNFTInstance.getRequest(reqId2).amountOfEEth, 1 ether);
     }
 }

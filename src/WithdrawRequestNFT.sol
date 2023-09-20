@@ -6,16 +6,12 @@ import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IWithdrawRequestNFT.sol";
 
-contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
-    struct WithdrawRequest {
-        uint96  amountOfEEth;
-        uint96  shareOfEEth;
-        bool    isValid;
-        uint64  fee;
-    }
 
-    mapping(uint256 => WithdrawRequest) private _requests;
+contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IWithdrawRequestNFT {
+
+    mapping(uint256 => IWithdrawRequestNFT.WithdrawRequest) private _requests;
     uint256 private _nextRequestId;
     address public DEPRECATED_admin;
     uint256 public lastFinalizedRequestId;
@@ -26,8 +22,8 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
     address public membershipManagerAddress;
 
-    event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner, uint64 fee);
-    event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner, uint64 fee);
+    event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner, uint256 fee);
+    event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner, uint256 fee);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -47,10 +43,11 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         _nextRequestId = 1;
     }
 
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient, uint64 fee) external payable onlyLiquidtyPool returns (uint256) {
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient, uint256 fee) external payable onlyLiquidtyPool returns (uint256) {
         uint256 requestId = _nextRequestId;
+        uint32 feeGwei = uint32(fee / 1 gwei);
         _nextRequestId++;
-        _requests[requestId] = WithdrawRequest(amountOfEEth, shareOfEEth, true, fee);
+        _requests[requestId] = IWithdrawRequestNFT.WithdrawRequest(amountOfEEth, shareOfEEth, true, feeGwei);
         _safeMint(recipient, requestId);
 
         emit WithdrawRequestCreated(uint32(requestId), amountOfEEth, shareOfEEth, recipient, fee);
@@ -62,7 +59,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         require(tokenId <= lastFinalizedRequestId, "Request is not finalized");
         require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
 
-        WithdrawRequest storage request = _requests[tokenId];
+        IWithdrawRequestNFT.WithdrawRequest storage request = _requests[tokenId];
         require(request.isValid, "Request is not valid");
 
         // send the lesser value of the originally requested amount of eEth or the current eEth value of the shares
@@ -75,19 +72,20 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         _burn(tokenId);
         delete _requests[tokenId];
 
-        if (request.fee > 0) {
+        uint256 fee = request.feeGwei * 1 gwei;
+        if (fee > 0) {
             // send fee to membership manager
-            liquidityPool.withdraw(membershipManagerAddress, request.fee);
+            liquidityPool.withdraw(membershipManagerAddress, fee);
         }
 
-        uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToTransfer - request.fee);
+        uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToTransfer - fee);
 
-        emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient, request.fee);
+        emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient, fee);
     }
     
     // add function to transfer accumulated shares to admin
 
-    function getRequest(uint256 requestId) external view returns (WithdrawRequest memory) {
+    function getRequest(uint256 requestId) external view returns (IWithdrawRequestNFT.WithdrawRequest memory) {
         return _requests[requestId];
     }
 

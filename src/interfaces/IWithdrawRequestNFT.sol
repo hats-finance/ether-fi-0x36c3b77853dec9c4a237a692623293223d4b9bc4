@@ -6,20 +6,23 @@ interface IWithdrawRequestNFT {
         uint96  amountOfEEth;
         uint96  shareOfEEth;
         bool    isValid;
+        uint32  feeGwei;
     }
 
-    function initialize() external;
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester, uint64 fee) external payable returns (uint256);
-    function claimWithdraw(uint256 requestId) external returns (WithdrawRequest memory);
+    function initialize(address _liquidityPoolAddress, address _eEthAddress, address _membershipManager) external;
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address requester, uint256 fee) external payable returns (uint256);
+    function claimWithdraw(uint256 requestId) external;
 
     function getRequest(uint256 requestId) external view returns (WithdrawRequest memory);
     function isFinalized(uint256 requestId) external view returns (bool);
-    function ownerOf(uint256 tokenId) external view returns (address);
 
     function getNextRequestId() external view returns (uint256);
 
     function invalidateRequest(uint256 requestId) external;
     function finalizeRequests(uint256 upperBound) external;
     function updateAdmin(address _address, bool _isAdmin) external;
-    function updateLiqudityPool(address _newLiquidityPool) external;
+
+    function updateLiquidityPool(address _newLiquidityPool) external;
+    function updateEEth(address _newEEth) external;
+    function updateMembershipManager(address _newMembershipManager) external;
 }
