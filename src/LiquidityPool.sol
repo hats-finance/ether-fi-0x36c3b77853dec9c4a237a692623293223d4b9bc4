@@ -400,15 +400,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         //If the number of validators to spin up is divisible with no remainder by the max number of validators per owner, we can keep the
         //number of validators for the last index the same as the max number of validators per owner. If it is not, we set the number of validators
         //for the last index to the remainder.
+        uint128 size;
         if(numValidatorsToCreate % maxValidatorsPerOwnerLocal == 0) {
-            uint128 size = numValidatorsToCreate / maxValidatorsPerOwnerLocal;
-            //We use this function to fetch what the last index in the selection will be. Based on different factors. See function for details.
-            lastIndex = _fetchLastIndex(size, index);
+            size = numValidatorsToCreate / maxValidatorsPerOwnerLocal;
         } else {
-            uint128 size = (numValidatorsToCreate / maxValidatorsPerOwnerLocal) + 1;
-            //We use this function to fetch what the last index in the selection will be. Based on different factors. See function for details.
-            lastIndex = _fetchLastIndex(size, index);
+            size = (numValidatorsToCreate / maxValidatorsPerOwnerLocal) + 1;
         }
+
+        //We use this function to fetch what the last index in the selection will be. Based on different factors. See function for details.
+        lastIndex = _fetchLastIndex(size, index);
 
         return (index, lastIndex);
     }
