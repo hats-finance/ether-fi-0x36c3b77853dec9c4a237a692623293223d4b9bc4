@@ -287,6 +287,18 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 15);
     }
 
+    // TODO(Dave): To Implement
+    //   - disallow recycle if any balance in node including eigenLayer contracts
+    //   - remove etherfiNodeAddressForBidID and all 1000 affected callsites (or fine to leave it?) now that linked list is gone
+    //   - cleanup. Remove logs. Function comments
+
+    // TODO(Dave): Remaining withdrawal-safe-pool Tests
+    // 1. add restaking to previously non-restaking node
+    // 2. restaking with previously restaked node
+    // 3. admin triggered recycle of fully_withdrawn node
+    // 4. test that recycle of fully_withdrawn node cannot happen if non-zero balance
+    //     -- including eigenPod + delayedWithdrawalRouter
+
     function test_UnregisterEtherFiNode() public {
         address node = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
         assert(node != address(0));
