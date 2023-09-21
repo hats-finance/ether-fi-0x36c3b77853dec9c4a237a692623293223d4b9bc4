@@ -328,12 +328,24 @@ contract EtherFiNodesManager is
         }
     }
 
+    error CannotResetWithdrawnNodeWithBalance();
 
     /// @notice reset unused withdrawal safes so that future validators can save gas creating contracts
     /// @dev Only nodes that are CANCELLED or FULLY_WITHDRAWN can be reset for reuse
     function resetWithdrawalSafes(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             IEtherFiNode node = IEtherFiNode(etherfiNodeAddress[_validatorIds[i]]);
+
+            // don't allow the node to be recycled if it is in the withrdawn state but still has a balance.
+            if (node.phase() == IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN) {
+                (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = node.totalBalanceInExecutionLayer();
+                uint256 totalBalance = _withdrawalSafe + _eigenPod + _delayedWithdrawalRouter;
+                if (totalBalance > 0) {
+                    revert CannotResetWithdrawnNodeWithBalance();
+                }
+            }
+
+            // reset safe and add to unused stack for later re-use
             node.resetWithdrawalSafe();
             unusedWithdrawalSafes.push(address(node));
             etherfiNodeAddress[_validatorIds[i]] = address(0);

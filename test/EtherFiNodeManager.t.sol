@@ -10,6 +10,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     address etherFiNode;
     uint256[] bidId;
     EtherFiNode safeInstance;
+    uint256 testnetFork;
 
     function setUp() public {
         setUpTests();
@@ -74,6 +75,8 @@ contract EtherFiNodesManagerTest is TestSetup {
         );
 
         safeInstance = EtherFiNode(payable(etherFiNode));
+
+        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
     }
 
     function test_SetStakingRewardsSplit() public {
@@ -196,6 +199,61 @@ contract EtherFiNodesManagerTest is TestSetup {
         managerInstance.unregisterEtherFiNode(bidId[0]);
     }
 
+    function test_CantResetNodeWithBalance() public {
+        vm.startPrank(address(stakingManagerInstance));
+        uint256 validatorId = bidId[0];
+
+        // need to put the node in a terminal state before it can be unregistered
+        managerInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        managerInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+
+        // simulate not fully withdrawn funds
+        vm.deal(managerInstance.etherfiNodeAddress(validatorId), 1 ether);
+        vm.stopPrank();
+
+
+        uint256[] memory validatorsToReset = new uint256[](1);
+        validatorsToReset[0] = validatorId;
+        vm.prank(alice);
+        vm.expectRevert(EtherFiNodesManager.CannotResetWithdrawnNodeWithBalance.selector);
+        managerInstance.resetWithdrawalSafes(validatorsToReset);
+    }
+
+    function test_CantResetRestakedNodeWithBalance() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+
+        uint256 validatorId = bidId[0];
+        address node = managerInstance.etherfiNodeAddressForBidID(validatorId);
+        IEtherFiNode(node).createEigenPod();
+
+        vm.startPrank(address(stakingManagerInstance));
+
+        // need to put the node in a terminal state before it can be unregistered
+        managerInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        managerInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+
+        // simulate funds still in eigenPod
+        vm.deal(IEtherFiNode(node).eigenPod(), 1 ether);
+        vm.stopPrank();
+
+        uint256[] memory validatorsToReset = new uint256[](1);
+        validatorsToReset[0] = validatorId;
+        vm.prank(alice);
+        vm.expectRevert(EtherFiNodesManager.CannotResetWithdrawnNodeWithBalance.selector);
+        managerInstance.resetWithdrawalSafes(validatorsToReset);
+
+        // move funds to the delayed withdrawal router
+        IEtherFiNode(node).queueRestakedWithdrawal();
+
+        // should still fail with the funds no longer in the pod
+        vm.prank(alice);
+        vm.expectRevert(EtherFiNodesManager.CannotResetWithdrawnNodeWithBalance.selector);
+        managerInstance.resetWithdrawalSafes(validatorsToReset);
+        assertEq(IEtherFiNode(node).eigenPod().balance, 0);
+    }
+
     function test_CreateEtherFiNode() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -288,16 +346,13 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     // TODO(Dave): To Implement
-    //   - disallow recycle if any balance in node including eigenLayer contracts
     //   - remove etherfiNodeAddressForBidID and all 1000 affected callsites (or fine to leave it?) now that linked list is gone
     //   - cleanup. Remove logs. Function comments
 
     // TODO(Dave): Remaining withdrawal-safe-pool Tests
     // 1. add restaking to previously non-restaking node
     // 2. restaking with previously restaked node
-    // 3. admin triggered recycle of fully_withdrawn node
-    // 4. test that recycle of fully_withdrawn node cannot happen if non-zero balance
-    //     -- including eigenPod + delayedWithdrawalRouter
+    // 3. normal mode in previously restaked
 
     function test_UnregisterEtherFiNode() public {
         address node = managerInstance.etherfiNodeAddressForBidID(bidId[0]);

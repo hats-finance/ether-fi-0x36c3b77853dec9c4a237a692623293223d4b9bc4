@@ -115,5 +115,6 @@ interface IEtherFiNode {
 
     function recordStakingStart() external;
     function resetWithdrawalSafe() external;
+    function totalBalanceInExecutionLayer() external view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter);
 
 }
