@@ -129,7 +129,10 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC20P
         _approve(owner, spender, value);
     }
 
-    // [INTERNAL FUNCTIONS] 
+    //--------------------------------------------------------------------------------------
+    //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
+    //--------------------------------------------------------------------------------------
+
     function _transfer(address _sender, address _recipient, uint256 _amount) internal {
         uint256 _sharesToTransfer = liquidityPool.sharesForAmount(_amount);
         _transferShares(_sender, _recipient, _sharesToTransfer);
@@ -163,7 +166,10 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC20P
         nonce.increment();
     }
 
-    // [GETTERS]
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  GETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+
     function name() public pure returns (string memory) { return "ether.fi ETH"; }
     function symbol() public pure returns (string memory) { return "eETH"; }
     function decimals() public pure returns (uint8) { return 18; }
@@ -208,7 +214,10 @@ contract EETH is IERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IERC20P
         return ECDSAUpgradeable.toTypedDataHash(_domainSeparatorV4(), structHash);
     }
 
-    // [MODIFIERS]
+    //--------------------------------------------------------------------------------------
+    //-----------------------------------  MODIFIERS  --------------------------------------
+    //--------------------------------------------------------------------------------------
+    
     modifier onlyPoolContract() {
         require(msg.sender == address(liquidityPool), "Only pool contract function");
         _;
