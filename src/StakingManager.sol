@@ -105,7 +105,11 @@ contract StakingManager is
     }
 
     /// @notice Allows depositing multiple stakes at once
+    /// @dev Function gets called from the liquidity pool as part of the BNFT staker flow
     /// @param _candidateBidIds IDs of the bids to be matched with each stake
+    /// @param _staker the address of the BNFT player who originated the call to the LP
+    /// @param _source the staking type that the funds are sourced from (EETH / ETHER_FAN), see natspec for allocateSourceOfFunds()
+    /// @param _enableRestaking Eigen layer integration check to identify if restaking is possible
     /// @return Array of the bid IDs that were processed and assigned
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, address _staker, ILiquidityPool.SourceOfFunds _source, bool _enableRestaking)
         public payable whenNotPaused nonReentrant correctStakeAmount returns (uint256[] memory)
@@ -131,12 +135,14 @@ contract StakingManager is
         }
     }
 
-    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits into beacon chain
+    /// @notice Creates validator object, mints NFTs, sets NB variables and deposits 1 ETH into beacon chain
+    /// @dev Function gets called from the LP and is used in the BNFT staking flow
     /// @param _depositRoot The fetched root of the Beacon Chain
     /// @param _validatorId Array of IDs of the validator to register
     /// @param _bNftRecipient Array of BNFT recipients
     /// @param _tNftRecipient Array of TNFT recipients
     /// @param _depositData Array of data structures to hold all data needed for depositing to the beacon chain
+    /// @param _staker address of the BNFT holder who initiated the transaction
     function batchRegisterValidators(
         bytes32 _depositRoot,
         uint256[] calldata _validatorId,
@@ -154,7 +160,13 @@ contract StakingManager is
         }
     }
 
-    // TOOD - discuss if we need to receive the full `DepositData` for stronger verification
+    /// @notice Approves validators and deposits the remaining 31 ETH into the beacon chain
+    /// @dev This gets called by the LP and only will only happen when the oracle has confirmed that the withdraw credentials for the 
+    ///         validators are correct. This prevents a front-running attack.
+    /// @param _validatorId validator IDs to approve
+    /// @param _pubKey the pubkeys for each validator
+    /// @param _signature the signature for the 31 ETH transaction which was submitted in the register phase
+    /// @param _depositDataRootApproval the deposit data root for the 31 ETH transaction which was submitted in the register phase
     function batchApproveRegistration(
         uint256[] memory _validatorId, 
         bytes[] calldata _pubKey,
@@ -182,8 +194,12 @@ contract StakingManager is
         }
     }
 
-    /// @notice Cancels a user's deposits
-    /// @param _validatorIds the IDs of the validators deposits to cancel
+    /// @notice Cancels deposits for validators registered in the BNFT flow
+    /// @dev Validators can be cancelled at any point before the full 32 ETH is deposited into the beacon chain. Validators which have
+    ///         already gone through the 'registered' phase will lose 1 ETH which is stuck in the beacon chain and will serve as a penalty for
+    ///         cancelling late. We need to update the number of validators each source has spun up to keep the target weight calculation correct.
+    /// @param _validatorIds validators to cancel
+    /// @param _caller address of the bNFT holder who initiated the transaction. Used for verification
     function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) public whenNotPaused nonReentrant {
         uint32 numberOfEethValidators;
         uint32 numberOfEtherFanValidators;
@@ -305,6 +321,8 @@ contract StakingManager is
             address operator = auctionManager.getBidOwner(bidId);
             bool isActive = auctionManager.isBidActive(bidId);
             if (bidStaker == address(0) && isActive) {
+                //Verify the node operator who has been selected is approved to run validators using the specific source of funds.
+                //See more info in Node Operator manager around approving operators for different source types
                 require(_verifyNodeOperator(operator, _source), "Operator not verified");
                 auctionManager.updateSelectedBidInformation(bidId);
                 validatorSourceOfFunds[bidId] = _source;
@@ -436,6 +454,11 @@ contract StakingManager is
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
+    /// @notice Checks if an operator is approved for a specified source of funds
+    /// @dev Operators do not need to be approved for delegated_staking type
+    /// @param _operator address of the operator being checked
+    /// @param _source the source of funds the operator is being checked for
+    /// @return approved whether the operator is approved for the source type
     function _verifyNodeOperator(address _operator, ILiquidityPool.SourceOfFunds _source) internal returns (bool approved) {
         if(uint256(ILiquidityPool.SourceOfFunds.DELEGATED_STAKING) == uint256(_source)) {
             approved = true;
