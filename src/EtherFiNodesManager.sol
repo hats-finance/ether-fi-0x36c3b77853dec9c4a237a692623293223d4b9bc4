@@ -336,6 +336,7 @@ contract EtherFiNodesManager is
             IEtherFiNode node = IEtherFiNode(etherfiNodeAddress[_validatorIds[i]]);
             node.resetWithdrawalSafe();
             unusedWithdrawalSafes.push(address(node));
+            etherfiNodeAddress[_validatorIds[i]] = address(0);
             emit WithdrawalSafeReset(_validatorIds[i], address(node));
         }
     }
