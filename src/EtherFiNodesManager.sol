@@ -80,29 +80,15 @@ contract EtherFiNodesManager is
     }
 
     // TODO: Maybe eigen layer toggle?
-    function createUnusedWithdrawalSafe() external returns (address) {
+    function createUnusedWithdrawalSafe(bool _enableRestaking) external returns (address) {
         BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
         EtherFiNode node = EtherFiNode(payable(proxy));
-        // TODO: double check that this address is correct when forwarded by UUPS proxy
         node.initialize(address(this));
+        node.createEigenPod();
 
         // add to pool of unused safes
         unusedWithdrawalSafes.push(address(node));
         return address(node);
-    }
-
-    // TODO: probably doesn't need to be a separate function. Fold into register below?
-    function reuseExistingWithdrawalSafe() private returns (address) {
-        // require length > 0
-
-        // pop from array with assembly
-
-        // re-initialize state
-
-        // update prev/next pointers
-
-        // update global pointer
-
     }
 
     /// @notice Registers the validator ID for the EtherFiNode contract
@@ -144,21 +130,15 @@ contract EtherFiNodesManager is
         uint256 _validatorId
     ) external onlyStakingManagerContract {
         // TODO(Dave): rework
-        require(etherfiNodeAddress[_validatorId].withdrawalSafeAddress != address(0), "not installed");
+        address safeAddress = etherfiNodeAddress[_validatorId].withdrawalSafeAddress;
+        require(safeAddress != address(0), "not installed");
+
+        // recycle the node
+        unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId].withdrawalSafeAddress);
+        IEtherFiNode(safeAddress).resetWithdrawalSafe();
+
         etherfiNodeAddress[_validatorId].withdrawalSafeAddress = address(0);
     }
-
-    /*
-    mapping(uint256 => uint256) private bidIdToValidatorId;
-    uint256 public validatorPoolHead;
-    function validatorIdFromBidId(uint256 _bidId) public returns (uint256) {
-        // if _bidId < grandfatherLimit {
-        //     return _bidId
-        //}
-        // if no entry in mapping return _bidId?
-        return bidIdToValidatorId[_bidId]
-    }
-    */
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------

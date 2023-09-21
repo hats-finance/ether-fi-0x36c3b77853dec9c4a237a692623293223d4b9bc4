@@ -53,17 +53,17 @@ contract EtherFiNode is IEtherFiNode {
 
     function recordStakingStart() external onlyEtherFiNodeManagerContract {
         require(stakingStartTimestamp == 0, "already recorded");
-
         stakingStartTimestamp = uint32(block.timestamp);
 
         _validatePhaseTransition(VALIDATOR_PHASE.STAKE_DEPOSITED);
         phase = VALIDATOR_PHASE.STAKE_DEPOSITED;
-
-        console2.log("post phase:", uint256(phase));
     }
 
     function resetWithdrawalSafe() external onlyEtherFiNodeManagerContract {
-        require(phase == VALIDATOR_PHASE.CANCELLED || phase == VALIDATOR_PHASE.FULLY_WITHDRAWN, "withdrawal safe still in use");
+        console2.log("reset phase:", uint256(phase));
+        require(phase == VALIDATOR_PHASE.CANCELLED ||
+                phase == VALIDATOR_PHASE.FULLY_WITHDRAWN
+                , "withdrawal safe still in use");
         ipfsHashForEncryptedValidatorKey = "";
         exitRequestTimestamp = 0;
         exitTimestamp = 0;

@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
 import "@eigenlayer/contracts/interfaces/IDelayedWithdrawalRouter.sol";
 
+import "forge-std/console2.sol";
+
 contract EtherFiNodeTest is TestSetup {
 
     // from EtherFiNodesManager.sol

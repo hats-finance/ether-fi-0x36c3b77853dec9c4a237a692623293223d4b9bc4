@@ -404,6 +404,7 @@ contract StakingManager is
         require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
 
         IEtherFiNode.VALIDATOR_PHASE validatorPhase = nodesManager.phase(_validatorId);
+        console2.log("_cancelDeposit start phase", uint256(validatorPhase));
 
         bidIdToStaker[_validatorId] = address(0);
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.CANCELLED);
@@ -416,6 +417,8 @@ contract StakingManager is
         } else {
             _refundDeposit(msg.sender, stakeAmount);
         }
+
+
 
         //Might need to burn BNFT
 

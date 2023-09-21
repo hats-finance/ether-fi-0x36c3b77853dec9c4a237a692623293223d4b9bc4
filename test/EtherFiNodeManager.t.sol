@@ -4,6 +4,8 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 import "../src/EtherFiNode.sol";
 
+import "forge-std/console2.sol";
+
 contract EtherFiNodesManagerTest is TestSetup {
     address etherFiNode;
     uint256[] bidId;
@@ -182,11 +184,15 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_UnregisterEtherFiNodeRevertsIfAlreadyUnregistered() public {
-        vm.prank(address(stakingManagerInstance));
+        vm.startPrank(address(stakingManagerInstance));
+
+        // need to put the node in a terminal state before it can be unregistered
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+
         managerInstance.unregisterEtherFiNode(bidId[0]);
 
         vm.expectRevert("not installed");
-        vm.prank(address(stakingManagerInstance));
         managerInstance.unregisterEtherFiNode(bidId[0]);
     }
 
@@ -232,8 +238,18 @@ contract EtherFiNodesManagerTest is TestSetup {
     function test_UnregisterEtherFiNode() public {
         address node = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
         assert(node != address(0));
+        //console2.log("test phase", node.
 
-        vm.prank(address(stakingManagerInstance));
+        vm.startPrank(address(stakingManagerInstance));
+        //console2.log(IEtherFiNode
+        
+        vm.expectRevert("withdrawal safe still in use");
+        managerInstance.unregisterEtherFiNode(bidId[0]);
+
+        // need to put the node in a terminal state before it can be unregistered
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+
         managerInstance.unregisterEtherFiNode(bidId[0]);
 
         node = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
