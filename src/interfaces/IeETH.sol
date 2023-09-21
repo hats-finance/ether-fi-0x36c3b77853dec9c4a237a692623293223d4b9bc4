@@ -6,10 +6,8 @@ interface IeETH {
     function symbol() external pure returns (string memory);
     function decimals() external pure returns (uint8);
     function totalShares() external view returns (uint256);
-
     function shares(address _user) external view returns (uint256);
     function balanceOf(address _user) external view returns (uint256);
-
     function initialize(address _liquidityPool) external;
     function mintShares(address _user, uint256 _share) external;
     function burnShares(address _user, uint256 _share) external;
