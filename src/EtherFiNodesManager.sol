@@ -353,10 +353,6 @@ contract EtherFiNodesManager is
         }
     }
 
-    function etherfiNodeAddressForBidID(uint256 _bidId) external view returns (address) {
-        return etherfiNodeAddress[_bidId];
-    }
-
     function createUnusedWithdrawalSafe(uint256 _count, bool _enableRestaking) external returns (address[] memory) {
         address[] memory createdSafes = new address[](_count);
         for (uint256 i = 0; i < _count; i++) {

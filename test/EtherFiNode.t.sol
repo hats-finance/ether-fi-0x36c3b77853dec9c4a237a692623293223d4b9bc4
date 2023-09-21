@@ -60,7 +60,7 @@ contract EtherFiNodeTest is TestSetup {
             false
         );
 
-        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         assertTrue(
             managerInstance.phase(bidId[0]) ==
@@ -454,7 +454,7 @@ contract EtherFiNodeTest is TestSetup {
             assertEq(staker_3, dan);
         }
 
-        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(bidId1[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(bidId1[0]);
 
         IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
@@ -480,9 +480,9 @@ contract EtherFiNodeTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, depositDataArray);
         vm.stopPrank();
 
-        assertEq(address(managerInstance.etherfiNodeAddressForBidID(bidId1[0])).balance, 0);
+        assertEq(address(managerInstance.etherfiNodeAddress(bidId1[0])).balance, 0);
 
-        etherFiNode = managerInstance.etherfiNodeAddressForBidID(bidId2[0]);
+        etherFiNode = managerInstance.etherfiNodeAddress(bidId2[0]);
 
         IStakingManager.DepositData[]
             memory depositDataArray2 = new IStakingManager.DepositData[](1);
@@ -508,7 +508,7 @@ contract EtherFiNodeTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId2, depositDataArray2);
         vm.stopPrank();
 
-        assertEq(address(managerInstance.etherfiNodeAddressForBidID(bidId2[0])).balance, 0);
+        assertEq(address(managerInstance.etherfiNodeAddress(bidId2[0])).balance, 0);
     }
 
     function test_markExitedWorksCorrectly() public {
@@ -516,7 +516,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         assertTrue(
             IEtherFiNode(etherFiNode).phase() ==
@@ -548,7 +548,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         assertTrue(
             IEtherFiNode(etherFiNode).phase() ==
@@ -571,7 +571,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
@@ -591,7 +591,7 @@ contract EtherFiNodeTest is TestSetup {
     function test_partialWithdrawRewardsDistribution() public {
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         // Transfer the T-NFT to 'dan'
         hoax(staker);
@@ -632,7 +632,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_partialWithdrawFails() public {
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         vm.deal(etherfiNode, 4 ether);
 
@@ -669,7 +669,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         hoax(alice);
         managerInstance.markBeingSlashed(bidId);
@@ -679,7 +679,7 @@ contract EtherFiNodeTest is TestSetup {
     function test_partialWithdrawAfterExitRequest() public {
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(bidId[0]);
 
         // Simulate the rewards distribution from the beacon chain
         vm.deal(etherfiNode, address(etherfiNode).balance + 1 ether);
@@ -733,7 +733,7 @@ contract EtherFiNodeTest is TestSetup {
 
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(
+        address etherfiNode = managerInstance.etherfiNodeAddress(
             validatorIds[0]
         );
 
@@ -750,7 +750,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
         uint256 treasuryBalance = address(treasuryInstance).balance;
@@ -772,7 +772,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
@@ -888,7 +888,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         // 8. balance < 4 ether
         vm.deal(etherfiNode, 4 ether);
@@ -918,7 +918,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
@@ -966,7 +966,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         startHoax(alice);
         assertEq(managerInstance.numberOfValidators(), 1);
@@ -1007,7 +1007,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = uint32(block.timestamp) + 86400;
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -1037,7 +1037,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = uint32(block.timestamp) + (1 + 7 * 86400);
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -1066,7 +1066,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = uint32(block.timestamp) + 28 * 86400;
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -1107,7 +1107,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = uint32(block.timestamp) + (1 + 28 * 86400);
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -1146,7 +1146,7 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = uint32(block.timestamp) + (1 + 28 * 86400);
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         hoax(TNFTInstance.ownerOf(validatorIds[0]));
         managerInstance.sendExitRequest(validatorIds[0]);
@@ -1183,7 +1183,7 @@ contract EtherFiNodeTest is TestSetup {
     function test_sendEthToEtherFiNodeContractSucceeds() public {
         uint256[] memory validatorIds = new uint256[](1);
         validatorIds[0] = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorIds[0]);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         vm.deal(owner, 10 ether);
         vm.prank(owner);
@@ -1234,7 +1234,7 @@ contract EtherFiNodeTest is TestSetup {
 
     function test_trackingTVL() public {
         uint256 validatorId = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorId);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
 
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = (0, 0, 0, 0);
 
@@ -1343,7 +1343,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // Confirm that after exiting the validator node from the beacon network,
         // if we trigger the full withdrawal, the same amount is transferred to {stakers, operator, treasury}
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorId);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
 
         uint256[] memory validatorIds = new uint256[](1);
         uint32[] memory exitRequestTimestamps = new uint32[](1);
@@ -1380,7 +1380,7 @@ contract EtherFiNodeTest is TestSetup {
 
     function test_withdrawFundsFailsWhenReceiverConsumedTooMuchGas() public {
         uint256 validatorId = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddressForBidID(validatorId);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
         vm.deal(address(etherfiNode), 3 ether); // need to give node some eth because it no longer has auction revenue
 
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;

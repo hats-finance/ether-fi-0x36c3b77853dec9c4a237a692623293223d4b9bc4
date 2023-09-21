@@ -80,7 +80,7 @@ contract RewardsSkimmingTest is TestSetup {
             bytes32[] memory stakerProof = merkleStakers.getProof(stakerWhitelistedAddresses, i);
             stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds, false);
 
-            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(candidateBidIds[0]);
+            address etherFiNode = managerInstance.etherfiNodeAddress(candidateBidIds[0]);
 
             bytes32 root = depGen.generateDepositRoot(
                 hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
@@ -142,7 +142,7 @@ contract RewardsSkimmingTest is TestSetup {
         vm.deal(address(managerInstance), 100 ether);
         vm.deal(operators[0], 1 ether);
         for (uint i = 0; i < num_stakers; i++) {
-            vm.deal(payable(managerInstance.etherfiNodeAddressForBidID(i)), 1 ether);
+            vm.deal(payable(managerInstance.etherfiNodeAddress(i)), 1 ether);
             vm.deal(stakers[i], 1 ether);
             vm.deal(people[i], 1 ether);
         }

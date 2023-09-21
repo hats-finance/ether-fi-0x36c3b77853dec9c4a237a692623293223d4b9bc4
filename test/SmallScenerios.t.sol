@@ -137,7 +137,7 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, 1);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(
+            address etherFiNode = managerInstance.etherfiNodeAddress(
                 processedBidIds[i]
             );
 
@@ -152,7 +152,7 @@ contract SmallScenariosTest is TestSetup {
 
         bytes32[] memory depositDataRootsForApproval = new bytes32[](1);
 
-        address etherFiNode = managerInstance.etherfiNodeAddressForBidID(processedBidIds[0]);
+        address etherFiNode = managerInstance.etherfiNodeAddress(processedBidIds[0]);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
@@ -189,7 +189,7 @@ contract SmallScenariosTest is TestSetup {
         liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), processedBidIds, depositDataArray, depositDataRootsForApproval, sig);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(
+            address etherFiNode = managerInstance.etherfiNodeAddress(
                 processedBidIds[i]
             );
 
@@ -267,7 +267,7 @@ contract SmallScenariosTest is TestSetup {
         liquidityPoolInstance.batchApproveRegistration(processedBidIds, pubKey, sig);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(
+            address etherFiNode = managerInstance.etherfiNodeAddress(
                 processedBidIds[i]
             );
 
@@ -283,7 +283,7 @@ contract SmallScenariosTest is TestSetup {
             skip(10 days);
 
             // The node contract receives the ETH (principal + rewards) from the beacon chian
-            address node = managerInstance.etherfiNodeAddressForBidID(processedBidIds[0]);
+            address node = managerInstance.etherfiNodeAddress(processedBidIds[0]);
             uint256 totalStakingRewardsForOneEtherRewardsForTnft = 1 ether * uint256(100 * 32) / uint256(90 * 29);
             vm.deal(address(node), address(node).balance + 32 ether + totalStakingRewardsForOneEtherRewardsForTnft);
 
@@ -435,7 +435,7 @@ contract SmallScenariosTest is TestSetup {
         );
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(
+            address etherFiNode = managerInstance.etherfiNodeAddress(
                 gregProcessedBidIds[i]
             );
 
@@ -455,7 +455,7 @@ contract SmallScenariosTest is TestSetup {
             memory depositDataArray = new IStakingManager.DepositData[](gregProcessedBidIds.length);
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
-            address node = managerInstance.etherfiNodeAddressForBidID(
+            address node = managerInstance.etherfiNodeAddress(
                 gregProcessedBidIds[i]
             );
 
@@ -476,7 +476,7 @@ contract SmallScenariosTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), gregProcessedBidIds, depositDataArray);
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddressForBidID(
+            address etherFiNode = managerInstance.etherfiNodeAddress(
                 gregProcessedBidIds[i]
             );
 
@@ -484,14 +484,14 @@ contract SmallScenariosTest is TestSetup {
         }
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
-            address gregNode = managerInstance.etherfiNodeAddressForBidID(
+            address gregNode = managerInstance.etherfiNodeAddress(
                 gregProcessedBidIds[i]
             );
             assertEq(gregNode.balance, 0 ether); // nodes no longer receive auction revenue
         }
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
-            address gregNode = managerInstance.etherfiNodeAddressForBidID(
+            address gregNode = managerInstance.etherfiNodeAddress(
                 gregProcessedBidIds[i]
             );
             assertTrue(

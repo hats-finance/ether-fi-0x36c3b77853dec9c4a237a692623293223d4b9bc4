@@ -25,7 +25,6 @@ interface IEtherFiNodesManager {
     function calculateTVL(uint256 _validatorId, uint256 _beaconBalance) external view returns (uint256, uint256, uint256, uint256);
     function delayedWithdrawalRouter() external view returns (IDelayedWithdrawalRouter);
     function eigenPodManager() external view returns (IEigenPodManager);
-    function etherfiNodeAddressForBidID(uint256 _bidId) external view returns (address);
     function generateWithdrawalCredentials(address _address) external view returns (bytes memory);
     function getFullWithdrawalPayouts(uint256 _validatorId) external view returns (uint256, uint256, uint256, uint256);
     function getNonExitPenalty(uint256 _validatorId) external view returns (uint256);
