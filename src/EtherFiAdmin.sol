@@ -71,6 +71,10 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         lastHandledReportRefBlock = _report.refBlockTo;
         pendingWithdrawalAmount = _report.pendingWithdrawalAmount;
         numPendingValidatorsRequestedToExit = _report.numPendingValidatorsRequestedToExit;
+
+        //The number of validators for the current scheduling period we can spin up
+        //Important variable when calculating how many BNFT players to assign for the scheduling period
+        //See natspec in LP for more information
         numValidatorsToSpinUp = _report.numValidatorsToSpinUp;
 
         _handleAccruedRewards(_report);

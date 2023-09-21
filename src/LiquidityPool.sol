@@ -101,9 +101,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         __UUPSUpgradeable_init(); 
     }
 
-    function initializePhase2(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal) external onlyOwner {        
+    function initializePhase2(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal) external onlyOwner { 
+        //Sets what scheduling period we will start with       
         schedulingPeriodInSeconds = _schedulingPeriod;
 
+        //Allows us to begin with a predefined number of validators
         fundStatistics[SourceOfFunds.EETH].numberOfValidators = _eEthNumVal;
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = _etherFanNumVal;
     }
