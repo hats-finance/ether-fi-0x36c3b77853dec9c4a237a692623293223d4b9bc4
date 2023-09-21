@@ -79,7 +79,7 @@ contract EtherFiNodesManager is
         }
     }
 
-    function etherfiNodeAddressForBidID(uint256 _bidId) external returns (address) {
+    function etherfiNodeAddressForBidID(uint256 _bidId) external view returns (address) {
         return etherfiNodeAddress[_bidId].withdrawalSafeAddress;
     }
 
