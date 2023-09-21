@@ -71,7 +71,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event ValidatorRegistered(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
     event ValidatorApproved(uint256 validatorId);
-    event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
     event Rebase(uint256 totalEthLocked, uint256 totalEEthShares);
     event WhitelistStatusUpdated(bool value);
 
@@ -107,7 +106,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     // Used by eETH staking flow
-    function deposit(address _referral) external payable returns (uint256) {
+    function deposit() external payable returns (uint256) {
+        return deposit(address(0));
+    }
+
+    function deposit(address _referral) public payable returns (uint256) {
         require(_isWhitelisted(msg.sender), "Invalid User");
 
         emit Deposit(msg.sender, msg.value, SourceOfFunds.EETH, _referral);
@@ -116,11 +119,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     // Used by ether.fan staking flow
-    function deposit(address _user) external payable returns (uint256) {
+    function deposit(address _user, address _referral) external payable returns (uint256) {
         require(msg.sender == address(membershipManager), "Incorrect Caller");
         require(_user == address(membershipManager) || _isWhitelisted(_user), "Invalid User");
 
-        emit Deposit(msg.sender, msg.value, SourceOfFunds.ETHER_FAN);
+        emit Deposit(msg.sender, msg.value, SourceOfFunds.ETHER_FAN, _referral);
 
         return _deposit();
     }
@@ -525,8 +528,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         fundStatistics[SourceOfFunds.EETH].targetWeight = _eEthWeight;
         fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight = _etherFanWeight;
-
-        emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }
 
     function updateWhitelistedAddresses(address _user, bool _value) external onlyAdmin {
