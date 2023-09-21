@@ -142,4 +142,6 @@ interface IEtherFiNodesManager {
     function fullWithdrawBatch(uint256[] calldata _validatorIds) external;
 
     function updateAdmin(address _address, bool _isAdmin) external;
+
+    function getUnusedWithdrawalSafesLength() external view returns (uint256);
 }

@@ -65,6 +65,10 @@ contract EtherFiNodesManager is
 
     address[] public unusedWithdrawalSafes;
 
+    function getUnusedWithdrawalSafesLength() external view returns (uint256) {
+        return unusedWithdrawalSafes.length;
+    }
+
     // Only nodes that are CANCELLED or FULLY_WITHDRAWN can be reset for reuse
     function resetWithdrawalSafes(uint256[] calldata _validatorIds) external onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -79,12 +83,13 @@ contract EtherFiNodesManager is
         return etherfiNodeAddress[_bidId].withdrawalSafeAddress;
     }
 
-    // TODO: Maybe eigen layer toggle?
     function createUnusedWithdrawalSafe(bool _enableRestaking) external returns (address) {
         BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
         EtherFiNode node = EtherFiNode(payable(proxy));
         node.initialize(address(this));
-        node.createEigenPod();
+        if (_enableRestaking) {
+            node.createEigenPod();
+        }
 
         // add to pool of unused safes
         unusedWithdrawalSafes.push(address(node));

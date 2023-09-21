@@ -235,6 +235,63 @@ contract EtherFiNodesManagerTest is TestSetup {
 
     }
 
+    function test_RegisterEtherFiNodeReusesAvailableSafes() public {
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            _ipfsHash,
+            5
+        );
+
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
+
+        // create bid with no matching deposit yet
+        hoax(alice);
+        bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+        console2.log(managerInstance.etherfiNodeAddressForBidID(0),
+                     managerInstance.etherfiNodeAddressForBidID(1), 
+                     managerInstance.etherfiNodeAddressForBidID(2),
+                     managerInstance.etherfiNodeAddressForBidID(3)
+        );
+        console2.log("bidId", bidId[0]);
+        assertEq(managerInstance.etherfiNodeAddressForBidID(bidId[0]), address(0));
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
+
+        // premake a safe
+        address premadeSafe = managerInstance.createUnusedWithdrawalSafe(false);
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 1);
+        assertEq(managerInstance.unusedWithdrawalSafes(0), premadeSafe);
+
+        // deposit
+        hoax(alice);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, false);
+
+        console2.log(managerInstance.etherfiNodeAddressForBidID(0),
+                     managerInstance.etherfiNodeAddressForBidID(1), 
+                     managerInstance.etherfiNodeAddressForBidID(2),
+                     managerInstance.etherfiNodeAddressForBidID(3)
+        );
+        console2.log("premade", premadeSafe);
+
+        // assigned safe should be the premade one
+        address node = managerInstance.etherfiNodeAddressForBidID(processedBids[0]);
+        assert(node != address(0));
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
+
+        // push another safe to the stack
+        address safe2 = managerInstance.createUnusedWithdrawalSafe(false);
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 1);
+
+        // recycle the first safe
+        vm.prank(alice);
+        stakingManagerInstance.batchCancelDeposit(processedBids);
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 2);
+
+        // original premade safe should be on top of the stack after being recycled
+        assertEq(managerInstance.unusedWithdrawalSafes(1), premadeSafe);
+        assertEq(managerInstance.unusedWithdrawalSafes(0), safe2);
+
+    }
+
     function test_UnregisterEtherFiNode() public {
         address node = managerInstance.etherfiNodeAddressForBidID(bidId[0]);
         assert(node != address(0));
