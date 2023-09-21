@@ -16,8 +16,6 @@ import "./EtherFiNode.sol";
 import "./TNFT.sol";
 import "./BNFT.sol";
 
-import "forge-std/console2.sol";
-
 contract EtherFiNodesManager is
     Initializable,
     IEtherFiNodesManager,
@@ -65,89 +63,6 @@ contract EtherFiNodesManager is
 
     address[] public unusedWithdrawalSafes;
 
-    function getUnusedWithdrawalSafesLength() external view returns (uint256) {
-        return unusedWithdrawalSafes.length;
-    }
-
-    // Only nodes that are CANCELLED or FULLY_WITHDRAWN can be reset for reuse
-    function resetWithdrawalSafes(uint256[] calldata _validatorIds) external onlyAdmin {
-        for (uint256 i = 0; i < _validatorIds.length; i++) {
-            IEtherFiNode node = IEtherFiNode(etherfiNodeAddress[_validatorIds[i]].withdrawalSafeAddress);
-            node.resetWithdrawalSafe();
-            unusedWithdrawalSafes.push(address(node));
-            emit WithdrawalSafeReset(_validatorIds[i], address(node));
-        }
-    }
-
-    function etherfiNodeAddressForBidID(uint256 _bidId) external view returns (address) {
-        return etherfiNodeAddress[_bidId].withdrawalSafeAddress;
-    }
-
-    function createUnusedWithdrawalSafe(uint256 _count, bool _enableRestaking) external returns (address[] memory) {
-        address[] memory createdSafes = new address[](_count);
-        for (uint256 i = 0; i < _count; i++) {
-            BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
-            EtherFiNode node = EtherFiNode(payable(proxy));
-            node.initialize(address(this));
-            if (_enableRestaking) {
-                node.createEigenPod();
-            }
-
-            // add to pool of unused safes
-            unusedWithdrawalSafes.push(address(node));
-            createdSafes[i] = address(node);
-        }
-        return createdSafes;
-    }
-
-    /// @notice Registers the validator ID for the EtherFiNode contract
-    /// @param _validatorId ID of the validator associated to the node
-    function registerEtherFiNode(uint256 _validatorId) external onlyStakingManagerContract returns (address) {
-        // TODO(Dave): rework
-        require(etherfiNodeAddress[_validatorId].withdrawalSafeAddress == address(0), "already installed");
-
-        address withdrawalSafeAddress;
-
-        // can I re-use an existing safe
-        if (unusedWithdrawalSafes.length > 0) {
-            //pop
-            withdrawalSafeAddress = unusedWithdrawalSafes[unusedWithdrawalSafes.length-1];
-            uint256 newLength = unusedWithdrawalSafes.length - 1;
-            unusedWithdrawalSafes.pop();
-            IEtherFiNode(withdrawalSafeAddress).recordStakingStart();
-        } else {
-            // make a new one
-            BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
-            EtherFiNode node = EtherFiNode(payable(proxy));
-            withdrawalSafeAddress = address(node);
-            node.initialize(address(this)); // TODO(Dave): maybe combine these 2 functions
-            console2.log("start");
-            node.recordStakingStart();
-            console2.log("recorded");
-        }
-
-        // check if a withdrawal safe is available
-
-
-        etherfiNodeAddress[_validatorId].withdrawalSafeAddress = withdrawalSafeAddress;
-        return withdrawalSafeAddress;
-    }
-
-    /// @notice Unset the EtherFiNode contract for the validator ID
-    /// @param _validatorId ID of the validator associated
-    function unregisterEtherFiNode(
-        uint256 _validatorId
-    ) external onlyStakingManagerContract {
-        // TODO(Dave): rework
-        address safeAddress = etherfiNodeAddress[_validatorId].withdrawalSafeAddress;
-        require(safeAddress != address(0), "not installed");
-
-        // recycle the node
-        unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId].withdrawalSafeAddress);
-        IEtherFiNode(safeAddress).resetWithdrawalSafe();
-
-        etherfiNodeAddress[_validatorId].withdrawalSafeAddress = address(0);
-    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -192,7 +107,7 @@ contract EtherFiNodesManager is
         require(_tnftContract != address(0), "No zero addresses");
         require(_bnftContract != address(0), "No zero addresses");
         require(_protocolRevenueManagerContract != address(0), "No zero addresses"); 
-               
+
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
@@ -417,6 +332,77 @@ contract EtherFiNodesManager is
         }
     }
 
+
+    /// @notice reset unused withdrawal safes so that future validators can save gas creating contracts
+    /// @dev Only nodes that are CANCELLED or FULLY_WITHDRAWN can be reset for reuse
+    function resetWithdrawalSafes(uint256[] calldata _validatorIds) external onlyAdmin {
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            IEtherFiNode node = IEtherFiNode(etherfiNodeAddress[_validatorIds[i]].withdrawalSafeAddress);
+            node.resetWithdrawalSafe();
+            unusedWithdrawalSafes.push(address(node));
+            emit WithdrawalSafeReset(_validatorIds[i], address(node));
+        }
+    }
+
+    function etherfiNodeAddressForBidID(uint256 _bidId) external view returns (address) {
+        return etherfiNodeAddress[_bidId].withdrawalSafeAddress;
+    }
+
+    function createUnusedWithdrawalSafe(uint256 _count, bool _enableRestaking) external returns (address[] memory) {
+        address[] memory createdSafes = new address[](_count);
+        for (uint256 i = 0; i < _count; i++) {
+            BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
+            EtherFiNode node = EtherFiNode(payable(proxy));
+            node.initialize(address(this));
+            if (_enableRestaking) {
+                node.createEigenPod();
+            }
+
+            // add to pool of unused safes
+            unusedWithdrawalSafes.push(address(node));
+            createdSafes[i] = address(node);
+        }
+        return createdSafes;
+    }
+
+    /// @notice Registers the validator ID for the EtherFiNode contract
+    /// @param _validatorId ID of the validator associated to the node
+    function registerEtherFiNode(uint256 _validatorId) external onlyStakingManagerContract returns (address) {
+        require(etherfiNodeAddress[_validatorId].withdrawalSafeAddress == address(0), "already installed");
+
+        address withdrawalSafeAddress;
+
+        // can I re-use an existing safe
+        if (unusedWithdrawalSafes.length > 0) {
+            // pop
+            withdrawalSafeAddress = unusedWithdrawalSafes[unusedWithdrawalSafes.length-1];
+            unusedWithdrawalSafes.pop();
+        } else {
+            // make a new one
+            BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
+            EtherFiNode node = EtherFiNode(payable(proxy));
+            withdrawalSafeAddress = address(node);
+            node.initialize(address(this));
+        }
+
+        IEtherFiNode(withdrawalSafeAddress).recordStakingStart();
+        etherfiNodeAddress[_validatorId].withdrawalSafeAddress = withdrawalSafeAddress;
+        return withdrawalSafeAddress;
+    }
+
+    /// @notice Unset the EtherFiNode contract for the validator ID
+    /// @param _validatorId ID of the validator associated
+    function unregisterEtherFiNode(uint256 _validatorId) external onlyStakingManagerContract {
+        address safeAddress = etherfiNodeAddress[_validatorId].withdrawalSafeAddress;
+        require(safeAddress != address(0), "not installed");
+
+        // recycle the node
+        unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId].withdrawalSafeAddress);
+        IEtherFiNode(safeAddress).resetWithdrawalSafe();
+
+        etherfiNodeAddress[_validatorId].withdrawalSafeAddress = address(0);
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  SETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -596,6 +582,11 @@ contract EtherFiNodesManager is
     /// @return the generated withdraw key for the node
     function generateWithdrawalCredentials(address _address) public pure returns (bytes memory) {   
         return abi.encodePacked(bytes1(0x01), bytes11(0x0), _address);
+    }
+
+    /// @notice get the length of the unusedWithdrawalSafes array
+    function getUnusedWithdrawalSafesLength() external view returns (uint256) {
+        return unusedWithdrawalSafes.length;
     }
 
     /// @notice Fetches the withdraw credentials for a specific node

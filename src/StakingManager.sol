@@ -399,8 +399,6 @@ contract StakingManager is
     /// @param _validatorId the ID of the validator deposit to cancel
     function _cancelDeposit(uint256 _validatorId, address _caller) internal {
 
-        // TODO(Dave): have cancel reset the safe and add to open list
-
         require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
 
         IEtherFiNode.VALIDATOR_PHASE validatorPhase = nodesManager.phase(_validatorId);
@@ -417,8 +415,6 @@ contract StakingManager is
         } else {
             _refundDeposit(msg.sender, stakeAmount);
         }
-
-
 
         //Might need to burn BNFT
 
