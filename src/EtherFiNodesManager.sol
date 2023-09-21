@@ -83,17 +83,21 @@ contract EtherFiNodesManager is
         return etherfiNodeAddress[_bidId].withdrawalSafeAddress;
     }
 
-    function createUnusedWithdrawalSafe(bool _enableRestaking) external returns (address) {
-        BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
-        EtherFiNode node = EtherFiNode(payable(proxy));
-        node.initialize(address(this));
-        if (_enableRestaking) {
-            node.createEigenPod();
-        }
+    function createUnusedWithdrawalSafe(uint256 _count, bool _enableRestaking) external returns (address[] memory) {
+        address[] memory createdSafes = new address[](_count);
+        for (uint256 i = 0; i < _count; i++) {
+            BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
+            EtherFiNode node = EtherFiNode(payable(proxy));
+            node.initialize(address(this));
+            if (_enableRestaking) {
+                node.createEigenPod();
+            }
 
-        // add to pool of unused safes
-        unusedWithdrawalSafes.push(address(node));
-        return address(node);
+            // add to pool of unused safes
+            unusedWithdrawalSafes.push(address(node));
+            createdSafes[i] = address(node);
+        }
+        return createdSafes;
     }
 
     /// @notice Registers the validator ID for the EtherFiNode contract
