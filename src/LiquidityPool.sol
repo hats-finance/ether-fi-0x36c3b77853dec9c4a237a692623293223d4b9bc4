@@ -18,6 +18,8 @@ import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IEtherFiAdmin.sol";
 
+import "forge-std/console.sol";
+
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -417,7 +419,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             lastIndex = _fetchLastIndex(size, index);
             lastIndexNumberOfValidators = numValidatorsToCreate % maxValidatorsPerOwnerLocal;
         }
-
         return (index, lastIndex, lastIndexNumberOfValidators);
     }
 
@@ -581,6 +582,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     ///         random number generator. Fetching the random number in advance wont help a user manipulate the protocol.
     /// @return A starting index for dutyForWeek to use.
     function _getSlotIndex() internal view returns (uint256) {
+        require(schedulingPeriodInSeconds > 0, "Invalid scheduling period");
+        require(numberOfActiveSlots() > 0, "No active slots");
         return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots();
     }
 
