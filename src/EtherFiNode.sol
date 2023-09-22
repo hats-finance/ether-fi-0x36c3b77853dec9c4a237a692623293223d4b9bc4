@@ -268,12 +268,12 @@ contract EtherFiNode is IEtherFiNode {
         return _principal - remaining;
     }
 
-    /// @notice total balance of this withdrawal safe in the execution layer. Includes restaked funds
+    /// @notice total balance of this withdrawal safe in the execution layer split into its component parts. Includes restaked funds
     /// @dev funds can be split across
     ///   1. the withdrawal safe
     ///   2. the EigenPod (eigenLayer)
     ///   3. the delayedWithdrawalRouter (eigenLayer)
-    function totalBalanceInExecutionLayer() public view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) {
+    function splitBalanceInExecutionLayer() public view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) {
 
         _withdrawalSafe = address(this).balance;
 
@@ -287,6 +287,12 @@ contract EtherFiNode is IEtherFiNode {
             }
         }
         return (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter);
+    }
+
+    /// @notice total balance (wei) of this safe currently in the execution layer. Includes restaked funds
+    function totalBalanceInExecutionLayer() public view returns (uint256) {
+        (uint256 _safe, uint256 _pod, uint256 _router) = splitBalanceInExecutionLayer();
+        return _safe + _pod + _router;
     }
 
     /// @notice Given
@@ -306,12 +312,8 @@ contract EtherFiNode is IEtherFiNode {
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         uint256 _scale
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
-        uint256 balance = _beaconBalance + getWithdrawableAmount();
 
-        if (isRestakingEnabled) {
-            (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = totalBalanceInExecutionLayer();
-            balance += _eigenPod + _delayedWithdrawalRouter;
-        }
+        uint256 balance = _beaconBalance + totalBalanceInExecutionLayer();
 
         // Compute the payouts for the rewards = (staking rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'

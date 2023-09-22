@@ -308,7 +308,14 @@ contract EtherFiNodesManager is
             = getFullWithdrawalPayouts(_validatorId);
         _setPhase(etherfiNode, _validatorId, IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
 
+
         _distributePayouts(_validatorId, toTreasury, toOperator, toTnft, toBnft);
+
+        // automatically recycle this node if entire execution layer balance is withdrawn
+        if (IEtherFiNode(etherfiNode).totalBalanceInExecutionLayer() == 0) {
+            unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId]);
+            IEtherFiNode(etherfiNode).resetWithdrawalSafe();
+        }
     }
 
     /// @notice Process the full withdrawal for multiple validators
@@ -328,7 +335,7 @@ contract EtherFiNodesManager is
         }
     }
 
-    error CannotResetWithdrawnNodeWithBalance();
+    error CannotResetNodeWithBalance();
 
     /// @notice reset unused withdrawal safes so that future validators can save gas creating contracts
     /// @dev Only nodes that are CANCELLED or FULLY_WITHDRAWN can be reset for reuse
@@ -338,10 +345,8 @@ contract EtherFiNodesManager is
 
             // don't allow the node to be recycled if it is in the withrdawn state but still has a balance.
             if (node.phase() == IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN) {
-                (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = node.totalBalanceInExecutionLayer();
-                uint256 totalBalance = _withdrawalSafe + _eigenPod + _delayedWithdrawalRouter;
-                if (totalBalance > 0) {
-                    revert CannotResetWithdrawnNodeWithBalance();
+                if (node.totalBalanceInExecutionLayer() > 0) {
+                    revert CannotResetNodeWithBalance();
                 }
             }
 

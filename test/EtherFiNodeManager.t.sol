@@ -215,7 +215,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         uint256[] memory validatorsToReset = new uint256[](1);
         validatorsToReset[0] = validatorId;
         vm.prank(alice);
-        vm.expectRevert(EtherFiNodesManager.CannotResetWithdrawnNodeWithBalance.selector);
+        vm.expectRevert(EtherFiNodesManager.CannotResetNodeWithBalance.selector);
         managerInstance.resetWithdrawalSafes(validatorsToReset);
     }
 
@@ -243,7 +243,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         uint256[] memory validatorsToReset = new uint256[](1);
         validatorsToReset[0] = validatorId;
         vm.prank(alice);
-        vm.expectRevert(EtherFiNodesManager.CannotResetWithdrawnNodeWithBalance.selector);
+        vm.expectRevert(EtherFiNodesManager.CannotResetNodeWithBalance.selector);
         managerInstance.resetWithdrawalSafes(validatorsToReset);
 
         // move funds to the delayed withdrawal router
@@ -251,7 +251,7 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         // should still fail with the funds no longer in the pod
         vm.prank(alice);
-        vm.expectRevert(EtherFiNodesManager.CannotResetWithdrawnNodeWithBalance.selector);
+        vm.expectRevert(EtherFiNodesManager.CannotResetNodeWithBalance.selector);
         managerInstance.resetWithdrawalSafes(validatorsToReset);
         assertEq(IEtherFiNode(node).eigenPod().balance, 0);
     }
