@@ -29,7 +29,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     uint32 public lastHandledReportRefSlot;
     uint32 public lastHandledReportRefBlock;
-    uint32 public pendingWithdrawalAmount;
+    uint128 public pendingWithdrawalAmount;
     uint32 public numPendingValidatorsRequestedToExit;
     uint32 public numValidatorsToSpinUp;
 
@@ -116,11 +116,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         liquidityPool.sendExitRequests(_report.liquidityPoolValidatorsToExit);
 
         // exitedValidators
-        uint32[] memory _exitTimestamps = new uint32[](_report.exitedValidators.length);
-        for (uint256 i = 0; i < _report.exitedValidators.length; i++) {
-            _exitTimestamps[i] = uint32(block.timestamp);
-        }
-        etherFiNodesManager.processNodeExit(_report.exitedValidators, _exitTimestamps);
+        etherFiNodesManager.processNodeExit(_report.exitedValidators, _report.exitedValidatorsExitTimestamps);
 
         // slashedValidators
         etherFiNodesManager.markBeingSlashed(_report.slashedValidators);
