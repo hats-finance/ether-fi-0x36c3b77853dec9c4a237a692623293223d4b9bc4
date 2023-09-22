@@ -358,6 +358,8 @@ contract EtherFiNodesManager is
         }
     }
 
+    /// @dev create a new proxy instance of the etherFiNode withdrawal safe contract.
+    /// @param _createEigenPod whether or not to create an associated eigenPod contract.
     function instantiateEtherFiNode(bool _createEigenPod) internal returns (address) {
             BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
             EtherFiNode node = EtherFiNode(payable(proxy));
@@ -369,6 +371,10 @@ contract EtherFiNodesManager is
             return address(node);
     }
 
+    /// @dev pre-create withdrawal safe contracts so that future staking operations are cheaper.
+    ///   This is just pre-paying the gas cost of instantiating EtherFiNode and EigenPod proxy instances
+    /// @param _count How many instances to create
+    /// @param _enableRestaking Whether or not to instantiate an associated eigenPod. (This can still be done later)
     function createUnusedWithdrawalSafe(uint256 _count, bool _enableRestaking) external returns (address[] memory) {
         address[] memory createdSafes = new address[](_count);
         for (uint256 i = 0; i < _count; i++) {
