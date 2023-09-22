@@ -192,14 +192,15 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
                 _report.validatorsToApprove,
                 _report.liquidityPoolValidatorsToExit,
                 _report.exitedValidators,
-                _report.slashedValidators,
-                _report.withdrawalRequestsToInvalidate,
-                _report.lastFinalizedWithdrawalRequestId
+                _report.exitedValidatorsExitTimestamps,
+                _report.slashedValidators
             )
         );
 
        bytes32 chunk3 = keccak256(
             abi.encode(
+                _report.withdrawalRequestsToInvalidate,
+                _report.lastFinalizedWithdrawalRequestId,
                 _report.eEthTargetAllocationWeight,
                 _report.etherFanTargetAllocationWeight,
                 _report.pendingWithdrawalAmount,

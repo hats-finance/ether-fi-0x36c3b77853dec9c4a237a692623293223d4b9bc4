@@ -892,7 +892,7 @@ contract LiquidityPoolTest is TestSetup {
         _executeAdminTasks(report);
 
         //Move to a random time in the future
-        _moveClock(13431561615);
+        _moveClock(100000);
 
         vm.startPrank(alice);
 
@@ -912,15 +912,14 @@ contract LiquidityPoolTest is TestSetup {
         vm.expectRevert("Not assigned");
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
 
-        vm.prank(bob);
-
+        vm.prank(elvis);
         //Making sure if a user is assigned they send in the correct amount (This will be updated 
         //as we will allow users to specify how many validator they want to spin up)
         vm.expectRevert("Deposit 2 ETH per validator");
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 6 ether}(bidIds, 4);
 
         //Move way more in the future
-        _moveClock(33431561615);
+        _moveClock(100000);
         vm.prank(alice);
 
         //This triggers the number of active holders to be updated to include the previous bnft holders
@@ -934,20 +933,14 @@ contract LiquidityPoolTest is TestSetup {
         IEtherFiOracle.OracleReport memory report2 = _emptyOracleReport();
 
         report2.numValidatorsToSpinUp = 14;
-        report2.refSlotTo = 2785963007;
         _executeAdminTasks(report2);
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
         (uint256 firstIndex, uint128 lastIndex, uint128 numForLastIndex) = liquidityPoolInstance.dutyForWeek();
 
-        assertEq(firstIndex, 4);
-        assertEq(lastIndex, 7);
+        assertEq(firstIndex, 3);
+        assertEq(lastIndex, 6);
         assertEq(numForLastIndex, 2);
-
-        //With the current timestamps and data, the following is true
-        //First Index = 4
-        //Last Index = 7
-        //Num Validators For Last = 2
 
         vm.prank(shonee);
         //Shonee deposits and her index is 4, allowing her to deposit for 4 validators
@@ -958,18 +951,17 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(validators[3], 4);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 4);
 
-        vm.prank(henry);
+        vm.prank(dan);
 
-        //Henry deposits and his index is 7, allowing him to deposit
+        //dan deposits and his index is 5, allowing him to deposit
         validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 6);
 
         assertEq(validators[0], 5);
         assertEq(validators[1], 6);
 
-        vm.prank(chad);
-
-        //Chad attempts to deposit, however, due to his index being 8 and not being apart of this weeks duty, he is not assigned
+        vm.prank(alice);
+        //alice attempts to deposit, however, due to his index being 0 and not being apart of this weeks duty, he is not assigned
         vm.expectRevert("Not assigned");
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
     }
@@ -989,7 +981,7 @@ contract LiquidityPoolTest is TestSetup {
         _executeAdminTasks(report);
 
         //Move to a random time in the future
-        _moveClock(13431561615);
+        _moveClock(100000);
 
         vm.startPrank(alice);
 
@@ -1004,17 +996,11 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.stopPrank();
 
-        vm.prank(bob);
+        vm.prank(elvis);
         //Making sure if a user is assigned they send in the correct amount (This will be updated 
         //as we will allow users to specify how many validator they want to spin up)
         vm.expectRevert(LiquidityPool.AboveMaxAllocation.selector);
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 10 ether}(bidIds, 5);
-
-        vm.prank(owner);
-        //Making sure if a user is assigned they send in the correct amount (This will be updated 
-        //as we will allow users to specify how many validator they want to spin up)
-        vm.expectRevert(LiquidityPool.AboveMaxAllocation.selector);
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
     }
 
     function test_OnlyApprovedOperatorsGetSelected() public {
@@ -1196,7 +1182,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
 
         //Move to a random time in the future
-        vm.warp(13431561615);
+        _moveClock(100000);
 
         //Set the max number of validators per holder to 4
         liquidityPoolInstance.setMaxBnftSlotSize(4);
@@ -1216,11 +1202,10 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.stopPrank();
 
-        _moveClock(33431561615);
+        _moveClock(100000);
 
         IEtherFiOracle.OracleReport memory report2 = _emptyOracleReport();
         report2.numValidatorsToSpinUp = 16;
-        report2.refSlotTo = 2785963467;
         _executeAdminTasks(report2);
 
         //Move way more in the future
@@ -1244,7 +1229,7 @@ contract LiquidityPoolTest is TestSetup {
         //Num Validators For Last = 4
         vm.stopPrank();
 
-        vm.startPrank(greg);
+        vm.startPrank(shonee);
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 12 ether}(bidIds, 6);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 6);
 

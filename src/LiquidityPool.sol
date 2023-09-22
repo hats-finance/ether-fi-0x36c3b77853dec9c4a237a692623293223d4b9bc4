@@ -18,6 +18,8 @@ import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IEtherFiAdmin.sol";
 
+import "forge-std/console.sol";
+
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -63,17 +65,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event Deposit(address indexed sender, uint256 amount);
-    event Withdraw(address indexed sender, address recipient, uint256 amount);
+    event Deposit(address indexed sender, uint256 amount, SourceOfFunds source, address referral);
+    event Withdraw(address indexed sender, address recipient, uint256 amount, SourceOfFunds source);
     event UpdatedWhitelist(address userAddress, bool value);
     event BnftHolderDeregistered(address user, uint256 index);
     event BnftHolderRegistered(address user, uint256 index);
     event UpdatedSchedulingPeriod(uint128 newPeriodInSeconds);
     event ValidatorRegistered(uint256 validatorId, bytes signature, bytes pubKey, bytes32 depositRoot);
     event ValidatorApproved(uint256 validatorId);
-    event StakingTargetWeightsSet(uint128 eEthWeight, uint128 etherFanWeight);
-    event FundsDeposited(SourceOfFunds source, uint256 amount);
-    event FundsWithdrawn(SourceOfFunds source, uint256 amount);
     event Rebase(uint256 totalEthLocked, uint256 totalEEthShares);
     event WhitelistStatusUpdated(bool value);
 
@@ -110,19 +109,23 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     // Used by eETH staking flow
     function deposit() external payable returns (uint256) {
+        return deposit(address(0));
+    }
+
+    function deposit(address _referral) public payable returns (uint256) {
         require(_isWhitelisted(msg.sender), "Invalid User");
 
-        emit FundsDeposited(SourceOfFunds.EETH, msg.value);
+        emit Deposit(msg.sender, msg.value, SourceOfFunds.EETH, _referral);
 
         return _deposit();
     }
 
     // Used by ether.fan staking flow
-    function deposit(address _user) external payable returns (uint256) {
+    function deposit(address _user, address _referral) external payable returns (uint256) {
         require(msg.sender == address(membershipManager), "Incorrect Caller");
         require(_user == address(membershipManager) || _isWhitelisted(_user), "Invalid User");
 
-        emit FundsDeposited(SourceOfFunds.ETHER_FAN, msg.value);
+        emit Deposit(msg.sender, msg.value, SourceOfFunds.ETHER_FAN, _referral);
 
         return _deposit();
     }
@@ -133,25 +136,20 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _amount the amount to withdraw from contract
     /// it returns the amount of shares burned
     function withdraw(address _recipient, uint256 _amount) external onlyWithdrawRequestOrMembershipManager NonZeroAddress(_recipient) returns (uint256) {
-
         if(totalValueInLp < _amount || eETH.balanceOf(msg.sender) < _amount) revert InsufficientLiquidity();
 
         uint256 share = sharesForWithdrawalAmount(_amount);
         totalValueInLp -= uint128(_amount);
         if (_amount > type(uint128).max || _amount == 0 || share == 0) revert InvalidAmount();
-
-        if(msg.sender == address(membershipManager)) {
-            emit FundsWithdrawn(SourceOfFunds.ETHER_FAN, _amount);
-        } else {
-            emit FundsWithdrawn(SourceOfFunds.EETH, _amount);
-        }
-
+        
         eETH.burnShares(msg.sender, share);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "send fail");
 
-        emit Withdraw(msg.sender, _recipient, _amount);
+        SourceOfFunds source = (msg.sender == address(membershipManager)) ? SourceOfFunds.ETHER_FAN : SourceOfFunds.EETH;
+        emit Withdraw(msg.sender, _recipient, _amount, source);
+
         return share;
     }
 
@@ -421,7 +419,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             lastIndex = _fetchLastIndex(size, index);
             lastIndexNumberOfValidators = numValidatorsToCreate % maxValidatorsPerOwnerLocal;
         }
-
         return (index, lastIndex, lastIndexNumberOfValidators);
     }
 
@@ -532,8 +529,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         fundStatistics[SourceOfFunds.EETH].targetWeight = _eEthWeight;
         fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight = _etherFanWeight;
-
-        emit StakingTargetWeightsSet(_eEthWeight, _etherFanWeight);
     }
 
     function updateWhitelistedAddresses(address _user, bool _value) external onlyAdmin {
@@ -568,8 +563,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         if (msg.value > type(uint128).max || msg.value == 0 || share == 0) revert InvalidAmount();
 
         eETH.mintShares(msg.sender, share);
-
-        emit Deposit(msg.sender, msg.value);
 
         return share;
     }

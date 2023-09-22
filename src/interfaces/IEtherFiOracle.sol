@@ -12,12 +12,13 @@ interface IEtherFiOracle {
         uint256[] validatorsToApprove;
         uint256[] liquidityPoolValidatorsToExit;
         uint256[] exitedValidators;
+        uint32[]  exitedValidatorsExitTimestamps;
         uint256[] slashedValidators;
         uint256[] withdrawalRequestsToInvalidate;
         uint32 lastFinalizedWithdrawalRequestId;
         uint32 eEthTargetAllocationWeight;
         uint32 etherFanTargetAllocationWeight;
-        uint32 pendingWithdrawalAmount;
+        uint128 pendingWithdrawalAmount;
         uint32 numPendingValidatorsRequestedToExit;
         uint32 numValidatorsToSpinUp;
     }

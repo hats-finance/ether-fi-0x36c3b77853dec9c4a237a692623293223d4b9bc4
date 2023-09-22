@@ -374,4 +374,44 @@ contract EtherFiOracleTest is TestSetup {
         assertEq(etherFanTargetWeight, 20);
     }
 
+    function test_huge_positive_rebaes() public {
+        // TVL after `launch_validator` is 60 ETH
+        // EtherFIAdmin limits the APR per rebase as 100 % == 10000 bps
+        uint256[] memory validatorIds = launch_validator();
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+
+        _moveClock(1 days / 12);
+
+        // Change in APR is below 100%
+        report.accruedRewards = int128(60 ether) / int128(365);
+        _executeAdminTasks(report);
+
+        _moveClock(1 days / 12);
+
+        // Change in APR is above 100%, which reverts
+        report.accruedRewards = int128(61 ether) / int128(365);
+        _executeAdminTasks(report, "EtherFiAdmin: TVL changed too much");
+    }
+
+    function test_huge_negative_rebaes() public {
+        // TVL after `launch_validator` is 60 ETH
+        // EtherFIAdmin limits the APR per rebase as 100 % == 10000 bps
+        uint256[] memory validatorIds = launch_validator();
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+
+        _moveClock(1 days / 12);
+
+        // Change in APR is below 100%
+        report.accruedRewards = int128(-59 ether) / int128(365);
+        _executeAdminTasks(report);
+
+        _moveClock(1 days / 12);
+
+        // Change in APR is above 100%, which reverts
+        report.accruedRewards = int128(-61 ether) / int128(365);
+        _executeAdminTasks(report, "EtherFiAdmin: TVL changed too much");
+    }
+
 }

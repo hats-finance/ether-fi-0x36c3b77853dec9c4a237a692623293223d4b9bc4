@@ -190,7 +190,7 @@ contract TestSetup is Test {
 
     int256 slotsPerEpoch = 32;
     int256 secondsPerSlot = 12;
-
+    uint32 genesisSlotTimestamp;
 
     function setUpTests() internal {
         vm.startPrank(owner);
@@ -354,11 +354,12 @@ contract TestSetup is Test {
         // special case for forked tests utilizing oracle
         // can't use env variable because then it would apply to all tests including non-forked ones
         if (block.chainid == 5) {
-            uint32 genesisSlotTimestamp = uint32(1616508000);
-            etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, genesisSlotTimestamp);
+            // goerli
+            genesisSlotTimestamp = uint32(1616508000);
         } else {
-            etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, 1);
+            genesisSlotTimestamp = 0;
         }
+        etherFiOracleInstance.initialize(2, 1024, 0, 32, 12, genesisSlotTimestamp);
 
         etherFiOracleInstance.addCommitteeMember(alice);
         etherFiOracleInstance.addCommitteeMember(bob);
@@ -394,27 +395,14 @@ contract TestSetup is Test {
             address(managerInstance),
             address(liquidityPoolInstance),
             address(membershipManagerInstance),
-            address(withdrawRequestNFTInstance)
+            address(withdrawRequestNFTInstance),
+            10000
         );
 
         liquidityPoolInstance.setEtherFiAdminContract(address(etherFiAdminInstance));
         liquidityPoolInstance.initializePhase2(604800, 1, 1);
 
-        uint256[] memory validatorsToApprove = new uint256[](1);
-        uint256[] memory validatorsToExit = new uint256[](1);
-        uint256[] memory exitedValidators = new uint256[](1);
-        uint256[] memory slashedValidators = new uint256[](1);
-        uint256[] memory withdrawalRequestsToInvalidate = new uint256[](1);
-        reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtPeriod3 = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtSlot3071 = IEtherFiOracle.OracleReport(1, 2048, 3072 - 1, 2048, 3072 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-        reportAtSlot4287 = IEtherFiOracle.OracleReport(1, 3264, 4288 - 1, 3264, 4288 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
-
+        _initOracleReportsforTesting();
         vm.stopPrank();
 
         // Setup dependencies
@@ -472,6 +460,24 @@ contract TestSetup is Test {
         _initializePeople();
         _initializeEtherFiAdmin();
 
+    }
+
+    function _initOracleReportsforTesting() internal {
+        uint256[] memory validatorsToApprove = new uint256[](1);
+        uint256[] memory validatorsToExit = new uint256[](1);
+        uint256[] memory exitedValidators = new uint256[](1);
+        uint32[] memory  exitTimestamps = new uint32[](1);
+        uint256[] memory slashedValidators = new uint256[](1);
+        uint256[] memory withdrawalRequestsToInvalidate = new uint256[](1);
+        reportAtPeriod2A = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, exitTimestamps, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod2B = IEtherFiOracle.OracleReport(1, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, exitTimestamps, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod2C = IEtherFiOracle.OracleReport(2, 0, 1024 - 1, 0, 1024 - 1, 200001, validatorsToApprove, validatorsToExit, exitedValidators, exitTimestamps, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod3 = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 2048 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, exitTimestamps, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod3A = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 0, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, exitTimestamps, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod3B = IEtherFiOracle.OracleReport(1, 0, 2048 - 1, 1, 2 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, exitTimestamps, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtPeriod4 = IEtherFiOracle.OracleReport(1, 2 * 1024, 1024 * 3 - 1, 2 * 1024, 3 * 1024 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, exitTimestamps, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtSlot3071 = IEtherFiOracle.OracleReport(1, 2048, 3072 - 1, 2048, 3072 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, exitTimestamps, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
+        reportAtSlot4287 = IEtherFiOracle.OracleReport(1, 3264, 4288 - 1, 3264, 4288 - 1, 200000, validatorsToApprove, validatorsToExit, exitedValidators, exitTimestamps, slashedValidators, withdrawalRequestsToInvalidate, 1, 80, 20, 0, 0, 0);
     }
 
     function _merkleSetup() internal {
@@ -633,8 +639,8 @@ contract TestSetup is Test {
     // effect: current slot x, moveClock y slots, you are at x + y
     function _moveClock(int256 numSlots) internal {
         assertEq(numSlots > 0, true);
-        vm.warp(block.timestamp + uint256(numSlots * 12 seconds));
         vm.roll(block.number + uint256(numSlots));
+        vm.warp(genesisSlotTimestamp + 12 * block.number);
     }
 
     function _initializeEtherFiAdmin() internal {
@@ -651,11 +657,6 @@ contract TestSetup is Test {
         withdrawRequestNFTInstance.updateAdmin(admin, true);
 
         vm.stopPrank();
-    }
-
-    function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report) internal {
-        bytes[] memory emptyBytes = new bytes[](0);
-        _executeAdminTasks(_report, emptyBytes, emptyBytes);
     }
 
     function _approveNodeOperators() internal {
@@ -691,16 +692,25 @@ contract TestSetup is Test {
 
     }
 
-    function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, bytes[] memory _pubKey, bytes[] memory _signature) internal {        
+    function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report) internal {
+        _executeAdminTasks(_report, "");
+    }
+
+    function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, string memory _revertMessage) internal {
+        bytes[] memory emptyBytes = new bytes[](0);
+        _executeAdminTasks(_report, emptyBytes, emptyBytes, _revertMessage);
+    }
+
+    function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, bytes[] memory _pubKey, bytes[] memory _signature, string memory _revertMessage) internal {        
         (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = etherFiOracleInstance.blockStampForNextReport();
         _report.refSlotFrom = slotFrom;
         _report.refSlotTo = slotTo;
         _report.refBlockFrom = blockFrom;
         _report.refBlockTo = slotTo; //
-
-        uint32 reportAtBlock = _report.refSlotTo + 3 * 32;
-        if (block.number < reportAtBlock + (3*32)) { // ensure report is finalized
-            _moveClock(int256((reportAtBlock + (3*32)) - block.number));
+        
+        uint32 reportAtBlock = 32 * (_report.refSlotTo / 32) + 3 * 32;
+        if (block.number < reportAtBlock) { // ensure report is finalized
+            _moveClock(int256((reportAtBlock) - block.number));
         }
 
         vm.prank(alice);
@@ -708,14 +718,19 @@ contract TestSetup is Test {
         vm.prank(bob);
         etherFiOracleInstance.submitReport(_report);
 
+        if (bytes(_revertMessage).length > 0) {
+            vm.expectRevert(bytes(_revertMessage));
+        }
+
         vm.prank(alice);
         etherFiAdminInstance.executeTasks(_report, _pubKey, _pubKey);
     }
 
     function _emptyOracleReport() internal returns (IEtherFiOracle.OracleReport memory report) {
         uint256[] memory emptyVals = new uint256[](0);
+        uint32[] memory emptyVals32 = new uint32[](0);
         uint32 consensusVersion = etherFiOracleInstance.consensusVersion();
-        report = IEtherFiOracle.OracleReport(consensusVersion, 0, 0, 0, 0, 0, emptyVals, emptyVals, emptyVals, emptyVals, emptyVals, 0, 0, 0, 0, 0, 0);
+        report = IEtherFiOracle.OracleReport(consensusVersion, 0, 0, 0, 0, 0, emptyVals, emptyVals, emptyVals, emptyVals32, emptyVals, emptyVals, 0, 0, 0, 0, 0, 0);
     }
 
     function calculatePermitDigest(address owner, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domainSeparator) public pure returns (bytes32) {
@@ -793,7 +808,8 @@ contract TestSetup is Test {
 
         setUpBnftHolders();
 
-        vm.warp(976348625856);
+        // vm.warp(1000000);
+        _moveClock(int256(1000000) / int256(12));
 
         vm.prank(alice);
         //Set the max number of validators per holder to 4
@@ -816,7 +832,9 @@ contract TestSetup is Test {
 
         bytes32[] memory proof = getWhitelistMerkleProof(9);
 
-        vm.prank(alice);
+        liquidityPoolInstance.dutyForWeek();
+
+        vm.prank(elvis);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
 
@@ -855,7 +873,7 @@ contract TestSetup is Test {
 
         // bytes32 depositRoot = _getDepositRoot();
         bytes32 depositRoot = zeroRoot;
-        vm.prank(alice);
+        vm.prank(elvis);
         liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
 
         bytes[] memory pubKey = new bytes[](2);
