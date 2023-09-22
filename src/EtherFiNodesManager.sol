@@ -358,19 +358,25 @@ contract EtherFiNodesManager is
         }
     }
 
-    function createUnusedWithdrawalSafe(uint256 _count, bool _enableRestaking) external returns (address[] memory) {
-        address[] memory createdSafes = new address[](_count);
-        for (uint256 i = 0; i < _count; i++) {
+    function instantiateEtherFiNode(bool _createEigenPod) internal returns (address) {
             BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
             EtherFiNode node = EtherFiNode(payable(proxy));
             node.initialize(address(this));
-            if (_enableRestaking) {
+            if (_createEigenPod) {
                 node.createEigenPod();
             }
 
-            // add to pool of unused safes
-            unusedWithdrawalSafes.push(address(node));
-            createdSafes[i] = address(node);
+            return address(node);
+    }
+
+    function createUnusedWithdrawalSafe(uint256 _count, bool _enableRestaking) external returns (address[] memory) {
+        address[] memory createdSafes = new address[](_count);
+        for (uint256 i = 0; i < _count; i++) {
+
+            // create safe and add to pool of unused safes
+            address newNode = instantiateEtherFiNode(_enableRestaking);
+            unusedWithdrawalSafes.push(newNode);
+            createdSafes[i] = address(newNode);
         }
         return createdSafes;
     }
@@ -389,10 +395,7 @@ contract EtherFiNodesManager is
             unusedWithdrawalSafes.pop();
         } else {
             // make a new one
-            BeaconProxy proxy = new BeaconProxy(IStakingManager(stakingManagerContract).getEtherFiNodeBeacon(), "");
-            EtherFiNode node = EtherFiNode(payable(proxy));
-            withdrawalSafeAddress = address(node);
-            node.initialize(address(this));
+            withdrawalSafeAddress = instantiateEtherFiNode(_enableRestaking);
         }
 
         IEtherFiNode(withdrawalSafeAddress).recordStakingStart(_enableRestaking);
