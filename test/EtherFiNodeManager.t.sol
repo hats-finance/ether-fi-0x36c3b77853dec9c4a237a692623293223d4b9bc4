@@ -170,14 +170,14 @@ contract EtherFiNodesManagerTest is TestSetup {
     function test_RegisterEtherFiNodeRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only staking manager contract function");
         vm.prank(owner);
-        managerInstance.registerEtherFiNode(bidId[0]);
+        managerInstance.registerEtherFiNode(bidId[0], false);
     }
 
     function test_RegisterEtherFiNodeRevertsIfAlreadyRegistered() public {
         // Node is registered in setup
         vm.expectRevert("already installed");
         vm.prank(address(stakingManagerInstance));
-        managerInstance.registerEtherFiNode(bidId[0]);
+        managerInstance.registerEtherFiNode(bidId[0], false);
     }
 
     function test_UnregisterEtherFiNodeRevertsOnIncorrectCaller() public {
@@ -345,9 +345,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 15);
     }
 
-    // TODO(Dave): To Implement
-    //   - remove etherfiNodeAddress and all 1000 affected callsites (or fine to leave it?) now that linked list is gone
-    //   - cleanup. Remove logs. Function comments
 
     // TODO(Dave): Remaining withdrawal-safe-pool Tests
     // 1. add restaking to previously non-restaking node

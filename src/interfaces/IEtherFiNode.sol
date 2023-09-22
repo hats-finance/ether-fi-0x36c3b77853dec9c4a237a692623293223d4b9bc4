@@ -113,7 +113,7 @@ interface IEtherFiNode {
     function isRestakingEnabled() external view returns (bool);
     function hasOutstandingEigenLayerWithdrawals() external view returns (bool);
 
-    function recordStakingStart() external;
+    function recordStakingStart(bool _enableRestaking) external;
     function resetWithdrawalSafe() external;
     function totalBalanceInExecutionLayer() external view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter);
 

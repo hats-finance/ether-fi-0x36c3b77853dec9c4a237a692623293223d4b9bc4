@@ -60,7 +60,7 @@ interface IEtherFiNodesManager {
     function partialWithdrawBatch(uint256[] calldata _validatorIds) external;
     function partialWithdraw(uint256 _validatorId) external;
     function processNodeExit(uint256[] calldata _validatorIds, uint32[] calldata _exitTimestamp) external;
-    function registerEtherFiNode(uint256 _validatorId) external returns (address);
+    function registerEtherFiNode(uint256 _validatorId, bool _enableRestaking) external returns (address);
     function sendExitRequest(uint256 _validatorId) external;
     function setEtherFiNodeIpfsHashForEncryptedValidatorKey(uint256 _validatorId, string calldata _ipfs) external;
     function setEtherFiNodePhase(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase) external;

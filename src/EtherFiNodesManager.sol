@@ -372,7 +372,7 @@ contract EtherFiNodesManager is
 
     /// @notice Registers the validator ID for the EtherFiNode contract
     /// @param _validatorId ID of the validator associated to the node
-    function registerEtherFiNode(uint256 _validatorId) external onlyStakingManagerContract returns (address) {
+    function registerEtherFiNode(uint256 _validatorId, bool _enableRestaking) external onlyStakingManagerContract returns (address) {
         require(etherfiNodeAddress[_validatorId] == address(0), "already installed");
 
         address withdrawalSafeAddress;
@@ -390,7 +390,7 @@ contract EtherFiNodesManager is
             node.initialize(address(this));
         }
 
-        IEtherFiNode(withdrawalSafeAddress).recordStakingStart();
+        IEtherFiNode(withdrawalSafeAddress).recordStakingStart(_enableRestaking);
         etherfiNodeAddress[_validatorId] = withdrawalSafeAddress;
         return withdrawalSafeAddress;
     }

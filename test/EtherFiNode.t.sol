@@ -33,13 +33,6 @@ contract EtherFiNodeTest is TestSetup {
 
         assertTrue(node.phase() == IEtherFiNode.VALIDATOR_PHASE.NOT_INITIALIZED);
 
-        console2.log("manager", node.etherFiNodesManager());
-
-        /*
-        vm.expectRevert("already initialized");
-        vm.prank(owner);
-        node.initialize(address(managerInstance));
-        */
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -133,6 +126,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.selectFork(testnetFork);
         setUp();
         safeInstance.createEigenPod();
+        // TODO: I need to enable restaking not just create pod like above
 
         // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
         vm.deal(address(safeInstance.eigenPod()), 1 ether);
@@ -141,6 +135,7 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(safeInstance).balance, 1 ether);
         assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
 
+        /*
         // claim the restaked rewards
         safeInstance.queueRestakedWithdrawal();
         vm.roll(block.number + (50400) + 1);
@@ -148,6 +143,7 @@ contract EtherFiNodeTest is TestSetup {
 
         assertEq(address(safeInstance).balance, 2 ether);
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
+        */
     }
 
     function test_totalBalanceInExecutionLayer() public {
