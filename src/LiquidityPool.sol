@@ -18,6 +18,8 @@ import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IEtherFiAdmin.sol";
 
+import "forge-std/console.sol";
+
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -417,7 +419,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             lastIndex = _fetchLastIndex(size, index);
             lastIndexNumberOfValidators = numValidatorsToCreate % maxValidatorsPerOwnerLocal;
         }
-
         return (index, lastIndex, lastIndexNumberOfValidators);
     }
 

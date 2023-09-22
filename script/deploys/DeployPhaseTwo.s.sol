@@ -130,7 +130,8 @@ contract DeployPhaseTwoScript is Script {
             managerAddress,
             liquidityPoolAddress,
             membershipManagerAddress,
-            withdrawRequestNFTAddress
+            withdrawRequestNFTAddress,
+            600 // 6%
         );
 
         etherFiAdminInstance.updateAdmin(oracleAdminAddress, true);
