@@ -48,54 +48,33 @@ interface IEtherFiNode {
     }
 
     // VIEW functions
-    function phase() external view returns (VALIDATOR_PHASE);
+    function calculateTVL(uint256 _beaconBalance, IEtherFiNodesManager.RewardsSplit memory _SRsplits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
     function eigenPod() external view returns (address);
-
-    function ipfsHashForEncryptedValidatorKey()
-        external
-        view
-        returns (string memory);
-
+    function exitRequestTimestamp() external view returns (uint32);
+    function exitTimestamp() external view returns (uint32);
+    function getNonExitPenalty(uint32 _tNftExitRequestTimestamp, uint32 _bNftExitRequestTimestamp) external view returns (uint256);
+    function getStakingRewardsPayouts(uint256 _beaconBalance, IEtherFiNodesManager.RewardsSplit memory _splits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
+    function ipfsHashForEncryptedValidatorKey() external view returns (string memory);
+    function phase() external view returns (VALIDATOR_PHASE);
     function stakingStartTimestamp() external view returns (uint32);
 
-    function exitRequestTimestamp() external view returns (uint32);
-
-    function exitTimestamp() external view returns (uint32);
-
-    function getStakingRewardsPayouts(
-        uint256 _beaconBalance,
-        IEtherFiNodesManager.RewardsSplit memory _splits,
-        uint256 _scale
-    ) external view returns (uint256, uint256, uint256, uint256);
-
-    function getNonExitPenalty(
-        uint32 _tNftExitRequestTimestamp, 
-        uint32 _bNftExitRequestTimestamp
-    ) external view returns (uint256);
-
-    function calculateTVL(
-        uint256 _beaconBalance,
-        IEtherFiNodesManager.RewardsSplit memory _SRsplits,
-        uint256 _scale
-    ) external view returns (uint256, uint256, uint256, uint256);
-
     // Non-VIEW functions
+    function claimQueuedWithdrawals(uint256 maxNumWithdrawals) external;
     function createEigenPod() external;
-
-    function setPhase(VALIDATOR_PHASE _phase) external;
-
-    function setIpfsHashForEncryptedValidatorKey(
-        string calldata _ipfs
-    ) external;
-
-    function setExitRequestTimestamp() external;
-
-    function markExited(uint32 _exitTimestamp) external;
-
+    function hasOutstandingEigenLayerWithdrawals() external view returns (bool);
+    function isRestakingEnabled() external view returns (bool);
     function markEvicted() external;
-
-    // Withdraw Rewards
+    function markExited(uint32 _exitTimestamp) external;
     function moveRewardsToManager(uint256 _amount) external;
+    function queueRestakedWithdrawal() external;
+    function recordStakingStart(bool _enableRestaking) external;
+    function resetWithdrawalSafe() external;
+    function setExitRequestTimestamp() external;
+    function setIpfsHashForEncryptedValidatorKey(string calldata _ipfs) external;
+    function setIsRestakingEnabled(bool _enabled) external;
+    function setPhase(VALIDATOR_PHASE _phase) external;
+    function splitBalanceInExecutionLayer() external view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter);
+    function totalBalanceInExecutionLayer() external view returns (uint256);
 
     function withdrawFunds(
         address _treasury,
@@ -108,15 +87,5 @@ interface IEtherFiNode {
         uint256 _bnftAmount
     ) external;
 
-    function queueRestakedWithdrawal() external;
-    function claimQueuedWithdrawals(uint256 maxNumWithdrawals) external;
-    function isRestakingEnabled() external view returns (bool);
-    function setIsRestakingEnabled(bool _enabled) external;
-    function hasOutstandingEigenLayerWithdrawals() external view returns (bool);
-
-    function recordStakingStart(bool _enableRestaking) external;
-    function resetWithdrawalSafe() external;
-    function splitBalanceInExecutionLayer() external view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter);
-    function totalBalanceInExecutionLayer() external view returns (uint256);
 
 }

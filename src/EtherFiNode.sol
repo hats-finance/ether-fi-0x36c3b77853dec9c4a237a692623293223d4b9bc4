@@ -39,7 +39,7 @@ contract EtherFiNode is IEtherFiNode {
     ///  To receive the rewards from the execution layer, it should have 'receive()' function.
     receive() external payable {}
 
-
+    /// @dev called once immediately after creating a new instance of a EtheriNode beacon proxy
     function initialize(address _etherFiNodesManager) external {
         require(phase == VALIDATOR_PHASE.NOT_INITIALIZED, "already initialized");
         require(etherFiNodesManager == address(0), "already initialized");
@@ -49,6 +49,7 @@ contract EtherFiNode is IEtherFiNode {
         _setPhase(VALIDATOR_PHASE.READY_FOR_DEPOSIT);
     }
 
+    /// @dev record a succesfull deposit. The stake can still be cancelled until the validator is formally registered
     function recordStakingStart(bool _enableRestaking) external onlyEtherFiNodeManagerContract {
         require(stakingStartTimestamp == 0, "already recorded");
         stakingStartTimestamp = uint32(block.timestamp);
@@ -61,6 +62,7 @@ contract EtherFiNode is IEtherFiNode {
         _setPhase(VALIDATOR_PHASE.STAKE_DEPOSITED);
     }
 
+    /// @dev reset this validator safe so it can be used again in the withdrawal safe pool
     function resetWithdrawalSafe() external onlyEtherFiNodeManagerContract {
         require(phase == VALIDATOR_PHASE.CANCELLED || phase == VALIDATOR_PHASE.FULLY_WITHDRAWN, "withdrawal safe still in use");
         ipfsHashForEncryptedValidatorKey = "";
@@ -127,6 +129,7 @@ contract EtherFiNode is IEtherFiNode {
         exitTimestamp = uint32(block.timestamp);
     }
 
+    /// @dev unused by protocol. Simplifies test setup
     function setIsRestakingEnabled(bool _enabled) external onlyEtherFiNodeManagerContract {
         isRestakingEnabled = _enabled;
     }
@@ -144,6 +147,7 @@ contract EtherFiNode is IEtherFiNode {
         require(sent, "Failed to send Ether");
     }
 
+    /// @dev transfer funds from the withdrawal safe to the 4 associated parties (bNFT, tNFT, treasury, nodeOperator)
     function withdrawFunds(
         address _treasury,
         uint256 _treasuryAmount,
@@ -412,11 +416,6 @@ contract EtherFiNode is IEtherFiNode {
         return (toBnftPrincipal, toTnftPrincipal);
     }
 
-    /// @notice Compute the withdrawable amount from the node
-    function getWithdrawableAmount() public view returns (uint256) {
-        return address(this).balance;
-    }
-
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS  ---------------------------------
     //--------------------------------------------------------------------------------------
@@ -459,6 +458,8 @@ contract EtherFiNode is IEtherFiNode {
         return uint256(timeElapsed / (24 * 3_600));
     }
 
+    /// @dev implementation address for beacon proxy.
+    ///      https://docs.openzeppelin.com/contracts/3.x/api/proxy#beacon
     function implementation() external view returns (address) {
         bytes32 slot = bytes32(uint256(keccak256('eip1967.proxy.beacon')) - 1);
         address implementationVariable;
