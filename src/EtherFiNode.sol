@@ -46,8 +46,7 @@ contract EtherFiNode is IEtherFiNode {
         require(_etherFiNodesManager != address(0), "No zero addresses");
         etherFiNodesManager = _etherFiNodesManager;
 
-        _validatePhaseTransition(VALIDATOR_PHASE.READY_FOR_DEPOSIT);
-        phase = VALIDATOR_PHASE.READY_FOR_DEPOSIT;
+        _setPhase(VALIDATOR_PHASE.READY_FOR_DEPOSIT);
     }
 
     function recordStakingStart(bool _enableRestaking) external onlyEtherFiNodeManagerContract {
@@ -59,9 +58,7 @@ contract EtherFiNode is IEtherFiNode {
             createEigenPod(); // NOOP if already exists
         }
 
-        _validatePhaseTransition(VALIDATOR_PHASE.STAKE_DEPOSITED);
-        phase = VALIDATOR_PHASE.STAKE_DEPOSITED;
-
+        _setPhase(VALIDATOR_PHASE.STAKE_DEPOSITED);
     }
 
     function resetWithdrawalSafe() external onlyEtherFiNodeManagerContract {
@@ -81,6 +78,10 @@ contract EtherFiNode is IEtherFiNode {
     /// @notice Set the validator phase
     /// @param _phase the new phase
     function setPhase(VALIDATOR_PHASE _phase) external onlyEtherFiNodeManagerContract {
+        _setPhase(_phase);
+    }
+
+    function _setPhase(VALIDATOR_PHASE _phase) internal {
         _validatePhaseTransition(_phase);
         phase = _phase;
     }
