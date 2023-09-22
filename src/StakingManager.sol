@@ -385,11 +385,6 @@ contract StakingManager is
 
         // register a withdrawalSafe for this bid/validator, creating a new one if necessary
         address etherfiNode = nodesManager.registerEtherFiNode(validatorId, _enableRestaking);
-    /*
-        if (_enableRestaking) {
-            IEtherFiNode(etherfiNode).createEigenPod(); // NOOP if already has an associated eigenPod
-        }
-    */
 
         emit StakeDeposit(_staker, _bidId, etherfiNode);
         emit StakeSource(_bidId, _source);
