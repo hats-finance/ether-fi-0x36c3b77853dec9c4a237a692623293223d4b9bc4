@@ -226,6 +226,8 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         uint256 validatorId = bidId[0];
         address node = managerInstance.etherfiNodeAddress(validatorId);
+        vm.prank(address(managerInstance));
+        IEtherFiNode(node).setIsRestakingEnabled(true);
         IEtherFiNode(node).createEigenPod();
 
         vm.startPrank(address(stakingManagerInstance));

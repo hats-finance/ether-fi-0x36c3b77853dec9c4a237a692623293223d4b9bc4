@@ -125,6 +125,10 @@ contract EtherFiNode is IEtherFiNode {
         exitTimestamp = uint32(block.timestamp);
     }
 
+    function setIsRestakingEnabled(bool _enabled) external onlyEtherFiNodeManagerContract {
+        isRestakingEnabled = _enabled;
+    }
+
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------

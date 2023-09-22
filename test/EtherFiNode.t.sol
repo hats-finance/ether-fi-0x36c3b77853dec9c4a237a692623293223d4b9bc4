@@ -125,8 +125,10 @@ contract EtherFiNodeTest is TestSetup {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
         setUp();
-        safeInstance.createEigenPod();
-        // TODO: I need to enable restaking not just create pod like above
+
+        safeInstance = EtherFiNode(payable(managerInstance.createUnusedWithdrawalSafe(1, true)[0]));
+        vm.prank(address(managerInstance));
+        safeInstance.recordStakingStart(true);
 
         // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
         vm.deal(address(safeInstance.eigenPod()), 1 ether);
@@ -135,7 +137,6 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(safeInstance).balance, 1 ether);
         assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
 
-        /*
         // claim the restaked rewards
         safeInstance.queueRestakedWithdrawal();
         vm.roll(block.number + (50400) + 1);
@@ -143,13 +144,14 @@ contract EtherFiNodeTest is TestSetup {
 
         assertEq(address(safeInstance).balance, 2 ether);
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
-        */
     }
 
     function test_totalBalanceInExecutionLayer() public {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
         setUp();
+        vm.prank(address(managerInstance));
+        safeInstance.setIsRestakingEnabled(true);
         safeInstance.createEigenPod();
 
         uint256 validatorId = bidId[0];
@@ -226,6 +228,8 @@ contract EtherFiNodeTest is TestSetup {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
         setUp();
+        vm.prank(address(managerInstance));
+        safeInstance.setIsRestakingEnabled(true);
         safeInstance.createEigenPod();
 
         // simulate 1 eth of staking rewards sent to the eigen pod
@@ -280,6 +284,8 @@ contract EtherFiNodeTest is TestSetup {
         vm.selectFork(testnetFork);
         setUp();
         safeInstance.createEigenPod();
+        vm.prank(address(managerInstance));
+        safeInstance.setIsRestakingEnabled(true);
 
         uint256 validatorId = bidId[0];
         uint256[] memory validatorIds = new uint256[](1);
@@ -317,9 +323,13 @@ contract EtherFiNodeTest is TestSetup {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
         setUp();
-        safeInstance.createEigenPod();
 
         uint256 validatorId = bidId[0];
+
+        vm.prank(address(managerInstance));
+        safeInstance.setIsRestakingEnabled(true);
+        safeInstance.createEigenPod();
+
         uint256[] memory validatorIds = new uint256[](1);
         uint32[] memory exitRequestTimestamps = new uint32[](1);
         validatorIds[0] = validatorId;

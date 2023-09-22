@@ -111,6 +111,7 @@ interface IEtherFiNode {
     function queueRestakedWithdrawal() external;
     function claimQueuedWithdrawals(uint256 maxNumWithdrawals) external;
     function isRestakingEnabled() external view returns (bool);
+    function setIsRestakingEnabled(bool _enabled) external;
     function hasOutstandingEigenLayerWithdrawals() external view returns (bool);
 
     function recordStakingStart(bool _enableRestaking) external;
