@@ -314,9 +314,18 @@ contract EtherFiNodeTest is TestSetup {
         // wait some time
         vm.roll(block.number + (50400) + 1);
 
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
+
         // try again. FullWithdraw will automatically attempt to claim queuedWithdrawals
         managerInstance.fullWithdraw(validatorIds[0]);
         assertEq(address(safeInstance).balance, 0);
+
+        // safe should have been automatically recycled
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 1);
+        assertEq(uint256(safeInstance.phase()), uint256(IEtherFiNode.VALIDATOR_PHASE.READY_FOR_DEPOSIT));
+        assertEq(safeInstance.isRestakingEnabled(), false);
+        assertEq(safeInstance.stakingStartTimestamp(), 0);
+        assertEq(safeInstance.restakingObservedExitBlock(), 0);
     }
 
     function test_restakedAttackerCantBlockWithdraw() public {

@@ -69,6 +69,7 @@ contract EtherFiNode is IEtherFiNode {
         stakingStartTimestamp = 0;
         phase = VALIDATOR_PHASE.READY_FOR_DEPOSIT;
         restakingObservedExitBlock = 0;
+        isRestakingEnabled = false;
     }
 
     //--------------------------------------------------------------------------------------
