@@ -170,9 +170,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error RequireTokenUnlocked();
 
     /// @notice Requests exchange of membership points tokens for ETH.
-    /// @dev This function allows users to request exchange of membership tokens to ETH.
+    /// @dev decrements the amount of eETH backing the membership NFT and calls requestWithdraw on the liquidity pool
     /// @param _tokenId The ID of the membership NFT.
     /// @param _amount The amount of membership tokens to exchange.
+    /// @return uint256 ID of the withdraw request NFT
     function requestWithdraw(uint256 _tokenId, uint256 _amount) external whenNotPaused returns (uint256) {
         _requireTokenOwner(_tokenId);
 
@@ -196,7 +197,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     /// @notice request to withdraw the entire balance of this NFT and burn it
-    /// @param _tokenId The ID of the membership NFT to liquidate
+    /// @dev burns the NFT and calls requestWithdraw on the liquidity pool
+    /// @param _tokenId ID of the membership NFT to liquidate
+    /// @return uint256 ID of the withdraw request NFT
     function requestWithdrawAndBurn(uint256 _tokenId) external whenNotPaused returns (uint256) {
         _requireTokenOwner(_tokenId);
 

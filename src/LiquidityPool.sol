@@ -155,8 +155,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice request withdraw from pool and receive a WithdrawRequestNFT
     /// @dev Transfers the amount of eETH from msg.senders account to the WithdrawRequestNFT contract & mints an NFT to the msg.sender
-    /// @param recipient the recipient who will be issued the NFT
-    /// @param amount the requested amount to withdraw from contract
+    /// @param recipient address that will be issued the NFT
+    /// @param amount requested amount to withdraw from contract
+    /// @return uint256 requestId of the WithdrawRequestNFT
     function requestWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
@@ -167,6 +168,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestId;
     }
 
+    /// @notice request withdraw from pool with signed permit data and receive a WithdrawRequestNFT
+    /// @dev accepts PermitInput signed data to approve transfer of eETH (EIP-2612) so withdraw request can happen in 1 tx
+    /// @param _owner address that will be issued the NFT
+    /// @param _amount requested amount to withdraw from contract
+    /// @param _permit signed permit data to approve transfer of eETH
+    /// @return uint256 requestId of the WithdrawRequestNFT
     function requestWithdrawWithPermit(address _owner, uint256 _amount, PermitInput calldata _permit)
         external
         returns (uint256)
@@ -175,6 +182,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return requestWithdraw(_owner, _amount);
     }
 
+    /// @notice request withdraw of some or all of the eETH backing a MembershipNFT and receive a WithdrawRequestNFT
+    /// @dev Transfers the amount of eETH from MembershipManager to the WithdrawRequestNFT contract & mints an NFT to the recipient
+    /// @param recipient address that will be issued the NFT
+    /// @param amount requested amount to withdraw from contract
+    /// @param fee the burn fee to be paid by the recipient when the withdrawal is claimed (WithdrawRequestNFT.claimWithdraw)
+    /// @return uint256 requestId of the WithdrawRequestNFT
     function requestMembershipNFTWithdraw(address recipient, uint256 amount, uint256 fee) public onlyMembershipManager NonZeroAddress(recipient) returns (uint256) {
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
