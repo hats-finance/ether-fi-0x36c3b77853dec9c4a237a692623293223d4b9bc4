@@ -582,8 +582,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     ///         random number generator. Fetching the random number in advance wont help a user manipulate the protocol.
     /// @return A starting index for dutyForWeek to use.
     function _getSlotIndex() internal view returns (uint256) {
-        require(schedulingPeriodInSeconds > 0, "Invalid scheduling period");
-        require(numberOfActiveSlots() > 0, "No active slots");
         return uint256(keccak256(abi.encodePacked(block.timestamp / schedulingPeriodInSeconds))) % numberOfActiveSlots();
     }
 
