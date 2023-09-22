@@ -92,14 +92,12 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         int256 elapsedSlots = int32(_report.refSlotTo - lastHandledReportRefSlot);
         int256 elapsedTime = 12 seconds * elapsedSlots;
 
-        int256 currentTVL = int128(uint128(liquidityPool.getTotalPooledEther()));
-        int256 newTVL = currentTVL + _report.accruedRewards;
-
         // This guard will be removed in future versions
         // Ensure that thew TVL didnt' change too much
         // Check if the absolute change (increment, decrement) in TVL is beyond the threshold variable
         // - 5% APR = 0.0137% per day
         // - 10% APR = 0.0274% per day
+        int256 currentTVL = int128(uint128(liquidityPool.getTotalPooledEther()));
         int256 apr;
         if (currentTVL > 0) {
             apr = 10000 * (_report.accruedRewards * 365 days) / (currentTVL * elapsedTime);
