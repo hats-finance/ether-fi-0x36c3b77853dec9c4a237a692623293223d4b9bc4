@@ -8,6 +8,7 @@ interface IEtherFiNode {
     //
     //      NOT_INITIALIZED
     //              |
+    //      READY_FOR_DEPOSIT
     //              ↓
     //      STAKE_DEPOSITED
     //           /      \
@@ -31,6 +32,8 @@ interface IEtherFiNode {
     //
     // All phase transitions should be made through the setPhase function,
     // which validates transitions based on these rules.
+    //
+    // Fully_WITHDRAWN or CANCELLED nodes can be recycled via resetWithdrawalSafe()
     enum VALIDATOR_PHASE {
         NOT_INITIALIZED,
         STAKE_DEPOSITED,
@@ -40,7 +43,8 @@ interface IEtherFiNode {
         CANCELLED,
         BEING_SLASHED,
         EVICTED,
-        WAITING_FOR_APPROVAL
+        WAITING_FOR_APPROVAL,
+        READY_FOR_DEPOSIT
     }
 
     // VIEW functions
@@ -76,6 +80,8 @@ interface IEtherFiNode {
     ) external view returns (uint256, uint256, uint256, uint256);
 
     // Non-VIEW functions
+    function createEigenPod() external;
+
     function setPhase(VALIDATOR_PHASE _phase) external;
 
     function setIpfsHashForEncryptedValidatorKey(
@@ -105,5 +111,12 @@ interface IEtherFiNode {
     function queueRestakedWithdrawal() external;
     function claimQueuedWithdrawals(uint256 maxNumWithdrawals) external;
     function isRestakingEnabled() external view returns (bool);
+    function setIsRestakingEnabled(bool _enabled) external;
     function hasOutstandingEigenLayerWithdrawals() external view returns (bool);
+
+    function recordStakingStart(bool _enableRestaking) external;
+    function resetWithdrawalSafe() external;
+    function splitBalanceInExecutionLayer() external view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter);
+    function totalBalanceInExecutionLayer() external view returns (uint256);
+
 }

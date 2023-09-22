@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
 import "@eigenlayer/contracts/interfaces/IDelayedWithdrawalRouter.sol";
 
+import "forge-std/console2.sol";
+
 contract EtherFiNodeTest is TestSetup {
 
     // from EtherFiNodesManager.sol
@@ -31,9 +33,6 @@ contract EtherFiNodeTest is TestSetup {
 
         assertTrue(node.phase() == IEtherFiNode.VALIDATOR_PHASE.NOT_INITIALIZED);
 
-        vm.expectRevert("already initialized");
-        vm.prank(owner);
-        node.initialize(address(managerInstance));
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -126,7 +125,10 @@ contract EtherFiNodeTest is TestSetup {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
         setUp();
-        safeInstance.createEigenPod();
+
+        safeInstance = EtherFiNode(payable(managerInstance.createUnusedWithdrawalSafe(1, true)[0]));
+        vm.prank(address(managerInstance));
+        safeInstance.recordStakingStart(true);
 
         // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
         vm.deal(address(safeInstance.eigenPod()), 1 ether);
@@ -144,17 +146,19 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
     }
 
-    function test_totalBalanceInExecutionLayer() public {
+    function test_splitBalanceInExecutionLayer() public {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
         setUp();
+        vm.prank(address(managerInstance));
+        safeInstance.setIsRestakingEnabled(true);
         safeInstance.createEigenPod();
 
         uint256 validatorId = bidId[0];
         uint256 beaconBalance = 32 ether;
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = (0, 0, 0, 0);
 
-        (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = safeInstance.splitBalanceInExecutionLayer();
         assertEq(_withdrawalSafe, 0 ether);
         assertEq(_eigenPod, 0 ether);
         assertEq(_delayedWithdrawalRouter, 0 ether);
@@ -168,7 +172,7 @@ contract EtherFiNodeTest is TestSetup {
         // simulate 1 eth of staking rewards sent to the eigen pod
         vm.deal(address(safeInstance.eigenPod()), 1 ether);
         assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
-        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.splitBalanceInExecutionLayer();
         assertEq(_withdrawalSafe, 0 ether);
         assertEq(_eigenPod, 1 ether);
         assertEq(_delayedWithdrawalRouter, 0 ether);
@@ -181,7 +185,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // queue the withdrawal of the rewards. Funds have been sent to the DelayedWithdrawalRouter
         safeInstance.queueRestakedWithdrawal();
-        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.splitBalanceInExecutionLayer();
         assertEq(_withdrawalSafe, 0 ether);
         assertEq(_eigenPod, 0 ether);
         assertEq(_delayedWithdrawalRouter, 1 ether);
@@ -194,7 +198,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // more staking rewards
         vm.deal(address(safeInstance.eigenPod()), 2 ether);
-        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.splitBalanceInExecutionLayer();
         assertEq(_withdrawalSafe, 0 ether);
         assertEq(_eigenPod, 2 ether);
         assertEq(_delayedWithdrawalRouter, 1 ether);
@@ -208,7 +212,7 @@ contract EtherFiNodeTest is TestSetup {
         // wait and claim the first queued withdrawal
         vm.roll(block.number + (50400) + 1);
         safeInstance.claimQueuedWithdrawals(1);
-        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.totalBalanceInExecutionLayer();
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safeInstance.splitBalanceInExecutionLayer();
         assertEq(_withdrawalSafe, 1 ether);
         assertEq(_eigenPod, 2 ether);
         assertEq(_delayedWithdrawalRouter, 0 ether);
@@ -224,6 +228,8 @@ contract EtherFiNodeTest is TestSetup {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
         setUp();
+        vm.prank(address(managerInstance));
+        safeInstance.setIsRestakingEnabled(true);
         safeInstance.createEigenPod();
 
         // simulate 1 eth of staking rewards sent to the eigen pod
@@ -278,6 +284,8 @@ contract EtherFiNodeTest is TestSetup {
         vm.selectFork(testnetFork);
         setUp();
         safeInstance.createEigenPod();
+        vm.prank(address(managerInstance));
+        safeInstance.setIsRestakingEnabled(true);
 
         uint256 validatorId = bidId[0];
         uint256[] memory validatorIds = new uint256[](1);
@@ -306,18 +314,31 @@ contract EtherFiNodeTest is TestSetup {
         // wait some time
         vm.roll(block.number + (50400) + 1);
 
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
+
         // try again. FullWithdraw will automatically attempt to claim queuedWithdrawals
         managerInstance.fullWithdraw(validatorIds[0]);
         assertEq(address(safeInstance).balance, 0);
+
+        // safe should have been automatically recycled
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 1);
+        assertEq(uint256(safeInstance.phase()), uint256(IEtherFiNode.VALIDATOR_PHASE.READY_FOR_DEPOSIT));
+        assertEq(safeInstance.isRestakingEnabled(), false);
+        assertEq(safeInstance.stakingStartTimestamp(), 0);
+        assertEq(safeInstance.restakingObservedExitBlock(), 0);
     }
 
     function test_restakedAttackerCantBlockWithdraw() public {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
         setUp();
-        safeInstance.createEigenPod();
 
         uint256 validatorId = bidId[0];
+
+        vm.prank(address(managerInstance));
+        safeInstance.setIsRestakingEnabled(true);
+        safeInstance.createEigenPod();
+
         uint256[] memory validatorIds = new uint256[](1);
         uint32[] memory exitRequestTimestamps = new uint32[](1);
         validatorIds[0] = validatorId;

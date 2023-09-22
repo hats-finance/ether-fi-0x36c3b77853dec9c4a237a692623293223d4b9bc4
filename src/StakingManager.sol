@@ -382,8 +382,10 @@ contract StakingManager is
     function _processDeposit(uint256 _bidId, address _staker, bool _enableRestaking, ILiquidityPool.SourceOfFunds _source) internal {
         bidIdToStaker[_bidId] = _staker;
         uint256 validatorId = _bidId;
-        address etherfiNode = createEtherfiNode(validatorId, _enableRestaking);
-        nodesManager.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED);
+
+        // register a withdrawalSafe for this bid/validator, creating a new one if necessary
+        address etherfiNode = nodesManager.registerEtherFiNode(validatorId, _enableRestaking);
+
         emit StakeDeposit(_staker, _bidId, etherfiNode);
         emit StakeSource(_bidId, _source);
     }
@@ -391,6 +393,7 @@ contract StakingManager is
     /// @notice Cancels a users stake
     /// @param _validatorId the ID of the validator deposit to cancel
     function _cancelDeposit(uint256 _validatorId, address _caller) internal {
+
         require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
 
         IEtherFiNode.VALIDATOR_PHASE validatorPhase = nodesManager.phase(_validatorId);
@@ -412,17 +415,6 @@ contract StakingManager is
         emit DepositCancelled(_validatorId);
 
         require(bidIdToStaker[_validatorId] == address(0), "Bid already cancelled");
-    }
-
-    function createEtherfiNode(uint256 _validatorId, bool _enableRestaking) private returns (address) {
-        BeaconProxy proxy = new BeaconProxy(address(upgradableBeacon), "");
-        EtherFiNode node = EtherFiNode(payable(proxy));
-        node.initialize(address(nodesManager));
-        if (_enableRestaking) {
-            node.createEigenPod();
-        }
-        nodesManager.registerEtherFiNode(_validatorId, address(node));
-        return address(node);
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake
@@ -447,6 +439,11 @@ contract StakingManager is
     //--------------------------------------------------------------------------------------
     //------------------------------------  GETTERS  ---------------------------------------
     //--------------------------------------------------------------------------------------
+
+    /// @notice Fetches the address of the beacon contract for future EtherFiNodes (withdrawal safes)
+    function getEtherFiNodeBeacon() external view returns (address) {
+        return address(upgradableBeacon);
+    }
 
     /// @notice Fetches the address of the implementation contract currently being used by the proxy
     /// @return the address of the currently used implementation contract
