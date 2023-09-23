@@ -397,17 +397,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         uint256 index = _getSlotIndex();
         uint128 numValidatorsToCreate = IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
 
-        //If the number of validators to spin up is divisible with no remainder by the max number of validators per owner, we can keep the
-        //number of validators for the last index the same as the max number of validators per owner. If it is not, we set the number of validators
-        //for the last index to the remainder.
         uint128 size;
-        if(numValidatorsToCreate % maxValidatorsPerOwnerLocal == 0) {
-            size = numValidatorsToCreate / maxValidatorsPerOwnerLocal;
+        //Get the number of BNFT holders we need to spin up the validators
+        if(numValidatorsToCreate < maxValidatorsPerOwnerLocal) {
+            size = 1;
         } else {
-            size = (numValidatorsToCreate / maxValidatorsPerOwnerLocal) + 1;
+            size = numValidatorsToCreate / maxValidatorsPerOwnerLocal;
         }
 
-        //We use this function to fetch what the last index in the selection will be. Based on different factors. See function for details.
+        //We use this function to fetch what the last index in the selection will be.
         lastIndex = _fetchLastIndex(size, index);
 
         return (index, lastIndex);

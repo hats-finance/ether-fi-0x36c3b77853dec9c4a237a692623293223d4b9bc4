@@ -870,7 +870,7 @@ contract LiquidityPoolTest is TestSetup {
         (firstIndex, lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         assertEq(firstIndex, 7);
-        assertEq(lastIndex, 5);
+        assertEq(lastIndex, 4);
 
     }
     
@@ -939,12 +939,11 @@ contract LiquidityPoolTest is TestSetup {
         (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         assertEq(firstIndex, 4);
-        assertEq(lastIndex, 7);
+        assertEq(lastIndex, 6);
 
         //With the current timestamps and data, the following is true
         //First Index = 4
-        //Last Index = 7
-        //Num Validators For Last = 2
+        //Last Index = 6
 
         vm.prank(shonee);
         //Shonee deposits and her index is 4, allowing her to deposit for 4 validators
@@ -955,9 +954,9 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(validators[3], 4);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 4);
 
-        vm.prank(henry);
+        vm.prank(elvis);
 
-        //Henry deposits and his index is 7, allowing him to deposit
+        //Elvis deposits and his index is 6, allowing him to deposit
         validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 6);
 
@@ -1080,12 +1079,11 @@ contract LiquidityPoolTest is TestSetup {
         (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         assertEq(firstIndex, 5);
-        assertEq(lastIndex, 1);
+        assertEq(lastIndex, 0);
 
         //With the current timestamps and data, the following is true
         //First Index = 5 
-        //Last Index = 1
-        //Num Validators For Last = 3
+        //Last Index = 0
 
         vm.stopPrank();
 
@@ -1230,8 +1228,7 @@ contract LiquidityPoolTest is TestSetup {
 
         //With the current timestamps and data, the following is true
         //First Index = 1
-        //Last Index = 3
-        //Num Validators For Last = 4
+        //Last Index = 2
         vm.stopPrank();
 
         vm.startPrank(greg);
@@ -1240,7 +1237,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.stopPrank();
 
-        vm.startPrank(owner);
+        vm.startPrank(bob);
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 10);
         vm.stopPrank();
