@@ -328,6 +328,42 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(safeInstance.restakingObservedExitBlock(), 0);
     }
 
+    function test_restakedPartialWithdrawQueuesFutureWithdrawals() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+
+        uint256 validatorId = bidId[0];
+        IEtherFiNode node = IEtherFiNode(managerInstance.etherfiNodeAddress(validatorId));
+
+        vm.prank(address(managerInstance));
+        node.setIsRestakingEnabled(true);
+        node.createEigenPod();
+
+
+        // simulate staking rewards
+        vm.deal(node.eigenPod(), 1 ether);
+
+        // queue up future withdrawal. Funds have moved to router
+        managerInstance.queueRestakedWithdrawal(validatorId);
+        (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = node.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 1 ether);
+
+        // more staking rewards
+        vm.deal(node.eigenPod(), 3 ether);
+
+        // withdraw should claim available queued withdrawals and also automatically queue up current balance for future
+        vm.roll(block.number + (50400) + 1);
+        managerInstance.partialWithdraw(validatorId);
+
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = node.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether); // funds are swept from safe after being moved into it
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 3 ether);
+    }
+
     function test_restakedAttackerCantBlockWithdraw() public {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
