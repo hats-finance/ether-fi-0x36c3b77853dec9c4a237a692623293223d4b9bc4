@@ -201,7 +201,10 @@ contract EtherFiNodesManager is
 
         // sweep rewards from eigenPod if any queued withdrawals are ready to be claimed
         if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
+            // claim any queued withdrawals that are ready
             IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithrawals);
+            // queue up an balance currently in the contract so they are ready to be swept in the future
+            IEtherFiNode(etherfiNode).queueRestakedWithdrawal();
         }
 
         require(
