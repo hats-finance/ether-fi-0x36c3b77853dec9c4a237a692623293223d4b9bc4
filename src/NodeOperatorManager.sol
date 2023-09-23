@@ -127,9 +127,9 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
     }
 
     /// @notice Approves or un approves an operator to run validators from a specific source of funds
-    /// @dev To keep fairness we will approve node operators to run validators only for a specific source of funds (EETH / ETHER_FAN)
+    /// @dev To allow a permissioned system, we will approve node operators to run validators only for a specific source of funds (EETH / ETHER_FAN)
     ///         Some operators can be approved for both sources and some for only one. Being approved means that when a BNFT player deposits,
-    ///         we allocate a source of funds to be used for the deposit. And only operators aproved for that source can run the validators
+    ///         we allocate a source of funds to be used for the deposit. And only operators approved for that source can run the validators
     ///         being created.
     /// @param _users the operator addresses to perform an approval or denial on
     /// @param _approvedTags the source of funds we will be updating operator permissions for
@@ -173,10 +173,10 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         _unpause();
     }
 
-    /// @notice simple function to check whether an operator is approved for a specified source of funds
+    /// @notice Function to check whether an operator is approved for a specified source of funds
     /// @param _operator the operator we are checking permissions for
     /// @param _source the source of funds we are checking the operator against
-    /// @returns approved whether the operator is approved or not
+    /// @return approved whether the operator is approved or not
     function isEligibleToRunValidatorsForSourceOfFund(address _operator, ILiquidityPool.SourceOfFunds _source) external view returns (bool approved) {
         approved = operatorApprovedTags[_operator][_source];
     }
