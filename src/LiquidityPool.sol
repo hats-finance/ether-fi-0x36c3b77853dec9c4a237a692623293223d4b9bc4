@@ -101,6 +101,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         __UUPSUpgradeable_init(); 
     }
 
+    /// @notice Allows us to set needed variable state in phase 2
+    /// @dev This data and functions are used to help with our staking router process. This helps us balance the use of funds
+    ///         being allocated to deposits. It also means we are able to give permissions to certain operators to run deposits only
+    ///         only from specific deposits
+    /// @param _schedulingPeriod the time we want between scheduling periods
+    /// @param _eEthNumVal the number of validators to set for eEth
+    /// @param _etherFanNumVal the number of validators to set for ether fan
     function initializePhase2(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal) external onlyOwner { 
         //Sets what scheduling period we will start with       
         schedulingPeriodInSeconds = _schedulingPeriod;
