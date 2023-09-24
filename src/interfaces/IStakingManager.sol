@@ -13,6 +13,8 @@ interface IStakingManager {
 
     function bidIdToStaker(uint256 id) external view returns (address);
 
+    function getEtherFiNodeBeacon() external view returns (address);
+
     function initialize(address _auctionAddress) external;
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
     function setLiquidityPoolAddress(address _liquidityPoolAddress) external;

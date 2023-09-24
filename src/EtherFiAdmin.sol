@@ -13,6 +13,7 @@ import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/IWithdrawRequestNFT.sol";
 
+import "forge-std/console.sol";
 
 contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
@@ -28,9 +29,11 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     uint32 public lastHandledReportRefSlot;
     uint32 public lastHandledReportRefBlock;
-    uint32 public pendingWithdrawalAmount;
+    uint128 public pendingWithdrawalAmount;
     uint32 public numPendingValidatorsRequestedToExit;
     uint32 public numValidatorsToSpinUp;
+
+    int32 public acceptableRebaseAprInBps;
 
     event AdminUpdated(address _address, bool _isAdmin);
     event AdminOperationsExecuted(address _address, bytes32 _reportHash);
@@ -47,7 +50,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address _etherFiNodesManager,
         address _liquidityPool,
         address _membershipManager,
-        address _withdrawRequestNft
+        address _withdrawRequestNft,
+        int32 _acceptableRebaseAprInBps
     ) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -59,6 +63,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         liquidityPool = ILiquidityPool(_liquidityPool);
         membershipManager = IMembershipManager(_membershipManager);
         withdrawRequestNft = IWithdrawRequestNFT(_withdrawRequestNft);
+        acceptableRebaseAprInBps = _acceptableRebaseAprInBps;
     }
 
     function executeTasks(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) external isAdmin() {
@@ -67,8 +72,6 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(slotForNextReportToProcess() == _report.refSlotFrom, "EtherFiAdmin: report has wrong `refSlotFrom`");
         require(blockForNextReportToProcess() == _report.refBlockFrom, "EtherFiAdmin: report has wrong `refBlockFrom`");
 
-        lastHandledReportRefSlot = _report.refSlotTo;
-        lastHandledReportRefBlock = _report.refBlockTo;
         pendingWithdrawalAmount = _report.pendingWithdrawalAmount;
         numPendingValidatorsRequestedToExit = _report.numPendingValidatorsRequestedToExit;
         numValidatorsToSpinUp = _report.numValidatorsToSpinUp;
@@ -78,10 +81,30 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _handleWithdrawals(_report);
         _handleTargetFundsAllocations(_report);
 
+        lastHandledReportRefSlot = _report.refSlotTo;
+        lastHandledReportRefBlock = _report.refBlockTo;
+
         emit AdminOperationsExecuted(msg.sender, reportHash);
     }
 
     function _handleAccruedRewards(IEtherFiOracle.OracleReport calldata _report) internal {
+        // compute the elapsed time since the last rebase
+        int256 elapsedSlots = int32(_report.refSlotTo - lastHandledReportRefSlot);
+        int256 elapsedTime = 12 seconds * elapsedSlots;
+
+        // This guard will be removed in future versions
+        // Ensure that thew TVL didnt' change too much
+        // Check if the absolute change (increment, decrement) in TVL is beyond the threshold variable
+        // - 5% APR = 0.0137% per day
+        // - 10% APR = 0.0274% per day
+        int256 currentTVL = int128(uint128(liquidityPool.getTotalPooledEther()));
+        int256 apr;
+        if (currentTVL > 0) {
+            apr = 10000 * (_report.accruedRewards * 365 days) / (currentTVL * elapsedTime);
+        }
+        int256 absApr = (apr > 0) ? apr : - apr;
+        require(absApr <= acceptableRebaseAprInBps, "EtherFiAdmin: TVL changed too much");
+
         membershipManager.rebase(_report.accruedRewards);
     }
 
@@ -93,11 +116,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         liquidityPool.sendExitRequests(_report.liquidityPoolValidatorsToExit);
 
         // exitedValidators
-        uint32[] memory _exitTimestamps = new uint32[](_report.exitedValidators.length);
-        for (uint256 i = 0; i < _report.exitedValidators.length; i++) {
-            _exitTimestamps[i] = uint32(block.timestamp);
-        }
-        etherFiNodesManager.processNodeExit(_report.exitedValidators, _exitTimestamps);
+        etherFiNodesManager.processNodeExit(_report.exitedValidators, _report.exitedValidatorsExitTimestamps);
 
         // slashedValidators
         etherFiNodesManager.markBeingSlashed(_report.slashedValidators);
@@ -125,11 +144,14 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return (lastHandledReportRefBlock == 0) ? 0 : lastHandledReportRefBlock + 1;
     }
 
-
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         admins[_address] = _isAdmin;
 
         emit AdminUpdated(_address, _isAdmin);
+    }
+
+    function updateAcceptableRebaseApr(int32 _acceptableRebaseAprInBps) external onlyOwner {
+        acceptableRebaseAprInBps = _acceptableRebaseAprInBps;
     }
 
     function getImplementation() external view returns (address) {

@@ -120,6 +120,19 @@
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "acceptableRebaseAprInBps",
+    "outputs": [
+      {
+        "internalType": "int32",
+        "name": "",
+        "type": "int32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -240,6 +253,11 @@
             "type": "uint256[]"
           },
           {
+            "internalType": "uint32[]",
+            "name": "exitedValidatorsExitTimestamps",
+            "type": "uint32[]"
+          },
+          {
             "internalType": "uint256[]",
             "name": "slashedValidators",
             "type": "uint256[]"
@@ -265,9 +283,9 @@
             "type": "uint32"
           },
           {
-            "internalType": "uint32",
+            "internalType": "uint128",
             "name": "pendingWithdrawalAmount",
-            "type": "uint32"
+            "type": "uint128"
           },
           {
             "internalType": "uint32",
@@ -349,6 +367,11 @@
         "internalType": "address",
         "name": "_withdrawRequestNft",
         "type": "address"
+      },
+      {
+        "internalType": "int32",
+        "name": "_acceptableRebaseAprInBps",
+        "type": "int32"
       }
     ],
     "name": "initialize",
@@ -452,9 +475,9 @@
     "name": "pendingWithdrawalAmount",
     "outputs": [
       {
-        "internalType": "uint32",
+        "internalType": "uint128",
         "name": "",
-        "type": "uint32"
+        "type": "uint128"
       }
     ],
     "stateMutability": "view",
@@ -515,6 +538,19 @@
       }
     ],
     "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "int32",
+        "name": "_acceptableRebaseAprInBps",
+        "type": "int32"
+      }
+    ],
+    "name": "updateAcceptableRebaseApr",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

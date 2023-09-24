@@ -1088,7 +1088,7 @@ contract StakingManagerTest is TestSetup {
         assertEq(stakingManagerInstance.bidIdToStaker(bidId2[0]), address(0));
         assertTrue(
             IEtherFiNode(etherFiNode).phase() ==
-                IEtherFiNode.VALIDATOR_PHASE.CANCELLED
+                IEtherFiNode.VALIDATOR_PHASE.READY_FOR_DEPOSIT // node has been recycled in pool
         );
 
         (bidAmount, , bidder, isActive) = auctionInstance.bids(bidId2[0]);

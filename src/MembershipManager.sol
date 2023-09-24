@@ -136,14 +136,18 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _amount amount of ETH to earn staking rewards.
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @return tokenId The ID of the minted membership NFT.
-    function wrapEth(uint256 _amount, uint256 _amountForPoints) public payable whenNotPaused returns (uint256) {
+    function wrapEth(uint256 _amount, uint256 _amountForPoints, address _referral) public payable whenNotPaused returns (uint256) {
         uint256 feeAmount = mintFee * 0.001 ether;
         uint256 depositPerNFT = _amount + _amountForPoints;
         uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
 
         if (depositPerNFT / 1 gwei < minDepositGwei || msg.value != ethNeededPerNFT) revert InvalidDeposit();
 
-        return _wrapEth(_amount, _amountForPoints);
+        return _wrapEth(_amount, _amountForPoints, _referral);
+    }
+
+    function wrapEth(uint256 _amount, uint256 _amountForPoints) external payable whenNotPaused returns (uint256) {
+        return wrapEth(_amount, _amountForPoints, address(0));
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
@@ -166,9 +170,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error RequireTokenUnlocked();
 
     /// @notice Requests exchange of membership points tokens for ETH.
-    /// @dev This function allows users to request exchange of membership tokens to ETH.
+    /// @dev decrements the amount of eETH backing the membership NFT and calls requestWithdraw on the liquidity pool
     /// @param _tokenId The ID of the membership NFT.
     /// @param _amount The amount of membership tokens to exchange.
+    /// @return uint256 ID of the withdraw request NFT
     function requestWithdraw(uint256 _tokenId, uint256 _amount) external whenNotPaused returns (uint256) {
         _requireTokenOwner(_tokenId);
 
@@ -192,7 +197,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     /// @notice request to withdraw the entire balance of this NFT and burn it
-    /// @param _tokenId The ID of the membership NFT to liquidate
+    /// @dev burns the NFT and calls requestWithdraw on the liquidity pool
+    /// @param _tokenId ID of the membership NFT to liquidate
+    /// @return uint256 ID of the withdraw request NFT
     function requestWithdrawAndBurn(uint256 _tokenId) external whenNotPaused returns (uint256) {
         _requireTokenOwner(_tokenId);
 
@@ -451,8 +458,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         return additionalDeposit;
     }
 
-    function _wrapEth(uint256 _amount, uint256 _amountForPoints) internal returns (uint256) {
-        liquidityPool.deposit{value: _amount + _amountForPoints}(msg.sender);
+    function _wrapEth(uint256 _amount, uint256 _amountForPoints, address _referral) internal returns (uint256) {
+        liquidityPool.deposit{value: _amount + _amountForPoints}(msg.sender, _referral);
         uint256 tokenId = _mintMembershipNFT(msg.sender, _amount, _amountForPoints, 0, 0);
         _emitNftUpdateEvent(tokenId);
         return tokenId;

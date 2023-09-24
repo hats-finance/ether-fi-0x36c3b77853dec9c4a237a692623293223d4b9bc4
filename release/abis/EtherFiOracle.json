@@ -472,6 +472,11 @@
             "type": "uint256[]"
           },
           {
+            "internalType": "uint32[]",
+            "name": "exitedValidatorsExitTimestamps",
+            "type": "uint32[]"
+          },
+          {
             "internalType": "uint256[]",
             "name": "slashedValidators",
             "type": "uint256[]"
@@ -497,9 +502,9 @@
             "type": "uint32"
           },
           {
-            "internalType": "uint32",
+            "internalType": "uint128",
             "name": "pendingWithdrawalAmount",
-            "type": "uint32"
+            "type": "uint128"
           },
           {
             "internalType": "uint32",
@@ -907,6 +912,11 @@
             "type": "uint256[]"
           },
           {
+            "internalType": "uint32[]",
+            "name": "exitedValidatorsExitTimestamps",
+            "type": "uint32[]"
+          },
+          {
             "internalType": "uint256[]",
             "name": "slashedValidators",
             "type": "uint256[]"
@@ -932,9 +942,9 @@
             "type": "uint32"
           },
           {
-            "internalType": "uint32",
+            "internalType": "uint128",
             "name": "pendingWithdrawalAmount",
-            "type": "uint32"
+            "type": "uint128"
           },
           {
             "internalType": "uint32",
@@ -1064,6 +1074,11 @@
             "type": "uint256[]"
           },
           {
+            "internalType": "uint32[]",
+            "name": "exitedValidatorsExitTimestamps",
+            "type": "uint32[]"
+          },
+          {
             "internalType": "uint256[]",
             "name": "slashedValidators",
             "type": "uint256[]"
@@ -1089,9 +1104,9 @@
             "type": "uint32"
           },
           {
-            "internalType": "uint32",
+            "internalType": "uint128",
             "name": "pendingWithdrawalAmount",
-            "type": "uint32"
+            "type": "uint128"
           },
           {
             "internalType": "uint32",
