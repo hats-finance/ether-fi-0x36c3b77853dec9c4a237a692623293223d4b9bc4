@@ -52,7 +52,7 @@ contract SmallScenariosTest is TestSetup {
 
         vm.prank(alice);
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         startHoax(bob);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 40);

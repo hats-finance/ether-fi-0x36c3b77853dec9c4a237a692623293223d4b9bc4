@@ -368,7 +368,7 @@ contract TestSetup is Test {
 
         vm.startPrank(alice);
         liquidityPoolInstance.setStakingTargetWeights(50, 50);
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
         membershipManagerInstance.setTopUpCooltimePeriod(28 days);
         vm.stopPrank();
         
@@ -812,8 +812,8 @@ contract TestSetup is Test {
         _moveClock(int256(1000000) / int256(12));
 
         vm.prank(alice);
-        //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        //Set the max number of validators per holder to 2
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(2);
 
         vm.startPrank(alice);
         if (!nodeOperatorManagerInstance.registered(alice)) {

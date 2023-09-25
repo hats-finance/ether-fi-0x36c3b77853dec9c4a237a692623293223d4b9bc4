@@ -300,7 +300,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(owner, 100 ether);
 
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
-        report.numValidatorsToSpinUp = 2;
+        report.numValidatorsToSpinUp = 4;
         _executeAdminTasks(report);
 
         setUpBnftHolders();
@@ -309,7 +309,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(alice);
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         hoax(alice);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
@@ -364,7 +364,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(owner, 100 ether);
 
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
-        report.numValidatorsToSpinUp = 2;
+        report.numValidatorsToSpinUp = 4;
         _executeAdminTasks(report);
 
         setUpBnftHolders();
@@ -373,7 +373,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(alice);
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         hoax(alice);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
@@ -466,7 +466,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(owner, 100 ether);
 
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
-        report.numValidatorsToSpinUp = 2;
+        report.numValidatorsToSpinUp = 4;
         _executeAdminTasks(report);
 
         setUpBnftHolders();
@@ -475,7 +475,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(alice);
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         hoax(alice);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
@@ -584,14 +584,14 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(owner, 100 ether);
 
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
-        report.numValidatorsToSpinUp = 2;
+        report.numValidatorsToSpinUp = 4;
         _executeAdminTasks(report);
 
         setUpBnftHolders();
 
         vm.prank(alice);
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0);
 
@@ -844,17 +844,16 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 120 ether}();
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
         _moveClock(1119296511);
-        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
         assertEq(firstIndex, 7);
         assertEq(lastIndex, 7);
-        assertEq(lastIndexNumOfValidators, 4);
 
         vm.stopPrank();
 
@@ -868,11 +867,10 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 630 ether}();
         
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        (firstIndex, lastIndex, lastIndexNumOfValidators) = liquidityPoolInstance.dutyForWeek();
+        (firstIndex, lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         assertEq(firstIndex, 7);
-        assertEq(lastIndex, 5);
-        assertEq(lastIndexNumOfValidators, 1);
+        assertEq(lastIndex, 4);
 
     }
     
@@ -897,7 +895,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 120 ether}();
@@ -936,11 +934,14 @@ contract LiquidityPoolTest is TestSetup {
         _executeAdminTasks(report2);
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        (uint256 firstIndex, uint128 lastIndex, uint128 numForLastIndex) = liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         assertEq(firstIndex, 3);
-        assertEq(lastIndex, 6);
-        assertEq(numForLastIndex, 2);
+        assertEq(lastIndex, 5);
+
+        //With the current timestamps and data, the following is true
+        //First Index = 4
+        //Last Index = 6
 
         vm.prank(shonee);
         //Shonee deposits and her index is 4, allowing her to deposit for 4 validators
@@ -953,7 +954,7 @@ contract LiquidityPoolTest is TestSetup {
 
         vm.prank(dan);
 
-        //dan deposits and his index is 5, allowing him to deposit
+        //Dan deposits and his index is 5, allowing him to deposit
         validators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
         assertEq(liquidityPoolInstance.numPendingDeposits(), 6);
 
@@ -986,7 +987,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 200 ether}();
@@ -1059,7 +1060,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.warp(13431561615);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 570 ether}();
@@ -1072,16 +1073,14 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
 
         //Can look in the logs that these numbers get returned, we cant test it without manually calculating numbers
-        (uint256 firstIndex, uint128 lastIndex, uint128 numForLastIndex) = liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         assertEq(firstIndex, 5);
-        assertEq(lastIndex, 1);
-        assertEq(numForLastIndex,3);
+        assertEq(lastIndex, 0);
 
         //With the current timestamps and data, the following is true
         //First Index = 5 
-        //Last Index = 1
-        //Num Validators For Last = 3
+        //Last Index = 0
 
         vm.stopPrank();
 
@@ -1116,7 +1115,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         vm.deal(alice, 100000 ether);
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
@@ -1127,7 +1126,7 @@ contract LiquidityPoolTest is TestSetup {
         //First Index = 682
         //Last Index = 515
         //Num Validators For Last = 1
-        (uint256 firstIndex, uint128 lastIndex, uint128 numOfValidatorsForLastIndex) = liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         (address firstIndexAddress, ) = liquidityPoolInstance.bnftHolders(firstIndex);
         (address firstDeductOneIndexAddress, ) = liquidityPoolInstance.bnftHolders(firstIndex - 1);
@@ -1160,9 +1159,9 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(lastIndexAddress);
 
         //User who is last in the selection deposits with the correct amount of funds
-        uint256 amount = 2 ether * numOfValidatorsForLastIndex;
-        liquidityPoolInstance.batchDepositAsBnftHolder{value: amount}(bidIds, numOfValidatorsForLastIndex);
-        assertEq(liquidityPoolInstance.numPendingDeposits(), 4 + numOfValidatorsForLastIndex);
+        uint256 amount = 2 ether * liquidityPoolInstance.maxValidatorsPerOwner();
+        liquidityPoolInstance.batchDepositAsBnftHolder{value: amount}(bidIds, liquidityPoolInstance.maxValidatorsPerOwner());
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 4 + liquidityPoolInstance.maxValidatorsPerOwner());
         vm.stopPrank();
     }
 
@@ -1185,7 +1184,7 @@ contract LiquidityPoolTest is TestSetup {
         _moveClock(100000);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 120 ether}();
@@ -1198,7 +1197,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.startPrank(alice);
 
         //Set the max number of validators per holder to 6
-        liquidityPoolInstance.setMaxBnftSlotSize(6);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(6);
 
         vm.stopPrank();
 
@@ -1224,9 +1223,8 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.dutyForWeek();
 
         //With the current timestamps and data, the following is true
-        //First Index = 1
-        //Last Index = 3
-        //Num Validators For Last = 4
+        //First Index = 3
+        //Last Index = 4
         vm.stopPrank();
 
         vm.startPrank(shonee);
@@ -1301,7 +1299,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.warp(1731561615);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
         
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 630 ether}();    
@@ -1382,7 +1380,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(greg, 100000 ether);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 120 ether}();
@@ -1433,7 +1431,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(greg, 100000 ether);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 120 ether}();
@@ -1543,7 +1541,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.deal(greg, 100000 ether);
 
         //Set the max number of validators per holder to 4
-        liquidityPoolInstance.setMaxBnftSlotSize(4);
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
 
         //Alice deposits funds into the LP to allow for validators to be spun and the calculations can work in dutyForWeek
         liquidityPoolInstance.deposit{value: 240 ether}();

@@ -217,7 +217,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @return Array of bids that were successfully processed.
     function batchDepositAsBnftHolder(uint256[] calldata _candidateBidIds, uint256 _numberOfValidators) external payable returns (uint256[] memory){
         //Checking which indexes form the schedule for the current scheduling period.
-        (uint256 firstIndex, uint128 lastIndex, uint128 lastIndexNumOfValidators) = dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = dutyForWeek();
         uint32 index = bnftHoldersIndexes[msg.sender].index;
 
         //Need to make sure the BNFT player is assigned for the current period
@@ -226,15 +226,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(bnftHolders[index].timestamp < uint32(getCurrentSchedulingStartTimestamp()), "Already deposited");
 
         //BNFT players are eligible to spin up anything up to the max amount of validators allowed (maxValidatorsPerOwner),
-        //however, sometimes the last selected user (the user in the position of the BNFT holders array at the lastIndex for the schedule)
-        //is only eligible to spin up the remaining validators. Example: The current schedule is calculated with the number of validators
-        //we want to spin up equalling 10. But the max an individual can deposit is 4. Therefore, the first two selected users can spin up 4 each,
-        //but the last user selected can only spin up 2 (number of validators to spin up (10) - number already allocated(8))
-        if(index == lastIndex) {
-            if(_numberOfValidators > lastIndexNumOfValidators) revert AboveMaxAllocation();
-        } else {
-            if(_numberOfValidators > maxValidatorsPerOwner) revert AboveMaxAllocation();
-        }
+        if(_numberOfValidators > maxValidatorsPerOwner) revert AboveMaxAllocation();
+    
         require(msg.value == _numberOfValidators * 2 ether, "Deposit 2 ETH per validator");
         require(totalValueInLp + msg.value >= 32 ether * _numberOfValidators, "Not enough balance");
 
@@ -397,51 +390,35 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit BnftHolderDeregistered(_bNftHolder, index);
     }
 
-    /// @notice Complex, relatively stateless function to calculate which BNFT players are currently scheduled and assigned to deposit as a BNFT player.
+    /// @notice Calculate which BNFT players are currently scheduled and assigned to deposit as a BNFT player.
     ///         We don't hold any data, just have the function return a start and finish index of the selected users in the array.
     ///         When a user deposits, it calls this function and checks if the user depositing fits inside the first and last index returnd
     ///         by this function. The indices can wrap around as well. Lets look at an example of a BNFT array with size 10.
     ///
+    ///         Example:
     ///         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  => firstIndex = 7
     ///                                         => lastIndex = 2
     ///         Therefore: the selected range would be users [7, 8, 9, 0, 1, 2]. We use the isAssigned function to check if the user is in the selected indices.
     ///
-    /// @dev We tried to keep this function as stateless as possible. We did not want data structures holding assigned users etc. 
     /// @return The first index that has been chosen in the array of BNFT holders
     /// @return The last index that has been chosen in the array of BNFT holders
-    /// @return The number of validators the last index selected can spin up. See natspec in batchDepositAsBnftHolder for more info.
-    function dutyForWeek() public view returns (uint256, uint128, uint128) {
-        uint128 maxValidatorsPerOwnerLocal = maxValidatorsPerOwner;
-
-        //This function cannot work unless we have assigned a certain amount of max validators per owner and have set how many validators we want
-        //to spin up in the admin contract.
-        if(maxValidatorsPerOwnerLocal == 0 || IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0) {
-            return (0,0,0);
+    function dutyForWeek() public view returns (uint256, uint128) {
+        // Early termindation if there are no validators to spin up
+        uint32 numValidatorsToSpinUp = IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
+        if(maxValidatorsPerOwner == 0 || numValidatorsToSpinUp == 0 || numValidatorsToSpinUp / maxValidatorsPerOwner == 0) {
+            return (0,0);
         }
 
-        uint128 lastIndex;
-
-        //Set the number of validators the last index can spin up to the standard max amount to start.
-        uint128 lastIndexNumberOfValidators = maxValidatorsPerOwnerLocal;
-
-        //Fetches a random index in the array. We will use this as the start index.
+        // Fetches a random index in the array. We will use this as the start index.
         uint256 index = _getSlotIndex();
-        uint128 numValidatorsToCreate = IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
 
-        //If the number of validators to spin up is divisible with no remainder by the max number of validators per owner, we can keep the
-        //number of validators for the last index the same as the max number of validators per owner. If it is not, we set the number of validators
-        //for the last index to the remainder.
-        if(numValidatorsToCreate % maxValidatorsPerOwnerLocal == 0) {
-            uint128 size = numValidatorsToCreate / maxValidatorsPerOwnerLocal;
-            //We use this function to fetch what the last index in the selection will be. Based on different factors. See function for details.
-            lastIndex = _fetchLastIndex(size, index);
-        } else {
-            uint128 size = (numValidatorsToCreate / maxValidatorsPerOwnerLocal) + 1;
-            //We use this function to fetch what the last index in the selection will be. Based on different factors. See function for details.
-            lastIndex = _fetchLastIndex(size, index);
-            lastIndexNumberOfValidators = numValidatorsToCreate % maxValidatorsPerOwnerLocal;
-        }
-        return (index, lastIndex, lastIndexNumberOfValidators);
+        // Get the number of BNFT holders we need to spin up the validators
+        uint128 size = numValidatorsToSpinUp / maxValidatorsPerOwner;
+
+        // We use this function to fetch what the last index in the selection will be.
+        uint128 lastIndex = _fetchLastIndex(size, index);
+
+        return (index, lastIndex);
     }
 
     /// @notice Send the exit requests as the T-NFT holder
@@ -518,7 +495,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice Sets the max number of validators a BNFT can spin up in a given scheduling period
     /// @param _newSize the number to set it to
-    function setMaxBnftSlotSize(uint128 _newSize) external onlyAdmin {
+    function setNumValidatorsToSpinUpPerSchedulePerBnftHolder(uint128 _newSize) external onlyAdmin {
         maxValidatorsPerOwner = _newSize;
     }
 
@@ -571,6 +548,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param numberOfEethValidators How many eEth validators to decrease
     /// @param numberOfEtherFanValidators How many etherFan validators to decrease
     function decreaseSourceOfFundsValidators(uint32 numberOfEethValidators, uint32 numberOfEtherFanValidators) external {
+        require(msg.sender == address(stakingManager), "Incorrect Caller");
         fundStatistics[SourceOfFunds.EETH].numberOfValidators -= numberOfEethValidators;
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators -= numberOfEtherFanValidators;
     }
