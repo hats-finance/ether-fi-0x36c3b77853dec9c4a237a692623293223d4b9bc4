@@ -381,43 +381,33 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit BnftHolderDeregistered(_bNftHolder, index);
     }
 
-    /// @notice Complex, relatively stateless function to calculate which BNFT players are currently scheduled and assigned to deposit as a BNFT player.
+    /// @notice Calculate which BNFT players are currently scheduled and assigned to deposit as a BNFT player.
     ///         We don't hold any data, just have the function return a start and finish index of the selected users in the array.
     ///         When a user deposits, it calls this function and checks if the user depositing fits inside the first and last index returnd
     ///         by this function. The indices can wrap around as well. Lets look at an example of a BNFT array with size 10.
     ///
+    ///         Example:
     ///         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  => firstIndex = 7
     ///                                         => lastIndex = 2
     ///         Therefore: the selected range would be users [7, 8, 9, 0, 1, 2]. We use the isAssigned function to check if the user is in the selected indices.
     ///
-    /// @dev We tried to keep this function as stateless as possible. We did not want data structures holding assigned users etc. 
     /// @return The first index that has been chosen in the array of BNFT holders
     /// @return The last index that has been chosen in the array of BNFT holders
     function dutyForWeek() public view returns (uint256, uint128) {
-        uint128 maxValidatorsPerOwnerLocal = maxValidatorsPerOwner;
-
-        //This function cannot work unless we have assigned a certain amount of max validators per owner and have set how many validators we want
-        //to spin up in the admin contract.
-        if(maxValidatorsPerOwnerLocal == 0 || IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp() == 0) {
+        // Early termindation if there are no validators to spin up
+        uint32 numValidatorsToSpinUp = IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
+        if(maxValidatorsPerOwner == 0 || numValidatorsToSpinUp == 0 || numValidatorsToSpinUp / maxValidatorsPerOwner == 0) {
             return (0,0);
         }
 
-        uint128 lastIndex;
-
-        //Fetches a random index in the array. We will use this as the start index.
+        // Fetches a random index in the array. We will use this as the start index.
         uint256 index = _getSlotIndex();
-        uint128 numValidatorsToCreate = IEtherFiAdmin(etherFiAdminContract).numValidatorsToSpinUp();
 
-        uint128 size;
-        //Get the number of BNFT holders we need to spin up the validators
-        if(numValidatorsToCreate < maxValidatorsPerOwnerLocal) {
-            size = 1;
-        } else {
-            size = numValidatorsToCreate / maxValidatorsPerOwnerLocal;
-        }
+        // Get the number of BNFT holders we need to spin up the validators
+        uint128 size = numValidatorsToSpinUp / maxValidatorsPerOwner;
 
-        //We use this function to fetch what the last index in the selection will be.
-        lastIndex = _fetchLastIndex(size, index);
+        // We use this function to fetch what the last index in the selection will be.
+        uint128 lastIndex = _fetchLastIndex(size, index);
 
         return (index, lastIndex);
     }
@@ -496,7 +486,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice Sets the max number of validators a BNFT can spin up in a given scheduling period
     /// @param _newSize the number to set it to
-    function setMaxBnftSlotSize(uint128 _newSize) external onlyAdmin {
+    function setNumValidatorsToSpinUpPerSchedulePerBnftHolder(uint128 _newSize) external onlyAdmin {
         maxValidatorsPerOwner = _newSize;
     }
 
@@ -549,6 +539,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param numberOfEethValidators How many eEth validators to decrease
     /// @param numberOfEtherFanValidators How many etherFan validators to decrease
     function decreaseSourceOfFundsValidators(uint32 numberOfEethValidators, uint32 numberOfEtherFanValidators) external {
+        require(msg.sender == address(stakingManager), "Incorrect Caller");
         fundStatistics[SourceOfFunds.EETH].numberOfValidators -= numberOfEethValidators;
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators -= numberOfEtherFanValidators;
     }

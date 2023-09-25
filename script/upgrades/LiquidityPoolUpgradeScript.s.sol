@@ -25,7 +25,7 @@ contract LiquidityPoolUpgrade is Script {
 
         LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
         LiquidityPoolInstance.initializePhase2(900, 3, 9);
-        LiquidityPoolInstance.setMaxBnftSlotSize(4);
+        LiquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
         LiquidityPoolInstance.setEtherFiAdminContract(etherFiAdminAddress);
 
         // Phase 2
