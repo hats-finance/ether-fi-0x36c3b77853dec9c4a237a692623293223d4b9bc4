@@ -16,14 +16,22 @@ contract LiquidityPoolUpgrade is Script {
         addressProvider = AddressProvider(addressProviderAddress);
         
         address LiquidityPoolProxyAddress = addressProvider.getContractAddress("LiquidityPool");
+        address etherFiAdminAddress = addressProvider.getContractAddress("EtherFiAdmin");
 
         vm.startBroadcast(deployerPrivateKey);
 
         LiquidityPool LiquidityPoolInstance = LiquidityPool(payable(LiquidityPoolProxyAddress));
         LiquidityPool LiquidityPoolV2Implementation = new LiquidityPool();
 
-        // LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
-        
+        LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
+        LiquidityPoolInstance.initializePhase2(900, 3, 9);
+        LiquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
+        LiquidityPoolInstance.setEtherFiAdminContract(etherFiAdminAddress);
+
+        // Phase 2
+        address withdrawRequestNFTInstance = addressProvider.getContractAddress("WithdrawRequestNFT");
+        LiquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
+
         vm.stopBroadcast();
     }
 }

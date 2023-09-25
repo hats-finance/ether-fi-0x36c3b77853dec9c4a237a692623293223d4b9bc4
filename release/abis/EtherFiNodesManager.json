@@ -5,6 +5,11 @@
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "MustClaimRestakedWithdrawals",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -144,6 +149,25 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum IEtherFiNode.VALIDATOR_PHASE",
+        "name": "_phase",
+        "type": "uint8"
+      }
+    ],
+    "name": "PhaseChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "address",
         "name": "account",
         "type": "address"
@@ -167,6 +191,45 @@
   },
   {
     "inputs": [],
+    "name": "DEPRECATED_admin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_protocolRevenueManager",
+    "outputs": [
+      {
+        "internalType": "contract IProtocolRevenueManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_protocolRevenueManagerContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "SCALE",
     "outputs": [
       {
@@ -179,13 +242,19 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -241,26 +310,6 @@
         "internalType": "uint256",
         "name": "_beaconBalance",
         "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_assumeFullyVested",
-        "type": "bool"
       }
     ],
     "name": "calculateTVL",
@@ -284,6 +333,32 @@
         "internalType": "uint256",
         "name": "toTreasury",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "delayedWithdrawalRouter",
+    "outputs": [
+      {
+        "internalType": "contract IDelayedWithdrawalRouter",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "eigenPodManager",
+    "outputs": [
+      {
+        "internalType": "contract IEigenPodManager",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -430,63 +505,9 @@
         "internalType": "uint256",
         "name": "_beaconBalance",
         "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
       }
     ],
     "name": "getRewardsPayouts",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "toNodeOperator",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toBnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTreasury",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_beaconBalance",
-        "type": "uint256"
-      }
-    ],
-    "name": "getStakingRewardsPayouts",
     "outputs": [
       {
         "internalType": "uint256",
@@ -680,25 +701,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "localRevenueIndex",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256[]",
         "name": "_validatorIds",
         "type": "uint256[]"
@@ -707,6 +709,19 @@
     "name": "markBeingSlashed",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxEigenlayerWithrawals",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -767,21 +782,6 @@
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
       }
     ],
     "name": "partialWithdraw",
@@ -795,21 +795,6 @@
         "internalType": "uint256[]",
         "name": "_validatorIds",
         "type": "uint256[]"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
       }
     ],
     "name": "partialWithdrawBatch",
@@ -828,21 +813,6 @@
         "internalType": "uint256[]",
         "name": "_validatorIds",
         "type": "uint256[]"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
       }
     ],
     "name": "partialWithdrawBatchGroupByOperator",
@@ -922,32 +892,6 @@
   },
   {
     "inputs": [],
-    "name": "protocolRevenueManager",
-    "outputs": [
-      {
-        "internalType": "contract IProtocolRevenueManager",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "protocolRevenueManagerContract",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "protocolRewardsSplit",
     "outputs": [
       {
@@ -993,6 +937,19 @@
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
+      }
+    ],
+    "name": "queueRestakedWithdrawal",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -1028,6 +985,32 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_addr",
+        "type": "address"
+      }
+    ],
+    "name": "setDelayedWithdrawalRouter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_addr",
+        "type": "address"
+      }
+    ],
+    "name": "setEigenPodMananger",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
@@ -1051,30 +1034,25 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
-        "name": "_localRevenueIndex",
-        "type": "uint256"
-      }
-    ],
-    "name": "setEtherFiNodeLocalRevenueIndex",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      },
-      {
         "internalType": "enum IEtherFiNode.VALIDATOR_PHASE",
         "name": "_phase",
         "type": "uint8"
       }
     ],
     "name": "setEtherFiNodePhase",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "_max",
+        "type": "uint8"
+      }
+    ],
+    "name": "setMaxEigenLayerWithdrawals",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1265,8 +1243,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_newAdmin",
+        "name": "_address",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAdmin",
+        "type": "bool"
       }
     ],
     "name": "updateAdmin",
@@ -1303,25 +1286,6 @@
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_validatorId",
-        "type": "uint256"
-      }
-    ],
-    "name": "vestedAuctionRewards",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

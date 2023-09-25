@@ -6,6 +6,21 @@
   },
   {
     "inputs": [],
+    "name": "AboveMaxAllocation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DataNotSet",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientLiquidity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidAmount",
     "type": "error"
   },
@@ -45,6 +60,44 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "BnftHolderDeregistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "BnftHolderRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "sender",
@@ -55,6 +108,12 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "source",
+        "type": "uint8"
       }
     ],
     "name": "Deposit",
@@ -96,6 +155,76 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalEthLocked",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalEEthShares",
+        "type": "uint256"
+      }
+    ],
+    "name": "Rebase",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "eEthWeight",
+        "type": "uint128"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "etherFanWeight",
+        "type": "uint128"
+      }
+    ],
+    "name": "StakingTargetWeightsSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "newPeriodInSeconds",
+        "type": "uint128"
+      }
+    ],
+    "name": "UpdatedSchedulingPeriod",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "userAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "value",
+        "type": "bool"
+      }
+    ],
+    "name": "UpdatedWhitelist",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "implementation",
@@ -103,6 +232,63 @@
       }
     ],
     "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "validatorId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ValidatorApproved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "validatorId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "pubKey",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "depositRoot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ValidatorRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "value",
+        "type": "bool"
+      }
+    ],
+    "name": "WhitelistStatusUpdated",
     "type": "event"
   },
   {
@@ -125,6 +311,12 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "source",
+        "type": "uint8"
       }
     ],
     "name": "Withdraw",
@@ -132,12 +324,83 @@
   },
   {
     "inputs": [],
-    "name": "admin",
+    "name": "DEPRECATED_admin",
     "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_bNftTreasury",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_eEthliquidStakingOpened",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_regulationsManager",
+    "outputs": [
+      {
+        "internalType": "contract IRegulationsManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "allocateSourceOfFunds",
+    "outputs": [
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -163,16 +426,26 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "bNftTreasury",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_pubKey",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_signature",
+        "type": "bytes[]"
       }
     ],
-    "stateMutability": "view",
+    "name": "batchApproveRegistration",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -191,22 +464,17 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_numDeposits",
-        "type": "uint256"
-      },
-      {
         "internalType": "uint256[]",
         "name": "_candidateBidIds",
         "type": "uint256[]"
       },
       {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
+        "internalType": "uint256",
+        "name": "_numberOfValidators",
+        "type": "uint256"
       }
     ],
-    "name": "batchDepositWithBidIds",
+    "name": "batchDepositAsBnftHolder",
     "outputs": [
       {
         "internalType": "uint256[]",
@@ -253,37 +521,114 @@
           }
         ],
         "internalType": "struct IStakingManager.DepositData[]",
-        "name": "_depositData",
+        "name": "_registerValidatorDepositData",
         "type": "tuple[]"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "_depositDataRootApproval",
+        "type": "bytes32[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_signaturesForApprovalDeposit",
+        "type": "bytes[]"
       }
     ],
-    "name": "batchRegisterValidators",
+    "name": "batchRegisterAsBnftHolder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "bnftHolders",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "holder",
+        "type": "address"
+      },
+      {
+        "internalType": "uint32",
+        "name": "timestamp",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "bnftHoldersIndexes",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "registered",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint32",
+        "name": "index",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_bNftHolder",
+        "type": "address"
+      }
+    ],
+    "name": "deRegisterBnftHolder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "numberOfEethValidators",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "numberOfEtherFanValidators",
+        "type": "uint32"
+      }
+    ],
+    "name": "decreaseSourceOfFundsValidators",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "closeEEthLiquidStaking",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
+    "name": "deposit",
+    "outputs": [
       {
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
-    "name": "deposit",
-    "outputs": [],
     "stateMutability": "payable",
     "type": "function"
   },
@@ -293,21 +638,59 @@
         "internalType": "address",
         "name": "_user",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_recipient",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32[]",
-        "name": "_merkleProof",
-        "type": "bytes32[]"
       }
     ],
     "name": "deposit",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "depositDataRootForApprovalDeposits",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "dutyForWeek",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -325,12 +708,49 @@
   },
   {
     "inputs": [],
-    "name": "eEthliquidStakingOpened",
+    "name": "etherFiAdminContract",
     "outputs": [
       {
-        "internalType": "bool",
+        "internalType": "address",
         "name": "",
-        "type": "bool"
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "fundStatistics",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "numberOfValidators",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "targetWeight",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCurrentSchedulingStartTimestamp",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -382,16 +802,93 @@
     "type": "function"
   },
   {
-    "inputs": [
+    "inputs": [],
+    "name": "holdersUpdate",
+    "outputs": [
       {
-        "internalType": "address",
-        "name": "_regulationsManager",
-        "type": "address"
+        "internalType": "uint32",
+        "name": "timestamp",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "startOfSlotNumOwners",
+        "type": "uint32"
       }
     ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint128",
+        "name": "_schedulingPeriod",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_eEthNumVal",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_etherFanNumVal",
+        "type": "uint32"
+      }
+    ],
+    "name": "initializePhase2",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_firstIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_lastIndex",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_index",
+        "type": "uint256"
+      }
+    ],
+    "name": "isAssigned",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxValidatorsPerOwner",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -435,9 +932,15 @@
   },
   {
     "inputs": [],
-    "name": "openEEthLiquidStaking",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "numberOfActiveSlots",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "numberOfActiveSlots",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -469,14 +972,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_tvl",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_balanceInLp",
-        "type": "uint256"
+        "internalType": "int128",
+        "name": "_accruedRewards",
+        "type": "int128"
       }
     ],
     "name": "rebase",
@@ -485,16 +983,16 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "regulationsManager",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "contract IRegulationsManager",
-        "name": "",
+        "internalType": "address",
+        "name": "_user",
         "type": "address"
       }
     ],
-    "stateMutability": "view",
+    "name": "registerAsBnftHolder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -507,12 +1005,160 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
+      }
+    ],
+    "name": "requestMembershipNFTWithdraw",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "requestWithdraw",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "v",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "r",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "s",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct ILiquidityPool.PermitInput",
+        "name": "_permit",
+        "type": "tuple"
+      }
+    ],
+    "name": "requestWithdrawWithPermit",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "restakeBnftDeposits",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "schedulingPeriodInSeconds",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256[]",
         "name": "_validatorIds",
         "type": "uint256[]"
       }
     ],
     "name": "sendExitRequests",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "setEtherFiAdminContract",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -533,6 +1179,19 @@
   {
     "inputs": [
       {
+        "internalType": "uint128",
+        "name": "_newSize",
+        "type": "uint128"
+      }
+    ],
+    "name": "setMaxBnftSlotSize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_address",
         "type": "address"
@@ -546,12 +1205,56 @@
   {
     "inputs": [
       {
+        "internalType": "bool",
+        "name": "_restake",
+        "type": "bool"
+      }
+    ],
+    "name": "setRestakeBnftDeposits",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint128",
+        "name": "_schedulingPeriodInSeconds",
+        "type": "uint128"
+      }
+    ],
+    "name": "setSchedulingPeriodInSeconds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_address",
         "type": "address"
       }
     ],
     "name": "setStakingManager",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_eEthWeight",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_etherFanWeight",
+        "type": "uint32"
+      }
+    ],
+    "name": "setStakingTargetWeights",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -578,6 +1281,19 @@
       }
     ],
     "name": "setTokenAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "setWithdrawRequestNFT",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -702,8 +1418,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_newAdmin",
+        "name": "_address",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAdmin",
+        "type": "bool"
       }
     ],
     "name": "updateAdmin",
@@ -714,12 +1435,30 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_newTreasury",
-        "type": "address"
+        "internalType": "bool",
+        "name": "_value",
+        "type": "bool"
       }
     ],
-    "name": "updateBNftTreasury",
+    "name": "updateWhitelistStatus",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_value",
+        "type": "bool"
+      }
+    ],
+    "name": "updateWhitelistedAddresses",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -756,6 +1495,38 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "whitelistEnabled",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "whitelisted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -769,8 +1540,27 @@
       }
     ],
     "name": "withdraw",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawRequestNFT",
+    "outputs": [
+      {
+        "internalType": "contract IWithdrawRequestNFT",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

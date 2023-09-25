@@ -77,7 +77,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         liquidityPoolImplementation = new LiquidityPool();
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPool = LiquidityPool(payable(address(liquidityPoolProxy)));
-        liquidityPool.initialize(address(regulationsManager));
+        liquidityPool.initialize();
         liquidityPool.setTnft(tnft);
         liquidityPool.setStakingManager(stakingManagerProxyAddress);
         liquidityPool.setEtherFiNodesManager(etherFiNodesManagerProxyAddress);
@@ -98,7 +98,7 @@ contract DeployPhaseOnePointFiveScript is Script {
         membershipManagerImplementation = new MembershipManager();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation),"");
         membershipManager = MembershipManager(payable(address(membershipManagerProxy)));
-        membershipManager.initialize(address(eETH), address(liquidityPool), address(membershipNFT), treasury, protocolRevenueManagerProxy);
+        // membershipManager.initialize(address(eETH), address(liquidityPool), address(membershipNFT), treasury, protocolRevenueManagerProxy);
         addressProvider.addContract(address(membershipManagerProxy), "MembershipManager");
 
         weETHImplementation = new WeETH();
@@ -121,21 +121,20 @@ contract DeployPhaseOnePointFiveScript is Script {
         regulationsManager.confirmEligibility(initialHash);
         membershipNFT.setMembershipManager(address(membershipManager));
         membershipManager.setTopUpCooltimePeriod(28 days);
-        membershipManager.setFeeSplits(0, 100);
 
         initializeTiers();
         preMint();
-        membershipManager.setFeeAmounts(0.05 ether, 0.05 ether, 0);
+        membershipManager.setFeeAmounts(0.05 ether, 0.05 ether, 0, 0);
         membershipManager.pauseContract();
         
         vm.stopBroadcast();
     }
 
     function setUpAdmins(address _admin) internal {
-        liquidityPool.updateAdmin(_admin);
-        regulationsManager.updateAdmin(_admin);
-        membershipManager.updateAdmin(_admin);
-        membershipNFT.updateAdmin(_admin);
+        liquidityPool.updateAdmin(_admin, true);
+        regulationsManager.updateAdmin(_admin, true);
+        membershipManager.updateAdmin(_admin, true);
+        membershipNFT.updateAdmin(_admin, true);
         nftExchange.updateAdmin(_admin);
     }
 
@@ -149,6 +148,7 @@ contract DeployPhaseOnePointFiveScript is Script {
     function preMint() internal {
         bytes32[] memory emptyProof;
         uint256 minAmount = membershipManager.minimumAmountForMint();
-        membershipManager.wrapEthBatch{value: 100 * minAmount}(100, minAmount, 0, emptyProof);
+        // MembershipManager V1 does not have `wrapEthBatch`
+        // membershipManager.wrapEthBatch{value: 100 * minAmount}(100, minAmount, 0, emptyProof);
     }
 }

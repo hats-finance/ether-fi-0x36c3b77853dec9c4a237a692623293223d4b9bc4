@@ -4,10 +4,13 @@ pragma solidity ^0.8.13;
 import "./TestSetup.sol";
 import "../src/EtherFiNode.sol";
 
+import "forge-std/console2.sol";
+
 contract EtherFiNodesManagerTest is TestSetup {
     address etherFiNode;
     uint256[] bidId;
     EtherFiNode safeInstance;
+    uint256 testnetFork;
 
     function setUp() public {
         setUpTests();
@@ -21,8 +24,6 @@ contract EtherFiNodesManagerTest is TestSetup {
             address(TNFTInstance),
             address(BNFTInstance),
             address(protocolRevenueManagerInstance));
-
-        bytes32[] memory proof2 = merkle.getProof(whiteListedAddresses, 1);
         
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
@@ -31,14 +32,13 @@ contract EtherFiNodesManagerTest is TestSetup {
         bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
         startHoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        assertEq(protocolRevenueManagerInstance.globalRevenueIndex(), 1);
 
         uint256[] memory bidIdArray = new uint256[](1);
         bidIdArray[0] = bidId[0];
 
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            proof2
+            false
         );
 
         etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -75,6 +75,8 @@ contract EtherFiNodesManagerTest is TestSetup {
         );
 
         safeInstance = EtherFiNode(payable(etherFiNode));
+
+        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
     }
 
     function test_SetStakingRewardsSplit() public {
@@ -165,23 +167,17 @@ contract EtherFiNodesManagerTest is TestSetup {
         managerInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(bidId[0], "_ipfsHash");
     }
 
-    function test_setEtherFiNodeLocalRevenueIndexRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only protocol revenue manager contract function");
-        vm.prank(owner);
-        managerInstance.setEtherFiNodeLocalRevenueIndex(bidId[0], 1);
-    }
-
     function test_RegisterEtherFiNodeRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only staking manager contract function");
         vm.prank(owner);
-        managerInstance.registerEtherFiNode(bidId[0], etherFiNode);
+        managerInstance.registerEtherFiNode(bidId[0], false);
     }
 
     function test_RegisterEtherFiNodeRevertsIfAlreadyRegistered() public {
         // Node is registered in setup
         vm.expectRevert("already installed");
         vm.prank(address(stakingManagerInstance));
-        managerInstance.registerEtherFiNode(bidId[0], etherFiNode);
+        managerInstance.registerEtherFiNode(bidId[0], false);
     }
 
     function test_UnregisterEtherFiNodeRevertsOnIncorrectCaller() public {
@@ -191,17 +187,76 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_UnregisterEtherFiNodeRevertsIfAlreadyUnregistered() public {
-        vm.prank(address(stakingManagerInstance));
+        vm.startPrank(address(stakingManagerInstance));
+
+        // need to put the node in a terminal state before it can be unregistered
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+
         managerInstance.unregisterEtherFiNode(bidId[0]);
 
         vm.expectRevert("not installed");
-        vm.prank(address(stakingManagerInstance));
         managerInstance.unregisterEtherFiNode(bidId[0]);
     }
 
-    function test_CreateEtherFiNode() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
+    function test_CantResetNodeWithBalance() public {
+        vm.startPrank(address(stakingManagerInstance));
+        uint256 validatorId = bidId[0];
 
+        // need to put the node in a terminal state before it can be unregistered
+        managerInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        managerInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+
+        // simulate not fully withdrawn funds
+        vm.deal(managerInstance.etherfiNodeAddress(validatorId), 1 ether);
+        vm.stopPrank();
+
+
+        uint256[] memory validatorsToReset = new uint256[](1);
+        validatorsToReset[0] = validatorId;
+        vm.prank(alice);
+        vm.expectRevert(EtherFiNodesManager.CannotResetNodeWithBalance.selector);
+        managerInstance.resetWithdrawalSafes(validatorsToReset);
+    }
+
+    function test_CantResetRestakedNodeWithBalance() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+
+        uint256 validatorId = bidId[0];
+        address node = managerInstance.etherfiNodeAddress(validatorId);
+        vm.prank(address(managerInstance));
+        IEtherFiNode(node).setIsRestakingEnabled(true);
+        IEtherFiNode(node).createEigenPod();
+
+        vm.startPrank(address(stakingManagerInstance));
+
+        // need to put the node in a terminal state before it can be unregistered
+        managerInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        managerInstance.setEtherFiNodePhase(validatorId, IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+
+        // simulate funds still in eigenPod
+        vm.deal(IEtherFiNode(node).eigenPod(), 1 ether);
+        vm.stopPrank();
+
+        uint256[] memory validatorsToReset = new uint256[](1);
+        validatorsToReset[0] = validatorId;
+        vm.prank(alice);
+        vm.expectRevert(EtherFiNodesManager.CannotResetNodeWithBalance.selector);
+        managerInstance.resetWithdrawalSafes(validatorsToReset);
+
+        // move funds to the delayed withdrawal router
+        IEtherFiNode(node).queueRestakedWithdrawal();
+
+        // should still fail with the funds no longer in the pod
+        vm.prank(alice);
+        vm.expectRevert(EtherFiNodesManager.CannotResetNodeWithBalance.selector);
+        managerInstance.resetWithdrawalSafes(validatorsToReset);
+        assertEq(IEtherFiNode(node).eigenPod().balance, 0);
+    }
+
+    function test_CreateEtherFiNode() public {
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -214,14 +269,13 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
 
         hoax(alice);
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, false);
 
         address node = managerInstance.etherfiNodeAddress(processedBids[0]);
         assert(node != address(0));
     }
 
     function test_RegisterEtherFiNode() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -234,18 +288,84 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
 
         hoax(alice);
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, aliceProof);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, false);
 
         address node = managerInstance.etherfiNodeAddress(processedBids[0]);
         assert(node != address(0));
 
     }
 
+    function test_RegisterEtherFiNodeReusesAvailableSafes() public {
+        vm.prank(alice);
+        nodeOperatorManagerInstance.registerNodeOperator(
+            _ipfsHash,
+            5
+        );
+
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
+
+        // create bid with no matching deposit yet
+        hoax(alice);
+        bidId = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+        assertEq(managerInstance.etherfiNodeAddress(bidId[0]), address(0));
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
+
+        // premake a safe
+        address[] memory premadeSafe = managerInstance.createUnusedWithdrawalSafe(1, false);
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 1);
+        assertEq(managerInstance.unusedWithdrawalSafes(0), premadeSafe[0]);
+
+        // deposit
+        hoax(alice);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId, false);
+
+        // assigned safe should be the premade one
+        address node = managerInstance.etherfiNodeAddress(processedBids[0]);
+        assert(node != address(0));
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
+
+        // push another safe to the stack
+        address[] memory safe2 = managerInstance.createUnusedWithdrawalSafe(1, false);
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 1);
+
+        // recycle the first safe
+        vm.prank(alice);
+        stakingManagerInstance.batchCancelDeposit(processedBids);
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 2);
+
+        // original premade safe should be on top of the stack after being recycled
+        assertEq(managerInstance.unusedWithdrawalSafes(1), premadeSafe[0]);
+        assertEq(managerInstance.unusedWithdrawalSafes(0), safe2[0]);
+    }
+
+    function test_createMultipleUnusedWithdrawalSafes() public {
+
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
+        address[] memory safes = managerInstance.createUnusedWithdrawalSafe(10, false);
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 10);
+        safes = managerInstance.createUnusedWithdrawalSafe(5, false);
+        assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 15);
+    }
+
+
+    // TODO(Dave): Remaining withdrawal-safe-pool Tests
+    // 1. add restaking to previously non-restaking node
+    // 2. restaking with previously restaked node
+    // 3. normal mode in previously restaked
+
     function test_UnregisterEtherFiNode() public {
         address node = managerInstance.etherfiNodeAddress(bidId[0]);
         assert(node != address(0));
 
-        vm.prank(address(stakingManagerInstance));
+        vm.startPrank(address(stakingManagerInstance));
+
+        vm.expectRevert("withdrawal safe still in use");
+        managerInstance.unregisterEtherFiNode(bidId[0]);
+
+        // need to put the node in a terminal state before it can be unregistered
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.EXITED);
+        managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
+
         managerInstance.unregisterEtherFiNode(bidId[0]);
 
         node = managerInstance.etherfiNodeAddress(bidId[0]);
@@ -348,15 +468,15 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdraw(0, true, true, true);
+        managerInstance.partialWithdraw(0);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatch(ids, true, true, true);
+        managerInstance.partialWithdrawBatch(ids);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids, true, true, true);
+        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");

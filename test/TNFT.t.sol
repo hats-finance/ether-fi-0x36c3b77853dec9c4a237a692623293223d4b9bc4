@@ -25,7 +25,6 @@ contract TnftTest is TestSetup {
 
     function test_Mint() public {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
             5
@@ -39,7 +38,7 @@ contract TnftTest is TestSetup {
         hoax(alice);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIds,
-            aliceProof
+            false
         );
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);

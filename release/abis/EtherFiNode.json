@@ -5,6 +5,51 @@
     "type": "constructor"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "nodeAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "podAddress",
+        "type": "address"
+      }
+    ],
+    "name": "EigenPodCreated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_localRevenueIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_vestedAuctionRewards",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint32",
@@ -126,26 +171,6 @@
         "type": "uint256"
       },
       {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_assumeFullyVested",
-        "type": "bool"
-      },
-      {
         "components": [
           {
             "internalType": "uint64",
@@ -170,33 +195,6 @@
         ],
         "internalType": "struct IEtherFiNodesManager.RewardsSplit",
         "name": "_SRsplits",
-        "type": "tuple"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "treasury",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "nodeOperator",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "tnft",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "bnft",
-            "type": "uint64"
-          }
-        ],
-        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
-        "name": "_PRsplits",
         "type": "tuple"
       },
       {
@@ -226,6 +224,39 @@
         "internalType": "uint256",
         "name": "toTreasury",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "maxNumWithdrawals",
+        "type": "uint256"
+      }
+    ],
+    "name": "claimQueuedWithdrawals",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "createEigenPod",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "eigenPod",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -297,182 +328,8 @@
   {
     "inputs": [
       {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "treasury",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "nodeOperator",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "tnft",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "bnft",
-            "type": "uint64"
-          }
-        ],
-        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
-        "name": "_splits",
-        "type": "tuple"
-      },
-      {
         "internalType": "uint256",
-        "name": "_scale",
-        "type": "uint256"
-      }
-    ],
-    "name": "getProtocolRewardsPayouts",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "toNodeOperator",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toBnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTreasury",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_beaconBalance",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_assumeFullyVested",
-        "type": "bool"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "treasury",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "nodeOperator",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "tnft",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "bnft",
-            "type": "uint64"
-          }
-        ],
-        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
-        "name": "_SRsplits",
-        "type": "tuple"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "treasury",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "nodeOperator",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "tnft",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "bnft",
-            "type": "uint64"
-          }
-        ],
-        "internalType": "struct IEtherFiNodesManager.RewardsSplit",
-        "name": "_PRsplits",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_scale",
-        "type": "uint256"
-      }
-    ],
-    "name": "getRewardsPayouts",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "toNodeOperator",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toBnft",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "toTreasury",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_beaconBalance",
+        "name": "_balance",
         "type": "uint256"
       },
       {
@@ -535,34 +392,26 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bool",
-        "name": "_stakingRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_protocolRewards",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_vestedAuctionFee",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_assumeFullyVested",
-        "type": "bool"
-      }
-    ],
+    "inputs": [],
     "name": "getWithdrawableAmount",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "hasOutstandingEigenLayerWithdrawals",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -609,12 +458,12 @@
   },
   {
     "inputs": [],
-    "name": "localRevenueIndex",
+    "name": "isRestakingEnabled",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bool",
         "name": "",
-        "type": "uint256"
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -668,16 +517,22 @@
   },
   {
     "inputs": [],
-    "name": "processVestedAuctionFeeWithdrawal",
+    "name": "queueRestakedWithdrawal",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "receiveVestedRewardsForStakers",
-    "outputs": [],
-    "stateMutability": "payable",
+    "name": "restakingObservedExitBlock",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -698,19 +553,6 @@
     "name": "setIpfsHashForEncryptedValidatorKey",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_localRevenueIndex",
-        "type": "uint256"
-      }
-    ],
-    "name": "setLocalRevenueIndex",
-    "outputs": [],
-    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -741,11 +583,21 @@
   },
   {
     "inputs": [],
-    "name": "vestedAuctionRewards",
+    "name": "totalBalanceInExecutionLayer",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "_withdrawalSafe",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_eigenPod",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_delayedWithdrawalRouter",
         "type": "uint256"
       }
     ],

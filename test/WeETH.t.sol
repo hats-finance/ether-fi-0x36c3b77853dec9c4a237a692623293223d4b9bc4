@@ -25,8 +25,7 @@ contract WeETHTest is TestSetup {
         // Total pooled ether = 10
         vm.deal(bob, 10 ether);
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -35,8 +34,7 @@ contract WeETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
@@ -54,6 +52,75 @@ contract WeETHTest is TestSetup {
         assertEq(eETHInstance.balanceOf(bob), 10 ether);
     }
 
+    function test_WrapWithPermitFailsWhenExceedingAllowance() public {
+        startHoax(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+
+        startHoax(alice);
+
+        uint256 aliceNonce = eETHInstance.nonces(alice);
+        // alice priv key = 2
+        ILiquidityPool.PermitInput memory permitInput = createPermitInput(2, address(weEthInstance), 2 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+
+        vm.expectRevert("TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE");
+        weEthInstance.wrapWithPermit(5 ether, permitInput);
+
+    }
+
+    function test_WrapWithPermitFailsWithInvalidSignature() public {
+        startHoax(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+
+        startHoax(alice);
+
+        uint256 aliceNonce = eETHInstance.nonces(alice);
+        // 69 is an invalid private key for alice
+        ILiquidityPool.PermitInput memory permitInput = createPermitInput(69, address(weEthInstance), 5 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+
+        vm.expectRevert("ERC20Permit: invalid signature");
+        weEthInstance.wrapWithPermit(5 ether, permitInput);
+    }
+
+    function test_WrapWithPermitWorksCorrectly() public {
+        // Total pooled ether = 10
+        vm.deal(bob, 10 ether);
+        vm.startPrank(bob);
+        liquidityPoolInstance.deposit{value: 10 ether}();
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
+
+        // Total pooled ether = 20
+        startHoax(alice);
+        liquidityPoolInstance.deposit{value: 10 ether}();
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
+        assertEq(eETHInstance.balanceOf(alice), 10 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
+
+        startHoax(alice);
+
+        uint256 aliceNonce = eETHInstance.nonces(alice);
+        // alice priv key = 2
+        ILiquidityPool.PermitInput memory permitInput = createPermitInput(2, address(weEthInstance), 5 ether, aliceNonce, 2**256 - 1, eETHInstance.DOMAIN_SEPARATOR());
+        weEthInstance.wrapWithPermit(5 ether, permitInput);
+
+        assertEq(weEthInstance.balanceOf(alice), 5 ether);
+        assertEq(eETHInstance.balanceOf(alice), 5 ether);
+        assertEq(eETHInstance.balanceOf(bob), 10 ether);
+    }
+
     function test_UnWrapEETHFailsIfZeroAmount() public {
         vm.expectRevert("Cannot unwrap a zero amount");
         weEthInstance.unwrap(0);
@@ -65,8 +132,7 @@ contract WeETHTest is TestSetup {
 
         // Total pooled ether = 10
         vm.startPrank(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -74,8 +140,7 @@ contract WeETHTest is TestSetup {
 
         // Total pooled ether = 20
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
@@ -106,8 +171,7 @@ contract WeETHTest is TestSetup {
 
     function test_MultipleDepositsAndFunctionalityWorksCorrectly() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -119,8 +183,7 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 5 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 15 ether);
@@ -133,8 +196,7 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         startHoax(greg);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 35 ether}(greg, gregProof);
+        liquidityPoolInstance.deposit{value: 35 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 50 ether);
@@ -148,7 +210,7 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(10 ether + 50 ether, 50 ether);
+        liquidityPoolInstance.rebase(10 ether);
 
         _transferTo(address(liquidityPoolInstance), 10 ether);
 
@@ -172,7 +234,7 @@ contract WeETHTest is TestSetup {
         //----------------------------------------------------------------------------------------------------------
 
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(60 ether + 50 ether, 60 ether);
+        liquidityPoolInstance.rebase(50 ether);
 
         _transferTo(address(liquidityPoolInstance), 50 ether);   
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 110 ether);
@@ -192,15 +254,13 @@ contract WeETHTest is TestSetup {
     function test_UnwrappingWithRewards() public {
         // Alice deposits into LP
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 2 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 2 ether}();
         assertEq(eETHInstance.balanceOf(alice), 2 ether);
         vm.stopPrank();
 
         // Bob deposits into LP
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         assertEq(eETHInstance.balanceOf(bob), 1 ether);
         vm.stopPrank();
 
@@ -214,19 +274,17 @@ contract WeETHTest is TestSetup {
 
         // Rewards enter LP
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(1 ether + 3 ether, 3 ether);
+        liquidityPoolInstance.rebase(1 ether);
         _transferTo(address(liquidityPoolInstance), 1 ether);
         assertEq(address(liquidityPoolInstance).balance, 4 ether);
 
         // Alice now has 2.666666666666666666 ether
-        // Bob should still have 1 weETH because it doesn't rebase
+        // Bob should still have 1 ether weETH because it doesn't rebase
         assertEq(eETHInstance.balanceOf(alice), 2.666666666666666666 ether);
         assertEq(weEthInstance.balanceOf(bob), 1 ether);
 
         // Bob unwraps his weETH and should get his principal + rewards
         // Bob should get 1.333333333333333333 ether
-
-        /// @notice not sure where the 0.000000000000000001 ether goes to. Possible that it gets rounded down on conversion
         vm.startPrank(bob);
         weEthInstance.unwrap(1 ether);
         assertEq(eETHInstance.balanceOf(bob), 1.333333333333333332 ether);

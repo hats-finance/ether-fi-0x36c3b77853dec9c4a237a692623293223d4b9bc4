@@ -65,22 +65,12 @@ contract EETHTest is TestSetup {
         eETHInstance.burnShares(alice, 100);
     }
 
-    /// @dev Tests eETH balanceOf and totalSupply functions as well
-    function test_EEthRebaseFailsWhenThereIsNoPooledEther() public {
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
-        vm.prank(address(membershipManagerInstance));
-        vm.expectRevert("rebasing when there is no pooled ether is not allowed.");
-        liquidityPoolInstance.rebase(10 ether, 0 ether);
-    }
-
-    /// @dev Tests eETH balanceOf and totalSupply functions as well
     function test_EEthRebase() public {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 0 ether);
 
         // Total pooled ether = 10
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -90,7 +80,7 @@ contract EETHTest is TestSetup {
 
         // Total pooled ether = 20
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(20 ether, 10 ether);
+        liquidityPoolInstance.rebase(10 ether);
         _transferTo(address(liquidityPoolInstance), 10 ether);
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 20 ether);
@@ -103,8 +93,7 @@ contract EETHTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 20 ether);
 
         startHoax(bob);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 5 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 25 ether);
@@ -129,7 +118,7 @@ contract EETHTest is TestSetup {
         /// vm.deal sets the balance of whoever its called on
         /// In this case 10 ether is added as reward 
         vm.prank(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(10 ether + 25 ether, 25 ether);
+        liquidityPoolInstance.rebase(10 ether);
         _transferTo(address(liquidityPoolInstance), 10 ether);
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 35 ether);
@@ -149,8 +138,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferWithAmount() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -183,8 +171,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferWithZero() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -252,8 +239,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferFromWithAmount() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
@@ -284,8 +270,7 @@ contract EETHTest is TestSetup {
 
     function test_TransferFromWithZero() public {
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 1 ether}();
         vm.stopPrank();
 
         assertEq(eETHInstance.balanceOf(alice), 1 ether);

@@ -4,3 +4,4 @@ murky/=lib/murky/src/
 @openzeppelin/=lib/openzeppelin-contracts/
 @openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/
 @uniswap/=lib/
+@eigenlayer/=lib/eigenlayer-contracts/src/

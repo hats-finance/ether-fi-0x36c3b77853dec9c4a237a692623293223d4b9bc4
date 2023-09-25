@@ -192,12 +192,70 @@
   },
   {
     "inputs": [],
-    "name": "admin",
+    "name": "DEPRECATED_admin",
     "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEPRECATED_protocolRevenueManager",
+    "outputs": [
+      {
+        "internalType": "contract IProtocolRevenueManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "accumulatedRevenue",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "accumulatedRevenueThreshold",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -380,6 +438,19 @@
   },
   {
     "inputs": [],
+    "name": "membershipManagerContractAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "minBidAmount",
     "outputs": [
       {
@@ -478,19 +549,6 @@
   },
   {
     "inputs": [],
-    "name": "protocolRevenueManager",
-    "outputs": [
-      {
-        "internalType": "contract IProtocolRevenueManager",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "proxiableUUID",
     "outputs": [
       {
@@ -525,6 +583,19 @@
   {
     "inputs": [
       {
+        "internalType": "uint128",
+        "name": "_newThreshold",
+        "type": "uint128"
+      }
+    ],
+    "name": "setAccumulatedRevenueThreshold",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint64",
         "name": "_newMaxBidAmount",
         "type": "uint64"
@@ -538,12 +609,12 @@
   {
     "inputs": [
       {
-        "internalType": "uint64",
-        "name": "_newMinBidAmount",
-        "type": "uint64"
+        "internalType": "address",
+        "name": "_membershipManagerContractAddress",
+        "type": "address"
       }
     ],
-    "name": "setMinBidPrice",
+    "name": "setMembershipManagerContractAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -551,12 +622,12 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_protocolRevenueManager",
-        "type": "address"
+        "internalType": "uint64",
+        "name": "_newMinBidAmount",
+        "type": "uint64"
       }
     ],
-    "name": "setProtocolRevenueManager",
+    "name": "setMinBidPrice",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -588,6 +659,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "transferAccumulatedRevenue",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -611,11 +689,29 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_newAdmin",
+        "name": "_address",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAdmin",
+        "type": "bool"
       }
     ],
     "name": "updateAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "updateNodeOperatorManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

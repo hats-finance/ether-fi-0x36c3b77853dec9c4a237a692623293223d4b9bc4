@@ -13,16 +13,11 @@ contract NFTExchangeTest is TestSetup {
         setUpTests();
 
         vm.startPrank(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
         eETHInstance.approve(address(membershipManagerInstance), 1_000_000_000 ether);
         vm.stopPrank();
 
         aliceProof = merkle.getProof(whiteListedAddresses, 3);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
-
-        vm.startPrank(owner);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        vm.stopPrank();
     }
 
     function test_trade() public {
@@ -32,7 +27,7 @@ contract NFTExchangeTest is TestSetup {
         // Owner mints a membership NFT holding 30 ETH
         vm.deal(alice, 100 ether);
         vm.startPrank(alice);
-        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint40 loyaltyPoints = 10000;
@@ -57,7 +52,9 @@ contract NFTExchangeTest is TestSetup {
         // make a small withdrawal
         vm.startPrank(alice);
         uint256 withdrawalAmount = 0.1 ether;
-        membershipManagerInstance.unwrapForEth(membershipNftTokenId, withdrawalAmount);
+        uint256 requestId = membershipManagerInstance.requestWithdraw(membershipNftTokenId, withdrawalAmount);
+        withdrawRequestNFTInstance.finalizeRequests(requestId);
+        withdrawRequestNFTInstance.claimWithdraw(requestId);
         assertEq(membershipNftInstance.transferLockedUntil(membershipNftTokenId), block.number + membershipManagerInstance.withdrawalLockBlocks());
 
         // fails because token is locked
@@ -106,7 +103,7 @@ contract NFTExchangeTest is TestSetup {
 
         // need to give liquidity pool a little more eth to cover previous withdrawal
         vm.prank(alice);
-        liquidityPoolInstance.deposit{value: 0.1 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 0.1 ether}();
 
         // Success: Owner brings the T-NFT to the liquidity pool and gets 30 ETH
         vm.prank(owner);
@@ -134,7 +131,7 @@ contract NFTExchangeTest is TestSetup {
         // Owner mints a membership NFT holding 30 ETH
         vm.deal(alice, 100 ether);
         vm.startPrank(alice);
-        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint40 loyaltyPoints = 10000;
@@ -176,7 +173,7 @@ contract NFTExchangeTest is TestSetup {
         // Owner mints a membership NFT holding 30 ETH
         vm.deal(alice, 100 ether);
         vm.startPrank(alice);
-        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, aliceProof);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint40 loyaltyPoints = 10000;
@@ -218,7 +215,7 @@ contract NFTExchangeTest is TestSetup {
         // Owner mints a membership NFT holding 30 ETH
         vm.deal(alice, 30 ether);
         vm.startPrank(alice);
-        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0, ownerProof);
+        uint256 membershipNftTokenId = membershipManagerInstance.wrapEth{value: 30 ether}(30 ether, 0);
 
         // Owner prepares for the NFT; setting its (loyalty, tier) points
         uint40 loyaltyPoints = 10000;
@@ -272,8 +269,6 @@ contract NFTExchangeTest is TestSetup {
     }
 
     function _alice_stake() internal returns (uint256) {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
@@ -282,7 +277,7 @@ contract NFTExchangeTest is TestSetup {
 
         vm.deal(alice, 32 ether);
         vm.startPrank(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, proof);
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidId1, false);
 
         address etherFiNode = managerInstance.etherfiNodeAddress(1);
         bytes32 root = depGen.generateDepositRoot(
@@ -303,7 +298,7 @@ contract NFTExchangeTest is TestSetup {
 
         depositDataArray[0] = depositData;
 
-        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, alice, alice, depositDataArray);
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, bidId1, depositDataArray);
         assertEq(BNFTInstance.ownerOf(bidId1[0]), alice);
         assertEq(TNFTInstance.ownerOf(bidId1[0]), alice);
 

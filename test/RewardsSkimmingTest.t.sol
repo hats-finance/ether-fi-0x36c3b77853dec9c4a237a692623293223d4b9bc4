@@ -47,7 +47,6 @@ contract RewardsSkimmingTest is TestSetup {
         _setUpStakerMerkle();
 
         vm.startPrank(alice);
-        stakingManagerInstance.updateMerkleRoot(rootStakers);
         nodeOperatorManagerInstance.addToWhitelist(operators[0]);
         vm.stopPrank();
 
@@ -72,14 +71,14 @@ contract RewardsSkimmingTest is TestSetup {
 
         for (uint i = 0; i < num_stakers; i++) {
             startHoax(stakers[i]);
-            
+
             IStakingManager.DepositData[]
             memory depositDataArray = new IStakingManager.DepositData[](1);
 
             uint256[] memory candidateBidIds = new uint256[](1);
             candidateBidIds[0] = validatorIds[i];
             bytes32[] memory stakerProof = merkleStakers.getProof(stakerWhitelistedAddresses, i);
-            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds, stakerProof);
+            stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds, false);
 
             address etherFiNode = managerInstance.etherfiNodeAddress(candidateBidIds[0]);
 
@@ -153,7 +152,7 @@ contract RewardsSkimmingTest is TestSetup {
         _deals();
         startHoax(operators[0]);
         for (uint i = 0; i < num_stakers/2; i++) {
-            managerInstance.partialWithdraw(validatorIds[i], true, false, false);
+            managerInstance.partialWithdraw(validatorIds[i]);
         }
         vm.stopPrank();
     }
@@ -161,7 +160,7 @@ contract RewardsSkimmingTest is TestSetup {
     function test_partialWithdrawBatchGroupByOperator() public {
         _deals();
         startHoax(operators[0]);
-        managerInstance.partialWithdrawBatchGroupByOperator(operators[0], validatorIdsOfMixedTNftHolders, true, false, false);
+        managerInstance.partialWithdrawBatchGroupByOperator(operators[0], validatorIdsOfMixedTNftHolders);
         vm.stopPrank();
     }
 
