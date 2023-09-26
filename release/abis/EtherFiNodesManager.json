@@ -6,6 +6,11 @@
   },
   {
     "inputs": [],
+    "name": "CannotResetNodeWithBalance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "MustClaimRestakedWithdrawals",
     "type": "error"
   },
@@ -190,6 +195,25 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "withdrawalSafeAddress",
+        "type": "address"
+      }
+    ],
+    "name": "WithdrawalSafeReset",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "DEPRECATED_admin",
     "outputs": [
@@ -336,6 +360,30 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_count",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_enableRestaking",
+        "type": "bool"
+      }
+    ],
+    "name": "createUnusedWithdrawalSafe",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -527,6 +575,19 @@
       {
         "internalType": "uint256",
         "name": "toTreasury",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getUnusedWithdrawalSafesLength",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -952,19 +1013,38 @@
         "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "_address",
-        "type": "address"
+        "internalType": "bool",
+        "name": "_enableRestaking",
+        "type": "bool"
       }
     ],
     "name": "registerEtherFiNode",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "resetWithdrawalSafes",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1237,6 +1317,25 @@
     "name": "unregisterEtherFiNode",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "unusedWithdrawalSafes",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
