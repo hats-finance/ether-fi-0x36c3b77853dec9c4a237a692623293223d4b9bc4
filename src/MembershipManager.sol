@@ -85,7 +85,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error WrongVersion();
 
     // To be called for Phase 2 contract upgrade
-    function initializePhase2() external onlyOwner {
+    function initializeOnUpgrade() external onlyOwner {
         fanBoostThreshold = 1_000; // 1 ETH
         burnFeeWaiverPeriodInDays = 30;
         while (tierVaults.length < tierData.length) {

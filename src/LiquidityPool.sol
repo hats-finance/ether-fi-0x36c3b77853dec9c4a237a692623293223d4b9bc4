@@ -18,8 +18,6 @@ import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IEtherFiAdmin.sol";
 
-import "forge-std/console.sol";
-
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -107,7 +105,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _schedulingPeriod the time we want between scheduling periods
     /// @param _eEthNumVal the number of validators to set for eEth
     /// @param _etherFanNumVal the number of validators to set for ether fan
-    function initializePhase2(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal) external onlyOwner { 
+    function initializeOnUpgrade(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal) external onlyOwner { 
         //Sets what scheduling period we will start with       
         schedulingPeriodInSeconds = _schedulingPeriod;
 

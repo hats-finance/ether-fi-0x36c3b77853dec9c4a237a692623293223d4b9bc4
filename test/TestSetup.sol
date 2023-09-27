@@ -400,7 +400,7 @@ contract TestSetup is Test {
         );
 
         liquidityPoolInstance.setEtherFiAdminContract(address(etherFiAdminInstance));
-        liquidityPoolInstance.initializePhase2(604800, 1, 1);
+        liquidityPoolInstance.initializeOnUpgrade(604800, 1, 1);
 
         _initOracleReportsforTesting();
         vm.stopPrank();
@@ -620,7 +620,7 @@ contract TestSetup is Test {
         membershipManagerV1Instance = MembershipManager(payable(membershipManagerProxy));
         assertEq(membershipManagerV1Instance.getImplementation(), address(membershipManagerV1Implementation));
 
-        membershipManagerV1Instance.initializePhase2();
+        membershipManagerV1Instance.initializeOnUpgrade();
         vm.stopPrank();
     }
 
