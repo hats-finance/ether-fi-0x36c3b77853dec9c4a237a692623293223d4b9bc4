@@ -158,7 +158,6 @@ contract EtherFiNode is IEtherFiNode {
         address _bnftHolder,
         uint256 _bnftAmount
     ) external onlyEtherFiNodeManagerContract {
-
         // the recipients of the funds must be able to receive the fund
         // For example, if it is a smart contract, 
         // they should implement either receive() or fallback() properly
