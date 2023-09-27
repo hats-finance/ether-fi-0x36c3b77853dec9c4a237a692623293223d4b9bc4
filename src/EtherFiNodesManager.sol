@@ -29,7 +29,7 @@ contract EtherFiNodesManager is
     //--------------------------------------------------------------------------------------
     uint64 public numberOfValidators;
     uint64 public nonExitPenaltyPrincipal;
-    uint64 public nonExitPenaltyDailyRate;
+    uint64 public nonExitPenaltyDailyRate; // in basis points
     uint64 public SCALE;
 
     address public treasuryContract;
@@ -109,7 +109,7 @@ contract EtherFiNodesManager is
         __ReentrancyGuard_init();
 
         nonExitPenaltyPrincipal = 1 ether;
-        nonExitPenaltyDailyRate = 3; // 3% per day
+        nonExitPenaltyDailyRate = 300; // 3% per day
         SCALE = 1_000_000;
 
         treasuryContract = _treasuryContract;
