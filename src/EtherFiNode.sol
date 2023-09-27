@@ -265,7 +265,7 @@ contract EtherFiNode is IEtherFiNode {
         uint256 remaining = _principal;
         while (daysElapsed > 0) {
             uint256 exponent = Math.min(7, daysElapsed);
-            remaining = (remaining * (100 - uint256(_dailyPenalty)) ** exponent) / (100 ** exponent);
+            remaining = (remaining * (10000 - uint256(_dailyPenalty)) ** exponent) / (10000 ** exponent);
             daysElapsed -= Math.min(7, daysElapsed);
         }
 
