@@ -24,13 +24,35 @@ contract DeployNewNodeOperatorManagerScript is Script {
         addressProvider = AddressProvider(addressProviderAddress);
 
         address AuctionManagerProxyAddress = addressProvider.getContractAddress("AuctionManager");
+        address phaseOneNodeOperator = addressProvider.getContractAddress("NodeOperatorManager");
+
+        // MAINNET
+        address[] memory operators = new address[](2);
+        operators[0] = 0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA;
+        operators[1] = 0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39;
+
+        bytes[] memory hashes = new bytes[](2);
+        uint64[] memory totalKeys = new uint64[](2);
+        uint64[] memory keysUsed = new uint64[](2);
 
         vm.startBroadcast(deployerPrivateKey);
+
+        for(uint256 i = 0; i < operators.length; i++) {
+            (uint64 totalKeysLocal, uint64 keysUsedLocal, bytes memory ipfsHash) = NodeOperatorManager(phaseOneNodeOperator).addressToOperatorData(operators[i]);
+            hashes[i] = ipfsHash;
+            totalKeys[i] = totalKeysLocal;
+            keysUsed[i] = keysUsedLocal;
+        }
 
         nodeOperatorManagerImplementation = new NodeOperatorManager();
         nodeOperatorManagerProxy = new UUPSProxy(address(nodeOperatorManagerImplementation), "");
         nodeOperatorManagerInstance = NodeOperatorManager(address(nodeOperatorManagerProxy));
         nodeOperatorManagerInstance.initialize();
+
+        console.log("New address:", address(nodeOperatorManagerInstance));
+
+        NodeOperatorManager(nodeOperatorManagerInstance).updateAdmin(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39, true);
+        NodeOperatorManager(nodeOperatorManagerInstance).batchMigrateNodeOperator(operators, hashes, totalKeys, keysUsed);
 
         AuctionManager(AuctionManagerProxyAddress).updateNodeOperatorManager(address(nodeOperatorManagerInstance));
         

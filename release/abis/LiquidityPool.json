@@ -850,7 +850,7 @@
         "type": "uint32"
       }
     ],
-    "name": "initializePhase2",
+    "name": "initializeOnUpgrade",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
