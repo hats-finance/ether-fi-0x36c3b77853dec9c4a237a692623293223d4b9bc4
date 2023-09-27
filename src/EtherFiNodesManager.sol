@@ -611,18 +611,22 @@ contract EtherFiNodesManager is
         return unusedWithdrawalSafes.length;
     }
 
+    function getWithdrawalSafeAddress(uint256 _validatorId) public view returns (address) {
+        address etherfiNode = etherfiNodeAddress[_validatorId];
+        require(etherfiNode != address(0), "The validator Id is invalid.");
+
+        if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
+            return IEtherFiNode(etherfiNode).eigenPod();
+        } else {
+            return etherfiNode;
+        }
+    }
+
     /// @notice Fetches the withdraw credentials for a specific node
     /// @param _validatorId id of the validator associated to etherfi node
     /// @return the generated withdraw key for the node
     function getWithdrawalCredentials(uint256 _validatorId) external view returns (bytes memory) {
-        address etherfiNode = etherfiNodeAddress[_validatorId];
-        require(etherfiNode != address(0), "The validator Id is invalid.");
-        
-        if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
-            return generateWithdrawalCredentials(IEtherFiNode(etherfiNode).eigenPod());
-        } else {
-            return generateWithdrawalCredentials(etherfiNode);
-        }
+        return generateWithdrawalCredentials(getWithdrawalSafeAddress(_validatorId));
     }
 
     /// @notice Fetches if the node has an exit request
@@ -641,6 +645,13 @@ contract EtherFiNodesManager is
         uint32 tNftExitRequestTimestamp = IEtherFiNode(etherfiNode).exitRequestTimestamp();
         uint32 bNftExitRequestTimestamp = IEtherFiNode(etherfiNode).exitTimestamp();
         return IEtherFiNode(etherfiNode).getNonExitPenalty(tNftExitRequestTimestamp, bNftExitRequestTimestamp);
+    }
+
+    /// @notice Fetches the nodes exit timestamp
+    function getExitTimestamp(uint256 _validatorId) public view returns (uint32) {
+        address etherfiNode = etherfiNodeAddress[_validatorId];
+        uint32 bNftExitRequestTimestamp = IEtherFiNode(etherfiNode).exitTimestamp();
+        return bNftExitRequestTimestamp;
     }
 
     /// @notice Fetches the claimable rewards payouts based on the accrued rewards
