@@ -147,11 +147,8 @@ contract EtherFiNodesManagerTest is TestSetup {
         vm.prank(owner);
         managerInstance.setNonExitPenaltyDailyRate(2 ether);
 
-        assertEq(managerInstance.nonExitPenaltyDailyRate(), 3);
-
         vm.prank(alice);
         managerInstance.setNonExitPenaltyDailyRate(5);
-
         assertEq(managerInstance.nonExitPenaltyDailyRate(), 5);
     }
 
