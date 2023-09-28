@@ -22,8 +22,8 @@ contract EtherFiNodesManagerTest is TestSetup {
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TNFTInstance),
-            address(BNFTInstance),
-            address(protocolRevenueManagerInstance));
+            address(BNFTInstance)
+        );
         
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
@@ -84,10 +84,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         vm.prank(owner);
         managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
 
-        vm.expectRevert("Amounts not equal to 1000000");
-        vm.prank(alice);
-        managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 300000);
-
         (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = managerInstance.stakingRewardsSplit();
         assertEq(treasury, 50000);
         assertEq(nodeOperator, 50000);
@@ -98,31 +94,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
 
         (treasury, nodeOperator, tnft, bnft) = managerInstance.stakingRewardsSplit();
-        assertEq(treasury, 100000);
-        assertEq(nodeOperator, 100000);
-        assertEq(tnft, 400000);
-        assertEq(bnft, 400000);
-    }
-
-    function test_SetProtocolRewardsSplit() public {
-        vm.expectRevert("Caller is not the admin");
-        vm.prank(owner);
-        managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 400000);
-
-        vm.expectRevert("Amounts not equal to 1000000");
-        vm.prank(alice);
-        managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 300000);
-
-        (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = managerInstance.protocolRewardsSplit();
-        assertEq(treasury, 250000);
-        assertEq(nodeOperator, 250000);
-        assertEq(tnft, 453125);
-        assertEq(bnft, 46875);
-
-        vm.prank(alice);
-        managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 400000);
-
-        (treasury, nodeOperator, tnft, bnft) = managerInstance.protocolRewardsSplit();
         assertEq(treasury, 100000);
         assertEq(nodeOperator, 100000);
         assertEq(tnft, 400000);
@@ -172,7 +143,7 @@ contract EtherFiNodesManagerTest is TestSetup {
 
     function test_RegisterEtherFiNodeRevertsIfAlreadyRegistered() public {
         // Node is registered in setup
-        vm.expectRevert("already installed");
+        vm.expectRevert(EtherFiNodesManager.AlreadyInstalled.selector);
         vm.prank(address(stakingManagerInstance));
         managerInstance.registerEtherFiNode(bidId[0], false);
     }
@@ -192,7 +163,7 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         managerInstance.unregisterEtherFiNode(bidId[0]);
 
-        vm.expectRevert("not installed");
+        vm.expectRevert(EtherFiNodesManager.NotInstalled.selector);
         managerInstance.unregisterEtherFiNode(bidId[0]);
     }
 
@@ -373,7 +344,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.isExitRequested(bidId[0]), false);
 
         hoax(alice);
-        vm.expectRevert("You are not the owner of the T-NFT");
+        vm.expectRevert(EtherFiNodesManager.NotTnftOwner.selector);
         managerInstance.sendExitRequest(bidId[0]);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
@@ -470,10 +441,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         hoax(alice);
         vm.expectRevert("Pausable: paused");
         managerInstance.partialWithdrawBatch(ids);
-
-        hoax(alice);
-        vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");

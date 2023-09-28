@@ -46,7 +46,7 @@ contract EtherFiNodesManager is
 
     //Holds the data for the revenue splits depending on where the funds are received from
     RewardsSplit public stakingRewardsSplit;
-    RewardsSplit public protocolRewardsSplit;
+    RewardsSplit public DEPRECATED_protocolRewardsSplit;
 
     address public DEPRECATED_admin;
     mapping(address => bool) public admins;
@@ -81,6 +81,8 @@ contract EtherFiNodesManager is
 
     receive() external payable {}
 
+    error NonZeroAddress();
+
     /// @dev Sets the revenue splits on deployment
     /// @dev AuctionManager, treasury and deposit contracts must be deployed first
     /// @param _treasuryContract The address of the treasury contract for interaction
@@ -88,21 +90,14 @@ contract EtherFiNodesManager is
     /// @param _stakingManagerContract The address of the staking contract for interaction
     /// @param _tnftContract The address of the TNFT contract for interaction
     /// @param _bnftContract The address of the BNFT contract for interaction
-    /// @param _protocolRevenueManagerContract The address of the protocols revenue manager contract for interaction
     function initialize(
         address _treasuryContract,
         address _auctionContract,
         address _stakingManagerContract,
         address _tnftContract,
-        address _bnftContract,
-        address _protocolRevenueManagerContract
+        address _bnftContract
     ) external initializer {
-        require(_treasuryContract != address(0), "No zero addresses");
-        require(_auctionContract != address(0), "No zero addresses");
-        require(_stakingManagerContract != address(0), "No zero addresses");
-        require(_tnftContract != address(0), "No zero addresses");
-        require(_bnftContract != address(0), "No zero addresses");
-        require(_protocolRevenueManagerContract != address(0), "No zero addresses"); 
+        if(_treasuryContract == address(0) || _auctionContract == address(0) || _stakingManagerContract == address(0) || _tnftContract == address(0) || _bnftContract == address(0)) revert NonZeroAddress();
 
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -130,25 +125,16 @@ contract EtherFiNodesManager is
             stakingRewardsSplit.treasury + stakingRewardsSplit.nodeOperator + stakingRewardsSplit.tnft + stakingRewardsSplit.bnft == SCALE,
             "Splits not equal to scale"
         );
-
-        protocolRewardsSplit = RewardsSplit({
-            treasury: 250_000, // 25 %
-            nodeOperator: 250_000, // 25 %
-            tnft: 453_125, // 50 % * 29 / 32
-            bnft: 46_875 // 50 % * 3 / 32
-        });
-        require(
-            protocolRewardsSplit.treasury + protocolRewardsSplit.nodeOperator + protocolRewardsSplit.tnft + protocolRewardsSplit.bnft == SCALE,
-            "Splits not equal to scale"
-        );
     }
 
+    error NotTnftOwner();
+    error ValidatorNotLive();
 
     /// @notice Send the request to exit the validator node
     /// @param _validatorId ID of the validator associated
     function sendExitRequest(uint256 _validatorId) public whenNotPaused {
-        require(msg.sender == tnft.ownerOf(_validatorId), "You are not the owner of the T-NFT");
-        require(phase(_validatorId) == IEtherFiNode.VALIDATOR_PHASE.LIVE, "validator node is not live");
+        if(msg.sender != tnft.ownerOf(_validatorId)) revert NotTnftOwner();
+        if(phase(_validatorId) != IEtherFiNode.VALIDATOR_PHASE.LIVE) revert ValidatorNotLive();
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).setExitRequestTimestamp();
 
@@ -230,64 +216,6 @@ contract EtherFiNodesManager is
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             partialWithdraw( _validatorIds[i]);
         }
-    }
-
-    /// @notice Batch-process the rewards skimming for the validator nodes belonging to the same operator
-    /// @param _operator The address of the operator to withdraw from
-    /// @param _validatorIds The ID's of the validators to be withdrawn from
-    function partialWithdrawBatchGroupByOperator(
-        address _operator,
-        uint256[] memory _validatorIds
-    ) external nonReentrant whenNotPaused{
-        uint256 totalOperatorAmount;
-        uint256 totalTreasuryAmount;
-        address tnftHolder;
-        address bnftHolder;
-
-        address etherfiNode;
-        uint256 _validatorId;
-        uint256[] memory payouts = new uint256[](4);  // (operator, tnft, bnft, treasury)
-        for (uint i = 0; i < _validatorIds.length; i++) {
-            _validatorId = _validatorIds[i];
-            etherfiNode = etherfiNodeAddress[_validatorId];
-            require(
-                _operator == auctionManager.getBidOwner(_validatorId),
-                "Not bid owner"
-            );
-            require(
-                payable(etherfiNode).balance < 8 ether,
-                "etherfi node contract's balance is above 8 ETH. You should exit the node."
-            );
-            require(
-                IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE || IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN,
-                "you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN."
-            );
-
-            // 'beaconBalance == 32 ether' means there is no accrued staking rewards and no slashing penalties  
-            (payouts[0], payouts[1], payouts[2], payouts[3])
-                = getRewardsPayouts(_validatorId, 32 ether);
-
-            IEtherFiNode(etherfiNode).moveRewardsToManager(payouts[0] + payouts[1] + payouts[2] + payouts[3]);
-
-            bool sent;
-            tnftHolder = tnft.ownerOf(_validatorId);
-            bnftHolder = bnft.ownerOf(_validatorId);
-            if (tnftHolder == bnftHolder) {
-                (sent, ) = payable(tnftHolder).call{value: payouts[1] + payouts[2]}("");
-                if (!sent) totalTreasuryAmount += payouts[1] + payouts[2];
-            } else {
-                (sent, ) = payable(tnftHolder).call{value: payouts[1]}("");
-                if (!sent) totalTreasuryAmount += payouts[1];
-                (sent, ) = payable(bnftHolder).call{value: payouts[2]}("");
-                if (!sent) totalTreasuryAmount += payouts[2];
-            }
-            totalOperatorAmount += payouts[0];
-            totalTreasuryAmount += payouts[3];
-        }
-        (bool sent, ) = payable(_operator).call{value: totalOperatorAmount}("");
-        if (!sent) totalTreasuryAmount += totalOperatorAmount;
-        (sent, ) = payable(treasuryContract).call{value: totalTreasuryAmount}("");
-        require(sent, "Failed to send Ether");
     }
 
     error MustClaimRestakedWithdrawals();
@@ -390,10 +318,13 @@ contract EtherFiNodesManager is
         return createdSafes;
     }
 
+    error AlreadyInstalled();
+    error NotInstalled();
+
     /// @notice Registers the validator ID for the EtherFiNode contract
     /// @param _validatorId ID of the validator associated to the node
     function registerEtherFiNode(uint256 _validatorId, bool _enableRestaking) external onlyStakingManagerContract returns (address) {
-        require(etherfiNodeAddress[_validatorId] == address(0), "already installed");
+        if(etherfiNodeAddress[_validatorId] != address(0)) revert AlreadyInstalled();
 
         address withdrawalSafeAddress;
 
@@ -416,7 +347,7 @@ contract EtherFiNodesManager is
     /// @param _validatorId ID of the validator associated
     function unregisterEtherFiNode(uint256 _validatorId) external onlyStakingManagerContract {
         address safeAddress = etherfiNodeAddress[_validatorId];
-        require(safeAddress != address(0), "not installed");
+        if(safeAddress == address(0)) revert NotInstalled();
 
         // recycle the node
         unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId]);
@@ -436,27 +367,12 @@ contract EtherFiNodesManager is
     /// @param _tnft the split going to the tnft holder
     /// @param _bnft the split going to the bnft holder
     function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft)
-        public onlyAdmin amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft)
+        public onlyAdmin
     {
         stakingRewardsSplit.treasury = _treasury;
         stakingRewardsSplit.nodeOperator = _nodeOperator;
         stakingRewardsSplit.tnft = _tnft;
         stakingRewardsSplit.bnft = _bnft;
-    }
-
-    /// @notice Sets the protocol rewards split
-    /// @notice Splits must add up to the SCALE of 1_000_000
-    /// @param _treasury the split going to the treasury
-    /// @param _nodeOperator the split going to the nodeOperator
-    /// @param _tnft the split going to the tnft holder
-    /// @param _bnft the split going to the bnft holder
-    function setProtocolRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft)
-        public onlyAdmin amountsEqualScale(_treasury, _nodeOperator, _tnft, _bnft)
-    {
-        protocolRewardsSplit.treasury = _treasury;
-        protocolRewardsSplit.nodeOperator = _nodeOperator;
-        protocolRewardsSplit.tnft = _tnft;
-        protocolRewardsSplit.bnft = _bnft;
     }
 
     /// @notice Sets the Non Exit Penalty Principal amount
@@ -465,10 +381,12 @@ contract EtherFiNodesManager is
         nonExitPenaltyPrincipal = _nonExitPenaltyPrincipal;
     }
 
+    error InvalidPenaltyRate();
+
     /// @notice Sets the Non Exit Penalty Daily Rate amount
     /// @param _nonExitPenaltyDailyRate the new non exit daily rate
     function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) public onlyAdmin {
-        require(_nonExitPenaltyDailyRate <= 100, "Invalid penalty rate");
+        if(_nonExitPenaltyDailyRate > 100) revert InvalidPenaltyRate();
         nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
 
@@ -746,11 +664,6 @@ contract EtherFiNodesManager is
 
     modifier onlyStakingManagerContract() {
         require(msg.sender == stakingManagerContract, "Only staking manager contract function");
-        _;
-    }
-
-    modifier amountsEqualScale(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft) {
-        require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "Amounts not equal to 1000000");
         _;
     }
 

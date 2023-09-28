@@ -240,8 +240,7 @@ contract TestSetup is Test {
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TNFTInstance),
-            address(BNFTInstance),
-            address(protocolRevenueManagerInstance)
+            address(BNFTInstance)
         );
         managerInstance.updateAdmin(alice, true);
         managerInstance.setEigenPodMananger(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
