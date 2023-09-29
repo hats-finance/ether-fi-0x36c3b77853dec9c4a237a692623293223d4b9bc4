@@ -1281,7 +1281,7 @@ contract EtherFiNodeTest is TestSetup {
         exitTimestamps[0] = uint32(block.timestamp);
 
         // T-NFT holder sends the exit request after the node is marked EXITED
-        vm.expectRevert("validator node is not live");
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotLive.selector);
         managerInstance.sendExitRequest(validatorIds[0]);
     }
 
