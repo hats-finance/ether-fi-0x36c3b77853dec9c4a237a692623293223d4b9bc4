@@ -1244,4 +1244,32 @@ contract MembershipManagerTest is TestSetup {
         assertEq(withdrawRequestNFTInstance.getRequest(reqId1).feeGwei, uint32(burnFee / 1 gwei));
         assertEq(withdrawRequestNFTInstance.getRequest(reqId2).amountOfEEth, 1 ether);
     }
+
+    function test_unwrap_fan_for_eeth() public {
+        vm.startPrank(alice);
+
+        // Alice owns 1 ETH
+        vm.deal(alice, 1 ether);
+
+        assertEq(alice.balance, 1 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+
+        // Alice mints an NFT with 1 ETH
+        uint256 aliceToken = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0 ether);
+
+        assertEq(alice.balance, 0 ether);
+        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+
+        // Alice unwraps the NFT to eETH
+        membershipManagerV1Instance.unwrapForEEthAndBurn(aliceToken);
+
+        assertEq(alice.balance, 0 ether);
+        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+    }
 }
