@@ -5,4 +5,4 @@ murky/=lib/murky/src/
 @openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/
 @uniswap/=lib/
 @eigenlayer/=lib/eigenlayer-contracts/src/
-@gnosissafe/contracts/=lib/safe-contracts/contracts/
+@gnosissafe/=lib/safe-contracts/
