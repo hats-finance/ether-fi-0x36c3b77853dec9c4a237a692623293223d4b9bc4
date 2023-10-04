@@ -80,7 +80,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetStakingRewardsSplit() public {
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Not admin");
         vm.prank(owner);
         managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
 
@@ -101,7 +101,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetNonExitPenaltyPrincipal() public {
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Not admin");
         vm.prank(owner);
         managerInstance.setNonExitPenaltyPrincipal(2 ether);
 
@@ -114,7 +114,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetNonExitPenaltyDailyRate() public {
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Not admin");
         vm.prank(owner);
         managerInstance.setNonExitPenaltyDailyRate(2 ether);
 
@@ -124,19 +124,19 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetEtherFiNodePhaseRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only staking manager contract function");
+        vm.expectRevert("Not staking manager");
         vm.prank(owner);
         managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.CANCELLED);
     }
 
     function test_setEtherFiNodeIpfsHashForEncryptedValidatorKeyRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only staking manager contract function");
+        vm.expectRevert("Not staking manager");
         vm.prank(owner);
         managerInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(bidId[0], "_ipfsHash");
     }
 
     function test_RegisterEtherFiNodeRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only staking manager contract function");
+        vm.expectRevert("Not staking manager");
         vm.prank(owner);
         managerInstance.registerEtherFiNode(bidId[0], false);
     }
@@ -149,7 +149,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_UnregisterEtherFiNodeRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only staking manager contract function");
+        vm.expectRevert("Not staking manager");
         vm.prank(owner);
         managerInstance.unregisterEtherFiNode(bidId[0]);
     }

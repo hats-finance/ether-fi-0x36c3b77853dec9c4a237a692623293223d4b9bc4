@@ -443,7 +443,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // shoud not be allowed to partial withdraw since node is exited
         // In this case it fails because of the balance check right before the state check
-        vm.expectRevert("etherfi node contract's balance is above 8 ETH. You should exit the node.");
+        vm.expectRevert("Balance > 8 ETH. Exit the node.");
         managerInstance.partialWithdraw(validatorId);
 
         // This should succeed even though there are still some unclaimed withdrawals
@@ -602,7 +602,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         IEtherFiNode(etherFiNode).markExited(1);
 
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Not admin");
         vm.prank(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
@@ -701,7 +701,7 @@ contract EtherFiNodeTest is TestSetup {
 
         vm.deal(etherfiNode, 8.0 ether);
         vm.expectRevert(
-            "etherfi node contract's balance is above 8 ETH. You should exit the node."
+            "Balance > 8 ETH. Exit the node."
         );
         managerInstance.partialWithdraw(bidId[0]);
     }
@@ -712,7 +712,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(etherfiNode, 4 ether);
 
         vm.expectRevert(
-            "Caller is not the admin"
+            "Not admin"
         );
         vm.prank(owner);
         managerInstance.markBeingSlashed(bidId);
@@ -720,7 +720,7 @@ contract EtherFiNodeTest is TestSetup {
         hoax(alice);
         managerInstance.markBeingSlashed(bidId);
         vm.expectRevert(
-            "you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN."
+            "Must be LIVE or FULLY_WITHDRAWN."
         );
         managerInstance.partialWithdraw(bidId[0]);
     }
@@ -984,7 +984,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256 bnftStakerBalance = address(staker).balance;
 
         hoax(owner);
-        vm.expectRevert("you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN.");
+        vm.expectRevert("Must be LIVE or FULLY_WITHDRAWN.");
         managerInstance.partialWithdraw(validatorIds[0]);
     }
 
