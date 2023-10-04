@@ -38,13 +38,17 @@ import "../src/EtherFiOracle.sol";
 import "../src/EtherFiAdmin.sol";
 
 import "@gnosissafe/contracts/GnosisSafeL2.sol";
+import "@gnosissafe/contracts/proxies/GnosisSafeProxyFactory.sol";
+import "@gnosissafe/contracts/proxies/GnosisSafeProxy.sol";
 
 
 contract TestSetup is Test {
     uint256 public constant kwei = 10 ** 3;
     uint256 public slippageLimit = 50;
 
-    GnosisSafeL2 public gnosisSafe1;
+    GnosisSafeProxyFactory public gnosisProxyFactory;
+    GnosisSafeL2 public gnosisSafeSingleton;
+    GnosisSafeProxy public gnosisSafeProxy;
 
     TestERC20 public rETH;
     TestERC20 public wstETH;
@@ -200,7 +204,9 @@ contract TestSetup is Test {
     function setUpTests() internal {
         vm.startPrank(owner);
 
-        gnosisSafe1 = new GnosisSafeL2();
+        gnosisSafeSingleton = new GnosisSafeL2();
+        gnosisProxyFactory = new GnosisSafeProxyFactory();
+        gnosisSafeProxy = gnosisProxyFactory.createProxy(address(gnosisSafeSingleton), "");
 
         // Deploy Contracts and Proxies
         treasuryInstance = new Treasury();

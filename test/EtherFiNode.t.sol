@@ -670,11 +670,11 @@ contract EtherFiNodeTest is TestSetup {
 
         // Transfer the T-NFT to 'gnosisSafe1'
         hoax(staker);
-        TNFTInstance.transferFrom(staker, address(gnosisSafe1), bidId[0]);
+        TNFTInstance.transferFrom(staker, address(gnosisSafeProxy), bidId[0]);
 
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
         uint256 treasuryBalance = address(treasuryInstance).balance;
-        uint256 gnosisSafe1Balance = address(gnosisSafe1).balance;
+        uint256 gnosisSafe1Balance = address(gnosisSafeProxy).balance;
         uint256 bnftStakerBalance = address(staker).balance;
 
         // Simulate the rewards distribution from the beacon chain
@@ -696,7 +696,7 @@ contract EtherFiNodeTest is TestSetup {
             address(treasuryInstance).balance,
             treasuryBalance + (1 ether * 5 ) / 100
         );
-        assertEq(address(gnosisSafe1).balance, gnosisSafe1Balance + 0.815625000000000000 ether);
+        assertEq(address(gnosisSafeProxy).balance, gnosisSafe1Balance + 0.815625000000000000 ether);
         assertEq(address(staker).balance, bnftStakerBalance + 0.084375000000000000 ether);
 
         vm.deal(etherfiNode, 8.0 ether);

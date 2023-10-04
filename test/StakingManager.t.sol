@@ -1358,7 +1358,7 @@ contract StakingManagerTest is TestSetup {
         bidIdArray[0] = bidId[0];
         vm.stopPrank();
 
-        startHoax(address(gnosisSafe1));
+        startHoax(address(gnosisSafeProxy));
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
             false
@@ -1392,7 +1392,7 @@ contract StakingManagerTest is TestSetup {
         address staker = stakingManagerInstance.bidIdToStaker(validatorId);
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
 
-        assertEq(staker, address(gnosisSafe1));
+        assertEq(staker, address(gnosisSafeProxy));
         assertEq(stakingManagerInstance.stakeAmount(), 32 ether);
         assertEq(winningBid, bidId[0]);
         assertEq(validatorId, bidId[0]);
