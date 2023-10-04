@@ -121,10 +121,6 @@ contract EtherFiNodesManager is
             tnft: 815_625, // 90 % * 29 / 32
             bnft: 84_375 // 90 % * 3 / 32
         });
-        require(
-            stakingRewardsSplit.treasury + stakingRewardsSplit.nodeOperator + stakingRewardsSplit.tnft + stakingRewardsSplit.bnft == SCALE,
-            "Splits not equal to scale"
-        );
     }
 
     error NotTnftOwner();
@@ -195,11 +191,11 @@ contract EtherFiNodesManager is
 
         require(
             address(etherfiNode).balance < 8 ether,
-            "etherfi node contract's balance is above 8 ETH. You should exit the node."
+            "Balance > 8 ETH. Exit the node."
         );
         require(
             IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE || IEtherFiNode(etherfiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN,
-            "you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN."
+            "Must be LIVE or FULLY_WITHDRAWN."
         );
 
         // Retrieve all possible rewards: {Staking, Protocol} rewards and the vested auction fee reward
@@ -422,7 +418,6 @@ contract EtherFiNodesManager is
     /// @notice Updates the address of the admin
     /// @param _address the new address to set as admin
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
-        require(_address != address(0), "Cannot be address zero");
         admins[_address] = _isAdmin;
     }
 
@@ -572,6 +567,11 @@ contract EtherFiNodesManager is
         return bNftExitRequestTimestamp;
     }
 
+    function getStakingStartTimestamp(uint256 _validatorId) public view returns (uint32) {
+        address etherfiNode = etherfiNodeAddress[_validatorId];
+        return IEtherFiNode(etherfiNode).stakingStartTimestamp();
+    }
+
     /// @notice Fetches the claimable rewards payouts based on the accrued rewards
     // 
     /// Note that since the smart contract running in the execution layer does not know the consensus layer data
@@ -663,12 +663,12 @@ contract EtherFiNodesManager is
     //--------------------------------------------------------------------------------------
 
     modifier onlyStakingManagerContract() {
-        require(msg.sender == stakingManagerContract, "Only staking manager contract function");
+        require(msg.sender == stakingManagerContract, "Not staking manager");
         _;
     }
 
     modifier onlyAdmin() {
-        require(admins[msg.sender], "Caller is not the admin");
+        require(admins[msg.sender], "Not admin");
         _;
     }
 }
