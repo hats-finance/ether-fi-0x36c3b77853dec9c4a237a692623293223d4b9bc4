@@ -36,7 +36,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     int32 public acceptableRebaseAprInBps;
 
     event AdminUpdated(address _address, bool _isAdmin);
-    event AdminOperationsExecuted(address _address, bytes32 _reportHash);
+    event AdminOperationsExecuted(address indexed _address, bytes32 indexed _reportHash);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
