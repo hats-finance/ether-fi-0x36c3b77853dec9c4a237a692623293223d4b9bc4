@@ -37,9 +37,14 @@ import "../src/MembershipManagerV0.sol";
 import "../src/EtherFiOracle.sol";
 import "../src/EtherFiAdmin.sol";
 
+import "@gnosissafe/contracts/GnosisSafeL2.sol";
+
+
 contract TestSetup is Test {
     uint256 public constant kwei = 10 ** 3;
     uint256 public slippageLimit = 50;
+
+    GnosisSafeL2 public gnosisSafe1;
 
     TestERC20 public rETH;
     TestERC20 public wstETH;
@@ -194,6 +199,8 @@ contract TestSetup is Test {
 
     function setUpTests() internal {
         vm.startPrank(owner);
+
+        gnosisSafe1 = new GnosisSafeL2();
 
         // Deploy Contracts and Proxies
         treasuryInstance = new Treasury();

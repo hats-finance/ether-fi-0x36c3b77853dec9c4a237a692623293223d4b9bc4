@@ -1343,4 +1343,69 @@ contract StakingManagerTest is TestSetup {
         vm.expectRevert("DepositContract: reconstructed DepositData does not match supplied deposit_data_root");
         mockDepositContractEth2.deposit{value: 32 ether}(pubkey, withdrawal_credentials, signature, deposit_data_root);
     }
+
+    function test_gnosis_spin_up_validators() public returns (uint256[] memory) {
+        vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
+
+        startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
+        uint256[] memory bidId = auctionInstance.createBid{value: 0.1 ether}(
+            1,
+            0.1 ether
+        );
+
+        uint256[] memory bidIdArray = new uint256[](1);
+        bidIdArray[0] = bidId[0];
+        vm.stopPrank();
+
+        startHoax(address(gnosisSafe1));
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
+            bidIdArray,
+            false
+        );
+
+        IStakingManager.DepositData[]
+            memory depositDataArray = new IStakingManager.DepositData[](1);
+
+        address etherFiNode = managerInstance.etherfiNodeAddress(1);
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            32 ether
+        );
+       
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
+        depositDataArray[0] = depositData;
+
+        stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), bidId, depositDataArray);
+
+        uint256 validatorId = bidId[0];
+        uint256 winningBid = bidId[0];
+        address staker = stakingManagerInstance.bidIdToStaker(validatorId);
+        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
+
+        assertEq(staker, address(gnosisSafe1));
+        assertEq(stakingManagerInstance.stakeAmount(), 32 ether);
+        assertEq(winningBid, bidId[0]);
+        assertEq(validatorId, bidId[0]);
+
+        vm.stopPrank();
+
+        assertEq(
+            IEtherFiNode(etherfiNode).ipfsHashForEncryptedValidatorKey(),
+            depositData.ipfsHashForEncryptedValidatorKey
+        );
+        assertEq(
+            managerInstance.ipfsHashForEncryptedValidatorKey(validatorId),
+            depositData.ipfsHashForEncryptedValidatorKey
+        );
+    }
 }
