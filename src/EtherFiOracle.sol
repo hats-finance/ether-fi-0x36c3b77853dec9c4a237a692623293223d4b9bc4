@@ -203,8 +203,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
                 _report.lastFinalizedWithdrawalRequestId,
                 _report.eEthTargetAllocationWeight,
                 _report.etherFanTargetAllocationWeight,
-                _report.pendingWithdrawalAmount,
-                _report.numPendingValidatorsRequestedToExit,
+                _report.finalizedWithdrawalAmount,
                 _report.numValidatorsToSpinUp
             )
         );
