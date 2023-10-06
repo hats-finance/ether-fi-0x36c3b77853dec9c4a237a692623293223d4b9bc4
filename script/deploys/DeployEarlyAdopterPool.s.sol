@@ -14,11 +14,16 @@ contract DeployEarlyAdopterPoolScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
+        address rETH = vm.envAddress("ERC_20_R_ETH_ADDRESS");
+        address wstETH = vm.envAddress("ERC_20_WST_ETH_ADDRESS");
+        address sfrxETH = vm.envAddress("ERC_20_SFRX_ETH_ADDRESS");
+        address cbETH = vm.envAddress("ERC_20_CB_ETH_ADDRESS");
+
         EarlyAdopterPool earlyAdopterPool = new EarlyAdopterPool(
-            0xae78736Cd615f374D3085123A210448E74Fc6393,
-            0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
-            0xac3E018457B222d93114458476f3E3416Abbe38F,
-            0xBe9895146f7AF43049ca1c1AE358B0541Ea49704
+            rETH,
+            wstETH,
+            sfrxETH,
+            cbETH
         );
 
         vm.stopBroadcast();
