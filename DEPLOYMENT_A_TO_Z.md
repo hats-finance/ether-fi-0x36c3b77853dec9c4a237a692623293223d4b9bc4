@@ -30,10 +30,29 @@ Update docs in https://www.notion.so/Contract-Addresses-087bd1d374f14cd7a6a3de52
 
 Record commit hash used: (66401b00)
 
-Step 2 - 
-Deploy Phase 1
+## Step 2 - Deploy Phase 1
 
-Step 3 -
-Deploy Phase 1.5
+Reference docs:
 
-May-19-2023
+https://www.notion.so/Mainnet-Deploy-Script-Tuesday-May-2-2023-5d3f44ea1dd84fe5a6d65b98954593e4
+
+### Setup .env for deploy
+
+```
+GOERLI_RPC_URL=https://eth-goerli.g.alchemy.com/v2/Gj8oS16rKivma6TYb_xZFiLY-EJJZ0jn
+PRIVATE_KEY=36b134b83ac3fb9391e629e9f36c413295aae42840d663fae66f6bfb9b9f7a0a
+ETHERSCAN_API_KEY=9BN8Q9Q875QI9VNH3NA14WGTD9D47AY6BH
+INITIAL_HASH=0x0ab8550a37ce88b186c3e9887c7c9914b413f7330155bf4086c8035847c6c6b4
+```
+
+### Run script
+
+```
+make deploy-goerli-suite
+```
+
+
+## Step 3 - Deploy Phase 1.5
+
+Take Step from below and extrapolate
+Follow https://www.notion.so/Go-Live-Plan-01cbc21671884f93a8aa3233fa82953a#d1567ba327fa4f679b1a6728d2e1ef8b
