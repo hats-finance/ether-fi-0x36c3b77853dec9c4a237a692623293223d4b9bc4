@@ -13,14 +13,12 @@ contract DeployPatchV3 is Script {
     }
 
     UpgradeAddresses upgradeAddressesStruct;
-
+    StakingManager public stakingManagerV3Implementation;
+    StakingManager public stakingManagerInstance;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address stakingManagerProxyAddress = vm.envAddress("STAKING_MANAGER_PROXY_ADDRESS");
-
-        //mainnet
-        require(stakingManagerProxyAddress == 0x25e821b7197B146F7713C3b89B6A4D83516B912d, "stakingManagerProxyAddress incorrect see .env");
 
         vm.startBroadcast(deployerPrivateKey);
 

@@ -55,13 +55,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "Id",
+        "name": "id",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "bytes",
-        "name": "ScoreType",
+        "name": "scoreType",
         "type": "bytes"
       }
     ],
