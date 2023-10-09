@@ -347,6 +347,11 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(numValidatorsEeth, 3);
         assertEq(numValidatorsEtherFan, 1);
 
+        // SD-1 "Anyone can call StakingManager.batchCancelDepositAsBnftHolder to cancel a deposit"
+        vm.prank(bob);
+        vm.expectRevert("Incorrect Caller");
+        stakingManagerInstance.batchCancelDepositAsBnftHolder(newValidators, alice);
+
         vm.prank(alice);
         liquidityPoolInstance.batchCancelDeposit(newValidators);
         
@@ -1577,4 +1582,5 @@ contract LiquidityPoolTest is TestSetup {
         vm.expectRevert("Already deposited");
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
     }
+
 }
