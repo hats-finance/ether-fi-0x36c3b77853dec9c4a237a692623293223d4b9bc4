@@ -128,10 +128,11 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         require(_report.refBlockTo < block.number, "Report is for wrong blockTo");
 
         // If two epochs in a row are justified, the current_epoch - 2 is considered finalized
+        // Put 1 epoch more as a safe buffer
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 reportEpoch = (_report.refSlotTo / SLOTS_PER_EPOCH);
-        require(reportEpoch + 2 < currEpoch, "Report Epoch is not finalized yet");
+        require(reportEpoch + 2  + 1 <= currEpoch, "Report Epoch is not finalized yet");
     }
 
     function isConsensusReached(bytes32 _hash) public view returns (bool) {
@@ -142,7 +143,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 slotEpoch = (_slot / SLOTS_PER_EPOCH);
-        return slotEpoch + 2 < currEpoch;
+        return slotEpoch + 2 + 1 <= currEpoch;
     }
 
     function _publishReport(OracleReport calldata _report, bytes32 _hash) internal {
