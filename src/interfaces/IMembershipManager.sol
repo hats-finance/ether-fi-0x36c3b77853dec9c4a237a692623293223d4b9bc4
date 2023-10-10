@@ -84,6 +84,5 @@ interface IMembershipManager {
     function setMinDepositWei(uint56 _value) external;
     function setMaxDepositTopUpPercent(uint8 _percent) external;
     function setTopUpCooltimePeriod(uint32 _newWaitTime) external;
-    function withdrawFees(uint256 _amount, address _recipient) external;
     function updateAdmin(address _address, bool _isAdmin) external;
 }
