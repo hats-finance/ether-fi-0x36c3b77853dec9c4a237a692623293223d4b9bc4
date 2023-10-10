@@ -265,10 +265,7 @@ contract EtherFiNodesManagerTest is TestSetup {
 
     function test_RegisterEtherFiNodeReusesAvailableSafes() public {
         vm.prank(alice);
-        nodeOperatorManagerInstance.registerNodeOperator(
-            _ipfsHash,
-            5
-        );
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
 
