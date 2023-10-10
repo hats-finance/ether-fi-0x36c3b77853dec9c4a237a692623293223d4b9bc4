@@ -66,10 +66,11 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
     }
 
     function submitReport(OracleReport calldata _report) external whenNotPaused returns (bool) {
+        bytes32 reportHash = generateReportHash(_report);
+        require(!consensusStates[reportHash].consensusReached, "Consensus already reached");
         require(shouldSubmitReport(msg.sender), "You don't need to submit a report");
         verifyReport(_report);
 
-        bytes32 reportHash = generateReportHash(_report);
 
         // update the member state
         CommitteeMemberState storage memberState = committeeMemberStates[msg.sender];
@@ -78,7 +79,6 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
 
         // update the consensus state
         ConsensusState storage consenState = consensusStates[reportHash];
-        consenState.support++;
 
         emit ReportSubmitted(
             _report.consensusVersion,
@@ -91,7 +91,8 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
             );
 
         // if the consensus reaches
-        bool consensusReached = (consenState.support == quorumSize);
+        consenState.support++;
+        bool consensusReached = (consenState.support >= quorumSize);
         if (consensusReached) {
             consenState.consensusReached = true;
             _publishReport(_report, reportHash);
