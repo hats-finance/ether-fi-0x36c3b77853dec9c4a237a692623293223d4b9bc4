@@ -242,6 +242,8 @@ contract EtherFiNodesManager is
         if (IEtherFiNode(etherfiNode).totalBalanceInExecutionLayer() == 0) {
             unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId]);
             IEtherFiNode(etherfiNode).resetWithdrawalSafe();
+
+            delete etherfiNodeAddress[_validatorId];
         }
     }
 
