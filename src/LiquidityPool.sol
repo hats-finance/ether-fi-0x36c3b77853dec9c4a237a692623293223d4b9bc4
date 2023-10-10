@@ -170,7 +170,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @return uint256 requestId of the WithdrawRequestNFT
     function requestWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
         uint256 share = sharesForAmount(amount);
-        if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
+        if (amount > type(uint96).max || amount == 0 || share == 0) revert InvalidAmount();
 
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient, 0);
         // transfer shares to WithdrawRequestNFT contract from this contract
@@ -200,7 +200,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @return uint256 requestId of the WithdrawRequestNFT
     function requestMembershipNFTWithdraw(address recipient, uint256 amount, uint256 fee) public onlyMembershipManager NonZeroAddress(recipient) returns (uint256) {
         uint256 share = sharesForAmount(amount);
-        if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
+        if (amount > type(uint96).max || amount == 0 || share == 0) revert InvalidAmount();
 
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient, fee);
         // transfer shares to WithdrawRequestNFT contract
