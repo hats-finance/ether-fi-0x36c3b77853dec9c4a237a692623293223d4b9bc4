@@ -619,7 +619,7 @@ contract TestSetup is Test {
         membershipManagerV1Instance = MembershipManager(payable(membershipManagerProxy));
         assertEq(membershipManagerV1Instance.getImplementation(), address(membershipManagerV1Implementation));
 
-        membershipManagerV1Instance.initializeOnUpgrade();
+        membershipManagerV1Instance.initializeOnUpgrade(address(etherFiAdminInstance));
         vm.stopPrank();
     }
 
