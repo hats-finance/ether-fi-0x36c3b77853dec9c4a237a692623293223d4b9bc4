@@ -1599,6 +1599,7 @@ contract LiquidityPoolTest is TestSetup {
 
         assertEq(liquidityPoolInstance.totalValueOutOfLp(), 0);
         assertEq(liquidityPoolInstance.totalValueInLp(), 0);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0);
 
         startHoax(bob);
         liquidityPoolInstance.deposit{value: 120 ether}();
@@ -1607,6 +1608,7 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(address(liquidityPoolInstance).balance, 120 ether);
         assertEq(liquidityPoolInstance.totalValueOutOfLp(), 0);
         assertEq(liquidityPoolInstance.totalValueInLp(), 120 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 120 ether);
 
         uint256 aliceBalance = address(alice).balance;
         bytes32[] memory proof = getWhitelistMerkleProof(9);
@@ -1625,5 +1627,6 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(liquidityPoolInstance.numPendingDeposits(), 2);
         assertEq(liquidityPoolInstance.totalValueOutOfLp(), 60 ether);
         assertEq(liquidityPoolInstance.totalValueInLp(), 60 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 120 ether);
     }
 }
