@@ -5,7 +5,6 @@ import "../MembershipManager.sol";
 import "../interfaces/IMembershipManager.sol";
 import "../LiquidityPool.sol";
 import "../interfaces/ILiquidityPool.sol";
-import "forge-std/console2.sol";
 
 library globalIndexLibrary {
     
