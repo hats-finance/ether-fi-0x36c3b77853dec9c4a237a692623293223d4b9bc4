@@ -226,7 +226,7 @@ contract EtherFiNodesManager is
 
         if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
             // sweep rewards from eigenPod
-            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(5);
+            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithrawals);
             // require that all pending withdrawals have cleared
             if (IEtherFiNode(etherfiNode).hasOutstandingEigenLayerWithdrawals()) revert MustClaimRestakedWithdrawals();
         }
