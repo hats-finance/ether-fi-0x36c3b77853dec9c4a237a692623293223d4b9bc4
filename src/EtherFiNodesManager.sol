@@ -240,8 +240,7 @@ contract EtherFiNodesManager is
 
         // automatically recycle this node if entire execution layer balance is withdrawn
         if (IEtherFiNode(etherfiNode).totalBalanceInExecutionLayer() == 0) {
-            unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId]);
-            IEtherFiNode(etherfiNode).resetWithdrawalSafe();
+            _recycleEtherFiNode(_validatorId);
         }
     }
 
@@ -278,9 +277,8 @@ contract EtherFiNodesManager is
             }
 
             // reset safe and add to unused stack for later re-use
-            node.resetWithdrawalSafe();
-            unusedWithdrawalSafes.push(address(node));
-            etherfiNodeAddress[_validatorIds[i]] = address(0);
+            _recycleEtherFiNode(_validatorIds[i]);
+
             emit WithdrawalSafeReset(_validatorIds[i], address(node));
         }
     }
@@ -342,14 +340,7 @@ contract EtherFiNodesManager is
     /// @notice Unset the EtherFiNode contract for the validator ID
     /// @param _validatorId ID of the validator associated
     function unregisterEtherFiNode(uint256 _validatorId) external onlyStakingManagerContract {
-        address safeAddress = etherfiNodeAddress[_validatorId];
-        if(safeAddress == address(0)) revert NotInstalled();
-
-        // recycle the node
-        unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId]);
-        IEtherFiNode(safeAddress).resetWithdrawalSafe();
-
-        etherfiNodeAddress[_validatorId] = address(0);
+        _recycleEtherFiNode(_validatorId);
     }
 
     //--------------------------------------------------------------------------------------
@@ -468,6 +459,16 @@ contract EtherFiNodesManager is
         _distributePayouts(_validatorId, 0, returnAmount, 0, 0);
 
         emit NodeEvicted(_validatorId);
+    }
+
+    function _recycleEtherFiNode(uint256 _validatorId) internal {
+        address safeAddress = etherfiNodeAddress[_validatorId];
+        if(safeAddress == address(0)) revert NotInstalled();
+
+        // recycle the node
+        IEtherFiNode(safeAddress).resetWithdrawalSafe();
+        unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId]);
+        delete etherfiNodeAddress[_validatorId];
     }
 
     function _distributePayouts(uint256 _validatorId, uint256 _toTreasury, uint256 _toOperator, uint256 _toTnft, uint256 _toBnft) internal {
