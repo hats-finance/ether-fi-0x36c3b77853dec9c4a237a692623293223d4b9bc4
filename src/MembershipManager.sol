@@ -280,7 +280,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     function _distributeStakingRewardsV1(uint256 _ethRewardsPerEEthShareBeforeRebase, uint256 _ethRewardsPerEEthShareAfterRebase) internal {
-        uint128[] memory vaultTotalPooledEEthShares = globalIndexLibrary.calculateVaultEEthShares(address(this), address(liquidityPool), _ethRewardsPerEEthShareBeforeRebase, _ethRewardsPerEEthShareAfterRebase);
+        uint128[] memory vaultTotalPooledEEthShares = globalIndexLibrary.calculateVaultEEthShares(this, liquidityPool, _ethRewardsPerEEthShareBeforeRebase, _ethRewardsPerEEthShareAfterRebase);
         for (uint256 i = 0; i < tierDeposits.length; i++) {
             tierVaults[i].totalPooledEEthShares = vaultTotalPooledEEthShares[i];
         }

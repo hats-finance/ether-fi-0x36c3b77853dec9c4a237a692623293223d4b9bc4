@@ -56,6 +56,7 @@ interface IMembershipManager {
     function tokenData(uint256) external view returns (uint96, uint40, uint40, uint32, uint32, uint8, uint8);
     function tierDeposits(uint256) external view returns (uint128, uint128);
     function tierData(uint256) external view returns (uint96, uint40, uint24, uint96);
+    function tierVaults(uint256) external view returns (uint128, uint128);
 
     function rewardsGlobalIndex(uint8 _tier) external view returns (uint256);
     function allTimeHighDepositAmount(uint256 _tokenId) external view returns (uint256);
