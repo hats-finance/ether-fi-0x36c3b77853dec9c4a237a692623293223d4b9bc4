@@ -148,48 +148,70 @@ library globalIndexLibrary {
     }
     */
 
+    struct cumulativeTierData {
+        uint256 sumTierRewards;
+        uint256 sumWeightedTierRewards;
+        uint256[] weightedRewards ;
+        uint256[] pooledEEthShares;
+    }
+
     //function daveCalculateVaultEEthShares(MembershipManager _membershipManager, LiquidityPool _liquidityPool, uint256 _ethRewardsPerEEthShareBeforeRebase, uint256 _ethRewardsPerEEthShareAfterRebase) public view returns (uint128[] memory) {
     //function calculateVaultEEthShares(MembershipManager membershipManager, LiquidityPool liquidityPool, uint256 _ethRewardsPerEEthShareBeforeRebase, uint256 _ethRewardsPerEEthShareAfterRebase) public view returns (uint128[] memory) {
     function calculateVaultEEthShares(IMembershipManager _membershipManager, ILiquidityPool _liquidityPool, uint256 _ethRewardsPerEEthShareBeforeRebase, uint256 _ethRewardsPerEEthShareAfterRebase) public view returns (uint128[] memory) {
-//        MembershipManager _membershipManager = MembershipManager(payable(membershipManager));
- //       LiquidityPool _liquidityPool = LiquidityPool(payable(liquidityPool));
 
-        int256 delta = int256(_ethRewardsPerEEthShareAfterRebase) - int256(_ethRewardsPerEEthShareBeforeRebase);
+        bool isLoss = _ethRewardsPerEEthShareAfterRebase < _ethRewardsPerEEthShareBeforeRebase;
+        uint256 delta = isLoss ? (_ethRewardsPerEEthShareBeforeRebase - _ethRewardsPerEEthShareAfterRebase) : (_ethRewardsPerEEthShareAfterRebase - _ethRewardsPerEEthShareBeforeRebase);
+        //uint256 delta = int256(_ethRewardsPerEEthShareAfterRebase) - int256(_ethRewardsPerEEthShareBeforeRebase);
         uint256 numberOfTiers = _membershipManager.numberOfTiers();
 
+        /*
         // sum rewards and weights
-        int256 sumTierRewards = 0;
-        int256 sumWeightedTierRewards = 0;
-        int256[] memory weightedTierRewards = new int256[](numberOfTiers);
-        uint256[] memory pooledEEthShares = new uint256[](numberOfTiers);
+        cumulativeTierData memory rewardData = cumulativeTierData({
+            sumTierRewards: 0,
+            sumWeightedTierRewards: 0,
+            weightedRewards: new uint256[](numberOfTiers),
+            pooledEEthShares: new uint256[](numberOfTiers),
+        });
+        */
+
+
+        uint256 sumTierRewards = 0;
+        uint256 sumWeightedTierRewards = 0;
+        uint256[] memory weightedTierRewards = new uint256[](numberOfTiers);
         for (uint256 i = 0; i < numberOfTiers; i++) {
             (uint128 totalPooledEEthShares,) = _membershipManager.tierVaults(i);
             (,, uint24 tierWeight,) = _membershipManager.tierData(i);
 
-            int256 tierReward = (delta) * int256(uint256(totalPooledEEthShares)) / 1 ether;
-            weightedTierRewards[i] = tierReward * int256(uint256(tierWeight));
+            uint256 tierReward = delta * totalPooledEEthShares / 1 ether;
 
             sumTierRewards += tierReward;
-            sumWeightedTierRewards += tierReward * int256(uint256(tierWeight));
+            sumWeightedTierRewards += tierReward * uint256(tierWeight);
+            weightedTierRewards[i] = tierReward * uint256(tierWeight);
+            /*
+            rewardData.sumTierRewards += tierReward;
+            rewardData.sumWeightedTierRewards += tierReward * uint256(tierWeight);
+            rewardData.weightedTierRewards[i] = tierReward * uint256(tierWeight);
+            */
         }
 
-        uint128[] memory vaultTotalPooledEEthShares = new uint128[](numberOfTiers);
+        uint128[] memory vaultEEthShares = new uint128[](numberOfTiers);
         for (uint256 i = 0; i < numberOfTiers; i++) {
             (uint128 totalPooledEEthShares,) = _membershipManager.tierVaults(i);
 
-            uint256 prevEthAmount = _ethRewardsPerEEthShareBeforeRebase * totalPooledEEthShares / 1 ether;
-            int256 rescaledTierRewards = 0;
+            uint256 rescaledTierRewards = 0;
             if (sumWeightedTierRewards > 0) {
                 rescaledTierRewards = weightedTierRewards[i] * sumTierRewards / sumWeightedTierRewards;
             }
-            console2.log("RescaledRewards:");
-            console2.logInt(rescaledTierRewards);
-            int256 newEthAmount = int256(prevEthAmount) + rescaledTierRewards;
-
-            vaultTotalPooledEEthShares[i] = uint128(_liquidityPool.sharesForAmount(prevEthAmount + uint256(rescaledTierRewards)));
+           // console2.log("RescaledRewards:");
+           // console2.logInt(rescaledTierRewards);
+            uint256 prevEthAmount = _ethRewardsPerEEthShareBeforeRebase * totalPooledEEthShares / 1 ether;
+            if (isLoss) {
+                vaultEEthShares[i] = uint128(_liquidityPool.sharesForAmount(prevEthAmount - rescaledTierRewards));
+            } else {
+                vaultEEthShares[i] = uint128(_liquidityPool.sharesForAmount(prevEthAmount + rescaledTierRewards));
+            }
         }
-        return vaultTotalPooledEEthShares;
+        return vaultEEthShares;
 
     }
-
 }
