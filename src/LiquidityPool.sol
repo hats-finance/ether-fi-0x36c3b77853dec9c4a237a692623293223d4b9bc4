@@ -438,21 +438,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         emit Rebase(getTotalPooledEther(), eETH.totalShares());
     }
 
-    /// @notice swap T-NFTs for ETH
-    /// @param _tokenIds the token Ids of T-NFTs
-    function swapTNftForEth(uint256[] calldata _tokenIds) external onlyOwner {
-        require(totalValueInLp >= 30 ether * _tokenIds.length, "not enough ETH in LP");
-        uint128 amount = uint128(30 ether * _tokenIds.length);
-        totalValueOutOfLp += amount;
-        totalValueInLp -= amount;
-        address owner = owner();
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
-            tNft.transferFrom(owner, address(this), _tokenIds[i]);
-        }
-        (bool sent, ) = address(owner).call{value: amount}("");
-        require(sent, "send fail");
-    }
-
     /// @notice sets the contract address for eETH
     /// @param _eETH address of eETH contract
     function setTokenAddress(address _eETH) external onlyOwner {
