@@ -157,9 +157,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "send fail");
 
-        SourceOfFunds source = (msg.sender == address(membershipManager)) ? SourceOfFunds.ETHER_FAN : SourceOfFunds.EETH;
-        emit Withdraw(msg.sender, _recipient, _amount, source);
-
         return share;
     }
 
@@ -170,11 +167,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @return uint256 requestId of the WithdrawRequestNFT
     function requestWithdraw(address recipient, uint256 amount) public NonZeroAddress(recipient) returns (uint256) {
         uint256 share = sharesForAmount(amount);
-        if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
+        if (amount > type(uint96).max || amount == 0 || share == 0) revert InvalidAmount();
 
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient, 0);
         // transfer shares to WithdrawRequestNFT contract from this contract
         eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
+
+        emit Withdraw(msg.sender, recipient, amount, SourceOfFunds.EETH);
+
         return requestId;
     }
 
@@ -200,11 +200,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @return uint256 requestId of the WithdrawRequestNFT
     function requestMembershipNFTWithdraw(address recipient, uint256 amount, uint256 fee) public onlyMembershipManager NonZeroAddress(recipient) returns (uint256) {
         uint256 share = sharesForAmount(amount);
-        if (amount > type(uint128).max || amount == 0 || share == 0) revert InvalidAmount();
+        if (amount > type(uint96).max || amount == 0 || share == 0) revert InvalidAmount();
 
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient, fee);
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
+
+        emit Withdraw(msg.sender, recipient, amount, SourceOfFunds.ETHER_FAN);
+
         return requestId;
     } 
 
@@ -437,21 +440,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueOutOfLp = uint128(int128(totalValueOutOfLp) + _accruedRewards);
 
         emit Rebase(getTotalPooledEther(), eETH.totalShares());
-    }
-
-    /// @notice swap T-NFTs for ETH
-    /// @param _tokenIds the token Ids of T-NFTs
-    function swapTNftForEth(uint256[] calldata _tokenIds) external onlyOwner {
-        require(totalValueInLp >= 30 ether * _tokenIds.length, "not enough ETH in LP");
-        uint128 amount = uint128(30 ether * _tokenIds.length);
-        totalValueOutOfLp += amount;
-        totalValueInLp -= amount;
-        address owner = owner();
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
-            tNft.transferFrom(owner, address(this), _tokenIds[i]);
-        }
-        (bool sent, ) = address(owner).call{value: amount}("");
-        require(sent, "send fail");
     }
 
     /// @notice sets the contract address for eETH

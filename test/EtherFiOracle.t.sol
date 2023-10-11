@@ -414,4 +414,41 @@ contract EtherFiOracleTest is TestSetup {
         _executeAdminTasks(report, "EtherFiAdmin: TVL changed too much");
     }
 
+    function test_SD_5() public {
+        vm.prank(owner);
+        etherFiOracleInstance.addCommitteeMember(chad);
+
+        vm.prank(owner);
+        etherFiOracleInstance.setQuorumSize(5);
+        
+        _moveClock(1024 + 2 * slotsPerEpoch);
+        
+        // alice submits the period 2 report
+        vm.prank(alice);
+        etherFiOracleInstance.submitReport(reportAtPeriod2A);
+           
+        // check the consensus state
+        bytes32 reportHash = etherFiOracleInstance.generateReportHash(reportAtPeriod2A);
+        (uint32 support, bool consensusReached) = etherFiOracleInstance.consensusStates(reportHash);
+        assertEq(support, 1);
+        assertEq(consensusReached, false);
+
+        vm.prank(owner);
+        etherFiOracleInstance.setQuorumSize(1);
+
+        // bob submits the period 2 report
+        vm.prank(bob);
+        etherFiOracleInstance.submitReport(reportAtPeriod2A);
+        (support, consensusReached) = etherFiOracleInstance.consensusStates(reportHash);
+        assertEq(support, 2);
+        assertEq(consensusReached, true);
+
+        // chad submits the period 2 report
+        vm.prank(chad);
+        vm.expectRevert("Consensus already reached");
+        etherFiOracleInstance.submitReport(reportAtPeriod2A);
+        (support, consensusReached) = etherFiOracleInstance.consensusStates(reportHash);
+        assertEq(support, 2);
+        assertEq(consensusReached, true);
+    }
 }

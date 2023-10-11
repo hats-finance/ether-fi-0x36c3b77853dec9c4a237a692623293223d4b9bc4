@@ -619,7 +619,7 @@ contract TestSetup is Test {
         membershipManagerV1Instance = MembershipManager(payable(membershipManagerProxy));
         assertEq(membershipManagerV1Instance.getImplementation(), address(membershipManagerV1Implementation));
 
-        membershipManagerV1Instance.initializeOnUpgrade();
+        membershipManagerV1Instance.initializeOnUpgrade(address(etherFiAdminInstance));
         vm.stopPrank();
     }
 
@@ -707,10 +707,15 @@ contract TestSetup is Test {
         _report.refBlockFrom = blockFrom;
         _report.refBlockTo = slotTo; //
         
-        uint32 reportAtBlock = 32 * (_report.refSlotTo / 32) + 3 * 32;
-        if (block.number < reportAtBlock) { // ensure report is finalized
-            _moveClock(int256((reportAtBlock) - block.number));
+        uint32 currentSlot = etherFiOracleInstance.computeSlotAtTimestamp(block.timestamp);
+        uint32 currentEpoch = (currentSlot / 32);
+        uint32 reportEpoch = (_report.refSlotTo / 32) + 3;
+        if (currentEpoch < reportEpoch) { // ensure report is finalized
+            uint32 numSlotsToMove = 32 * (reportEpoch - currentEpoch);
+            _moveClock(int256(int32(numSlotsToMove)));
         }
+
+        etherFiOracleInstance.verifyReport(_report);
 
         vm.prank(alice);
         etherFiOracleInstance.submitReport(_report);
@@ -787,6 +792,41 @@ contract TestSetup is Test {
         (registered, index) = liquidityPoolInstance.bnftHoldersIndexes(henry);
         assertEq(registered, true);
         assertEq(index, 7);
+    }
+
+    function depositAndRegisterValidator(bool restaked) public returns (uint256) {
+        vm.deal(alice, 33 ether);
+        vm.startPrank(alice);
+
+        nodeOperatorManagerInstance.registerNodeOperator("fake_ipfs_hash", 10);
+
+        // create a new bid
+        uint256[] memory createdBids = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
+
+        // depsosit against that bid with restaking enabled
+        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether * createdBids.length}(createdBids, restaked);
+
+        // Register the validator and send deposited eth to depositContract/Beaconchain
+        // signatures are not checked but roots need to match
+        bytes32 root = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.getWithdrawalCredentials(createdBids[0]),
+            32 ether
+        );
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "validator_unit_tests"
+        });
+        IStakingManager.DepositData[] memory depositDatas = new IStakingManager.DepositData[](1);
+        depositDatas[0] = depositData;
+        stakingManagerInstance.batchRegisterValidators(zeroRoot, createdBids, depositDatas);
+
+        vm.stopPrank();
+        return createdBids[0];
     }
 
     function launch_validator() internal returns (uint256[] memory) {

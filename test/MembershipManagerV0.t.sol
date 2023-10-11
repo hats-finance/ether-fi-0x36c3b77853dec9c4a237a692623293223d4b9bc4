@@ -1136,7 +1136,7 @@ contract MembershipManagerV0Test is TestSetup {
         assertEq(membershipNftInstance.tierPointsOf(aliceToken2), 24);
 
         // another 2x by rebase
-        vm.startPrank(alice);
+        vm.startPrank(address(etherFiAdminInstance));
         membershipManagerV1Instance.rebase(int128(uint128(address(liquidityPoolInstance).balance)));
         vm.stopPrank();
         _transferTo(address(liquidityPoolInstance), address(liquidityPoolInstance).balance);
