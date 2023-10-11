@@ -201,6 +201,8 @@ contract StakingManager is
     /// @param _validatorIds validators to cancel
     /// @param _caller address of the bNFT holder who initiated the transaction. Used for verification
     function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) public whenNotPaused nonReentrant {
+        require(msg.sender == liquidityPoolContract, "Incorrect Caller");
+
         uint32 numberOfEethValidators;
         uint32 numberOfEtherFanValidators;
         for (uint256 x; x < _validatorIds.length; ++x) { 
@@ -411,7 +413,6 @@ contract StakingManager is
     /// @notice Cancels a users stake
     /// @param _validatorId the ID of the validator deposit to cancel
     function _cancelDeposit(uint256 _validatorId, address _caller) internal {
-
         require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
 
         IEtherFiNode.VALIDATOR_PHASE validatorPhase = nodesManager.phase(_validatorId);
