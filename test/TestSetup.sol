@@ -707,10 +707,15 @@ contract TestSetup is Test {
         _report.refBlockFrom = blockFrom;
         _report.refBlockTo = slotTo; //
         
-        uint32 reportAtBlock = 32 * (_report.refSlotTo / 32) + 3 * 32;
-        if (block.number < reportAtBlock) { // ensure report is finalized
-            _moveClock(int256((reportAtBlock) - block.number));
+        uint32 currentSlot = etherFiOracleInstance.computeSlotAtTimestamp(block.timestamp);
+        uint32 currentEpoch = (currentSlot / 32);
+        uint32 reportEpoch = (_report.refSlotTo / 32) + 3;
+        if (currentEpoch < reportEpoch) { // ensure report is finalized
+            uint32 numSlotsToMove = 32 * (reportEpoch - currentEpoch);
+            _moveClock(int256(int32(numSlotsToMove)));
         }
+
+        etherFiOracleInstance.verifyReport(_report);
 
         vm.prank(alice);
         etherFiOracleInstance.submitReport(_report);

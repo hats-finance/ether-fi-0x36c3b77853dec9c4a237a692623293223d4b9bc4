@@ -157,9 +157,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         (bool sent, ) = _recipient.call{value: _amount}("");
         require(sent, "send fail");
 
-        SourceOfFunds source = (msg.sender == address(membershipManager)) ? SourceOfFunds.ETHER_FAN : SourceOfFunds.EETH;
-        emit Withdraw(msg.sender, _recipient, _amount, source);
-
         return share;
     }
 
@@ -175,6 +172,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient, 0);
         // transfer shares to WithdrawRequestNFT contract from this contract
         eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
+
+        emit Withdraw(msg.sender, recipient, amount, SourceOfFunds.EETH);
+
         return requestId;
     }
 
@@ -205,6 +205,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         uint256 requestId = withdrawRequestNFT.requestWithdraw(uint96(amount), uint96(share), recipient, fee);
         // transfer shares to WithdrawRequestNFT contract
         eETH.transferFrom(msg.sender, address(withdrawRequestNFT), amount);
+
+        emit Withdraw(msg.sender, recipient, amount, SourceOfFunds.ETHER_FAN);
+
         return requestId;
     } 
 
