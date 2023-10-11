@@ -132,7 +132,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 reportEpoch = (_report.refSlotTo / SLOTS_PER_EPOCH);
-        require(reportEpoch + 2  + 1 <= currEpoch, "Report Epoch is not finalized yet");
+        require(reportEpoch + 2 < currEpoch, "Report Epoch is not finalized yet");
     }
 
     function isConsensusReached(bytes32 _hash) public view returns (bool) {
@@ -143,7 +143,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 slotEpoch = (_slot / SLOTS_PER_EPOCH);
-        return slotEpoch + 2 + 1 <= currEpoch;
+        return slotEpoch + 2 < currEpoch;
     }
 
     function _publishReport(OracleReport calldata _report, bytes32 _hash) internal {
