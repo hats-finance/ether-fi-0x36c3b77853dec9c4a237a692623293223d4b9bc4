@@ -129,6 +129,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         require(_report.refBlockTo < block.number, "Report is for wrong blockTo");
 
         // If two epochs in a row are justified, the current_epoch - 2 is considered finalized
+        // Put 1 epoch more as a safe buffer
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 reportEpoch = (_report.refSlotTo / SLOTS_PER_EPOCH);
