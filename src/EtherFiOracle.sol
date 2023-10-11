@@ -247,7 +247,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         // check if the start slot is at the beginning of the epoch
         require(_reportStartSlot > computeSlotAtTimestamp(block.timestamp), "The start slot should be in the future");
         require(_reportStartSlot > lastPublishedReportRefSlot, "The start slot should be after the last published report");
-        require(_reportStartSlot % 32 == 0, "The start slot should be at the beginning of the epoch");
+        require(_reportStartSlot % SLOTS_PER_EPOCH == 0, "The start slot should be at the beginning of the epoch");
         reportStartSlot = _reportStartSlot;
         emit ReportStartSlotUpdated(_reportStartSlot);
     }
