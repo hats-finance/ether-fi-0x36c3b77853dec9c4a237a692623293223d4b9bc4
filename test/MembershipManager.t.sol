@@ -359,7 +359,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(aliceToken), 0.5 ether);
 
         // Rebase; staking rewards 0.5 ETH into LP
-        vm.startPrank(alice);
+        vm.startPrank(address(etherFiAdminInstance));
         membershipManagerV1Instance.rebase(0.5 ether);
         vm.stopPrank();
 
@@ -391,7 +391,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(address(liquidityPoolInstance).balance, 2.5 ether);
 
         // More Staking rewards 1 ETH into LP
-        vm.startPrank(alice);
+        vm.startPrank(address(etherFiAdminInstance));
         membershipManagerV1Instance.rebase(1 ether);
         vm.stopPrank();
 
@@ -624,7 +624,7 @@ contract MembershipManagerTest is TestSetup {
         uint256 aliceToken = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0);
         vm.stopPrank();
 
-        vm.startPrank(alice);
+        vm.startPrank(address(etherFiAdminInstance));
         membershipManagerV1Instance.rebase(1 ether);
         vm.stopPrank();
 
@@ -858,7 +858,7 @@ contract MembershipManagerTest is TestSetup {
         skip(365 days);
 
         // 1 ETH is earned as a staking rewards; 2 ETH has grown to 3 ETH.
-        vm.startPrank(alice);
+        vm.startPrank(address(etherFiAdminInstance));
         membershipManagerV1Instance.rebase(1 ether);
         vm.stopPrank();
 
@@ -924,6 +924,7 @@ contract MembershipManagerTest is TestSetup {
         vm.startPrank(alice);
         uint256 aliceToken = membershipManagerV1Instance.wrapEth{value: 50 ether}(50 ether, 0 ether);
         assertEq(membershipNftInstance.tierOf(aliceToken), 0);
+        vm.stopPrank();
 
         (uint128 tier0EEthShare,) = membershipManagerV1Instance.tierVaults(0);
         (uint128 tier1EEthShare,) = membershipManagerV1Instance.tierVaults(1);
@@ -931,10 +932,14 @@ contract MembershipManagerTest is TestSetup {
         assertEq(tier1EEthShare, 0);
         assertEq(membershipNftInstance.valueOf(aliceToken), 50 ether);
 
+        vm.startPrank(address(etherFiAdminInstance));
         membershipManagerV1Instance.rebase(50 ether);
+        vm.stopPrank();
         assertEq(membershipNftInstance.valueOf(aliceToken), 100 ether);
 
+        vm.startPrank(alice);
         membershipManagerV1Instance.setPoints(aliceToken, uint40(28 * kwei), uint40(24 * 28));
+        vm.stopPrank();
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
 
         (tier0EEthShare,) = membershipManagerV1Instance.tierVaults(0);
@@ -943,10 +948,11 @@ contract MembershipManagerTest is TestSetup {
         assertEq(tier1EEthShare, 50 ether);
         assertEq(membershipNftInstance.valueOf(aliceToken), 100 ether);
 
+        vm.startPrank(address(etherFiAdminInstance));
         membershipManagerV1Instance.rebase(50 ether);
+        vm.stopPrank();
         assertEq(membershipNftInstance.valueOf(aliceToken), 150 ether);
 
-        vm.stopPrank();
     }
 
     function get_total_accrued_rewards(uint256[] memory tokens) internal returns (uint256) {
@@ -993,7 +999,7 @@ contract MembershipManagerTest is TestSetup {
 
             uint256 tvlInContract = address(liquidityPoolInstance).balance;
 
-            vm.startPrank(alice);
+            vm.startPrank(address(etherFiAdminInstance));
             membershipManagerV1Instance.rebase(int128(uint128(moneyPerRebase)));
             vm.stopPrank();
 
@@ -1133,7 +1139,7 @@ contract MembershipManagerTest is TestSetup {
         }
         vm.stopPrank();
 
-        vm.startPrank(alice);
+        vm.startPrank(address(etherFiAdminInstance));
         membershipManagerV1Instance.rebase(1 ether);
         vm.stopPrank();
 
@@ -1170,7 +1176,7 @@ contract MembershipManagerTest is TestSetup {
 
         _transferTo(address(membershipManagerV1Instance), 1 ether);
 
-        vm.startPrank(alice);
+        vm.startPrank(address(etherFiAdminInstance));
         membershipManagerV1Instance.rebase(0 ether);
         vm.stopPrank();
 
@@ -1209,7 +1215,7 @@ contract MembershipManagerTest is TestSetup {
         }
         vm.stopPrank();
 
-        vm.startPrank(alice);
+        vm.startPrank(address(etherFiAdminInstance));
         // 10 % loss in eETH
         // eETH: 61 ETH -> -6.1 ETH 
         // Ether.Fan: 5 ETH -> -0.5 ETH

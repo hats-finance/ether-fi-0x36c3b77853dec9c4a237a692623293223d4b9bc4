@@ -10,6 +10,7 @@ import "./interfaces/IeETH.sol";
 import "./interfaces/IMembershipManager.sol";
 import "./interfaces/IMembershipNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IEtherFiAdmin.sol";
 
 import "./libraries/GlobalIndexLibrary.sol";
 
@@ -62,6 +63,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     // Phase 2
     TierVault[] public tierVaults;
 
+    IEtherFiAdmin public etherFiAdmin;
+
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
@@ -85,7 +88,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error WrongVersion();
 
     // To be called for Phase 2 contract upgrade
-    function initializeOnUpgrade() external onlyOwner {
+    function initializeOnUpgrade(address _etherFiAdminAddress) external onlyOwner {
+        etherFiAdmin = IEtherFiAdmin(_etherFiAdminAddress);
         fanBoostThreshold = 1_000; // 1 ETH
         burnFeeWaiverPeriodInDays = 30;
         while (tierVaults.length < tierData.length) {
@@ -244,8 +248,9 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _emitNftUpdateEvent(_tokenId);
     }
 
+    error InvalidCaller();
     function rebase(int128 _accruedRewards) external {
-        _requireAdmin();
+        if (msg.sender != address(etherFiAdmin)) revert InvalidCaller();
         uint256 ethRewardsPerEEthShareBeforeRebase = liquidityPool.amountForShare(1 ether);
         liquidityPool.rebase(_accruedRewards);
         uint256 ethRewardsPerEEthShareAfterRebase = liquidityPool.amountForShare(1 ether);
@@ -287,12 +292,11 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     error TierLimitExceeded();
-    function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256) {
+    function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external {
         _requireAdmin();
         if (tierDeposits.length >= type(uint8).max) revert TierLimitExceeded();
         tierData.push(TierData(0, _requiredTierPoints, _weight, 0));
         tierVaults.push(TierVault(0, 0));
-        return tierDeposits.length - 1;
     }
 
     error OutOfBound();
@@ -325,15 +329,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _setPoints(_tokenId, _loyaltyPoints, _tierPoints);
         _claimTier(_tokenId);
         _emitNftUpdateEvent(_tokenId);
-    }
-
-    error InvalidWithdraw();
-    function withdrawFees(uint256 _amount, address _recipient) external {
-        _requireAdmin();
-        if (_recipient == address(0)) revert InvalidWithdraw();
-        if (address(this).balance < _amount) revert InvalidWithdraw();
-        (bool sent, ) = address(_recipient).call{value: _amount}("");
-        if (!sent) revert InvalidWithdraw();
     }
 
     function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external {
