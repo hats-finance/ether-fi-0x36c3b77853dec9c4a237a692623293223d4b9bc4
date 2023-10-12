@@ -258,6 +258,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             uint256 returnAmount = 2 ether * (_numberOfValidators - newValidators.length);
             totalValueOutOfLp += uint128(returnAmount);
             totalValueInLp -= uint128(returnAmount);
+            numPendingDeposits -= uint32(_numberOfValidators - newValidators.length);
 
             (bool sent, ) = msg.sender.call{value: returnAmount}("");
             require(sent, "send fail");

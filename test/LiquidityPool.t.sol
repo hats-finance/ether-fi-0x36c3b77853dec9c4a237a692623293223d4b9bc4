@@ -1583,4 +1583,55 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
     }
 
+    function test_SD_17() public {
+        vm.deal(owner, 100 ether);
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 4;
+        _executeAdminTasks(report);
+
+        setUpBnftHolders();
+
+        vm.warp(976348625856);
+
+        vm.prank(alice);
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
+
+        hoax(alice);
+        uint256[] memory bidIds = auctionInstance.createBid{value: 0.2 ether}(2, 0.1 ether);
+        assertEq(bidIds.length, 2);
+
+        assertEq(liquidityPoolInstance.totalValueOutOfLp(), 0);
+        assertEq(liquidityPoolInstance.totalValueInLp(), 0);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 0);
+
+        startHoax(bob);
+        liquidityPoolInstance.deposit{value: 120 ether}();
+        vm.stopPrank();
+
+        assertEq(address(liquidityPoolInstance).balance, 120 ether);
+        assertEq(liquidityPoolInstance.totalValueOutOfLp(), 0);
+        assertEq(liquidityPoolInstance.totalValueInLp(), 120 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 120 ether);
+
+        uint256 aliceBalance = address(alice).balance;
+        bytes32[] memory proof = getWhitelistMerkleProof(9);
+        uint256[] memory bidIdsWithDuplicates = new uint256[](4);
+        bidIdsWithDuplicates[0] = bidIds[0];
+        bidIdsWithDuplicates[1] = bidIds[0];
+        bidIdsWithDuplicates[2] = bidIds[1];
+        bidIdsWithDuplicates[3] = bidIds[1];
+        vm.prank(alice);
+        uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 * 2 ether}(bidIdsWithDuplicates, 4);
+
+        assertEq(newValidators.length, 2);
+        assertEq(address(alice).balance, aliceBalance - 4 ether);
+        assertEq(address(liquidityPoolInstance).balance, 60 ether);
+        assertEq(address(stakingManagerInstance).balance, 64 ether);
+        assertEq(liquidityPoolInstance.numPendingDeposits(), 2);
+        assertEq(liquidityPoolInstance.totalValueOutOfLp(), 60 ether);
+        assertEq(liquidityPoolInstance.totalValueInLp(), 60 ether);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 120 ether);
+    }
 }
