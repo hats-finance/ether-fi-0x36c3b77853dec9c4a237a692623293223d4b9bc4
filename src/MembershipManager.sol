@@ -121,7 +121,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint40 loyaltyPoints = uint40(_min(_points, type(uint40).max));
         uint40 tierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
 
-        liquidityPool.deposit{value: msg.value}(msg.sender);
+        liquidityPool.deposit{value: msg.value}();
 
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
@@ -178,7 +178,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         claim(_tokenId);
 
         uint256 additionalDeposit = _topUpDeposit(_tokenId, _amount, _amountForPoints);
-        liquidityPool.deposit{value: additionalDeposit}(msg.sender);
+        liquidityPool.deposit{value: additionalDeposit}();
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -260,7 +260,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 etherFanEEthShares = eETH.shares(address(this));
         uint256 thresholdAmount = fanBoostThresholdEthAmount();
         if (address(this).balance >= thresholdAmount) {
-            uint256 mintedShare = liquidityPool.deposit{value: thresholdAmount}(address(this));
+            uint256 mintedShare = liquidityPool.deposit{value: thresholdAmount}();
             ethRewardsPerEEthShareAfterRebase += 1 ether * thresholdAmount / etherFanEEthShares;
         }
 
