@@ -311,6 +311,19 @@
   },
   {
     "inputs": [],
+    "name": "beaconGenesisTimestamp",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "blockStampForNextReport",
     "outputs": [
       {

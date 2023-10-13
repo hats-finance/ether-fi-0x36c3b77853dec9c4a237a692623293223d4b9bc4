@@ -212,6 +212,10 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         return keccak256(abi.encode(chunk1, chunk2, chunk3));
     }
 
+    function beaconGenesisTimestamp() external view returns (uint32) {
+        return BEACON_GENESIS_TIME;
+    }
+
     function addCommitteeMember(address _address) public onlyOwner {
         require(committeeMemberStates[_address].registered == false, "Already registered");
         numCommitteeMembers++;
