@@ -192,7 +192,7 @@ contract StakingManager is
         require(msg.sender != liquidityPoolContract, "Incorrect Caller");
 
         for (uint256 x; x < _validatorIds.length; ++x) {
-            require(!bidIdToStakerInfo[_validatorIds[x]].isBNftFlow, "It is BNFT flow");
+            require(bidIdToStakerInfo[_validatorIds[x]].sourceOfFund == ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, "Wrong flow");
             _cancelDeposit(_validatorIds[x], msg.sender);
         }
     }
@@ -209,8 +209,8 @@ contract StakingManager is
         uint32 numberOfEethValidators;
         uint32 numberOfEtherFanValidators;
         for (uint256 x; x < _validatorIds.length; ++x) { 
-            require(bidIdToStakerInfo[_validatorIds[x]].isBNftFlow, "It is not BNFT flow");
-            if(validatorSourceOfFunds[_validatorIds[x]] == ILiquidityPool.SourceOfFunds.EETH){
+            require(bidIdToStakerInfo[_validatorIds[x]].sourceOfFund != ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, "Wrong flow");
+            if (validatorSourceOfFunds[_validatorIds[x]] == ILiquidityPool.SourceOfFunds.EETH){
                 numberOfEethValidators++;
             } else if (validatorSourceOfFunds[_validatorIds[x]] == ILiquidityPool.SourceOfFunds.ETHER_FAN) {
                 numberOfEtherFanValidators++;
@@ -404,8 +404,7 @@ contract StakingManager is
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId The bid that won the right to the deposit
     function _processDeposit(uint256 _bidId, address _staker, bool _enableRestaking, ILiquidityPool.SourceOfFunds _source) internal {
-        bool isBNftFlow = (_source != ILiquidityPool.SourceOfFunds.DELEGATED_STAKING);
-        bidIdToStakerInfo[_bidId] = StakerInfo(_staker, isBNftFlow);
+        bidIdToStakerInfo[_bidId] = StakerInfo(_staker, _source);
         uint256 validatorId = _bidId;
 
         // register a withdrawalSafe for this bid/validator, creating a new one if necessary

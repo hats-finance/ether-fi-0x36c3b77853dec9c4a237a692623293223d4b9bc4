@@ -13,7 +13,7 @@ interface IStakingManager {
 
     struct StakerInfo {
         address staker;
-        bool    isBNftFlow;
+        ILiquidityPool.SourceOfFunds sourceOfFund;
     }
 
     function bidIdToStaker(uint256 id) external view returns (address);

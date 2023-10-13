@@ -353,7 +353,7 @@ contract LiquidityPoolTest is TestSetup {
         stakingManagerInstance.batchCancelDepositAsBnftHolder(newValidators, alice);
 
         vm.prank(alice);
-        vm.expectRevert("It is BNFT flow");
+        vm.expectRevert("Wrong flow");
         stakingManagerInstance.batchCancelDeposit(newValidators);
 
         vm.prank(alice);
