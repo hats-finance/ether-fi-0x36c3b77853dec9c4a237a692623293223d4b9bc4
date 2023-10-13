@@ -55,7 +55,6 @@ contract StakingManager is
     address public DEPRECATED_admin;
     address public nodeOperatorManager;
     mapping(address => bool) public admins;
-    mapping(uint256 => ILiquidityPool.SourceOfFunds) public validatorSourceOfFunds;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -209,10 +208,12 @@ contract StakingManager is
         uint32 numberOfEethValidators;
         uint32 numberOfEtherFanValidators;
         for (uint256 x; x < _validatorIds.length; ++x) { 
-            require(bidIdToStakerInfo[_validatorIds[x]].sourceOfFund != ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, "Wrong flow");
-            if (validatorSourceOfFunds[_validatorIds[x]] == ILiquidityPool.SourceOfFunds.EETH){
+            ILiquidityPool.SourceOfFunds source = bidIdToStakerInfo[_validatorIds[x]].sourceOfFund;
+            require(source != ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, "Wrong flow");
+
+            if (source == ILiquidityPool.SourceOfFunds.EETH){
                 numberOfEethValidators++;
-            } else if (validatorSourceOfFunds[_validatorIds[x]] == ILiquidityPool.SourceOfFunds.ETHER_FAN) {
+            } else if (source == ILiquidityPool.SourceOfFunds.ETHER_FAN) {
                 numberOfEtherFanValidators++;
             }
             _cancelDeposit(_validatorIds[x], _caller);
@@ -331,7 +332,6 @@ contract StakingManager is
                 //See more info in Node Operator manager around approving operators for different source types
                 require(_verifyNodeOperator(operator, _source), "Operator not verified");
                 auctionManager.updateSelectedBidInformation(bidId);
-                validatorSourceOfFunds[bidId] = _source;
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
                 _processDeposit(bidId, _staker, _enableRestaking, _source);
