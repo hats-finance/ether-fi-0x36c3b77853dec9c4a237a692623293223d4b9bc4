@@ -230,27 +230,6 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertEq(bobsEndingBalance, bobsStartingBalance + 0.5 ether, "Bobs balance should be 1 ether higher");
     }
 
-    function testUpdateLiquidityPool() public {
-        address newLiquidityPool = address(0x456);
-        vm.prank(alice);
-        withdrawRequestNFTInstance.updateLiquidityPool(newLiquidityPool);
-        assertEq(address(withdrawRequestNFTInstance.liquidityPool()), newLiquidityPool, "Liquidity pool should be updated");
-    }
-
-    function testUpdateEEth() public {
-        address newEEth = address(0x789);
-        vm.prank(alice);
-        withdrawRequestNFTInstance.updateEEth(newEEth);
-        assertEq(address(withdrawRequestNFTInstance.eETH()), newEEth, "eETH should be updated");
-    }
-
-    function testUpdateAdmin() public {
-        address newAdmin = address(0xabc);
-        vm.prank(owner);
-        withdrawRequestNFTInstance.updateAdmin(newAdmin, true);
-        assertTrue(withdrawRequestNFTInstance.admins(newAdmin));
-    }
-
     function test_withdraw_with_zero_liquidity() public {
         // bob mints 60 eETH and alilce spins up 2 validators with the deposited 60 ETH
         launch_validator();

@@ -122,21 +122,6 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         _requests[requestId].isValid = false;
     }
 
-    function updateLiquidityPool(address _newLiquidityPool) external onlyAdmin {
-        require(_newLiquidityPool != address(0), "Cannot be address zero");
-        liquidityPool = ILiquidityPool(_newLiquidityPool);
-    }
-
-    function updateEEth(address _newEEth) external onlyAdmin {
-        require(_newEEth != address(0), "Cannot be address zero");
-        eETH = IeETH(_newEEth);
-    }
-
-    function updateMembershipManager(address _newMembershipManager) external onlyAdmin {
-        require(_newMembershipManager != address(0), "Cannot be address zero");
-        membershipManager = IMembershipManager(_newMembershipManager);
-    }
-
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         admins[_address] = _isAdmin;

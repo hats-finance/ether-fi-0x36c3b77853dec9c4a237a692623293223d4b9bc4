@@ -217,7 +217,7 @@ contract UpgradeTest is TestSetup {
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
-        stakingManagerV2Implementation.initialize(address(auctionInstance));
+        stakingManagerV2Implementation.initialize(address(auctionInstance), address(depositContractEth2));
 
 
         vm.expectRevert("Ownable: caller is not the owner");
@@ -231,7 +231,7 @@ contract UpgradeTest is TestSetup {
 
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
-        stakingManagerV2Instance.initialize(address(auctionInstance));
+        stakingManagerV2Instance.initialize(address(auctionInstance), address(depositContractEth2));
 
         assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
         // assertEq(stakingManagerV2Instance.isUpgraded(), true);
@@ -240,9 +240,6 @@ contract UpgradeTest is TestSetup {
         assertEq(stakingManagerV2Instance.maxBatchDepositSize(), 25);
 
         assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(depositContractEth2));
-        vm.prank(owner);
-        stakingManagerV2Instance.registerEth2DepositContract(address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
-        assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
     }
 
     function test_canUpgradeEtherFiNode() public {        
