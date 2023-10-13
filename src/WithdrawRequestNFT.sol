@@ -22,6 +22,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
     uint32 public nextRequestId;
     uint32 public lastFinalizedRequestId;
+    uint96 public accumulatedDustEEthShares; // to be burned or used to cover the validator churn cost
 
     event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner, uint256 fee);
     event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner, uint256 fee);
@@ -90,11 +91,20 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         }
 
         uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToTransfer - fee);
+        uint256 amountUnBurnedShare = request.shareOfEEth - amountBurnedShare;
+        accumulatedDustEEthShares += uint96(amountUnBurnedShare);
 
         emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient, fee);
     }
     
-    // add function to transfer accumulated shares to admin
+    // a function to transfer accumulated shares to admin
+    function burnAccumulatedDustEEthShares() external onlyAdmin {
+        require(eETH.totalShares() > accumulatedDustEEthShares, "Inappropriate burn");
+        uint256 amount = accumulatedDustEEthShares;
+        accumulatedDustEEthShares = 0;
+
+        eETH.burnShares(address(this), amount);
+    }
 
     function getRequest(uint256 requestId) external view returns (IWithdrawRequestNFT.WithdrawRequest memory) {
         return _requests[requestId];

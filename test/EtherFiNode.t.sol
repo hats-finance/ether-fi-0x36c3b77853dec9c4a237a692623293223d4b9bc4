@@ -101,41 +101,6 @@ contract EtherFiNodeTest is TestSetup {
         testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
     }
 
-    function createRestakedValidator() public returns (uint256) {
-        vm.deal(alice, 33 ether);
-        vm.startPrank(alice);
-
-        nodeOperatorManagerInstance.registerNodeOperator("fake_ipfs_hash", 10);
-
-        // create a new bid
-        uint256[] memory createdBids = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
-
-        // depsosit against that bid with restaking enabled
-        stakingManagerInstance.batchDepositWithBidIds{value: 32 ether * createdBids.length}(createdBids, true);
-
-        // Register the validator and send deposited eth to depositContract/Beaconchain
-        // signatures are not checked but roots need to match
-        bytes32 root = depGen.generateDepositRoot(
-            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-            managerInstance.getWithdrawalCredentials(createdBids[0]),
-            32 ether
-        );
-        IStakingManager.DepositData memory depositData = IStakingManager
-            .DepositData({
-                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
-                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-                depositDataRoot: root,
-                ipfsHashForEncryptedValidatorKey: "restaking_unit_tests"
-        });
-        IStakingManager.DepositData[] memory depositDatas = new IStakingManager.DepositData[](1);
-        depositDatas[0] = depositData;
-        stakingManagerInstance.batchRegisterValidators(zeroRoot, createdBids, depositDatas);
-
-        vm.stopPrank();
-        return createdBids[0];
-    }
-
     function test_createPod() public {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
@@ -161,7 +126,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.selectFork(testnetFork);
         setUp();
 
-        uint256 bidId = createRestakedValidator();
+        uint256 bidId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(bidId)));
 
         // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
@@ -185,7 +150,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.selectFork(testnetFork);
         setUp();
 
-        uint256 validatorId = createRestakedValidator();
+        uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
 
         uint256 beaconBalance = 32 ether;
@@ -262,7 +227,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.selectFork(testnetFork);
         setUp();
 
-        uint256 validatorId = createRestakedValidator();
+        uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
 
         // simulate 1 eth of staking rewards sent to the eigen pod
@@ -317,7 +282,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.selectFork(testnetFork);
         setUp();
 
-        uint256 validatorId = createRestakedValidator();
+        uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
 
         uint256[] memory validatorIds = new uint256[](1);
@@ -365,7 +330,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.selectFork(testnetFork);
         setUp();
 
-        uint256 validatorId = createRestakedValidator();
+        uint256 validatorId = depositAndRegisterValidator(true);
         IEtherFiNode node = IEtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
 
         // simulate staking rewards
@@ -396,7 +361,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.selectFork(testnetFork);
         setUp();
 
-        uint256 validatorId = createRestakedValidator();
+        uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
 
         uint256[] memory validatorIds = new uint256[](1);

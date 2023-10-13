@@ -129,6 +129,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         require(_report.refBlockTo < block.number, "Report is for wrong blockTo");
 
         // If two epochs in a row are justified, the current_epoch - 2 is considered finalized
+        // Put 1 epoch more as a safe buffer
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 reportEpoch = (_report.refSlotTo / SLOTS_PER_EPOCH);
@@ -246,7 +247,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         // check if the start slot is at the beginning of the epoch
         require(_reportStartSlot > computeSlotAtTimestamp(block.timestamp), "The start slot should be in the future");
         require(_reportStartSlot > lastPublishedReportRefSlot, "The start slot should be after the last published report");
-        require(_reportStartSlot % 32 == 0, "The start slot should be at the beginning of the epoch");
+        require(_reportStartSlot % SLOTS_PER_EPOCH == 0, "The start slot should be at the beginning of the epoch");
         reportStartSlot = _reportStartSlot;
         emit ReportStartSlotUpdated(_reportStartSlot);
     }
