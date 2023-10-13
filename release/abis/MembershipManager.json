@@ -46,17 +46,17 @@
   },
   {
     "inputs": [],
+    "name": "InvalidCaller",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidDeposit",
     "type": "error"
   },
   {
     "inputs": [],
     "name": "InvalidEAPRollover",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidWithdraw",
     "type": "error"
   },
   {
@@ -389,13 +389,7 @@
       }
     ],
     "name": "addNewTier",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -560,6 +554,19 @@
   },
   {
     "inputs": [],
+    "name": "etherFiAdmin",
+    "outputs": [
+      {
+        "internalType": "contract IEtherFiAdmin",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "fanBoostThresholdEthAmount",
     "outputs": [
       {
@@ -627,7 +634,13 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_etherFiAdminAddress",
+        "type": "address"
+      }
+    ],
     "name": "initializeOnUpgrade",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -1409,24 +1422,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_recipient",
-        "type": "address"
-      }
-    ],
-    "name": "withdrawFees",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
