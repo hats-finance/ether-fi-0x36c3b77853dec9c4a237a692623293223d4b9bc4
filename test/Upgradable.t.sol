@@ -7,6 +7,31 @@ import "../src/interfaces/ILiquidityPool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "../lib/murky/src/Merkle.sol";
 
+contract StakingManagerV1Syko is StakingManager {
+    mapping (uint256 => address) test;
+
+    function add(uint256 id, address addr) public {
+        test[id] = addr;
+    }
+
+    function getTest(uint256 id) public view returns (address) {
+        return test[id];
+    }
+}
+
+contract StakingManagerV2Syko is StakingManager {
+    struct TestData {
+        address add;
+        bool isV2;
+    }
+
+    mapping (uint256 => TestData) testData;
+
+    function getTest(uint256 id) public view returns (TestData memory) {
+        return testData[id];
+    }
+}
+
 contract AuctionManagerV2Test is AuctionManager {
     function isUpgraded() public pure returns(bool){
         return true;
@@ -322,5 +347,27 @@ contract UpgradeTest is TestSetup {
 
         assertEq(nodeOperatorManagerV2Instance.getImplementation(), address(nodeOperatorManagerV2Implementation));
         assertEq(nodeOperatorManagerV2Instance.isUpgraded(), true);
+    }
+
+    function test_Storage() public {
+        StakingManager stakingManagerV1Implementation = new StakingManagerV1Syko();
+        StakingManager stakingManagerV2Implementation = new StakingManagerV2Syko();
+        
+        vm.prank(owner);
+        stakingManagerInstance.upgradeTo(address(stakingManagerV1Implementation));
+        StakingManagerV1Syko stakingManagerV1Instance = StakingManagerV1Syko(address(stakingManagerProxy));
+        assertEq(stakingManagerV1Instance.getImplementation(), address(stakingManagerV1Implementation));
+
+        stakingManagerV1Instance.add(1, address(owner));
+        assertEq(stakingManagerV1Instance.getTest(1), address(owner));       
+
+        vm.prank(owner);
+        stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
+        StakingManagerV2Syko stakingManagerV2Instance = StakingManagerV2Syko(address(stakingManagerProxy));
+        assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
+
+        assertEq(stakingManagerV2Instance.getTest(1).add, address(owner));       
+        assertEq(stakingManagerV2Instance.getTest(1).isV2, false);       
+
     }
 }

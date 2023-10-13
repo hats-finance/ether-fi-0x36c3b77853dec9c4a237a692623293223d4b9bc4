@@ -299,7 +299,7 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(eETHInstance.balanceOf(bob), 3 ether);
     }
 
-    function test_batchCancelDepositAsBnftHolder() public {
+    function test_batchCancelDepositAsBnftHolder1() public {
         vm.deal(owner, 100 ether);
 
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
@@ -351,6 +351,10 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(bob);
         vm.expectRevert("Incorrect Caller");
         stakingManagerInstance.batchCancelDepositAsBnftHolder(newValidators, alice);
+
+        vm.prank(alice);
+        vm.expectRevert("Wrong flow");
+        stakingManagerInstance.batchCancelDeposit(newValidators);
 
         vm.prank(alice);
         liquidityPoolInstance.batchCancelDeposit(newValidators);

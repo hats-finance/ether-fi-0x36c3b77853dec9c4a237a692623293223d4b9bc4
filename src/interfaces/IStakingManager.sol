@@ -11,6 +11,11 @@ interface IStakingManager {
         string ipfsHashForEncryptedValidatorKey;
     }
 
+    struct StakerInfo {
+        address staker;
+        ILiquidityPool.SourceOfFunds sourceOfFund;
+    }
+
     function bidIdToStaker(uint256 id) external view returns (address);
 
     function getEtherFiNodeBeacon() external view returns (address);
