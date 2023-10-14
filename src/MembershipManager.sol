@@ -296,7 +296,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error TierLimitExceeded();
     function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external {
         _requireAdmin();
-        if (tierDeposits.length >= type(uint8).max) revert TierLimitExceeded();
+        if (tierData.length >= type(uint8).max) revert TierLimitExceeded();
         tierData.push(TierData(0, _requiredTierPoints, _weight, 0));
         tierVaults.push(TierVault(0, 0));
     }
