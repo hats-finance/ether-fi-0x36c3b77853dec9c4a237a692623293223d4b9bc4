@@ -1,4 +1,3 @@
-//const ethers = require('ethers');
 const fs = require('fs');
 const ethers = require('ethers');
 require('dotenv').config();
@@ -42,7 +41,7 @@ function writeConfigFile() {
   contracts = getContractNames()
   jsonConfig = {}
 
-  for (contract of contracts) { //create empty array for each contract
+  for (contract of contracts) { 
     arr = []
     jsonConfig[contract] = { arr };
   }
@@ -55,7 +54,7 @@ function writeConfigFile() {
       if (method["type"] != undefined && method["stateMutability"] != undefined) {
         if (method["type"] == "function" && method["stateMutability"] == "view" &&
           method["inputs"].length == 0 && method["outputs"].length == 1 && method["outputs"][0]["type"] == "address") { //check if returns address
-          methodSubstring = ContractSubstring(method["name"], contracts)
+          methodSubstring = contractSubstring(method["name"], contracts)
           if (methodSubstring != "") {
             methods.push({
               "methodName": method["name"],
@@ -76,7 +75,7 @@ function writeConfigFile() {
   }
 }
 
-function ContractSubstring(method, contracts) {
+function contractSubstring(method, contracts) {
   for (contract of contracts) {
     if (method.toLowerCase() == contract.toLowerCase()) return contract
   }
@@ -99,7 +98,7 @@ async function checkFunctionAddress(network) {
   contract_address = {}
   addressProvider = ""
 
-  if (network == "homestead") addressProvider = process.env.MAINNET_ADDRESS_PROVIDER
+  if (network == "mainnet") addressProvider = process.env.MAINNET_ADDRESS_PROVIDER
   else if (network == "goerli") addressProvider = process.env.GOERLI_ADDRESS_PROVIDER
   addressProviderABI = getABI("AddressProvider")
   addyProviderFunName = "getContractAddress"
@@ -123,12 +122,16 @@ async function checkFunctionAddress(network) {
 
 async function main() {
   const args = process.argv;
-  network = "homestead"
+  network = "mainnet"
   if (args.length > 2) {
-    network = args[2]
-    console.log(network)
+    if (args[2] == "-write") {
+      writeConfigFile()
+      return
+    } else { //assume network
+      network = args[2]
+      console.log(network)
+    }
   }
-  //writeConfigFile()
   checkFunctionAddress(network)
 }
 
