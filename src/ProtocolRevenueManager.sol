@@ -26,9 +26,9 @@ contract ProtocolRevenueManager is
     IEtherFiNodesManager public etherFiNodesManager;
     IAuctionManager public auctionManager;
 
-    uint256 public globalRevenueIndex;
-    uint128 public vestedAuctionFeeSplitForStakers;
-    uint128 public auctionFeeVestingPeriodForStakersInDays;
+    uint256 public DEPRECATED_globalRevenueIndex;
+    uint128 public DEPRECATED_vestedAuctionFeeSplitForStakers;
+    uint128 public DEPRECATED_auctionFeeVestingPeriodForStakersInDays;
 
     address public admin;
 
@@ -47,43 +47,11 @@ contract ProtocolRevenueManager is
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
 
-        globalRevenueIndex = 1;
-        vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested
-        auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
+        DEPRECATED_globalRevenueIndex = 1;
+        DEPRECATED_vestedAuctionFeeSplitForStakers = 50; // 50% of the auction fee is vested
+        DEPRECATED_auctionFeeVestingPeriodForStakersInDays = 6 * 7 * 4; // 6 months
     }
 
-    /// @notice All of the received Ether is shared to all validators! Cool!
-    receive() external payable {
-        uint256 numberOfValidators = etherFiNodesManager.numberOfValidators();
-        require(numberOfValidators > 0, "No Active Validator");
-        globalRevenueIndex += msg.value / numberOfValidators;
-    }
-
-    /// @notice add the revenue from the auction fee paid by the node operator for the corresponding validator
-    /// @param _validatorId the validator ID
-    function addAuctionRevenue(uint256 _validatorId) external payable onlyAuctionManager nonReentrant {
-        require(etherFiNodesManager.numberOfValidators() > 0, "No Active Validator");
-        require(etherFiNodesManager.localRevenueIndex(_validatorId) == 0, "addAuctionRevenue is already processed for the validator.");
-        uint256 amountVestedForStakers = (vestedAuctionFeeSplitForStakers * msg.value) / 100;
-        uint256 amountToProtocol = msg.value - amountVestedForStakers;
-        address etherfiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
-        uint256 globalIndexlocal = globalRevenueIndex;
-
-        globalRevenueIndex += amountToProtocol / etherFiNodesManager.numberOfValidators();
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex(_validatorId, globalIndexlocal);
-        IEtherFiNode(etherfiNode).receiveVestedRewardsForStakers{value: amountVestedForStakers}();
-    }
-
-    /// @notice Distribute the accrued rewards to the validator
-    /// @param _validatorId id of the validator
-    function distributeAuctionRevenue(uint256 _validatorId) external onlyEtherFiNodesManager nonReentrant returns (uint256) {
-        if (etherFiNodesManager.isExited(_validatorId) || etherFiNodesManager.isFullyWithdrawn(_validatorId) || etherFiNodesManager.isEvicted(_validatorId)) {
-            return 0;
-        }
-        uint256 amount = getAccruedAuctionRevenueRewards(_validatorId);
-        etherFiNodesManager.setEtherFiNodeLocalRevenueIndex{value: amount}(_validatorId, globalRevenueIndex);
-        return amount;
-    }
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  SETTERS   ---------------------------------------
@@ -107,19 +75,6 @@ contract ProtocolRevenueManager is
         auctionManager = IAuctionManager(_auctionManager);
     }
 
-    /// @notice set the auction reward vesting period
-    /// @param _periodInDays vesting period in days
-    function setAuctionRewardVestingPeriod(uint128 _periodInDays) external onlyAdmin {
-        auctionFeeVestingPeriodForStakersInDays = _periodInDays;
-    }
-
-    /// @notice set the auction reward split for stakers
-    /// @param _split vesting period in days
-    function setAuctionRewardSplitForStakers(uint128 _split) external onlyAdmin {
-        require(_split <= 100, "Cannot be more than 100% split");
-        vestedAuctionFeeSplitForStakers = _split;
-    }
-
     function pauseContract() external onlyAdmin { _pause(); }
     function unPauseContract() external onlyAdmin { _unpause(); }
 
@@ -139,18 +94,6 @@ contract ProtocolRevenueManager is
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------
     //--------------------------------------------------------------------------------------
-
-    /// @notice Compute the accrued rewards for a validator
-    /// @param _validatorId id of the validator
-    function getAccruedAuctionRevenueRewards(uint256 _validatorId) public view returns (uint256) {
-        address etherFiNode = etherFiNodesManager.etherfiNodeAddress(_validatorId);
-        uint256 localRevenueIndex = IEtherFiNode(etherFiNode).localRevenueIndex();   
-        if (localRevenueIndex == 0) {
-            return 0;
-        }
-        uint256 amount = globalRevenueIndex - localRevenueIndex;
-        return amount;
-    }
 
     /// @notice Fetches the address of the implementation contract currently being used by the proxy
     /// @return the address of the currently used implementation contract

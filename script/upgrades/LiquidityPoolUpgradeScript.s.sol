@@ -16,14 +16,27 @@ contract LiquidityPoolUpgrade is Script {
         addressProvider = AddressProvider(addressProviderAddress);
         
         address LiquidityPoolProxyAddress = addressProvider.getContractAddress("LiquidityPool");
+        address etherFiAdminAddress = addressProvider.getContractAddress("EtherFiAdmin");
 
         vm.startBroadcast(deployerPrivateKey);
 
         LiquidityPool LiquidityPoolInstance = LiquidityPool(payable(LiquidityPoolProxyAddress));
         LiquidityPool LiquidityPoolV2Implementation = new LiquidityPool();
 
-        // LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
-        
+        LiquidityPoolInstance.upgradeTo(address(LiquidityPoolV2Implementation));
+
+        //Ensure these inputs are correct
+        //First parameter = the scheduling period in seconds we want to set
+        //Second parameter = the number of validators ETH source of funds currently has spun up
+        //Third parameter = the number of validators ETHER_FAN source of funds currently has spun up
+        LiquidityPoolInstance.initializeOnUpgrade(900, 3, 9);
+        LiquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
+        LiquidityPoolInstance.setEtherFiAdminContract(etherFiAdminAddress);
+
+        // Phase 2
+        address withdrawRequestNFTInstance = addressProvider.getContractAddress("WithdrawRequestNFT");
+        LiquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
+
         vm.stopBroadcast();
     }
 }

@@ -99,8 +99,7 @@ contract DeployPhaseOne is Script {
             address(auctionManager),
             address(stakingManager),
             address(TNFTInstance),
-            address(BNFTInstance),
-            address(protocolRevenueManager)
+            address(BNFTInstance)
         );
 
         EtherFiNode etherFiNode = new EtherFiNode();
@@ -109,7 +108,6 @@ contract DeployPhaseOne is Script {
         nodeOperatorManager.setAuctionContractAddress(address(auctionManager));
 
         auctionManager.setStakingManagerContractAddress(address(stakingManager));
-        auctionManager.setProtocolRevenueManager(address(protocolRevenueManager));
 
         protocolRevenueManager.setAuctionManagerAddress(address(auctionManager));
         protocolRevenueManager.setEtherFiNodesManagerAddress(address(etherFiNodesManager));

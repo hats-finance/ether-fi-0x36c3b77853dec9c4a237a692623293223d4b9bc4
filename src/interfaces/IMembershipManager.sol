@@ -9,18 +9,25 @@ interface IMembershipManager {
     }
 
     struct TokenData {
-        uint96 rewardsLocalIndex;
+        uint96 vaultShare;
         uint40 baseLoyaltyPoints;
         uint40 baseTierPoints;
         uint32 prevPointsAccrualTimestamp;
         uint32 prevTopUpTimestamp;
         uint8  tier;
-        uint8  __gap;
+        uint8  version;
     }
 
+    // Used for V1
+    struct TierVault {
+        uint128 totalPooledEEthShares; // total share of eEth in the tier vault
+        uint128 totalVaultShares; // total share of the tier vault
+    }
+
+    // Used for V0
     struct TierDeposit {
-        uint128 amounts;
-        uint128 shares;
+        uint128 amounts; // total pooled eth amount
+        uint128 shares; // total pooled eEth shares
     }
 
     struct TierData {
@@ -31,17 +38,18 @@ interface IMembershipManager {
     }
 
     // State-changing functions
-    function initialize(address _eEthAddress, address _liquidityPoolAddress, address _membershipNft, address _treasury, address _protocolRevenueManager) external;
-
     function wrapEthForEap(uint256 _amount, uint256 _amountForPoint, uint32  _eapDepositBlockNumber, uint256 _snapshotEthAmount, uint256 _points, bytes32[] calldata _merkleProof) external payable returns (uint256);
-    function wrapEth(uint256 _amount, uint256 _amountForPoint, bytes32[] calldata _merkleProof) external payable returns (uint256);
+    function wrapEth(uint256 _amount, uint256 _amountForPoint) external payable returns (uint256);
+    function wrapEth(uint256 _amount, uint256 _amountForPoint, address _referral) external payable returns (uint256);
 
-    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints, bytes32[] calldata _merkleProof) external payable;
+    function topUpDepositWithEth(uint256 _tokenId, uint128 _amount, uint128 _amountForPoints) external payable;
 
-    function unwrapForEth(uint256 _tokenId, uint256 _amount) external;
-    function withdrawAndBurnForEth(uint256 _tokenId) external;
+    function requestWithdraw(uint256 _tokenId, uint256 _amount) external returns (uint256);
+    function requestWithdrawAndBurn(uint256 _tokenId) external returns (uint256);
 
     function claim(uint256 _tokenId) external;
+
+    function migrateFromV0ToV1(uint256 _tokenId) external;
 
     // Getter functions
     function tokenDeposits(uint256) external view returns (uint128, uint128);
@@ -56,24 +64,25 @@ interface IMembershipManager {
     function pointsBoostFactor() external view returns (uint16);
     function pointsGrowthRate() external view returns (uint16);
     function maxDepositTopUpPercent() external view returns (uint8);
-    function calculateGlobalIndex() external view returns (uint96[] memory, uint128[] memory);
     function numberOfTiers() external view returns (uint8);
     function getImplementation() external view returns (address);
-    function sharesReservedForRewards() external view returns (uint128);
     function minimumAmountForMint() external view returns (uint256);
+
+    function eEthShareForVaultShare(uint8 _tier, uint256 _vaultShare) external view returns (uint256);
+    function vaultShareForEEthShare(uint8 _tier, uint256 _eEthShare) external view returns (uint256);
+    function ethAmountForVaultShare(uint8 _tier, uint256 _vaultShare) external view returns (uint256);
+    function vaultShareForEthAmount(uint8 _tier, uint256 _ethAmount) external view returns (uint256);
 
     // only Owner
     function setWithdrawalLockBlocks(uint32 _blocks) external;
     function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external;
-    function rebase(uint256 _tvl, uint256 _balanceInLp) external;
-    function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external returns (uint256);
+    function rebase(int128 _accruedRewards) external;
+    function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external;
     function updateTier(uint8 _tier, uint40 _requiredTierPoints, uint24 _weight) external;
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
     function setPointsBatch(uint256[] calldata _tokenIds, uint40[] calldata _loyaltyPoints, uint40[] calldata _tierPoints) external;
-    function recoverTierPointsForEap(uint256 _tokenId, uint32  _eapDepositBlockNumber) external;
-    function recoverTierPointsForEapBatch(uint256[] calldata _tokenIds, uint32[] calldata _eapDepositBlockNumbers) external;
     function setMinDepositWei(uint56 _value) external;
     function setMaxDepositTopUpPercent(uint8 _percent) external;
     function setTopUpCooltimePeriod(uint32 _newWaitTime) external;
-    function withdrawFees(uint256 _amount, address _recipient) external;
+    function updateAdmin(address _address, bool _isAdmin) external;
 }

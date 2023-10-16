@@ -7,6 +7,31 @@ import "../src/interfaces/ILiquidityPool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "../lib/murky/src/Merkle.sol";
 
+contract StakingManagerV1Syko is StakingManager {
+    mapping (uint256 => address) test;
+
+    function add(uint256 id, address addr) public {
+        test[id] = addr;
+    }
+
+    function getTest(uint256 id) public view returns (address) {
+        return test[id];
+    }
+}
+
+contract StakingManagerV2Syko is StakingManager {
+    struct TestData {
+        address add;
+        bool isV2;
+    }
+
+    mapping (uint256 => TestData) testData;
+
+    function getTest(uint256 id) public view returns (TestData memory) {
+        return testData[id];
+    }
+}
+
 contract AuctionManagerV2Test is AuctionManager {
     function isUpgraded() public pure returns(bool){
         return true;
@@ -158,8 +183,7 @@ contract UpgradeTest is TestSetup {
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TNFTInstance),
-            address(BNFTInstance),
-            address(protocolRevenueManagerInstance)
+            address(BNFTInstance)
         );
 
         assertEq(etherFiNodesManagerV2Instance.getImplementation(), address(managerV2Implementation));
@@ -177,7 +201,6 @@ contract UpgradeTest is TestSetup {
         assertEq(protocolRevenueManagerInstance.getImplementation(), address(protocolRevenueManagerImplementation));
 
         vm.prank(alice);
-        protocolRevenueManagerInstance.setAuctionRewardSplitForStakers(uint128(60));
 
         ProtocolRevenueManagerV2 protocolRevenueManagerV2Implementation = new ProtocolRevenueManagerV2();
 
@@ -196,9 +219,6 @@ contract UpgradeTest is TestSetup {
 
         assertEq(protocolRevenueManagerV2Instance.getImplementation(), address(protocolRevenueManagerV2Implementation));
         assertEq(protocolRevenueManagerV2Instance.isUpgraded(), true);
-
-        // State is maintained
-        assertEq(protocolRevenueManagerV2Instance.vestedAuctionFeeSplitForStakers(), 60);
     }
 
     function test_CanUpgradeStakingManager() public {
@@ -211,8 +231,8 @@ contract UpgradeTest is TestSetup {
             0.1 ether
         );
 
-        vm.stopPrank();      
-        
+        vm.stopPrank();
+
         assertEq(stakingManagerInstance.getImplementation(), address(stakingManagerImplementation));
 
         vm.prank(alice);
@@ -250,9 +270,7 @@ contract UpgradeTest is TestSetup {
         assertEq(address(stakingManagerV2Instance.depositContractEth2()), address(0x00000000219ab540356cBB839Cbe05303d7705Fa));
     }
 
-    function test_canUpgradeEtherFiNode() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
-        
+    function test_canUpgradeEtherFiNode() public {        
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -262,14 +280,12 @@ contract UpgradeTest is TestSetup {
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         uint256[] memory bidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, proof);
+        uint256[] memory processedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(bidIds, false);
 
         address safe1 = managerInstance.etherfiNodeAddress(processedBids[0]);
         console.log(safe1);
 
         vm.stopPrank();
-
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
         
         vm.prank(alice);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -279,8 +295,7 @@ contract UpgradeTest is TestSetup {
 
         startHoax(alice);
         uint256[] memory aliceBidIds = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
-
-        uint256[] memory aliceProcessedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(aliceBidIds, aliceProof);
+        uint256[] memory aliceProcessedBids = stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(aliceBidIds, false);
 
         address safe2 = managerInstance.etherfiNodeAddress(aliceProcessedBids[0]);
         console.log(safe2);
@@ -332,5 +347,27 @@ contract UpgradeTest is TestSetup {
 
         assertEq(nodeOperatorManagerV2Instance.getImplementation(), address(nodeOperatorManagerV2Implementation));
         assertEq(nodeOperatorManagerV2Instance.isUpgraded(), true);
+    }
+
+    function test_Storage() public {
+        StakingManager stakingManagerV1Implementation = new StakingManagerV1Syko();
+        StakingManager stakingManagerV2Implementation = new StakingManagerV2Syko();
+        
+        vm.prank(owner);
+        stakingManagerInstance.upgradeTo(address(stakingManagerV1Implementation));
+        StakingManagerV1Syko stakingManagerV1Instance = StakingManagerV1Syko(address(stakingManagerProxy));
+        assertEq(stakingManagerV1Instance.getImplementation(), address(stakingManagerV1Implementation));
+
+        stakingManagerV1Instance.add(1, address(owner));
+        assertEq(stakingManagerV1Instance.getTest(1), address(owner));       
+
+        vm.prank(owner);
+        stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
+        StakingManagerV2Syko stakingManagerV2Instance = StakingManagerV2Syko(address(stakingManagerProxy));
+        assertEq(stakingManagerV2Instance.getImplementation(), address(stakingManagerV2Implementation));
+
+        assertEq(stakingManagerV2Instance.getTest(1).add, address(owner));       
+        assertEq(stakingManagerV2Instance.getTest(1).isV2, false);       
+
     }
 }

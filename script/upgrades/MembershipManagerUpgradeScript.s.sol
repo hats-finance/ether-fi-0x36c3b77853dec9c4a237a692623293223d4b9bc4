@@ -16,13 +16,19 @@ contract MembershipManagerUpgrade is Script {
         addressProvider = AddressProvider(addressProviderAddress);
         
         address membershipManagerProxy = addressProvider.getContractAddress("MembershipManager");
+        address etherFiAdminAddress = addressProvider.getContractAddress("EtherFiAdmin");
+
+        assert(membershipManagerProxy != address(0));
+        assert(etherFiAdminAddress != address(0));
 
         vm.startBroadcast(deployerPrivateKey);
 
         MembershipManager membershipManagerInstance = MembershipManager(payable(membershipManagerProxy));
         MembershipManager membershipManagerV2Implementation = new MembershipManager();
 
-        // membershipManagerInstance.upgradeTo(address(membershipManagerV2Implementation));
+        membershipManagerInstance.upgradeTo(address(membershipManagerV2Implementation));
+
+        membershipManagerInstance.initializeOnUpgrade(etherFiAdminAddress);
         
         vm.stopBroadcast();
     }

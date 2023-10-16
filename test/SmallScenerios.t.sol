@@ -10,6 +10,7 @@ contract SmallScenariosTest is TestSetup {
     bytes32[] public chadProof;
     bytes32[] public danProof;
     bytes32[] public ownerProof;
+    bytes[] public sig;
 
     function setUp() public {
         setUpTests();
@@ -19,6 +20,10 @@ contract SmallScenariosTest is TestSetup {
         chadProof = merkle.getProof(whiteListedAddresses, 5);
         danProof = merkle.getProof(whiteListedAddresses, 6);
         ownerProof = merkle.getProof(whiteListedAddresses, 10);
+
+        vm.prank(alice);
+    liquidityPoolInstance.setStakingTargetWeights(50, 50);
+
     }
     
     /*
@@ -38,6 +43,17 @@ contract SmallScenariosTest is TestSetup {
         // bids to match with later staking 
         bobProof = merkle.getProof(whiteListedAddresses, 4);
 
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        report.numValidatorsToSpinUp = 1;
+        _executeAdminTasks(report);
+
+        setUpBnftHolders();
+        vm.warp(976348625856);
+
+        vm.prank(alice);
+        //Set the max number of validators per holder to 4
+        liquidityPoolInstance.setNumValidatorsToSpinUpPerSchedulePerBnftHolder(4);
+
         startHoax(bob);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 40);
         uint256[] memory bidIds = auctionInstance.createBid{value: 1 ether}(5, 0.2 ether);
@@ -49,8 +65,7 @@ contract SmallScenariosTest is TestSetup {
 
         /// Alice confirms she is not a US or Canadian citizen and deposits 10 ETH into the pool.
         startHoax(alice);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 10 ether}(alice, aliceProof);
+        liquidityPoolInstance.deposit{value: 10 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
@@ -59,13 +74,9 @@ contract SmallScenariosTest is TestSetup {
         assertEq(eETHInstance.shares(alice), 10 ether);
         assertEq(eETHInstance.totalShares(), 10 ether);
 
-        /// Bob then comes along, confirms he is not a US or Canadian citizen and deposits 5 ETH into the pool.
+        /// Bob then comes along and deposits 5 ETH into the pool.
         startHoax(bob);
-        vm.expectRevert("Incorrect hash");
-        regulationsManagerInstance.confirmEligibility("INCORRECT HASH");
-
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 5 ether}(bob, bobProof);
+        liquidityPoolInstance.deposit{value: 5 ether}();
         vm.stopPrank();
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 15 ether);
@@ -102,30 +113,67 @@ contract SmallScenariosTest is TestSetup {
 
         /// Chad confirms he is not a US or Canadian citizen and deposits 17 ether into Pool
         startHoax(chad);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 15 ether}(chad, chadProof);
+        liquidityPoolInstance.deposit{value: 15 ether}();
         vm.stopPrank();
 
         // Chad's 15 ETH + Alice's 10ETH + Bob's 5ETH
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
 
+        address[] memory users = new address[](1);
+        users[0] = address(bob);
+
+        ILiquidityPool.SourceOfFunds[] memory approvedTags = new ILiquidityPool.SourceOfFunds[](1);
+        approvedTags[0] = ILiquidityPool.SourceOfFunds.EETH;
+
+        bool[] memory approvals = new bool[](1);
+        approvals[0] = true;
+
+        vm.prank(alice);
+        nodeOperatorManagerInstance.batchUpdateOperatorsApprovedTags(users, approvedTags, approvals);
+
         // EtherFi rolls up 32 ether into a validator and mints the associated NFT's
         vm.deal(owner, 4 ether);
         startHoax(alice);
-        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositWithBidIds{value: 2 ether}(1, bidIds, getWhitelistMerkleProof(9));
+        uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, 1);
+
+        for (uint256 i = 0; i < processedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                processedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED));
+        }
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
         assertEq(address(stakingManagerInstance).balance, 32 ether);
 
         // Generate Deposit Data
         IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](1);
+
+        bytes32[] memory depositDataRootsForApproval = new bytes32[](1);
+
         address etherFiNode = managerInstance.etherfiNodeAddress(processedBidIds[0]);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.generateWithdrawalCredentials(etherFiNode),
-            32 ether
+            1 ether
         );
+
+        bytes32 rootForApproval = depGen.generateDepositRoot(
+            hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+            hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            31 ether
+        );
+
+        bytes[] memory pubKey = new bytes[](1);
+        pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
+
+        bytes[] memory sig = new bytes[](1);
+        sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
+
+        depositDataRootsForApproval[0] = rootForApproval;
 
         depositDataArray[0] = IStakingManager
             .DepositData({
@@ -134,27 +182,37 @@ contract SmallScenariosTest is TestSetup {
                 depositDataRoot: root,
                 ipfsHashForEncryptedValidatorKey: "test_ipfs"
             });
-        
+
         vm.stopPrank();
         vm.startPrank(alice);
         // Register the Validator
-        liquidityPoolInstance.batchRegisterValidators(_getDepositRoot(), processedBidIds, depositDataArray);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), processedBidIds, depositDataArray, depositDataRootsForApproval, sig);
+
+        for (uint256 i = 0; i < processedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                processedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL));
+        }
+
         vm.stopPrank();
 
-        assertEq(address(stakingManagerInstance).balance, 0 ether);
+        assertEq(address(stakingManagerInstance).balance, 31 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
         assertEq(address(liquidityPoolInstance).balance, 0 ether);
 
         // Check NFT's are minted correctly
         assertEq(TNFTInstance.ownerOf(processedBidIds[0]), address(liquidityPoolInstance));
-        assertEq(BNFTInstance.ownerOf(processedBidIds[0]), owner);
+        assertEq(BNFTInstance.ownerOf(processedBidIds[0]), alice);
 
         /// STAKING REWARDS COME IN DAILY
         // EtherFi sets the accrued staking rewards in the Liquidity Pool.
         skip(1 days);
         
+        // 1 ETH as staking rewards
         startHoax(address(membershipManagerInstance));
-        liquidityPoolInstance.rebase(30 ether + 1 ether, 0 ether);
+        liquidityPoolInstance.rebase(1 ether);
         vm.stopPrank();
         _transferTo(address(liquidityPoolInstance), 1 ether);
 
@@ -178,28 +236,42 @@ contract SmallScenariosTest is TestSetup {
         
         /// Chad wants to withdraw his ETH from the pool.
         /// He has a claimable balance of 15.5 ETH but the Pool only has a balance of 0.0453125 ETH.
-        /// EtherFi should make sure that there is sufficient liquidity in the pool to allow for withdrawals
-        vm.expectRevert("Not enough ETH in the liquidity pool");
+        /// EtherFi should allow users to request withdrawals even if the pool doesn't have enough ETH to cover it.
+        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 15.5 ether);
+
         vm.prank(chad);
-        liquidityPoolInstance.withdraw(chad, 15.5 ether);
+        eETHInstance.approve(address(liquidityPoolInstance), 15.5 ether);
+
+        vm.prank(chad);
+        uint256 withdrawRequestId = liquidityPoolInstance.requestWithdraw(chad, 15.5 ether);
         
         // EtherFi deposits a validators worth (32 ETH) into the pool to allow users to withdraw
         vm.deal(owner, 100 ether);
         vm.startPrank(owner);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether);
-        regulationsManagerInstance.confirmEligibility(termsAndConditionsHash);
-        liquidityPoolInstance.deposit{value: 32 ether}(owner, ownerProof);
+        liquidityPoolInstance.deposit{value: 32 ether}();
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 31 ether + 32 ether);
         assertEq(address(liquidityPoolInstance).balance, 32 ether + 1 ether);
         vm.stopPrank();
-        
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 15.5 ether);
-        // Chad withdraws 
-        vm.prank(chad);
-        liquidityPoolInstance.withdraw(chad, 15.5 ether);
 
-        assertEq(liquidityPoolInstance.getTotalPooledEther(), 47.5 ether); // 63 - 15.5 = 47.5
-        assertEq(address(liquidityPoolInstance).balance, 17.5 ether); // 33 - 15.5 = 17.5
+        _finalizeWithdrawalRequest(withdrawRequestId);
+
+        vm.prank(chad);
+        withdrawRequestNFTInstance.claimWithdraw(withdrawRequestId);
+
+        assert(liquidityPoolInstance.getTotalPooledEther() >= 47.5 ether); // 63 - 15.5 = 47.5
+        assert(address(liquidityPoolInstance).balance >= 17.5 ether); // 33 - 15.5 = 17.5
+
+        vm.prank(alice);
+        liquidityPoolInstance.batchApproveRegistration(processedBidIds, pubKey, sig);
+
+        for (uint256 i = 0; i < processedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                processedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.LIVE));
+        }
 
         // EtherFi sends an exit request for a node to be exited to reclaim the 32 ether sent to the pool for withdrawals
         {
@@ -235,7 +307,9 @@ contract SmallScenariosTest is TestSetup {
 
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(alice), 10.333333333333333333 ether);
         assertEq(liquidityPoolInstance.getTotalEtherClaimOf(bob), 5.166666666666666665 ether);
-        assertEq(liquidityPoolInstance.getTotalEtherClaimOf(chad), 0 ether);
+
+        // Chad may have 1 wei less due to rounding errors
+        assert(liquidityPoolInstance.getTotalEtherClaimOf(chad) <= 1);
     }
 
     /*------ AUCTION / STAKER FLOW ------*/
@@ -312,7 +386,7 @@ contract SmallScenariosTest is TestSetup {
         startHoax(dan);
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(
             bidIdArray,
-            danProof
+            false
         );
 
         (amount, , , isActive) = auctionInstance.bids(chadBidIds[4]);
@@ -345,8 +419,6 @@ contract SmallScenariosTest is TestSetup {
 
         //-------------------------------------------------------------------------------------------------------------------------------
 
-        bytes32[] memory gregProof = merkle.getProof(whiteListedAddresses, 8);
-
         startHoax(greg);
         uint256[] memory bidIdArray2 = new uint256[](6);
         bidIdArray2[0] = chadBidIds[4];
@@ -358,8 +430,16 @@ contract SmallScenariosTest is TestSetup {
 
         uint256[] memory gregProcessedBidIds = stakingManagerInstance.batchDepositWithBidIds{value: 192 ether}(
             bidIdArray2,
-            gregProof
+            false
         );
+
+        for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                gregProcessedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED));
+        }
 
         staker = stakingManagerInstance.bidIdToStaker(bobBidIds[2]);
 
@@ -395,10 +475,18 @@ contract SmallScenariosTest is TestSetup {
         stakingManagerInstance.batchRegisterValidators(_getDepositRoot(), gregProcessedBidIds, depositDataArray);
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                gregProcessedBidIds[i]
+            );
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.LIVE));
+        }
+
+        for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
             address gregNode = managerInstance.etherfiNodeAddress(
                 gregProcessedBidIds[i]
             );
-            assertEq(gregNode.balance, 0.1 ether);
+            assertEq(gregNode.balance, 0 ether); // nodes no longer receive auction revenue
         }
 
         for (uint256 i = 0; i < gregProcessedBidIds.length; i++) {
@@ -414,8 +502,10 @@ contract SmallScenariosTest is TestSetup {
         }
 
         assertEq(address(auctionInstance).balance, 5.2 ether);
-        assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether);
+        //assertEq(address(protocolRevenueManagerInstance).balance, 0.5 ether); // TODO(Dave): protocolRevenueManager will be deprecated
+
         assertEq(managerInstance.numberOfValidators(), 5);
         assertEq(address(stakingManagerInstance).balance, 0 ether);
     }
+
 }

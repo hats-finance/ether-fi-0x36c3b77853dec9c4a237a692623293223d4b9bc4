@@ -29,14 +29,21 @@ contract AuctionManager is
     uint256 public numberOfActiveBids;
 
     INodeOperatorManager public nodeOperatorManager;
-    IProtocolRevenueManager public protocolRevenueManager;
+    IProtocolRevenueManager public DEPRECATED_protocolRevenueManager;
 
     address public stakingManagerContractAddress;
     bool public whitelistEnabled;
 
     mapping(uint256 => Bid) public bids;
 
-    address public admin;
+    address public DEPRECATED_admin;
+
+    // new state variables for phase 2
+    address public membershipManagerContractAddress;
+    uint128 public accumulatedRevenue;
+    uint128 public accumulatedRevenueThreshold;
+
+    mapping(address => bool) public admins;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
@@ -68,6 +75,8 @@ contract AuctionManager is
         maxBidAmount = 5 ether;
         numberOfBids = 1;
         whitelistEnabled = true;
+        accumulatedRevenue = 0;
+        accumulatedRevenueThreshold = 1 ether;
 
         nodeOperatorManager = INodeOperatorManager(_nodeOperatorManagerContract);
 
@@ -185,14 +194,28 @@ contract AuctionManager is
         emit BidReEnteredAuction(_bidId);
     }
 
-    /// @notice Transfer the auction fee received from the node operator to the protocol revenue manager
+    /// @notice Transfer the auction fee received from the node operator to the membership NFT contract when above the threshold
     /// @dev Called by registerValidator() in StakingManager.sol
     /// @param _bidId the ID of the validator
     function processAuctionFeeTransfer(
         uint256 _bidId
     ) external onlyStakingManagerContract {
         uint256 amount = bids[_bidId].amount;
-        protocolRevenueManager.addAuctionRevenue{value: amount}(_bidId);
+        uint256 newAccumulatedRevenue = accumulatedRevenue + amount;
+        if (newAccumulatedRevenue >= accumulatedRevenueThreshold) {
+            accumulatedRevenue = 0;
+            (bool sent, ) = membershipManagerContractAddress.call{value: newAccumulatedRevenue}("");
+            require(sent, "Failed to send Ether");
+        } else {
+            accumulatedRevenue = uint128(newAccumulatedRevenue);
+        }
+    }
+
+    function transferAccumulatedRevenue() external onlyAdmin {
+        uint256 transferAmount = accumulatedRevenue;
+        accumulatedRevenue = 0;
+        (bool sent, ) = membershipManagerContractAddress.call{value: transferAmount}("");
+        require(sent, "Failed to send Ether");
     }
 
     /// @notice Disables the whitelisting phase of the bidding
@@ -269,20 +292,6 @@ contract AuctionManager is
     //--------------------------------------  SETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    /// @notice Sets an instance of the protocol revenue manager
-    /// @notice Performed this way due to circular dependencies
-    /// @dev Needed to process an auction fee
-    /// @param _protocolRevenueManager the address of the protocol manager
-    function setProtocolRevenueManager(
-        address _protocolRevenueManager
-    ) external onlyOwner {
-        require(address(protocolRevenueManager) == address(0), "Address already set");
-        require(_protocolRevenueManager != address(0), "No zero addresses");
-        protocolRevenueManager = IProtocolRevenueManager(
-            _protocolRevenueManager
-        );
-    }
-
     /// @notice Sets the staking managers contract address in the current contract
     /// @param _stakingManagerContractAddress new stakingManagerContract address
     function setStakingManagerContractAddress(
@@ -291,6 +300,15 @@ contract AuctionManager is
         require(address(stakingManagerContractAddress) == address(0), "Address already set");
         require(_stakingManagerContractAddress != address(0), "No zero addresses");
         stakingManagerContractAddress = _stakingManagerContractAddress;
+    }
+
+    /// @notice Sets the membership manager contract address
+    /// @dev Needed to transfer accumulated revenue to the membership manager contract
+    /// @param _membershipManagerContractAddress new MembershiptManager contract address
+    function setMembershipManagerContractAddress(address _membershipManagerContractAddress) external onlyOwner {
+        require(membershipManagerContractAddress == address(0), "Address already set");
+        require(_membershipManagerContractAddress != address(0), "No zero addresses");
+        membershipManagerContractAddress = _membershipManagerContractAddress;
     }
 
     /// @notice Updates the minimum bid price for a non-whitelisted bidder
@@ -308,6 +326,12 @@ contract AuctionManager is
         maxBidAmount = _newMaxBidAmount;
     }
 
+    /// @notice Updates the accumulated revenue threshold that will trigger a transfer to MembershipNFT contract
+    /// @param _newThreshold the new threshold to set
+    function setAccumulatedRevenueThreshold(uint128 _newThreshold) external onlyAdmin {
+        accumulatedRevenueThreshold = _newThreshold;
+    }
+
     /// @notice Updates the minimum bid price for a whitelisted address
     /// @param _newAmount the new amount to set the minimum bid price as
     function updateWhitelistMinBidAmount(
@@ -317,11 +341,17 @@ contract AuctionManager is
         whitelistBidAmount = _newAmount;
     }
 
+    function updateNodeOperatorManager(address _address) external onlyOwner {
+        nodeOperatorManager = INodeOperatorManager(
+            _address
+        );
+    }
+
     /// @notice Updates the address of the admin
-    /// @param _newAdmin the new address to set as admin
-    function updateAdmin(address _newAdmin) external onlyOwner {
-        require(_newAdmin != address(0), "Cannot be address zero");
-        admin = _newAdmin;
+    /// @param _address the new address to set as admin
+    function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
+        require(_address != address(0), "Cannot be address zero");
+        admins[_address] = _isAdmin;
     }
 
     //--------------------------------------------------------------------------------------
@@ -334,15 +364,7 @@ contract AuctionManager is
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
+        require(admins[msg.sender], "Caller is not the admin");
         _;
-    }
-}
-
-contract AuctionManagerV2 is AuctionManager {
-    function updateNodeOperatorManager(address _address) external onlyOwner {
-        nodeOperatorManager = INodeOperatorManager(
-            _address
-        );
     }
 }

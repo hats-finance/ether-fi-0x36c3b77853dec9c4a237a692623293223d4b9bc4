@@ -67,23 +67,10 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "bytes32",
-        "name": "oldMerkle",
-        "type": "bytes32"
+        "internalType": "address",
+        "name": "operator",
+        "type": "address"
       },
-      {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "newMerkle",
-        "type": "bytes32"
-      }
-    ],
-    "name": "MerkleUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
       {
         "indexed": false,
         "internalType": "uint64",
@@ -168,6 +155,31 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "operator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "source",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "approved",
+        "type": "bool"
+      }
+    ],
+    "name": "UpdatedOperatorApprovals",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "implementation",
@@ -220,13 +232,19 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -243,6 +261,57 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_operator",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_ipfsHash",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "_totalKeys",
+        "type": "uint64[]"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "_keysUsed",
+        "type": "uint64[]"
+      }
+    ],
+    "name": "batchMigrateNodeOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_users",
+        "type": "address[]"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds[]",
+        "name": "_approvedTags",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "_approvals",
+        "type": "bool[]"
+      }
+    ],
+    "name": "batchUpdateOperatorsApprovedTags",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -326,6 +395,30 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "_operator",
+        "type": "address"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "_source",
+        "type": "uint8"
+      }
+    ],
+    "name": "isEligibleToRunValidatorsForSourceOfFund",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "approved",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_user",
         "type": "address"
       }
@@ -335,6 +428,30 @@
       {
         "internalType": "bool",
         "name": "whitelisted",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "enum ILiquidityPool.SourceOfFunds",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "operatorApprovedTags",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
         "type": "bool"
       }
     ],
@@ -481,8 +598,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_newAdmin",
+        "name": "_address",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isAdmin",
+        "type": "bool"
       }
     ],
     "name": "updateAdmin",

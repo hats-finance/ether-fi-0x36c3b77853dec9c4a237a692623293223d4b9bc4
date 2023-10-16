@@ -16,13 +16,16 @@ contract MembershipNFTUpgrade is Script {
         addressProvider = AddressProvider(addressProviderAddress);
         
         address membershipNFTProxy = addressProvider.getContractAddress("MembershipNFT");
+        address liquidityPool = addressProvider.getContractAddress("LiquidityPool");
 
         vm.startBroadcast(deployerPrivateKey);
 
         MembershipNFT membershipNFTInstance = MembershipNFT(payable(membershipNFTProxy));
         MembershipNFT membershipNFTV2Implementation = new MembershipNFT();
 
-        // membershipNFTInstance.upgradeTo(address(membershipNFTV2Implementation));
+        membershipNFTInstance.upgradeTo(address(membershipNFTV2Implementation));
+
+        membershipNFTInstance.setLiquidityPool(liquidityPool);
         
         vm.stopBroadcast();
     }
