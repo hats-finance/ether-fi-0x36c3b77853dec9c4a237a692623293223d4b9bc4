@@ -75,9 +75,10 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         require(request.isValid, "Request is not valid");
 
         // send the lesser value of the originally requested amount of eEth or the current eEth value of the shares
-        uint256 amountForShares = liquidityPool.amountForShare(request.shareOfEEth);
-        uint256 amountToTransfer = (request.amountOfEEth < amountForShares) ? request.amountOfEEth : amountForShares;
-        require(amountToTransfer > 0, "Amount to transfer is zero");
+        
+        uint256 shareForAmount = liquidityPool.sharesForAmount(request.amountOfEEth);
+        uint256 shareToTransfer = (request.shareOfEEth < shareForAmount) ? request.shareOfEEth : shareForAmount;
+        require(shareToTransfer > 0, "Amount to transfer is zero");
 
         // transfer eth to requester
         address recipient = ownerOf(tokenId);
@@ -85,16 +86,17 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         delete _requests[tokenId];
 
         uint256 fee = request.feeGwei * 1 gwei;
+        uint256 shareToBurn = shareToTransfer;
         if (fee > 0) {
             // send fee to membership manager
-            liquidityPool.withdraw(address(membershipManager), fee);
+            uint256 burnedShare = liquidityPool.withdraw(address(membershipManager), fee);
+            shareToTransfer -= burnedShare;
         }
 
-        uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToTransfer - fee);
-        uint256 amountUnBurnedShare = request.shareOfEEth - amountBurnedShare;
-        accumulatedDustEEthShares += uint96(amountUnBurnedShare);
+        uint256 amountWithdrawn = liquidityPool.withdrawByShares(recipient, shareToTransfer);
+        accumulatedDustEEthShares += request.shareOfEEth - uint96(shareToBurn);
 
-        emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient, fee);
+        emit WithdrawRequestClaimed(uint32(tokenId), amountWithdrawn, shareToBurn, recipient, fee);
     }
     
     // a function to transfer accumulated shares to admin

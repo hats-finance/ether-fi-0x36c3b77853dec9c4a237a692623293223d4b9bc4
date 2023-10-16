@@ -18,6 +18,8 @@ import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IEtherFiAdmin.sol";
 
+import "forge-std/console.sol";
+
 contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
@@ -145,19 +147,16 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// it returns the amount of shares burned
     function withdraw(address _recipient, uint256 _amount) external NonZeroAddress(_recipient) returns (uint256) {
         require(msg.sender == address(withdrawRequestNFT), "Incorrect Caller");
-        if(totalValueInLp < _amount || eETH.balanceOf(msg.sender) < _amount) revert InsufficientLiquidity();
-
         uint256 share = sharesForWithdrawalAmount(_amount);
-        totalValueInLp -= uint128(_amount);
-        ethAmountLockedForWithdrawal -= uint128(_amount);
-        if (_amount > type(uint128).max || _amount == 0 || share == 0) revert InvalidAmount();
-        
-        eETH.burnShares(msg.sender, share);
-
-        (bool sent, ) = _recipient.call{value: _amount}("");
-        require(sent, "send fail");
-
+        _withdraw(_recipient, _amount, share);
         return share;
+    }
+
+    function withdrawByShares(address _recipient, uint256 _share) external NonZeroAddress(_recipient) returns (uint256) {
+        require(msg.sender == address(withdrawRequestNFT), "Incorrect Caller");
+        uint256 amount = amountForShare(_share);
+        _withdraw(_recipient, amount, _share);
+        return amount;
     }
 
     /// @notice request withdraw from pool and receive a WithdrawRequestNFT
@@ -602,6 +601,19 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         return (_depositAmount * eETH.totalShares()) / totalPooledEther;
     }
 
+    function _withdraw(address _recipient, uint256 _amount, uint256 _share) internal {
+        if (totalValueInLp < _amount || eETH.balanceOf(msg.sender) < _amount) revert InsufficientLiquidity();
+        if (_amount > type(uint128).max || _amount == 0 || _share == 0) revert InvalidAmount();
+
+        totalValueInLp -= uint128(_amount);
+        ethAmountLockedForWithdrawal -= uint128(_amount);
+        
+        eETH.burnShares(msg.sender, _share);
+
+        (bool sent, ) = _recipient.call{value: _amount}("");
+        require(sent, "send fail");
+    }
+
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
@@ -676,6 +688,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         // ceiling division so rounding errors favor the protocol
         uint256 numerator = _amount * eETH.totalShares();
+        console.log("sharesForWithdrawalAmount", _amount, eETH.totalShares());
+        console.log("sharesForWithdrawalAmount", totalPooledEther - 1, totalPooledEther);
         return (numerator + totalPooledEther - 1) / totalPooledEther;
     }
 

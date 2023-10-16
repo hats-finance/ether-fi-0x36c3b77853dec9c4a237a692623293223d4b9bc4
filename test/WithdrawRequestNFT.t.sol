@@ -303,6 +303,9 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(withdrawRequestNFTInstance)), 8);
         // Within `LP.requestWithdraw`
         // - `share` is calculated by `sharesForAmount` as (9 * 98) / 100 = 8.82 ---> (rounded down to) 8
+        // So, the withdrawal request has:
+        // - `amountOfEEth` = 9
+        // - `shareOfEEth` = 8
 
 
         _finalizeWithdrawalRequest(requestId);
@@ -311,7 +314,6 @@ contract WithdrawRequestNFTTest is TestSetup {
         vm.prank(bob);
         withdrawRequestNFTInstance.claimWithdraw(requestId);
         // Within `claimWithdraw`,
-        // - `request.amountOfEEth` is 9
         // - `amountForShares` is (8 * 100) / 98 = 8.16 ---> (rounded down to) 8
         // - `amountToTransfer` is min(9, 8) = 8
         // Therefore, it calls `LP.withdraw(.., 8)`
