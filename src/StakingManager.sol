@@ -188,8 +188,6 @@ contract StakingManager is
     /// @notice Cancels a user's deposits
     /// @param _validatorIds the IDs of the validators deposits to cancel
     function batchCancelDeposit(uint256[] calldata _validatorIds) public whenNotPaused nonReentrant {
-        require(msg.sender != liquidityPoolContract, "Incorrect Caller");
-
         for (uint256 x; x < _validatorIds.length; ++x) {
             require(bidIdToStakerInfo[_validatorIds[x]].sourceOfFund == ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, "Wrong flow");
             _cancelDeposit(_validatorIds[x], msg.sender);
