@@ -2,9 +2,15 @@ const fs = require('fs');
 const ethers = require('ethers');
 require('dotenv').config();
 
-function print(str) {
-  console.log(str)
-}
+/*
+how to run:
+1. Create .env file where:
+ ETHERSCAN_API_KEY=<API KEY>, MAINNET_ADDRESS_PROVIDER=0x8487c5F8550E3C3e7734Fe7DCF77DB2B72E4A848, and GOERLI_ADDRESS_PROVIDER=0x6E429db4E1a77bCe9B6F9EDCC4e84ea689c1C97e
+2. need ethers, dotenv, and fs modules installed
+ 3. Write config file: node DeployOnlyAddressCheck.js -write
+ 4. Validate that the config file is correct
+ 5. To check addresses: node DeployOnlyAddressCheck.js <network> (network is optional, defaults to mainnet)
+*/
 
 function getContractNames() {
   const contracts = fs.readFileSync('contracts.json',
@@ -37,11 +43,29 @@ async function callMethod(contractAddress, abi, functionName, args, network) {
   })
 }
 
+function contractSubstring(method, contracts) {
+  for (contract of contracts) {
+    if (method.toLowerCase() == contract.toLowerCase()) return contract
+  }
+  for (contract of contracts) {
+    meth = method.toLowerCase()
+    con = contract.toLowerCase()
+    if (meth.includes(con) || con.includes(meth)) {
+      return contract
+    }
+  }
+  return ""
+}
+
+function isDeprecated(method) {
+  return (method.toLowerCase().includes("deprecated"))
+}
+
 function writeConfigFile() {
   contracts = getContractNames()
   jsonConfig = {}
 
-  for (contract of contracts) { 
+  for (contract of contracts) {
     arr = []
     jsonConfig[contract] = { arr };
   }
@@ -53,7 +77,7 @@ function writeConfigFile() {
       method = abi[i]
       if (method["type"] != undefined && method["stateMutability"] != undefined) {
         if (method["type"] == "function" && method["stateMutability"] == "view" &&
-          method["inputs"].length == 0 && method["outputs"].length == 1 && method["outputs"][0]["type"] == "address") { //check if returns address
+          method["inputs"].length == 0 && method["outputs"].length == 1 && method["outputs"][0]["type"] == "address" && !isDeprecated(method["name"])) { //check if returns address
           methodSubstring = contractSubstring(method["name"], contracts)
           if (methodSubstring != "") {
             methods.push({
@@ -75,22 +99,7 @@ function writeConfigFile() {
   }
 }
 
-function contractSubstring(method, contracts) {
-  for (contract of contracts) {
-    if (method.toLowerCase() == contract.toLowerCase()) return contract
-  }
-  for (contract of contracts) {
-    meth = method.toLowerCase()
-    con = contract.toLowerCase()
-    if (meth.includes(con) || con.includes(meth)) {
-      return contract
-    }
-  }
-  return ""
-}
-
 async function checkFunctionAddress(network) {
-  //read file
   const file = fs.readFileSync('addressConfig.json',
     { encoding: 'utf8', flag: 'r' });
   var contract_Methods = JSON.parse(file);
@@ -113,7 +122,7 @@ async function checkFunctionAddress(network) {
       if (method["value"] != "" && method["isReference"] == true) {
         address = await callMethod(contract_address[contract], getABI(contract), method["methodName"], [], network)
         if (address != contract_address[method["value"]]) {
-          print("contract:" + contract + " method:" + method["methodName"] + " address:" + address + " correct address:" + contract_address[method["value"]])
+          console.log("contract:" + contract + " method:" + method["methodName"] + " address:" + address + " correct address:" + contract_address[method["value"]])
         }
       }
     }
@@ -129,10 +138,10 @@ async function main() {
       return
     } else { //assume network
       network = args[2]
-      console.log(network)
     }
   }
   checkFunctionAddress(network)
 }
 
 main()
+
