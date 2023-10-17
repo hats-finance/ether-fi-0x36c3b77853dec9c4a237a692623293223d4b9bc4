@@ -94,9 +94,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp += uint128(msg.value);
     }
 
-    function initialize() external initializer {
+    function initialize(address _eEthAddress, address _stakingManagerAddress, address _nodesManagerAddress, address _membershipManagerAddress, address _tNftAddress) external initializer {
+        if (_eEthAddress == address(0) || _stakingManagerAddress == address(0) || _nodesManagerAddress == address(0) || _membershipManagerAddress == address(0) || _tNftAddress == address(0)) revert DataNotSet();
+        
         __Ownable_init();
-        __UUPSUpgradeable_init(); 
+        __UUPSUpgradeable_init();
+
+        eETH = IeETH(_eEthAddress);
+        stakingManager = IStakingManager(_stakingManagerAddress);
+        nodesManager = IEtherFiNodesManager(_nodesManagerAddress);
+        membershipManager = IMembershipManager(_membershipManagerAddress);
+        tNft = ITNFT(_tNftAddress);
     }
 
     /// @notice Allows us to set needed variable state in phase 2
@@ -106,13 +114,18 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _schedulingPeriod the time we want between scheduling periods
     /// @param _eEthNumVal the number of validators to set for eEth
     /// @param _etherFanNumVal the number of validators to set for ether fan
-    function initializeOnUpgrade(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal) external onlyOwner { 
+    function initializeOnUpgrade(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal, address _etherFiAdminContract, address _withdrawRequestNFT) external onlyOwner { 
+        require(etherFiAdminContract == address(0), "Already initialized");
+        
         //Sets what scheduling period we will start with       
         schedulingPeriodInSeconds = _schedulingPeriod;
 
         //Allows us to begin with a predefined number of validators
         fundStatistics[SourceOfFunds.EETH].numberOfValidators = _eEthNumVal;
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators = _etherFanNumVal;
+
+        etherFiAdminContract = _etherFiAdminContract;
+        withdrawRequestNFT = IWithdrawRequestNFT(_withdrawRequestNFT);
     }
 
     // Used by eETH staking flow
@@ -440,36 +453,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueOutOfLp = uint128(int128(totalValueOutOfLp) + _accruedRewards);
 
         emit Rebase(getTotalPooledEther(), eETH.totalShares());
-    }
-
-    /// @notice sets the contract address for eETH
-    /// @param _eETH address of eETH contract
-    function setTokenAddress(address _eETH) external onlyOwner {
-        eETH = IeETH(_eETH);
-    }
-
-    function setStakingManager(address _address) external onlyOwner {
-        stakingManager = IStakingManager(_address);
-    }
-
-    function setEtherFiNodesManager(address _nodeManager) public onlyOwner {
-        nodesManager = IEtherFiNodesManager(_nodeManager);
-    }
-
-    function setMembershipManager(address _address) external onlyOwner {
-        membershipManager = IMembershipManager(_address);
-    }
-
-    function setTnft(address _address) external onlyOwner{
-        tNft = ITNFT(_address);
-    }
-
-    function setEtherFiAdminContract(address _address) external onlyOwner {
-        etherFiAdminContract = _address;
-    }
-
-    function setWithdrawRequestNFT(address _address) external onlyOwner {
-        withdrawRequestNFT = IWithdrawRequestNFT(_address);
     }
 
     /// @notice Whether or not nodes created via bNFT deposits should be restaked

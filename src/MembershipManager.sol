@@ -123,7 +123,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint40 loyaltyPoints = uint40(_min(_points, type(uint40).max));
         uint40 tierPoints = membershipNFT.computeTierPointsForEap(_eapDepositBlockNumber);
 
-        liquidityPool.deposit{value: msg.value}();
+        liquidityPool.deposit{value: msg.value}(msg.sender, address(0));
 
         uint256 tokenId = _mintMembershipNFT(msg.sender, msg.value - _amountForPoints, _amountForPoints, loyaltyPoints, tierPoints);
 
@@ -180,7 +180,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         claim(_tokenId);
 
         uint256 additionalDeposit = _topUpDeposit(_tokenId, _amount, _amountForPoints);
-        liquidityPool.deposit{value: additionalDeposit}();
+        liquidityPool.deposit{value: additionalDeposit}(msg.sender, address(0));
         _emitNftUpdateEvent(_tokenId);
     }
 
@@ -262,7 +262,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint256 etherFanEEthShares = eETH.shares(address(this));
         uint256 thresholdAmount = fanBoostThresholdEthAmount();
         if (address(this).balance >= thresholdAmount) {
-            uint256 mintedShare = liquidityPool.deposit{value: thresholdAmount}();
+            uint256 mintedShare = liquidityPool.deposit{value: thresholdAmount}(address(this), address(0));
             ethRewardsPerEEthShareAfterRebase += 1 ether * thresholdAmount / etherFanEEthShares;
         }
 
@@ -296,7 +296,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error TierLimitExceeded();
     function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external {
         _requireAdmin();
-        if (tierDeposits.length >= type(uint8).max) revert TierLimitExceeded();
+        if (tierData.length >= type(uint8).max) revert TierLimitExceeded();
         tierData.push(TierData(0, _requiredTierPoints, _weight, 0));
         tierVaults.push(TierVault(0, 0));
     }

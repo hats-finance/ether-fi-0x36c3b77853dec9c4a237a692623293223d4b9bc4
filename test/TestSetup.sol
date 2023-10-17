@@ -195,6 +195,9 @@ contract TestSetup is Test {
     function setUpTests() internal {
         vm.startPrank(owner);
 
+        mockDepositContractEth2 = new DepositContract();
+        depositContractEth2 = IDepositContract(address(mockDepositContractEth2));
+
         // Deploy Contracts and Proxies
         treasuryInstance = new Treasury();
 
@@ -213,7 +216,7 @@ contract TestSetup is Test {
         stakingManagerImplementation = new StakingManager();
         stakingManagerProxy = new UUPSProxy(address(stakingManagerImplementation), "");
         stakingManagerInstance = StakingManager(address(stakingManagerProxy));
-        stakingManagerInstance.initialize(address(auctionInstance));
+        stakingManagerInstance.initialize(address(auctionInstance), address(mockDepositContractEth2));
         stakingManagerInstance.updateAdmin(alice, true);
 
         TNFTImplementation = new TNFT();
@@ -281,14 +284,8 @@ contract TestSetup is Test {
         addressProviderInstance = new AddressProvider(address(owner));
 
         liquidityPoolImplementation = new LiquidityPool();
-        vm.expectRevert("Initializable: contract is already initialized");
-        liquidityPoolImplementation.initialize();
-
         liquidityPoolProxy = new UUPSProxy(address(liquidityPoolImplementation),"");
         liquidityPoolInstance = LiquidityPool(payable(address(liquidityPoolProxy)));
-        liquidityPoolInstance.initialize();
-        liquidityPoolInstance.setTnft(address(TNFTInstance));
-        liquidityPoolInstance.updateAdmin(alice, true);
 
         // TODO - not sure what `name` and `versiona` are for
         eETHImplementation = new EETH();
@@ -322,20 +319,19 @@ contract TestSetup is Test {
         membershipNftImplementation = new MembershipNFT();
         membershipNftProxy = new UUPSProxy(address(membershipNftImplementation), "");
         membershipNftInstance = MembershipNFT(payable(membershipNftProxy));
-        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json");
-        membershipNftInstance.updateAdmin(alice, true);
 
         withdrawRequestNFTImplementation = new WithdrawRequestNFT();
         withdrawRequestNFTProxy = new UUPSProxy(address(withdrawRequestNFTImplementation), "");
         withdrawRequestNFTInstance = WithdrawRequestNFT(payable(withdrawRequestNFTProxy));
-        withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)), payable(address(membershipManagerInstance)));
-        withdrawRequestNFTInstance.updateAdmin(alice, true);
 
-        liquidityPoolInstance.setWithdrawRequestNFT(address(withdrawRequestNFTInstance));
 
         membershipManagerImplementation = new MembershipManagerV0();
         membershipManagerProxy = new UUPSProxy(address(membershipManagerImplementation), "");
         membershipManagerInstance = MembershipManagerV0(payable(membershipManagerProxy));
+
+        liquidityPoolInstance.initialize(address(eETHInstance), address(stakingManagerInstance), address(etherFiNodeManagerProxy), address(membershipManagerInstance), address(TNFTInstance));
+        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json", address(membershipManagerInstance), address(liquidityPoolInstance));
+        withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)), payable(address(membershipManagerInstance)));
         membershipManagerInstance.initialize(
             address(eETHInstance),
             address(liquidityPoolInstance),
@@ -343,8 +339,12 @@ contract TestSetup is Test {
             address(treasuryInstance),
             address(protocolRevenueManagerInstance)
         );
-        membershipManagerInstance.updateAdmin(alice, true);
         auctionInstance.setMembershipManagerContractAddress(address(membershipManagerInstance));
+
+        membershipManagerInstance.updateAdmin(alice, true);
+        membershipNftInstance.updateAdmin(alice, true);
+        withdrawRequestNFTInstance.updateAdmin(alice, true);
+        liquidityPoolInstance.updateAdmin(alice, true);
 
         etherFiOracleImplementation = new EtherFiOracle();
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
@@ -373,9 +373,6 @@ contract TestSetup is Test {
         
         vm.startPrank(owner);
 
-        membershipNftInstance.setMembershipManager(address(membershipManagerInstance));
-        membershipNftInstance.setLiquidityPool(address(liquidityPoolInstance));
-
         tvlOracle = new TVLOracle(alice);
 
         nftExchangeImplementation = new NFTExchange();
@@ -398,8 +395,7 @@ contract TestSetup is Test {
             10000
         );
 
-        liquidityPoolInstance.setEtherFiAdminContract(address(etherFiAdminInstance));
-        liquidityPoolInstance.initializeOnUpgrade(604800, 1, 1);
+        liquidityPoolInstance.initializeOnUpgrade(604800, 1, 1, address(etherFiAdminInstance), address(withdrawRequestNFTInstance));
 
         _initOracleReportsforTesting();
         vm.stopPrank();
@@ -432,21 +428,11 @@ contract TestSetup is Test {
         stakingManagerInstance.registerTNFTContract(address(TNFTInstance));
         stakingManagerInstance.registerBNFTContract(address(BNFTInstance));
 
-        liquidityPoolInstance.setTokenAddress(address(eETHInstance));
-        liquidityPoolInstance.setStakingManager(address(stakingManagerInstance));
-        liquidityPoolInstance.setEtherFiNodesManager(address(managerInstance));
-        liquidityPoolInstance.setMembershipManager(address(membershipManagerInstance));
-
         vm.stopPrank();
 
         vm.startPrank(owner);
 
         depGen = new DepositDataGeneration();
-        mockDepositContractEth2 = new DepositContract();
-
-        // depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b); // Goerli testnet deposit contract
-        depositContractEth2 = IDepositContract(address(mockDepositContractEth2));
-        stakingManagerInstance.registerEth2DepositContract(address(mockDepositContractEth2));
 
         attacker = new Attacker(address(liquidityPoolInstance));
         revertAttacker = new RevertAttacker();
