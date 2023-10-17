@@ -35,7 +35,7 @@ contract StakingManagerTest is TestSetup {
      function test_DisableInitializer() public {
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
-        stakingManagerImplementation.initialize(address(auctionInstance));
+        stakingManagerImplementation.initialize(address(auctionInstance), address(depositContractEth2));
     }
 
     function test_fake() public {

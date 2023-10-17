@@ -79,7 +79,7 @@ contract StakingManager is
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager Contract must be deployed first
     /// @param _auctionAddress The address of the auction contract for interaction
-    function initialize(address _auctionAddress) external initializer {
+    function initialize(address _auctionAddress, address _depositContractAddress) external initializer {
         require(_auctionAddress != address(0), "No zero addresses");
 
         stakeAmount = 32 ether;
@@ -91,7 +91,7 @@ contract StakingManager is
         __ReentrancyGuard_init();
 
         auctionManager = IAuctionManager(_auctionAddress);
-        depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b);
+        depositContractEth2 = IDepositContract(_depositContractAddress);
     }
 
     /// @notice Allows depositing multiple stakes at once
@@ -290,12 +290,7 @@ contract StakingManager is
         require(_address != address(0), "Cannot be address zero");
         admins[_address] = _isAdmin;
     }
-
-    function registerEth2DepositContract(address _address) public onlyOwner {
-        require(_address != address(0), "No zero addresses");
-        depositContractEth2 = IDepositContract(_address);
-    }
-
+    
     function setNodeOperatorManager(address _nodeOperateManager) external onlyAdmin {
         require(_nodeOperateManager != address(0), "Cannot be address zero");
         nodeOperatorManager = _nodeOperateManager;

@@ -50,12 +50,15 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         _disableInitializers();
     }
 
-    function initialize(string calldata _metadataURI) external initializer {
+    function initialize(string calldata _metadataURI, address _membershipManagerAddress, address _liquidityPoolAddress) external initializer {
+        require(_membershipManagerAddress != address(0) && _liquidityPoolAddress != address(0), "No zero addresses");
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
         nextMintTokenId = 1;
         maxTokenId = 1000;
+        membershipManager = IMembershipManager(_membershipManagerAddress);
+        liquidityPool = ILiquidityPool(_liquidityPoolAddress);
     }
 
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {
@@ -95,14 +98,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     function setMaxTokenId(uint32 _maxTokenId) external onlyAdmin() {
         maxTokenId = _maxTokenId;
-    }
-
-    function setMembershipManager(address _address) external onlyOwner {
-        membershipManager = IMembershipManager(_address);
-    }
-
-    function setLiquidityPool(address _address) external onlyOwner {
-        liquidityPool = ILiquidityPool(_address);
     }
 
     /// @notice Set up for EAP migration; Updates the merkle root, Set the required loyalty points per tier
