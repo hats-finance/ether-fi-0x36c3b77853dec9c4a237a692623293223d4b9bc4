@@ -3,11 +3,6 @@
   "RegulationsManager": [],
   "LiquidityPool": [
     {
-      "methodName": "bNftTreasury",
-      "value": "BNFT",
-      "isReference": true
-    },
-    {
       "methodName": "eETH",
       "value": "EETH",
       "isReference": true
@@ -23,17 +18,17 @@
       "isReference": true
     },
     {
-      "methodName": "regulationsManager",
-      "value": "RegulationsManager",
-      "isReference": true
-    },
-    {
       "methodName": "stakingManager",
       "value": "StakingManager",
       "isReference": true
     },
     {
       "methodName": "tNft",
+      "value": "TNFT",
+      "isReference": true
+    },
+    {
+      "methodName": "withdrawRequestNFT",
       "value": "TNFT",
       "isReference": true
     }
@@ -74,17 +69,18 @@
       "isReference": true
     },
     {
-      "methodName": "protocolRevenueManager",
-      "value": "ProtocolRevenueManager",
-      "isReference": true
-    },
-    {
       "methodName": "treasury",
       "value": "Treasury",
       "isReference": true
     }
   ],
-  "MembershipNFT": [],
+  "MembershipNFT": [
+    {
+      "methodName": "liquidityPool",
+      "value": "LiquidityPool",
+      "isReference": true
+    }
+  ],
   "NFTExchange": [
     {
       "methodName": "membershipNft",
@@ -99,13 +95,13 @@
   ],
   "AuctionManager": [
     {
-      "methodName": "nodeOperatorManager",
-      "value": "NodeOperatorManager",
+      "methodName": "membershipManagerContractAddress",
+      "value": "MembershipManager",
       "isReference": true
     },
     {
-      "methodName": "protocolRevenueManager",
-      "value": "ProtocolRevenueManager",
+      "methodName": "nodeOperatorManager",
+      "value": "NodeOperatorManager",
       "isReference": true
     },
     {
@@ -136,6 +132,11 @@
       "isReference": true
     },
     {
+      "methodName": "nodeOperatorManager",
+      "value": "NodeOperatorManager",
+      "isReference": true
+    },
+    {
       "methodName": "nodesManager",
       "value": "EtherFiNodesManager",
       "isReference": true
@@ -150,16 +151,6 @@
     {
       "methodName": "bnft",
       "value": "BNFT",
-      "isReference": true
-    },
-    {
-      "methodName": "protocolRevenueManager",
-      "value": "ProtocolRevenueManager",
-      "isReference": true
-    },
-    {
-      "methodName": "protocolRevenueManagerContract",
-      "value": "ProtocolRevenueManager",
       "isReference": true
     },
     {
