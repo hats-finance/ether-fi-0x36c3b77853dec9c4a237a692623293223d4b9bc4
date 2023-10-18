@@ -115,7 +115,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _eEthNumVal the number of validators to set for eEth
     /// @param _etherFanNumVal the number of validators to set for ether fan
     function initializeOnUpgrade(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal, address _etherFiAdminContract, address _withdrawRequestNFT) external onlyOwner { 
-        require(etherFiAdminContract == address(0), "Already initialized");
+        require(_etherFiAdminContract != address(0) && _withdrawRequestNFT != address(0), "No zero addresses");
+        require(etherFiAdminContract == address(0) && address(withdrawRequestNFT) == address(0), "Already initialized");
+
+        restakeBnftDeposits = false;
+        ethAmountLockedForWithdrawal = 0;
         
         //Sets what scheduling period we will start with       
         schedulingPeriodInSeconds = _schedulingPeriod;
@@ -158,7 +162,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// it returns the amount of shares burned
     function withdraw(address _recipient, uint256 _amount) external NonZeroAddress(_recipient) returns (uint256) {
         require(msg.sender == address(withdrawRequestNFT), "Incorrect Caller");
-        if(totalValueInLp < _amount || eETH.balanceOf(msg.sender) < _amount) revert InsufficientLiquidity();
+        if(totalValueInLp < _amount || ethAmountLockedForWithdrawal < _amount || eETH.balanceOf(msg.sender) < _amount) revert InsufficientLiquidity();
 
         uint256 share = sharesForWithdrawalAmount(_amount);
         totalValueInLp -= uint128(_amount);
