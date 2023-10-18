@@ -118,7 +118,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(_etherFiAdminContract != address(0) && _withdrawRequestNFT != address(0), "No zero addresses");
         require(etherFiAdminContract == address(0) && address(withdrawRequestNFT) == address(0), "Already initialized");
 
-        restakeBnftDeposits = true;
+        restakeBnftDeposits = false;
         ethAmountLockedForWithdrawal = 0;
         
         //Sets what scheduling period we will start with       
