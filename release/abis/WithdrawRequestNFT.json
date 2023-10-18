@@ -231,6 +231,19 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "requestId",
+        "type": "uint32"
+      }
+    ],
+    "name": "WithdrawRequestInvalidated",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "accumulatedDustEEthShares",
     "outputs": [
@@ -818,45 +831,6 @@
       }
     ],
     "name": "updateAdmin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newEEth",
-        "type": "address"
-      }
-    ],
-    "name": "updateEEth",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newLiquidityPool",
-        "type": "address"
-      }
-    ],
-    "name": "updateLiquidityPool",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newMembershipManager",
-        "type": "address"
-      }
-    ],
-    "name": "updateMembershipManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

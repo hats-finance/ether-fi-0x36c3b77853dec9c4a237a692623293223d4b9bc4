@@ -26,6 +26,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
     event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner, uint256 fee);
     event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner, uint256 fee);
+    event WithdrawRequestInvalidated(uint32 requestId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -119,7 +120,10 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     }
 
     function invalidateRequest(uint256 requestId) external onlyAdmin {
+        require(_requests[requestId].isValid, "Request is not valid");
         _requests[requestId].isValid = false;
+
+        emit WithdrawRequestInvalidated(uint32(requestId));
     }
 
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
