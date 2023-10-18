@@ -258,4 +258,52 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertEq(bobsEndingBalance, bobsStartingBalance + 60 ether, "Bobs balance should be 60 ether higher");
         
     }
+
+    function test_SD_6() public {
+        vm.deal(bob, 98);
+
+        vm.startPrank(bob);
+        liquidityPoolInstance.deposit{value: 98}();
+        eETHInstance.approve(address(liquidityPoolInstance), 98);
+        vm.stopPrank();
+
+        assertEq(eETHInstance.totalShares(), 98);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 98);
+        vm.prank(address(membershipManagerInstance));
+        liquidityPoolInstance.rebase(2);
+        assertEq(eETHInstance.totalShares(), 98);
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 100);
+
+        assertEq(eETHInstance.balanceOf(address(withdrawRequestNFTInstance)), 0);
+        vm.prank(bob);
+        // Withdraw request for 9 wei eETH amount (= 8.82 wei eETH share)
+        // 8 wei eETH share is transfered to `withdrawRequestNFT` contract
+        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, 9);
+        assertEq(eETHInstance.balanceOf(address(withdrawRequestNFTInstance)), 8);
+        // Within `LP.requestWithdraw`
+        // - `share` is calculated by `sharesForAmount` as (9 * 98) / 100 = 8.82 ---> (rounded down to) 8
+
+
+        _finalizeWithdrawalRequest(requestId);
+
+
+        vm.prank(bob);
+        withdrawRequestNFTInstance.claimWithdraw(requestId);
+        // Within `claimWithdraw`,
+        // - `request.amountOfEEth` is 9
+        // - `amountForShares` is (8 * 100) / 98 = 8.16 ---> (rounded down to) 8
+        // - `amountToTransfer` is min(9, 8) = 8
+        // Therefore, it calls `LP.withdraw(.., 8)`
+
+        // Within `LP.withdraw`, 
+        // - `share` is calculated by 'sharesForWithdrawalAmount' as (8 * 98 + 100 - 1) / 100 = 8.83 ---> (rounded down to) 8
+
+        // As a result, bob received 8 wei ETH which is 1 wei less than 9 wei.
+        assertEq(bob.balance, 8);
+        assertEq(eETHInstance.balanceOf(address(withdrawRequestNFTInstance)), 0);
+
+        // We burnt 8 wei eETH share which is worth of 8.16 wei eETH amount.
+        // We processed the withdrawal of 8 wei ETH. 
+        // --> The rest 0.16 wei ETH is effectively distributed to the other eETH holders.
+    }
 }
