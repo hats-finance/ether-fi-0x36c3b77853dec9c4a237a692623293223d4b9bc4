@@ -627,6 +627,11 @@
         "internalType": "address",
         "name": "_auctionAddress",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_depositContractAddress",
+        "type": "address"
       }
     ],
     "name": "initialize",
@@ -754,19 +759,6 @@
       }
     ],
     "name": "registerBNFTContract",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_address",
-        "type": "address"
-      }
-    ],
-    "name": "registerEth2DepositContract",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -949,25 +941,6 @@
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "validatorSourceOfFunds",
-    "outputs": [
-      {
-        "internalType": "enum ILiquidityPool.SourceOfFunds",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]
