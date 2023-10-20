@@ -14,6 +14,7 @@ import "../../src/interfaces/ILiquidityPool.sol";
 import "../../src/interfaces/IMembershipManager.sol";
 import "../../src/interfaces/IMembershipNFT.sol";
 import "../../src/interfaces/IEtherFiNodesManager.sol";
+import "../../src/interfaces/IEtherFiOracle.sol";
 import "../../src/interfaces/IWithdrawRequestNFT.sol";
 
 import "../../src/UUPSProxy.sol";
@@ -147,5 +148,7 @@ contract DeployPhaseTwoScript is Script {
         IWithdrawRequestNFT(address(withdrawRequestNFTAddress)).updateAdmin(admin, true);
 
         addressProvider.addContract(address(etherFiAdminProxy), "EtherFiAdmin");
+
+        IEtherFiOracle(address(etherFiOracleAddress)).setEtherFiAdmin(address(etherFiAdminInstance));
     }
 }

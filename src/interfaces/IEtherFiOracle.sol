@@ -54,4 +54,5 @@ interface IEtherFiOracle {
     function setQuorumSize(uint32 _quorumSize) external;
     function setOracleReportPeriod(uint32 _reportPeriodSlot) external;
     function setConsensusVersion(uint32 _consensusVersion) external;
+    function setEtherFiAdmin(address _etherFiAdminAddress) external;
 }
