@@ -8,6 +8,7 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 
 import "./interfaces/IEtherFiOracle.sol";
+import "./interfaces/IEtherFiAdmin.sol";
 
 import "forge-std/console.sol";
 
@@ -31,6 +32,8 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
 
     uint32 public numCommitteeMembers; // the total number of committee members
     uint32 public numActiveCommitteeMembers; // the number of active (enabled) committee members
+
+    IEtherFiAdmin etherFiAdmin;
 
     event CommitteeMemberAdded(address indexed member);
     event CommitteeMemberRemoved(address indexed member);
@@ -116,6 +119,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         uint32 slot = slotForNextReport();
         require(_isFinalized(slot), "Report Epoch is not finalized yet");
         require(computeSlotAtTimestamp(block.timestamp) >= reportStartSlot, "Report Slot has not started yet");
+        require(lastPublishedReportRefSlot == etherFiAdmin.lastHandledReportRefSlot(), "Last published report is not handled yet");
         return slot > committeeMemberStates[_member].lastReportRefSlot;
     }
 
@@ -253,6 +257,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         require(_reportStartSlot > lastPublishedReportRefSlot, "The start slot should be after the last published report");
         require(_reportStartSlot % SLOTS_PER_EPOCH == 0, "The start slot should be at the beginning of the epoch");
         reportStartSlot = _reportStartSlot;
+        
         emit ReportStartSlotUpdated(_reportStartSlot);
     }
 
@@ -275,6 +280,11 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         consensusVersion = _consensusVersion;
 
         emit ConsensusVersionUpdated(_consensusVersion);
+    }
+
+    function setEtherFiAdmin(address _etherFiAdminAddress) external onlyOwner {
+        require(etherFiAdmin == IEtherFiAdmin(address(0)), "EtherFiAdmin is already set");
+        etherFiAdmin = IEtherFiAdmin(_etherFiAdminAddress);
     }
 
     function pauseContract() external onlyOwner {

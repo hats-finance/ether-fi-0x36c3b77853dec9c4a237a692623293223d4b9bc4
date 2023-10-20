@@ -194,29 +194,46 @@ contract EtherFiOracleTest is TestSetup {
         // Now it's period 3
         _moveClock(1024);
 
-        // alice submits the period 3 report
-        vm.prank(alice);
-        consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod3);
-        assertEq(consensusReached, false);
-        // bob submits the same period 3 report
-        vm.prank(bob);
-        consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod3);
-        assertEq(consensusReached, true);
+        _executeAdminTasks(reportAtPeriod3);
+
 
         // Now it's period 4
         _moveClock(1024);
 
+        _executeAdminTasks(reportAtPeriod4);
+    }
+
+    function test_report_submission_before_processing_last_published_one_fails() public {
+        bytes[] memory emptyBytes = new bytes[](0);
+        vm.prank(owner);
+        etherFiOracleInstance.setQuorumSize(1);
+
+        // period 2
+        _moveClock(1024 + 2 * slotsPerEpoch);
+
         vm.prank(alice);
-        consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod4);
-        assertEq(consensusReached, false);
-        vm.prank(bob);
-        consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod4);
+        bool consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod2A);
         assertEq(consensusReached, true);
+
+        // Now it's period 3
+        _moveClock(1024);
+
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        _initReportBlockStamp(report);
+
+        vm.prank(alice);
+        vm.expectRevert("Last published report is not handled yet");
+        etherFiOracleInstance.submitReport(report);
+        
+        vm.prank(alice);
+        etherFiAdminInstance.executeTasks(reportAtPeriod2A, emptyBytes, emptyBytes);
+
+        vm.prank(alice);
+        etherFiOracleInstance.submitReport(report);
     }
 
     function test_change_report_start_slot() public { 
         vm.prank(owner);
-        etherFiOracleInstance.setQuorumSize(1);
         
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
         _moveClock(1024 + 2 * 32);
@@ -231,8 +248,7 @@ contract EtherFiOracleTest is TestSetup {
         report.refBlockFrom = 0;
         report.refBlockTo = 1024-1;
 
-        vm.prank(alice);
-        etherFiOracleInstance.submitReport(report);
+        _executeAdminTasks(report);
 
         (slotFrom, slotTo, blockFrom) = etherFiOracleInstance.blockStampForNextReport();
         assertEq(slotFrom, 1024);
@@ -255,8 +271,7 @@ contract EtherFiOracleTest is TestSetup {
         report.refBlockFrom = 1024;
         report.refBlockTo = 2 * 1024 + 512 -1;
 
-        vm.prank(alice);
-        etherFiOracleInstance.submitReport(report);
+        _executeAdminTasks(report);
 
         (slotFrom, slotTo, blockFrom) = etherFiOracleInstance.blockStampForNextReport();
         assertEq(slotFrom, 2 * 1024 + 512);
