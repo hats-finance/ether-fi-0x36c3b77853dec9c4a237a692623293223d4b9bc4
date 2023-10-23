@@ -32,6 +32,7 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
         stakingManagerAddress = _stakingManagerAddress;
     }
 
+    /// @notice initialization function that should be called after phase 2.0 contract upgrade
     function initializeOnUpgrade(address _etherFiNodesManagerAddress) onlyOwner external {
         require(etherFiNodesManagerAddress == address(0), "Already initialized for upgrade");
         require(_etherFiNodesManagerAddress != address(0), "Cannot initialize to zero address");
@@ -47,6 +48,7 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
         _mint(_receiver, _validatorId);
     }
 
+    /// @notice burn the associated tNFT when a full withdrawal is processed
     function burnFromWithdrawal(uint256 _validatorId) external onlyEtherFiNodesManager {
         _burn(_validatorId);
     }
