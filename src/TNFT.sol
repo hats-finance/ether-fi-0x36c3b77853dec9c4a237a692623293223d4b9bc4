@@ -10,6 +10,7 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
     address public stakingManagerAddress;
+    address public etherFiNodesManagerAddress;
 
     address public admin;
 
@@ -41,6 +42,10 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
         _mint(_receiver, _validatorId);
     }
 
+    function burnFromWithdrawal(uint256 _validatorId) external onlyEtherFiNodesManager {
+        _burn(_validatorId);
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
@@ -48,6 +53,17 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------  SETTER  --------------------------------------
+    //--------------------------------------------------------------------------------------
+    function setAdmin(address _admin) external onlyOwner {
+        admin = _admin;
+    }
+
+    function setEtherFiNodesManagerAddress(address _addr) external onlyAdmin {
+        etherFiNodesManagerAddress = _addr;
+    }
 
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
@@ -63,8 +79,18 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //------------------------------------  MODIFIERS  -------------------------------------
     //--------------------------------------------------------------------------------------
 
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Caller is not the admin");
+        _;
+    }
+
     modifier onlyStakingManager() {
         require(msg.sender == stakingManagerAddress, "Only staking manager contract");
+        _;
+    }
+
+    modifier onlyEtherFiNodesManager() {
+        require(msg.sender == etherFiNodesManagerAddress, "Only etherFiNodesManager contract");
         _;
     }
 }
