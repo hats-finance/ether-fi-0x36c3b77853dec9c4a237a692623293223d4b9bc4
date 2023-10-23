@@ -232,9 +232,11 @@ contract EtherFiOracleTest is TestSetup {
         etherFiOracleInstance.submitReport(report);
     }
 
-    function test_change_report_start_slot() public { 
+    function test_change_report_start_slot1() public { 
         vm.prank(owner);
-        
+        bytes[] memory emptyBytes = new bytes[](0);
+        etherFiOracleInstance.setQuorumSize(1);
+
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
         _moveClock(1024 + 2 * 32);
 
@@ -248,35 +250,61 @@ contract EtherFiOracleTest is TestSetup {
         report.refBlockFrom = 0;
         report.refBlockTo = 1024-1;
 
-        _executeAdminTasks(report);
+        vm.startPrank(alice);
+        etherFiOracleInstance.submitReport(report);
+        etherFiAdminInstance.executeTasks(report, emptyBytes, emptyBytes);
+        vm.stopPrank();
 
         (slotFrom, slotTo, blockFrom) = etherFiOracleInstance.blockStampForNextReport();
         assertEq(slotFrom, 1024);
         assertEq(slotTo, 2 * 1024 - 1);
         assertEq(blockFrom, 1024);
 
-        console.log(etherFiOracleInstance.computeSlotAtTimestamp(block.timestamp));
         vm.prank(owner);
         etherFiOracleInstance.setReportStartSlot(1 * 1024 + 512);
+
+        _moveClock(1 * 1024 + 512);
 
         (slotFrom, slotTo, blockFrom) = etherFiOracleInstance.blockStampForNextReport();
         assertEq(slotFrom, 1024);
         assertEq(slotTo, 2 * 1024 + 512 - 1);
         assertEq(blockFrom, 1024);
 
-        _moveClock(1 * 1024 + 512);
-
         report.refSlotFrom = 1024;
-        report.refSlotTo = 2 * 1024 + 512 -1;
+        report.refSlotTo = 2 * 1024 + 512 - 1;
         report.refBlockFrom = 1024;
-        report.refBlockTo = 2 * 1024 + 512 -1;
+        report.refBlockTo = 2 * 1024 + 512 - 1;
 
-        _executeAdminTasks(report);
+        vm.startPrank(alice);
+        etherFiOracleInstance.submitReport(report);
+        etherFiAdminInstance.executeTasks(report, emptyBytes, emptyBytes);
+        vm.stopPrank();
 
         (slotFrom, slotTo, blockFrom) = etherFiOracleInstance.blockStampForNextReport();
         assertEq(slotFrom, 2 * 1024 + 512);
         assertEq(slotTo, 3 * 1024 + 512 - 1);
         assertEq(blockFrom, 2 * 1024 + 512);
+    }
+
+    function test_change_report_start_slot2() public { 
+        vm.prank(owner);
+        
+        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+        _moveClock(1024 + 2 * 32);
+
+        (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = etherFiOracleInstance.blockStampForNextReport();
+        assertEq(slotFrom, 0);
+        assertEq(slotTo, 1024 - 1);
+        assertEq(blockFrom, 0);
+
+        console.log(etherFiOracleInstance.computeSlotAtTimestamp(block.timestamp));
+        vm.prank(owner);
+        etherFiOracleInstance.setReportStartSlot(1 * 1024 + 512);
+
+        (slotFrom, slotTo, blockFrom) = etherFiOracleInstance.blockStampForNextReport();
+        assertEq(slotFrom, 1 * 1024 + 512);
+        assertEq(slotTo, 2 * 1024 + 512 - 1);
+        assertEq(blockFrom, 1 * 1024 + 512);
     }
 
     function test_report_start_slot() public {
@@ -327,6 +355,36 @@ contract EtherFiOracleTest is TestSetup {
 
         vm.prank(alice);
         etherFiOracleInstance.submitReport(reportAtSlot4287);
+    }
+
+    function test_unpublishReport() public {
+        bytes[] memory emptyBytes = new bytes[](0);
+        vm.prank(owner);
+        etherFiOracleInstance.setQuorumSize(1);
+
+        // period 2
+        _moveClock(1024 + 2 * slotsPerEpoch);
+
+        uint32 lastPublishedReportRefSlot = etherFiOracleInstance.lastPublishedReportRefSlot();
+        uint32 lastPublishedReportRefBlock = etherFiOracleInstance.lastPublishedReportRefBlock();
+
+        // Oracle accidentally generated an wrong report
+        bytes32 reportHash = etherFiOracleInstance.generateReportHash(reportAtPeriod2A);
+        vm.prank(alice);
+        bool consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod2A);
+        assertEq(consensusReached, true);
+
+        assertEq(etherFiOracleInstance.lastPublishedReportRefSlot(), reportAtPeriod2A.refSlotTo);
+        assertEq(etherFiOracleInstance.lastPublishedReportRefBlock(), reportAtPeriod2A.refBlockTo);
+
+        // Owner performs manual operations to undo the published report
+        vm.startPrank(owner);
+        etherFiOracleInstance.unpublishReport(reportHash);
+        etherFiOracleInstance.updateLastPublishedBlockStamps(lastPublishedReportRefSlot, lastPublishedReportRefBlock);
+        vm.stopPrank();
+
+        assertEq(etherFiOracleInstance.lastPublishedReportRefSlot(), lastPublishedReportRefSlot);
+        assertEq(etherFiOracleInstance.lastPublishedReportRefBlock(), lastPublishedReportRefBlock);
     }
 
     function test_pause() public {

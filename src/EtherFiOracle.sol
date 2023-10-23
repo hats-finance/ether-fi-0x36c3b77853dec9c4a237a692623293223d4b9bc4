@@ -286,6 +286,17 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         require(etherFiAdmin == IEtherFiAdmin(address(0)), "EtherFiAdmin is already set");
         etherFiAdmin = IEtherFiAdmin(_etherFiAdminAddress);
     }
+    
+    function unpublishReport(bytes32 _hash) external onlyOwner {
+        require(consensusStates[_hash].consensusReached, "Consensus is not reached yet");
+        consensusStates[_hash].support = 0;
+        consensusStates[_hash].consensusReached = false;
+    }
+
+    function updateLastPublishedBlockStamps(uint32 _lastPublishedReportRefSlot, uint32 _lastPublishedReportRefBlock) external onlyOwner {
+        lastPublishedReportRefSlot = _lastPublishedReportRefSlot;
+        lastPublishedReportRefBlock = _lastPublishedReportRefBlock;
+    }
 
     function pauseContract() external onlyOwner {
         _pause();
