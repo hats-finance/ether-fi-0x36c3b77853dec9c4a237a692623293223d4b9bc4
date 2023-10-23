@@ -418,6 +418,46 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(address(safeInstance).balance, 0);
     }
 
+    function testFullWithdrawBurnsTNFT() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+
+        uint256 validatorId = depositAndRegisterValidator(true);
+        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
+
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitRequestTimestamps = new uint32[](1);
+        validatorIds[0] = validatorId;
+        exitRequestTimestamps[0] = uint32(block.timestamp);
+
+        vm.deal(safeInstance.eigenPod(), 32 ether);
+
+        vm.startPrank(alice); // alice is the admin
+        vm.expectRevert("validator node is not exited");
+        managerInstance.fullWithdraw(validatorId);
+
+        // Marked as EXITED
+        // should also have queued up the current balance to via DelayedWithdrawalRouter
+        managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
+
+        // wait some time so claims are claimable
+        vm.roll(block.number + (50400) + 1);
+
+        // alice should own the tNFT since she created the validator
+        assertEq(TNFTInstance.ownerOf(validatorId), alice);
+
+        // withdraw the node
+        managerInstance.fullWithdraw(validatorIds[0]);
+
+        // tNFT should be burned
+        vm.expectRevert("ERC721: invalid token ID");
+        TNFTInstance.ownerOf(validatorId);
+    }
+
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(alice);

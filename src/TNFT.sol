@@ -12,8 +12,6 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     address public stakingManagerAddress;
     address public etherFiNodesManagerAddress;
 
-    address public admin;
-
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
     //--------------------------------------------------------------------------------------
@@ -32,6 +30,13 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
         __UUPSUpgradeable_init();
 
         stakingManagerAddress = _stakingManagerAddress;
+    }
+
+    function initializeOnUpgrade(address _etherFiNodesManagerAddress) onlyOwner external {
+        require(etherFiNodesManagerAddress == address(0), "Already initialized for upgrade");
+        require(_etherFiNodesManagerAddress != address(0), "Cannot initialize to zero address");
+
+        etherFiNodesManagerAddress = _etherFiNodesManagerAddress;
     }
 
     /// @notice Mints NFT to required user
@@ -55,17 +60,6 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     ) internal override onlyOwner {}
 
     //--------------------------------------------------------------------------------------
-    //--------------------------------------  SETTER  --------------------------------------
-    //--------------------------------------------------------------------------------------
-    function setAdmin(address _admin) external onlyOwner {
-        admin = _admin;
-    }
-
-    function setEtherFiNodesManagerAddress(address _addr) external onlyAdmin {
-        etherFiNodesManagerAddress = _addr;
-    }
-
-    //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
@@ -78,11 +72,6 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
     //--------------------------------------------------------------------------------------
     //------------------------------------  MODIFIERS  -------------------------------------
     //--------------------------------------------------------------------------------------
-
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "Caller is not the admin");
-        _;
-    }
 
     modifier onlyStakingManager() {
         require(msg.sender == stakingManagerAddress, "Only staking manager contract");
