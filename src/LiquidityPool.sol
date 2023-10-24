@@ -507,10 +507,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight = _etherFanWeight;
     }
 
-    function updateWhitelistedAddresses(address _user, bool _value) external onlyAdmin {
-        whitelisted[_user] = _value;
+    function updateWhitelistedAddresses(address[] calldata _users, bool _value) external onlyAdmin {
+        for (uint256 i = 0; i < _users.length; i++) {
+            whitelisted[_users[i]] = _value;
 
-        emit UpdatedWhitelist(_user, _value);
+            emit UpdatedWhitelist(_users[i], _value);
+        }
     }
 
     function updateWhitelistStatus(bool _value) external onlyAdmin {

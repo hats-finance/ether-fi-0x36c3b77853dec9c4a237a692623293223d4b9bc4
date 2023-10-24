@@ -590,9 +590,14 @@ contract MembershipManagerTest is TestSetup {
         //Giving 12 Ether to shonee
         vm.deal(shonee, 12 ether);
 
+        address[] memory addrs = new address[](1);
+        addrs[0] = address(henry);
+
         vm.prank(alice);
-        liquidityPoolInstance.updateWhitelistedAddresses(address(shonee), true);
-        vm.startPrank(shonee);
+        liquidityPoolInstance.updateWhitelistedAddresses(addrs, true);
+        
+        vm.startPrank(henry);
+        membershipManagerV1Instance.wrapEth{value: 10 ether}(10 ether, 0);
     }
 
     function test_UpdatingPointsGrowthRate() public {
