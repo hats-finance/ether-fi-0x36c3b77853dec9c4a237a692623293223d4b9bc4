@@ -250,6 +250,8 @@ contract TestSetup is Test {
         managerInstance.setDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
         managerInstance.setMaxEigenLayerWithdrawals(5); // TODO(Dave): run some tests to find a good balance between gas and security
 
+        TNFTInstance.initializeOnUpgrade(address(managerInstance));
+
         regulationsManagerImplementation = new RegulationsManager();
         vm.expectRevert("Initializable: contract is already initialized");
         regulationsManagerImplementation.initialize();

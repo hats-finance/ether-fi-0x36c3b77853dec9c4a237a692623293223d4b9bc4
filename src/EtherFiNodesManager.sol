@@ -235,13 +235,15 @@ contract EtherFiNodesManager is
             = getFullWithdrawalPayouts(_validatorId);
         _setPhase(etherfiNode, _validatorId, IEtherFiNode.VALIDATOR_PHASE.FULLY_WITHDRAWN);
 
-
         _distributePayouts(_validatorId, toTreasury, toOperator, toTnft, toBnft);
 
         // automatically recycle this node if entire execution layer balance is withdrawn
         if (IEtherFiNode(etherfiNode).totalBalanceInExecutionLayer() == 0) {
             _recycleEtherFiNode(_validatorId);
         }
+
+        // burn the tNFT
+        tnft.burnFromWithdrawal(_validatorId);
     }
 
     /// @notice Process the full withdrawal for multiple validators
