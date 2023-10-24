@@ -1012,6 +1012,37 @@
   {
     "inputs": [
       {
+        "internalType": "bytes32",
+        "name": "_hash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "unpublishReport",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_lastPublishedReportRefSlot",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_lastPublishedReportRefBlock",
+        "type": "uint32"
+      }
+    ],
+    "name": "updateLastPublishedBlockStamps",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "newImplementation",
         "type": "address"
