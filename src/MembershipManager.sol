@@ -482,6 +482,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (ethAmount < feeAmount) revert InsufficientBalance();
 
         _withdraw(_tokenId, ethAmount);
+        delete tokenData[_tokenId];
+
         membershipNFT.burn(msg.sender, _tokenId, 1);
 
         _emitNftUpdateEvent(_tokenId);
