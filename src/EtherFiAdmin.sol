@@ -70,9 +70,6 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(slotForNextReportToProcess() == _report.refSlotFrom, "EtherFiAdmin: report has wrong `refSlotFrom`");
         require(blockForNextReportToProcess() == _report.refBlockFrom, "EtherFiAdmin: report has wrong `refBlockFrom`");
 
-        //The number of validators for the current scheduling period we can spin up
-        //Important variable when calculating how many BNFT players to assign for the scheduling period
-        //See natspec in LP for more information
         numValidatorsToSpinUp = _report.numValidatorsToSpinUp;
 
         _handleAccruedRewards(_report);
@@ -87,6 +84,10 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _handleAccruedRewards(IEtherFiOracle.OracleReport calldata _report) internal {
+        if (_report.accruedRewards == 0) {
+            return;
+        }
+
         // compute the elapsed time since the last rebase
         int256 elapsedSlots = int32(_report.refSlotTo - lastHandledReportRefSlot);
         int256 elapsedTime = 12 seconds * elapsedSlots;
@@ -109,16 +110,24 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function _handleValidators(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) internal {
         // validatorsToApprove
-        liquidityPool.batchApproveRegistration(_report.validatorsToApprove, _pubKey, _signature);
+        if (_report.validatorsToApprove.length > 0) {
+            liquidityPool.batchApproveRegistration(_report.validatorsToApprove, _pubKey, _signature);
+        }
 
         // liquidityPoolValidatorsToExit
-        liquidityPool.sendExitRequests(_report.liquidityPoolValidatorsToExit);
+        if (_report.liquidityPoolValidatorsToExit.length > 0) {
+            liquidityPool.sendExitRequests(_report.liquidityPoolValidatorsToExit);
+        }
 
         // exitedValidators
-        etherFiNodesManager.processNodeExit(_report.exitedValidators, _report.exitedValidatorsExitTimestamps);
+        if (_report.exitedValidators.length > 0) {
+            etherFiNodesManager.processNodeExit(_report.exitedValidators, _report.exitedValidatorsExitTimestamps);
+        }
 
         // slashedValidators
-        etherFiNodesManager.markBeingSlashed(_report.slashedValidators);
+        if (_report.slashedValidators.length > 0) {
+            etherFiNodesManager.markBeingSlashed(_report.slashedValidators);
+        }
     }
 
     function _handleWithdrawals(IEtherFiOracle.OracleReport calldata _report) internal {
@@ -131,7 +140,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     function _handleTargetFundsAllocations(IEtherFiOracle.OracleReport calldata _report) internal {
-        if (_report.eEthTargetAllocationWeight == 0 || _report.etherFanTargetAllocationWeight == 0) {
+        // To handle the case when we want to avoid updating the params too often (to save gas fee)
+        if (_report.eEthTargetAllocationWeight == 0 && _report.etherFanTargetAllocationWeight == 0) {
             return;
         }
         liquidityPool.setStakingTargetWeights(_report.eEthTargetAllocationWeight, _report.etherFanTargetAllocationWeight);
