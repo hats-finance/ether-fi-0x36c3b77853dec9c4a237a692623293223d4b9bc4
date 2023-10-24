@@ -72,7 +72,10 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.deposit{value: 1 ether}();
         assertEq(address(liquidityPoolInstance).balance, 0);
 
-        liquidityPoolInstance.updateWhitelistedAddresses(address(alice), true);
+        address[] memory addrs = new address[](1);
+        addrs[0] = alice;
+
+        liquidityPoolInstance.updateWhitelistedAddresses(addrs, true);
         liquidityPoolInstance.deposit{value: 1 ether}();
 
         assertEq(address(liquidityPoolInstance).balance, 1 ether);
