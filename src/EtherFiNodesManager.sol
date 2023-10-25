@@ -358,6 +358,7 @@ contract EtherFiNodesManager is
     function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft)
         public onlyAdmin
     {
+        require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "wring splits");
         stakingRewardsSplit.treasury = _treasury;
         stakingRewardsSplit.nodeOperator = _nodeOperator;
         stakingRewardsSplit.tnft = _tnft;
