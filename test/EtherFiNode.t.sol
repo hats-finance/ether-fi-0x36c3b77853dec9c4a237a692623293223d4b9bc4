@@ -356,6 +356,56 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(_delayedWithdrawalRouter, 3 ether);
     }
 
+    function test_withdrawableBalanceInExecutionLayer() public {
+        // re-run setup now that we have fork selected. Probably a better way we can do this
+        vm.selectFork(testnetFork);
+        setUp();
+
+        uint256 validatorId = depositAndRegisterValidator(true);
+        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
+
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 0 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 0 ether);
+
+        // send some funds to the pod
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 1 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 0 ether);
+
+        // queue withdrawal
+        safeInstance.queueRestakedWithdrawal();
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 1 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 0 ether);
+
+        // more eth to pod
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 2 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 0 ether);
+
+        // wait so queued withdrawal is claimable
+        vm.roll(block.number + (50400) + 1);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 2 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 1 ether);
+
+        // claim that withdrawal
+        safeInstance.claimQueuedWithdrawals(10);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 2 ether);
+        assertEq(address(safeInstance).balance, 1 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 1 ether);
+
+        // queue multiple but only some that are claimable
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.roll(block.number + (50400) + 1);
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 3 ether);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 4 ether);
+
+
+    }
+
     function test_restakedAttackerCantBlockWithdraw() public {
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);

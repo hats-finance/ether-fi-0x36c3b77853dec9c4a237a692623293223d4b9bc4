@@ -611,10 +611,10 @@ contract EtherFiNodesManager is
         public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         require(isExited(_validatorId), "validator node is not exited");
 
-        // The full withdrawal payouts should be equal to the total TVL of the validator
+        // The full withdrawal payouts should be equal to the total withdrawable TVL of the validator
         // 'beaconBalance' should be 0 since the validator must be in 'withdrawal_done' status
         // - it will get provably verified once we have EIP 4788
-        return calculateTVL(_validatorId, 0);
+        return calculateWithdrawableTVL(_validatorId, 0);
     }
 
     /// @notice Compute the TVLs for {node operator, t-nft holder, b-nft holder, treasury}
@@ -630,8 +630,35 @@ contract EtherFiNodesManager is
         uint256 _beaconBalance
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
         address etherfiNode = etherfiNodeAddress[_validatorId];
+        uint256 executionBalance = IEtherFiNode(etherfiNode).totalBalanceInExecutionLayer();
         return  IEtherFiNode(etherfiNode).calculateTVL(
                     _beaconBalance,
+                    executionBalance,
+                    stakingRewardsSplit,
+                    SCALE
+                );
+    }
+
+    /// @notice Compute the withdrawable TVLs for {node operator, t-nft holder, b-nft holder, treasury}
+    ///         This differs from calculateTVL() in the presence of restaking, where some funds
+    ///         might not be immediately withdrawable due to eigenLayer's delayed withdrawal mechanism.
+    ///         This method should be used when determining full withdrawal payouts
+    /// @param _validatorId id of the validator associated to etherfi node
+    /// @param _beaconBalance the balance of the validator in Consensus Layer
+    ///
+    /// @return toNodeOperator  the TVL for the Node Operator
+    /// @return toTnft          the TVL for the T-NFT holder
+    /// @return toBnft          the TVL for the B-NFT holder
+    /// @return toTreasury      the TVL for the Treasury
+    function calculateWithdrawableTVL(
+        uint256 _validatorId,
+        uint256 _beaconBalance
+    ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
+        address etherfiNode = etherfiNodeAddress[_validatorId];
+        uint256 executionBalance = IEtherFiNode(etherfiNode).withdrawableBalanceInExecutionLayer();
+        return  IEtherFiNode(etherfiNode).calculateTVL(
+                    _beaconBalance,
+                    executionBalance,
                     stakingRewardsSplit,
                     SCALE
                 );

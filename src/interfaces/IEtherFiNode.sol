@@ -48,7 +48,7 @@ interface IEtherFiNode {
     }
 
     // VIEW functions
-    function calculateTVL(uint256 _beaconBalance, IEtherFiNodesManager.RewardsSplit memory _SRsplits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
+    function calculateTVL(uint256 _beaconBalance, uint256 _executionBalance, IEtherFiNodesManager.RewardsSplit memory _SRsplits, uint256 _scale) external view returns (uint256, uint256, uint256, uint256);
     function eigenPod() external view returns (address);
     function exitRequestTimestamp() external view returns (uint32);
     function exitTimestamp() external view returns (uint32);
@@ -75,6 +75,7 @@ interface IEtherFiNode {
     function setPhase(VALIDATOR_PHASE _phase) external;
     function splitBalanceInExecutionLayer() external view returns (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter);
     function totalBalanceInExecutionLayer() external view returns (uint256);
+    function withdrawableBalanceInExecutionLayer() external view returns (uint256);
 
     function withdrawFunds(
         address _treasury,

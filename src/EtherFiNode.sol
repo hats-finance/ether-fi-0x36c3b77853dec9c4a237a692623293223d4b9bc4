@@ -294,10 +294,27 @@ contract EtherFiNode is IEtherFiNode {
         return (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter);
     }
 
+
     /// @notice total balance (wei) of this safe currently in the execution layer. Includes restaked funds
     function totalBalanceInExecutionLayer() public view returns (uint256) {
         (uint256 _safe, uint256 _pod, uint256 _router) = splitBalanceInExecutionLayer();
         return _safe + _pod + _router;
+    }
+
+    /// @notice balance (wei) of this safe that could be immediately withdrawn.
+    ///         This only differs from the balance in the safe in the case of restaked validators
+    ///         because some funds might not be withdrawable yet do to eigenlayer's queued withdrawal system
+    function withdrawableBalanceInExecutionLayer() public view returns (uint256) {
+        uint256 safeBalance = address(this).balance;
+        uint256 claimableBalance = 0;
+        if (isRestakingEnabled) {
+            IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter());
+            IDelayedWithdrawalRouter.DelayedWithdrawal[] memory claimableWithdrawals = delayedWithdrawalRouter.getClaimableUserDelayedWithdrawals(address(this));
+            for (uint256 x = 0; x < claimableWithdrawals.length; x++) {
+                claimableBalance += claimableWithdrawals[x].amount;
+            }
+        }
+        return safeBalance + claimableBalance;
     }
 
     /// @notice Given
@@ -305,6 +322,7 @@ contract EtherFiNode is IEtherFiNode {
     ///         - the current balance of the ether fi node,
     ///         Compute the TVLs for {node operator, t-nft holder, b-nft holder, treasury}
     /// @param _beaconBalance the balance of the validator in Consensus Layer
+    /// @param _executionBalance the balance of the validator in Execution Layer
     /// @param _SRsplits the splits for the Staking Rewards
     /// @param _scale the scale
     ///
@@ -314,11 +332,12 @@ contract EtherFiNode is IEtherFiNode {
     /// @return toTreasury      the payout to the Treasury
     function calculateTVL(
         uint256 _beaconBalance,
+        uint256 _executionBalance,
         IEtherFiNodesManager.RewardsSplit memory _SRsplits,
         uint256 _scale
     ) public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
 
-        uint256 balance = _beaconBalance + totalBalanceInExecutionLayer();
+        uint256 balance = _beaconBalance + _executionBalance;
 
         // Compute the payouts for the rewards = (staking rewards)
         // the protocol rewards must be paid off already in 'processNodeExit'
