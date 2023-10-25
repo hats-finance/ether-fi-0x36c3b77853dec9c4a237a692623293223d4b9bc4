@@ -405,16 +405,19 @@ contract EtherFiNodeTest is TestSetup {
         // TODO(Dave): 5 picked here because that's how many claims I set the manager contract to attempt. We can tune thi
         safeInstance.claimQueuedWithdrawals(5);
         unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
 
         // shoud not be allowed to partial withdraw since node is exited
         // In this case it fails because of the balance check right before the state check
         vm.expectRevert("Balance > 8 ETH. Exit the node.");
         managerInstance.partialWithdraw(validatorId);
 
+        // attacker sends more eth to pod that will not be able to be able to be withdrawn immediately
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+
         // This should succeed even though there are still some unclaimed withdrawals
         // this is because we only enforce that all withdrawals before the observed exit of the node have completed
         managerInstance.fullWithdraw(validatorIds[0]);
-        assertEq(unclaimedWithdrawals.length, 1);
         assertEq(address(safeInstance).balance, 0);
     }
 
