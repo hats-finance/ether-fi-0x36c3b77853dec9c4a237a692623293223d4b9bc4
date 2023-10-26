@@ -376,7 +376,7 @@ contract EtherFiNodesManager is
     /// @notice Sets the Non Exit Penalty Daily Rate amount
     /// @param _nonExitPenaltyDailyRate the new non exit daily rate
     function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) public onlyAdmin {
-        if(_nonExitPenaltyDailyRate > 100) revert InvalidPenaltyRate();
+        if(_nonExitPenaltyDailyRate > 10000) revert InvalidPenaltyRate();
         nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
 
