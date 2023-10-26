@@ -358,6 +358,7 @@ contract EtherFiNodesManager is
     function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft)
         public onlyAdmin
     {
+        require(_treasury + _nodeOperator + _tnft + _bnft == SCALE, "wring splits");
         stakingRewardsSplit.treasury = _treasury;
         stakingRewardsSplit.nodeOperator = _nodeOperator;
         stakingRewardsSplit.tnft = _tnft;
@@ -375,7 +376,7 @@ contract EtherFiNodesManager is
     /// @notice Sets the Non Exit Penalty Daily Rate amount
     /// @param _nonExitPenaltyDailyRate the new non exit daily rate
     function setNonExitPenaltyDailyRate(uint64 _nonExitPenaltyDailyRate) public onlyAdmin {
-        if(_nonExitPenaltyDailyRate > 100) revert InvalidPenaltyRate();
+        if(_nonExitPenaltyDailyRate > 10000) revert InvalidPenaltyRate();
         nonExitPenaltyDailyRate = _nonExitPenaltyDailyRate;
     }
 

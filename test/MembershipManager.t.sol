@@ -1269,6 +1269,7 @@ contract MembershipManagerTest is TestSetup {
 
     function test_unwrap_fan_for_eeth() public {
         vm.startPrank(alice);
+        membershipManagerV1Instance.setFeeAmounts(0 ether, 0.5 ether, 0 ether, 30);
 
         // Alice owns 1 ETH
         vm.deal(alice, 1 ether);
@@ -1286,12 +1287,14 @@ contract MembershipManagerTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
 
-        // Alice unwraps the NFT to eETH
+        // Alice unwraps the NFT to eETH paying 0.5 ETH as the burn fee
+        // The burn fee 0.5 ETH is sent to the MembershipManager contract
         membershipManagerV1Instance.unwrapForEEthAndBurn(aliceToken);
 
         assertEq(alice.balance, 0 ether);
-        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0.5 ether);
+        assertEq(address(membershipManagerV1Instance).balance, 0.5 ether);
         assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 0 ether);
-        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0.5 ether);
     }
 }

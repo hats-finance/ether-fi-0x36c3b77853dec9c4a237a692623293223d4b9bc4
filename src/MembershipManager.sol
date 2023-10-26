@@ -167,6 +167,10 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
         // transfer 'eEthShares' of eETH to the owner
         eETH.transfer(msg.sender, totalBalance - feeAmount);
+
+        if (feeAmount > 0) {
+            liquidityPool.withdraw(address(this), feeAmount);
+        }
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.
@@ -478,7 +482,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         uint8 tier = tokenData[_tokenId].tier;
         uint256 vaultShare = tokenData[_tokenId].vaultShare;
         uint256 ethAmount = ethAmountForVaultShare(tier, vaultShare);
-        uint64 feeAmount = hasMetBurnFeeWaiverPeriod(_tokenId) ? 0 : burnFee * 0.001 ether;
+        uint256 feeAmount = hasMetBurnFeeWaiverPeriod(_tokenId) ? 0 : uint256(burnFee) * 0.001 ether;
         if (ethAmount < feeAmount) revert InsufficientBalance();
 
         _withdraw(_tokenId, ethAmount);

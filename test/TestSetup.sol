@@ -922,7 +922,9 @@ contract TestSetup is Test {
         vm.startPrank(alice);
         withdrawRequestNFTInstance.finalizeRequests(_requestId);
         uint128 amount = withdrawRequestNFTInstance.getRequest(_requestId).amountOfEEth;
-        liquidityPoolInstance.addEthAmountLockedForWithdrawal(amount);
         vm.stopPrank();
+
+        vm.prank(address(etherFiAdminInstance));
+        liquidityPoolInstance.addEthAmountLockedForWithdrawal(amount);
     }
 }
