@@ -85,7 +85,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         _burn(tokenId);
         delete _requests[tokenId];
 
-        uint256 fee = request.feeGwei * 1 gwei;
+        uint256 fee = uint256(request.feeGwei) * 1 gwei;
         if (fee > 0) {
             // send fee to membership manager
             liquidityPool.withdraw(address(membershipManager), fee);

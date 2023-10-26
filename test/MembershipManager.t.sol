@@ -1297,4 +1297,39 @@ contract MembershipManagerTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 0 ether);
         assertEq(eETHInstance.balanceOf(alice), 0.5 ether);
     }
+
+    function test_request_withdraw_and_burn() public {
+        vm.startPrank(alice);
+
+        // Alice owns 1 ETH
+        vm.deal(alice, 1 ether);
+
+        assertEq(alice.balance, 1 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+
+        // Alice mints an NFT with 1 ETH
+        uint256 aliceToken = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0 ether);
+
+        assertEq(alice.balance, 0 ether);
+        assertEq(address(liquidityPoolInstance).balance, 1 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 1 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether);
+
+        membershipManagerV1Instance.setFeeAmounts(0, 50000000000000000, 0, 69);
+
+        uint256 requestId = membershipManagerV1Instance.requestWithdrawAndBurn(aliceToken);
+        vm.stopPrank();
+
+        _finalizeWithdrawalRequest(requestId);
+
+        vm.prank(alice);
+        withdrawRequestNFTInstance.claimWithdraw(requestId);
+
+        assertEq(alice.balance, 0.95 ether);
+        assertEq(address(liquidityPoolInstance).balance, 0 ether);
+        assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 0 ether);
+        assertEq(eETHInstance.balanceOf(alice), 0 ether); 
+    }
 }
