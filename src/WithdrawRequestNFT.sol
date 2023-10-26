@@ -68,7 +68,6 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         require(tokenId < nextRequestId, "Request does not exist");
         require(tokenId <= lastFinalizedRequestId, "Request is not finalized");
         require(ownerOf(tokenId) != address(0), "Already Claimed");
-        require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
 
         IWithdrawRequestNFT.WithdrawRequest memory request = _requests[tokenId];
         require(request.isValid, "Request is not valid");
@@ -85,6 +84,8 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     /// @dev burns the NFT and transfers ETH from the liquidity pool to the owner minus any fee, withdraw request must be valid and finalized
     /// @param tokenId the id of the withdraw request and associated NFT
     function claimWithdraw(uint256 tokenId) public {
+        require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
+
         IWithdrawRequestNFT.WithdrawRequest memory request = _requests[tokenId];
         uint256 fee = uint256(request.feeGwei) * 1 gwei;
         uint256 amountToWithdraw = getClaimableAmount(tokenId);
