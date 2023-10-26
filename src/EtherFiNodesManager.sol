@@ -242,8 +242,9 @@ contract EtherFiNodesManager is
             _recycleEtherFiNode(_validatorId);
         }
 
-        // burn the tNFT
+        // burn the tNFT and bNFT
         tnft.burnFromWithdrawal(_validatorId);
+        bnft.burnFromWithdrawal(_validatorId);
     }
 
     /// @notice Process the full withdrawal for multiple validators

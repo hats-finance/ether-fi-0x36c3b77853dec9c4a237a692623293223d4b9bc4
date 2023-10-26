@@ -509,6 +509,9 @@ contract EtherFiNodeTest is TestSetup {
         // tNFT should be burned
         vm.expectRevert("ERC721: invalid token ID");
         TNFTInstance.ownerOf(validatorId);
+        // bNFT should be burned
+        vm.expectRevert("ERC721: invalid token ID");
+        BNFTInstance.ownerOf(validatorId);
     }
 
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {

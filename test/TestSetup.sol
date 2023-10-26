@@ -251,6 +251,7 @@ contract TestSetup is Test {
         managerInstance.setMaxEigenLayerWithdrawals(5); // TODO(Dave): run some tests to find a good balance between gas and security
 
         TNFTInstance.initializeOnUpgrade(address(managerInstance));
+        BNFTInstance.initializeOnUpgrade(address(managerInstance));
 
         regulationsManagerImplementation = new RegulationsManager();
         vm.expectRevert("Initializable: contract is already initialized");
