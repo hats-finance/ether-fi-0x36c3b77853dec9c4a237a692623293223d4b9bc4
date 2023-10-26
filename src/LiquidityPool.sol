@@ -532,7 +532,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators -= numberOfEtherFanValidators;
     }
 
-    function addEthAmountLockedForWithdrawal(uint128 _amount) external onlyAdmin {
+    function addEthAmountLockedForWithdrawal(uint128 _amount) external {
+        require(msg.sender == address(etherFiAdminContract), "Incorrect Caller");
         ethAmountLockedForWithdrawal += _amount;
     }
 
