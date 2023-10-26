@@ -161,14 +161,16 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _amount the amount to withdraw from contract
     /// it returns the amount of shares burned
     function withdraw(address _recipient, uint256 _amount) external NonZeroAddress(_recipient) returns (uint256) {
-        require(msg.sender == address(withdrawRequestNFT), "Incorrect Caller");
-        if(totalValueInLp < _amount || ethAmountLockedForWithdrawal < _amount || eETH.balanceOf(msg.sender) < _amount) revert InsufficientLiquidity();
-
         uint256 share = sharesForWithdrawalAmount(_amount);
-        totalValueInLp -= uint128(_amount);
-        ethAmountLockedForWithdrawal -= uint128(_amount);
+        require(msg.sender == address(withdrawRequestNFT) || msg.sender == address(membershipManager), "Incorrect Caller");
+        if (totalValueInLp < _amount || (msg.sender == address(withdrawRequestNFT) && ethAmountLockedForWithdrawal < _amount) || eETH.balanceOf(msg.sender) < _amount) revert InsufficientLiquidity();
         if (_amount > type(uint128).max || _amount == 0 || share == 0) revert InvalidAmount();
-        
+
+        totalValueInLp -= uint128(_amount);
+        if (msg.sender == address(withdrawRequestNFT)) {
+            ethAmountLockedForWithdrawal -= uint128(_amount);
+        }
+
         eETH.burnShares(msg.sender, share);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
