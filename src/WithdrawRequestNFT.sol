@@ -67,7 +67,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     /// @notice called by the NFT owner to claim their ETH
     /// @dev burns the NFT and transfers ETH from the liquidity pool to the owner minus any fee, withdraw request must be valid and finalized
     /// @param tokenId the id of the withdraw request and associated NFT
-    function claimWithdraw(uint256 tokenId) external {
+    function claimWithdraw(uint256 tokenId) public {
         require(tokenId < nextRequestId, "Request does not exist");
         require(tokenId <= lastFinalizedRequestId, "Request is not finalized");
         require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
@@ -97,7 +97,13 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
 
         emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient, fee);
     }
-    
+
+    function batchClaimWithdraw(uint256[] calldata tokenIds) external {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            claimWithdraw(tokenIds[i]);
+        }
+    }
+
     // a function to transfer accumulated shares to admin
     function burnAccumulatedDustEEthShares() external onlyAdmin {
         require(eETH.totalShares() > accumulatedDustEEthShares, "Inappropriate burn");

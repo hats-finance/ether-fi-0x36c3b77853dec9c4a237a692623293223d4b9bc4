@@ -70,6 +70,35 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertEq(requestId2, 2, "Request id should be 2");
     }
 
+    function test_batchClaimWithdraw() public {
+        vm.deal(bob, 100 ether);
+        
+        vm.startPrank(bob);
+        liquidityPoolInstance.deposit{value: 10 ether}();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+
+        uint96 amountOfEEth = 1 ether;
+
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+        uint256 requestId1 = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+        vm.stopPrank();
+        _finalizeWithdrawalRequest(requestId1);
+
+        vm.startPrank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+        uint256 requestId2 = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+        vm.stopPrank();
+        _finalizeWithdrawalRequest(requestId2);
+
+        vm.startPrank(bob);
+        uint256[] memory requestIds = new uint256[](2);
+        requestIds[0] = requestId1;
+        requestIds[1] = requestId2;
+        withdrawRequestNFTInstance.batchClaimWithdraw(requestIds);
+        vm.stopPrank();
+    }
+
     function test_finalizeRequests() public {
         startHoax(bob);
         liquidityPoolInstance.deposit{value: 10 ether}();
