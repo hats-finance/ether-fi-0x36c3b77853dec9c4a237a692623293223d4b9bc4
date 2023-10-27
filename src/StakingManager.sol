@@ -60,7 +60,7 @@ contract StakingManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event StakeDeposit(address indexed staker, uint256 bidId, address withdrawSafe);
+    event StakeDeposit(address indexed staker, uint256 indexed bidId, address indexed withdrawSafe, bool restaked);
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(address indexed operator, address indexed bNftOwner, address indexed tNftOwner, 
                               uint256 validatorId, bytes validatorPubKey, string ipfsHashForEncryptedValidatorKey);
@@ -403,7 +403,7 @@ contract StakingManager is
         // register a withdrawalSafe for this bid/validator, creating a new one if necessary
         address etherfiNode = nodesManager.registerEtherFiNode(validatorId, _enableRestaking);
 
-        emit StakeDeposit(_staker, _bidId, etherfiNode);
+        emit StakeDeposit(_staker, _bidId, etherfiNode, _enableRestaking);
         emit StakeSource(_bidId, _source);
     }
 

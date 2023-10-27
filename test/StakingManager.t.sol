@@ -6,8 +6,9 @@ import "./TestSetup.sol";
 contract StakingManagerTest is TestSetup {
     event StakeDeposit(
         address indexed staker,
-        uint256 bidId,
-        address withdrawSafe
+        uint256 indexed bidId,
+        address indexed withdrawSafe,
+        bool restaked
     );
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(
