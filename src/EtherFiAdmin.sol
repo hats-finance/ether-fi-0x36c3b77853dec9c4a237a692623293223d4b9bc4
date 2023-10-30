@@ -64,11 +64,11 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         acceptableRebaseAprInBps = _acceptableRebaseAprInBps;
     }
 
-    // pause {etherfi oracle, staking manager, auction manager, etherfi nodes manager, liquidity pool, membership manager, withdraw request nft}
+    // pause {etherfi oracle, staking manager, auction manager, etherfi nodes manager, liquidity pool, membership manager}
     // based on the boolean flags
     // if true, pause,
     // else, unpuase
-    function pause(bool _etherFiOracle, bool _stakingManager, bool _auctionManager, bool _etherFiNodesManager, bool _liquidityPool, bool _membershipManager, bool _withdrawRequestNft) external isAdmin() {
+    function pause(bool _etherFiOracle, bool _stakingManager, bool _auctionManager, bool _etherFiNodesManager, bool _liquidityPool, bool _membershipManager) external isAdmin() {
         if (_etherFiOracle) {
             etherFiOracle.pauseContract();
         } else {
@@ -98,11 +98,6 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             membershipManager.pauseContract();
         } else {
             membershipManager.unPauseContract();
-        }
-        if (_withdrawRequestNft) {
-            withdrawRequestNft.pauseContract();
-        } else {
-            withdrawRequestNft.unPauseContract();
         }
     }
 

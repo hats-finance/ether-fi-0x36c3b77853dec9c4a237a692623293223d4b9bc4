@@ -4,7 +4,6 @@ pragma solidity 0.8.13;
 import "@openzeppelin-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
@@ -12,7 +11,7 @@ import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/IMembershipManager.sol";
 
 
-contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable, IWithdrawRequestNFT {
+contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IWithdrawRequestNFT {
 
     ILiquidityPool public liquidityPool;
     IeETH public eETH; 
@@ -28,6 +27,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner, uint256 fee);
     event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner, uint256 fee);
     event WithdrawRequestInvalidated(uint32 requestId);
+    event WithdrawRequestValidated(uint32 requestId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -54,7 +54,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     /// @param recipient address to recieve with WithdrawRequestNFT
     /// @param fee fee to be subtracted from amount when recipient calls claimWithdraw
     /// @return uint256 id of the withdraw request
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient, uint256 fee) external payable onlyLiquidtyPool whenNotPaused returns (uint256) {
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient, uint256 fee) external payable onlyLiquidtyPool returns (uint256) {
         uint256 requestId = nextRequestId++;
         uint32 feeGwei = uint32(fee / 1 gwei);
 
@@ -84,7 +84,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     /// @notice called by the NFT owner to claim their ETH
     /// @dev burns the NFT and transfers ETH from the liquidity pool to the owner minus any fee, withdraw request must be valid and finalized
     /// @param tokenId the id of the withdraw request and associated NFT
-    function claimWithdraw(uint256 tokenId) whenNotPaused public {
+    function claimWithdraw(uint256 tokenId) public {
         require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
 
         IWithdrawRequestNFT.WithdrawRequest memory request = _requests[tokenId];
@@ -144,17 +144,16 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         emit WithdrawRequestInvalidated(uint32(requestId));
     }
 
+    function validateRequest(uint256 requestId) external onlyAdmin {
+        require(!_requests[requestId].isValid, "Request is valid");
+        _requests[requestId].isValid = true;
+
+        emit WithdrawRequestValidated(uint32(requestId));
+    }
+
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         admins[_address] = _isAdmin;
-    }
-
-    function pauseContract() external onlyAdmin {
-        _pause();
-    }
-
-    function unPauseContract() external onlyAdmin {
-        _unpause();
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
