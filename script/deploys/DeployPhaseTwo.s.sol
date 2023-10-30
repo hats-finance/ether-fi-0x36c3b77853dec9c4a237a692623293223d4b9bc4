@@ -102,7 +102,7 @@ contract DeployPhaseTwoScript is Script {
 
         if (block.chainid == 0) {
             // Mainnet's slot 0 happened at 1606824023; https://beaconcha.in/slot/0
-            etherFiOracleInstance.initialize(1, 7200, 12, 1606824023);
+            etherFiOracleInstance.initialize(1, 7200, 0, 32, 12, 1606824023);
         } else if (block.chainid == 5) {
             // Goerli's slot 0 happened at 1616508000; https://goerli.beaconcha.in/slot/0
             etherFiOracleInstance.initialize(1, 96, 0, 32, 12, 1616508000);
