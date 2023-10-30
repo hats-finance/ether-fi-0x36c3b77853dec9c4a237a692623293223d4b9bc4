@@ -148,11 +148,10 @@ contract EtherFiNodesManager is
         }
     }
 
-    function batchRevertExitRequest(uint256[] calldata _validatorIds) external whenNotPaused {
+    function batchRevertExitRequest(uint256[] calldata _validatorIds) external onlyAdmin whenNotPaused {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             uint256 _validatorId = _validatorIds[i];
 
-            if (msg.sender != tnft.ownerOf(_validatorId)) revert NotTnftOwner();
             if (phase(_validatorId) != IEtherFiNode.VALIDATOR_PHASE.LIVE) revert ValidatorNotLive();
             address etherfiNode = etherfiNodeAddress[_validatorId];
             IEtherFiNode(etherfiNode).setExitRequestTimestamp(0);
