@@ -185,9 +185,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         eETH.burnShares(msg.sender, share);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
-        if (!sent) {
-            revert SendFail();
-        }
+        if (!sent) revert SendFail();
 
         return share;
     }
@@ -232,10 +230,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param fee the burn fee to be paid by the recipient when the withdrawal is claimed (WithdrawRequestNFT.claimWithdraw)
     /// @return uint256 requestId of the WithdrawRequestNFT
     function requestMembershipNFTWithdraw(address recipient, uint256 amount, uint256 fee) public whenNotPaused returns (uint256) {
-        if (msg.sender != address(membershipManager)) {
-            revert IncorrectCaller();
-        }
-
+        if (msg.sender != address(membershipManager)) revert IncorrectCaller();
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint96).max || amount == 0 || share == 0) revert InvalidAmount();
 
@@ -297,9 +292,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             numPendingDeposits -= uint32(_numberOfValidators - newValidators.length);
 
             (bool sent, ) = msg.sender.call{value: returnAmount}("");
-            if (!sent) {
-                revert SendFail();
-            }
+            if (!sent) revert SendFail();
         }
         
         return newValidators;
@@ -382,9 +375,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp -= uint128(returnAmount);
         
         (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
-        if (!sent) {
-            revert SendFail();
-        }
+        if (!sent) revert SendFail();
     }
 
     /// @notice The admin can register an address to become a BNFT holder. This adds them to the bnftHolders array
@@ -476,9 +467,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice Rebase by ether.fi
     function rebase(int128 _accruedRewards) public {
-        if (msg.sender != address(membershipManager)) {
-            revert IncorrectCaller();
-        }
+        if (msg.sender != address(membershipManager)) revert IncorrectCaller();
         totalValueOutOfLp = uint128(int128(totalValueOutOfLp) + _accruedRewards);
 
         emit Rebase(getTotalPooledEther(), eETH.totalShares());
@@ -536,9 +525,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _eEthWeight The target weight for eEth
     /// @param _etherFanWeight The target weight for EtherFan
     function setStakingTargetWeights(uint32 _eEthWeight, uint32 _etherFanWeight) external onlyAdmin {
-        if (_eEthWeight + _etherFanWeight != 100) {
-            revert InvalidParams();
-        }
+        if (_eEthWeight + _etherFanWeight != 100) revert InvalidParams();
 
         fundStatistics[SourceOfFunds.EETH].targetWeight = _eEthWeight;
         fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight = _etherFanWeight;
@@ -564,17 +551,15 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param numberOfEethValidators How many eEth validators to decrease
     /// @param numberOfEtherFanValidators How many etherFan validators to decrease
     function decreaseSourceOfFundsValidators(uint32 numberOfEethValidators, uint32 numberOfEtherFanValidators) external {
-        if (msg.sender != address(stakingManager)) {
-            revert IncorrectCaller();
-        }
+        if (msg.sender != address(stakingManager)) revert IncorrectCaller();
+
         fundStatistics[SourceOfFunds.EETH].numberOfValidators -= numberOfEethValidators;
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators -= numberOfEtherFanValidators;
     }
 
     function addEthAmountLockedForWithdrawal(uint128 _amount) external {
-        if (msg.sender != address(etherFiAdminContract)) {
-            revert IncorrectCaller();
-        }
+        if (msg.sender != address(etherFiAdminContract)) revert IncorrectCaller();
+        
         ethAmountLockedForWithdrawal += _amount;
     }
 
