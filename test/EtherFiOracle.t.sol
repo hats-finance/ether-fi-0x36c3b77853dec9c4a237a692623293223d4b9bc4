@@ -524,4 +524,32 @@ contract EtherFiOracleTest is TestSetup {
         assertEq(support, 2);
         assertEq(consensusReached, true);
     }
+
+    function test_postReportWaitTimeInSlots() public {
+        bytes[] memory emptyBytes = new bytes[](0);
+        vm.prank(owner);
+        etherFiOracleInstance.setQuorumSize(1);
+
+        // period 2
+        _moveClock(1024 + 2 * slotsPerEpoch);
+
+        vm.prank(alice);
+        bool consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod2A);
+        assertEq(consensusReached, true);
+
+        vm.prank(alice);
+        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), true);
+
+        vm.prank(owner);
+        etherFiAdminInstance.updatePostReportWaitTimeInSlots(2 * 32 + 2);
+        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), false);
+        _moveClock(1);
+        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), true);
+
+        vm.prank(owner);
+        etherFiAdminInstance.updatePostReportWaitTimeInSlots(2 * 32 + 3);
+        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), false);
+        _moveClock(1);
+        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), true);
+    }
 }
