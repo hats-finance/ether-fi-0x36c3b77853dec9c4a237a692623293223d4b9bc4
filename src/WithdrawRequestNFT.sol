@@ -54,7 +54,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     /// @param recipient address to recieve with WithdrawRequestNFT
     /// @param fee fee to be subtracted from amount when recipient calls claimWithdraw
     /// @return uint256 id of the withdraw request
-    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient, uint256 fee) external payable onlyLiquidtyPool returns (uint256) {
+    function requestWithdraw(uint96 amountOfEEth, uint96 shareOfEEth, address recipient, uint256 fee) external payable onlyLiquidtyPool whenNotPaused returns (uint256) {
         uint256 requestId = nextRequestId++;
         uint32 feeGwei = uint32(fee / 1 gwei);
 
@@ -84,7 +84,7 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     /// @notice called by the NFT owner to claim their ETH
     /// @dev burns the NFT and transfers ETH from the liquidity pool to the owner minus any fee, withdraw request must be valid and finalized
     /// @param tokenId the id of the withdraw request and associated NFT
-    function claimWithdraw(uint256 tokenId) public {
+    function claimWithdraw(uint256 tokenId) whenNotPaused public {
         require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
 
         IWithdrawRequestNFT.WithdrawRequest memory request = _requests[tokenId];
