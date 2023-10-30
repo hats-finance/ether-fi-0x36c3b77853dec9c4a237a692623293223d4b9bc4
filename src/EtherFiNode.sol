@@ -69,7 +69,7 @@ contract EtherFiNode is IEtherFiNode {
         exitRequestTimestamp = 0;
         exitTimestamp = 0;
         stakingStartTimestamp = 0;
-        phase = VALIDATOR_PHASE.READY_FOR_DEPOSIT;
+        _setPhase(VALIDATOR_PHASE.READY_FOR_DEPOSIT);
         restakingObservedExitBlock = 0;
         isRestakingEnabled = false;
     }
@@ -107,8 +107,7 @@ contract EtherFiNode is IEtherFiNode {
     /// @param _exitTimestamp the time the exit was complete
     function markExited(uint32 _exitTimestamp) external onlyEtherFiNodeManagerContract {
         require(_exitTimestamp <= block.timestamp, "Invalid exit timestamp");
-        _validatePhaseTransition(VALIDATOR_PHASE.EXITED);
-        phase = VALIDATOR_PHASE.EXITED;
+        _setPhase(VALIDATOR_PHASE.EXITED);
         exitTimestamp = _exitTimestamp;
 
         if (isRestakingEnabled) {
@@ -121,11 +120,9 @@ contract EtherFiNode is IEtherFiNode {
         }
     }
 
-    /// @notice Set the validators phase to EVICTED
-    function markEvicted() external onlyEtherFiNodeManagerContract {
-        _validatePhaseTransition(VALIDATOR_PHASE.EVICTED);
-        phase = VALIDATOR_PHASE.EVICTED;
-        exitTimestamp = uint32(block.timestamp);
+    /// @notice Set the validators phase to BEING_SLASHED
+    function markBeingSlashed() external onlyEtherFiNodeManagerContract {
+        _setPhase(VALIDATOR_PHASE.BEING_SLASHED);
     }
 
     /// @dev unused by protocol. Simplifies test setup
@@ -457,6 +454,10 @@ contract EtherFiNode is IEtherFiNode {
             pass = (_newPhase == VALIDATOR_PHASE.EXITED);
         } else if (currentPhase == VALIDATOR_PHASE.EXITED) {
             pass = (_newPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN);
+        } else if (currentPhase == VALIDATOR_PHASE.CANCELLED) {
+            pass = (_newPhase == VALIDATOR_PHASE.READY_FOR_DEPOSIT);
+        } else if (currentPhase == VALIDATOR_PHASE.FULLY_WITHDRAWN) {
+            pass = (_newPhase == VALIDATOR_PHASE.READY_FOR_DEPOSIT);
         } else {
             pass = false;
         }
