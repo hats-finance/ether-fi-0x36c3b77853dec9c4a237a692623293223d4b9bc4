@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin-upgradeable/contracts/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
@@ -11,7 +12,7 @@ import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/IMembershipManager.sol";
 
 
-contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable, IWithdrawRequestNFT {
+contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable, IWithdrawRequestNFT {
 
     ILiquidityPool public liquidityPool;
     IeETH public eETH; 
@@ -146,6 +147,14 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         require(_address != address(0), "Cannot be address zero");
         admins[_address] = _isAdmin;
+    }
+
+    function pauseContract() external onlyAdmin {
+        _pause();
+    }
+
+    function unPauseContract() external onlyAdmin {
+        _unpause();
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}

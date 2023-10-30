@@ -293,7 +293,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(safeInstance.eigenPod(), 32 ether);
 
         vm.startPrank(alice); // alice is the admin
-        vm.expectRevert("validator node is not exited");
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotExited.selector);
         managerInstance.fullWithdraw(validatorIds[0]);
 
         // Marked as EXITED
@@ -422,7 +422,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(safeInstance.eigenPod(), 32 ether);
 
         vm.startPrank(alice); // alice is the admin
-        vm.expectRevert("validator node is not exited");
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotExited.selector);
         managerInstance.fullWithdraw(validatorIds[0]);
 
         // Marked as EXITED
@@ -487,7 +487,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(safeInstance.eigenPod(), 32 ether);
 
         vm.startPrank(alice); // alice is the admin
-        vm.expectRevert("validator node is not exited");
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotExited.selector);
         managerInstance.fullWithdraw(validatorId);
 
         // Marked as EXITED
@@ -514,7 +514,7 @@ contract EtherFiNodeTest is TestSetup {
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(alice);
-        safeInstance.setExitRequestTimestamp();
+        safeInstance.setExitRequestTimestamp(0);
     }
 
     function test_SetPhaseRevertsOnIncorrectCaller() public {
@@ -532,7 +532,7 @@ contract EtherFiNodeTest is TestSetup {
     function test_SetExitRequestTimestampRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
-        safeInstance.setExitRequestTimestamp();
+        safeInstance.setExitRequestTimestamp(1);
 
     }
 
@@ -698,29 +698,6 @@ contract EtherFiNodeTest is TestSetup {
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
     }
 
-    function test_evict() public {
-        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
-        uint256[] memory validatorIds = new uint256[](1);
-        validatorIds[0] = bidId[0];
-        uint32[] memory exitTimestamps = new uint32[](1);
-        exitTimestamps[0] = 1;
-        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
-
-        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
-        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
-        assertEq(address(etherFiNode).balance, 0.00 ether); // node no longer receives auction revenue
-
-        uint256 nodeOperatorBalance = address(nodeOperator).balance;
-
-        vm.prank(alice);
-        managerInstance.processNodeEvict(validatorIds);
-
-        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EVICTED);
-        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
-        assertEq(address(etherFiNode).balance, 0);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
-    }
-
     function test_partialWithdrawRewardsDistribution() public {
         address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
         address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
@@ -871,7 +848,7 @@ contract EtherFiNodeTest is TestSetup {
         );
 
         vm.deal(etherfiNode, 16 ether);
-        vm.expectRevert("validator node is not exited");
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotExited.selector);
         managerInstance.fullWithdraw(validatorIds[0]);
     }
 
@@ -1231,7 +1208,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256[] memory validatorIds = new uint256[](1);
         uint32[] memory exitTimestamps = new uint32[](2);
         startHoax(alice);
-        vm.expectRevert("Check params");
+        vm.expectRevert(EtherFiNodesManager.InvalidParams.selector);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 

@@ -85,4 +85,6 @@ interface IMembershipManager {
     function setMaxDepositTopUpPercent(uint8 _percent) external;
     function setTopUpCooltimePeriod(uint32 _newWaitTime) external;
     function updateAdmin(address _address, bool _isAdmin) external;
+    function pauseContract() external;
+    function unPauseContract() external;
 }

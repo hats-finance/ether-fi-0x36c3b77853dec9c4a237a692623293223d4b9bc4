@@ -374,7 +374,6 @@ contract MembershipManagerTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 2 ether);
     }
 
-    // TODO: Fix it. `Rebase` is not working for V1 vault at the moment
     function _test_StakingRewards() public {
         vm.deal(alice, 100 ether);
 
@@ -1184,8 +1183,10 @@ contract MembershipManagerTest is TestSetup {
         assertEq(membershipNftInstance.valueOf(tokens[4]), 1 ether + 1 ether * uint256(30) / uint256(100) - 1);
     }
 
-    function test_rewards_for_etherfan() public {
+    function test_rewards_for_etherfan1() public {
         vm.startPrank(alice);
+        membershipManagerV1Instance.setFanBoostThresholdEthAmount(1 ether);
+
         membershipManagerV1Instance.updateTier(0, 0, 10);
         membershipManagerV1Instance.updateTier(1, 1, 15);
         membershipManagerV1Instance.updateTier(2, 2, 20);
@@ -1208,6 +1209,9 @@ contract MembershipManagerTest is TestSetup {
         }
         vm.stopPrank();
 
+        // 1 ether sent to MembershipManager contract is distributed to
+        // ether.fan nfts as rewards.
+        // Note that the rebase amount is 0 eth
         _transferTo(address(membershipManagerV1Instance), 1 ether);
 
         vm.startPrank(address(etherFiAdminInstance));
@@ -1222,8 +1226,53 @@ contract MembershipManagerTest is TestSetup {
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
     }
 
+    function test_rewards_for_etherfan2() public {
+        vm.startPrank(alice);
+        membershipManagerV1Instance.setFanBoostThresholdEthAmount(1 ether);
+
+        membershipManagerV1Instance.updateTier(0, 0, 10);
+        membershipManagerV1Instance.updateTier(1, 1, 15);
+        membershipManagerV1Instance.updateTier(2, 2, 20);
+        membershipManagerV1Instance.updateTier(3, 3, 25);
+        membershipManagerV1Instance.updateTier(4, 4, 30);
+        vm.stopPrank();
+
+        // 1 + 1 + 2 + 3 + 4 + 5 = 16
+        vm.deal(alice, 16 ether);
+        uint256[] memory tokens = new uint256[](5);
+        vm.startPrank(alice);
+
+        liquidityPoolInstance.deposit{value: 1 ether}();
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokens[i] = membershipManagerV1Instance.wrapEth{value: (i + 1) * 1 ether}((i + 1) * 1 ether, 0);
+            membershipManagerV1Instance.setPoints(tokens[i], 0, uint40(i));
+            assertEq(membershipNftInstance.valueOf(tokens[i]), (i + 1) * 1 ether);
+            assertEq(membershipNftInstance.tierOf(tokens[i]), uint40(i));
+        }
+        vm.stopPrank();
+
+        // 1 ether sent to MembershipManager contract is distributed to
+        // ether.fan nfts as rewards.
+        // Note that the rebase amount is 0 eth
+        _transferTo(address(membershipManagerV1Instance), 1 ether);
+
+        vm.startPrank(address(etherFiAdminInstance));
+        membershipManagerV1Instance.rebase(0 ether);
+        vm.stopPrank();
+
+        // 10 : 15 : 20 : 25 : 30 ~= 285 : 428 : 571 : 714 : 857
+        assertEq(10000 * membershipNftInstance.valueOf(tokens[0]) / ((0 + 1) * 1 ether), 10285);
+        assertEq(10000 * membershipNftInstance.valueOf(tokens[1]) / ((1 + 1) * 1 ether), 10428);
+        assertEq(10000 * membershipNftInstance.valueOf(tokens[2]) / ((2 + 1) * 1 ether), 10571);
+        assertEq(10000 * membershipNftInstance.valueOf(tokens[3]) / ((3 + 1) * 1 ether), 10714);
+        assertEq(10000 * membershipNftInstance.valueOf(tokens[4]) / ((4 + 1) * 1 ether), 10857);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+    }
+
     function test_negative_rewards() public {
-        // Spawn 2 validators, TVL = 60 ETH
+        // Spawn 2 validators, TVL = 60 ETH with 60 eETH
         uint256[] memory validatorIds = launch_validator();
 
         vm.startPrank(alice);
@@ -1238,9 +1287,11 @@ contract MembershipManagerTest is TestSetup {
         uint256[] memory tokens = new uint256[](5);
         vm.startPrank(alice);
 
+        // Additional 1 eETH
         liquidityPoolInstance.deposit{value: 1 ether}();
         assertEq(eETHInstance.balanceOf(alice), 1 ether);
 
+        // 5 ether.fan NFTs with 1 ETH in each
         for (uint256 i = 0; i < tokens.length; i++) {
             tokens[i] = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0);
             membershipManagerV1Instance.setPoints(tokens[i], 0, uint40(i));
@@ -1256,12 +1307,58 @@ contract MembershipManagerTest is TestSetup {
         membershipManagerV1Instance.rebase(-6.6 ether);
         vm.stopPrank();
 
+        // -0.5 ETH loss is re-distributed across the ether.fan NFTs
         assertEq(membershipNftInstance.valueOf(tokens[0]), 1 ether - 0.5 ether * uint256(10) / uint256(100) - 1);
         assertEq(membershipNftInstance.valueOf(tokens[1]), 1 ether - 0.5 ether * uint256(15) / uint256(100) - 1);
         assertEq(membershipNftInstance.valueOf(tokens[2]), 1 ether - 0.5 ether * uint256(20) / uint256(100));
         assertEq(membershipNftInstance.valueOf(tokens[3]), 1 ether - 0.5 ether * uint256(25) / uint256(100) - 1);
         assertEq(membershipNftInstance.valueOf(tokens[4]), 1 ether - 0.5 ether * uint256(30) / uint256(100) - 1);
         assertEq(eETHInstance.balanceOf(alice), 1 ether * uint256(9) / uint256(10));
+    }
+
+    function test_positive_rewards() public {
+        // Spawn 2 validators, TVL = 60 ETH with 60 eETH
+        uint256[] memory validatorIds = launch_validator();
+
+        vm.startPrank(alice);
+        membershipManagerV1Instance.updateTier(0, 0, 10);
+        membershipManagerV1Instance.updateTier(1, 1, 15);
+        membershipManagerV1Instance.updateTier(2, 2, 20);
+        membershipManagerV1Instance.updateTier(3, 3, 25);
+        membershipManagerV1Instance.updateTier(4, 4, 30);
+        vm.stopPrank();
+
+        vm.deal(alice, 6 ether);
+        uint256[] memory tokens = new uint256[](5);
+        vm.startPrank(alice);
+
+        // Additional 1 eETH
+        liquidityPoolInstance.deposit{value: 1 ether}();
+        assertEq(eETHInstance.balanceOf(alice), 1 ether);
+
+        // 5 ether.fan NFTs with 1 ETH in each
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokens[i] = membershipManagerV1Instance.wrapEth{value: 1 ether}(1 ether, 0);
+            membershipManagerV1Instance.setPoints(tokens[i], 0, uint40(i));
+            assertEq(membershipNftInstance.valueOf(tokens[i]), 1 ether);
+            assertEq(membershipNftInstance.tierOf(tokens[i]), uint40(i));
+        }
+        vm.stopPrank();
+
+        vm.startPrank(address(etherFiAdminInstance));
+        // 10 % gain in eETH
+        // eETH: 61 ETH -> +6.1 ETH 
+        // Ether.Fan: 5 ETH -> +0.5 ETH
+        membershipManagerV1Instance.rebase(6.6 ether);
+        vm.stopPrank();
+
+        // +0.5 ETH gain is re-distributed across the ether.fan NFTs
+        assertEq(membershipNftInstance.valueOf(tokens[0]), 1 ether + 0.5 ether * uint256(10) / uint256(100) - 1);
+        assertEq(membershipNftInstance.valueOf(tokens[1]), 1 ether + 0.5 ether * uint256(15) / uint256(100) - 1);
+        assertEq(membershipNftInstance.valueOf(tokens[2]), 1 ether + 0.5 ether * uint256(20) / uint256(100));
+        assertEq(membershipNftInstance.valueOf(tokens[3]), 1 ether + 0.5 ether * uint256(25) / uint256(100) - 1);
+        assertEq(membershipNftInstance.valueOf(tokens[4]), 1 ether + 0.5 ether * uint256(30) / uint256(100) - 1);
+        assertEq(eETHInstance.balanceOf(alice), 1 ether * uint256(11) / uint256(10));
     }
 
     function test_burn_fee_waiver() public {

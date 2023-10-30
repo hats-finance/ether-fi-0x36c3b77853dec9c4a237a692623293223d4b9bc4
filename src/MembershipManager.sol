@@ -88,12 +88,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     error WrongVersion();
 
     // To be called for Phase 2 contract upgrade
-    function initializeOnUpgrade(address _etherFiAdminAddress) external onlyOwner {
+    function initializeOnUpgrade(address _etherFiAdminAddress, uint256 _fanBoostThresholdAmount, uint16 _burnFeeWaiverPeriodInDays) external onlyOwner {
         require(address(etherFiAdmin) == address(0), "Already initialized");
 
         etherFiAdmin = IEtherFiAdmin(_etherFiAdminAddress);
-        fanBoostThreshold = 1_000; // 1 ETH
-        burnFeeWaiverPeriodInDays = 30;
+        fanBoostThreshold = uint16(_fanBoostThresholdAmount / 0.001 ether);
+        burnFeeWaiverPeriodInDays = _burnFeeWaiverPeriodInDays;
         while (tierVaults.length < tierData.length) {
             tierVaults.push(TierVault(0, 0));
         }

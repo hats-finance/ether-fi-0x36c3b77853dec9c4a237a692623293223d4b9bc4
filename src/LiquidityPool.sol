@@ -6,6 +6,7 @@ import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradea
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IStakingManager.sol";
@@ -18,7 +19,7 @@ import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IEtherFiAdmin.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, PausableUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -75,9 +76,12 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     event Rebase(uint256 totalEthLocked, uint256 totalEEthShares);
     event WhitelistStatusUpdated(bool value);
 
+    error IncorrectCaller();
     error InvalidAmount();
+    error InvalidParams();
     error DataNotSet();
     error InsufficientLiquidity();
+    error SendFail();
 
     //--------------------------------------------------------------------------------------
     //----------------------------  STATE-CHANGING FUNCTIONS  ------------------------------
@@ -147,7 +151,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     // Used by ether.fan staking flow
     function deposit(address _user, address _referral) external payable returns (uint256) {
-        require(msg.sender == address(membershipManager), "Incorrect Caller");
+        if (msg.sender != address(membershipManager)) {
+            revert IncorrectCaller();
+        }
         require(_user == address(membershipManager) || _isWhitelisted(_user), "Invalid User");
 
         emit Deposit(msg.sender, msg.value, SourceOfFunds.ETHER_FAN, _referral);
@@ -174,7 +180,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         eETH.burnShares(msg.sender, share);
 
         (bool sent, ) = _recipient.call{value: _amount}("");
-        require(sent, "send fail");
+        if (!sent) {
+            revert SendFail();
+        }
 
         return share;
     }
@@ -217,7 +225,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param amount requested amount to withdraw from contract
     /// @param fee the burn fee to be paid by the recipient when the withdrawal is claimed (WithdrawRequestNFT.claimWithdraw)
     /// @return uint256 requestId of the WithdrawRequestNFT
-    function requestMembershipNFTWithdraw(address recipient, uint256 amount, uint256 fee) public onlyMembershipManager NonZeroAddress(recipient) returns (uint256) {
+    function requestMembershipNFTWithdraw(address recipient, uint256 amount, uint256 fee) public NonZeroAddress(recipient) returns (uint256) {
+        if (msg.sender != address(membershipManager)) {
+            revert IncorrectCaller();
+        }
+
         uint256 share = sharesForAmount(amount);
         if (amount > type(uint96).max || amount == 0 || share == 0) revert InvalidAmount();
 
@@ -280,7 +292,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
             numPendingDeposits -= uint32(_numberOfValidators - newValidators.length);
 
             (bool sent, ) = msg.sender.call{value: returnAmount}("");
-            require(sent, "send fail");
+            if (!sent) {
+                revert SendFail();
+            }
         }
         
         return newValidators;
@@ -363,7 +377,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         totalValueInLp -= uint128(returnAmount);
         
         (bool sent, ) = address(msg.sender).call{value: returnAmount}("");
-        require(sent, "send fail");
+        if (!sent) {
+            revert SendFail();
+        }
     }
 
     /// @notice The admin can register an address to become a BNFT holder. This adds them to the bnftHolders array
@@ -455,7 +471,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     /// @notice Rebase by ether.fi
     function rebase(int128 _accruedRewards) public {
-        require(msg.sender == address(membershipManager), "Incorrect Caller");
+        if (msg.sender != address(membershipManager)) {
+            revert IncorrectCaller();
+        }
         totalValueOutOfLp = uint128(int128(totalValueOutOfLp) + _accruedRewards);
 
         emit Rebase(getTotalPooledEther(), eETH.totalShares());
@@ -470,6 +488,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _address the new address to set as admin
     function updateAdmin(address _address, bool _isAdmin) external onlyOwner {
         admins[_address] = _isAdmin;
+    }
+
+    function pauseContract() external onlyAdmin {
+        _pause();
+    }
+
+    function unPauseContract() external onlyAdmin {
+        _unpause();
     }
 
     /// @notice Sets the max number of validators a BNFT can spin up in a given scheduling period
@@ -503,7 +529,9 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _eEthWeight The target weight for eEth
     /// @param _etherFanWeight The target weight for EtherFan
     function setStakingTargetWeights(uint32 _eEthWeight, uint32 _etherFanWeight) external onlyAdmin {
-        require(_eEthWeight + _etherFanWeight == 100, "Invalid weights");
+        if (_eEthWeight + _etherFanWeight != 100) {
+            revert InvalidParams();
+        }
 
         fundStatistics[SourceOfFunds.EETH].targetWeight = _eEthWeight;
         fundStatistics[SourceOfFunds.ETHER_FAN].targetWeight = _etherFanWeight;
@@ -529,13 +557,17 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param numberOfEethValidators How many eEth validators to decrease
     /// @param numberOfEtherFanValidators How many etherFan validators to decrease
     function decreaseSourceOfFundsValidators(uint32 numberOfEethValidators, uint32 numberOfEtherFanValidators) external {
-        require(msg.sender == address(stakingManager), "Incorrect Caller");
+        if (msg.sender != address(stakingManager)) {
+            revert IncorrectCaller();
+        }
         fundStatistics[SourceOfFunds.EETH].numberOfValidators -= numberOfEethValidators;
         fundStatistics[SourceOfFunds.ETHER_FAN].numberOfValidators -= numberOfEtherFanValidators;
     }
 
     function addEthAmountLockedForWithdrawal(uint128 _amount) external {
-        require(msg.sender == address(etherFiAdminContract), "Incorrect Caller");
+        if (msg.sender != address(etherFiAdminContract)) {
+            revert IncorrectCaller();
+        }
         ethAmountLockedForWithdrawal += _amount;
     }
 
@@ -691,11 +723,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     modifier onlyAdmin() {
         require(admins[msg.sender], "Not admin");
-        _;
-    }
-
-    modifier onlyMembershipManager() {
-        require(msg.sender == address(membershipManager), "Caller is not the MembershipManager");
         _;
     }
 

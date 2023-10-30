@@ -64,6 +64,48 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         acceptableRebaseAprInBps = _acceptableRebaseAprInBps;
     }
 
+    // pause {etherfi oracle, staking manager, auction manager, etherfi nodes manager, liquidity pool, membership manager, withdraw request nft}
+    // based on the boolean flags
+    // if true, pause,
+    // else, unpuase
+    function pause(bool _etherFiOracle, bool _stakingManager, bool _auctionManager, bool _etherFiNodesManager, bool _liquidityPool, bool _membershipManager, bool _withdrawRequestNft) external isAdmin() {
+        if (_etherFiOracle) {
+            etherFiOracle.pauseContract();
+        } else {
+            etherFiOracle.unPauseContract();
+        }
+        if (_stakingManager) {
+            stakingManager.pauseContract();
+        } else {
+            stakingManager.unPauseContract();
+        }
+        if (_auctionManager) {
+            auctionManager.pauseContract();
+        } else {
+            auctionManager.unPauseContract();
+        }
+        if (_etherFiNodesManager) {
+            etherFiNodesManager.pauseContract();
+        } else {
+            etherFiNodesManager.unPauseContract();
+        }
+        if (_liquidityPool) {
+            liquidityPool.pauseContract();
+        } else {
+            liquidityPool.unPauseContract();
+        }
+        if (_membershipManager) {
+            membershipManager.pauseContract();
+        } else {
+            membershipManager.unPauseContract();
+        }
+        if (_withdrawRequestNft) {
+            withdrawRequestNft.pauseContract();
+        } else {
+            withdrawRequestNft.unPauseContract();
+        }
+    }
+
     function executeTasks(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) external isAdmin() {
         bytes32 reportHash = etherFiOracle.generateReportHash(_report);
         require(etherFiOracle.isConsensusReached(reportHash), "EtherFiAdmin: report didn't reach consensus");
