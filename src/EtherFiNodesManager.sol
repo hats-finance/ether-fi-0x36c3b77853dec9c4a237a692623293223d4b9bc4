@@ -64,11 +64,11 @@ contract EtherFiNodesManager is
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
     event FundsWithdrawn(uint256 indexed _validatorId, uint256 amount);
-    event NodeExitRequested(uint256 _validatorId);
-    event NodeExitRequestReverted(uint256 _validatorId);
-    event NodeExitProcessed(uint256 _validatorId);
-    event NodeEvicted(uint256 _validatorId);
-    event PhaseChanged(uint256 _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase);
+    event NodeExitRequested(uint256 indexed _validatorId);
+    event NodeExitRequestReverted(uint256 indexed _validatorId);
+    event NodeExitProcessed(uint256 indexed _validatorId);
+    event NodeEvicted(uint256 indexed _validatorId);
+    event PhaseChanged(uint256 indexed _validatorId, IEtherFiNode.VALIDATOR_PHASE _phase);
     event WithdrawalSafeReset(uint256 indexed _validatorId, address indexed withdrawalSafeAddress);
 
     //--------------------------------------------------------------------------------------
@@ -168,9 +168,7 @@ contract EtherFiNodesManager is
         uint256[] calldata _validatorIds,
         uint32[] calldata _exitTimestamps
     ) external onlyAdmin nonReentrant whenNotPaused {
-        if (_validatorIds.length != _exitTimestamps.length) {
-            revert InvalidParams();
-        }
+        if (_validatorIds.length != _exitTimestamps.length) revert InvalidParams();
         
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             _processNodeExit(_validatorIds[i], _exitTimestamps[i]);
@@ -367,9 +365,7 @@ contract EtherFiNodesManager is
     function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnft)
         public onlyAdmin
     {
-        if (_treasury + _nodeOperator + _tnft + _bnft != SCALE) {
-            revert InvalidParams();
-        }
+        if (_treasury + _nodeOperator + _tnft + _bnft != SCALE) revert InvalidParams();
         stakingRewardsSplit.treasury = _treasury;
         stakingRewardsSplit.nodeOperator = _nodeOperator;
         stakingRewardsSplit.tnft = _tnft;
@@ -605,9 +601,7 @@ contract EtherFiNodesManager is
     /// @return toTreasury      the TVL for the Treasury
     function getFullWithdrawalPayouts(uint256 _validatorId) 
         public view returns (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) {
-        if (!isExited(_validatorId)) {
-            revert ValidatorNotExited();
-        }
+        if (!isExited(_validatorId)) revert ValidatorNotExited();
 
         // The full withdrawal payouts should be equal to the total withdrawable TVL of the validator
         // 'beaconBalance' should be 0 since the validator must be in 'withdrawal_done' status
@@ -686,6 +680,11 @@ contract EtherFiNodesManager is
         return _getImplementation();
     }
 
+    function _requireAdmin() internal view virtual {
+        require(admins[msg.sender], "Not admin");
+    }
+
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -696,7 +695,7 @@ contract EtherFiNodesManager is
     }
 
     modifier onlyAdmin() {
-        require(admins[msg.sender], "Not admin");
+        _requireAdmin();
         _;
     }
 }

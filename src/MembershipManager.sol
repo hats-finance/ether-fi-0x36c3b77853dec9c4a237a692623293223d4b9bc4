@@ -350,17 +350,12 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     /// @notice Updates minimum valid deposit
-    /// @param _value minimum deposit in wei
-    function setMinDepositWei(uint56 _value) external {
+    /// @param _minDepositGwei minimum deposit in wei
+    /// @param _maxDepositTopUpPercent integer percentage value
+    function setDepositAmountParams(uint56 _minDepositGwei, uint8 _maxDepositTopUpPercent) external {
         _requireAdmin();
-        minDepositGwei = _value;
-    }
-
-    /// @notice Updates minimum valid deposit
-    /// @param _percent integer percentage value
-    function setMaxDepositTopUpPercent(uint8 _percent) external {
-        _requireAdmin();
-        maxDepositTopUpPercent = _percent;
+        minDepositGwei = _minDepositGwei;
+        maxDepositTopUpPercent = _maxDepositTopUpPercent;
     }
 
     /// @notice Updates the time a user must wait between top ups
@@ -688,16 +683,16 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     }
 
     error OnlyTokenOwner();
-    function _requireTokenOwner(uint256 _tokenId) internal {
+    function _requireTokenOwner(uint256 _tokenId) internal view {
         if (membershipNFT.balanceOfUser(msg.sender, _tokenId) != 1) revert OnlyTokenOwner();
     }
 
     error OnlyAdmin();
-    function _requireAdmin() internal {
+    function _requireAdmin() internal view {
         if (!admins[msg.sender]) revert OnlyAdmin();
     }
 
-    function _feeAmountSanityCheck(uint256 _feeAmount) internal {
+    function _feeAmountSanityCheck(uint256 _feeAmount) internal view {
         if (_feeAmount % 0.001 ether != 0 || _feeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
     }
 

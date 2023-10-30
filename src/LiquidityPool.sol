@@ -6,7 +6,6 @@ import "@openzeppelin-upgradeable/contracts/token/ERC721/IERC721ReceiverUpgradea
 import "@openzeppelin-upgradeable/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 
 import "./interfaces/IRegulationsManager.sol";
 import "./interfaces/IStakingManager.sol";
@@ -19,7 +18,7 @@ import "./interfaces/IWithdrawRequestNFT.sol";
 import "./interfaces/ILiquidityPool.sol";
 import "./interfaces/IEtherFiAdmin.sol";
 
-contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, PausableUpgradeable, ILiquidityPool {
+contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, ILiquidityPool {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -60,10 +59,14 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, Pa
     // TODO(Dave): Before we go to mainnet consider packing this with other variables
     bool public restakeBnftDeposits;
     uint128 public ethAmountLockedForWithdrawal;
+    bool public paused;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
+
+    event Paused(address account);
+    event Unpaused(address account);
 
     event Deposit(address indexed sender, uint256 amount, SourceOfFunds source, address referral);
     event Withdraw(address indexed sender, address recipient, uint256 amount, SourceOfFunds source);
@@ -120,10 +123,11 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, Pa
     /// @param _etherFanNumVal the number of validators to set for ether fan
     function initializeOnUpgrade(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal, address _etherFiAdminContract, address _withdrawRequestNFT) external onlyOwner { 
         require(_etherFiAdminContract != address(0) && _withdrawRequestNFT != address(0), "No zero addresses");
-        require(etherFiAdminContract == address(0) && address(withdrawRequestNFT) == address(0), "Already initialized");
+        // require(etherFiAdminContract == address(0) && address(withdrawRequestNFT) == address(0), "Already initialized");
 
         restakeBnftDeposits = false;
         ethAmountLockedForWithdrawal = 0;
+        maxValidatorsPerOwner = 10;
         
         //Sets what scheduling period we will start with       
         schedulingPeriodInSeconds = _schedulingPeriod;
@@ -491,11 +495,13 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, Pa
     }
 
     function pauseContract() external onlyAdmin {
-        _pause();
+        paused = true;
+        emit Paused(_msgSender());
     }
 
     function unPauseContract() external onlyAdmin {
-        _unpause();
+        paused = false;
+        emit Unpaused(_msgSender());
     }
 
     /// @notice Sets the max number of validators a BNFT can spin up in a given scheduling period
@@ -709,13 +715,25 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, Pa
 
     function getImplementation() external view returns (address) {return _getImplementation();}
 
+    function _requireAdmin() internal view virtual {
+        require(admins[msg.sender], "Not admin");
+    }
+
+    function _requirePaused() internal view virtual {
+        require(paused, "Pausable: not paused");
+    }
+
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
     modifier onlyAdmin() {
-        require(admins[msg.sender], "Not admin");
+        _requireAdmin();
         _;
     }
 
+    modifier whenNotPaused() {
+        _requirePaused();
+        _;
+    }
 }

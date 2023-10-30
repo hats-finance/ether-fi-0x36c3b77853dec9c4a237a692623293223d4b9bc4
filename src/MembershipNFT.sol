@@ -153,7 +153,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
 
-    function balanceOfUser(address _user, uint256 _id) public returns (uint256) {
+    function balanceOfUser(address _user, uint256 _id) public view returns (uint256) {
         return balanceOf(_user, _id);
     }
 
