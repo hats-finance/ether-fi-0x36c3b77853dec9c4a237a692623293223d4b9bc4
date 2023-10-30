@@ -395,7 +395,8 @@ contract TestSetup is Test {
             address(liquidityPoolInstance),
             address(membershipManagerInstance),
             address(withdrawRequestNFTInstance),
-            10000
+            10000,
+            0
         );
 
         etherFiOracleInstance.setEtherFiAdmin(address(etherFiAdminInstance));

@@ -33,6 +33,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     int32 public acceptableRebaseAprInBps;
 
+    uint16 public postReportWaitTimeInSlots;
+
     event AdminUpdated(address _address, bool _isAdmin);
     event AdminOperationsExecuted(address indexed _address, bytes32 indexed _reportHash);
 
@@ -49,7 +51,8 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address _liquidityPool,
         address _membershipManager,
         address _withdrawRequestNft,
-        int32 _acceptableRebaseAprInBps
+        int32 _acceptableRebaseAprInBps,
+        uint16 _postReportWaitTimeInSlots
     ) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -62,6 +65,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         membershipManager = IMembershipManager(_membershipManager);
         withdrawRequestNft = IWithdrawRequestNFT(_withdrawRequestNft);
         acceptableRebaseAprInBps = _acceptableRebaseAprInBps;
+        postReportWaitTimeInSlots = _postReportWaitTimeInSlots;
     }
 
     // pause {etherfi oracle, staking manager, auction manager, etherfi nodes manager, liquidity pool, membership manager}
@@ -101,11 +105,21 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         }
     }
 
+    function canExecuteTasks(IEtherFiOracle.OracleReport calldata _report) external view returns (bool) {
+        bytes32 reportHash = etherFiOracle.generateReportHash(_report);
+        if (!etherFiOracle.isConsensusReached(reportHash)) return false;
+        if (slotForNextReportToProcess() != _report.refSlotFrom) return false;
+        if (blockForNextReportToProcess() != _report.refBlockFrom) return false;
+        if (etherFiOracle.computeSlotAtTimestamp(block.timestamp) < postReportWaitTimeInSlots + _report.refSlotTo) return false;
+        return true;
+    }
+
     function executeTasks(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) external isAdmin() {
         bytes32 reportHash = etherFiOracle.generateReportHash(_report);
         require(etherFiOracle.isConsensusReached(reportHash), "EtherFiAdmin: report didn't reach consensus");
         require(slotForNextReportToProcess() == _report.refSlotFrom, "EtherFiAdmin: report has wrong `refSlotFrom`");
         require(blockForNextReportToProcess() == _report.refBlockFrom, "EtherFiAdmin: report has wrong `refBlockFrom`");
+        require(etherFiOracle.computeSlotAtTimestamp(block.timestamp) >= postReportWaitTimeInSlots + _report.refSlotTo, "EtherFiAdmin: report is too fresh");
 
         numValidatorsToSpinUp = _report.numValidatorsToSpinUp;
 
@@ -200,6 +214,10 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function updateAcceptableRebaseApr(int32 _acceptableRebaseAprInBps) external onlyOwner {
         acceptableRebaseAprInBps = _acceptableRebaseAprInBps;
+    }
+
+    function updatePostReportWaitTimeInSlots(uint16 _postReportWaitTimeInSlots) external onlyOwner {
+        postReportWaitTimeInSlots = _postReportWaitTimeInSlots;
     }
 
     function getImplementation() external view returns (address) {
