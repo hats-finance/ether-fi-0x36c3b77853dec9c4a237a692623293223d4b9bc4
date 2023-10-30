@@ -28,7 +28,9 @@ contract MembershipManagerUpgrade is Script {
 
         membershipManagerInstance.upgradeTo(address(membershipManagerV2Implementation));
 
-        membershipManagerInstance.initializeOnUpgrade(etherFiAdminAddress);
+        // 0.3 ether is the treshold for ether.fan rewards distribution
+        // 183 days (6 months) is required for burn fee waiver
+        membershipManagerInstance.initializeOnUpgrade(etherFiAdminAddress, 0.3 ether, 183);
         
         vm.stopBroadcast();
     }

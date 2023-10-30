@@ -349,16 +349,8 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         assertEq(managerInstance.isExitRequested(bidId[0]), true);
 
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        vm.expectRevert("Exit request was already sent.");
-        managerInstance.sendExitRequest(bidId[0]);
-
         uint256[] memory ids = new uint256[](1);
         ids[0] = bidId[0];
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        vm.expectRevert("Exit request was already sent.");
-        managerInstance.batchSendExitRequest(ids);
-
         address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
         uint32 exitRequestTimestamp = IEtherFiNode(etherFiNode).exitRequestTimestamp();
 

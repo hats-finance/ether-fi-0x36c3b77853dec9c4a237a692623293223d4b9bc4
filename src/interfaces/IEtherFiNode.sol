@@ -69,7 +69,7 @@ interface IEtherFiNode {
     function queueRestakedWithdrawal() external;
     function recordStakingStart(bool _enableRestaking) external;
     function resetWithdrawalSafe() external;
-    function setExitRequestTimestamp() external;
+    function setExitRequestTimestamp(uint32 _timestamp) external;
     function setIpfsHashForEncryptedValidatorKey(string calldata _ipfs) external;
     function setIsRestakingEnabled(bool _enabled) external;
     function setPhase(VALIDATOR_PHASE _phase) external;

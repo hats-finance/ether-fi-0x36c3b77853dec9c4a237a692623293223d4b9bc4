@@ -1367,7 +1367,7 @@ contract LiquidityPoolTest is TestSetup {
         liquidityPoolInstance.setStakingTargetWeights(50, 50);
 
         vm.startPrank(alice);
-        vm.expectRevert("Invalid weights");
+        vm.expectRevert(LiquidityPool.InvalidParams.selector);
         liquidityPoolInstance.setStakingTargetWeights(50, 51);
 
         liquidityPoolInstance.setStakingTargetWeights(61, 39);
@@ -1452,9 +1452,9 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
-        vm.warp(12431561615);
+        _moveClock(230);
 
-        liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 
         startHoax(alice);
         bidIds = auctionInstance.createBid{value: 1 ether}(
@@ -1463,13 +1463,14 @@ contract LiquidityPoolTest is TestSetup {
         );
         vm.stopPrank();
 
-        startHoax(alice);
+        address bnftHolder = (firstIndex == 0) ? alice : greg;
+        startHoax(bnftHolder);
         processedBids = liquidityPoolInstance.batchDepositAsBnftHolder{value: 8 ether}(bidIds, 4);
 
-        assertEq(stakingManagerInstance.bidIdToStaker(11), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(12), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(13), alice);
-        assertEq(stakingManagerInstance.bidIdToStaker(14), alice);
+        assertEq(stakingManagerInstance.bidIdToStaker(11), bnftHolder);
+        assertEq(stakingManagerInstance.bidIdToStaker(12), bnftHolder);
+        assertEq(stakingManagerInstance.bidIdToStaker(13), bnftHolder);
+        assertEq(stakingManagerInstance.bidIdToStaker(14), bnftHolder);
 
         // verify that created nodes have associated eigenPods
         IEtherFiNode node = IEtherFiNode(managerInstance.etherfiNodeAddress(bidIds[0]));

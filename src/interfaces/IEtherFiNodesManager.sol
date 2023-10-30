@@ -68,4 +68,6 @@ interface IEtherFiNodesManager {
     function setStakingRewardsSplit(uint64 _treasury, uint64 _nodeOperator, uint64 _tnft, uint64 _bnf) external;
     function unregisterEtherFiNode(uint256 _validatorId) external;
     function updateAdmin(address _address, bool _isAdmin) external;
+    function pauseContract() external;
+    function unPauseContract() external;
 }

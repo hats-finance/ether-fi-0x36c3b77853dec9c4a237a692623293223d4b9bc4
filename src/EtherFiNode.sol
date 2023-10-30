@@ -99,9 +99,8 @@ contract EtherFiNode is IEtherFiNode {
 
     /// @notice Sets the exit request timestamp
     /// @dev Called when a TNFT holder submits an exit request
-    function setExitRequestTimestamp() external onlyEtherFiNodeManagerContract {
-        require(exitRequestTimestamp == 0, "Exit request was already sent.");
-        exitRequestTimestamp = uint32(block.timestamp);
+    function setExitRequestTimestamp(uint32 _timestamp) external onlyEtherFiNodeManagerContract {
+        exitRequestTimestamp = _timestamp;
     }
 
     /// @notice Set the validators phase to exited
