@@ -24,10 +24,10 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
     uint32 public lastFinalizedRequestId;
     uint96 public accumulatedDustEEthShares; // to be burned or used to cover the validator churn cost
 
-    event WithdrawRequestCreated(uint32 requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner, uint256 fee);
-    event WithdrawRequestClaimed(uint32 requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner, uint256 fee);
-    event WithdrawRequestInvalidated(uint32 requestId);
-    event WithdrawRequestValidated(uint32 requestId);
+    event WithdrawRequestCreated(uint32 indexed requestId, uint256 amountOfEEth, uint256 shareOfEEth, address owner, uint256 fee);
+    event WithdrawRequestClaimed(uint32 indexed requestId, uint256 amountOfEEth, uint256 burntShareOfEEth, address owner, uint256 fee);
+    event WithdrawRequestInvalidated(uint32 indexed requestId);
+    event WithdrawRequestValidated(uint32 indexed requestId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
