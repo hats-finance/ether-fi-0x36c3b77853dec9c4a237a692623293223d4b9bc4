@@ -64,13 +64,10 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         return requestId;
     }
 
-    /// @notice called by the NFT owner to claim their ETH
-    /// @dev burns the NFT and transfers ETH from the liquidity pool to the owner minus any fee, withdraw request must be valid and finalized
-    /// @param tokenId the id of the withdraw request and associated NFT
-    function claimWithdraw(uint256 tokenId) external {
+    function getClaimableAmount(uint256 tokenId) public returns (uint256) {
         require(tokenId < nextRequestId, "Request does not exist");
         require(tokenId <= lastFinalizedRequestId, "Request is not finalized");
-        require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
+        require(ownerOf(tokenId) != address(0), "Already Claimed");
 
         IWithdrawRequestNFT.WithdrawRequest memory request = _requests[tokenId];
         require(request.isValid, "Request is not valid");
@@ -78,26 +75,46 @@ contract WithdrawRequestNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgrad
         // send the lesser value of the originally requested amount of eEth or the current eEth value of the shares
         uint256 amountForShares = liquidityPool.amountForShare(request.shareOfEEth);
         uint256 amountToTransfer = (request.amountOfEEth < amountForShares) ? request.amountOfEEth : amountForShares;
-        require(amountToTransfer > 0, "Amount to transfer is zero");
+        uint256 fee = uint256(request.feeGwei) * 1 gwei;
+
+        return amountToTransfer - fee;
+    }
+
+    /// @notice called by the NFT owner to claim their ETH
+    /// @dev burns the NFT and transfers ETH from the liquidity pool to the owner minus any fee, withdraw request must be valid and finalized
+    /// @param tokenId the id of the withdraw request and associated NFT
+    function claimWithdraw(uint256 tokenId) public {
+        require(ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
+
+        IWithdrawRequestNFT.WithdrawRequest memory request = _requests[tokenId];
+        uint256 fee = uint256(request.feeGwei) * 1 gwei;
+        uint256 amountToWithdraw = getClaimableAmount(tokenId);
 
         // transfer eth to requester
         address recipient = ownerOf(tokenId);
         _burn(tokenId);
         delete _requests[tokenId];
 
-        uint256 fee = request.feeGwei * 1 gwei;
         if (fee > 0) {
             // send fee to membership manager
             liquidityPool.withdraw(address(membershipManager), fee);
         }
 
-        uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToTransfer - fee);
+        uint256 amountBurnedShare = liquidityPool.withdraw(recipient, amountToWithdraw);
         uint256 amountUnBurnedShare = request.shareOfEEth - amountBurnedShare;
-        accumulatedDustEEthShares += uint96(amountUnBurnedShare);
+        if (amountUnBurnedShare > 0) {
+            accumulatedDustEEthShares += uint96(amountUnBurnedShare);
+        }
 
-        emit WithdrawRequestClaimed(uint32(tokenId), amountToTransfer, amountBurnedShare, recipient, fee);
+        emit WithdrawRequestClaimed(uint32(tokenId), amountToWithdraw + fee, amountBurnedShare, recipient, fee);
     }
-    
+
+    function batchClaimWithdraw(uint256[] calldata tokenIds) external {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            claimWithdraw(tokenIds[i]);
+        }
+    }
+
     // a function to transfer accumulated shares to admin
     function burnAccumulatedDustEEthShares() external onlyAdmin {
         require(eETH.totalShares() > accumulatedDustEEthShares, "Inappropriate burn");

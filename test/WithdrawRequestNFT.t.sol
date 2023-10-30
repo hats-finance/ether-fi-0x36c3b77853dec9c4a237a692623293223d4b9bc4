@@ -140,7 +140,27 @@ contract WithdrawRequestNFTTest is TestSetup {
         assertFalse(requestIsFinalized, "Request should not be finalized");
 
         vm.expectRevert("Request is not finalized");
-        vm.prank(address(liquidityPoolInstance));
+        vm.prank(bob);
+        withdrawRequestNFTInstance.claimWithdraw(requestId);
+    }
+
+    function test_ClaimWithdrawOfOthers() public {
+        startHoax(bob);
+        liquidityPoolInstance.deposit{value: 10 ether}();
+        vm.stopPrank();
+
+        assertEq(liquidityPoolInstance.getTotalPooledEther(), 10 ether);
+
+        uint96 amountOfEEth = 1 ether;
+
+        vm.prank(bob);
+        eETHInstance.approve(address(liquidityPoolInstance), amountOfEEth);
+
+        vm.prank(bob);
+        uint256 requestId = liquidityPoolInstance.requestWithdraw(bob, amountOfEEth);
+
+        vm.expectRevert("Not the owner of the NFT");
+        vm.prank(alice);
         withdrawRequestNFTInstance.claimWithdraw(requestId);
     }
 

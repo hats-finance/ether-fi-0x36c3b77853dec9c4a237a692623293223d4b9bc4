@@ -88,6 +88,35 @@ contract MembershipManagerTest is TestSetup {
     }
 
 
+    function test_batchClaimWithdraw() public {
+        vm.prank(alice);
+        membershipManagerV1Instance.setFeeAmounts(0 ether, 0.5 ether, 0 ether, 30);
+        
+        vm.deal(bob, 100 ether);
+
+        vm.startPrank(bob);
+        uint256 bobToken1 = membershipManagerV1Instance.wrapEth{value: 10 ether}(10 ether, 0);
+        uint256 bobToken2 = membershipManagerV1Instance.wrapEth{value: 10 ether}(10 ether, 0);
+
+        uint256 requestId1 = membershipManagerV1Instance.requestWithdrawAndBurn(bobToken1);
+        uint256 requestId2 = membershipManagerV1Instance.requestWithdrawAndBurn(bobToken2);
+        vm.stopPrank();
+
+        _finalizeWithdrawalRequest(requestId1);
+        _finalizeWithdrawalRequest(requestId2);
+
+        vm.startPrank(bob);
+        uint256[] memory requestIds = new uint256[](2);
+        requestIds[0] = requestId1;
+        requestIds[1] = requestId2;
+        withdrawRequestNFTInstance.batchClaimWithdraw(requestIds);
+        vm.stopPrank();
+
+        assertEq(address(membershipManagerV1Instance).balance, 2 * 0.5 ether);
+        assertEq(address(bob).balance, 100 ether - 2 * 0.5 ether);
+    }
+
+
     // Note that 1 ether membership points earns 1 kwei (10 ** 6) points a day
     function test_HowPointsGrow() public {
         vm.deal(alice, 2 ether);
