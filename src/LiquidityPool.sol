@@ -125,6 +125,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(_etherFiAdminContract != address(0) && _withdrawRequestNFT != address(0), "No zero addresses");
         // require(etherFiAdminContract == address(0) && address(withdrawRequestNFT) == address(0), "Already initialized");
 
+        paused = false;
         restakeBnftDeposits = false;
         ethAmountLockedForWithdrawal = 0;
         maxValidatorsPerOwner = 10;
@@ -419,7 +420,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(bnftHoldersIndexes[_bNftHolder].registered, "Not registered");
         uint256 index = bnftHoldersIndexes[_bNftHolder].index;
         require(admins[msg.sender] || msg.sender == bnftHolders[index].holder, "Incorrect Caller");
-
+        
         uint256 endIndex = bnftHolders.length - 1;
         address endUser = bnftHolders[endIndex].holder;
 
@@ -719,8 +720,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         require(admins[msg.sender], "Not admin");
     }
 
-    function _requirePaused() internal view virtual {
-        require(paused, "Pausable: not paused");
+    function _requireNotPaused() internal view virtual {
+        require(!paused, "Pausable: paused");
     }
 
     //--------------------------------------------------------------------------------------
@@ -733,7 +734,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     }
 
     modifier whenNotPaused() {
-        _requirePaused();
+        _requireNotPaused();
         _;
     }
 }
