@@ -559,7 +559,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
     function addEthAmountLockedForWithdrawal(uint128 _amount) external {
         if (msg.sender != address(etherFiAdminContract)) revert IncorrectCaller();
-        
+
         ethAmountLockedForWithdrawal += _amount;
     }
 

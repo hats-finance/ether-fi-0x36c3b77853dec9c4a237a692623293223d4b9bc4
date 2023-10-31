@@ -266,7 +266,9 @@ contract EtherFiNodesManager is
     ) external whenNotPaused onlyAdmin {
         for (uint256 i = 0; i < _validatorIds.length; i++) {
             address etherfiNode = etherfiNodeAddress[_validatorIds[i]];
-            _setPhase(etherfiNode, _validatorIds[i], IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
+            IEtherFiNode(etherfiNode).markBeingSlashed();
+
+            emit PhaseChanged(_validatorIds[i], IEtherFiNode.VALIDATOR_PHASE.BEING_SLASHED);
         }
     }
 
@@ -343,6 +345,8 @@ contract EtherFiNodesManager is
 
         IEtherFiNode(withdrawalSafeAddress).recordStakingStart(_enableRestaking);
         etherfiNodeAddress[_validatorId] = withdrawalSafeAddress;
+
+        emit PhaseChanged(_validatorId, IEtherFiNode(withdrawalSafeAddress).phase());
         return withdrawalSafeAddress;
     }
 
@@ -448,6 +452,8 @@ contract EtherFiNodesManager is
 
         numberOfValidators -= 1;
 
+        emit PhaseChanged(_validatorId, IEtherFiNode.VALIDATOR_PHASE.EXITED);
+
         emit NodeExitProcessed(_validatorId);
     }
 
@@ -463,6 +469,9 @@ contract EtherFiNodesManager is
         // recycle the node
         IEtherFiNode(safeAddress).resetWithdrawalSafe();
         unusedWithdrawalSafes.push(etherfiNodeAddress[_validatorId]);
+
+        emit PhaseChanged(_validatorId, IEtherFiNode.VALIDATOR_PHASE.READY_FOR_DEPOSIT);
+
         delete etherfiNodeAddress[_validatorId];
     }
 

@@ -63,8 +63,8 @@ interface IEtherFiNode {
     function createEigenPod() external;
     function hasOutstandingEigenLayerWithdrawals() external view returns (bool);
     function isRestakingEnabled() external view returns (bool);
-    function markEvicted() external;
     function markExited(uint32 _exitTimestamp) external;
+    function markBeingSlashed() external;
     function moveRewardsToManager(uint256 _amount) external;
     function queueRestakedWithdrawal() external;
     function recordStakingStart(bool _enableRestaking) external;
