@@ -342,7 +342,6 @@ contract TestSetup is Test {
             address(treasuryInstance),
             address(protocolRevenueManagerInstance)
         );
-        auctionInstance.setMembershipManagerContractAddress(address(membershipManagerInstance));
 
         membershipManagerInstance.updateAdmin(alice, true);
         membershipNftInstance.updateAdmin(alice, true);
@@ -401,6 +400,7 @@ contract TestSetup is Test {
 
         etherFiOracleInstance.setEtherFiAdmin(address(etherFiAdminInstance));
         liquidityPoolInstance.initializeOnUpgrade(604800, 1, 1, address(etherFiAdminInstance), address(withdrawRequestNFTInstance));
+        auctionInstance.initializeOnUpgrade(address(membershipManagerInstance), 1 ether, address(etherFiAdminInstance));
 
         _initOracleReportsforTesting();
         vm.stopPrank();
@@ -639,7 +639,6 @@ contract TestSetup is Test {
         etherFiAdminInstance.updateAdmin(alice, true);
 
         address admin = address(etherFiAdminInstance);
-        auctionInstance.updateAdmin(admin, true); 
         stakingManagerInstance.updateAdmin(admin, true); 
         liquidityPoolInstance.updateAdmin(admin, true);
         membershipManagerInstance.updateAdmin(admin, true);
