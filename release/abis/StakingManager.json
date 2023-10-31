@@ -104,16 +104,22 @@
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "bidId",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "withdrawSafe",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "restaked",
+        "type": "bool"
       }
     ],
     "name": "StakeDeposit",
@@ -635,6 +641,24 @@
       }
     ],
     "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_nodeOperatorManager",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_etherFiAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "initializeOnUpgrade",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
