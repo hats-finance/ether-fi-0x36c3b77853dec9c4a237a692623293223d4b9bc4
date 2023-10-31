@@ -1452,7 +1452,7 @@ contract LiquidityPoolTest is TestSetup {
         vm.stopPrank();
 
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
-        _moveClock(230);
+        _moveClock(32 * 225 * 7);
 
         (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
 

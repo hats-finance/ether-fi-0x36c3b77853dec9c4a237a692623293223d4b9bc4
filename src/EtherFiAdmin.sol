@@ -110,7 +110,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         if (!etherFiOracle.isConsensusReached(reportHash)) return false;
         if (slotForNextReportToProcess() != _report.refSlotFrom) return false;
         if (blockForNextReportToProcess() != _report.refBlockFrom) return false;
-        if (etherFiOracle.computeSlotAtTimestamp(block.timestamp) < postReportWaitTimeInSlots + _report.refSlotTo) return false;
+        if (etherFiOracle.computeSlotAtTimestamp(block.timestamp) < postReportWaitTimeInSlots + etherFiOracle.getConsensusSlot(reportHash)) return false;
         return true;
     }
 
@@ -119,7 +119,7 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(etherFiOracle.isConsensusReached(reportHash), "EtherFiAdmin: report didn't reach consensus");
         require(slotForNextReportToProcess() == _report.refSlotFrom, "EtherFiAdmin: report has wrong `refSlotFrom`");
         require(blockForNextReportToProcess() == _report.refBlockFrom, "EtherFiAdmin: report has wrong `refBlockFrom`");
-        require(etherFiOracle.computeSlotAtTimestamp(block.timestamp) >= postReportWaitTimeInSlots + _report.refSlotTo, "EtherFiAdmin: report is too fresh");
+        require(etherFiOracle.computeSlotAtTimestamp(block.timestamp) >= postReportWaitTimeInSlots + etherFiOracle.getConsensusSlot(reportHash), "EtherFiAdmin: report is too fresh");
 
         numValidatorsToSpinUp = _report.numValidatorsToSpinUp;
 

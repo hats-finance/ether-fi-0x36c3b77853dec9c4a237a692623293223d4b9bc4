@@ -98,6 +98,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         bool consensusReached = (consenState.support >= quorumSize);
         if (consensusReached) {
             consenState.consensusReached = true;
+            consenState.consensusTimestamp = uint32(block.timestamp);
             _publishReport(_report, reportHash);
         }
 
@@ -142,6 +143,16 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
 
     function isConsensusReached(bytes32 _hash) public view returns (bool) {
         return consensusStates[_hash].consensusReached;
+    }
+
+    function getConsensusTimestamp(bytes32 _hash) public view returns (uint32) {
+        require(consensusStates[_hash].consensusReached, "Consensus is not reached yet");
+        return consensusStates[_hash].consensusTimestamp;
+    }
+
+    function getConsensusSlot(bytes32 _hash) public view returns (uint32) {
+        require(consensusStates[_hash].consensusReached, "Consensus is not reached yet");
+        return computeSlotAtTimestamp(consensusStates[_hash].consensusTimestamp);
     }
 
     function _isFinalized(uint32 _slot) internal view returns (bool) {
