@@ -165,13 +165,13 @@ contract EtherFiOracleTest is TestSetup {
         
         // check the consensus state
         bytes32 reportHash = etherFiOracleInstance.generateReportHash(reportAtPeriod2A);
-        (uint32 support, bool consensusReached) = etherFiOracleInstance.consensusStates(reportHash);
+        (uint32 support, bool consensusReached,) = etherFiOracleInstance.consensusStates(reportHash);
         assertEq(support, 1);
 
         // bob submits the period 2 report
         vm.prank(bob);
         etherFiOracleInstance.submitReport(reportAtPeriod2A);
-        (support, consensusReached) = etherFiOracleInstance.consensusStates(reportHash);
+        (support, consensusReached,) = etherFiOracleInstance.consensusStates(reportHash);
         assertEq(support, 2);
 
         assertEq(etherFiOracleInstance.lastPublishedReportRefSlot(), reportAtPeriod2A.refSlotTo);
@@ -502,27 +502,33 @@ contract EtherFiOracleTest is TestSetup {
            
         // check the consensus state
         bytes32 reportHash = etherFiOracleInstance.generateReportHash(reportAtPeriod2A);
-        (uint32 support, bool consensusReached) = etherFiOracleInstance.consensusStates(reportHash);
+        (uint32 support, bool consensusReached, uint32 consensusTimestamp) = etherFiOracleInstance.consensusStates(reportHash);
         assertEq(support, 1);
         assertEq(consensusReached, false);
+        assertEq(consensusTimestamp, 0);
 
         vm.prank(owner);
         etherFiOracleInstance.setQuorumSize(1);
 
         // bob submits the period 2 report
+        uint32 curTimestamp = uint32(block.timestamp);
         vm.prank(bob);
         etherFiOracleInstance.submitReport(reportAtPeriod2A);
-        (support, consensusReached) = etherFiOracleInstance.consensusStates(reportHash);
+        (support, consensusReached, consensusTimestamp) = etherFiOracleInstance.consensusStates(reportHash);
         assertEq(support, 2);
         assertEq(consensusReached, true);
+        assertEq(consensusTimestamp, curTimestamp);
+
+        _moveClock(1);
 
         // chad submits the period 2 report
         vm.prank(chad);
         vm.expectRevert("Consensus already reached");
         etherFiOracleInstance.submitReport(reportAtPeriod2A);
-        (support, consensusReached) = etherFiOracleInstance.consensusStates(reportHash);
+        (support, consensusReached, consensusTimestamp) = etherFiOracleInstance.consensusStates(reportHash);
         assertEq(support, 2);
         assertEq(consensusReached, true);
+        assertEq(consensusTimestamp, curTimestamp);
     }
 
     function test_postReportWaitTimeInSlots() public {
@@ -541,14 +547,9 @@ contract EtherFiOracleTest is TestSetup {
         assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), true);
 
         vm.prank(owner);
-        etherFiAdminInstance.updatePostReportWaitTimeInSlots(2 * 32 + 2);
+        etherFiAdminInstance.updatePostReportWaitTimeInSlots(1);
         assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), false);
-        _moveClock(1);
-        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), true);
 
-        vm.prank(owner);
-        etherFiAdminInstance.updatePostReportWaitTimeInSlots(2 * 32 + 3);
-        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), false);
         _moveClock(1);
         assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), true);
     }

@@ -628,7 +628,7 @@ contract TestSetup is Test {
 
     // effect: current slot x, moveClock y slots, you are at x + y
     function _moveClock(int256 numSlots) internal {
-        assertEq(numSlots > 0, true);
+        assertEq(numSlots >= 0, true);
         vm.roll(block.number + uint256(numSlots));
         vm.warp(genesisSlotTimestamp + 12 * block.number);
     }
@@ -716,6 +716,8 @@ contract TestSetup is Test {
         etherFiOracleInstance.submitReport(_report);
         vm.prank(bob);
         etherFiOracleInstance.submitReport(_report);
+
+        _moveClock(int256(int16(etherFiAdminInstance.postReportWaitTimeInSlots())));
 
         if (bytes(_revertMessage).length > 0) {
             vm.expectRevert(bytes(_revertMessage));
