@@ -407,6 +407,29 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_membershipManagerContractAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_accumulatedRevenueThreshold",
+        "type": "uint128"
+      },
+      {
+        "internalType": "address",
+        "name": "_etherFiAdminContractAddress",
+        "type": "address"
+      }
+    ],
+    "name": "initializeOnUpgrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_bidId",
         "type": "uint256"
@@ -602,19 +625,6 @@
       }
     ],
     "name": "setMaxBidPrice",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_membershipManagerContractAddress",
-        "type": "address"
-      }
-    ],
-    "name": "setMembershipManagerContractAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
