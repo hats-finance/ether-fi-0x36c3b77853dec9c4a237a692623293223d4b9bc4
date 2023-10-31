@@ -639,7 +639,6 @@ contract TestSetup is Test {
         etherFiAdminInstance.updateAdmin(alice, true);
 
         address admin = address(etherFiAdminInstance);
-        auctionInstance.updateAdmin(admin, true); 
         stakingManagerInstance.updateAdmin(admin, true); 
         liquidityPoolInstance.updateAdmin(admin, true);
         membershipManagerInstance.updateAdmin(admin, true);
