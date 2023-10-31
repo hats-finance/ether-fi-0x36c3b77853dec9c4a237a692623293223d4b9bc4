@@ -54,7 +54,7 @@ contract EtherFiNodesManager is
     IEigenPodManager public eigenPodManager;
     IDelayedWithdrawalRouter public delayedWithdrawalRouter;
     // max number of queued eigenlayer withdrawals to attempt to claim in a single tx
-    uint8 public maxEigenlayerWithrawals;
+    uint8 public maxEigenlayerWithdrawals;
 
     // stack of re-usable withdrawal safes to save gas
     address[] public unusedWithdrawalSafes;
@@ -190,7 +190,7 @@ contract EtherFiNodesManager is
         // sweep rewards from eigenPod if any queued withdrawals are ready to be claimed
         if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
             // claim any queued withdrawals that are ready
-            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithrawals);
+            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithdrawals);
             // queue up an balance currently in the contract so they are ready to be swept in the future
             IEtherFiNode(etherfiNode).queueRestakedWithdrawal();
         }
@@ -232,7 +232,7 @@ contract EtherFiNodesManager is
 
         if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
             // sweep rewards from eigenPod
-            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithrawals);
+            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithdrawals);
             // require that all pending withdrawals have cleared
             if (IEtherFiNode(etherfiNode).hasOutstandingEigenLayerWithdrawals()) revert MustClaimRestakedWithdrawals();
         }
@@ -411,7 +411,7 @@ contract EtherFiNodesManager is
     /// @notice set maximum number of queued eigenlayer withdrawals that can be processed in 1 tx
     /// @param _max max number of queued withdrawals
     function setMaxEigenLayerWithdrawals(uint8 _max) external onlyOwner {
-        maxEigenlayerWithrawals = _max;
+        maxEigenlayerWithdrawals = _max;
     }
 
     /// @notice Increments the number of validators by a certain amount
