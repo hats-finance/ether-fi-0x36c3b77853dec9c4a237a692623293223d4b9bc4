@@ -80,7 +80,6 @@ interface IMembershipManager {
     function addNewTier(uint40 _requiredTierPoints, uint24 _weight) external;
     function updateTier(uint8 _tier, uint40 _requiredTierPoints, uint24 _weight) external;
     function setPoints(uint256 _tokenId, uint40 _loyaltyPoints, uint40 _tierPoints) external;
-    function setPointsBatch(uint256[] calldata _tokenIds, uint40[] calldata _loyaltyPoints, uint40[] calldata _tierPoints) external;
     function setDepositAmountParams(uint56 _minDepositGwei, uint8 _maxDepositTopUpPercent) external;
     function setTopUpCooltimePeriod(uint32 _newWaitTime) external;
     function updateAdmin(address _address, bool _isAdmin) external;

@@ -144,7 +144,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
     /// @param _amountForPoints amount of ETH to boost earnings of {loyalty, tier} points
     /// @return tokenId The ID of the minted membership NFT.
     function wrapEth(uint256 _amount, uint256 _amountForPoints, address _referral) public payable whenNotPaused returns (uint256) {
-        uint256 feeAmount = mintFee * 0.001 ether;
+        uint256 feeAmount = uint256(mintFee) * 0.001 ether;
         uint256 depositPerNFT = _amount + _amountForPoints;
         uint256 ethNeededPerNFT = depositPerNFT + feeAmount;
 
@@ -315,17 +315,6 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (_tier >= tierData.length) revert OutOfBound();
         tierData[_tier].requiredTierPoints = _requiredTierPoints;
         tierData[_tier].weight = _weight;
-    }
-
-    /// @notice Sets the points for the given NFTs.
-    /// @dev This function allows the contract owner to set the points for specific NFTs.
-    /// @param _tokenIds The IDs of the membership NFT.
-    /// @param _loyaltyPoints The number of loyalty points to set for the specified NFT.
-    /// @param _tierPoints The number of tier points to set for the specified NFT.
-    function setPointsBatch(uint256[] calldata _tokenIds, uint40[] calldata _loyaltyPoints, uint40[] calldata _tierPoints) external {
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
-            setPoints(_tokenIds[i], _loyaltyPoints[i], _tierPoints[i]);            
-        }
     }
 
     /// @notice Sets the points for a given Ethereum address.
