@@ -71,6 +71,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     event FundsMigrated(address indexed user, uint256 _tokenId, uint256 _amount, uint256 _eapPoints, uint40 _loyaltyPoints, uint40 _tierPoints);
     event NftUpdated(uint256 _tokenId, uint128 _amount, uint128 _amountSacrificedForBoostingPoints, uint40 _loyaltyPoints, uint40 _tierPoints, uint8 _tier, uint32 _prevTopUpTimestamp, uint96 _share);
+    event NftUnwrappedForEEth(address indexed _user, uint256 indexed _tokenId, uint256 _amountOfEEth, uint40 _loyaltyPoints, uint256 _feeAmount);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -163,6 +164,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         _claimStakingRewards(_tokenId);
         _migrateFromV0ToV1(_tokenId);
 
+        uint40 loyaltyPoints = membershipNFT.loyaltyPointsOf(_tokenId);
         (uint256 totalBalance, uint256 feeAmount) = _withdrawAndBurn(_tokenId);
 
         // transfer 'eEthShares' of eETH to the owner
@@ -171,6 +173,8 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (feeAmount > 0) {
             liquidityPool.withdraw(address(this), feeAmount);
         }
+
+        emit NftUnwrappedForEEth(msg.sender, _tokenId, totalBalance - feeAmount, loyaltyPoints, feeAmount);
     }
 
     /// @notice Increase your deposit tied to this NFT within the configured percentage limit.

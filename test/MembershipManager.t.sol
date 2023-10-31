@@ -1413,6 +1413,8 @@ contract MembershipManagerTest is TestSetup {
         assertEq(eETHInstance.balanceOf(address(membershipManagerV1Instance)), 1 ether);
         assertEq(eETHInstance.balanceOf(alice), 0 ether);
 
+        _moveClock(225);
+
         // Alice unwraps the NFT to eETH paying 0.5 ETH as the burn fee
         // The burn fee 0.5 ETH is sent to the MembershipManager contract
         membershipManagerV1Instance.unwrapForEEthAndBurn(aliceToken);
