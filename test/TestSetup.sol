@@ -401,13 +401,13 @@ contract TestSetup is Test {
 
         etherFiOracleInstance.setEtherFiAdmin(address(etherFiAdminInstance));
         liquidityPoolInstance.initializeOnUpgrade(604800, 1, 1, address(etherFiAdminInstance), address(withdrawRequestNFTInstance));
+        stakingManagerInstance.initializeOnUpgrade(address(nodeOperatorManagerInstance), address(etherFiAdminInstance));
 
         _initOracleReportsforTesting();
         vm.stopPrank();
 
         // Setup dependencies
         vm.startPrank(alice);
-        stakingManagerInstance.setNodeOperatorManager(address(nodeOperatorManagerInstance));
         _approveNodeOperators();
         _setUpNodeOperatorWhitelist();
         vm.stopPrank();
