@@ -192,6 +192,80 @@ contract TestSetup is Test {
     int256 secondsPerSlot = 12;
     uint32 genesisSlotTimestamp;
 
+    // enum for fork options
+    uint8 TESTNET_FORK = 1;
+    uint8 MAINNET_FORK = 2;
+
+    function initializeFork(uint8 forkEnum, bool deployNewContracts) public returns (uint256) {
+        uint256 fork;
+        if (forkEnum == MAINNET_FORK) {
+            /*
+            fork = vm.createFork(vm.envString("MAINNET_RPC_URL"));
+            if (deployNewContracts) {
+                setUp();
+            } else {
+
+            }
+            */
+
+
+        } else if (forkEnum == TESTNET_FORK) {
+            fork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
+            vm.selectFork(fork);
+            if (deployNewContracts) {
+                setUpTests();
+            } else {
+                // grab all addresses from address manager and override
+              //  addressProviderInstance = AddressProvider(address(0x8487c5F8550E3C3e7734Fe7DCF77DB2B72E4A848));
+                addressProviderInstance = AddressProvider(address(0x6E429db4E1a77bCe9B6F9EDCC4e84ea689c1C97e));
+                regulationsManagerInstance = RegulationsManager(addressProviderInstance.getContractAddress("RegulationsManager"));
+                assert(address(regulationsManagerInstance) != address(0x0));
+                console2.log("hello");
+                managerInstance = EtherFiNodesManager(payable(addressProviderInstance.getContractAddress("EtherFiNodesManager")));
+                assert(address(managerInstance) != address(0x0));
+                liquidityPoolInstance = LiquidityPool(payable(addressProviderInstance.getContractAddress("LiquidityPool")));
+                assert(address(liquidityPoolInstance) != address(0x0));
+                eETHInstance = EETH(addressProviderInstance.getContractAddress("EETH"));
+                assert(address(eETHInstance) != address(0x0));
+                weEthInstance = WeETH(addressProviderInstance.getContractAddress("WeETH"));
+                assert(address(weEthInstance) != address(0x0));
+                membershipManagerV1Instance = MembershipManager(payable(addressProviderInstance.getContractAddress("MembershipManager")));
+                assert(address(membershipManagerV1Instance) != address(0x0));
+                membershipNftInstance = MembershipNFT(addressProviderInstance.getContractAddress("MembershipNFT"));
+                assert(address(membershipNftInstance) != address(0x0));
+                nftExchangeInstance = NFTExchange(addressProviderInstance.getContractAddress("NFTExchange"));
+                assert(address(nftExchangeInstance) != address(0x0));
+                auctionInstance = AuctionManager(addressProviderInstance.getContractAddress("AuctionManager"));
+                assert(address(auctionInstance) != address(0x0));
+                stakingManagerInstance = StakingManager(addressProviderInstance.getContractAddress("StakingManager"));
+                assert(address(stakingManagerInstance) != address(0x0));
+                TNFTInstance = TNFT(addressProviderInstance.getContractAddress("TNFT"));
+                assert(address(TNFTInstance) != address(0x0));
+                BNFTInstance = BNFT(addressProviderInstance.getContractAddress("BNFT"));
+                assert(address(BNFTInstance) != address(0x0));
+                treasuryInstance = Treasury(payable(addressProviderInstance.getContractAddress("Treasury")));
+                assert(address(treasuryInstance) != address(0x0));
+                nodeOperatorManagerInstance = NodeOperatorManager(addressProviderInstance.getContractAddress("NodeOperatorManager"));
+                assert(address(nodeOperatorManagerInstance) != address(0x0));
+                node = EtherFiNode(payable(addressProviderInstance.getContractAddress("EtherFiNode")));
+                assert(address(node) != address(0x0));
+                earlyAdopterPoolInstance = EarlyAdopterPool(payable(addressProviderInstance.getContractAddress("EarlyAdopterPool")));
+                assert(address(earlyAdopterPoolInstance) != address(0x0));
+                withdrawRequestNFTInstance = WithdrawRequestNFT(addressProviderInstance.getContractAddress("WithdrawRequestNFT"));
+                assert(address(withdrawRequestNFTInstance) != address(0x0));
+
+                return fork;
+
+
+            }
+        } else {
+            revert("Unimplemented fork");
+        }
+
+
+
+    }
+
     function setUpTests() internal {
         vm.startPrank(owner);
 
