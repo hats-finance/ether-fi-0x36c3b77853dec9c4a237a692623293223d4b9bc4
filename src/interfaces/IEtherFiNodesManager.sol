@@ -70,4 +70,7 @@ interface IEtherFiNodesManager {
     function updateAdmin(address _address, bool _isAdmin) external;
     function pauseContract() external;
     function unPauseContract() external;
+
+    function treasuryContract() external view returns (address);
+    function maxEigenlayerWithdrawals() external view returns (uint8);
 }
