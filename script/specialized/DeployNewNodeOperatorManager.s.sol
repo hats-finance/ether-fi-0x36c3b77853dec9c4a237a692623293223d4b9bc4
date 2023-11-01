@@ -60,7 +60,7 @@ contract DeployNewNodeOperatorManagerScript is Script {
             operators[5] = 0xB8db44e12eacc48F7C2224a248c8990289556fAe;
             operators[6] = 0x00a16D2572573DC9E26e2d267f2270cddAC9218B;
             operators[7] = 0x3f95F8f6222F6D97b47122372D60117ab386C48F;
-            operators[8] = 0xadf8ca6368227db9ee3a4d03e463bcd90d31de53;
+            operators[8] = 0xaDf8Ca6368227DB9Ee3a4d03e463Bcd90D31DE53;
             operators[9] = 0xAfBD66706F90BC56D29c39A260930b34B2757ed8;
             operators[10] = 0xB6C9125584A1A28cCafd31056D4aF29014862536;
         }else if(block.chainid == 5) {
