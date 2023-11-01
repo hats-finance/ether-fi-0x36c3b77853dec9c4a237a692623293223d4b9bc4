@@ -97,7 +97,7 @@ contract DeployPhaseOnePointFiveScript is Script {
 
         liquidityPool.initialize(address(eETH), address(stakingManagerProxyAddress), address(etherFiNodesManagerProxyAddress), address(membershipManager), address(tnft));
         // membershipManager.initialize(address(eETH), address(liquidityPool), address(membershipNFT), treasury, protocolRevenueManagerProxy);
-        membershipNFT.initialize(baseURI, address(membershipManager), address(liquidityPool));
+        membershipNFT.initialize(baseURI, address(membershipManager));
 
         weETHImplementation = new WeETH();
         weETHProxy = new UUPSProxy(address(weETHImplementation),"");
