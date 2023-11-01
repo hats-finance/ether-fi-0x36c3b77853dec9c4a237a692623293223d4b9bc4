@@ -330,7 +330,7 @@ contract TestSetup is Test {
         membershipManagerInstance = MembershipManagerV0(payable(membershipManagerProxy));
 
         liquidityPoolInstance.initialize(address(eETHInstance), address(stakingManagerInstance), address(etherFiNodeManagerProxy), address(membershipManagerInstance), address(TNFTInstance));
-        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json", address(membershipManagerInstance), address(liquidityPoolInstance));
+        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json", address(membershipManagerInstance));
         withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)), payable(address(membershipManagerInstance)));
         membershipManagerInstance.initialize(
             address(eETHInstance),
@@ -400,6 +400,7 @@ contract TestSetup is Test {
         stakingManagerInstance.initializeOnUpgrade(address(nodeOperatorManagerInstance), address(etherFiAdminInstance));
         auctionInstance.initializeOnUpgrade(address(membershipManagerInstance), 1 ether, address(etherFiAdminInstance));
         managerInstance.initializeOnUpgrade(address(etherFiAdminInstance), 0xa286b84C96aF280a49Fe1F40B9627C2A2827df41, 0x89581561f1F98584F88b0d57c2180fb89225388f, 5);
+        membershipNftInstance.initializeOnUpgrade(address(liquidityPoolInstance));
 
         _initOracleReportsforTesting();
         vm.stopPrank();
