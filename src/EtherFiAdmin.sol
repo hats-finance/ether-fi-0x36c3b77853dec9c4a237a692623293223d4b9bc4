@@ -107,19 +107,24 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     function canExecuteTasks(IEtherFiOracle.OracleReport calldata _report) external view returns (bool) {
         bytes32 reportHash = etherFiOracle.generateReportHash(_report);
+        uint32 current_slot = etherFiOracle.computeSlotAtTimestamp(block.timestamp);
+
         if (!etherFiOracle.isConsensusReached(reportHash)) return false;
         if (slotForNextReportToProcess() != _report.refSlotFrom) return false;
         if (blockForNextReportToProcess() != _report.refBlockFrom) return false;
-        if (etherFiOracle.computeSlotAtTimestamp(block.timestamp) < postReportWaitTimeInSlots + etherFiOracle.getConsensusSlot(reportHash)) return false;
+        if (current_slot < postReportWaitTimeInSlots + etherFiOracle.getConsensusSlot(reportHash)) return false;
+        if (current_slot >= _report.refSlotTo + 1 + etherFiOracle.reportPeriodSlot()) return false;
         return true;
     }
 
     function executeTasks(IEtherFiOracle.OracleReport calldata _report, bytes[] calldata _pubKey, bytes[] calldata _signature) external isAdmin() {
         bytes32 reportHash = etherFiOracle.generateReportHash(_report);
+        uint32 current_slot = etherFiOracle.computeSlotAtTimestamp(block.timestamp);
         require(etherFiOracle.isConsensusReached(reportHash), "EtherFiAdmin: report didn't reach consensus");
         require(slotForNextReportToProcess() == _report.refSlotFrom, "EtherFiAdmin: report has wrong `refSlotFrom`");
         require(blockForNextReportToProcess() == _report.refBlockFrom, "EtherFiAdmin: report has wrong `refBlockFrom`");
-        require(etherFiOracle.computeSlotAtTimestamp(block.timestamp) >= postReportWaitTimeInSlots + etherFiOracle.getConsensusSlot(reportHash), "EtherFiAdmin: report is too fresh");
+        require(current_slot >= postReportWaitTimeInSlots + etherFiOracle.getConsensusSlot(reportHash), "EtherFiAdmin: report is too fresh");
+        require(current_slot < _report.refSlotTo + 1 + etherFiOracle.reportPeriodSlot(), "EtherFiAdmin: report is too old");
 
         numValidatorsToSpinUp = _report.numValidatorsToSpinUp;
 

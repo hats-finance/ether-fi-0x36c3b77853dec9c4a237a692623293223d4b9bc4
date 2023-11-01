@@ -178,6 +178,112 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "consensusVersion",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "refSlotFrom",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "refSlotTo",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "refBlockFrom",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "refBlockTo",
+            "type": "uint32"
+          },
+          {
+            "internalType": "int128",
+            "name": "accruedRewards",
+            "type": "int128"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "validatorsToApprove",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "liquidityPoolValidatorsToExit",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "exitedValidators",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "exitedValidatorsExitTimestamps",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "slashedValidators",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "withdrawalRequestsToInvalidate",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint32",
+            "name": "lastFinalizedWithdrawalRequestId",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "eEthTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint128",
+            "name": "finalizedWithdrawalAmount",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint32",
+            "name": "numValidatorsToSpinUp",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct IEtherFiOracle.OracleReport",
+        "name": "_report",
+        "type": "tuple"
+      }
+    ],
+    "name": "canExecuteTasks",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "etherFiNodesManager",
     "outputs": [
@@ -367,6 +473,11 @@
         "internalType": "int32",
         "name": "_acceptableRebaseAprInBps",
         "type": "int32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_postReportWaitTimeInSlots",
+        "type": "uint16"
       }
     ],
     "name": "initialize",
@@ -447,6 +558,57 @@
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "_etherFiOracle",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_stakingManager",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_auctionManager",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_etherFiNodesManager",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_liquidityPool",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_membershipManager",
+        "type": "bool"
+      }
+    ],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "postReportWaitTimeInSlots",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
       }
     ],
     "stateMutability": "view",
@@ -538,6 +700,19 @@
       }
     ],
     "name": "updateAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint16",
+        "name": "_postReportWaitTimeInSlots",
+        "type": "uint16"
+      }
+    ],
+    "name": "updatePostReportWaitTimeInSlots",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
