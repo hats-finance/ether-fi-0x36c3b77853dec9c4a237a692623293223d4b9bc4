@@ -90,7 +90,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
 
     // To be called for Phase 2 contract upgrade
     function initializeOnUpgrade(address _etherFiAdminAddress, uint256 _fanBoostThresholdAmount, uint16 _burnFeeWaiverPeriodInDays) external onlyOwner {
-        // require(address(etherFiAdmin) == address(0), "Already initialized");
+        require(address(etherFiAdmin) == address(0), "Already initialized");
 
         etherFiAdmin = IEtherFiAdmin(_etherFiAdminAddress);
         fanBoostThreshold = uint16(_fanBoostThresholdAmount / 0.001 ether);
