@@ -74,6 +74,8 @@ interface IMembershipManager {
     function vaultShareForEthAmount(uint8 _tier, uint256 _ethAmount) external view returns (uint256);
 
     // only Owner
+    function initializeOnUpgrade(address _etherFiAdminAddress, uint256 _fanBoostThresholdAmount, uint16 _burnFeeWaiverPeriodInDays) external;
+
     function setWithdrawalLockBlocks(uint32 _blocks) external;
     function updatePointsParams(uint16 _newPointsBoostFactor, uint16 _newPointsGrowthRate) external;
     function rebase(int128 _accruedRewards) external;
