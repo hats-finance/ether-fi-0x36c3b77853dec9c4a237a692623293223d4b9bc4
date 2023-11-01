@@ -23,7 +23,6 @@ contract DeployNewNodeOperatorManagerScript is Script {
         address addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         addressProvider = AddressProvider(addressProviderAddress);
 
-        address AuctionManagerProxyAddress = addressProvider.getContractAddress("AuctionManager");
         address phaseOneNodeOperator = addressProvider.getContractAddress("NodeOperatorManager");
 
         address[] memory operators;
@@ -71,10 +70,7 @@ contract DeployNewNodeOperatorManagerScript is Script {
         nodeOperatorManagerInstance = NodeOperatorManager(address(nodeOperatorManagerProxy));
         nodeOperatorManagerInstance.initialize();
 
-        NodeOperatorManager(nodeOperatorManagerInstance).updateAdmin(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39, true);
         NodeOperatorManager(nodeOperatorManagerInstance).batchMigrateNodeOperator(operators, hashes, totalKeys, keysUsed);
-
-        AuctionManager(AuctionManagerProxyAddress).updateNodeOperatorManager(address(nodeOperatorManagerInstance));
         
         if (addressProvider.getContractAddress("NodeOperatorManager") != address(nodeOperatorManagerInstance)) {
             addressProvider.removeContract("NodeOperatorManager");
