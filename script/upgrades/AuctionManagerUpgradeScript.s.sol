@@ -18,6 +18,7 @@ contract AuctionManagerUpgrade is Script {
         address AuctionManagerProxyAddress = addressProvider.getContractAddress("AuctionManager");
         address membershipManagerProxyAddress = addressProvider.getContractAddress("MembershipManager");
         address etherFiAdminAddress = addressProvider.getContractAddress("EtherFiAdmin");
+        address nodeOperatorManagerAddress = addressProvider.getContractAddress("NodeOperatorManager");
         
         vm.startBroadcast(deployerPrivateKey);
 
@@ -25,7 +26,7 @@ contract AuctionManagerUpgrade is Script {
         AuctionManager AuctionManagerImplementation = new AuctionManager();
 
         AuctionManagerInstance.upgradeTo(address(AuctionManagerImplementation));
-        AuctionManagerInstance.initializeOnUpgrade(membershipManagerProxyAddress, 0.15 ether, etherFiAdminAddress);
+        AuctionManagerInstance.initializeOnUpgrade(membershipManagerProxyAddress, 0.15 ether, etherFiAdminAddress, nodeOperatorManagerAddress);
 
         vm.stopBroadcast();
     }
