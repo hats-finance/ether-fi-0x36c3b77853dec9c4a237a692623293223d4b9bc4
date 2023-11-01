@@ -714,7 +714,13 @@ contract TestSetup is Test {
         vm.prank(bob);
         etherFiOracleInstance.submitReport(_report);
 
-        _moveClock(int256(int16(etherFiAdminInstance.postReportWaitTimeInSlots())));
+        int256 offset = int256(int16(etherFiAdminInstance.postReportWaitTimeInSlots()));
+        if (offset > 2 * 32) {
+            offset -= 2 * 32;
+        }
+        if (offset > 0) {
+            _moveClock(offset);
+        }
 
         if (bytes(_revertMessage).length > 0) {
             vm.expectRevert(bytes(_revertMessage));

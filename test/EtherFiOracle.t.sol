@@ -224,12 +224,6 @@ contract EtherFiOracleTest is TestSetup {
         vm.prank(alice);
         vm.expectRevert("Last published report is not handled yet");
         etherFiOracleInstance.submitReport(report);
-        
-        vm.prank(alice);
-        etherFiAdminInstance.executeTasks(reportAtPeriod2A, emptyBytes, emptyBytes);
-
-        vm.prank(alice);
-        etherFiOracleInstance.submitReport(report);
     }
 
     function test_change_report_start_slot1() public { 
@@ -550,7 +544,36 @@ contract EtherFiOracleTest is TestSetup {
         etherFiAdminInstance.updatePostReportWaitTimeInSlots(1);
         assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), false);
 
+        vm.expectRevert("EtherFiAdmin: report is too fresh");
+        vm.prank(alice);
+        etherFiAdminInstance.executeTasks(reportAtPeriod2A, emptyBytes, emptyBytes);
+
         _moveClock(1);
         assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), true);
+
+        vm.prank(alice);
+        etherFiAdminInstance.executeTasks(reportAtPeriod2A, emptyBytes, emptyBytes);
+    }
+
+    function test_too_old_report() public {
+        bytes[] memory emptyBytes = new bytes[](0);
+        vm.prank(owner);
+        etherFiOracleInstance.setQuorumSize(1);
+
+        // period 2
+        _moveClock(1024 + 2 * slotsPerEpoch);
+
+        vm.prank(alice);
+        bool consensusReached = etherFiOracleInstance.submitReport(reportAtPeriod2A);
+        assertEq(consensusReached, true);
+
+        vm.prank(alice);
+        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), true);
+
+        _moveClock(1024 - 2 * slotsPerEpoch);
+        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), false);
+
+        _moveClock(1);
+        assertEq(etherFiAdminInstance.canExecuteTasks(reportAtPeriod2A), false);
     }
 }
