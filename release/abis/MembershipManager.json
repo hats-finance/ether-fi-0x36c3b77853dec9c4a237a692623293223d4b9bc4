@@ -201,6 +201,43 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_amountOfEEth",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint40",
+        "name": "_loyaltyPoints",
+        "type": "uint40"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_feeAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "NftUnwrappedForEEth",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "_tokenId",
@@ -639,6 +676,16 @@
         "internalType": "address",
         "name": "_etherFiAdminAddress",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_fanBoostThresholdAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_burnFeeWaiverPeriodInDays",
+        "type": "uint16"
       }
     ],
     "name": "initializeOnUpgrade",
@@ -894,6 +941,24 @@
   {
     "inputs": [
       {
+        "internalType": "uint56",
+        "name": "_minDepositGwei",
+        "type": "uint56"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_maxDepositTopUpPercent",
+        "type": "uint8"
+      }
+    ],
+    "name": "setDepositAmountParams",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_fanBoostThresholdEthAmount",
         "type": "uint256"
@@ -928,32 +993,6 @@
       }
     ],
     "name": "setFeeAmounts",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint8",
-        "name": "_percent",
-        "type": "uint8"
-      }
-    ],
-    "name": "setMaxDepositTopUpPercent",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint56",
-        "name": "_value",
-        "type": "uint56"
-      }
-    ],
-    "name": "setMinDepositWei",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
