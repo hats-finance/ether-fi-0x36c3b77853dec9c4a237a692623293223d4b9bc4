@@ -246,9 +246,6 @@ contract TestSetup is Test {
             address(BNFTInstance)
         );
         managerInstance.updateAdmin(alice, true);
-        managerInstance.setEigenPodMananger(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
-        managerInstance.setDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
-        managerInstance.setMaxEigenLayerWithdrawals(5); // TODO(Dave): run some tests to find a good balance between gas and security
 
         TNFTInstance.initializeOnUpgrade(address(managerInstance));
         BNFTInstance.initializeOnUpgrade(address(managerInstance));
@@ -402,6 +399,7 @@ contract TestSetup is Test {
         liquidityPoolInstance.initializeOnUpgrade(604800, 1, 1, address(etherFiAdminInstance), address(withdrawRequestNFTInstance));
         stakingManagerInstance.initializeOnUpgrade(address(nodeOperatorManagerInstance), address(etherFiAdminInstance));
         auctionInstance.initializeOnUpgrade(address(membershipManagerInstance), 1 ether, address(etherFiAdminInstance));
+        managerInstance.initializeOnUpgrade(address(etherFiAdminInstance), 0xa286b84C96aF280a49Fe1F40B9627C2A2827df41, 0x89581561f1F98584F88b0d57c2180fb89225388f, 5);
 
         _initOracleReportsforTesting();
         vm.stopPrank();
@@ -642,7 +640,6 @@ contract TestSetup is Test {
         stakingManagerInstance.updateAdmin(admin, true); 
         liquidityPoolInstance.updateAdmin(admin, true);
         membershipManagerInstance.updateAdmin(admin, true);
-        managerInstance.updateAdmin(admin, true);
         withdrawRequestNFTInstance.updateAdmin(admin, true);
 
         vm.stopPrank();
