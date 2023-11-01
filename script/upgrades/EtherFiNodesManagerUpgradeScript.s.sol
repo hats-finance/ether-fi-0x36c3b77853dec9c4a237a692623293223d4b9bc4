@@ -22,7 +22,7 @@ contract EtherFiNodesManagerUpgrade is Script {
         address delayedWithdrawalRouter;
         uint8 maxEigenlayerWithdrawals = 5;
 
-        if (block.chainid == 0) {
+        if (block.chainid == 1) {
             eigenPodManager = 0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338;
             delayedWithdrawalRouter = 0x7Fe7E9CC0F274d2435AD5d56D5fa73E47F6A23D8;
         } else if (block.chainid == 5) {
