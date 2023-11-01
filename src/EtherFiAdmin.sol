@@ -109,9 +109,6 @@ contract EtherFiAdmin is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bytes32 reportHash = etherFiOracle.generateReportHash(_report);
         uint32 current_slot = etherFiOracle.computeSlotAtTimestamp(block.timestamp);
 
-        console.log(current_slot, postReportWaitTimeInSlots, etherFiOracle.getConsensusSlot(reportHash));
-        console.log(current_slot, _report.refSlotTo, etherFiOracle.reportPeriodSlot());
-
         if (!etherFiOracle.isConsensusReached(reportHash)) return false;
         if (slotForNextReportToProcess() != _report.refSlotFrom) return false;
         if (blockForNextReportToProcess() != _report.refBlockFrom) return false;
