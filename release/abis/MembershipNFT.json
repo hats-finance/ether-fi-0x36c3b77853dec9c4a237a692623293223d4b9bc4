@@ -703,16 +703,24 @@
       },
       {
         "internalType": "address",
-        "name": "_membershipManagerAddress",
+        "name": "_membershipManagerInstance",
         "type": "address"
-      },
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
         "internalType": "address",
         "name": "_liquidityPoolAddress",
         "type": "address"
       }
     ],
-    "name": "initialize",
+    "name": "initializeOnUpgrade",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
