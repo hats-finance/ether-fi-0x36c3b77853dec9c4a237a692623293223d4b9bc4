@@ -58,7 +58,7 @@ contract DeployPhaseOnePointFiveScript is Script {
 
         address stakingManagerProxyAddress = addressProvider.getContractAddress("StakingManager");
         address etherFiNodesManagerProxyAddress = addressProvider.getContractAddress("EtherFiNodesManager");
-        address treasury = addressProvider.getImplementationAddress("Treasury");
+        address treasury = addressProvider.getContractAddress("Treasury");
         address protocolRevenueManagerProxy = addressProvider.getContractAddress("ProtocolRevenueManager");
         address tnft = addressProvider.getContractAddress("TNFT");
         address admin = vm.envAddress("DEPLOYER");
@@ -66,6 +66,14 @@ contract DeployPhaseOnePointFiveScript is Script {
         bytes32 initialHash = vm.envBytes32("INITIAL_HASH");
 
         string memory baseURI = vm.envString("BASE_URI");
+
+        addressProvider.removeContract("RegulationsManager");
+        addressProvider.removeContract("LiquidityPool");
+        addressProvider.removeContract("EETH");
+        addressProvider.removeContract("MembershipNFT");
+        addressProvider.removeContract("MembershipManager");
+        addressProvider.removeContract("WeETH");
+        addressProvider.removeContract("NFTExchange");
 
         // Deploy contracts
         regulationsManagerImplementation = new RegulationsManager();

@@ -25,7 +25,7 @@ contract DeployNewNodeOperatorManagerScript is Script {
         nodeOperatorManagerImplementation = new NodeOperatorManager();
         nodeOperatorManagerProxy = new UUPSProxy(address(nodeOperatorManagerImplementation), "");
         nodeOperatorManagerInstance = NodeOperatorManager(address(nodeOperatorManagerProxy));
-        nodeOperatorManagerInstance.initialize();
+        // nodeOperatorManagerInstance.initialize();
 
         AuctionManager auctionManagerInstance = AuctionManager(auctionManagerProxyAddress);
         AuctionManagerV2 auctionManagerV2Implementation = new AuctionManagerV2();
