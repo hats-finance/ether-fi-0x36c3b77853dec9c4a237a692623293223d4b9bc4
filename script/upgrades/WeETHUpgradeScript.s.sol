@@ -26,7 +26,7 @@ contract WeEthUpgrade is Script {
 
         weEthInstance.upgradeTo(address(weEthV2Implementation));
 
-        require(totalSupply == weEthInstance.totalSupply(), "WeEthUpgrade: totalSupply mismatch"
+        require(totalSupply == weEthInstance.totalSupply(), "WeEthUpgrade: totalSupply mismatch");
 
         vm.stopBroadcast();
     }
