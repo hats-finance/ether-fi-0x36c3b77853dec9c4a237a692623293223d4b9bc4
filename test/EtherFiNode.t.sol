@@ -305,7 +305,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // fail because we have not processed the queued withdrawal of the funds from the pod
         // because not enough time has passed to claim them
-        vm.expectRevert(EtherFiNodesManager.MustClaimRestakedWithdrawals.selector);
+        vm.expectRevert("Must Claim Restaked Withdrawals");
         managerInstance.fullWithdraw(validatorIds[0]);
 
         // wait some time

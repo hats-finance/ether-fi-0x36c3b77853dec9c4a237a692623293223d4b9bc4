@@ -239,12 +239,7 @@ contract EtherFiNodesManager is
     function fullWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused{
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
-        if (IEtherFiNode(etherfiNode).isRestakingEnabled()) {
-            // sweep rewards from eigenPod
-            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithdrawals);
-            // require that all pending withdrawals have cleared
-            if (IEtherFiNode(etherfiNode).hasOutstandingEigenLayerWithdrawals()) revert MustClaimRestakedWithdrawals();
-        }
+        IEtherFiNode(etherfiNode).prepareForFullWithdraw(maxEigenlayerWithdrawals);
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
             = getFullWithdrawalPayouts(_validatorId);
@@ -693,13 +688,17 @@ contract EtherFiNodesManager is
         require(admins[msg.sender], "Not admin");
     }
 
+    function _onlyStakingManagerContract() internal view virtual {
+        require(msg.sender == stakingManagerContract, "Not staking manager");
+    }
+
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
     modifier onlyStakingManagerContract() {
-        require(msg.sender == stakingManagerContract, "Not staking manager");
+        _onlyStakingManagerContract();
         _;
     }
 
