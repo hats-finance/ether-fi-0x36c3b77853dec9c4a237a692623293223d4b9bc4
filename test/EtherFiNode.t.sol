@@ -371,8 +371,6 @@ contract EtherFiNodeTest is TestSetup {
         safeInstance.queueRestakedWithdrawal();
         assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 3 ether);
         assertEq(safeInstance.totalBalanceInExecutionLayer(), 4 ether);
-
-
     }
 
     function test_restakedAttackerCantBlockWithdraw() public {

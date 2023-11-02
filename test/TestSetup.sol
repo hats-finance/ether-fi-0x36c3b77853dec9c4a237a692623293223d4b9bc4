@@ -217,16 +217,18 @@ contract TestSetup is Test {
     // testnet or mainnet.
     function initializeRealisticFork(uint8 forkEnum) public {
 
+
         if (forkEnum == MAINNET_FORK) {
             vm.selectFork(vm.createFork(vm.envString("MAINNET_RPC_URL")));
+            addressProviderInstance = AddressProvider(address(0x8487c5F8550E3C3e7734Fe7DCF77DB2B72E4A848));
         } else if (forkEnum == TESTNET_FORK) {
             vm.selectFork(vm.createFork(vm.envString("GOERLI_RPC_URL")));
+            addressProviderInstance = AddressProvider(address(0x6E429db4E1a77bCe9B6F9EDCC4e84ea689c1C97e));
         } else {
             revert("Unimplemented fork");
         }
 
         // grab all addresses from address manager and override global testing variables
-        addressProviderInstance = AddressProvider(address(0x6E429db4E1a77bCe9B6F9EDCC4e84ea689c1C97e));
         regulationsManagerInstance = RegulationsManager(addressProviderInstance.getContractAddress("RegulationsManager"));
         managerInstance = EtherFiNodesManager(payable(addressProviderInstance.getContractAddress("EtherFiNodesManager")));
         liquidityPoolInstance = LiquidityPool(payable(addressProviderInstance.getContractAddress("LiquidityPool")));
@@ -261,7 +263,8 @@ contract TestSetup is Test {
         assert(address(nodeOperatorManagerInstance) != address(0x0));
         assert(address(node) != address(0x0));
         assert(address(earlyAdopterPoolInstance) != address(0x0));
-        assert(address(withdrawRequestNFTInstance) != address(0x0));
+     // TODO: doesn't currently exist on mainnet. But re-add this check after deploy
+     //   assert(address(withdrawRequestNFTInstance) != address(0x0));
     }
 
     function setUpTests() internal {
