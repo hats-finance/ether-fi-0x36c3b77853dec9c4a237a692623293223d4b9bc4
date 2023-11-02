@@ -19,13 +19,9 @@ contract EtherFiNodeTest is TestSetup {
     uint256 BNFTRewardSplit = 84_375;
     uint256 RewardSplitDivisor = 1_000_000;
 
-    uint256 testnetFork;
     uint256[] bidId;
     EtherFiNode safeInstance;
     EtherFiNode restakingSafe;
-
-    // eigenLayer
-    IDelayedWithdrawalRouter delayedWithdrawalRouter;
 
     function setUp() public {
 
@@ -96,38 +92,15 @@ contract EtherFiNodeTest is TestSetup {
             auctionInstance.accumulatedRevenue(),
             0.1 ether
         );
-
-        delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(safeInstance.etherFiNodesManager()).delayedWithdrawalRouter());
-        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
     }
 
-    function test_createPod() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
-        safeInstance.createEigenPod();
-        console2.log("podAddr:", address(safeInstance.eigenPod()));
-
-        vm.deal(address(safeInstance.eigenPod()), 2 ether);
-        console2.log("balances:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
-
-        safeInstance.queueRestakedWithdrawal();
-        console2.log("balances2:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
-
-        vm.roll(block.number + (50400) + 1);
-        
-        safeInstance.claimQueuedWithdrawals(1);
-        console2.log("balances3:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
-    }
 
     function test_claimMixedSafeAndPodFunds() public {
 
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 bidId = depositAndRegisterValidator(true);
-        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(bidId)));
+       safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(bidId)));
 
         // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
         vm.deal(address(safeInstance.eigenPod()), 1 ether);
@@ -146,9 +119,8 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_splitBalanceInExecutionLayer() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -223,9 +195,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_claimRestakedRewards() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -262,7 +232,8 @@ contract EtherFiNodeTest is TestSetup {
         safeInstance.queueRestakedWithdrawal();
 
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 3);
 
         // wait but only claim 2 of the 3 queued withdrawals
@@ -271,16 +242,15 @@ contract EtherFiNodeTest is TestSetup {
         vm.roll(block.number + (50400) + 1);
         safeInstance.claimQueuedWithdrawals(2);
 
-        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+
+        unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
         assertEq(address(safeInstance).balance, 2 ether);
     }
 
     function test_restakedFullWithdrawal() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -299,7 +269,7 @@ contract EtherFiNodeTest is TestSetup {
         // Marked as EXITED
         // should also have queued up the current balance to via DelayedWithdrawalRouter
         managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
 
@@ -326,9 +296,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_restakedPartialWithdrawQueuesFutureWithdrawals() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         IEtherFiNode node = IEtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -357,9 +325,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_withdrawableBalanceInExecutionLayer() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -402,14 +368,10 @@ contract EtherFiNodeTest is TestSetup {
         safeInstance.queueRestakedWithdrawal();
         assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 3 ether);
         assertEq(safeInstance.totalBalanceInExecutionLayer(), 4 ether);
-
-
     }
 
     function test_restakedAttackerCantBlockWithdraw() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -428,7 +390,7 @@ contract EtherFiNodeTest is TestSetup {
         // Marked as EXITED
         // should also have queued up the current balance to via DelayedWithdrawalRouter
         managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
 
@@ -446,7 +408,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(safeInstance.eigenPod(), 1 ether);
         safeInstance.queueRestakedWithdrawal();
 
-        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 6);
 
         // wait some time so claims are claimable
@@ -454,7 +416,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // TODO(Dave): 5 picked here because that's how many claims I set the manager contract to attempt. We can tune thi
         safeInstance.claimQueuedWithdrawals(5);
-        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
 
         // shoud not be allowed to partial withdraw since node is exited
@@ -472,9 +434,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function testFullWithdrawBurnsTNFT() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -493,7 +453,7 @@ contract EtherFiNodeTest is TestSetup {
         // Marked as EXITED
         // should also have queued up the current balance to via DelayedWithdrawalRouter
         managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
 

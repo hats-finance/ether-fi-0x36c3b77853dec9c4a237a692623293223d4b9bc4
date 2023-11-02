@@ -10,7 +10,6 @@ contract EtherFiNodesManagerTest is TestSetup {
     address etherFiNode;
     uint256[] bidId;
     EtherFiNode safeInstance;
-    uint256 testnetFork;
 
     function setUp() public {
         setUpTests();
@@ -75,8 +74,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         );
 
         safeInstance = EtherFiNode(payable(etherFiNode));
-
-        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
     }
 
     function test_SetStakingRewardsSplit() public {
@@ -179,7 +176,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         vm.deal(managerInstance.etherfiNodeAddress(validatorId), 1 ether);
         vm.stopPrank();
 
-
         uint256[] memory validatorsToReset = new uint256[](1);
         validatorsToReset[0] = validatorId;
         vm.prank(alice);
@@ -188,11 +184,9 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_CantResetRestakedNodeWithBalance() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
-        uint256 validatorId = bidId[0];
+        uint256 validatorId = depositAndRegisterValidator(true);
         address node = managerInstance.etherfiNodeAddress(validatorId);
         vm.prank(address(managerInstance));
         IEtherFiNode(node).setIsRestakingEnabled(true);
@@ -404,7 +398,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     function test_PausableModifierWorks() public {
         hoax(alice);
         managerInstance.pauseContract();
-        
+
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         vm.expectRevert("Pausable: paused");
         managerInstance.sendExitRequest(bidId[0]);
