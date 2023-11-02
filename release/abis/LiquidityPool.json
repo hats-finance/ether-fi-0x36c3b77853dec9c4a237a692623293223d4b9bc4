@@ -16,12 +16,27 @@
   },
   {
     "inputs": [],
+    "name": "IncorrectCaller",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InsufficientLiquidity",
     "type": "error"
   },
   {
     "inputs": [],
     "name": "InvalidAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidParams",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SendFail",
     "type": "error"
   },
   {
@@ -162,6 +177,19 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "totalEthLocked",
         "type": "uint256"
@@ -174,6 +202,19 @@
       }
     ],
     "name": "Rebase",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
     "type": "event"
   },
   {
@@ -1026,6 +1067,26 @@
   },
   {
     "inputs": [],
+    "name": "pauseContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "proxiableUUID",
     "outputs": [
       {
@@ -1379,6 +1440,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "unPauseContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -1412,9 +1480,9 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
+        "internalType": "address[]",
+        "name": "_users",
+        "type": "address[]"
       },
       {
         "internalType": "bool",
