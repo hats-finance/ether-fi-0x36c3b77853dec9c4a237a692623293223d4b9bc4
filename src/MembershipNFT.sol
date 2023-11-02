@@ -50,15 +50,21 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         _disableInitializers();
     }
 
-    function initialize(string calldata _metadataURI, address _membershipManagerAddress, address _liquidityPoolAddress) external initializer {
-        require(_membershipManagerAddress != address(0) && _liquidityPoolAddress != address(0), "No zero addresses");
+    function initialize(string calldata _metadataURI, address _membershipManagerInstance) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
         __ERC1155_init(_metadataURI);
         nextMintTokenId = 1;
         maxTokenId = 1000;
-        membershipManager = IMembershipManager(_membershipManagerAddress);
+        membershipManager = IMembershipManager(_membershipManagerInstance);
+    }
+
+    function initializeOnUpgrade(address _liquidityPoolAddress) external onlyOwner {
+        require(_liquidityPoolAddress != address(0), "No zero addresses");
+        require(address(liquidityPool) == address(0), "Already initialized");
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
+        admins[DEPRECATED_admin] = true;
+        DEPRECATED_admin = address(0);
     }
 
     function mint(address _to, uint256 _amount) external onlyMembershipManagerContract returns (uint256) {

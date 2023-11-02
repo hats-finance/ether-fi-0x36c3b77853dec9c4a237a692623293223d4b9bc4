@@ -125,6 +125,15 @@ contract EtherFiNodesManager is
         });
     }
 
+    function initializeOnUpgrade(address _etherFiAdmin, address _eigenPodManager, address _delayedWithdrawalRouter, uint8 _maxEigenlayerWithdrawals) public onlyOwner {
+        require(address(eigenPodManager) == address(0) && address(delayedWithdrawalRouter) == address(0), "Already initialized");
+        require(_eigenPodManager != address(0) && _delayedWithdrawalRouter != address(0), "Zero Addresses");
+        admins[_etherFiAdmin] = true;
+        eigenPodManager = IEigenPodManager(_eigenPodManager);
+        delayedWithdrawalRouter = IDelayedWithdrawalRouter(_delayedWithdrawalRouter);
+        maxEigenlayerWithdrawals = _maxEigenlayerWithdrawals;
+    }
+
     error NotTnftOwner();
     error ValidatorNotLive();
     error ValidatorNotExited();
@@ -487,15 +496,6 @@ contract EtherFiNodesManager is
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    // Eigenlayer EigenPodManager
-    function setEigenPodMananger(address _addr) external onlyOwner {
-        eigenPodManager = IEigenPodManager(_addr);
-    }
-
-    // Eigenlayer DelayedWithdrawalRouter
-    function setDelayedWithdrawalRouter(address _addr) external onlyOwner {
-        delayedWithdrawalRouter = IDelayedWithdrawalRouter(_addr);
-    }
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  GETTER   --------------------------------------

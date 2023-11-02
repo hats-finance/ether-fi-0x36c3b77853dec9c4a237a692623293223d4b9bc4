@@ -1120,7 +1120,7 @@ contract LiquidityPoolTest is TestSetup {
         }
 
         //Move to a random period in time
-        _moveClock(1684181656753);
+        _moveClock(7 * 225 * 32);
         
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
         report.numValidatorsToSpinUp = 256;
@@ -1422,7 +1422,6 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_RestakedDepositFromBNFTHolder() public {
-
         // re-run setup now that we have fork selected. Probably a better way we can do this
         vm.selectFork(testnetFork);
         setUp();

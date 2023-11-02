@@ -320,9 +320,6 @@ contract TestSetup is Test {
             address(BNFTInstance)
         );
         managerInstance.updateAdmin(alice, true);
-        managerInstance.setEigenPodMananger(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
-        managerInstance.setDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
-        managerInstance.setMaxEigenLayerWithdrawals(5); // TODO(Dave): run some tests to find a good balance between gas and security
 
         TNFTInstance.initializeOnUpgrade(address(managerInstance));
         BNFTInstance.initializeOnUpgrade(address(managerInstance));
@@ -407,7 +404,7 @@ contract TestSetup is Test {
         membershipManagerInstance = MembershipManagerV0(payable(membershipManagerProxy));
 
         liquidityPoolInstance.initialize(address(eETHInstance), address(stakingManagerInstance), address(etherFiNodeManagerProxy), address(membershipManagerInstance), address(TNFTInstance));
-        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json", address(membershipManagerInstance), address(liquidityPoolInstance));
+        membershipNftInstance.initialize("https://etherfi-cdn/{id}.json", address(membershipManagerInstance));
         withdrawRequestNFTInstance.initialize(payable(address(liquidityPoolInstance)), payable(address(eETHInstance)), payable(address(membershipManagerInstance)));
         membershipManagerInstance.initialize(
             address(eETHInstance),
@@ -475,7 +472,9 @@ contract TestSetup is Test {
         etherFiOracleInstance.setEtherFiAdmin(address(etherFiAdminInstance));
         liquidityPoolInstance.initializeOnUpgrade(604800, 1, 1, address(etherFiAdminInstance), address(withdrawRequestNFTInstance));
         stakingManagerInstance.initializeOnUpgrade(address(nodeOperatorManagerInstance), address(etherFiAdminInstance));
-        auctionInstance.initializeOnUpgrade(address(membershipManagerInstance), 1 ether, address(etherFiAdminInstance));
+        auctionInstance.initializeOnUpgrade(address(membershipManagerInstance), 1 ether, address(etherFiAdminInstance), address(nodeOperatorManagerInstance));
+        managerInstance.initializeOnUpgrade(address(etherFiAdminInstance), 0xa286b84C96aF280a49Fe1F40B9627C2A2827df41, 0x89581561f1F98584F88b0d57c2180fb89225388f, 5);
+        membershipNftInstance.initializeOnUpgrade(address(liquidityPoolInstance));
 
         _initOracleReportsforTesting();
         vm.stopPrank();
@@ -716,7 +715,6 @@ contract TestSetup is Test {
         stakingManagerInstance.updateAdmin(admin, true); 
         liquidityPoolInstance.updateAdmin(admin, true);
         membershipManagerInstance.updateAdmin(admin, true);
-        managerInstance.updateAdmin(admin, true);
         withdrawRequestNFTInstance.updateAdmin(admin, true);
 
         vm.stopPrank();
@@ -790,7 +788,13 @@ contract TestSetup is Test {
         vm.prank(bob);
         etherFiOracleInstance.submitReport(_report);
 
-        _moveClock(int256(int16(etherFiAdminInstance.postReportWaitTimeInSlots())));
+        int256 offset = int256(int16(etherFiAdminInstance.postReportWaitTimeInSlots()));
+        if (offset > 2 * 32) {
+            offset -= 2 * 32;
+        }
+        if (offset > 0) {
+            _moveClock(offset);
+        }
 
         if (bytes(_revertMessage).length > 0) {
             vm.expectRevert(bytes(_revertMessage));

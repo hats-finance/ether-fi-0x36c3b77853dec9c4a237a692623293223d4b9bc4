@@ -16,6 +16,11 @@
   },
   {
     "inputs": [],
+    "name": "InvalidParams",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidPenaltyRate",
     "type": "error"
   },
@@ -37,6 +42,11 @@
   {
     "inputs": [],
     "name": "NotTnftOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ValidatorNotExited",
     "type": "error"
   },
   {
@@ -112,7 +122,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
@@ -125,7 +135,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
@@ -138,7 +148,20 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      }
+    ],
+    "name": "NodeExitRequestReverted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
@@ -183,7 +206,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
@@ -363,6 +386,19 @@
         "type": "uint256[]"
       }
     ],
+    "name": "batchRevertExitRequest",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      }
+    ],
     "name": "batchSendExitRequest",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -395,6 +431,45 @@
       }
     ],
     "name": "calculateTVL",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "toNodeOperator",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "toTnft",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "toBnft",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "toTreasury",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_validatorId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_beaconBalance",
+        "type": "uint256"
+      }
+    ],
+    "name": "calculateWithdrawableTVL",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1010,19 +1085,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "_validatorIds",
-        "type": "uint256[]"
-      }
-    ],
-    "name": "processNodeEvict",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
