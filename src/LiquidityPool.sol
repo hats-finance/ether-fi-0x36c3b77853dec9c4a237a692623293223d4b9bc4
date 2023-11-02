@@ -128,7 +128,7 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
         paused = false;
         restakeBnftDeposits = false;
         ethAmountLockedForWithdrawal = 0;
-        maxValidatorsPerOwner = 10;
+        maxValidatorsPerOwner = 30;
         
         //Sets what scheduling period we will start with       
         schedulingPeriodInSeconds = _schedulingPeriod;
