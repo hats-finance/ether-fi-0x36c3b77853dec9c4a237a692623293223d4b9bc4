@@ -61,7 +61,6 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
 
     function initializeOnUpgrade(address _liquidityPoolAddress) external onlyOwner {
         require(_liquidityPoolAddress != address(0), "No zero addresses");
-        require(address(liquidityPool) == address(0), "Already initialized");
         liquidityPool = ILiquidityPool(_liquidityPoolAddress);
         admins[DEPRECATED_admin] = true;
         DEPRECATED_admin = address(0);

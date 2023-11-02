@@ -23,9 +23,6 @@ contract EtherFiNodeTest is TestSetup {
     EtherFiNode safeInstance;
     EtherFiNode restakingSafe;
 
-    // eigenLayer
-    IDelayedWithdrawalRouter delayedWithdrawalRouter;
-
     function setUp() public {
 
         setUpTests();
@@ -95,8 +92,6 @@ contract EtherFiNodeTest is TestSetup {
             auctionInstance.accumulatedRevenue(),
             0.1 ether
         );
-
-        delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(safeInstance.etherFiNodesManager()).delayedWithdrawalRouter());
     }
 
 
@@ -237,7 +232,8 @@ contract EtherFiNodeTest is TestSetup {
         safeInstance.queueRestakedWithdrawal();
 
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 3);
 
         // wait but only claim 2 of the 3 queued withdrawals
@@ -246,7 +242,8 @@ contract EtherFiNodeTest is TestSetup {
         vm.roll(block.number + (50400) + 1);
         safeInstance.claimQueuedWithdrawals(2);
 
-        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+
+        unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
         assertEq(address(safeInstance).balance, 2 ether);
@@ -272,13 +269,13 @@ contract EtherFiNodeTest is TestSetup {
         // Marked as EXITED
         // should also have queued up the current balance to via DelayedWithdrawalRouter
         managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
 
         // fail because we have not processed the queued withdrawal of the funds from the pod
         // because not enough time has passed to claim them
-        vm.expectRevert(EtherFiNodesManager.MustClaimRestakedWithdrawals.selector);
+        vm.expectRevert("Must Claim Restaked Withdrawals");
         managerInstance.fullWithdraw(validatorIds[0]);
 
         // wait some time
@@ -393,7 +390,7 @@ contract EtherFiNodeTest is TestSetup {
         // Marked as EXITED
         // should also have queued up the current balance to via DelayedWithdrawalRouter
         managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
 
@@ -411,7 +408,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(safeInstance.eigenPod(), 1 ether);
         safeInstance.queueRestakedWithdrawal();
 
-        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 6);
 
         // wait some time so claims are claimable
@@ -419,7 +416,7 @@ contract EtherFiNodeTest is TestSetup {
 
         // TODO(Dave): 5 picked here because that's how many claims I set the manager contract to attempt. We can tune thi
         safeInstance.claimQueuedWithdrawals(5);
-        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
 
         // shoud not be allowed to partial withdraw since node is exited
@@ -456,7 +453,7 @@ contract EtherFiNodeTest is TestSetup {
         // Marked as EXITED
         // should also have queued up the current balance to via DelayedWithdrawalRouter
         managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
 

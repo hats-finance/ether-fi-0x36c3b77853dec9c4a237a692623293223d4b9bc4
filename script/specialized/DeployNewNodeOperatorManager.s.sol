@@ -32,19 +32,37 @@ contract DeployNewNodeOperatorManagerScript is Script {
 
         if(block.chainid == 1) {
             // MAINNET
-            operators = new address[](8);
+            // normal wallets
+            // 0x83B55dF61cD1181F019DF8e93D46bAFd31806d50
+            // 0x78cA32Ac90D7F99225a3B9288D561E0cB3744899
+            // 0x7C0576343975A1360CEb91238e7B7985B8d71BF4
+            // 0x6916487F0c4553B9EE2f401847B6C58341B76991
+            // 0xd624FEfF4b4E77486B544c93A30794CA4B3f10A2
+            // 0xB8db44e12eacc48F7C2224a248c8990289556fAe
+            // 0x00a16D2572573DC9E26e2d267f2270cddAC9218B
+            // 0x3f95F8f6222F6D97b47122372D60117ab386C48F
+
+            // gnosis
+            // 0xadf8ca6368227db9ee3a4d03e463bcd90d31de53
+            // 0xAfBD66706F90BC56D29c39A260930b34B2757ed8
+            // 0xB6C9125584A1A28cCafd31056D4aF29014862536
+
+            operators = new address[](11);
+            hashes = new bytes[](11);
+            totalKeys = new uint64[](11);
+            keysUsed = new uint64[](11); 
+
             operators[0] = 0x83B55dF61cD1181F019DF8e93D46bAFd31806d50;
             operators[1] = 0x78cA32Ac90D7F99225a3B9288D561E0cB3744899;
             operators[2] = 0x7C0576343975A1360CEb91238e7B7985B8d71BF4;
             operators[3] = 0x6916487F0c4553B9EE2f401847B6C58341B76991;
             operators[4] = 0xd624FEfF4b4E77486B544c93A30794CA4B3f10A2;
-            operators[5] = 0x00a16D2572573DC9E26e2d267f2270cddAC9218B;
-            operators[6] = 0xB8db44e12eacc48F7C2224a248c8990289556fAe;
+            operators[5] = 0xB8db44e12eacc48F7C2224a248c8990289556fAe;
+            operators[6] = 0x00a16D2572573DC9E26e2d267f2270cddAC9218B;
             operators[7] = 0x3f95F8f6222F6D97b47122372D60117ab386C48F;
-
-            hashes = new bytes[](8);
-            totalKeys = new uint64[](8);
-            keysUsed = new uint64[](8); 
+            operators[8] = 0xaDf8Ca6368227DB9Ee3a4d03e463Bcd90D31DE53;
+            operators[9] = 0xAfBD66706F90BC56D29c39A260930b34B2757ed8;
+            operators[10] = 0xB6C9125584A1A28cCafd31056D4aF29014862536;
         }else if(block.chainid == 5) {
             // GOERLI
             operators = new address[](2);

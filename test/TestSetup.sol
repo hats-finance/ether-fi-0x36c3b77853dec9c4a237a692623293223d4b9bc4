@@ -202,7 +202,7 @@ contract TestSetup is Test {
     function initializeTestingFork(uint8 forkEnum) public {
 
         if (forkEnum == MAINNET_FORK) {
-            vm.selectFork(vm.createFork(vm.envString("GOERLI_RPC_URL")));
+            vm.selectFork(vm.createFork(vm.envString("MAINNET_RPC_URL")));
         } else if (forkEnum == TESTNET_FORK) {
             vm.selectFork(vm.createFork(vm.envString("GOERLI_RPC_URL")));
         } else {
@@ -216,7 +216,6 @@ contract TestSetup is Test {
     // the associated network. This allows you to realistically test new transactions against
     // testnet or mainnet.
     function initializeRealisticFork(uint8 forkEnum) public {
-
 
         if (forkEnum == MAINNET_FORK) {
             vm.selectFork(vm.createFork(vm.envString("MAINNET_RPC_URL")));

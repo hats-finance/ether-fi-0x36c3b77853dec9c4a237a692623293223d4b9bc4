@@ -95,7 +95,6 @@ contract StakingManager is
     }
 
     function initializeOnUpgrade(address _nodeOperatorManager, address _etherFiAdmin) external onlyOwner {
-        require(nodeOperatorManager == address(0), "Already initialized");
         require(_nodeOperatorManager != address(0) && _etherFiAdmin != address(0), "No zero addresses");
         DEPRECATED_admin = address(0);
         nodeOperatorManager = _nodeOperatorManager;

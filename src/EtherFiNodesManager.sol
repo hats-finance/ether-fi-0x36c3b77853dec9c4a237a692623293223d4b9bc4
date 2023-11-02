@@ -126,7 +126,6 @@ contract EtherFiNodesManager is
     }
 
     function initializeOnUpgrade(address _etherFiAdmin, address _eigenPodManager, address _delayedWithdrawalRouter, uint8 _maxEigenlayerWithdrawals) public onlyOwner {
-        require(address(eigenPodManager) == address(0) && address(delayedWithdrawalRouter) == address(0), "Already initialized");
         require(_eigenPodManager != address(0) && _delayedWithdrawalRouter != address(0), "Zero Addresses");
         admins[_etherFiAdmin] = true;
         eigenPodManager = IEigenPodManager(_eigenPodManager);
@@ -229,8 +228,6 @@ contract EtherFiNodesManager is
         }
     }
 
-    error MustClaimRestakedWithdrawals();
-
     /// @notice process the full withdrawal
     /// @dev This fullWithdrawal is allowed only after it's marked as EXITED.
     /// @dev EtherFi will be monitoring the status of the validator nodes and mark them EXITED if they do;
@@ -243,7 +240,7 @@ contract EtherFiNodesManager is
             // sweep rewards from eigenPod
             IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithdrawals);
             // require that all pending withdrawals have cleared
-            if (IEtherFiNode(etherfiNode).hasOutstandingEigenLayerWithdrawals()) revert MustClaimRestakedWithdrawals();
+            require (!IEtherFiNode(etherfiNode).hasOutstandingEigenLayerWithdrawals(), "Must Claim Restaked Withdrawals");
         }
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
@@ -693,13 +690,17 @@ contract EtherFiNodesManager is
         require(admins[msg.sender], "Not admin");
     }
 
+    function _onlyStakingManagerContract() internal view virtual {
+        require(msg.sender == stakingManagerContract, "Not staking manager");
+    }
+
 
     //--------------------------------------------------------------------------------------
     //-----------------------------------  MODIFIERS  --------------------------------------
     //--------------------------------------------------------------------------------------
 
     modifier onlyStakingManagerContract() {
-        require(msg.sender == stakingManagerContract, "Not staking manager");
+        _onlyStakingManagerContract();
         _;
     }
 
