@@ -123,7 +123,6 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
     /// @param _etherFanNumVal the number of validators to set for ether fan
     function initializeOnUpgrade(uint128 _schedulingPeriod, uint32 _eEthNumVal, uint32 _etherFanNumVal, address _etherFiAdminContract, address _withdrawRequestNFT) external onlyOwner { 
         require(_etherFiAdminContract != address(0) && _withdrawRequestNFT != address(0), "No zero addresses");
-        require(etherFiAdminContract == address(0) && address(withdrawRequestNFT) == address(0), "Already initialized");
 
         paused = false;
         restakeBnftDeposits = false;

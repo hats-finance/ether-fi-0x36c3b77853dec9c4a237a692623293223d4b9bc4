@@ -126,7 +126,6 @@ contract EtherFiNodesManager is
     }
 
     function initializeOnUpgrade(address _etherFiAdmin, address _eigenPodManager, address _delayedWithdrawalRouter, uint8 _maxEigenlayerWithdrawals) public onlyOwner {
-        require(address(eigenPodManager) == address(0) && address(delayedWithdrawalRouter) == address(0), "Already initialized");
         require(_eigenPodManager != address(0) && _delayedWithdrawalRouter != address(0), "Zero Addresses");
         admins[_etherFiAdmin] = true;
         eigenPodManager = IEigenPodManager(_eigenPodManager);

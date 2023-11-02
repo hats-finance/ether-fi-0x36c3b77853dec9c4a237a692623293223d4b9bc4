@@ -34,7 +34,6 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
 
     /// @notice initialization function that should be called after phase 2.0 contract upgrade
     function initializeOnUpgrade(address _etherFiNodesManagerAddress) onlyOwner external {
-        require(etherFiNodesManagerAddress == address(0), "Already initialized for upgrade");
         require(_etherFiNodesManagerAddress != address(0), "Cannot initialize to zero address");
 
         etherFiNodesManagerAddress = _etherFiNodesManagerAddress;
