@@ -21,6 +21,7 @@ interface INodeOperatorManager {
     ) external view returns (bool whitelisted);
 
     function registerNodeOperator(
+        bytes32[] calldata _merkleProof,
         bytes memory ipfsHash,
         uint64 totalKeys
     ) external;
