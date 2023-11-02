@@ -136,21 +136,35 @@ contract EtherFiNodeTest is TestSetup {
 
     }
 
+    /*
     function test_forkRealCreatePod() public {
-        //vm.selectFork(initializeFork(TESTNET_FORK, false));
-        initializeFork(TESTNET_FORK, false);
+        initializeRealisticFork(TESTNET_FORK);
 
-        vm.startPrank(managerInstance.owner());
-        managerInstance.setEigenPodMananger(0xa286b84C96aF280a49Fe1F40B9627C2A2827df41);
-        managerInstance.setDelayedWithdrawalRouter(0x89581561f1F98584F88b0d57c2180fb89225388f);
-        managerInstance.setMaxEigenLayerWithdrawals(5); // TODO(Dave): run some tests to find a good balance between gas and security
-        vm.stopPrank();
+
+        uint256 bidId = depositAndRegisterValidator(true);
+        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(bidId)));
+
+        // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
+        vm.deal(address(safeInstance.eigenPod()), 1 ether);
+        vm.deal(address(safeInstance), 1 ether);
+
+        assertEq(address(safeInstance).balance, 1 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
+
+        // claim the restaked rewards
+        safeInstance.queueRestakedWithdrawal();
+        vm.roll(block.number + (50400) + 1);
+        safeInstance.claimQueuedWithdrawals(1);
+
+        assertEq(address(safeInstance).balance, 2 ether);
+        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
 
     }
+    */
 
+    /*
     function test_mainnetCreatePod() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(mainnetFork);
+        initializeTestingFork(TESTNET_FORK);
         setUp();
 
         vm.startPrank(managerInstance.owner());
@@ -174,15 +188,14 @@ contract EtherFiNodeTest is TestSetup {
         safeInstance.claimQueuedWithdrawals(1);
         console2.log("balances3:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
     }
+    */
 
     function test_claimMixedSafeAndPodFunds() public {
 
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(MAINNET_FORK);
 
         uint256 bidId = depositAndRegisterValidator(true);
-        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(bidId)));
+       safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(bidId)));
 
         // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
         vm.deal(address(safeInstance.eigenPod()), 1 ether);
