@@ -19,8 +19,6 @@ contract EtherFiNodeTest is TestSetup {
     uint256 BNFTRewardSplit = 84_375;
     uint256 RewardSplitDivisor = 1_000_000;
 
-    uint256 testnetFork;
-    uint256 mainnetFork;
     uint256[] bidId;
     EtherFiNode safeInstance;
     EtherFiNode restakingSafe;
@@ -99,100 +97,12 @@ contract EtherFiNodeTest is TestSetup {
         );
 
         delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(safeInstance.etherFiNodesManager()).delayedWithdrawalRouter());
-        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
-        mainnetFork = vm.createFork(vm.envString("MAINNET_RPC_URL"));
     }
 
-    function test_createPod() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
-        safeInstance.createEigenPod();
-        console2.log("podAddr:", address(safeInstance.eigenPod()));
-
-        vm.deal(address(safeInstance.eigenPod()), 2 ether);
-        console2.log("balances:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
-
-        safeInstance.queueRestakedWithdrawal();
-        console2.log("balances2:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
-
-        vm.roll(block.number + (50400) + 1);
-        
-        safeInstance.claimQueuedWithdrawals(1);
-        console2.log("balances3:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
-    }
-
-    function initializeFork() public {
-        /*
-            TESTNET
-            MAINNET
-
-            Use existing contracts
-            Deploy new contracts
-
-            configure external dependencies (eigenLayer) (always?)
-
-        */
-
-    }
-
-    /*
-    function test_forkRealCreatePod() public {
-        initializeRealisticFork(TESTNET_FORK);
-
-
-        uint256 bidId = depositAndRegisterValidator(true);
-        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(bidId)));
-
-        // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
-        vm.deal(address(safeInstance.eigenPod()), 1 ether);
-        vm.deal(address(safeInstance), 1 ether);
-
-        assertEq(address(safeInstance).balance, 1 ether);
-        assertEq(address(safeInstance.eigenPod()).balance, 1 ether);
-
-        // claim the restaked rewards
-        safeInstance.queueRestakedWithdrawal();
-        vm.roll(block.number + (50400) + 1);
-        safeInstance.claimQueuedWithdrawals(1);
-
-        assertEq(address(safeInstance).balance, 2 ether);
-        assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
-
-    }
-    */
-
-    /*
-    function test_mainnetCreatePod() public {
-        initializeTestingFork(TESTNET_FORK);
-        setUp();
-
-        vm.startPrank(managerInstance.owner());
-
-        managerInstance.setEigenPodMananger(address(0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338));
-        managerInstance.setDelayedWithdrawalRouter(address(0x7Fe7E9CC0F274d2435AD5d56D5fa73E47F6A23D8));
-
-        vm.stopPrank();
-
-        safeInstance.createEigenPod();
-        console2.log("podAddr:", address(safeInstance.eigenPod()));
-
-        vm.deal(address(safeInstance.eigenPod()), 2 ether);
-        console2.log("balances:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
-
-        safeInstance.queueRestakedWithdrawal();
-        console2.log("balances2:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
-
-        vm.roll(block.number + (50400) + 1);
-        
-        safeInstance.claimQueuedWithdrawals(1);
-        console2.log("balances3:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
-    }
-    */
 
     function test_claimMixedSafeAndPodFunds() public {
 
-        initializeTestingFork(MAINNET_FORK);
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 bidId = depositAndRegisterValidator(true);
        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(bidId)));
@@ -214,9 +124,8 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_splitBalanceInExecutionLayer() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -291,9 +200,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_claimRestakedRewards() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -346,9 +253,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_restakedFullWithdrawal() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -394,9 +299,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_restakedPartialWithdrawQueuesFutureWithdrawals() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         IEtherFiNode node = IEtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -425,9 +328,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_withdrawableBalanceInExecutionLayer() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -475,9 +376,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_restakedAttackerCantBlockWithdraw() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
@@ -540,9 +439,7 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function testFullWithdrawBurnsTNFT() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
         uint256 validatorId = depositAndRegisterValidator(true);
         safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
