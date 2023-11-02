@@ -157,8 +157,10 @@ contract DeployPhaseTwoScript is Script {
             postReportWaitTimeInSlots
         );
 
-        IEtherFiOracle(address(etherFiOracleAddress)).setEtherFiAdmin(address(etherFiAdminInstance));
         etherFiAdminInstance.updateAdmin(oracleAdminAddress, true);
+
+        IEtherFiOracle(address(etherFiOracleAddress)).setEtherFiAdmin(address(etherFiAdminInstance));
+        IWithdrawRequestNFT(address(withdrawRequestNFTAddress)).updateAdmin(address(etherFiAdminInstance), true);
 
         // Used only for development
         if (false) {
@@ -168,7 +170,6 @@ contract DeployPhaseTwoScript is Script {
             ILiquidityPool(address(liquidityPoolAddress)).updateAdmin(admin, true);
             IMembershipManager(address(membershipManagerAddress)).updateAdmin(admin, true);
             IEtherFiNodesManager(address(managerAddress)).updateAdmin(admin, true);
-            IWithdrawRequestNFT(address(withdrawRequestNFTAddress)).updateAdmin(admin, true);
         }
 
         addressProvider.addContract(address(etherFiAdminProxy), "EtherFiAdmin");

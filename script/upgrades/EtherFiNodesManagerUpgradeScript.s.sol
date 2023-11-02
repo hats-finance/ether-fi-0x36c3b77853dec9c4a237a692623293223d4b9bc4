@@ -46,7 +46,8 @@ contract EtherFiNodesManagerUpgrade is Script {
         require(IEtherFiNodesManager(EtherFiNodesManagerProxyAddress).numberOfValidators() == numberOfValidators);
         require(IEtherFiNodesManager(EtherFiNodesManagerProxyAddress).treasuryContract() == treasury);
         require(IEtherFiNodesManager(EtherFiNodesManagerProxyAddress).maxEigenlayerWithdrawals() == maxEigenlayerWithdrawals);
-        
+        require(IEtherFiNodesManager(EtherFiNodesManagerProxyAddress).admins(etherFiAdminAddress), "EtherFiAdmin should be an admin");
+
         vm.stopBroadcast();
     }
 }

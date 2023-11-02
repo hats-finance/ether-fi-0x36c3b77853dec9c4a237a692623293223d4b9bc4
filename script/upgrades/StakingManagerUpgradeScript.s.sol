@@ -31,6 +31,8 @@ contract StakingManagerUpgrade is Script {
         stakingManagerInstance.upgradeTo(address(stakingManagerV2Implementation));
         stakingManagerInstance.initializeOnUpgrade(nodeOperatorManagerAddress, etherFiAdminAddress);
         
+        require(stakingManagerInstance.admins(etherFiAdminAddress), "EtherFiAdmin should be an admin");
+
         vm.stopBroadcast();
     }
 }
