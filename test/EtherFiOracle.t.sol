@@ -204,7 +204,6 @@ contract EtherFiOracleTest is TestSetup {
     }
 
     function test_report_submission_before_processing_last_published_one_fails() public {
-        bytes[] memory emptyBytes = new bytes[](0);
         vm.prank(owner);
         etherFiOracleInstance.setQuorumSize(1);
 
@@ -282,8 +281,7 @@ contract EtherFiOracleTest is TestSetup {
 
     function test_change_report_start_slot2() public { 
         vm.prank(owner);
-        
-        IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
+
         _moveClock(1024 + 2 * 32);
 
         (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = etherFiOracleInstance.blockStampForNextReport();
@@ -352,7 +350,6 @@ contract EtherFiOracleTest is TestSetup {
     }
 
     function test_unpublishReport() public {
-        bytes[] memory emptyBytes = new bytes[](0);
         vm.prank(owner);
         etherFiOracleInstance.setQuorumSize(1);
 
@@ -444,7 +441,7 @@ contract EtherFiOracleTest is TestSetup {
     function test_huge_positive_rebaes() public {
         // TVL after `launch_validator` is 60 ETH
         // EtherFIAdmin limits the APR per rebase as 100 % == 10000 bps
-        uint256[] memory validatorIds = launch_validator();
+        launch_validator();
 
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
 
@@ -464,7 +461,7 @@ contract EtherFiOracleTest is TestSetup {
     function test_huge_negative_rebaes() public {
         // TVL after `launch_validator` is 60 ETH
         // EtherFIAdmin limits the APR per rebase as 100 % == 10000 bps
-        uint256[] memory validatorIds = launch_validator();
+        launch_validator();
 
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
 
@@ -556,7 +553,6 @@ contract EtherFiOracleTest is TestSetup {
     }
 
     function test_too_old_report() public {
-        bytes[] memory emptyBytes = new bytes[](0);
         vm.prank(owner);
         etherFiOracleInstance.setQuorumSize(1);
 

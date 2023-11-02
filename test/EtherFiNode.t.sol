@@ -773,7 +773,6 @@ contract EtherFiNodeTest is TestSetup {
 
         hoax(owner);
         managerInstance.partialWithdraw(bidId[0]);
-        uint256 nodeOperatorBalance2 = address(nodeOperator).balance;
 
         // node operator gets nothing because took longer than 14 days
         assertEq(address(nodeOperator).balance, nodeOperatorBalance);
@@ -823,7 +822,6 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
         uint256 treasuryBalance = address(treasuryInstance).balance;
@@ -975,11 +973,6 @@ contract EtherFiNodeTest is TestSetup {
         // Transfer the T-NFT to 'dan'
         hoax(staker);
         TNFTInstance.transferFrom(staker, dan, validatorIds[0]);
-
-        uint256 nodeOperatorBalance = address(nodeOperator).balance;
-        uint256 treasuryBalance = address(treasuryInstance).balance;
-        uint256 danBalance = address(dan).balance;
-        uint256 bnftStakerBalance = address(staker).balance;
 
         hoax(owner);
         vm.expectRevert("Must be LIVE or FULLY_WITHDRAWN.");
@@ -1307,7 +1300,6 @@ contract EtherFiNodeTest is TestSetup {
 
     function test_trackingTVL() public {
         uint256 validatorId = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
 
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = (0, 0, 0, 0);
 
@@ -1456,9 +1448,6 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
         vm.deal(address(etherfiNode), 3 ether); // need to give node some eth because it no longer has auction revenue
 
-        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
-        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
-        
         uint256 treasuryBalance = address(treasuryInstance).balance;
         uint256 noAttackerBalance = address(noAttacker).balance;
         uint256 revertAttackerBalance = address(revertAttacker).balance;

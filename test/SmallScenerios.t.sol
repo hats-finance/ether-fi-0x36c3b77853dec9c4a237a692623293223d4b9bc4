@@ -170,8 +170,8 @@ contract SmallScenariosTest is TestSetup {
         bytes[] memory pubKey = new bytes[](1);
         pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
 
-        bytes[] memory sig = new bytes[](1);
-        sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
+        bytes[] memory signature = new bytes[](1);
+        signature[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
 
         depositDataRootsForApproval[0] = rootForApproval;
 
@@ -186,7 +186,7 @@ contract SmallScenariosTest is TestSetup {
         vm.stopPrank();
         vm.startPrank(alice);
         // Register the Validator
-        liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), processedBidIds, depositDataArray, depositDataRootsForApproval, sig);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), processedBidIds, depositDataArray, depositDataRootsForApproval, signature);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
@@ -263,7 +263,7 @@ contract SmallScenariosTest is TestSetup {
         assert(address(liquidityPoolInstance).balance >= 17.5 ether); // 33 - 15.5 = 17.5
 
         vm.prank(alice);
-        liquidityPoolInstance.batchApproveRegistration(processedBidIds, pubKey, sig);
+        liquidityPoolInstance.batchApproveRegistration(processedBidIds, pubKey, signature);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
             address etherFiNode = managerInstance.etherfiNodeAddress(
