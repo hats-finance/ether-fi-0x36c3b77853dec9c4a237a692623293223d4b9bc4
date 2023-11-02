@@ -685,7 +685,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         if (!admins[msg.sender]) revert OnlyAdmin();
     }
 
-    function _feeAmountSanityCheck(uint256 _feeAmount) internal view {
+    function _feeAmountSanityCheck(uint256 _feeAmount) internal pure {
         if (_feeAmount % 0.001 ether != 0 || _feeAmount / 0.001 ether > type(uint16).max) revert InvalidAmount();
     }
 

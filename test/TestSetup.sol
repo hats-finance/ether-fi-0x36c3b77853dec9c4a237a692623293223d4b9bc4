@@ -579,7 +579,7 @@ contract TestSetup is Test {
         root = merkle.getRoot(whiteListedAddresses);
     }
 
-    function getWhitelistMerkleProof(uint256 index) internal returns (bytes32[] memory) {
+    function getWhitelistMerkleProof(uint256 index) internal view returns (bytes32[] memory) {
         return merkle.getProof(whiteListedAddresses, index);
     }
 
@@ -695,7 +695,7 @@ contract TestSetup is Test {
         vm.stopPrank();
     }
 
-    function _getDepositRoot() internal returns (bytes32) {
+    function _getDepositRoot() internal view returns (bytes32) {
         bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
         return onchainDepositRoot;
     }
@@ -761,7 +761,7 @@ contract TestSetup is Test {
 
     }
 
-    function _initReportBlockStamp(IEtherFiOracle.OracleReport memory _report) internal {
+    function _initReportBlockStamp(IEtherFiOracle.OracleReport memory _report) internal view {
         (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = etherFiOracleInstance.blockStampForNextReport();
         _report.refSlotFrom = slotFrom;
         _report.refSlotTo = slotTo;
@@ -812,7 +812,7 @@ contract TestSetup is Test {
         etherFiAdminInstance.executeTasks(_report, _pubKey, _pubKey);
     }
 
-    function _emptyOracleReport() internal returns (IEtherFiOracle.OracleReport memory report) {
+    function _emptyOracleReport() internal view returns (IEtherFiOracle.OracleReport memory report) {
         uint256[] memory emptyVals = new uint256[](0);
         uint32[] memory emptyVals32 = new uint32[](0);
         uint32 consensusVersion = etherFiOracleInstance.consensusVersion();

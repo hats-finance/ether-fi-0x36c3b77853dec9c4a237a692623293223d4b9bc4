@@ -919,7 +919,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(tier2_apr_bp, 0); // 00.00% for tier 2 with weight 3, because there is no deposited ETH in tier 2
     }
 
-    function calculateAggregatedTVL(uint256[] memory _validatorIds) internal returns (uint256[] memory) {
+    function calculateAggregatedTVL(uint256[] memory _validatorIds) internal view returns (uint256[] memory) {
         uint256[] memory tvls = new uint256[](4);
 
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -988,7 +988,7 @@ contract MembershipManagerTest is TestSetup {
 
     }
 
-    function get_total_accrued_rewards(uint256[] memory tokens) internal returns (uint256) {
+    function get_total_accrued_rewards(uint256[] memory tokens) internal view returns (uint256) {
         uint256 total = 0;
         for (uint256 i = 0; i < tokens.length; i++) {
             total += membershipNftInstance.accruedStakingRewardsOf(tokens[i]);
@@ -996,7 +996,7 @@ contract MembershipManagerTest is TestSetup {
         return total;
     }
 
-    function get_total_value_of(uint256[] memory tokens) internal returns (uint256) {
+    function get_total_value_of(uint256[] memory tokens) internal view returns (uint256) {
         uint256 total = 0;
         for (uint256 i = 0; i < tokens.length; i++) {
             total += membershipNftInstance.valueOf(tokens[i]);
