@@ -229,8 +229,6 @@ contract EtherFiNodesManager is
         }
     }
 
-    error MustClaimRestakedWithdrawals();
-
     /// @notice process the full withdrawal
     /// @dev This fullWithdrawal is allowed only after it's marked as EXITED.
     /// @dev EtherFi will be monitoring the status of the validator nodes and mark them EXITED if they do;
