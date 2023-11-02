@@ -59,7 +59,7 @@ contract MembershipManagerTest is TestSetup {
 
         // alice unwraps 1% and should lose 1 tier.
         vm.prank(alice);
-        uint256 aliceTokenId = membershipManagerV1Instance.requestWithdraw(aliceToken, 1 ether);
+        membershipManagerV1Instance.requestWithdraw(aliceToken, 1 ether);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 28 * 24 * 1); // booted to start of previous tier == 672
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
 
@@ -613,7 +613,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Henry tries to mint but fails because he is not whitelisted.
         vm.expectRevert("Invalid User");
-        uint256 Token = membershipManagerV1Instance.wrapEth{value: 10 ether}(10 ether, 0);
+        membershipManagerV1Instance.wrapEth{value: 10 ether}(10 ether, 0);
 
         //Giving 12 Ether to shonee
         vm.deal(shonee, 12 ether);
@@ -919,7 +919,7 @@ contract MembershipManagerTest is TestSetup {
         assertEq(tier2_apr_bp, 0); // 00.00% for tier 2 with weight 3, because there is no deposited ETH in tier 2
     }
 
-    function calculateAggregatedTVL(uint256[] memory _validatorIds) internal returns (uint256[] memory) {
+    function calculateAggregatedTVL(uint256[] memory _validatorIds) internal view returns (uint256[] memory) {
         uint256[] memory tvls = new uint256[](4);
 
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -988,7 +988,7 @@ contract MembershipManagerTest is TestSetup {
 
     }
 
-    function get_total_accrued_rewards(uint256[] memory tokens) internal returns (uint256) {
+    function get_total_accrued_rewards(uint256[] memory tokens) internal view returns (uint256) {
         uint256 total = 0;
         for (uint256 i = 0; i < tokens.length; i++) {
             total += membershipNftInstance.accruedStakingRewardsOf(tokens[i]);
@@ -996,7 +996,7 @@ contract MembershipManagerTest is TestSetup {
         return total;
     }
 
-    function get_total_value_of(uint256[] memory tokens) internal returns (uint256) {
+    function get_total_value_of(uint256[] memory tokens) internal view returns (uint256) {
         uint256 total = 0;
         for (uint256 i = 0; i < tokens.length; i++) {
             total += membershipNftInstance.valueOf(tokens[i]);
@@ -1029,8 +1029,6 @@ contract MembershipManagerTest is TestSetup {
 
         for (uint256 round = 0; round < rounds; round++) {
             skip(7 days);
-
-            uint256 tvlInContract = address(liquidityPoolInstance).balance;
 
             vm.startPrank(address(etherFiAdminInstance));
             membershipManagerV1Instance.rebase(int128(uint128(moneyPerRebase)));
@@ -1076,7 +1074,6 @@ contract MembershipManagerTest is TestSetup {
             address actor = actors[i];
             uint256 token = tokens[i];
             uint256 tokenValue = membershipNftInstance.valueOf(token);
-            uint256 prevBalance = address(actor).balance;
             uint256 expectedBalanceAfterWithdrawal = address(actor).balance + tokenValue;
 
             vm.prank(actor);
@@ -1273,7 +1270,7 @@ contract MembershipManagerTest is TestSetup {
 
     function test_negative_rewards() public {
         // Spawn 2 validators, TVL = 60 ETH with 60 eETH
-        uint256[] memory validatorIds = launch_validator();
+        launch_validator();
 
         vm.startPrank(alice);
         membershipManagerV1Instance.updateTier(0, 0, 10);
@@ -1318,7 +1315,7 @@ contract MembershipManagerTest is TestSetup {
 
     function test_positive_rewards() public {
         // Spawn 2 validators, TVL = 60 ETH with 60 eETH
-        uint256[] memory validatorIds = launch_validator();
+        launch_validator();
 
         vm.startPrank(alice);
         membershipManagerV1Instance.updateTier(0, 0, 10);
@@ -1366,7 +1363,7 @@ contract MembershipManagerTest is TestSetup {
 
         // Set burn fee to 0.05 ether, burn fee waiver requirement as 30 days
         membershipManagerV1Instance.setFeeAmounts(0 ether, 0.05 ether, 0 ether, 30);
-        (uint256 mintFee, uint256 burnFee, uint256 upgradeFee) = membershipManagerV1Instance.getFees();
+        (, uint256 burnFee, ) = membershipManagerV1Instance.getFees();
 
         vm.deal(alice, 2 ether);
 

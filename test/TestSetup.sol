@@ -227,7 +227,7 @@ contract TestSetup is Test {
             revert("Unimplemented fork");
         }
 
-        // grab all addresses from address manager and override global testing variables
+        //  grab all addresses from address manager and override global testing variables
         regulationsManagerInstance = RegulationsManager(addressProviderInstance.getContractAddress("RegulationsManager"));
         managerInstance = EtherFiNodesManager(payable(addressProviderInstance.getContractAddress("EtherFiNodesManager")));
         liquidityPoolInstance = LiquidityPool(payable(addressProviderInstance.getContractAddress("LiquidityPool")));
@@ -578,7 +578,7 @@ contract TestSetup is Test {
         root = merkle.getRoot(whiteListedAddresses);
     }
 
-    function getWhitelistMerkleProof(uint256 index) internal returns (bytes32[] memory) {
+    function getWhitelistMerkleProof(uint256 index) internal view returns (bytes32[] memory) {
         return merkle.getProof(whiteListedAddresses, index);
     }
 
@@ -694,7 +694,7 @@ contract TestSetup is Test {
         vm.stopPrank();
     }
 
-    function _getDepositRoot() internal returns (bytes32) {
+    function _getDepositRoot() internal view returns (bytes32) {
         bytes32 onchainDepositRoot = depositContractEth2.get_deposit_root();
         return onchainDepositRoot;
     }
@@ -760,7 +760,7 @@ contract TestSetup is Test {
 
     }
 
-    function _initReportBlockStamp(IEtherFiOracle.OracleReport memory _report) internal {
+    function _initReportBlockStamp(IEtherFiOracle.OracleReport memory _report) internal view {
         (uint32 slotFrom, uint32 slotTo, uint32 blockFrom) = etherFiOracleInstance.blockStampForNextReport();
         _report.refSlotFrom = slotFrom;
         _report.refSlotTo = slotTo;
@@ -777,7 +777,7 @@ contract TestSetup is Test {
         _executeAdminTasks(_report, emptyBytes, emptyBytes, _revertMessage);
     }
 
-    function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, bytes[] memory _pubKey, bytes[] memory _signature, string memory _revertMessage) internal {        
+    function _executeAdminTasks(IEtherFiOracle.OracleReport memory _report, bytes[] memory _pubKey, bytes[] memory /*_signature*/, string memory _revertMessage) internal {        
         _initReportBlockStamp(_report);
         
         uint32 currentSlot = etherFiOracleInstance.computeSlotAtTimestamp(block.timestamp);
@@ -811,28 +811,28 @@ contract TestSetup is Test {
         etherFiAdminInstance.executeTasks(_report, _pubKey, _pubKey);
     }
 
-    function _emptyOracleReport() internal returns (IEtherFiOracle.OracleReport memory report) {
+    function _emptyOracleReport() internal view returns (IEtherFiOracle.OracleReport memory report) {
         uint256[] memory emptyVals = new uint256[](0);
         uint32[] memory emptyVals32 = new uint32[](0);
         uint32 consensusVersion = etherFiOracleInstance.consensusVersion();
         report = IEtherFiOracle.OracleReport(consensusVersion, 0, 0, 0, 0, 0, emptyVals, emptyVals, emptyVals, emptyVals32, emptyVals, emptyVals, 0, 0, 0, 0, 0);
     }
 
-    function calculatePermitDigest(address owner, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domainSeparator) public pure returns (bytes32) {
+    function calculatePermitDigest(address _owner, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domainSeparator) public pure returns (bytes32) {
         bytes32 permitTypehash = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
         bytes32 digest = keccak256(
             abi.encodePacked(
                 hex"1901",
                 domainSeparator,
-                keccak256(abi.encode(permitTypehash, owner, spender, value, nonce, deadline))
+                keccak256(abi.encode(permitTypehash, _owner, spender, value, nonce, deadline))
             )
         );
         return digest;
     }
 
     function createPermitInput(uint256 privKey, address spender, uint256 value, uint256 nonce, uint256 deadline, bytes32 domianSeparator) public returns (ILiquidityPool.PermitInput memory) {
-        address owner = vm.addr(privKey);
-        bytes32 digest = calculatePermitDigest(owner, spender, value, nonce, deadline, domianSeparator);
+        address _owner = vm.addr(privKey);
+        bytes32 digest = calculatePermitDigest(_owner, spender, value, nonce, deadline, domianSeparator);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privKey, digest);
         ILiquidityPool.PermitInput memory permitInput = ILiquidityPool.PermitInput({
             value: value,
@@ -889,7 +889,7 @@ contract TestSetup is Test {
 
         // Register the validator and send deposited eth to depositContract/Beaconchain
         // signatures are not checked but roots need to match
-        bytes32 root = depGen.generateDepositRoot(
+        bytes32 depositRoot = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
             managerInstance.getWithdrawalCredentials(createdBids[0]),
@@ -899,7 +899,7 @@ contract TestSetup is Test {
             .DepositData({
                 publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
                 signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-                depositDataRoot: root,
+                depositDataRoot: depositRoot,
                 ipfsHashForEncryptedValidatorKey: "validator_unit_tests"
         });
         IStakingManager.DepositData[] memory depositDatas = new IStakingManager.DepositData[](1);
@@ -949,8 +949,6 @@ contract TestSetup is Test {
         liquidityPoolInstance.deposit{value: 60 ether}();
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();
-
-        bytes32[] memory proof = getWhitelistMerkleProof(9);
 
         liquidityPoolInstance.dutyForWeek();
 

@@ -215,7 +215,7 @@ contract WithdrawRequestNFTTest is TestSetup {
     }
 
     function test_ValidClaimWithdrawWithNegativeRebase() public {
-        uint256[] memory validatorIds = launch_validator();
+        launch_validator();
 
         startHoax(bob);
         liquidityPoolInstance.deposit{value: 10 ether}();

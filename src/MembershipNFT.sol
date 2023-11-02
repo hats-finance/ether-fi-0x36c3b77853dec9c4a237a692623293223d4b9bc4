@@ -141,7 +141,7 @@ contract MembershipNFT is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         uint256[] memory _ids,
         uint256[] memory _amounts,
         bytes memory _data
-    ) internal override {
+    ) internal view override {
 
         // empty mints and burns from checks
         if (_from == address(0x00) || _to == address(0x00)) {

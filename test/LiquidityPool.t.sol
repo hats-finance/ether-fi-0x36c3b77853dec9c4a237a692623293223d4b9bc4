@@ -333,7 +333,6 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(liquidityPoolInstance.totalValueInLp(), 60 ether);
 
         uint256 aliceBalance = address(alice).balance;
-        bytes32[] memory proof = getWhitelistMerkleProof(9);
         vm.prank(alice);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
 
@@ -406,7 +405,6 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(liquidityPoolInstance.totalValueInLp(), 60 ether);
 
         uint256 aliceBalance = address(alice).balance;
-        bytes32[] memory proof = getWhitelistMerkleProof(9);
         vm.prank(alice);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
 
@@ -508,7 +506,6 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(liquidityPoolInstance.totalValueInLp(), 60 ether);
 
         uint256 aliceBalance = address(alice).balance;
-        bytes32[] memory proof = getWhitelistMerkleProof(9);
         vm.prank(alice);
         uint256[] memory newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
 
@@ -618,8 +615,6 @@ contract LiquidityPoolTest is TestSetup {
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 60 ether);
         vm.stopPrank();
-
-        bytes32[] memory proof = getWhitelistMerkleProof(3);
 
         vm.warp(1681075815 - 35 * 24 * 3600);   // Sun March ...
         vm.prank(henry);
@@ -1380,7 +1375,6 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_DepositFromBNFTHolder() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
         report.numValidatorsToSpinUp = 4;
@@ -1430,8 +1424,6 @@ contract LiquidityPoolTest is TestSetup {
         vm.prank(alice);
         liquidityPoolInstance.setRestakeBnftDeposits(true);
 
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
-
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
         report.numValidatorsToSpinUp = 4;
         _executeAdminTasks(report);
@@ -1453,7 +1445,7 @@ contract LiquidityPoolTest is TestSetup {
         //Move forward in time to make sure dutyForWeek runs with an arbitrary timestamp
         _moveClock(32 * 225 * 7);
 
-        (uint256 firstIndex, uint128 lastIndex) = liquidityPoolInstance.dutyForWeek();
+        (uint256 firstIndex, ) = liquidityPoolInstance.dutyForWeek();
 
         startHoax(alice);
         bidIds = auctionInstance.createBid{value: 1 ether}(
@@ -1541,7 +1533,6 @@ contract LiquidityPoolTest is TestSetup {
     }
 
     function test_DepositFromBNFTHolderTwice() public {
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
         report.numValidatorsToSpinUp = 8;
@@ -1623,7 +1614,6 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 120 ether);
 
         uint256 aliceBalance = address(alice).balance;
-        bytes32[] memory proof = getWhitelistMerkleProof(9);
         uint256[] memory bidIdsWithDuplicates = new uint256[](4);
         bidIdsWithDuplicates[0] = bidIds[0];
         bidIdsWithDuplicates[1] = bidIds[0];

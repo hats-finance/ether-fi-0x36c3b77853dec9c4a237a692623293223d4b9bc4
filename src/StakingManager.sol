@@ -456,7 +456,7 @@ contract StakingManager is
     /// @param _operator address of the operator being checked
     /// @param _source the source of funds the operator is being checked for
     /// @return approved whether the operator is approved for the source type
-    function _verifyNodeOperator(address _operator, ILiquidityPool.SourceOfFunds _source) internal returns (bool approved) {
+    function _verifyNodeOperator(address _operator, ILiquidityPool.SourceOfFunds _source) internal view returns (bool approved) {
         if(uint256(ILiquidityPool.SourceOfFunds.DELEGATED_STAKING) == uint256(_source)) {
             approved = true;
         } else {

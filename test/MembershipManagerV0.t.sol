@@ -69,7 +69,7 @@ contract MembershipManagerV0Test is TestSetup {
 
         // alice unwraps 1% and should lose 1 tier.
         vm.prank(alice);
-        uint256 aliceTokenId = membershipManagerInstance.requestWithdraw(aliceToken, 1 ether);
+        membershipManagerInstance.requestWithdraw(aliceToken, 1 ether);
         assertEq(membershipNftInstance.tierPointsOf(aliceToken), 28 * 24 * 1); // booted to start of previous tier == 672
         assertEq(membershipNftInstance.tierOf(aliceToken), 1);
 
@@ -254,7 +254,7 @@ contract MembershipManagerV0Test is TestSetup {
         vm.stopPrank();
 
         // Alice Deposits into MembershipManager and receives eETH in return
-        bytes32[] memory aliceProof = merkleMigration2.getProof(
+        bytes32[] memory _aliceProof = merkleMigration2.getProof(
             dataForVerification2,
             0
         );
@@ -269,7 +269,7 @@ contract MembershipManagerV0Test is TestSetup {
             16970393 - 10,
             1 ether,
             103680,
-            aliceProof
+            _aliceProof
         );
 
         vm.expectRevert(MembershipManager.InvalidEAPRollover.selector);
@@ -279,7 +279,7 @@ contract MembershipManagerV0Test is TestSetup {
             16970393 - 10,
             1 ether,
             103680,
-            aliceProof
+            _aliceProof
         );
 
         vm.expectRevert(MembershipManager.InvalidEAPRollover.selector);
@@ -289,7 +289,7 @@ contract MembershipManagerV0Test is TestSetup {
             16970393 - 10,
             1 ether,
             0,
-            aliceProof
+            _aliceProof
         );
         vm.stopPrank();
     }
@@ -572,7 +572,7 @@ contract MembershipManagerV0Test is TestSetup {
 
         // Henry tries to mint but fails because he is not whitelisted.
         vm.expectRevert("Invalid User");
-        uint256 Token = membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0);
+        membershipManagerInstance.wrapEth{value: 10 ether}(10 ether, 0);
     }
 
     function test_UpdatingPointsGrowthRate() public {
@@ -949,7 +949,7 @@ contract MembershipManagerV0Test is TestSetup {
         assertEq(tier2_apr_bp, 0); // 00.00% for tier 2 with weight 3, because there is no deposited ETH in tier 2
     }
 
-    function calculateAggregatedTVL(uint256[] memory _validatorIds) internal returns (uint256[] memory) {
+    function calculateAggregatedTVL(uint256[] memory _validatorIds) internal view returns (uint256[] memory) {
         uint256[] memory tvls = new uint256[](4);
 
         for (uint256 i = 0; i < _validatorIds.length; i++) {
@@ -1008,7 +1008,7 @@ contract MembershipManagerV0Test is TestSetup {
         vm.stopPrank();
     }
 
-    function get_total_accrued_rewards(uint256[] memory tokens) internal returns (uint256) {
+    function get_total_accrued_rewards(uint256[] memory tokens) internal view returns (uint256) {
         uint256 total = 0;
         for (uint256 i = 0; i < tokens.length; i++) {
             total += membershipNftInstance.accruedStakingRewardsOf(tokens[i]);
@@ -1187,7 +1187,7 @@ contract MembershipManagerV0Test is TestSetup {
 
     function test_negative_rewards() public {
         // Spawn 2 validators, TVL = 60 ETH
-        uint256[] memory validatorIds = launch_validator();
+        launch_validator();
 
         vm.startPrank(alice);
         membershipManagerInstance.updateTier(0, 0, 10);
