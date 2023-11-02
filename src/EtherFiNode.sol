@@ -170,16 +170,6 @@ contract EtherFiNode is IEtherFiNode {
         require(sent, "Failed to send Ether");
     }
 
-    function prepareForFullWithdraw(uint8 _maxEigenlayerWithdrawals) external onlyEtherFiNodeManagerContract {
-        if (!isRestakingEnabled) return;
-
-        // sweep rewards from eigenPod
-        claimQueuedWithdrawals(_maxEigenlayerWithdrawals);
-        
-        // require that all pending withdrawals have cleared
-        require (!hasOutstandingEigenLayerWithdrawals(), "Must Claim Restaked Withdrawals");
-    }
-
     //--------------------------------------------------------------------------------------
     //--------------------------------------  GETTER  --------------------------------------
     //--------------------------------------------------------------------------------------
@@ -527,7 +517,7 @@ contract EtherFiNode is IEtherFiNode {
     // We don't need to worry about unbounded array length because anyone can call claimQueuedWithdrawals()
     // with a variable number of withdrawals to process if the queue ever became to large.
     // This function can go away once we have a proof based withdrawal system.
-    function hasOutstandingEigenLayerWithdrawals() public view returns (bool) {
+    function hasOutstandingEigenLayerWithdrawals() external view returns (bool) {
 
         IDelayedWithdrawalRouter delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(etherFiNodesManager).delayedWithdrawalRouter());
         IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(this));

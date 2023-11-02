@@ -237,7 +237,12 @@ contract EtherFiNodesManager is
     function fullWithdraw(uint256 _validatorId) public nonReentrant whenNotPaused{
         address etherfiNode = etherfiNodeAddress[_validatorId];
 
-        IEtherFiNode(etherfiNode).prepareForFullWithdraw(maxEigenlayerWithdrawals);
+        if (IEtherFiNode(etherfiNode).tryFullWithdraw()) {
+            // sweep rewards from eigenPod
+            IEtherFiNode(etherfiNode).claimQueuedWithdrawals(maxEigenlayerWithdrawals);
+            // require that all pending withdrawals have cleared
+            require (!IEtherFiNode(etherfiNode).hasOutstandingEigenLayerWithdrawals(), "Must Claim Restaked Withdrawals");
+        }
 
         (uint256 toOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) 
             = getFullWithdrawalPayouts(_validatorId);
