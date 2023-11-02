@@ -86,7 +86,6 @@ contract AuctionManager is
 
     function initializeOnUpgrade(address _membershipManagerContractAddress, uint128 _accumulatedRevenueThreshold, address _etherFiAdminContractAddress, address _nodeOperatorManagerAddress) external onlyOwner { 
         require(_membershipManagerContractAddress != address(0) && _etherFiAdminContractAddress != address(0) && _nodeOperatorManagerAddress != address(0), "No Zero Addresses");
-        require(membershipManagerContractAddress == address(0), "Address already set");
         membershipManagerContractAddress = _membershipManagerContractAddress;
         nodeOperatorManager = INodeOperatorManager(_nodeOperatorManagerAddress);
         accumulatedRevenue = 0;
