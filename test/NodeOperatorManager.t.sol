@@ -77,7 +77,7 @@ contract NodeOperatorManagerTest is TestSetup {
             keysUsed
         );
 
-        vm.prank(alice);
+        vm.prank(owner);
         nodeOperatorManagerInstance.initializeOnUpgrade(
             operators,
             hashes,
@@ -97,7 +97,7 @@ contract NodeOperatorManagerTest is TestSetup {
 
         assertEq(nodeOperatorManagerInstance.registered(bob), true);
 
-        vm.prank(alice);
+        vm.prank(owner);
         vm.expectRevert("Already registered");
         nodeOperatorManagerInstance.initializeOnUpgrade(
             operators,
