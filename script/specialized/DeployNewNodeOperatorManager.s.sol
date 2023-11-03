@@ -65,13 +65,14 @@ contract DeployNewNodeOperatorManagerScript is Script {
             operators[10] = 0xB6C9125584A1A28cCafd31056D4aF29014862536;
         }else if(block.chainid == 5) {
             // GOERLI
-            operators = new address[](2);
-            operators[0] = 0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA;
-            operators[1] = 0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39;
+            operators = new address[](0);
+            // operators = new address[](2);
+            // operators[0] = 0x2Fc348E6505BA471EB21bFe7a50298fd1f02DBEA;
+            // operators[1] = 0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39;
 
-            hashes = new bytes[](2);
-            totalKeys = new uint64[](2);
-            keysUsed = new uint64[](2);
+            hashes = new bytes[](0);
+            totalKeys = new uint64[](0);
+            keysUsed = new uint64[](0);
         }
 
         vm.startBroadcast(deployerPrivateKey);
@@ -88,7 +89,7 @@ contract DeployNewNodeOperatorManagerScript is Script {
         nodeOperatorManagerInstance = NodeOperatorManager(address(nodeOperatorManagerProxy));
         nodeOperatorManagerInstance.initialize();
 
-        NodeOperatorManager(nodeOperatorManagerInstance).batchMigrateNodeOperator(operators, hashes, totalKeys, keysUsed);
+        NodeOperatorManager(nodeOperatorManagerInstance).initializeOnUpgrade(operators, hashes, totalKeys, keysUsed);
         
         if (addressProvider.getContractAddress("NodeOperatorManager") != address(nodeOperatorManagerInstance)) {
             addressProvider.removeContract("NodeOperatorManager");

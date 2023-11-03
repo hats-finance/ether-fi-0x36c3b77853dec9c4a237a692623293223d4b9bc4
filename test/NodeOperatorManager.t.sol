@@ -70,7 +70,7 @@ contract NodeOperatorManagerTest is TestSetup {
 
         vm.prank(bob);
         vm.expectRevert("Caller is not the admin");
-        nodeOperatorManagerInstance.batchMigrateNodeOperator(
+        nodeOperatorManagerInstance.initializeOnUpgrade(
             operators,
             hashes,
             totalKeys,
@@ -78,7 +78,7 @@ contract NodeOperatorManagerTest is TestSetup {
         );
 
         vm.prank(alice);
-        nodeOperatorManagerInstance.batchMigrateNodeOperator(
+        nodeOperatorManagerInstance.initializeOnUpgrade(
             operators,
             hashes,
             totalKeys,
@@ -99,7 +99,7 @@ contract NodeOperatorManagerTest is TestSetup {
 
         vm.prank(alice);
         vm.expectRevert("Already registered");
-        nodeOperatorManagerInstance.batchMigrateNodeOperator(
+        nodeOperatorManagerInstance.initializeOnUpgrade(
             operators,
             hashes,
             totalKeys,
