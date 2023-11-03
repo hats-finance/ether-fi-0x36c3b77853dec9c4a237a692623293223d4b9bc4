@@ -138,6 +138,8 @@ contract LiquidityPool is Initializable, OwnableUpgradeable, UUPSUpgradeable, IL
 
         etherFiAdminContract = _etherFiAdminContract;
         withdrawRequestNFT = IWithdrawRequestNFT(_withdrawRequestNFT);
+
+        admins[_etherFiAdminContract] = true;
     }
 
     // Used by eETH staking flow

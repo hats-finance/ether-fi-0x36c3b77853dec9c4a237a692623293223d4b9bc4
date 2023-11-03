@@ -61,6 +61,7 @@ contract LiquidityPoolUpgrade is Script {
         require(numPendingDeposits == LiquidityPoolInstance.numPendingDeposits(), "numPendingDeposits");
         require(totalValueOutOfLp == LiquidityPoolInstance.totalValueOutOfLp(), "totalValueOutOfLp");
         require(totalValueInLp == LiquidityPoolInstance.totalValueInLp(), "totalValueInLp");
+        require(LiquidityPoolInstance.admins(etherFiAdminAddress), "EtherFiAdmin should be an admin");
 
         vm.stopBroadcast();
     }

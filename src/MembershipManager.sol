@@ -96,6 +96,7 @@ contract MembershipManager is Initializable, OwnableUpgradeable, PausableUpgrade
         while (tierVaults.length < tierData.length) {
             tierVaults.push(TierVault(0, 0));
         }
+        admins[_etherFiAdminAddress] = true;
     }
 
     error InvalidEAPRollover();
