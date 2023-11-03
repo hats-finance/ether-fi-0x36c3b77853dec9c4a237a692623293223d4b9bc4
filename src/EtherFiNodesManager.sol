@@ -185,9 +185,18 @@ contract EtherFiNodesManager is
     /// @notice queue a withdrawal of eth from an eigenPod. You must wait for the queuing period
     ///         defined by eigenLayer before you can finish the withdrawal via etherFiNode.claimQueuedWithdrawals()
     /// @param _validatorId The validator Id
-    function queueRestakedWithdrawal(uint256 _validatorId) external whenNotPaused {
+    function queueRestakedWithdrawal(uint256 _validatorId) public whenNotPaused {
         address etherfiNode = etherfiNodeAddress[_validatorId];
         IEtherFiNode(etherfiNode).queueRestakedWithdrawal();
+    }
+
+    /// @notice queue a withdrawal of eth from an eigenPod. You must wait for the queuing period
+    ///         defined by eigenLayer before you can finish the withdrawal via etherFiNode.claimQueuedWithdrawals()
+    /// @param _validatorIds The list of validators to queue withdrawals for
+    function batchQueueRestakedWithdrawal(uint256[] calldata _validatorIds) external whenNotPaused {
+        for (uint256 i = 0; i < _validatorIds.length; i++) {
+            queueRestakedWithdrawal(_validatorIds[i]);
+        }
     }
 
     /// @notice Process the rewards skimming

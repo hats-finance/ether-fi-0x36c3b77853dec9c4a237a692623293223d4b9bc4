@@ -29,7 +29,6 @@ contract EtherFiNodeTest is TestSetup {
 
         assertTrue(node.phase() == IEtherFiNode.VALIDATOR_PHASE.NOT_INITIALIZED);
 
-
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
             _ipfsHash,
@@ -94,6 +93,42 @@ contract EtherFiNodeTest is TestSetup {
         );
     }
 
+
+    function test_batchClaimRestakedWithdrawal() public {
+        initializeTestingFork(TESTNET_FORK);
+        uint256 validator1 = depositAndRegisterValidator(true);
+        uint256 validator2 = depositAndRegisterValidator(true);
+        EtherFiNode safe1 = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validator1)));
+        EtherFiNode safe2 = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validator2)));
+
+        vm.deal(address(safe1.eigenPod()), 1 ether);
+        vm.deal(address(safe2.eigenPod()), 2 ether);
+
+        (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = safe1.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 1 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safe2.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 2 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+
+        uint256[] memory validatorIds = new uint256[](2);
+        validatorIds[0] = validator1;
+        validatorIds[1] = validator2;
+        managerInstance.batchQueueRestakedWithdrawal(validatorIds);
+
+        // both safes should have funds queued for withdrawal
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safe1.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 1 ether);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safe2.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 2 ether);
+
+    }
 
     function test_claimMixedSafeAndPodFunds() public {
 
