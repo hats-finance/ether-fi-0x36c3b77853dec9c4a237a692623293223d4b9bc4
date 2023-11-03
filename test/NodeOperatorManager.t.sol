@@ -69,7 +69,7 @@ contract NodeOperatorManagerTest is TestSetup {
         keysUsed[1] = 1;
 
         vm.prank(bob);
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Ownable: caller is not the owner");
         nodeOperatorManagerInstance.initializeOnUpgrade(
             operators,
             hashes,
