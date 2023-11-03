@@ -879,12 +879,14 @@ contract TestSetup is Test {
         vm.deal(alice, 33 ether);
         vm.startPrank(alice);
 
-        nodeOperatorManagerInstance.registerNodeOperator("fake_ipfs_hash", 10);
+        // if we call this multiple times in a test, don't blow up
+        try  nodeOperatorManagerInstance.registerNodeOperator("fake_ipfs_hash", 10) {
+        } catch {}
 
         // create a new bid
         uint256[] memory createdBids = auctionInstance.createBid{value: 0.1 ether}(1, 0.1 ether);
 
-        // depsosit against that bid with restaking enabled
+        // deposit against that bid with restaking enabled
         stakingManagerInstance.batchDepositWithBidIds{value: 32 ether * createdBids.length}(createdBids, restaked);
 
         // Register the validator and send deposited eth to depositContract/Beaconchain

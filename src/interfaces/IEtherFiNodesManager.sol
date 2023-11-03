@@ -50,6 +50,7 @@ interface IEtherFiNodesManager {
         address _bnftContract
     ) external;
 
+    function batchQueueRestakedWithdrawal(uint256[] calldata _validatorIds) external;
     function batchSendExitRequest(uint256[] calldata _validatorIds) external;
     function fullWithdrawBatch(uint256[] calldata _validatorIds) external;
     function fullWithdraw(uint256 _validatorId) external;
