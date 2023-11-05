@@ -11,11 +11,16 @@ interface IStakingManager {
         string ipfsHashForEncryptedValidatorKey;
     }
 
+    struct StakerInfo {
+        address staker;
+        ILiquidityPool.SourceOfFunds sourceOfFund;
+    }
+
     function bidIdToStaker(uint256 id) external view returns (address);
 
     function getEtherFiNodeBeacon() external view returns (address);
 
-    function initialize(address _auctionAddress) external;
+    function initialize(address _auctionAddress, address _depositContractAddress) external;
     function setEtherFiNodesManagerAddress(address _managerAddress) external;
     function setLiquidityPoolAddress(address _liquidityPoolAddress) external;
     function batchDepositWithBidIds(uint256[] calldata _candidateBidIds, address _staker, ILiquidityPool.SourceOfFunds source, bool _enableRestaking) external payable returns (uint256[] memory);
@@ -32,4 +37,6 @@ interface IStakingManager {
     function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) external;
 
     function updateAdmin(address _address, bool _isAdmin) external;
+    function pauseContract() external;
+    function unPauseContract() external;
 }

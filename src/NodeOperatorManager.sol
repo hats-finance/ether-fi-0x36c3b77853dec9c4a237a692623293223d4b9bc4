@@ -51,41 +51,15 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
         __UUPSUpgradeable_init();
     }
 
-    /// @notice Registers a user as a operator to allow them to bid
-    /// @param _ipfsHash location of all IPFS data stored for operator
-    /// @param _totalKeys The number of keys they have available, relates to how many validators they can run
-    function registerNodeOperator(
-        bytes memory _ipfsHash,
-        uint64 _totalKeys
-    ) public whenNotPaused {
-        require(!registered[msg.sender], "Already registered");
-        
-        KeyData memory keyData = KeyData({
-            totalKeys: _totalKeys,
-            keysUsed: 0,
-            ipfsHash: abi.encodePacked(_ipfsHash)
-        });
-
-        addressToOperatorData[msg.sender] = keyData;
-        registered[msg.sender] = true;
-
-        emit OperatorRegistered(
-            msg.sender,
-            keyData.totalKeys,
-            keyData.keysUsed,
-            _ipfsHash
-        );
-    }
-
     /// @notice Migrates operator details from previous contract
     /// @dev Our previous node operator contract was non upgradeable. We will be moving to an upgradeable version but need this
     ///         function to migrate the data
-    function batchMigrateNodeOperator(
+    function initializeOnUpgrade(
         address[] memory _operator, 
         bytes[] memory _ipfsHash,
         uint64[] memory _totalKeys,
         uint64[] memory _keysUsed
-    ) external onlyAdmin {
+    ) external onlyOwner {
         require((_operator.length == _ipfsHash.length) && (_operator.length == _totalKeys.length) && (_operator.length == _keysUsed.length), "Invalid lengths");
         for(uint256 x = 0; x < _operator.length; x++) {
             require(!registered[_operator[x]], "Already registered");
@@ -106,6 +80,32 @@ contract NodeOperatorManager is INodeOperatorManager, Initializable, UUPSUpgrade
                 _ipfsHash[x]
             );
         }
+    }
+
+    /// @notice Registers a user as a operator to allow them to bid
+    /// @param _ipfsHash location of all IPFS data stored for operator
+    /// @param _totalKeys The number of keys they have available, relates to how many validators they can run
+    function registerNodeOperator(
+        bytes memory _ipfsHash,
+        uint64 _totalKeys
+    ) public whenNotPaused {
+        require(!registered[msg.sender], "Already registered");
+
+        KeyData memory keyData = KeyData({
+            totalKeys: _totalKeys,
+            keysUsed: 0,
+            ipfsHash: abi.encodePacked(_ipfsHash)
+        });
+
+        addressToOperatorData[msg.sender] = keyData;
+        registered[msg.sender] = true;
+
+        emit OperatorRegistered(
+            msg.sender,
+            keyData.totalKeys,
+            keyData.keysUsed,
+            _ipfsHash
+        );
     }
 
     /// @notice Fetches the next key they have available to use

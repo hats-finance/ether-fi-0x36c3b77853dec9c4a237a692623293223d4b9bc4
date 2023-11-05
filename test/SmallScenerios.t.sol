@@ -137,11 +137,11 @@ contract SmallScenariosTest is TestSetup {
         uint256[] memory processedBidIds = liquidityPoolInstance.batchDepositAsBnftHolder{value: 2 ether}(bidIds, 1);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddress(
+            address _etherFiNode = managerInstance.etherfiNodeAddress(
                 processedBidIds[i]
             );
 
-            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED));
+            assertEq(uint8(IEtherFiNode(_etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED));
         }
 
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 30 ether);
@@ -152,26 +152,26 @@ contract SmallScenariosTest is TestSetup {
 
         bytes32[] memory depositDataRootsForApproval = new bytes32[](1);
 
-        address etherFiNode = managerInstance.etherfiNodeAddress(processedBidIds[0]);
+        address newEtherFiNode = managerInstance.etherfiNodeAddress(processedBidIds[0]);
         bytes32 root = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            managerInstance.generateWithdrawalCredentials(newEtherFiNode),
             1 ether
         );
 
         bytes32 rootForApproval = depGen.generateDepositRoot(
             hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
             hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
-            managerInstance.generateWithdrawalCredentials(etherFiNode),
+            managerInstance.generateWithdrawalCredentials(newEtherFiNode),
             31 ether
         );
 
         bytes[] memory pubKey = new bytes[](1);
         pubKey[0] = hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c";
 
-        bytes[] memory sig = new bytes[](1);
-        sig[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
+        bytes[] memory signature = new bytes[](1);
+        signature[0] = hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df";
 
         depositDataRootsForApproval[0] = rootForApproval;
 
@@ -186,14 +186,14 @@ contract SmallScenariosTest is TestSetup {
         vm.stopPrank();
         vm.startPrank(alice);
         // Register the Validator
-        liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), processedBidIds, depositDataArray, depositDataRootsForApproval, sig);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(_getDepositRoot(), processedBidIds, depositDataArray, depositDataRootsForApproval, signature);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddress(
+            address _etherFiNode = managerInstance.etherfiNodeAddress(
                 processedBidIds[i]
             );
 
-            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL));
+            assertEq(uint8(IEtherFiNode(_etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL));
         }
 
         vm.stopPrank();
@@ -254,8 +254,7 @@ contract SmallScenariosTest is TestSetup {
         assertEq(address(liquidityPoolInstance).balance, 32 ether + 1 ether);
         vm.stopPrank();
 
-        vm.prank(alice);
-        withdrawRequestNFTInstance.finalizeRequests(withdrawRequestId);
+        _finalizeWithdrawalRequest(withdrawRequestId);
 
         vm.prank(chad);
         withdrawRequestNFTInstance.claimWithdraw(withdrawRequestId);
@@ -264,14 +263,14 @@ contract SmallScenariosTest is TestSetup {
         assert(address(liquidityPoolInstance).balance >= 17.5 ether); // 33 - 15.5 = 17.5
 
         vm.prank(alice);
-        liquidityPoolInstance.batchApproveRegistration(processedBidIds, pubKey, sig);
+        liquidityPoolInstance.batchApproveRegistration(processedBidIds, pubKey, signature);
 
         for (uint256 i = 0; i < processedBidIds.length; i++) {
-            address etherFiNode = managerInstance.etherfiNodeAddress(
+            address _etherFiNode = managerInstance.etherfiNodeAddress(
                 processedBidIds[i]
             );
 
-            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.LIVE));
+            assertEq(uint8(IEtherFiNode(_etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.LIVE));
         }
 
         // EtherFi sends an exit request for a node to be exited to reclaim the 32 ether sent to the pool for withdrawals

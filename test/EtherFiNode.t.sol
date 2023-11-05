@@ -19,20 +19,15 @@ contract EtherFiNodeTest is TestSetup {
     uint256 BNFTRewardSplit = 84_375;
     uint256 RewardSplitDivisor = 1_000_000;
 
-    uint256 testnetFork;
     uint256[] bidId;
     EtherFiNode safeInstance;
     EtherFiNode restakingSafe;
-
-    // eigenLayer
-    IDelayedWithdrawalRouter delayedWithdrawalRouter;
 
     function setUp() public {
 
         setUpTests();
 
         assertTrue(node.phase() == IEtherFiNode.VALIDATOR_PHASE.NOT_INITIALIZED);
-
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -96,39 +91,51 @@ contract EtherFiNodeTest is TestSetup {
             auctionInstance.accumulatedRevenue(),
             0.1 ether
         );
-
-        delayedWithdrawalRouter = IDelayedWithdrawalRouter(IEtherFiNodesManager(safeInstance.etherFiNodesManager()).delayedWithdrawalRouter());
-        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
     }
 
-    function test_createPod() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
-        safeInstance.createEigenPod();
-        console2.log("podAddr:", address(safeInstance.eigenPod()));
 
-        vm.deal(address(safeInstance.eigenPod()), 2 ether);
-        console2.log("balances:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+    function test_batchClaimRestakedWithdrawal() public {
+        initializeTestingFork(TESTNET_FORK);
+        uint256 validator1 = depositAndRegisterValidator(true);
+        uint256 validator2 = depositAndRegisterValidator(true);
+        EtherFiNode safe1 = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validator1)));
+        EtherFiNode safe2 = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validator2)));
 
-        safeInstance.queueRestakedWithdrawal();
-        console2.log("balances2:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+        vm.deal(address(safe1.eigenPod()), 1 ether);
+        vm.deal(address(safe2.eigenPod()), 2 ether);
 
-        vm.roll(block.number + (50400) + 1);
-        
-        safeInstance.claimQueuedWithdrawals(1);
-        console2.log("balances3:", address(safeInstance).balance, address(safeInstance.eigenPod()).balance);
+        (uint256 _withdrawalSafe, uint256 _eigenPod, uint256 _delayedWithdrawalRouter) = safe1.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 1 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safe2.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 2 ether);
+        assertEq(_delayedWithdrawalRouter, 0 ether);
+
+        uint256[] memory validatorIds = new uint256[](2);
+        validatorIds[0] = validator1;
+        validatorIds[1] = validator2;
+        managerInstance.batchQueueRestakedWithdrawal(validatorIds);
+
+        // both safes should have funds queued for withdrawal
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safe1.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 1 ether);
+        (_withdrawalSafe, _eigenPod, _delayedWithdrawalRouter) = safe2.splitBalanceInExecutionLayer();
+        assertEq(_withdrawalSafe, 0 ether);
+        assertEq(_eigenPod, 0 ether);
+        assertEq(_delayedWithdrawalRouter, 2 ether);
+
     }
 
     function test_claimMixedSafeAndPodFunds() public {
 
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
-        safeInstance = EtherFiNode(payable(managerInstance.createUnusedWithdrawalSafe(1, true)[0]));
-        vm.prank(address(managerInstance));
-        safeInstance.recordStakingStart(true);
+        uint256 bidId = depositAndRegisterValidator(true);
+       safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(bidId)));
 
         // simulate 1 eth of already claimed staking rewards and 1 eth of unclaimed restaked rewards
         vm.deal(address(safeInstance.eigenPod()), 1 ether);
@@ -147,14 +154,12 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_splitBalanceInExecutionLayer() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
-        vm.prank(address(managerInstance));
-        safeInstance.setIsRestakingEnabled(true);
-        safeInstance.createEigenPod();
 
-        uint256 validatorId = bidId[0];
+        initializeTestingFork(TESTNET_FORK);
+
+        uint256 validatorId = depositAndRegisterValidator(true);
+        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
+
         uint256 beaconBalance = 32 ether;
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = (0, 0, 0, 0);
 
@@ -225,12 +230,10 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_claimRestakedRewards() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
-        vm.prank(address(managerInstance));
-        safeInstance.setIsRestakingEnabled(true);
-        safeInstance.createEigenPod();
+        initializeTestingFork(TESTNET_FORK);
+
+        uint256 validatorId = depositAndRegisterValidator(true);
+        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
 
         // simulate 1 eth of staking rewards sent to the eigen pod
         vm.deal(address(safeInstance.eigenPod()), 1 ether);
@@ -264,7 +267,8 @@ contract EtherFiNodeTest is TestSetup {
         safeInstance.queueRestakedWithdrawal();
 
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 3);
 
         // wait but only claim 2 of the 3 queued withdrawals
@@ -273,21 +277,19 @@ contract EtherFiNodeTest is TestSetup {
         vm.roll(block.number + (50400) + 1);
         safeInstance.claimQueuedWithdrawals(2);
 
-        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+
+        unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(address(safeInstance.eigenPod()).balance, 0 ether);
         assertEq(address(safeInstance).balance, 2 ether);
     }
 
     function test_restakedFullWithdrawal() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
-        safeInstance.createEigenPod();
-        vm.prank(address(managerInstance));
-        safeInstance.setIsRestakingEnabled(true);
+        initializeTestingFork(TESTNET_FORK);
 
-        uint256 validatorId = bidId[0];
+        uint256 validatorId = depositAndRegisterValidator(true);
+        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
+
         uint256[] memory validatorIds = new uint256[](1);
         uint32[] memory exitRequestTimestamps = new uint32[](1);
         validatorIds[0] = validatorId;
@@ -296,19 +298,19 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(safeInstance.eigenPod(), 32 ether);
 
         vm.startPrank(alice); // alice is the admin
-        vm.expectRevert("validator node is not exited");
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotExited.selector);
         managerInstance.fullWithdraw(validatorIds[0]);
 
         // Marked as EXITED
         // should also have queued up the current balance to via DelayedWithdrawalRouter
         managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
 
         // fail because we have not processed the queued withdrawal of the funds from the pod
         // because not enough time has passed to claim them
-        vm.expectRevert(EtherFiNodesManager.MustClaimRestakedWithdrawals.selector);
+        vm.expectRevert("Must Claim Restaked Withdrawals");
         managerInstance.fullWithdraw(validatorIds[0]);
 
         // wait some time
@@ -329,17 +331,10 @@ contract EtherFiNodeTest is TestSetup {
     }
 
     function test_restakedPartialWithdrawQueuesFutureWithdrawals() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
-        uint256 validatorId = bidId[0];
-        IEtherFiNode node = IEtherFiNode(managerInstance.etherfiNodeAddress(validatorId));
-
-        vm.prank(address(managerInstance));
-        node.setIsRestakingEnabled(true);
-        node.createEigenPod();
-
+        uint256 validatorId = depositAndRegisterValidator(true);
+        IEtherFiNode node = IEtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
 
         // simulate staking rewards
         vm.deal(node.eigenPod(), 1 ether);
@@ -364,16 +359,57 @@ contract EtherFiNodeTest is TestSetup {
         assertEq(_delayedWithdrawalRouter, 3 ether);
     }
 
+    function test_withdrawableBalanceInExecutionLayer() public {
+        initializeTestingFork(TESTNET_FORK);
+
+        uint256 validatorId = depositAndRegisterValidator(true);
+        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
+
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 0 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 0 ether);
+
+        // send some funds to the pod
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 1 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 0 ether);
+
+        // queue withdrawal
+        safeInstance.queueRestakedWithdrawal();
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 1 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 0 ether);
+
+        // more eth to pod
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 2 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 0 ether);
+
+        // wait so queued withdrawal is claimable
+        vm.roll(block.number + (50400) + 1);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 2 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 1 ether);
+
+        // claim that withdrawal
+        safeInstance.claimQueuedWithdrawals(10);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 2 ether);
+        assertEq(address(safeInstance).balance, 1 ether);
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 1 ether);
+
+        // queue multiple but only some that are claimable
+        safeInstance.queueRestakedWithdrawal();
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        vm.roll(block.number + (50400) + 1);
+        vm.deal(safeInstance.eigenPod(), 1 ether);
+        safeInstance.queueRestakedWithdrawal();
+        assertEq(safeInstance.withdrawableBalanceInExecutionLayer(), 3 ether);
+        assertEq(safeInstance.totalBalanceInExecutionLayer(), 4 ether);
+    }
+
     function test_restakedAttackerCantBlockWithdraw() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
-        uint256 validatorId = bidId[0];
-
-        vm.prank(address(managerInstance));
-        safeInstance.setIsRestakingEnabled(true);
-        safeInstance.createEigenPod();
+        uint256 validatorId = depositAndRegisterValidator(true);
+        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
 
         uint256[] memory validatorIds = new uint256[](1);
         uint32[] memory exitRequestTimestamps = new uint32[](1);
@@ -383,13 +419,13 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(safeInstance.eigenPod(), 32 ether);
 
         vm.startPrank(alice); // alice is the admin
-        vm.expectRevert("validator node is not exited");
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotExited.selector);
         managerInstance.fullWithdraw(validatorIds[0]);
 
         // Marked as EXITED
         // should also have queued up the current balance to via DelayedWithdrawalRouter
         managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
-        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 1);
         assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
 
@@ -407,7 +443,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(safeInstance.eigenPod(), 1 ether);
         safeInstance.queueRestakedWithdrawal();
 
-        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
         assertEq(unclaimedWithdrawals.length, 6);
 
         // wait some time so claims are claimable
@@ -415,24 +451,68 @@ contract EtherFiNodeTest is TestSetup {
 
         // TODO(Dave): 5 picked here because that's how many claims I set the manager contract to attempt. We can tune thi
         safeInstance.claimQueuedWithdrawals(5);
-        unclaimedWithdrawals = delayedWithdrawalRouter.getUserDelayedWithdrawals(address(safeInstance));
+        unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
 
         // shoud not be allowed to partial withdraw since node is exited
         // In this case it fails because of the balance check right before the state check
-        vm.expectRevert("etherfi node contract's balance is above 8 ETH. You should exit the node.");
+        vm.expectRevert("Balance > 8 ETH. Exit the node.");
         managerInstance.partialWithdraw(validatorId);
+
+        // attacker sends more eth to pod that will not be able to be able to be withdrawn immediately
+        vm.deal(safeInstance.eigenPod(), 1 ether);
 
         // This should succeed even though there are still some unclaimed withdrawals
         // this is because we only enforce that all withdrawals before the observed exit of the node have completed
         managerInstance.fullWithdraw(validatorIds[0]);
-        assertEq(unclaimedWithdrawals.length, 1);
         assertEq(address(safeInstance).balance, 0);
+    }
+
+    function testFullWithdrawBurnsTNFT() public {
+        initializeTestingFork(TESTNET_FORK);
+
+        uint256 validatorId = depositAndRegisterValidator(true);
+        safeInstance = EtherFiNode(payable(managerInstance.etherfiNodeAddress(validatorId)));
+
+        uint256[] memory validatorIds = new uint256[](1);
+        uint32[] memory exitRequestTimestamps = new uint32[](1);
+        validatorIds[0] = validatorId;
+        exitRequestTimestamps[0] = uint32(block.timestamp);
+
+        vm.deal(safeInstance.eigenPod(), 32 ether);
+
+        vm.startPrank(alice); // alice is the admin
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotExited.selector);
+        managerInstance.fullWithdraw(validatorId);
+
+        // Marked as EXITED
+        // should also have queued up the current balance to via DelayedWithdrawalRouter
+        managerInstance.processNodeExit(validatorIds, exitRequestTimestamps);
+        IDelayedWithdrawalRouter.DelayedWithdrawal[] memory unclaimedWithdrawals = managerInstance.delayedWithdrawalRouter().getUserDelayedWithdrawals(address(safeInstance));
+        assertEq(unclaimedWithdrawals.length, 1);
+        assertEq(unclaimedWithdrawals[0].amount, uint224(32 ether));
+
+        // wait some time so claims are claimable
+        vm.roll(block.number + (50400) + 1);
+
+        // alice should own the tNFT since she created the validator
+        assertEq(TNFTInstance.ownerOf(validatorId), alice);
+
+        // withdraw the node
+        managerInstance.fullWithdraw(validatorIds[0]);
+
+        // tNFT should be burned
+        vm.expectRevert("ERC721: invalid token ID");
+        TNFTInstance.ownerOf(validatorId);
+        // bNFT should be burned
+        vm.expectRevert("ERC721: invalid token ID");
+        BNFTInstance.ownerOf(validatorId);
     }
 
     function test_SetExitRequestTimestampFailsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(alice);
-        safeInstance.setExitRequestTimestamp();
+        safeInstance.setExitRequestTimestamp(0);
     }
 
     function test_SetPhaseRevertsOnIncorrectCaller() public {
@@ -450,7 +530,7 @@ contract EtherFiNodeTest is TestSetup {
     function test_SetExitRequestTimestampRevertsOnIncorrectCaller() public {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         vm.prank(owner);
-        safeInstance.setExitRequestTimestamp();
+        safeInstance.setExitRequestTimestamp(1);
 
     }
 
@@ -578,7 +658,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.expectRevert("Only EtherFiNodeManager Contract");
         IEtherFiNode(etherFiNode).markExited(1);
 
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Not admin");
         vm.prank(owner);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
@@ -614,29 +694,6 @@ contract EtherFiNodeTest is TestSetup {
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
         assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EXITED);
         assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
-    }
-
-    function test_evict() public {
-        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
-        uint256[] memory validatorIds = new uint256[](1);
-        validatorIds[0] = bidId[0];
-        uint32[] memory exitTimestamps = new uint32[](1);
-        exitTimestamps[0] = 1;
-        address etherFiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
-
-        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.LIVE);
-        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() == 0);
-        assertEq(address(etherFiNode).balance, 0.00 ether); // node no longer receives auction revenue
-
-        uint256 nodeOperatorBalance = address(nodeOperator).balance;
-
-        vm.prank(alice);
-        managerInstance.processNodeEvict(validatorIds);
-
-        assertTrue(IEtherFiNode(etherFiNode).phase() == IEtherFiNode.VALIDATOR_PHASE.EVICTED);
-        assertTrue(IEtherFiNode(etherFiNode).exitTimestamp() > 0);
-        assertEq(address(etherFiNode).balance, 0);
-        assertEq(address(nodeOperator).balance, nodeOperatorBalance);
     }
 
     function test_partialWithdrawRewardsDistribution() public {
@@ -677,7 +734,7 @@ contract EtherFiNodeTest is TestSetup {
 
         vm.deal(etherfiNode, 8.0 ether);
         vm.expectRevert(
-            "etherfi node contract's balance is above 8 ETH. You should exit the node."
+            "Balance > 8 ETH. Exit the node."
         );
         managerInstance.partialWithdraw(bidId[0]);
     }
@@ -688,7 +745,7 @@ contract EtherFiNodeTest is TestSetup {
         vm.deal(etherfiNode, 4 ether);
 
         vm.expectRevert(
-            "Caller is not the admin"
+            "Not admin"
         );
         vm.prank(owner);
         managerInstance.markBeingSlashed(bidId);
@@ -696,7 +753,7 @@ contract EtherFiNodeTest is TestSetup {
         hoax(alice);
         managerInstance.markBeingSlashed(bidId);
         vm.expectRevert(
-            "you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN."
+            "Must be LIVE or FULLY_WITHDRAWN."
         );
         managerInstance.partialWithdraw(bidId[0]);
     }
@@ -751,7 +808,6 @@ contract EtherFiNodeTest is TestSetup {
 
         hoax(owner);
         managerInstance.partialWithdraw(bidId[0]);
-        uint256 nodeOperatorBalance2 = address(nodeOperator).balance;
 
         // node operator gets nothing because took longer than 14 days
         assertEq(address(nodeOperator).balance, nodeOperatorBalance);
@@ -789,7 +845,7 @@ contract EtherFiNodeTest is TestSetup {
         );
 
         vm.deal(etherfiNode, 16 ether);
-        vm.expectRevert("validator node is not exited");
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotExited.selector);
         managerInstance.fullWithdraw(validatorIds[0]);
     }
 
@@ -801,7 +857,6 @@ contract EtherFiNodeTest is TestSetup {
         validatorIds[0] = bidId[0];
         uint32[] memory exitTimestamps = new uint32[](1);
         exitTimestamps[0] = 1;
-        address etherfiNode = managerInstance.etherfiNodeAddress(validatorIds[0]);
 
         uint256 nodeOperatorBalance = address(nodeOperator).balance;
         uint256 treasuryBalance = address(treasuryInstance).balance;
@@ -954,13 +1009,8 @@ contract EtherFiNodeTest is TestSetup {
         hoax(staker);
         TNFTInstance.transferFrom(staker, dan, validatorIds[0]);
 
-        uint256 nodeOperatorBalance = address(nodeOperator).balance;
-        uint256 treasuryBalance = address(treasuryInstance).balance;
-        uint256 danBalance = address(dan).balance;
-        uint256 bnftStakerBalance = address(staker).balance;
-
         hoax(owner);
-        vm.expectRevert("you can skim the rewards only when the node is LIVE or FULLY_WITHDRAWN.");
+        vm.expectRevert("Must be LIVE or FULLY_WITHDRAWN.");
         managerInstance.partialWithdraw(validatorIds[0]);
     }
 
@@ -1149,7 +1199,7 @@ contract EtherFiNodeTest is TestSetup {
         uint256[] memory validatorIds = new uint256[](1);
         uint32[] memory exitTimestamps = new uint32[](2);
         startHoax(alice);
-        vm.expectRevert("Check params");
+        vm.expectRevert(EtherFiNodesManager.InvalidParams.selector);
         managerInstance.processNodeExit(validatorIds, exitTimestamps);
     }
 
@@ -1257,7 +1307,7 @@ contract EtherFiNodeTest is TestSetup {
         exitTimestamps[0] = uint32(block.timestamp);
 
         // T-NFT holder sends the exit request after the node is marked EXITED
-        vm.expectRevert("validator node is not live");
+        vm.expectRevert(EtherFiNodesManager.ValidatorNotLive.selector);
         managerInstance.sendExitRequest(validatorIds[0]);
     }
 
@@ -1285,7 +1335,6 @@ contract EtherFiNodeTest is TestSetup {
 
     function test_trackingTVL() public {
         uint256 validatorId = bidId[0];
-        address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
 
         (uint256 toNodeOperator, uint256 toTnft, uint256 toBnft, uint256 toTreasury) = (0, 0, 0, 0);
 
@@ -1434,9 +1483,6 @@ contract EtherFiNodeTest is TestSetup {
         address etherfiNode = managerInstance.etherfiNodeAddress(validatorId);
         vm.deal(address(etherfiNode), 3 ether); // need to give node some eth because it no longer has auction revenue
 
-        address nodeOperator = 0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931;
-        address staker = 0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf;
-        
         uint256 treasuryBalance = address(treasuryInstance).balance;
         uint256 noAttackerBalance = address(noAttacker).balance;
         uint256 revertAttackerBalance = address(revertAttacker).balance;

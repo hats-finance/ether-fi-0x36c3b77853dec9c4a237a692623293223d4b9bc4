@@ -50,18 +50,17 @@ contract StakingManager is
     IEtherFiNodesManager public nodesManager;
     UpgradeableBeacon private upgradableBeacon;
 
-    mapping(uint256 => address) public bidIdToStaker;
+    mapping(uint256 => StakerInfo) public bidIdToStakerInfo;
 
     address public DEPRECATED_admin;
     address public nodeOperatorManager;
     mapping(address => bool) public admins;
-    mapping(uint256 => ILiquidityPool.SourceOfFunds) public validatorSourceOfFunds;
 
     //--------------------------------------------------------------------------------------
     //-------------------------------------  EVENTS  ---------------------------------------
     //--------------------------------------------------------------------------------------
 
-    event StakeDeposit(address indexed staker, uint256 bidId, address withdrawSafe);
+    event StakeDeposit(address indexed staker, uint256 indexed bidId, address indexed withdrawSafe, bool restaked);
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(address indexed operator, address indexed bNftOwner, address indexed tNftOwner, 
                               uint256 validatorId, bytes validatorPubKey, string ipfsHashForEncryptedValidatorKey);
@@ -80,7 +79,7 @@ contract StakingManager is
     /// @dev Deploys NFT contracts internally to ensure ownership is set to this contract
     /// @dev AuctionManager Contract must be deployed first
     /// @param _auctionAddress The address of the auction contract for interaction
-    function initialize(address _auctionAddress) external initializer {
+    function initialize(address _auctionAddress, address _depositContractAddress) external initializer {
         require(_auctionAddress != address(0), "No zero addresses");
 
         stakeAmount = 32 ether;
@@ -92,7 +91,14 @@ contract StakingManager is
         __ReentrancyGuard_init();
 
         auctionManager = IAuctionManager(_auctionAddress);
-        depositContractEth2 = IDepositContract(0xff50ed3d0ec03aC01D4C79aAd74928BFF48a7b2b);
+        depositContractEth2 = IDepositContract(_depositContractAddress);
+    }
+
+    function initializeOnUpgrade(address _nodeOperatorManager, address _etherFiAdmin) external onlyOwner {
+        require(_nodeOperatorManager != address(0) && _etherFiAdmin != address(0), "No zero addresses");
+        DEPRECATED_admin = address(0);
+        nodeOperatorManager = _nodeOperatorManager;
+        admins[_etherFiAdmin] = true;
     }
 
     /// @notice Allows depositing multiple stakes at once
@@ -190,6 +196,7 @@ contract StakingManager is
     /// @param _validatorIds the IDs of the validators deposits to cancel
     function batchCancelDeposit(uint256[] calldata _validatorIds) public whenNotPaused nonReentrant {
         for (uint256 x; x < _validatorIds.length; ++x) {
+            require(bidIdToStakerInfo[_validatorIds[x]].sourceOfFund == ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, "Wrong flow");
             _cancelDeposit(_validatorIds[x], msg.sender);
         }
     }
@@ -201,12 +208,17 @@ contract StakingManager is
     /// @param _validatorIds validators to cancel
     /// @param _caller address of the bNFT holder who initiated the transaction. Used for verification
     function batchCancelDepositAsBnftHolder(uint256[] calldata _validatorIds, address _caller) public whenNotPaused nonReentrant {
+        require(msg.sender == liquidityPoolContract, "Incorrect Caller");
+
         uint32 numberOfEethValidators;
         uint32 numberOfEtherFanValidators;
         for (uint256 x; x < _validatorIds.length; ++x) { 
-            if(validatorSourceOfFunds[_validatorIds[x]] == ILiquidityPool.SourceOfFunds.EETH){
+            ILiquidityPool.SourceOfFunds source = bidIdToStakerInfo[_validatorIds[x]].sourceOfFund;
+            require(source != ILiquidityPool.SourceOfFunds.DELEGATED_STAKING, "Wrong flow");
+
+            if (source == ILiquidityPool.SourceOfFunds.EETH){
                 numberOfEethValidators++;
-            } else if (validatorSourceOfFunds[_validatorIds[x]] == ILiquidityPool.SourceOfFunds.ETHER_FAN) {
+            } else if (source == ILiquidityPool.SourceOfFunds.ETHER_FAN) {
                 numberOfEtherFanValidators++;
             }
             _cancelDeposit(_validatorIds[x], _caller);
@@ -283,12 +295,7 @@ contract StakingManager is
         require(_address != address(0), "Cannot be address zero");
         admins[_address] = _isAdmin;
     }
-
-    function registerEth2DepositContract(address _address) public onlyOwner {
-        require(_address != address(0), "No zero addresses");
-        depositContractEth2 = IDepositContract(_address);
-    }
-
+    
     function setNodeOperatorManager(address _nodeOperateManager) external onlyAdmin {
         require(_nodeOperateManager != address(0), "Cannot be address zero");
         nodeOperatorManager = _nodeOperateManager;
@@ -317,7 +324,7 @@ contract StakingManager is
             i < _candidateBidIds.length && processedBidIdsCount < numberOfDeposits;
             ++i) {
             uint256 bidId = _candidateBidIds[i];
-            address bidStaker = bidIdToStaker[bidId];
+            address bidStaker = bidIdToStakerInfo[bidId].staker;
             address operator = auctionManager.getBidOwner(bidId);
             bool isActive = auctionManager.isBidActive(bidId);
             if (bidStaker == address(0) && isActive) {
@@ -325,7 +332,6 @@ contract StakingManager is
                 //See more info in Node Operator manager around approving operators for different source types
                 require(_verifyNodeOperator(operator, _source), "Operator not verified");
                 auctionManager.updateSelectedBidInformation(bidId);
-                validatorSourceOfFunds[bidId] = _source;
                 processedBidIds[processedBidIdsCount] = bidId;
                 processedBidIdsCount++;
                 _processDeposit(bidId, _staker, _enableRestaking, _source);
@@ -362,7 +368,7 @@ contract StakingManager is
         address _staker,
         uint256 _depositAmount
     ) internal {
-        require(bidIdToStaker[_validatorId] == _staker, "Not deposit owner");
+        require(bidIdToStakerInfo[_validatorId].staker == _staker, "Not deposit owner");
         bytes memory withdrawalCredentials = nodesManager.getWithdrawalCredentials(_validatorId);
         bytes32 depositDataRoot = depositRootGenerator.generateDepositRoot(_depositData.publicKey, _depositData.signature, withdrawalCredentials, _depositAmount);
         require(depositDataRoot == _depositData.depositDataRoot, "Deposit data root mismatch");
@@ -398,25 +404,24 @@ contract StakingManager is
     /// @notice Update the state of the contract now that a deposit has been made
     /// @param _bidId The bid that won the right to the deposit
     function _processDeposit(uint256 _bidId, address _staker, bool _enableRestaking, ILiquidityPool.SourceOfFunds _source) internal {
-        bidIdToStaker[_bidId] = _staker;
+        bidIdToStakerInfo[_bidId] = StakerInfo(_staker, _source);
         uint256 validatorId = _bidId;
 
         // register a withdrawalSafe for this bid/validator, creating a new one if necessary
         address etherfiNode = nodesManager.registerEtherFiNode(validatorId, _enableRestaking);
 
-        emit StakeDeposit(_staker, _bidId, etherfiNode);
+        emit StakeDeposit(_staker, _bidId, etherfiNode, _enableRestaking);
         emit StakeSource(_bidId, _source);
     }
 
     /// @notice Cancels a users stake
     /// @param _validatorId the ID of the validator deposit to cancel
     function _cancelDeposit(uint256 _validatorId, address _caller) internal {
-
-        require(bidIdToStaker[_validatorId] == _caller, "Not deposit owner");
+        require(bidIdToStakerInfo[_validatorId].staker == _caller, "Not deposit owner");
 
         IEtherFiNode.VALIDATOR_PHASE validatorPhase = nodesManager.phase(_validatorId);
 
-        bidIdToStaker[_validatorId] = address(0);
+        bidIdToStakerInfo[_validatorId].staker = address(0);
         nodesManager.setEtherFiNodePhase(_validatorId, IEtherFiNode.VALIDATOR_PHASE.CANCELLED);
         nodesManager.unregisterEtherFiNode(_validatorId);
 
@@ -432,7 +437,7 @@ contract StakingManager is
 
         emit DepositCancelled(_validatorId);
 
-        require(bidIdToStaker[_validatorId] == address(0), "Bid already cancelled");
+        require(bidIdToStakerInfo[_validatorId].staker == address(0), "Bid already cancelled");
     }
 
     /// @notice Refunds the depositor their staked ether for a specific stake
@@ -451,7 +456,7 @@ contract StakingManager is
     /// @param _operator address of the operator being checked
     /// @param _source the source of funds the operator is being checked for
     /// @return approved whether the operator is approved for the source type
-    function _verifyNodeOperator(address _operator, ILiquidityPool.SourceOfFunds _source) internal returns (bool approved) {
+    function _verifyNodeOperator(address _operator, ILiquidityPool.SourceOfFunds _source) internal view returns (bool approved) {
         if(uint256(ILiquidityPool.SourceOfFunds.DELEGATED_STAKING) == uint256(_source)) {
             approved = true;
         } else {
@@ -466,6 +471,10 @@ contract StakingManager is
     /// @notice Fetches the address of the beacon contract for future EtherFiNodes (withdrawal safes)
     function getEtherFiNodeBeacon() external view returns (address) {
         return address(upgradableBeacon);
+    }
+
+    function bidIdToStaker(uint256 id) external view returns (address) {
+        return bidIdToStakerInfo[id].staker;
     }
 
     /// @notice Fetches the address of the implementation contract currently being used by the proxy

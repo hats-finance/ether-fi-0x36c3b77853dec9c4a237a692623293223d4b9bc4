@@ -77,7 +77,6 @@ contract RewardsSkimmingTest is TestSetup {
 
             uint256[] memory candidateBidIds = new uint256[](1);
             candidateBidIds[0] = validatorIds[i];
-            bytes32[] memory stakerProof = merkleStakers.getProof(stakerWhitelistedAddresses, i);
             stakingManagerInstance.batchDepositWithBidIds{value: 32 ether}(candidateBidIds, false);
 
             address etherFiNode = managerInstance.etherfiNodeAddress(candidateBidIds[0]);
@@ -156,14 +155,7 @@ contract RewardsSkimmingTest is TestSetup {
         }
         vm.stopPrank();
     }
-
-    function test_partialWithdrawBatchGroupByOperator() public {
-        _deals();
-        startHoax(operators[0]);
-        managerInstance.partialWithdrawBatchGroupByOperator(operators[0], validatorIdsOfMixedTNftHolders);
-        vm.stopPrank();
-    }
-
+    
     function test_partialWithdrawBatchForTNftInLiquidityPool() public {
         _deals();
         startHoax(operators[0]);

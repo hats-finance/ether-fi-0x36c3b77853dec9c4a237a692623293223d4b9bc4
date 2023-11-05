@@ -10,7 +10,6 @@ contract EtherFiNodesManagerTest is TestSetup {
     address etherFiNode;
     uint256[] bidId;
     EtherFiNode safeInstance;
-    uint256 testnetFork;
 
     function setUp() public {
         setUpTests();
@@ -22,8 +21,8 @@ contract EtherFiNodesManagerTest is TestSetup {
             address(auctionInstance),
             address(stakingManagerInstance),
             address(TNFTInstance),
-            address(BNFTInstance),
-            address(protocolRevenueManagerInstance));
+            address(BNFTInstance)
+        );
         
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
@@ -75,18 +74,12 @@ contract EtherFiNodesManagerTest is TestSetup {
         );
 
         safeInstance = EtherFiNode(payable(etherFiNode));
-
-        testnetFork = vm.createFork(vm.envString("GOERLI_RPC_URL"));
     }
 
     function test_SetStakingRewardsSplit() public {
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Not admin");
         vm.prank(owner);
         managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 400000);
-
-        vm.expectRevert("Amounts not equal to 1000000");
-        vm.prank(alice);
-        managerInstance.setStakingRewardsSplit(100000, 100000, 400000, 300000);
 
         (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = managerInstance.stakingRewardsSplit();
         assertEq(treasury, 50000);
@@ -104,33 +97,8 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(bnft, 400000);
     }
 
-    function test_SetProtocolRewardsSplit() public {
-        vm.expectRevert("Caller is not the admin");
-        vm.prank(owner);
-        managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 400000);
-
-        vm.expectRevert("Amounts not equal to 1000000");
-        vm.prank(alice);
-        managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 300000);
-
-        (uint64 treasury, uint64 nodeOperator, uint64 tnft, uint64 bnft) = managerInstance.protocolRewardsSplit();
-        assertEq(treasury, 250000);
-        assertEq(nodeOperator, 250000);
-        assertEq(tnft, 453125);
-        assertEq(bnft, 46875);
-
-        vm.prank(alice);
-        managerInstance.setProtocolRewardsSplit(100000, 100000, 400000, 400000);
-
-        (treasury, nodeOperator, tnft, bnft) = managerInstance.protocolRewardsSplit();
-        assertEq(treasury, 100000);
-        assertEq(nodeOperator, 100000);
-        assertEq(tnft, 400000);
-        assertEq(bnft, 400000);
-    }
-
     function test_SetNonExitPenaltyPrincipal() public {
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Not admin");
         vm.prank(owner);
         managerInstance.setNonExitPenaltyPrincipal(2 ether);
 
@@ -143,45 +111,42 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_SetNonExitPenaltyDailyRate() public {
-        vm.expectRevert("Caller is not the admin");
+        vm.expectRevert("Not admin");
         vm.prank(owner);
         managerInstance.setNonExitPenaltyDailyRate(2 ether);
 
-        assertEq(managerInstance.nonExitPenaltyDailyRate(), 3);
-
         vm.prank(alice);
         managerInstance.setNonExitPenaltyDailyRate(5);
-
         assertEq(managerInstance.nonExitPenaltyDailyRate(), 5);
     }
 
     function test_SetEtherFiNodePhaseRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only staking manager contract function");
+        vm.expectRevert("Not staking manager");
         vm.prank(owner);
         managerInstance.setEtherFiNodePhase(bidId[0], IEtherFiNode.VALIDATOR_PHASE.CANCELLED);
     }
 
     function test_setEtherFiNodeIpfsHashForEncryptedValidatorKeyRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only staking manager contract function");
+        vm.expectRevert("Not staking manager");
         vm.prank(owner);
         managerInstance.setEtherFiNodeIpfsHashForEncryptedValidatorKey(bidId[0], "_ipfsHash");
     }
 
     function test_RegisterEtherFiNodeRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only staking manager contract function");
+        vm.expectRevert("Not staking manager");
         vm.prank(owner);
         managerInstance.registerEtherFiNode(bidId[0], false);
     }
 
     function test_RegisterEtherFiNodeRevertsIfAlreadyRegistered() public {
         // Node is registered in setup
-        vm.expectRevert("already installed");
+        vm.expectRevert(EtherFiNodesManager.AlreadyInstalled.selector);
         vm.prank(address(stakingManagerInstance));
         managerInstance.registerEtherFiNode(bidId[0], false);
     }
 
     function test_UnregisterEtherFiNodeRevertsOnIncorrectCaller() public {
-        vm.expectRevert("Only staking manager contract function");
+        vm.expectRevert("Not staking manager");
         vm.prank(owner);
         managerInstance.unregisterEtherFiNode(bidId[0]);
     }
@@ -195,7 +160,7 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         managerInstance.unregisterEtherFiNode(bidId[0]);
 
-        vm.expectRevert("not installed");
+        vm.expectRevert(EtherFiNodesManager.NotInstalled.selector);
         managerInstance.unregisterEtherFiNode(bidId[0]);
     }
 
@@ -211,7 +176,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         vm.deal(managerInstance.etherfiNodeAddress(validatorId), 1 ether);
         vm.stopPrank();
 
-
         uint256[] memory validatorsToReset = new uint256[](1);
         validatorsToReset[0] = validatorId;
         vm.prank(alice);
@@ -220,11 +184,9 @@ contract EtherFiNodesManagerTest is TestSetup {
     }
 
     function test_CantResetRestakedNodeWithBalance() public {
-        // re-run setup now that we have fork selected. Probably a better way we can do this
-        vm.selectFork(testnetFork);
-        setUp();
+        initializeTestingFork(TESTNET_FORK);
 
-        uint256 validatorId = bidId[0];
+        uint256 validatorId = depositAndRegisterValidator(true);
         address node = managerInstance.etherfiNodeAddress(validatorId);
         vm.prank(address(managerInstance));
         IEtherFiNode(node).setIsRestakingEnabled(true);
@@ -297,10 +259,7 @@ contract EtherFiNodesManagerTest is TestSetup {
 
     function test_RegisterEtherFiNodeReusesAvailableSafes() public {
         vm.prank(alice);
-        nodeOperatorManagerInstance.registerNodeOperator(
-            _ipfsHash,
-            5
-        );
+        nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 5);
 
         assertEq(managerInstance.getUnusedWithdrawalSafesLength(), 0);
 
@@ -376,7 +335,7 @@ contract EtherFiNodesManagerTest is TestSetup {
         assertEq(managerInstance.isExitRequested(bidId[0]), false);
 
         hoax(alice);
-        vm.expectRevert("You are not the owner of the T-NFT");
+        vm.expectRevert(EtherFiNodesManager.NotTnftOwner.selector);
         managerInstance.sendExitRequest(bidId[0]);
 
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
@@ -384,16 +343,8 @@ contract EtherFiNodesManagerTest is TestSetup {
 
         assertEq(managerInstance.isExitRequested(bidId[0]), true);
 
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        vm.expectRevert("Exit request was already sent.");
-        managerInstance.sendExitRequest(bidId[0]);
-
         uint256[] memory ids = new uint256[](1);
         ids[0] = bidId[0];
-        hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
-        vm.expectRevert("Exit request was already sent.");
-        managerInstance.batchSendExitRequest(ids);
-
         address etherFiNode = managerInstance.etherfiNodeAddress(bidId[0]);
         uint32 exitRequestTimestamp = IEtherFiNode(etherFiNode).exitRequestTimestamp();
 
@@ -447,7 +398,7 @@ contract EtherFiNodesManagerTest is TestSetup {
     function test_PausableModifierWorks() public {
         hoax(alice);
         managerInstance.pauseContract();
-        
+
         hoax(0x9154a74AAfF2F586FB0a884AeAb7A64521c64bCf);
         vm.expectRevert("Pausable: paused");
         managerInstance.sendExitRequest(bidId[0]);
@@ -473,10 +424,6 @@ contract EtherFiNodesManagerTest is TestSetup {
         hoax(alice);
         vm.expectRevert("Pausable: paused");
         managerInstance.partialWithdrawBatch(ids);
-
-        hoax(alice);
-        vm.expectRevert("Pausable: paused");
-        managerInstance.partialWithdrawBatchGroupByOperator(alice, ids);
 
         hoax(alice);
         vm.expectRevert("Pausable: paused");

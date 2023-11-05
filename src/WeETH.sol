@@ -7,8 +7,9 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/draft-ERC20PermitUpgradeable.sol";
 import "./interfaces/IeETH.sol";
 import "./interfaces/ILiquidityPool.sol";
+import "./interfaces/IRateProvider.sol";
 
-contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable {
+contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable, IRateProvider {
     //--------------------------------------------------------------------------------------
     //---------------------------------  STATE-VARIABLES  ----------------------------------
     //--------------------------------------------------------------------------------------
@@ -29,12 +30,17 @@ contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
         require(_liquidityPool != address(0), "No zero addresses");
         require(_eETH != address(0), "No zero addresses");
         
-        __ERC20_init("EtherFi wrapped ETH", "weETH");
-        __ERC20Permit_init("EtherFi wrapped ETH");
+        __ERC20_init("Wrapped eETH", "weETH");
+        __ERC20Permit_init("Wrapped eETH");
         __UUPSUpgradeable_init();
         __Ownable_init();
         eETH = IeETH(_eETH);
         liquidityPool = ILiquidityPool(_liquidityPool);
+    }
+
+    /// @dev name changed from the version initially deployed
+    function name() public view virtual override returns (string memory) {
+        return "Wrapped eETH";
     }
 
     /// @notice Wraps eEth
@@ -92,8 +98,13 @@ contract WeETH is ERC20Upgradeable, UUPSUpgradeable, OwnableUpgradeable, ERC20Pe
     /// @notice Fetches the amount of eEth respective to the amount of weEth sent in
     /// @param _weETHAmount amount sent in
     /// @return The total amount for the number of shares sent in
-    function getEETHByWeETH(uint256 _weETHAmount) external view returns (uint256) {
+    function getEETHByWeETH(uint256 _weETHAmount) public view returns (uint256) {
         return liquidityPool.amountForShare(_weETHAmount);
+    }
+
+    // Amount of weETH for 1 eETH
+    function getRate() external view returns (uint256) {
+        return getEETHByWeETH(1 ether);
     }
 
     function getImplementation() external view returns (address) {

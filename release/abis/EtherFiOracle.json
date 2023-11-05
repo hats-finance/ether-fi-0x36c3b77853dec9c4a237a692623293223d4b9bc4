@@ -40,7 +40,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "member",
         "type": "address"
@@ -53,7 +53,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "member",
         "type": "address"
@@ -66,7 +66,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "member",
         "type": "address"
@@ -199,7 +199,7 @@
         "type": "uint32"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "bytes32",
         "name": "hash",
         "type": "bytes32"
@@ -255,13 +255,13 @@
         "type": "uint32"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "bytes32",
         "name": "hash",
         "type": "bytes32"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "committeeMember",
         "type": "address"
@@ -307,6 +307,19 @@
     "name": "addCommitteeMember",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "beaconGenesisTimestamp",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -404,6 +417,11 @@
         "internalType": "bool",
         "name": "consensusReached",
         "type": "bool"
+      },
+      {
+        "internalType": "uint32",
+        "name": "consensusTimestamp",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -503,13 +521,8 @@
           },
           {
             "internalType": "uint128",
-            "name": "pendingWithdrawalAmount",
+            "name": "finalizedWithdrawalAmount",
             "type": "uint128"
-          },
-          {
-            "internalType": "uint32",
-            "name": "numPendingValidatorsRequestedToExit",
-            "type": "uint32"
           },
           {
             "internalType": "uint32",
@@ -531,6 +544,44 @@
       }
     ],
     "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_hash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getConsensusSlot",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_hash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getConsensusTimestamp",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -794,6 +845,19 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_etherFiAdminAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setEtherFiAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint32",
         "name": "_reportPeriodSlot",
         "type": "uint32"
@@ -943,13 +1007,8 @@
           },
           {
             "internalType": "uint128",
-            "name": "pendingWithdrawalAmount",
+            "name": "finalizedWithdrawalAmount",
             "type": "uint128"
-          },
-          {
-            "internalType": "uint32",
-            "name": "numPendingValidatorsRequestedToExit",
-            "type": "uint32"
           },
           {
             "internalType": "uint32",
@@ -989,6 +1048,37 @@
   {
     "inputs": [],
     "name": "unPauseContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_hash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "unpublishReport",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_lastPublishedReportRefSlot",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_lastPublishedReportRefBlock",
+        "type": "uint32"
+      }
+    ],
+    "name": "updateLastPublishedBlockStamps",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1105,13 +1195,8 @@
           },
           {
             "internalType": "uint128",
-            "name": "pendingWithdrawalAmount",
+            "name": "finalizedWithdrawalAmount",
             "type": "uint128"
-          },
-          {
-            "internalType": "uint32",
-            "name": "numPendingValidatorsRequestedToExit",
-            "type": "uint32"
           },
           {
             "internalType": "uint32",

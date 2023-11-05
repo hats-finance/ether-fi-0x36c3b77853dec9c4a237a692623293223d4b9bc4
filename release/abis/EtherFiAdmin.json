@@ -27,13 +27,13 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "_address",
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "bytes32",
         "name": "_reportHash",
         "type": "bytes32"
@@ -178,6 +178,112 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "consensusVersion",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "refSlotFrom",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "refSlotTo",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "refBlockFrom",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "refBlockTo",
+            "type": "uint32"
+          },
+          {
+            "internalType": "int128",
+            "name": "accruedRewards",
+            "type": "int128"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "validatorsToApprove",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "liquidityPoolValidatorsToExit",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "exitedValidators",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "exitedValidatorsExitTimestamps",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "slashedValidators",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "withdrawalRequestsToInvalidate",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint32",
+            "name": "lastFinalizedWithdrawalRequestId",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "eEthTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
+            "name": "etherFanTargetAllocationWeight",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint128",
+            "name": "finalizedWithdrawalAmount",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint32",
+            "name": "numValidatorsToSpinUp",
+            "type": "uint32"
+          }
+        ],
+        "internalType": "struct IEtherFiOracle.OracleReport",
+        "name": "_report",
+        "type": "tuple"
+      }
+    ],
+    "name": "canExecuteTasks",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "etherFiNodesManager",
     "outputs": [
@@ -284,13 +390,8 @@
           },
           {
             "internalType": "uint128",
-            "name": "pendingWithdrawalAmount",
+            "name": "finalizedWithdrawalAmount",
             "type": "uint128"
-          },
-          {
-            "internalType": "uint32",
-            "name": "numPendingValidatorsRequestedToExit",
-            "type": "uint32"
           },
           {
             "internalType": "uint32",
@@ -372,6 +473,11 @@
         "internalType": "int32",
         "name": "_acceptableRebaseAprInBps",
         "type": "int32"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_postReportWaitTimeInSlots",
+        "type": "uint16"
       }
     ],
     "name": "initialize",
@@ -433,19 +539,6 @@
   },
   {
     "inputs": [],
-    "name": "numPendingValidatorsRequestedToExit",
-    "outputs": [
-      {
-        "internalType": "uint32",
-        "name": "",
-        "type": "uint32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "numValidatorsToSpinUp",
     "outputs": [
       {
@@ -471,13 +564,51 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "_etherFiOracle",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_stakingManager",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_auctionManager",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_etherFiNodesManager",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_liquidityPool",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_membershipManager",
+        "type": "bool"
+      }
+    ],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
-    "name": "pendingWithdrawalAmount",
+    "name": "postReportWaitTimeInSlots",
     "outputs": [
       {
-        "internalType": "uint128",
+        "internalType": "uint16",
         "name": "",
-        "type": "uint128"
+        "type": "uint16"
       }
     ],
     "stateMutability": "view",
@@ -569,6 +700,19 @@
       }
     ],
     "name": "updateAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint16",
+        "name": "_postReportWaitTimeInSlots",
+        "type": "uint16"
+      }
+    ],
+    "name": "updatePostReportWaitTimeInSlots",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -42,6 +42,8 @@ interface ILiquidityPool {
         uint32 index;
     }
 
+    function initialize(address _eEthAddress, address _stakingManagerAddress, address _nodesManagerAddress, address _membershipManagerAddress, address _tNftAddress) external;
+
     function numPendingDeposits() external view returns (uint32);
     function totalValueOutOfLp() external view returns (uint128);
     function totalValueInLp() external view returns (uint128);
@@ -66,15 +68,12 @@ interface ILiquidityPool {
     function sendExitRequests(uint256[] calldata _validatorIds) external;
 
     function rebase(int128 _accruedRewards) external;
-    function setTokenAddress(address _eETH) external;
-    function setStakingManager(address _address) external;
-    function setEtherFiNodesManager(address _nodeManager) external;
-    function setMembershipManager(address _address) external;
-    function setTnft(address _address) external;
-    function setWithdrawRequestNFT(address _address) external; 
+    function addEthAmountLockedForWithdrawal(uint128 _amount) external;
+    
     function setStakingTargetWeights(uint32 _eEthWeight, uint32 _etherFanWeight) external;
-    function setEtherFiAdminContract(address _address) external;
     function updateAdmin(address _newAdmin, bool _isAdmin) external;
-
+    function pauseContract() external;
+    function unPauseContract() external;
+    
     function decreaseSourceOfFundsValidators(uint32 numberOfEethValidators, uint32 numberOfEtherFanValidators) external;
 }

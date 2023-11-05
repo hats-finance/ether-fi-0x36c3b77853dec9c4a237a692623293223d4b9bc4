@@ -14,6 +14,7 @@ import "../../src/interfaces/ILiquidityPool.sol";
 import "../../src/interfaces/IMembershipManager.sol";
 import "../../src/interfaces/IMembershipNFT.sol";
 import "../../src/interfaces/IEtherFiNodesManager.sol";
+import "../../src/interfaces/IEtherFiOracle.sol";
 import "../../src/interfaces/IWithdrawRequestNFT.sol";
 
 import "../../src/UUPSProxy.sol";
@@ -45,11 +46,8 @@ contract DeployPhaseTwoScript is Script {
 
     address oracleAdminAddress;
 
-    uint32 beacon_genesis_time;
-
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");    
-        beacon_genesis_time = uint32(vm.envUint("BEACON_GENESIS_TIME"));
         addressProviderAddress = vm.envAddress("CONTRACT_REGISTRY");
         oracleAdminAddress = vm.envAddress("ORACLE_ADMIN_ADDRESS");
         addressProvider = AddressProvider(addressProviderAddress);
@@ -66,7 +64,7 @@ contract DeployPhaseTwoScript is Script {
     }
 
     function retrieve_contract_addresses() internal {
-        // Retrieve the addresses of the contracts that have already been deployed
+        // Retrieve the addresses of the contracts that have already deployed
         etherFiOracleAddress = addressProvider.getContractAddress("EtherFiOracle");
         stakingManagerAddress = addressProvider.getContractAddress("StakingManager");
         auctionAddress = addressProvider.getContractAddress("AuctionManager");
@@ -102,12 +100,24 @@ contract DeployPhaseTwoScript is Script {
         etherFiOracleProxy = new UUPSProxy(address(etherFiOracleImplementation), "");
         etherFiOracleInstance = EtherFiOracle(payable(etherFiOracleProxy));
 
-        etherFiOracleInstance.initialize(1, 96, 0, 32, 12, beacon_genesis_time);
-        // etherFiOracleInstance.initialize(2, 7200, 12, beacon_genesis_time);
-        // 96 slots = 19.2 mins, 7200 slots = 225 epochs = 1day
+        if (block.chainid == 0) {
+            // Mainnet's slot 0 happened at 1606824023; https://beaconcha.in/slot/0
+            etherFiOracleInstance.initialize(1, 7200, 0, 32, 12, 1606824023);
 
-        // etherFiOracleInstance.addCommitteeMember(address(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39));
-        // etherFiOracleInstance.addCommitteeMember(address(0x601B37004f2A6B535a6cfBace0f88D2d534aCcD8));
+            // TODO
+            // address oracleNodeAddress = 0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39
+            // etherFiOracleInstance.addCommitteeMember(oracleNodeAddress);
+
+        } else if (block.chainid == 5) {
+            // Goerli's slot 0 happened at 1616508000; https://goerli.beaconcha.in/slot/0
+            etherFiOracleInstance.initialize(1, 96, 0, 32, 12, 1616508000);
+            // 96 slots = 19.2 mins, 7200 slots = 225 epochs = 1day
+
+            etherFiOracleInstance.addCommitteeMember(address(0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39));
+            etherFiOracleInstance.addCommitteeMember(address(0x601B37004f2A6B535a6cfBace0f88D2d534aCcD8));
+        } else {
+            require(false, "chain is wrong");
+        }
 
         addressProvider.addContract(address(etherFiOracleProxy), "EtherFiOracle");
     }
@@ -122,7 +132,19 @@ contract DeployPhaseTwoScript is Script {
         etherFiAdminProxy = new UUPSProxy(address(etherFiAdminImplementation), "");
         etherFiAdminInstance = EtherFiAdmin(payable(etherFiAdminProxy));
 
-        // Retrieve their actuall addresses from AddressProvider using their contract names
+        int32 acceptableRebaseAprInBps;
+        uint16 postReportWaitTimeInSlots;
+
+        if (block.chainid == 0) {
+            acceptableRebaseAprInBps = 500; // 5%
+            postReportWaitTimeInSlots = 7200 / 2; // 7200 slots = 225 epochs = 1 day
+        } else if (block.chainid == 5) {
+            acceptableRebaseAprInBps = 600; // 6%
+            postReportWaitTimeInSlots = 15 minutes / 12 seconds; // 15 minutes
+        } else {
+            require(false, "chain is wrong");
+        }
+
         etherFiAdminInstance.initialize(
             etherFiOracleAddress,
             stakingManagerAddress,
@@ -131,20 +153,24 @@ contract DeployPhaseTwoScript is Script {
             liquidityPoolAddress,
             membershipManagerAddress,
             withdrawRequestNFTAddress,
-            600 // 6%
+            acceptableRebaseAprInBps,
+            postReportWaitTimeInSlots
         );
 
         etherFiAdminInstance.updateAdmin(oracleAdminAddress, true);
 
-        // TODO: The below will fail in Mainnet
-        // -> Pre-build those transactions in Gnosis safe and sign when deploying
-        address admin = address(etherFiAdminInstance);
-        IAuctionManager(address(auctionAddress)).updateAdmin(admin, true);
-        IStakingManager(address(stakingManagerAddress)).updateAdmin(admin, true);
-        ILiquidityPool(address(liquidityPoolAddress)).updateAdmin(admin, true);
-        IMembershipManager(address(membershipManagerAddress)).updateAdmin(admin, true);
-        IEtherFiNodesManager(address(managerAddress)).updateAdmin(admin, true);
-        IWithdrawRequestNFT(address(withdrawRequestNFTAddress)).updateAdmin(admin, true);
+        IEtherFiOracle(address(etherFiOracleAddress)).setEtherFiAdmin(address(etherFiAdminInstance));
+        IWithdrawRequestNFT(address(withdrawRequestNFTAddress)).updateAdmin(address(etherFiAdminInstance), true);
+
+        // Used only for development
+        if (false) {
+            address admin = address(etherFiAdminInstance);
+            IAuctionManager(address(auctionAddress)).updateAdmin(admin, true);
+            IStakingManager(address(stakingManagerAddress)).updateAdmin(admin, true);
+            ILiquidityPool(address(liquidityPoolAddress)).updateAdmin(admin, true);
+            IMembershipManager(address(membershipManagerAddress)).updateAdmin(admin, true);
+            IEtherFiNodesManager(address(managerAddress)).updateAdmin(admin, true);
+        }
 
         addressProvider.addContract(address(etherFiAdminProxy), "EtherFiAdmin");
     }

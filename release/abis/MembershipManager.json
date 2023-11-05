@@ -46,17 +46,17 @@
   },
   {
     "inputs": [],
+    "name": "InvalidCaller",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidDeposit",
     "type": "error"
   },
   {
     "inputs": [],
     "name": "InvalidEAPRollover",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidWithdraw",
     "type": "error"
   },
   {
@@ -195,6 +195,43 @@
       }
     ],
     "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_amountOfEEth",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint40",
+        "name": "_loyaltyPoints",
+        "type": "uint40"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_feeAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "NftUnwrappedForEEth",
     "type": "event"
   },
   {
@@ -389,13 +426,7 @@
       }
     ],
     "name": "addNewTier",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -560,6 +591,19 @@
   },
   {
     "inputs": [],
+    "name": "etherFiAdmin",
+    "outputs": [
+      {
+        "internalType": "contract IEtherFiAdmin",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "fanBoostThresholdEthAmount",
     "outputs": [
       {
@@ -627,8 +671,24 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "initializePhase2",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_etherFiAdminAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_fanBoostThresholdAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_burnFeeWaiverPeriodInDays",
+        "type": "uint16"
+      }
+    ],
+    "name": "initializeOnUpgrade",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -881,6 +941,24 @@
   {
     "inputs": [
       {
+        "internalType": "uint56",
+        "name": "_minDepositGwei",
+        "type": "uint56"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_maxDepositTopUpPercent",
+        "type": "uint8"
+      }
+    ],
+    "name": "setDepositAmountParams",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_fanBoostThresholdEthAmount",
         "type": "uint256"
@@ -922,32 +1000,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint8",
-        "name": "_percent",
-        "type": "uint8"
-      }
-    ],
-    "name": "setMaxDepositTopUpPercent",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint56",
-        "name": "_value",
-        "type": "uint56"
-      }
-    ],
-    "name": "setMinDepositWei",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint256",
         "name": "_tokenId",
         "type": "uint256"
@@ -964,29 +1016,6 @@
       }
     ],
     "name": "setPoints",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "_tokenIds",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint40[]",
-        "name": "_loyaltyPoints",
-        "type": "uint40[]"
-      },
-      {
-        "internalType": "uint40[]",
-        "name": "_tierPoints",
-        "type": "uint40[]"
-      }
-    ],
-    "name": "setPointsBatch",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1263,6 +1292,19 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "unwrapForEEthAndBurn",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "_address",
         "type": "address"
@@ -1399,24 +1441,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_recipient",
-        "type": "address"
-      }
-    ],
-    "name": "withdrawFees",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "withdrawalLockBlocks",
     "outputs": [
@@ -1427,6 +1451,35 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amountForPoints",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_referral",
+        "type": "address"
+      }
+    ],
+    "name": "wrapEth",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
     "type": "function"
   },
   {

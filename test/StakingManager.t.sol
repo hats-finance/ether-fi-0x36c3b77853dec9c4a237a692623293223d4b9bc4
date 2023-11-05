@@ -6,8 +6,9 @@ import "./TestSetup.sol";
 contract StakingManagerTest is TestSetup {
     event StakeDeposit(
         address indexed staker,
-        uint256 bidId,
-        address withdrawSafe
+        uint256 indexed bidId,
+        address indexed withdrawSafe,
+        bool restaked
     );
     event DepositCancelled(uint256 id);
     event ValidatorRegistered(
@@ -23,7 +24,6 @@ contract StakingManagerTest is TestSetup {
     uint256[] public validatorArray;
     uint256[] public bidIds;
     bytes[] public sig;
-    address public etherFiNode;
 
     function setUp() public {
         setUpTests();
@@ -35,10 +35,10 @@ contract StakingManagerTest is TestSetup {
      function test_DisableInitializer() public {
         vm.expectRevert("Initializable: contract is already initialized");
         vm.prank(owner);
-        stakingManagerImplementation.initialize(address(auctionInstance));
+        stakingManagerImplementation.initialize(address(auctionInstance), address(depositContractEth2));
     }
 
-    function test_fake() public {
+    function test_fake() public view {
         console.logBytes32(_getDepositRoot());
     }
 
@@ -63,8 +63,6 @@ contract StakingManagerTest is TestSetup {
         IEtherFiOracle.OracleReport memory report = _emptyOracleReport();
         report.numValidatorsToSpinUp = 4;
         _executeAdminTasks(report);
-
-        bytes32[] memory aliceProof = merkle.getProof(whiteListedAddresses, 3);
 
         vm.startPrank(alice);
         liquidityPoolInstance.registerAsBnftHolder(alice);
@@ -635,7 +633,6 @@ contract StakingManagerTest is TestSetup {
     }
 
     function test_BatchRegisterValidatorWorksCorrectly() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
@@ -782,7 +779,6 @@ contract StakingManagerTest is TestSetup {
     }
 
     function test_BatchRegisterValidatorFailsIfIncorrectPhase() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         startHoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(_ipfsHash, 100);
@@ -1248,7 +1244,6 @@ contract StakingManagerTest is TestSetup {
     }
 
     function test_EventValidatorRegistered() public {
-        bytes32[] memory proof = merkle.getProof(whiteListedAddresses, 0);
 
         vm.prank(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
         nodeOperatorManagerInstance.registerNodeOperator(
@@ -1301,13 +1296,13 @@ contract StakingManagerTest is TestSetup {
         );
 
         hoax(0xCd5EBC2dD4Cb3dc52ac66CEEcc72c838B40A5931);
-        uint256[] memory bidIds = auctionInstance.createBid{value: 0.4 ether}(
+        uint256[] memory newBidIds = auctionInstance.createBid{value: 0.4 ether}(
             4,
             0.1 ether
         );
 
         startHoax(alice);
-        stakingManagerInstance.batchDepositWithBidIds{value: 128 ether}(bidIds, false);
+        stakingManagerInstance.batchDepositWithBidIds{value: 128 ether}(newBidIds, false);
     }
 
     function test_CanOnlySetAddressesOnce() public {

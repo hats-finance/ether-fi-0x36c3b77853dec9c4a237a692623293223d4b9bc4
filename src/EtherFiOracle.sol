@@ -8,6 +8,7 @@ import "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgradeable/contracts/security/PausableUpgradeable.sol";
 
 import "./interfaces/IEtherFiOracle.sol";
+import "./interfaces/IEtherFiAdmin.sol";
 
 import "forge-std/console.sol";
 
@@ -32,16 +33,18 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
     uint32 public numCommitteeMembers; // the total number of committee members
     uint32 public numActiveCommitteeMembers; // the number of active (enabled) committee members
 
-    event CommitteeMemberAdded(address member);
-    event CommitteeMemberRemoved(address member);
-    event CommitteeMemberUpdated(address member, bool enabled);
+    IEtherFiAdmin etherFiAdmin;
+
+    event CommitteeMemberAdded(address indexed member);
+    event CommitteeMemberRemoved(address indexed member);
+    event CommitteeMemberUpdated(address indexed member, bool enabled);
     event QuorumUpdated(uint32 newQuorumSize);
     event ConsensusVersionUpdated(uint32 newConsensusVersion);
     event OracleReportPeriodUpdated(uint32 newOracleReportPeriod);
     event ReportStartSlotUpdated(uint32 reportStartSlot);
 
-    event ReportPublished(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash);
-    event ReportSubmitted(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 hash, address committeeMember);
+    event ReportPublished(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 indexed hash);
+    event ReportSubmitted(uint32 consensusVersion, uint32 refSlotFrom, uint32 refSlotTo, uint32 refBlockFrom, uint32 refBlockTo, bytes32 indexed hash, address indexed committeeMember);
 
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -66,10 +69,11 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
     }
 
     function submitReport(OracleReport calldata _report) external whenNotPaused returns (bool) {
+        bytes32 reportHash = generateReportHash(_report);
+        require(!consensusStates[reportHash].consensusReached, "Consensus already reached");
         require(shouldSubmitReport(msg.sender), "You don't need to submit a report");
         verifyReport(_report);
 
-        bytes32 reportHash = generateReportHash(_report);
 
         // update the member state
         CommitteeMemberState storage memberState = committeeMemberStates[msg.sender];
@@ -78,7 +82,6 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
 
         // update the consensus state
         ConsensusState storage consenState = consensusStates[reportHash];
-        consenState.support++;
 
         emit ReportSubmitted(
             _report.consensusVersion,
@@ -91,9 +94,11 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
             );
 
         // if the consensus reaches
-        bool consensusReached = (consenState.support == quorumSize);
+        consenState.support++;
+        bool consensusReached = (consenState.support >= quorumSize);
         if (consensusReached) {
             consenState.consensusReached = true;
+            consenState.consensusTimestamp = uint32(block.timestamp);
             _publishReport(_report, reportHash);
         }
 
@@ -115,6 +120,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         uint32 slot = slotForNextReport();
         require(_isFinalized(slot), "Report Epoch is not finalized yet");
         require(computeSlotAtTimestamp(block.timestamp) >= reportStartSlot, "Report Slot has not started yet");
+        require(lastPublishedReportRefSlot == etherFiAdmin.lastHandledReportRefSlot(), "Last published report is not handled yet");
         return slot > committeeMemberStates[_member].lastReportRefSlot;
     }
 
@@ -128,6 +134,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         require(_report.refBlockTo < block.number, "Report is for wrong blockTo");
 
         // If two epochs in a row are justified, the current_epoch - 2 is considered finalized
+        // Put 1 epoch more as a safe buffer
         uint32 currSlot = computeSlotAtTimestamp(block.timestamp);
         uint32 currEpoch = (currSlot / SLOTS_PER_EPOCH);
         uint32 reportEpoch = (_report.refSlotTo / SLOTS_PER_EPOCH);
@@ -136,6 +143,16 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
 
     function isConsensusReached(bytes32 _hash) public view returns (bool) {
         return consensusStates[_hash].consensusReached;
+    }
+
+    function getConsensusTimestamp(bytes32 _hash) public view returns (uint32) {
+        require(consensusStates[_hash].consensusReached, "Consensus is not reached yet");
+        return consensusStates[_hash].consensusTimestamp;
+    }
+
+    function getConsensusSlot(bytes32 _hash) public view returns (uint32) {
+        require(consensusStates[_hash].consensusReached, "Consensus is not reached yet");
+        return computeSlotAtTimestamp(consensusStates[_hash].consensusTimestamp);
     }
 
     function _isFinalized(uint32 _slot) internal view returns (bool) {
@@ -203,12 +220,15 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
                 _report.lastFinalizedWithdrawalRequestId,
                 _report.eEthTargetAllocationWeight,
                 _report.etherFanTargetAllocationWeight,
-                _report.pendingWithdrawalAmount,
-                _report.numPendingValidatorsRequestedToExit,
+                _report.finalizedWithdrawalAmount,
                 _report.numValidatorsToSpinUp
             )
         );
-        return keccak256(abi.encodePacked(chunk1, chunk2, chunk3));
+        return keccak256(abi.encode(chunk1, chunk2, chunk3));
+    }
+
+    function beaconGenesisTimestamp() external view returns (uint32) {
+        return BEACON_GENESIS_TIME;
     }
 
     function addCommitteeMember(address _address) public onlyOwner {
@@ -223,6 +243,7 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
     function removeCommitteeMember(address _address) public onlyOwner {
         require(committeeMemberStates[_address].registered == true, "Not registered");
         numCommitteeMembers--;
+        if (committeeMemberStates[_address].enabled) numActiveCommitteeMembers--;
         delete committeeMemberStates[_address];
 
         emit CommitteeMemberRemoved(_address);
@@ -245,8 +266,9 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         // check if the start slot is at the beginning of the epoch
         require(_reportStartSlot > computeSlotAtTimestamp(block.timestamp), "The start slot should be in the future");
         require(_reportStartSlot > lastPublishedReportRefSlot, "The start slot should be after the last published report");
-        require(_reportStartSlot % 32 == 0, "The start slot should be at the beginning of the epoch");
+        require(_reportStartSlot % SLOTS_PER_EPOCH == 0, "The start slot should be at the beginning of the epoch");
         reportStartSlot = _reportStartSlot;
+        
         emit ReportStartSlotUpdated(_reportStartSlot);
     }
 
@@ -269,6 +291,22 @@ contract EtherFiOracle is Initializable, OwnableUpgradeable, PausableUpgradeable
         consensusVersion = _consensusVersion;
 
         emit ConsensusVersionUpdated(_consensusVersion);
+    }
+
+    function setEtherFiAdmin(address _etherFiAdminAddress) external onlyOwner {
+        require(etherFiAdmin == IEtherFiAdmin(address(0)), "EtherFiAdmin is already set");
+        etherFiAdmin = IEtherFiAdmin(_etherFiAdminAddress);
+    }
+    
+    function unpublishReport(bytes32 _hash) external onlyOwner {
+        require(consensusStates[_hash].consensusReached, "Consensus is not reached yet");
+        consensusStates[_hash].support = 0;
+        consensusStates[_hash].consensusReached = false;
+    }
+
+    function updateLastPublishedBlockStamps(uint32 _lastPublishedReportRefSlot, uint32 _lastPublishedReportRefBlock) external onlyOwner {
+        lastPublishedReportRefSlot = _lastPublishedReportRefSlot;
+        lastPublishedReportRefBlock = _lastPublishedReportRefBlock;
     }
 
     function pauseContract() external onlyOwner {
