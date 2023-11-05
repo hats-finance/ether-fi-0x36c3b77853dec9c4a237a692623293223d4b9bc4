@@ -420,6 +420,11 @@
         "internalType": "address",
         "name": "_etherFiAdminContractAddress",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_nodeOperatorManagerAddress",
+        "type": "address"
       }
     ],
     "name": "initializeOnUpgrade",

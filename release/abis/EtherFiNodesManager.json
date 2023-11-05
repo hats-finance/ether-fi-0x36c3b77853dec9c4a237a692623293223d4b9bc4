@@ -26,11 +26,6 @@
   },
   {
     "inputs": [],
-    "name": "MustClaimRestakedWithdrawals",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "NonZeroAddress",
     "type": "error"
   },
@@ -376,6 +371,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_validatorIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "batchQueueRestakedWithdrawal",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -852,6 +860,34 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_etherFiAdmin",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_eigenPodManager",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_delayedWithdrawalRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_maxEigenlayerWithdrawals",
+        "type": "uint8"
+      }
+    ],
+    "name": "initializeOnUpgrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_validatorId",
         "type": "uint256"
@@ -959,7 +995,7 @@
   },
   {
     "inputs": [],
-    "name": "maxEigenlayerWithrawals",
+    "name": "maxEigenlayerWithdrawals",
     "outputs": [
       {
         "internalType": "uint8",
@@ -1184,32 +1220,6 @@
       }
     ],
     "name": "sendExitRequest",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_addr",
-        "type": "address"
-      }
-    ],
-    "name": "setDelayedWithdrawalRouter",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_addr",
-        "type": "address"
-      }
-    ],
-    "name": "setEigenPodMananger",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
