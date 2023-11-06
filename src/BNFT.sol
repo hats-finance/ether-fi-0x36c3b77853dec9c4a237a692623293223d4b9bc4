@@ -52,6 +52,11 @@ contract BNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
         _burn(_validatorId);
     }
 
+    /// @notice burn the associated one
+    function burnFromCancelBNftFlow(uint256 _validatorId) external onlyStakingManager {
+        _burn(_validatorId);
+    }
+
     //ERC721 function being overridden to make it soulbound
     function _beforeTokenTransfer(
         address from,
