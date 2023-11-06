@@ -460,7 +460,7 @@ contract LiquidityPoolTest is TestSetup {
         sig[1] = hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65";
 
         vm.prank(alice);
-        liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(zeroRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
 
         vm.prank(alice);
         liquidityPoolInstance.batchCancelDeposit(newValidators);
@@ -473,6 +473,47 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(address(liquidityPoolInstance).balance, 60 ether);
         assertEq(stakingManagerInstance.bidIdToStaker(newValidators[0]), address(0));
         assertEq(stakingManagerInstance.bidIdToStaker(newValidators[1]), address(0));
+
+        _moveClock(7 days);
+
+        liquidityPoolInstance.dutyForWeek();
+
+        vm.deal(henry, 4 ether);
+        // again... should be able to re-deposit
+        vm.prank(henry);
+        newValidators = liquidityPoolInstance.batchDepositAsBnftHolder{value: 4 ether}(bidIds, 2);
+
+        for (uint256 i = 0; i < newValidators.length; i++) {
+            address etherFiNode = managerInstance.etherfiNodeAddress(
+                newValidators[i]
+            );
+            root = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                1 ether
+            );
+
+            depositDataRootsForApproval[i] = depGen.generateDepositRoot(
+                hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                hex"ad899d85dcfcc2506a8749020752f81353dd87e623b2982b7bbfbbdd7964790eab4e06e226917cba1253f063d64a7e5407d8542776631b96c4cea78e0968833b36d4e0ae0b94de46718f905ca6d9b8279e1044a41875640f8cb34dc3f6e4de65",
+                managerInstance.generateWithdrawalCredentials(etherFiNode),
+                31 ether
+            );
+
+            depositDataArray[i] = IStakingManager.DepositData({
+                publicKey: hex"8f9c0aab19ee7586d3d470f132842396af606947a0589382483308fdffdaf544078c3be24210677a9c471ce70b3b4c2c",
+                signature: hex"877bee8d83cac8bf46c89ce50215da0b5e370d282bb6c8599aabdbc780c33833687df5e1f5b5c2de8a6cd20b6572c8b0130b1744310a998e1079e3286ff03e18e4f94de8cdebecf3aaac3277b742adb8b0eea074e619c20d13a1dda6cba6e3df",
+                depositDataRoot: root,
+                ipfsHashForEncryptedValidatorKey: "test_ipfs"
+            });
+
+            assertEq(uint8(IEtherFiNode(etherFiNode).phase()), uint8(IEtherFiNode.VALIDATOR_PHASE.STAKE_DEPOSITED));
+
+        }
+
+        vm.prank(henry);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(zeroRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
     }
     
     function test_batchCancelDepositAsBnftHolderWithDifferentValidatorStages() public {
@@ -1630,5 +1671,45 @@ contract LiquidityPoolTest is TestSetup {
         assertEq(liquidityPoolInstance.totalValueOutOfLp(), 60 ether);
         assertEq(liquidityPoolInstance.totalValueInLp(), 60 ether);
         assertEq(liquidityPoolInstance.getTotalPooledEther(), 120 ether);
+    }
+
+    function test_goerli_test() internal {
+        initializeRealisticFork(TESTNET_FORK);
+
+        address addr = 0xD0d7F8a5a86d8271ff87ff24145Cf40CEa9F7A39;
+        vm.startPrank(addr);
+
+        bytes32 depositRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
+        uint256[] memory newValidators = new uint256[](1);
+        newValidators[0] = 149;
+
+//         {
+//     "publicKey": "923f084f451f9092089c8f1ce4f454eaebd98fcc096fed1375e5c8904bdc9a9351a9c95c6b200ba487bc1a18f704d19a",
+//     "signature": "9368bd230a8146c8ae305600e98f550d672f164f0e670ca53461a489301af75365b1325caea038828c8ab3d7210b58bf0c1a40e97213a5766932b5d9ce3606e2caea83c31f8dee5783ec3d4d0adaf792d275bdccd0334f38333c3ca7d8130611",
+//     "depositDataRoot": "0x948630649547a52291aac357b70da54a5a6f3b881defb3d7cef2de5f09a8a5f3",
+//     "ipfsHashForEncryptedValidatorKey": "QmPuujz3qgdmFoYVyhkMCP9NMrjKQskkb8zEnapKZEuLh8"
+// }
+
+        IStakingManager.DepositData[] memory depositDataArray = new IStakingManager.DepositData[](1);
+        IStakingManager.DepositData memory depositData = IStakingManager
+            .DepositData({
+                publicKey: hex"923f084f451f9092089c8f1ce4f454eaebd98fcc096fed1375e5c8904bdc9a9351a9c95c6b200ba487bc1a18f704d19a",
+                signature: hex"9368bd230a8146c8ae305600e98f550d672f164f0e670ca53461a489301af75365b1325caea038828c8ab3d7210b58bf0c1a40e97213a5766932b5d9ce3606e2caea83c31f8dee5783ec3d4d0adaf792d275bdccd0334f38333c3ca7d8130611",
+                depositDataRoot: 0x948630649547a52291aac357b70da54a5a6f3b881defb3d7cef2de5f09a8a5f3,
+                ipfsHashForEncryptedValidatorKey: "QmPuujz3qgdmFoYVyhkMCP9NMrjKQskkb8zEnapKZEuLh8"
+            });
+
+        depositDataArray[0] = depositData;
+
+        bytes32[] memory depositDataRootsForApproval = new bytes32[](1);
+        depositDataRootsForApproval[0] = 0x58d12a5856cd571cfdd55f5d887d9cfd44f1236ab92197cb37851ca3a49a6658;
+
+        bytes[] memory sig = new bytes[](1);
+        sig[0] = hex"a63be986aaeffbcf4bb641dacc72f2f37638d953b238c9f789afdad3dede41b5cc3a5079be1a32f81edcbec6e059886902bbea00bc40d84865feb89861ddd8e5ebfb359bcfd79baf930613d57b6a1fd854c29fa470596c6dda2153696730b4c1";
+
+        assertEq(stakingManagerInstance.bidIdToStaker(149), addr);
+        liquidityPoolInstance.batchRegisterAsBnftHolder(depositRoot, newValidators, depositDataArray, depositDataRootsForApproval, sig);
+
     }
 }
