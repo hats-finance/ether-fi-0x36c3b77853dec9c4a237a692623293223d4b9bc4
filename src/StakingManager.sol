@@ -221,6 +221,13 @@ contract StakingManager is
             } else if (source == ILiquidityPool.SourceOfFunds.ETHER_FAN) {
                 numberOfEtherFanValidators++;
             }
+
+            if(nodesManager.phase(_validatorIds[x]) == IEtherFiNode.VALIDATOR_PHASE.WAITING_FOR_APPROVAL) {
+                uint256 nftTokenId = _validatorIds[x];
+                TNFTInterfaceInstance.burnFromCancelBNftFlow(nftTokenId);
+                BNFTInterfaceInstance.burnFromCancelBNftFlow(nftTokenId);
+            }
+
             _cancelDeposit(_validatorIds[x], _caller);
         }
 
@@ -432,8 +439,6 @@ contract StakingManager is
         } else {
             _refundDeposit(msg.sender, stakeAmount);
         }
-
-        //Might need to burn BNFT
 
         emit DepositCancelled(_validatorId);
 

@@ -52,6 +52,11 @@ contract TNFT is ERC721Upgradeable, UUPSUpgradeable, OwnableUpgradeable {
         _burn(_validatorId);
     }
 
+        /// @notice burn the associated one
+    function burnFromCancelBNftFlow(uint256 _validatorId) external onlyStakingManager {
+        _burn(_validatorId);
+    }
+
     //--------------------------------------------------------------------------------------
     //-------------------------------  INTERNAL FUNCTIONS   --------------------------------
     //--------------------------------------------------------------------------------------
