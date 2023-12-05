@@ -20,7 +20,7 @@ AuctionManager.sol BNFT.sol EETH.sol EtherFiAdmin.sol EtherFiNode.sol EtherFiNod
 ## **Findings**
 [(Ether.fi issues repo)](https://github.com/hats-finance/ether-fi-0x36c3b77853dec9c4a237a692623293223d4b9bc4/issues)
 
-### **Medium severity finding:**
+### **Medium severity findings:**
 
 1. **Incorrect Check of Stale Price Leading to DoS and Stale Price Use in Ibo Contract**
    - **Issue URL:** [GitHub Issue Link](https://github.com/hats-finance/ether-fi-0x36c3b77853dec9c4a237a692623293223d4b9bc4/issues/14)
