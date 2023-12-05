@@ -1,4 +1,4 @@
-# **Audit Report for Ether.fi Audit Competition on Hats.finance**
+# **Ether.fi Audit Competition on Hats.finance**
 
 ## **Introduction to Hats.finance**
 Hats.finance builds autonomous security infrastructure for integration with major DeFi protocols to secure users' assets. It aims to be the decentralized choice for Web3 security, offering proactive security mechanisms like decentralized audit competitions and bug bounties. The protocol facilitates audit competitions to quickly secure smart contracts by having auditors compete, thereby reducing auditing costs and accelerating submissions. This aligns with their mission of fostering a robust, secure, and scalable Web3 ecosystem through decentralized security solutions​.
