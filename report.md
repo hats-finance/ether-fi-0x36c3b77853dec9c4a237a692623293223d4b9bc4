@@ -55,10 +55,10 @@ AuctionManager.sol BNFT.sol EETH.sol EtherFiAdmin.sol EtherFiNode.sol EtherFiNod
 13. **Absence of checks for zero address**: Missing validations for zero addresses in contracts. [GitHub Issue](https://github.com/hats-finance/ether-fi-0x36c3b77853dec9c4a237a692623293223d4b9bc4/issues/5).
 
 
-**Conclusion**
+## **Conclusion**
 The audit revealed significant insights into Ether.fi's contract security, particularly highlighting low severity issues that need attention. Addressing these findings will enhance the protocol's resilience and trustworthiness.
 
-**Disclaimer**
+## **Disclaimer**
 This report does not assert that the audited contracts are completely secure. Continuous review and comprehensive testing are advised before deploying critical smart contracts.
 
 The Ether.fi audit competition illustrates the collaborative effort in identifying and rectifying potential vulnerabilities, enhancing the overall security and functionality of the platform.
