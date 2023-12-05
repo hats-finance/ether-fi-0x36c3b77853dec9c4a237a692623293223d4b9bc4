@@ -9,7 +9,7 @@ Ether.fi is a trailblazing decentralized, non-custodial Ethereum staking protoco
 ## **Competition Details**
 - Type: A public audit competition hosted by Hats.finance.
 - Duration: Two weeks.
-- Maximum Reward: $80,000
+- Maximum Reward: $72,000
 - Total Payout: $6,100 distributed among nine participants.
 
 ## **Scope of Audit**
