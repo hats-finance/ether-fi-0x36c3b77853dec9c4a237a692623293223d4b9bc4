@@ -24,7 +24,7 @@ AuctionManager.sol BNFT.sol EETH.sol EtherFiAdmin.sol EtherFiNode.sol EtherFiNod
 
 1. **Incorrect Check of Stale Price Leading to DoS and Stale Price Use in Ibo Contract**
    - **Issue URL:** [GitHub Issue Link](https://github.com/hats-finance/ether-fi-0x36c3b77853dec9c4a237a692623293223d4b9bc4/issues/14)
-   - **Summary:** This issue, identified as medium severity, involves an incorrect check of stale price in the Ibo contract. This vulnerability can potentially lead to a Denial of Service (DoS) attack and the use of a stale price, which may have significant implications for the contract's reliability and integrity.
+   - **Summary:** This issue, classified as medium severity, involves a reentrancy bug in the LiquidityPool contract that allows a malicious actor to alter the number of shares to transfer to the WithdrawRequestNFT contract when calling requestWithdraw.
 
 ### **Low severity finding:**
 
