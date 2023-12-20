@@ -56,7 +56,7 @@ AuctionManager.sol BNFT.sol EETH.sol EtherFiAdmin.sol EtherFiNode.sol EtherFiNod
 
 
 ## **Conclusion**
-The audit revealed significant insights into Ether.fi's contract security, particularly highlighting low severity issues that need attention. Addressing these findings will enhance the protocol's resilience and trustworthiness.
+The audit revealed significant insights into Ether.fi's contract security, particularly highlighting amedium severity issue and low severity issues that need attention. Addressing these findings will enhance the protocol's resilience and trustworthiness.
 
 ## **Disclaimer**
 This report does not assert that the audited contracts are completely secure. Continuous review and comprehensive testing are advised before deploying critical smart contracts.
